@@ -54,6 +54,12 @@ class compositor_core_impl_t : public compositor_core_t
      */
     virtual void erase_view(wayfire_view view);
 
+    /**
+     * Find a view by its stringified ID.
+     * @return nullptr if no such view exists.
+     */
+    virtual wayfire_view find_view(const std::string& id);
+
     static compositor_core_impl_t& get();
 
     wlr_seat *get_current_seat() override;
@@ -109,6 +115,7 @@ class compositor_core_impl_t : public compositor_core_t
 
     wf::output_t *active_output = nullptr;
     std::vector<std::unique_ptr<wf::view_interface_t>> views;
+    std::unordered_map<std::string, wayfire_view> id_to_view;
 
     /* pairs (layer, request_id) */
     std::set<std::pair<uint32_t, int>> layer_focus_requests;

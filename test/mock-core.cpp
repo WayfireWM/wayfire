@@ -138,6 +138,16 @@ void mock_core_t::focus_view(wayfire_view v)
 void mock_core_t::erase_view(wayfire_view v)
 {}
 
+wayfire_view mock_core_t::find_view(const std::string& id)
+{
+    if (fake_views.count(id))
+    {
+        return fake_views[id];
+    }
+
+    return nullptr;
+}
+
 pid_t mock_core_t::run(std::string command)
 {
     return 0;
@@ -157,6 +167,11 @@ mock_core_t::mock_core_t()
 mock_core_t::~mock_core_t() = default;
 
 wf::compositor_core_impl_t& wf::compositor_core_impl_t::get()
+{
+    return mock_core();
+}
+
+mock_core_t& mock_core()
 {
     // Make everything use the mock implementation
     static mock_core_t mock;

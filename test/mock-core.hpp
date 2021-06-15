@@ -4,10 +4,13 @@
 class mock_core_t : public wf::compositor_core_impl_t
 {
   public:
+    std::unordered_map<std::string, wayfire_view> fake_views;
+
     void init() override;
     void post_init() override;
 
     void erase_view(wayfire_view view) override;
+    wayfire_view find_view(const std::string& id) override;
 
     static compositor_core_impl_t& get();
 
@@ -55,3 +58,5 @@ class mock_core_t : public wf::compositor_core_impl_t
     mock_core_t();
     virtual ~mock_core_t();
 };
+
+mock_core_t& mock_core();

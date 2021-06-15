@@ -16,3 +16,4 @@ mock_test = executable(
 test('Mock Event Loop Test', mock_test)
 
 subdir('geometry')
+subdir('txn')
