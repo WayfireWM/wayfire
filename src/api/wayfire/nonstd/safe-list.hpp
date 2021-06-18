@@ -5,8 +5,7 @@
 #include <memory>
 #include <algorithm>
 #include <functional>
-
-#include <wayland-server.h>
+#include <wayfire/util.hpp>
 
 #include "reverse.hpp"
 
@@ -17,22 +16,11 @@
  * for-each-like loop) */
 namespace wf
 {
-/* The object type depends on the safe list type, and the safe list type
- * needs access to the event loop. However, the event loop is typically
- * available from core.hpp. Because we can't resolve this circular dependency,
- * we provide a link to the event loop specially for the safe list */
-namespace _safe_list_detail
-{
-/* In main.cpp, and initialized there */
-extern wl_event_loop *event_loop;
-void idle_cleanup_func(void *data);
-}
-
 template<class T>
 class safe_list_t
 {
+    wf::wl_idle_call idle_cleanup;
     std::list<std::unique_ptr<T>> list;
-    wl_event_source *idle_cleanup_source = NULL;
 
     /* Remove all invalidated elements in the list */
     std::function<void()> do_cleanup = [&] ()
@@ -48,14 +36,12 @@ class safe_list_t
                 it = list.erase(it);
             }
         }
-
-        idle_cleanup_source = NULL;
     };
 
     /* Return whether the list has invalidated elements */
     bool is_dirty() const
     {
-        return idle_cleanup_source;
+        return idle_cleanup.is_connected();
     }
 
   public:
@@ -79,14 +65,6 @@ class safe_list_t
 
     safe_list_t(safe_list_t&& other) = default;
     safe_list_t& operator =(safe_list_t&& other) = default;
-
-    ~safe_list_t()
-    {
-        if (idle_cleanup_source)
-        {
-            wl_event_source_remove(idle_cleanup_source);
-        }
-    }
 
     T& back()
     {
@@ -227,7 +205,7 @@ class safe_list_t
     /* Remove all elements from the list */
     void clear()
     {
-        remove_if([] (const T& el) { return true; });
+        remove_if([] (const T&) { return true; });
     }
 
     /* Remove all elements satisfying a given condition.
@@ -248,11 +226,9 @@ class safe_list_t
         }
 
         /* Schedule a clean-up, but be careful to not schedule it twice */
-        if (!idle_cleanup_source && actually_removed)
+        if (!is_dirty() && actually_removed)
         {
-            idle_cleanup_source = wl_event_loop_add_idle(
-                _safe_list_detail::event_loop,
-                _safe_list_detail::idle_cleanup_func, &do_cleanup);
+            idle_cleanup.run_once([this] () { this->do_cleanup(); });
         }
     }
 };
