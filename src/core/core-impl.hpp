@@ -37,13 +37,13 @@ class compositor_core_impl_t : public compositor_core_t
      * Initialize the compositor core.
      * Called only by main().
      */
-    void init();
+    virtual void init();
 
     /**
      * Finish initialization of core after the backend has started.
      * Called only by main().
      */
-    void post_init();
+    virtual void post_init();
 
     wayfire_shell *wf_shell;
     wf_gtk_shell *gtk_shell;
@@ -52,7 +52,7 @@ class compositor_core_impl_t : public compositor_core_t
      * Remove a view from the compositor list. This is called when the view's
      * keep_count reaches zero for the first time after its creation.
      */
-    void erase_view(wayfire_view view);
+    virtual void erase_view(wayfire_view view);
 
     static compositor_core_impl_t& get();
 
@@ -97,7 +97,7 @@ class compositor_core_impl_t : public compositor_core_t
     void shutdown() override;
     compositor_state_t get_current_state() override;
 
-  private:
+  protected:
     wf::wl_listener_wrapper decoration_created;
     wf::wl_listener_wrapper xdg_decoration_created;
     wf::wl_listener_wrapper vkbd_created;

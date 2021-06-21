@@ -888,13 +888,6 @@ wf::compositor_core_impl_t::~compositor_core_impl_t()
     output_layout.reset();
 }
 
-wf::compositor_core_impl_t& wf::compositor_core_impl_t::get()
-{
-    static compositor_core_impl_t instance;
-
-    return instance;
-}
-
 wf::compositor_core_t& wf::compositor_core_t::get()
 {
     return wf::compositor_core_impl_t::get();
@@ -912,17 +905,3 @@ wf::compositor_core_impl_t& wf::get_core_impl()
 
 // TODO: move this to a better location
 wf_runtime_config runtime_config;
-
-// TODO: move this to a better location
-namespace wf
-{
-namespace _safe_list_detail
-{
-wl_event_loop *event_loop;
-void idle_cleanup_func(void *data)
-{
-    auto priv = reinterpret_cast<std::function<void()>*>(data);
-    (*priv)();
-}
-}
-}
