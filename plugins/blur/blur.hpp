@@ -1,6 +1,7 @@
 #include <wayfire/core.hpp>
 #include <wayfire/opengl.hpp>
 #include <wayfire/render-manager.hpp>
+#include <wayfire/region.hpp>
 
 /* The MIT License (MIT)
  *

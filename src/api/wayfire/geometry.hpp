@@ -45,6 +45,19 @@ wf::point_t operator +(const wf::point_t& a, const wf::point_t& b);
 wf::point_t operator -(const wf::point_t& a, const wf::point_t& b);
 
 wf::point_t operator -(const wf::point_t& a);
+
+/** Return the closest valume to @value which is in [@min, @max] */
+template<class T>
+T clamp(T value, T min, T max)
+{
+    return std::min(std::max(value, min), max);
+}
+
+/**
+ * Return the closest geometry to window which is completely inside the output.
+ * The returned geometry might be smaller, but never bigger than window.
+ */
+geometry_t clamp(geometry_t window, geometry_t output);
 }
 
 bool operator ==(const wf::geometry_t& a, const wf::geometry_t& b);

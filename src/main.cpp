@@ -234,9 +234,7 @@ int main(int argc, char *argv[])
     /* First create display and initialize safe-list's event loop, so that
      * wf objects (which depend on safe-list) can work */
     auto display = wl_display_create();
-    wf::_safe_list_detail::event_loop = wl_display_get_event_loop(display);
-
-    auto& core = wf::get_core_impl();
+    auto& core   = wf::get_core_impl();
 
     core.argc = argc;
     core.argv = argv;

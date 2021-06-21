@@ -1,7 +1,7 @@
 #pragma once
 
 #include <vector>
-#include <wayfire/util.hpp>
+#include <wayfire/region.hpp>
 #include "deco-button.hpp"
 
 namespace wf

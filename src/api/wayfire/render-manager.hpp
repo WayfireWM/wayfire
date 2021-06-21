@@ -1,14 +1,13 @@
-#ifndef RENDER_MANAGER_HPP
-#define RENDER_MANAGER_HPP
+#pragma once
 
-#include "wayfire/output.hpp"
-#include "wayfire/object.hpp"
+#include <wayfire/output.hpp>
+#include <wayfire/object.hpp>
+#include <wayfire/region.hpp>
 
 namespace wf
 {
 struct framebuffer_base_t;
 struct framebuffer_t;
-struct region_t;
 struct workspace_stream_t;
 /** Render hooks can be used to override Wayfire's built-in rendering. The
  * plugin which sets the hook gains full control over what and how is drawn
@@ -213,5 +212,3 @@ class render_manager : public wf::signal_provider_t
     std::unique_ptr<impl> pimpl;
 };
 }
-
-#endif

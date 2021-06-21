@@ -1,8 +1,8 @@
-#ifndef WF_WORKSPACE_STREAM_HPP
-#define WF_WORKSPACE_STREAM_HPP
+#pragma once
 
-#include "wayfire/opengl.hpp"
-#include "wayfire/object.hpp"
+#include <wayfire/opengl.hpp>
+#include <wayfire/object.hpp>
+#include <wayfire/region.hpp>
 
 namespace wf
 {
@@ -48,5 +48,3 @@ struct stream_signal_t : public wf::signal_data_t
     const wf::framebuffer_t& fb;
 };
 }
-
-#endif /* end of include guard: WF_WORKSPACE_STREAM_HPP */

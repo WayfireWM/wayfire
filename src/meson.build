@@ -1,4 +1,5 @@
-wayfire_sources = ['util.cpp',
+wayfire_sources = ['geometry.cpp',
+                   'region.cpp',
 
                    'core/output-layout.cpp',
                    'core/matcher.cpp',
@@ -85,7 +86,7 @@ libwayfire = declare_dependency(link_whole: libwayfire_sta,
 tests_include_dirs = include_directories('.')
 
 # Generate main executable
-executable('wayfire', ['main.cpp'],
+executable('wayfire', ['util.cpp', 'main.cpp'],
     dependencies: libwayfire,
     install: true,
     cpp_args: debug_arguments)

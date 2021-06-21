@@ -8,6 +8,7 @@
 #include "wayfire/geometry.hpp"
 #include "wayfire/decorator.hpp"
 #include <wayfire/nonstd/wlroots.hpp>
+#include <wayfire/region.hpp>
 
 namespace wf
 {

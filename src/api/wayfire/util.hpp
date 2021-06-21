@@ -2,79 +2,9 @@
 #define WF_UTIL_HPP
 
 #include <algorithm>
+#include <wayland-server.h>
 #include <functional>
-#include <pixman.h>
 
-#include "wayfire/geometry.hpp"
-
-/* ---------------------- pixman utility functions -------------------------- */
-namespace wf
-{
-struct region_t
-{
-    region_t();
-    /* Makes a copy of the given region */
-    region_t(pixman_region32_t *damage);
-    region_t(const wlr_box& box);
-    ~region_t();
-
-    region_t(const region_t& other);
-    region_t(region_t&& other);
-
-    region_t& operator =(const region_t& other);
-    region_t& operator =(region_t&& other);
-
-    bool empty() const;
-    void clear();
-
-    void expand_edges(int amount);
-    pixman_box32_t get_extents() const;
-    bool contains_point(const point_t& point) const;
-    bool contains_pointf(const pointf_t& point) const;
-
-    /* Translate the region */
-    region_t operator +(const point_t& vector) const;
-    region_t& operator +=(const point_t& vector);
-
-    region_t operator *(float scale) const;
-    region_t& operator *=(float scale);
-
-    /* Region intersection */
-    region_t operator &(const wlr_box& box) const;
-    region_t operator &(const region_t& other) const;
-    region_t& operator &=(const wlr_box& box);
-    region_t& operator &=(const region_t& other);
-
-    /* Region union */
-    region_t operator |(const wlr_box& other) const;
-    region_t operator |(const region_t& other) const;
-    region_t& operator |=(const wlr_box& other);
-    region_t& operator |=(const region_t& other);
-
-    /* Subtract the box/region from the current region */
-    region_t operator ^(const wlr_box& box) const;
-    region_t operator ^(const region_t& other) const;
-    region_t& operator ^=(const wlr_box& box);
-    region_t& operator ^=(const region_t& other);
-
-    pixman_region32_t *to_pixman();
-
-    const pixman_box32_t *begin() const;
-    const pixman_box32_t *end() const;
-
-  private:
-    pixman_region32_t _region;
-    /* Returns a const-casted pixman_region32_t*, useful in const operators
-     * where we use this->_region as only source for calculations, but pixman
-     * won't let us pass a const pixman_region32_t* */
-    pixman_region32_t *unconst() const;
-};
-}
-
-wlr_box wlr_box_from_pixman_box(const pixman_box32_t& box);
-pixman_box32_t pixman_box_from_wlr_box(const wlr_box& box);
-
-/* ------------------------- misc helper functions ------------------------- */
 namespace wf
 {
 /** Convert timespect to milliseconds. */
@@ -83,22 +13,6 @@ int64_t timespec_to_msec(const timespec& ts);
 /** Returns current time in msec, using CLOCK_MONOTONIC as a base */
 uint32_t get_current_time();
 
-/** Return the closest valume to @value which is in [@min, @max] */
-template<class T>
-T clamp(T value, T min, T max)
-{
-    return std::min(std::max(value, min), max);
-}
-
-/**
- * Return the closest geometry to window which is completely inside the output.
- * The returned geometry might be smaller, but never bigger than window.
- */
-geometry_t clamp(geometry_t window, geometry_t output);
-}
-
-namespace wf
-{
 /**
  * A wrapper around wl_listener compatible with C++11 std::functions
  */
@@ -145,9 +59,7 @@ class wl_idle_call
 {
   public:
     using callback_t = std::function<void ()>;
-    /* Initialize an empty idle call. set_event_loop() and set_callback()
-     * should be called before calls to run_once(), otherwise it won't
-     * have any effect */
+    /* Initialize an empty idle call. */
     wl_idle_call();
     /** Will disconnect if connected */
     ~wl_idle_call();
@@ -157,11 +69,6 @@ class wl_idle_call
     wl_idle_call(wl_idle_call &&) = delete;
     wl_idle_call& operator =(const wl_idle_call&) = delete;
     wl_idle_call& operator =(wl_idle_call&&) = delete;
-
-    /** Set the event loop. This will disconnect the wl_idle_call if it
-     * is connected. If no event loop is set (or if NULL loop), the default
-     * loop from core is used */
-    void set_event_loop(wl_event_loop *loop);
 
     /** Set the callback. This will disconnect the wl_idle_call if it is
      * connected */
@@ -177,7 +84,7 @@ class wl_idle_call
     /** Stop waiting for idle, no-op if not connected */
     void disconnect();
     /** @return true if the event source is active */
-    bool is_connected();
+    bool is_connected() const;
 
     /** execute the callback now. do not use manually! */
     void execute();
