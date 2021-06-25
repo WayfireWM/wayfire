@@ -4,6 +4,7 @@
 #include "../src/core/transaction/transaction-priv.hpp"
 #include "mock-instruction.hpp"
 #include "../mock-core.hpp"
+#include "../mock.hpp"
 
 using namespace wf::txn;
 
@@ -66,13 +67,120 @@ TEST_CASE("Transaction Impl Basics")
     };
 
     check_instructions(0, 0, 0);
+    tx_ab->set_id(123);
+    REQUIRE(tx_ab->get_state() == NEW);
+    REQUIRE(tx_ab->get_id() == 123);
 
     tx_ab->set_pending();
     check_instructions(1, 0, 0);
+    REQUIRE(tx_ab->get_state() == PENDING);
 
     tx_ab->commit();
     check_instructions(1, 1, 0);
+    REQUIRE(tx_ab->get_state() == COMMITTED);
 
     tx_ab->apply();
     check_instructions(1, 1, 1);
+    REQUIRE(tx_ab->get_state() == DONE);
+}
+
+TEST_CASE("Transaction Impl Signals")
+{
+    mock_loop::get().start(0);
+
+    auto tx_pub = transaction_t::create();
+    auto tx_ab  = dynamic_cast<transaction_impl_t*>(tx_pub.get());
+    REQUIRE(tx_ab != nullptr);
+
+    auto i1 = new mock_instruction_t("a");
+    auto i2 = new mock_instruction_t("b");
+
+    tx_ab->add_instruction(instruction_uptr_t(i1));
+
+    int nr_applied   = 0;
+    int nr_cancelled = 0;
+    int nr_timeout   = 0;
+
+    const auto& check_states = [&] (int applied, int cancelled, int timeout)
+    {
+        REQUIRE(nr_applied == applied);
+        REQUIRE(nr_cancelled == cancelled);
+        REQUIRE(nr_timeout == timeout);
+    };
+
+    wf::signal_callback_t on_done = [&] (wf::signal_data_t *data)
+    {
+        auto ev = static_cast<done_signal_t*>(data);
+        REQUIRE(ev->id == 0);
+
+        switch (ev->state)
+        {
+          case wf::txn::TXN_TIMED_OUT:
+            ++nr_timeout;
+            break;
+
+          case wf::txn::TXN_CANCELLED:
+            ++nr_cancelled;
+            break;
+
+          case wf::txn::TXN_APPLIED:
+            ++nr_applied;
+            break;
+        }
+    };
+
+    tx_ab->connect_signal("done", &on_done);
+    tx_ab->set_id(0);
+
+    SUBCASE("Merge into pending, then cancel")
+    {
+        tx_ab->set_pending();
+
+        auto tx_pub_b = transaction_t::create();
+        auto tx_b     = dynamic_cast<transaction_impl_t*>(tx_pub_b.release());
+
+        tx_b->add_instruction(instruction_uptr_t(i2));
+        tx_ab->merge(transaction_iuptr_t(tx_b));
+
+        REQUIRE(tx_ab->get_objects() == std::set<std::string>{"a", "b"});
+        tx_ab->commit();
+        i2->send_cancel();
+        check_states(0, 1, 0);
+    }
+
+    SUBCASE("No merging")
+    {
+        tx_ab->add_instruction(instruction_uptr_t(i2));
+        tx_ab->set_pending();
+        tx_ab->commit();
+
+        SUBCASE("Cancelling")
+        {
+            i1->send_ready();
+            i2->send_cancel();
+            check_states(0, 1, 0);
+            mock_loop::get().move_forward(1000);
+            check_states(0, 1, 0);
+        }
+
+        SUBCASE("Time out")
+        {
+            i2->send_ready();
+            // Move a lot forward so that it has time to trigger the timeout
+            mock_loop::get().move_forward(1000);
+            check_states(0, 0, 1);
+        }
+
+        SUBCASE("Successful apply")
+        {
+            i2->send_ready();
+            // Default timeout is 100ms
+            // Make sure that it is almost triggered
+            mock_loop::get().move_forward(99);
+            i1->send_ready();
+            check_states(1, 0, 0);
+            mock_loop::get().move_forward(1000);
+            check_states(1, 0, 0);
+        }
+    }
 }

@@ -38,10 +38,17 @@ class mock_instruction_t : public wf::txn::instruction_t
         ++applied;
     }
 
-    void send_done()
+    void send_ready()
     {
-        wf::txn::instruction_done_signal data;
+        wf::txn::instruction_ready_signal data;
         data.instruction = {this};
-        this->emit_signal("done", &data);
+        this->emit_signal("ready", &data);
+    }
+
+    void send_cancel()
+    {
+        wf::txn::instruction_cancel_signal data;
+        data.instruction = {this};
+        this->emit_signal("cancel", &data);
     }
 };

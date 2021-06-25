@@ -13,22 +13,42 @@ struct _instruction_signal : public wf::signal_data_t
 };
 
 /**
- * name: done
+ * name: ready
  * on: instruction
  * when: Emitted whenever the instruction is ready to be applied.
  */
-using instruction_done_signal = _instruction_signal;
+using instruction_ready_signal = _instruction_signal;
+
+/**
+ * name: cancel
+ * on: instruction
+ * when: Emitted whenever the instruction can no longer be applied.
+ */
+using instruction_cancel_signal = _instruction_signal;
 
 /**
  * A single instruction which is part of a transaction.
  * The instruction can change one or more states in Wayfire.
  *
- * Instruction lifetimes and states are similar to those of whole transactions.
- * An instruction can be in a pending state (hasn't been applied to anything),
- * or committed state (sent to clients but not applied yet).
+ * The instruction lifetime is as follows:
  *
- * As soon as the transaction has been committed and it is ready to be applied,
- * it should emit the 'ready' signal.
+ * 1. Instruction is created and added to a transaction.
+ * 2. Instruction is marked as pending. This means its transaction has been
+ *   added to the queue of pending transactions, and will eventually be
+ *   applied.
+ * 3. Instruction is committed when its transaction is committed. This means
+ *   that Wayfire is waiting for clients or other entities to become ready to
+ *   apply the transaction.
+ * 4. Instruction becomes ready (e.g. client responds with a new buffer), and
+ *   'ready' is emitted.
+ * 5. Instruction is applied when all instructions in its transaction are
+ *   ready. Note that this can happen even before the instruction is ready, in
+ *   case of a timeout. In this case, the instruction implementation determines
+ *   the best course of action.
+ *
+ * If at any point the instruction becomes impossible to apply (e.g. view is
+ * unmapped, output becomes destroyed, etc.), the 'cancel' signal should be
+ * emitted on the instruction.
  */
 class instruction_t : public wf::signal_provider_t
 {
