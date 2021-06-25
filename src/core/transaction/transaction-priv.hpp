@@ -46,7 +46,7 @@ class transaction_impl_t : public transaction_t, public signal_provider_t
 
     /**
      * Set all instructions as pending.
-     * Transaction state moves from NEW to PENDING
+     * Transaction state moves from NEW to PENDING.
      */
     void set_pending();
 
@@ -95,9 +95,19 @@ class transaction_impl_t : public transaction_t, public signal_provider_t
 
     transaction_state_t get_state() const;
 
+    /**
+     * A transaction becomes dirty when new instructions are added to it,
+     * until the dirty flag is cleared. Afterwards, new instructions can make
+     * it dirty again.
+     */
+    bool is_dirty() const;
+
+    void clear_dirty();
+
   private:
     uint32_t id;
     int32_t instructions_done = 0;
+    bool dirty = false;
 
     transaction_state_t state = NEW;
     std::vector<instruction_uptr_t> instructions;

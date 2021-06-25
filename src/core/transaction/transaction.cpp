@@ -77,17 +77,12 @@ void transaction_impl_t::merge(transaction_iuptr_t other)
     assert(other->get_state() == NEW);
     assert(state == NEW || state == PENDING);
 
-    // Connect to 'cancel' of the new instructions
-    if (state == PENDING)
+    for (auto& i : other->instructions)
     {
-        for (auto& i : other->instructions)
-        {
-            i->connect_signal("cancel", &on_instruction_cancel);
-        }
+        add_instruction(std::move(i));
     }
 
-    std::move(other->instructions.begin(), other->instructions.end(),
-        std::back_inserter(instructions));
+    // drop other
 }
 
 bool transaction_impl_t::does_intersect(const transaction_impl_t& other) const
@@ -105,7 +100,13 @@ bool transaction_impl_t::does_intersect(const transaction_impl_t& other) const
 
 void transaction_impl_t::add_instruction(instruction_uptr_t instr)
 {
+    if (state == PENDING)
+    {
+        instr->connect_signal("cancel", &on_instruction_cancel);
+    }
+
     this->instructions.push_back(std::move(instr));
+    this->dirty = true;
 }
 
 std::set<std::string> transaction_impl_t::get_objects() const
@@ -149,5 +150,15 @@ transaction_uptr_t transaction_t::create()
 {
     return std::make_unique<transaction_impl_t>();
 }
+
+bool transaction_impl_t::is_dirty() const
+{
+    return this->dirty;
 }
+
+void transaction_impl_t::clear_dirty()
+{
+    this->dirty = false;
+}
+} // namespace txn
 }

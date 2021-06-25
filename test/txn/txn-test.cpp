@@ -184,3 +184,23 @@ TEST_CASE("Transaction Impl Signals")
         }
     }
 }
+
+TEST_CASE("Transaction impl dirty flag")
+{
+    auto tx_pub = transaction_t::create();
+    auto tx_ab  = dynamic_cast<transaction_impl_t*>(tx_pub.get());
+    REQUIRE(tx_ab != nullptr);
+
+    auto i1 = new mock_instruction_t("a");
+    auto i2 = new mock_instruction_t("b");
+
+    tx_ab->add_instruction(instruction_uptr_t(i1));
+    REQUIRE(tx_ab->is_dirty());
+    tx_ab->set_pending();
+    REQUIRE(tx_ab->is_dirty());
+    tx_ab->clear_dirty();
+    REQUIRE_FALSE(tx_ab->is_dirty());
+
+    tx_ab->add_instruction(instruction_uptr_t(i2));
+    REQUIRE(tx_ab->is_dirty());
+}
