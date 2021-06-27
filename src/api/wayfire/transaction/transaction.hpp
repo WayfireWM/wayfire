@@ -12,8 +12,25 @@ namespace txn
 /**
  * Describes the state of a transaction at the end of its lifetime.
  */
-enum transaction_end_state_t
+enum transaction_state_t
 {
+    /**
+     * A newly created transaction which has not been submitted and does not
+     * have an ID yet.
+     */
+    TXN_NEW,
+    /**
+     * A transaction with a pending commit.
+     */
+    TXN_PENDING,
+    /**
+     * A committed transaction, waiting for readiness to be applied.
+     */
+    TXN_COMMITTED,
+    /**
+     * A transaction which is ready (and about) to be applied.
+     */
+    TXN_READY,
     /**
      * Transaction was cancelled because one of the participating objects
      * was destroyed.
@@ -32,23 +49,40 @@ enum transaction_end_state_t
     TXN_APPLIED,
 };
 
-/**
- * name: done
- * on: transaction-manager
- * when: Whenever a transaction has been applied or cancelled.
- * argument: unused
- */
-struct done_signal_t : public wf::signal_data_t
-{
-    /** The ID of the transaction. */
-    uint64_t id;
-
-    /** The state of the transaction. */
-    transaction_end_state_t state;
-};
-
 class transaction_t;
 using transaction_uptr_t = std::unique_ptr<transaction_t>;
+
+struct transaction_signal : public wf::signal_data_t
+{
+    /**
+     * The transaction which this signal is about.
+     */
+    const transaction_uptr_t& tx;
+
+    transaction_signal(const transaction_uptr_t& _tx) :
+        tx(_tx)
+    {}
+};
+
+/**
+ * name: pending
+ * on: transaction-manager, view(transaction-)
+ * when: Pending is emitted when there are new pending instructions in a
+ *   transaction. This happens when the transaction moves from NEW to PENDING.
+ *   When this signal is emitted, plugins can add additional instructions. This
+ *   will cause the pending signal to be emitted again for the same
+ *   transaction. Plugins should be EXTREMELY careful with adding new
+ *   instructions, because that may cause infinite loops if they keep adding
+ *   new instructions on every pending signal.
+ */
+using pending_signal = transaction_signal;
+
+/**
+ * name: done
+ * on: transaction-manager, view(transaction-)
+ * when: Whenever a transaction has been applied or cancelled.
+ */
+using done_signal = transaction_signal;
 
 /**
  * transaction_t represents a collection of changes to views' states which
@@ -67,6 +101,8 @@ using transaction_uptr_t = std::unique_ptr<transaction_t>;
  * - COMMITTED: instructions have been sent to client, and Wayfire is waiting
  *   for a response.
  *
+ * - READY: all instructions are ready to be applied.
+ *
  * Transactions are moved from PENDING to COMMITTED automatically.
  * This is possible as soon as there are no COMMITTED transactions which affect
  * the same views.  Otherwise, all PENDING transactions are merged together into
@@ -82,7 +118,7 @@ using transaction_uptr_t = std::unique_ptr<transaction_t>;
  *   time.
  *
  * In all of these three cases, 'done' signal is emitted from the transaction
- * manager, with information on why the transaction has ended.
+ * manager.
  */
 class transaction_t
 {
@@ -119,6 +155,13 @@ class transaction_t
      */
     virtual std::set<wayfire_view> get_views() const = 0;
 
+    /**
+     * Get the ID of the transaction.
+     * The ID is valid only after submitting the transaction to the
+     * transaction_manager.
+     */
+    virtual uint64_t get_id() const = 0;
+
     transaction_t(const transaction_t& other) = delete;
     transaction_t(transaction_t&& other) = delete;
     transaction_t& operator =(const transaction_t& other) = delete;
@@ -147,6 +190,7 @@ class transaction_manager_t : public signal_provider_t
      * Submit a new transaction.
      * It becomes pending and is committed as soon as possible.
      *
+     * @param tx The transaction to submit.
      * @return The ID of the transaction. Note that the transaction may be
      *   merged into an existing pending transaction, in which case, the
      *   old transaction ID will be returned.

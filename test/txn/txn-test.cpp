@@ -68,20 +68,27 @@ TEST_CASE("Transaction Impl Basics")
 
     check_instructions(0, 0, 0);
     tx_ab->set_id(123);
-    REQUIRE(tx_ab->get_state() == NEW);
+    REQUIRE(tx_ab->get_state() == TXN_NEW);
     REQUIRE(tx_ab->get_id() == 123);
 
     tx_ab->set_pending();
     check_instructions(1, 0, 0);
-    REQUIRE(tx_ab->get_state() == PENDING);
+    REQUIRE(tx_ab->get_state() == TXN_PENDING);
 
     tx_ab->commit();
     check_instructions(1, 1, 0);
-    REQUIRE(tx_ab->get_state() == COMMITTED);
+    REQUIRE(tx_ab->get_state() == TXN_COMMITTED);
+
+    for (auto i : {i1, i2, i3, i4, i5})
+    {
+        i->send_ready();
+    }
+
+    REQUIRE(tx_ab->get_state() == TXN_READY);
 
     tx_ab->apply();
     check_instructions(1, 1, 1);
-    REQUIRE(tx_ab->get_state() == DONE);
+    REQUIRE(tx_ab->get_state() == TXN_APPLIED);
 }
 
 TEST_CASE("Transaction Impl Signals")
@@ -97,20 +104,20 @@ TEST_CASE("Transaction Impl Signals")
 
     tx_ab->add_instruction(instruction_uptr_t(i1));
 
-    int nr_applied   = 0;
+    int nr_ready     = 0;
     int nr_cancelled = 0;
     int nr_timeout   = 0;
 
     const auto& check_states = [&] (int applied, int cancelled, int timeout)
     {
-        REQUIRE(nr_applied == applied);
+        REQUIRE(nr_ready == applied);
         REQUIRE(nr_cancelled == cancelled);
         REQUIRE(nr_timeout == timeout);
     };
 
     wf::signal_callback_t on_done = [&] (wf::signal_data_t *data)
     {
-        auto ev = static_cast<done_signal_t*>(data);
+        auto ev = static_cast<priv_done_signal*>(data);
         REQUIRE(ev->id == 0);
 
         switch (ev->state)
@@ -123,9 +130,12 @@ TEST_CASE("Transaction Impl Signals")
             ++nr_cancelled;
             break;
 
-          case wf::txn::TXN_APPLIED:
-            ++nr_applied;
+          case wf::txn::TXN_READY:
+            ++nr_ready;
             break;
+
+          default:
+            REQUIRE_MESSAGE(false, "done signal emitted with invalid end state!");
         }
     };
 
@@ -135,7 +145,6 @@ TEST_CASE("Transaction Impl Signals")
     SUBCASE("Merge into pending, then cancel")
     {
         tx_ab->set_pending();
-
         auto tx_pub_b = transaction_t::create();
         auto tx_b     = dynamic_cast<transaction_impl_t*>(tx_pub_b.release());
 
@@ -161,6 +170,8 @@ TEST_CASE("Transaction Impl Signals")
             check_states(0, 1, 0);
             mock_loop::get().move_forward(1000);
             check_states(0, 1, 0);
+
+            REQUIRE(tx_ab->get_state() == TXN_CANCELLED);
         }
 
         SUBCASE("Time out")
@@ -169,6 +180,8 @@ TEST_CASE("Transaction Impl Signals")
             // Move a lot forward so that it has time to trigger the timeout
             mock_loop::get().move_forward(1000);
             check_states(0, 0, 1);
+
+            REQUIRE(tx_ab->get_state() == TXN_TIMED_OUT);
         }
 
         SUBCASE("Successful apply")
@@ -181,6 +194,7 @@ TEST_CASE("Transaction Impl Signals")
             check_states(1, 0, 0);
             mock_loop::get().move_forward(1000);
             check_states(1, 0, 0);
+            REQUIRE(tx_ab->get_state() == TXN_READY);
         }
     }
 }

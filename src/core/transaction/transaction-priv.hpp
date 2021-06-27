@@ -28,12 +28,13 @@ class transaction_manager_t::impl
     std::vector<transaction_iuptr_t> committed;
 };
 
-enum transaction_state_t
+/**
+ * Same as txn::done_signal, but on the transaction itself.
+ */
+struct priv_done_signal : public signal_data_t
 {
-    NEW,
-    PENDING,
-    COMMITTED,
-    DONE,
+    uint64_t id;
+    transaction_state_t state;
 };
 
 /**
@@ -88,7 +89,7 @@ class transaction_impl_t : public transaction_t, public signal_provider_t
         this->id = id;
     }
 
-    uint32_t get_id() const
+    uint64_t get_id() const override
     {
         return this->id;
     }
@@ -105,18 +106,18 @@ class transaction_impl_t : public transaction_t, public signal_provider_t
     void clear_dirty();
 
   private:
-    uint32_t id;
+    uint64_t id;
     int32_t instructions_done = 0;
     bool dirty = false;
 
-    transaction_state_t state = NEW;
+    transaction_state_t state = TXN_NEW;
     std::vector<instruction_uptr_t> instructions;
 
     wf::signal_connection_t on_instruction_cancel;
     wf::signal_connection_t on_instruction_ready;
 
     wf::wl_timer commit_timeout;
-    void emit_done(transaction_end_state_t end_state);
+    void emit_done(transaction_state_t end_state);
 };
 }
 }

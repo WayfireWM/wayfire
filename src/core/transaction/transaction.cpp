@@ -11,6 +11,7 @@ transaction_impl_t::transaction_impl_t()
 {
     this->on_instruction_cancel.set_callback([=] (wf::signal_data_t*)
     {
+        state = TXN_CANCELLED;
         emit_done(TXN_CANCELLED);
         commit_timeout.disconnect();
     });
@@ -20,7 +21,8 @@ transaction_impl_t::transaction_impl_t()
         ++instructions_done;
         if (instructions_done == (int32_t)instructions.size())
         {
-            emit_done(TXN_APPLIED);
+            state = TXN_READY;
+            emit_done(TXN_READY);
             commit_timeout.disconnect();
         }
     });
@@ -28,29 +30,30 @@ transaction_impl_t::transaction_impl_t()
 
 void transaction_impl_t::set_pending()
 {
-    assert(this->state == NEW);
+    assert(this->state == TXN_NEW);
     for (auto& i : this->instructions)
     {
         i->set_pending();
         i->connect_signal("cancel", &on_instruction_cancel);
     }
 
-    this->state = PENDING;
+    this->state = TXN_PENDING;
 }
 
 void transaction_impl_t::commit()
 {
-    assert(this->state == PENDING);
+    assert(this->state == TXN_PENDING);
     for (auto& i : this->instructions)
     {
         i->connect_signal("ready", &on_instruction_ready);
         i->commit();
     }
 
-    this->state = COMMITTED;
+    this->state = TXN_COMMITTED;
 
     commit_timeout.set_timeout(100, [=] ()
     {
+        state = TXN_TIMED_OUT;
         emit_done(TXN_TIMED_OUT);
         return false;
     });
@@ -58,13 +61,13 @@ void transaction_impl_t::commit()
 
 void transaction_impl_t::apply()
 {
-    assert(this->state == COMMITTED);
+    assert(this->state == TXN_READY || this->state == TXN_CANCELLED);
     for (auto& i : this->instructions)
     {
         i->apply();
     }
 
-    this->state = DONE;
+    this->state = TXN_APPLIED;
 }
 
 transaction_state_t transaction_impl_t::get_state() const
@@ -74,8 +77,8 @@ transaction_state_t transaction_impl_t::get_state() const
 
 void transaction_impl_t::merge(transaction_iuptr_t other)
 {
-    assert(other->get_state() == NEW);
-    assert(state == NEW || state == PENDING);
+    assert(other->get_state() == TXN_NEW);
+    assert(state == TXN_NEW || state == TXN_PENDING);
 
     for (auto& i : other->instructions)
     {
@@ -100,7 +103,9 @@ bool transaction_impl_t::does_intersect(const transaction_impl_t& other) const
 
 void transaction_impl_t::add_instruction(instruction_uptr_t instr)
 {
-    if (state == PENDING)
+    assert(state == TXN_NEW || state == TXN_PENDING);
+
+    if (state == TXN_PENDING)
     {
         instr->connect_signal("cancel", &on_instruction_cancel);
     }
@@ -135,12 +140,12 @@ std::set<wayfire_view> transaction_impl_t::get_views() const
     return views;
 }
 
-void transaction_impl_t::emit_done(transaction_end_state_t end_state)
+void transaction_impl_t::emit_done(transaction_state_t end_state)
 {
     this->on_instruction_ready.disconnect();
     this->on_instruction_cancel.disconnect();
 
-    done_signal_t ev;
+    priv_done_signal ev;
     ev.id    = this->get_id();
     ev.state = end_state;
     this->emit_signal("done", &ev);
