@@ -14,6 +14,7 @@ wayfire_sources = ['geometry.cpp',
                    'core/view-access-interface.cpp',
 
                    'core/transaction/transaction.cpp',
+                   'core/transaction/transaction-manager.cpp',
 
                    'core/seat/pointing-device.cpp',
                    'core/seat/input-manager.cpp',

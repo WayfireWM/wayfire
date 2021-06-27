@@ -11,23 +11,6 @@ namespace txn
 class transaction_impl_t;
 using transaction_iuptr_t = std::unique_ptr<transaction_impl_t>;
 
-class transaction_manager_t::impl
-{
-  public:
-
-  private:
-    /**
-     * The single pending transaction, if it exists.
-     * Otherwise, nullptr.
-     */
-    transaction_iuptr_t pending;
-
-    /**
-     * A list of committed transactions.
-     */
-    std::vector<transaction_iuptr_t> committed;
-};
-
 /**
  * Same as txn::done_signal, but on the transaction itself.
  */
@@ -84,7 +67,7 @@ class transaction_impl_t : public transaction_t, public signal_provider_t
     /**
      * Set the ID.
      */
-    void set_id(uint32_t id)
+    void set_id(uint64_t id)
     {
         this->id = id;
     }
@@ -119,5 +102,5 @@ class transaction_impl_t : public transaction_t, public signal_provider_t
     wf::wl_timer commit_timeout;
     void emit_done(transaction_state_t end_state);
 };
-}
+} // namespace txn
 }

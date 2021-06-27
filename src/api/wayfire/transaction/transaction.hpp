@@ -78,6 +78,13 @@ struct transaction_signal : public wf::signal_data_t
 using pending_signal = transaction_signal;
 
 /**
+ * name: ready
+ * on: transaction-manager, view(transaction-)
+ * when: Whenever a transaction becomes READY.
+ */
+using done_signal = transaction_signal;
+
+/**
  * name: done
  * on: transaction-manager, view(transaction-)
  * when: Whenever a transaction has been applied or cancelled.
@@ -111,11 +118,11 @@ using done_signal = transaction_signal;
  * Destruction of transactions:
  *
  * - A pending or committed transaction may fail at any time, for ex. if a view
- *   in it is closed by the client.
+ *   in it is closed by the client (state CANCELLED).
  * - A committed transaction may time out because clients are too slow to
- *   respond.
+ *   respond (state TIMED_OUT).
  * - A committed transaction may succeed if all clients update their surfaces on
- *   time.
+ *   time (state APPLIED).
  *
  * In all of these three cases, 'done' signal is emitted from the transaction
  * manager.
@@ -188,12 +195,20 @@ class transaction_manager_t : public signal_provider_t
 
     /**
      * Submit a new transaction.
-     * It becomes pending and is committed as soon as possible.
+     *
+     * In case the transaction manipulates only objects for which there are no
+     * already pending or committed instructions, the transaction is committed
+     * as soon as control returns to the main loop.
+     *
+     * If that is not true, all such transactions are merged together in a
+     * single large transaction and committed as soon as the committed
+     * instructions which block it are all done.
+     *
+     * Note that submitting an empty transaction is not allowed.
      *
      * @param tx The transaction to submit.
-     * @return The ID of the transaction. Note that the transaction may be
-     *   merged into an existing pending transaction, in which case, the
-     *   old transaction ID will be returned.
+     * @return The assigned ID of the transaction. Note that this may be the ID
+     *   of the large transaction that the current one was merged in.
      */
     uint64_t submit(transaction_uptr_t tx);
 
