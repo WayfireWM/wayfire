@@ -10,4 +10,4 @@ txn_manager_test = executable(
     ['txn-manager-test.cpp'],
     dependencies: mocklib,
     install: false)
-test('transaction_manager_t Test', txn_test)
+test('transaction_manager_t Test', txn_manager_test)

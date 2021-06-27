@@ -112,8 +112,10 @@ void wf::wl_timer::execute()
 // Mock event loop
 mock_loop& mock_loop::get()
 {
-    static mock_loop ml;
-    return ml;
+    // Allocate mock_loop dynamically, so that idles/timers can be destroyed
+    // without using the deallocated mock_loop
+    static mock_loop *ml = new mock_loop;
+    return *ml;
 }
 
 void mock_loop::start(int X)
