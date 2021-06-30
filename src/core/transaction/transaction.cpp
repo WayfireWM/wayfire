@@ -108,6 +108,7 @@ void transaction_impl_t::add_instruction(instruction_uptr_t instr)
     if (state == TXN_PENDING)
     {
         instr->connect_signal("cancel", &on_instruction_cancel);
+        instr->set_pending();
     }
 
     this->instructions.push_back(std::move(instr));

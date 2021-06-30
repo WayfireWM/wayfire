@@ -152,6 +152,7 @@ TEST_CASE("Transaction Impl Signals")
         tx_ab->merge(transaction_iuptr_t(tx_b));
 
         REQUIRE(tx_ab->get_objects() == std::set<std::string>{"a", "b"});
+        REQUIRE(i2->pending == 1);
         tx_ab->commit();
         i2->send_cancel();
         check_states(0, 1, 0);
