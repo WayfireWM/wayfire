@@ -108,6 +108,8 @@ class transaction_manager_t::impl
         switch (ev->state)
         {
           case TXN_READY:
+          // fallthrough
+          case TXN_TIMED_OUT:
             emit_signal("ready", &emit_ev);
             tx->apply();
             emit_signal("done", &emit_ev);

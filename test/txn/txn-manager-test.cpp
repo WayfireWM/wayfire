@@ -169,4 +169,12 @@ TEST_CASE("Commit and then apply transaction")
         mock_loop::get().dispatch_idle();
         REQUIRE(nr_instruction_freed == 2);
     }
+
+    SUBCASE("Transaction times out")
+    {
+        mock_loop::get().dispatch_idle();
+        require(id1, i, 2);
+        mock_loop::get().move_forward(100);
+        require(id1, i, 4);
+    }
 }

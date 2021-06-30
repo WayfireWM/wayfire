@@ -61,7 +61,7 @@ void transaction_impl_t::commit()
 
 void transaction_impl_t::apply()
 {
-    assert(this->state == TXN_READY || this->state == TXN_CANCELLED);
+    assert(this->state == TXN_READY || this->state == TXN_TIMED_OUT);
     for (auto& i : this->instructions)
     {
         i->apply();
