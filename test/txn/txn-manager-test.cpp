@@ -177,4 +177,45 @@ TEST_CASE("Commit and then apply transaction")
         mock_loop::get().move_forward(100);
         require(id1, i, 4);
     }
+
+    SUBCASE("Pending and committed transactions are cancelled, another is scheduled")
+    {
+        auto tx2 = transaction_t::create();
+        auto i2  = new mock_instruction_t("a");
+        tx2->add_instruction(instruction_uptr_t(i2));
+
+        auto tx3 = transaction_t::create();
+        auto i3  = new mock_instruction_t("b");
+        tx3->add_instruction(instruction_uptr_t(i3));
+
+        mock_loop::get().dispatch_idle();
+        require(id1, i, 2);
+
+        auto id2 = manager.submit(std::move(tx2));
+        auto id3 = manager.submit(std::move(tx3));
+
+        require(id2, i2, 1);
+        require(id3, i3, 1);
+
+        const auto& require_cancel = [&] (int id, mock_instruction_t *i)
+        {
+            REQUIRE(nr_done[id] == 1);
+            REQUIRE(nr_ready[id] == 0);
+            REQUIRE(i->applied == 0);
+        };
+
+        i->send_cancel();
+        require_cancel(id1, i);
+
+        require(id2, i2, 1);
+        require(id3, i3, 1);
+        i2->cnt_destroy = &nr_instruction_freed;
+        i2->send_cancel();
+        require_cancel(id2, i2);
+        require(id3, i3, 1);
+
+        mock_loop::get().dispatch_idle();
+        REQUIRE(nr_instruction_freed == 2);
+        require(id3, i3, 2);
+    }
 }

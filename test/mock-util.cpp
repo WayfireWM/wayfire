@@ -29,8 +29,8 @@ void wf::wl_idle_call::set_callback(callback_t call)
 {
     this->call = [this, call]
     {
-        call();
         this->source = nullptr;
+        call();
     };
 }
 
@@ -132,11 +132,15 @@ int mock_loop::ctime()
 
 void mock_loop::dispatch_idle()
 {
-    for (auto it = idles.begin(); it != idles.end();)
+    for (auto& cb : idles)
     {
-        auto cb = *it;
-        ++it;
-        (*cb)();
+        if (!cb)
+        {
+            // already erased
+            continue;
+        }
+
+        (**cb)();
     }
 
     idles.clear();
@@ -184,19 +188,16 @@ void mock_loop::rem_timer(wf::wl_timer::callback_t *callback)
 
 void mock_loop::add_idle(wf::wl_idle_call::callback_t *callback)
 {
-    idles.push_back(callback);
+    idles.push_back(std::make_unique<wf::wl_idle_call::callback_t*>(callback));
 }
 
 void mock_loop::rem_idle(wf::wl_idle_call::callback_t *callback)
 {
-    for (auto it = idles.begin(); it != idles.end();)
+    for (auto it = idles.begin(); it != idles.end(); ++it)
     {
-        if (*it == callback)
+        if (*it && (**it == callback))
         {
-            it = idles.erase(it);
-        } else
-        {
-            ++it;
+            it->reset();
         }
     }
 }

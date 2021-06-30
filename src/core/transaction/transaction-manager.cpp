@@ -21,7 +21,10 @@ class transaction_manager_t::impl
         tx_impl->set_id(free_id);
         ++free_id;
 
+        LOGC(TXN, "New transaction ", tx_impl->get_id());
         tx_impl->set_pending();
+        tx_impl->connect_signal("done", &on_tx_done);
+
         pending_signal ev;
         ev.tx = {tx_impl};
         while (tx_impl->is_dirty())
@@ -48,12 +51,17 @@ class transaction_manager_t::impl
     {
         const auto& try_commit = [=] (transaction_iuptr_t& tx)
         {
+            if (!tx || (tx->get_state() != TXN_PENDING))
+            {
+                return false;
+            }
+
             bool can_commit = std::none_of(committed.begin(), committed.end(),
                 [&tx] (const auto& ctx)
             {
                 // Filter out only in-progress transactions.
                 // The others are already DONE or CANCELLED.
-                return (tx->get_state() == TXN_COMMITTED) &&
+                return (ctx->get_state() == TXN_COMMITTED) &&
                 tx->does_intersect(*ctx);
             });
 
@@ -77,10 +85,7 @@ class transaction_manager_t::impl
             }
         }
 
-        if (mega_transaction)
-        {
-            try_commit(mega_transaction);
-        }
+        try_commit(mega_transaction);
     };
 
     wf::wl_idle_call idle_cleanup;
@@ -88,11 +93,15 @@ class transaction_manager_t::impl
     {
         const auto& is_done = [] (const transaction_iuptr_t& tx)
         {
-            return tx->get_state() != TXN_COMMITTED;
+            return (tx->get_state() != TXN_COMMITTED) &&
+                   (tx->get_state() != TXN_PENDING);
         };
 
         auto it = std::remove_if(committed.begin(), committed.end(), is_done);
         committed.erase(it, committed.end());
+
+        it = std::remove_if(pending_idle.begin(), pending_idle.end(), is_done);
+        pending_idle.erase(it, pending_idle.end());
     };
 
     // Committed transactions
@@ -110,8 +119,16 @@ class transaction_manager_t::impl
           case TXN_READY:
           // fallthrough
           case TXN_TIMED_OUT:
+            LOGC(TXN, "Applying transaction ", tx->get_id(),
+                " (timeout: ", ev->state == TXN_TIMED_OUT, ")");
             emit_signal("ready", &emit_ev);
             tx->apply();
+            emit_signal("done", &emit_ev);
+            idle_cleanup.run_once();
+            break;
+
+          case TXN_CANCELLED:
+            LOGC(TXN, "Transaction ", tx->get_id(), " cancelled");
             emit_signal("done", &emit_ev);
             idle_cleanup.run_once();
             break;
@@ -149,8 +166,8 @@ class transaction_manager_t::impl
 
     void do_commit(transaction_iuptr_t tx)
     {
+        LOGC(TXN, "Committing transaction ", tx->get_id());
         tx->commit();
-        tx->connect_signal("done", &on_tx_done);
         committed.push_back(std::move(tx));
     }
 
@@ -177,6 +194,14 @@ transaction_manager_t& get_fresh_transaction_manager()
 {
     auto& mgr = transaction_manager_t::get();
     mgr.priv = std::make_unique<transaction_manager_t::impl>();
+
+    // Enable logs for tests
+    wf::log::enabled_categories.set(
+        (size_t)wf::log::logging_category::TXN, 1);
+    wf::log::initialize_logging(std::cout, wf::log::LOG_LEVEL_DEBUG,
+        wf::log::LOG_COLOR_MODE_OFF);
+
+    LOGD("Refreshed transaction manager");
     return mgr;
 }
 

@@ -3,6 +3,7 @@
 #include <wayfire/util.hpp>
 #include <map>
 #include <list>
+#include <memory>
 
 /**
  * A mock event loop with idle and timer sources.
@@ -48,6 +49,6 @@ class mock_loop
     };
 
     std::multimap<int, timer_item> timers;
-    std::list<wf::wl_idle_call::callback_t*> idles;
+    std::list<std::unique_ptr<wf::wl_idle_call::callback_t*>> idles;
     int current_time = 0;
 };
