@@ -6,7 +6,7 @@
 #include <map>
 
 #include <unistd.h>
-#include "debug-func.hpp"
+#include <wayfire/debug.hpp>
 #include "main.hpp"
 #include "wayfire/nonstd/safe-list.hpp"
 
@@ -157,6 +157,22 @@ static wf::config_backend_t *load_backend(const std::string& backend)
     return init();
 }
 
+void parse_extended_debugging(const std::vector<std::string>& categories)
+{
+    for (const auto& cat : categories)
+    {
+        if (cat == "txn")
+        {
+            LOGD("Enabling extended debugging for transactions");
+            wf::log::enabled_categories.set(
+                (size_t)wf::log::logging_category::TXN, 1);
+        } else
+        {
+            LOGE("Unrecognized debugging category \"", cat, "\"");
+        }
+    }
+}
+
 int main(int argc, char *argv[])
 {
     wf::log::log_level_t log_level = wf::log::LOG_LEVEL_INFO;
@@ -167,7 +183,7 @@ int main(int argc, char *argv[])
         {
             "config-backend", required_argument, NULL, 'B'
         },
-        {"debug", no_argument, NULL, 'd'},
+        {"debug", optional_argument, NULL, 'd'},
         {"damage-debug", no_argument, NULL, 'D'},
         {"damage-rerender", no_argument, NULL, 'R'},
         {"help", no_argument, NULL, 'h'},
@@ -177,9 +193,10 @@ int main(int argc, char *argv[])
 
     std::string config_file;
     std::string config_backend = WF_DEFAULT_CONFIG_BACKEND;
+    std::vector<std::string> extended_debug_categories;
 
     int c, i;
-    while ((c = getopt_long(argc, argv, "c:B:dDhRv", opts, &i)) != -1)
+    while ((c = getopt_long(argc, argv, "c:B:d::DhRv", opts, &i)) != -1)
     {
         switch (c)
         {
@@ -205,6 +222,22 @@ int main(int argc, char *argv[])
 
           case 'd':
             log_level = wf::log::LOG_LEVEL_DEBUG;
+
+            // Make sure to parse things like `-d txn`, which getopt does not.
+            // According to documentation, for optional arguments, optarg will
+            // be NULL so we need to manually check.
+            if (!optarg && (NULL != argv[optind]) &&
+                ('-' != argv[optind][0]))
+            {
+                optarg = argv[optind];
+                ++optind;
+            }
+
+            if (optarg)
+            {
+                extended_debug_categories.push_back(optarg);
+            }
+
             break;
 
           case 'v':
@@ -221,6 +254,8 @@ int main(int argc, char *argv[])
         (log_level == wf::log::LOG_LEVEL_DEBUG ? WLR_DEBUG : WLR_ERROR);
     wlr_log_init(wlr_log_level, wlr_log_handler);
     wf::log::initialize_logging(std::cout, log_level, detect_color_mode());
+
+    parse_extended_debugging(extended_debug_categories);
 
 #ifdef PRINT_TRACE
     /* In case of crash, print the stacktrace for debugging.

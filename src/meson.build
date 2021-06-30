@@ -1,5 +1,6 @@
 wayfire_sources = ['geometry.cpp',
                    'region.cpp',
+                   'debug.cpp',
 
                    'core/output-layout.cpp',
                    'core/matcher.cpp',

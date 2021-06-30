@@ -7,6 +7,7 @@
 
 #define nonull(x) ((x) ? (x) : ("nil"))
 #include <wayfire/util/log.hpp>
+#include <bitset>
 
 namespace wf
 {
@@ -19,6 +20,32 @@ namespace wf
  */
 void print_trace(bool fast_mode);
 }
+
+/* ------------------------ Logging categories -------------------------------*/
+
+namespace wf
+{
+namespace log
+{
+/**
+ * A list of available logging categories.
+ * Logging categories need to be manually enabled.
+ */
+enum class logging_category : size_t
+{
+    TXN = 0,
+    TOTAL,
+};
+
+extern std::bitset<(size_t)logging_category::TOTAL> enabled_categories;
+}
+}
+
+#define LOGC(CAT, ...) \
+    if (wf::log::enabled_categories[(size_t)wf::log::logging_category::CAT]) \
+    { \
+        LOGD("[", #CAT, "] ", __VA_ARGS__); \
+    }
 
 /* ------------------- Miscallaneous helpers for debugging ------------------ */
 #include <ostream>
