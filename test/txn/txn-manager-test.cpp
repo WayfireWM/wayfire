@@ -82,13 +82,14 @@ TEST_CASE("Submit and extend transaction")
 
     REQUIRE(tx_raw->get_objects() ==
         std::set<std::string>{"a", "A", "b", "C", "X"});
+
+    // Clear up for other tests
+    core.fake_views.clear();
 }
 
 TEST_CASE("Commit and then apply transaction")
 {
     auto& manager = get_fresh_transaction_manager();
-    auto& core    = mock_core();
-
     auto tx = transaction_t::create();
 
     int nr_instruction_freed = 0;
@@ -138,19 +139,34 @@ TEST_CASE("Commit and then apply transaction")
     };
 
     auto id1 = manager.submit(std::move(tx));
-    SUBCASE("Apply immediately")
+    SUBCASE("Schedule two concurrent transactions")
     {
+        auto tx2 = transaction_t::create();
+        auto i2  = new mock_instruction_t("b");
+        i2->cnt_destroy = &nr_instruction_freed;
+        tx2->add_instruction(instruction_uptr_t(i2));
+        auto id2 = manager.submit(std::move(tx2));
+
         require(id1, i, 1);
+        require(id2, i2, 1);
+
         // really waits for ready
         for (int cnt = 0; cnt < 5; cnt++)
         {
             mock_loop::get().dispatch_idle();
             require(id1, i, 2);
+            require(id2, i, 2);
         }
 
         i->send_ready();
         require(id1, i, 4);
+        require(id2, i2, 2);
         mock_loop::get().dispatch_idle();
         REQUIRE(nr_instruction_freed == 1);
+
+        i2->send_ready();
+        require(id2, i2, 4);
+        mock_loop::get().dispatch_idle();
+        REQUIRE(nr_instruction_freed == 2);
     }
 }
