@@ -18,7 +18,7 @@ TEST_CASE("Getting IDs")
     auto tx2_raw = tx2.get();
     tx2->add_instruction(mock_instruction_t::get("a"));
 
-    auto& manager = transaction_manager_t::get();
+    auto& manager = get_fresh_transaction_manager();
 
     auto id  = manager.submit(std::move(tx));
     auto id2 = manager.submit(std::move(tx2));
@@ -30,7 +30,7 @@ TEST_CASE("Getting IDs")
 
 TEST_CASE("Submit and extend transaction")
 {
-    auto& manager = transaction_manager_t::get();
+    auto& manager = get_fresh_transaction_manager();
     auto& core    = mock_core();
 
     wf::color_rect_view_t fake_view;
@@ -82,4 +82,75 @@ TEST_CASE("Submit and extend transaction")
 
     REQUIRE(tx_raw->get_objects() ==
         std::set<std::string>{"a", "A", "b", "C", "X"});
+}
+
+TEST_CASE("Commit and then apply transaction")
+{
+    auto& manager = get_fresh_transaction_manager();
+    auto& core    = mock_core();
+
+    auto tx = transaction_t::create();
+
+    int nr_instruction_freed = 0;
+    auto i = new mock_instruction_t("a");
+    i->cnt_destroy = &nr_instruction_freed;
+    tx->add_instruction(instruction_uptr_t(i));
+
+    std::map<int, int> nr_pending;
+    std::map<int, int> nr_ready;
+    std::map<int, int> nr_done;
+
+    wf::signal_connection_t on_pending = [&] (wf::signal_data_t *data)
+    {
+        auto ev = static_cast<pending_signal*>(data);
+        REQUIRE(i->pending == 1);
+        REQUIRE(nr_ready[ev->tx->get_id()] == 0);
+        REQUIRE(nr_done[ev->tx->get_id()] == 0);
+        nr_pending[ev->tx->get_id()]++;
+    };
+    wf::signal_connection_t on_ready = [&] (wf::signal_data_t *data)
+    {
+        auto ev = static_cast<ready_signal*>(data);
+        REQUIRE(nr_done[ev->tx->get_id()] == 0);
+        nr_ready[ev->tx->get_id()]++;
+    };
+    wf::signal_connection_t on_done = [&] (wf::signal_data_t *data)
+    {
+        auto ev = static_cast<done_signal*>(data);
+        nr_done[ev->tx->get_id()]++;
+    };
+
+    manager.connect_signal("pending", &on_pending);
+    manager.connect_signal("ready", &on_ready);
+    manager.connect_signal("done", &on_done);
+
+    // 0-> new, 1 -> pending, 2-> committed, 3->ready, 4-> done
+    const auto& require = [&nr_pending, &nr_ready, &nr_done] (
+        int id, mock_instruction_t *i, int phase)
+    {
+        REQUIRE(nr_pending[id] == (phase >= 1));
+        REQUIRE(nr_ready[id] == (phase >= 3));
+        REQUIRE(nr_done[id] == (phase >= 4));
+
+        REQUIRE(i->pending == (phase >= 1));
+        REQUIRE(i->committed == (phase >= 2));
+        REQUIRE(i->applied == (phase >= 4));
+    };
+
+    auto id1 = manager.submit(std::move(tx));
+    SUBCASE("Apply immediately")
+    {
+        require(id1, i, 1);
+        // really waits for ready
+        for (int cnt = 0; cnt < 5; cnt++)
+        {
+            mock_loop::get().dispatch_idle();
+            require(id1, i, 2);
+        }
+
+        i->send_ready();
+        require(id1, i, 4);
+        mock_loop::get().dispatch_idle();
+        REQUIRE(nr_instruction_freed == 1);
+    }
 }

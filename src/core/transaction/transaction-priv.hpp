@@ -102,5 +102,10 @@ class transaction_impl_t : public transaction_t, public signal_provider_t
     wf::wl_timer commit_timeout;
     void emit_done(transaction_state_t end_state);
 };
+
+// Get the transaction manager with transaction_manager_t::get(), and clean
+// its state if needed.
+// Used in tests.
+transaction_manager_t& get_fresh_transaction_manager();
 } // namespace txn
 }

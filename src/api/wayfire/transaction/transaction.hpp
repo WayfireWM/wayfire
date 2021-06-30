@@ -57,11 +57,7 @@ struct transaction_signal : public wf::signal_data_t
     /**
      * The transaction which this signal is about.
      */
-    const transaction_uptr_t& tx;
-
-    transaction_signal(const transaction_uptr_t& _tx) :
-        tx(_tx)
-    {}
+    nonstd::observer_ptr<transaction_t> tx;
 };
 
 /**
@@ -80,9 +76,10 @@ using pending_signal = transaction_signal;
 /**
  * name: ready
  * on: transaction-manager, view(transaction-)
- * when: Whenever a transaction becomes READY.
+ * when: Whenever a transaction is about to be applied. This can happen when
+ *   the transaction is READY or TIMED_OUT.
  */
-using done_signal = transaction_signal;
+using ready_signal = transaction_signal;
 
 /**
  * name: done

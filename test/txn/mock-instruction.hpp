@@ -8,10 +8,20 @@ class mock_instruction_t : public wf::txn::instruction_t
         return std::make_unique<mock_instruction_t>(object);
     }
 
+    int *cnt_destroy = nullptr;
+
     std::string object;
     mock_instruction_t(std::string object = "")
     {
         this->object = object;
+    }
+
+    ~mock_instruction_t()
+    {
+        if (cnt_destroy)
+        {
+            (*cnt_destroy)++;
+        }
     }
 
     int pending   = 0;
