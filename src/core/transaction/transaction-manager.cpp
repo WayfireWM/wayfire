@@ -18,22 +18,32 @@ class transaction_manager_t::impl
     uint64_t submit(transaction_uptr_t tx)
     {
         auto tx_impl = dynamic_cast<transaction_impl_t*>(tx.release());
-        tx_impl->set_id(free_id);
-        ++free_id;
+
+        // We first set id to the transaction.
+        // It may be merged into the mega transaction later.
+        set_id(tx_impl);
 
         LOGC(TXN, "New transaction ", tx_impl->get_id());
         tx_impl->set_pending();
         tx_impl->connect_signal("done", &on_tx_done);
+        collect_instructions(tx_impl);
 
-        pending_signal ev;
-        ev.tx = {tx_impl};
-        while (tx_impl->is_dirty())
+        auto tx_iuptr = transaction_iuptr_t(tx_impl);
+        if (is_conflict(tx_iuptr))
         {
-            tx_impl->clear_dirty();
-            emit_signal("pending", &ev);
+            LOGC(TXN, "Merging into mega transaction");
+            if (mega_transaction)
+            {
+                mega_transaction->merge(std::move(tx_iuptr));
+            } else
+            {
+                mega_transaction = std::move(tx_iuptr);
+            }
+
+            return mega_transaction->get_id();
         }
 
-        pending_idle.push_back(transaction_iuptr_t(tx_impl));
+        pending_idle.push_back(std::move(tx_iuptr));
         // Schedule for running later
         idle_commit.run_once();
 
@@ -43,8 +53,62 @@ class transaction_manager_t::impl
   private:
     uint64_t free_id = 0;
 
+    void set_id(transaction_impl_t *tx)
+    {
+        tx->set_id(free_id);
+        ++free_id;
+    }
+
+    void collect_instructions(transaction_impl_t *tx)
+    {
+        pending_signal ev;
+        ev.tx = {tx};
+        while (tx->is_dirty())
+        {
+            tx->clear_dirty();
+            emit_signal("pending", &ev);
+        }
+    }
+
     // Transactions that will be committed on next idle
     std::vector<transaction_iuptr_t> pending_idle;
+
+    // Check whether tx has a conflict with an already scheduled transaction.
+    bool is_conflict(const transaction_iuptr_t& tx,
+        const transaction_iuptr_t& scheduled)
+    {
+        if (!scheduled)
+        {
+            return false;
+        }
+
+        if ((scheduled->get_state() != TXN_COMMITTED) &&
+            (scheduled->get_state() != TXN_PENDING))
+        {
+            // Transaction already DONE, TIMED_OUT or CANCELLED
+            return false;
+        }
+
+        return scheduled->does_intersect(*tx);
+    }
+
+    // Check whether a transaction has a conflict with a pending or committed
+    // transactions
+    bool is_conflict(const transaction_iuptr_t& tx)
+    {
+        if (is_conflict(tx, mega_transaction))
+        {
+            return true;
+        }
+
+        bool with_pending = std::any_of(pending_idle.begin(), pending_idle.end(),
+            [&tx, this] (const auto& ptx) { return is_conflict(tx, ptx); });
+
+        bool with_committed = std::any_of(committed.begin(), committed.end(),
+            [&tx, this] (const auto& ctx) { return is_conflict(tx, ctx); });
+
+        return with_pending || with_committed;
+    }
 
     wf::wl_idle_call idle_commit;
     wf::wl_idle_call::callback_t idle_commit_handler = [=] ()
@@ -57,13 +121,7 @@ class transaction_manager_t::impl
             }
 
             bool can_commit = std::none_of(committed.begin(), committed.end(),
-                [&tx] (const auto& ctx)
-            {
-                // Filter out only in-progress transactions.
-                // The others are already DONE or CANCELLED.
-                return (ctx->get_state() == TXN_COMMITTED) &&
-                tx->does_intersect(*ctx);
-            });
+                [&tx, this] (const auto& ctx) { return is_conflict(tx, ctx); });
 
             if (can_commit)
             {
@@ -102,6 +160,11 @@ class transaction_manager_t::impl
 
         it = std::remove_if(pending_idle.begin(), pending_idle.end(), is_done);
         pending_idle.erase(it, pending_idle.end());
+
+        if (mega_transaction && is_done(mega_transaction))
+        {
+            mega_transaction.reset();
+        }
     };
 
     // Committed transactions
@@ -130,6 +193,7 @@ class transaction_manager_t::impl
           case TXN_CANCELLED:
             LOGC(TXN, "Transaction ", tx->get_id(), " cancelled");
             emit_signal("done", &emit_ev);
+            idle_commit.run_once();
             idle_cleanup.run_once();
             break;
 

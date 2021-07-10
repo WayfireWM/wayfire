@@ -178,6 +178,14 @@ TEST_CASE("Commit and then apply transaction")
         require(id1, i, 4);
     }
 
+
+    const auto& require_cancel = [&] (int id, mock_instruction_t *i)
+    {
+        REQUIRE(nr_done[id] == 1);
+        REQUIRE(nr_ready[id] == 0);
+        REQUIRE(i->applied == 0);
+    };
+
     SUBCASE("Pending and committed transactions are cancelled, another is scheduled")
     {
         auto tx2 = transaction_t::create();
@@ -197,13 +205,6 @@ TEST_CASE("Commit and then apply transaction")
         require(id2, i2, 1);
         require(id3, i3, 1);
 
-        const auto& require_cancel = [&] (int id, mock_instruction_t *i)
-        {
-            REQUIRE(nr_done[id] == 1);
-            REQUIRE(nr_ready[id] == 0);
-            REQUIRE(i->applied == 0);
-        };
-
         i->send_cancel();
         require_cancel(id1, i);
 
@@ -217,5 +218,84 @@ TEST_CASE("Commit and then apply transaction")
         mock_loop::get().dispatch_idle();
         REQUIRE(nr_instruction_freed == 2);
         require(id3, i3, 2);
+    }
+
+    SUBCASE("Aggregation of pending transactions")
+    {
+        auto tx2 = transaction_t::create();
+        auto i2  = new mock_instruction_t("a");
+        tx2->add_instruction(instruction_uptr_t(i2));
+
+        auto tx3 = transaction_t::create();
+        auto i31 = new mock_instruction_t("a");
+        auto i32 = new mock_instruction_t("b");
+        tx3->add_instruction(instruction_uptr_t(i31));
+        tx3->add_instruction(instruction_uptr_t(i32));
+
+        auto tx4 = transaction_t::create();
+        auto i4  = new mock_instruction_t("b");
+        tx4->add_instruction(instruction_uptr_t(i4));
+
+        auto tx5 = transaction_t::create();
+        auto i51 = new mock_instruction_t("c");
+        auto i52 = new mock_instruction_t("a");
+        tx5->add_instruction(instruction_uptr_t(i51));
+
+        wf::signal_connection_t on_pending_add_a = [&] (wf::signal_data_t *data)
+        {
+            auto ev = static_cast<pending_signal*>(data);
+            if (ev->tx->get_objects().count("c") &&
+                !ev->tx->get_objects().count("a"))
+            {
+                ev->tx->add_instruction(instruction_uptr_t(i52));
+            }
+        };
+        manager.connect_signal("pending", &on_pending_add_a);
+
+        auto id2 = manager.submit(std::move(tx2));
+        auto id3 = manager.submit(std::move(tx3));
+
+        REQUIRE(id2 == id3);
+        mock_loop::get().dispatch_idle();
+
+        require(id1, i, 2);
+        require(id2, i2, 1);
+        require(id3, i31, 1);
+        require(id3, i32, 1);
+
+        auto id4 = manager.submit(std::move(tx4));
+        auto id5 = manager.submit(std::move(tx5));
+
+        require(id1, i, 2);
+        require(id2, i2, 1);
+        require(id3, i31, 1);
+        require(id3, i32, 1);
+        require(id4, i4, 1);
+        require(id5, i51, 1);
+        require(id5, i52, 1);
+
+        mock_loop::get().dispatch_idle();
+        require(id1, i, 2);
+        require(id2, i2, 1);
+
+        SUBCASE("Cancelling mega transaction")
+        {
+            i2->send_cancel();
+            // test only a few of the instructions
+            require_cancel(id2, i2);
+            require_cancel(id3, i32);
+            require_cancel(id5, i51);
+        }
+
+        SUBCASE("Committing mega transaction")
+        {
+            i->send_cancel();
+            mock_loop::get().dispatch_idle();
+
+            // test only a few
+            require(id2, i2, 2);
+            require(id3, i31, 2);
+            require(id5, i52, 2);
+        }
     }
 }
