@@ -91,6 +91,54 @@ TEST_CASE("Transaction Impl Basics")
     REQUIRE(tx_ab->get_state() == TXN_APPLIED);
 }
 
+TEST_CASE("Merging transactions")
+{
+    auto i1 = new mock_instruction_t("a");
+    auto i2 = new mock_instruction_t("b");
+
+    auto tx_pub = transaction_t::create();
+    auto tx     = dynamic_cast<transaction_impl_t*>(tx_pub.release());
+    tx->add_instruction(instruction_uptr_t(i1));
+
+    auto tx2_pub = transaction_t::create();
+    auto tx2     = dynamic_cast<transaction_impl_t*>(tx2_pub.release());
+    tx2->add_instruction(instruction_uptr_t(i2));
+
+    // 1 -> new, 2 -> pending, 3 -> committed, 4 -> applied
+    const auto& require_instruction = [] (mock_instruction_t *i, int state)
+    {
+        REQUIRE(i->pending == (state >= 2));
+        REQUIRE(i->committed == (state >= 3));
+        REQUIRE(i->applied == (state >= 4));
+    };
+
+    SUBCASE("Merging new")
+    {
+        tx->merge(transaction_iuptr_t(tx2));
+        require_instruction(i1, 1);
+        require_instruction(i2, 1);
+    }
+
+    SUBCASE("Merge new into pending")
+    {
+        tx->set_pending();
+        require_instruction(i1, 2);
+        require_instruction(i2, 1);
+        tx->merge(transaction_iuptr_t(tx2));
+        require_instruction(i1, 2);
+        require_instruction(i2, 2);
+    }
+
+    SUBCASE("Merge pending into pending")
+    {
+        tx->set_pending();
+        tx2->set_pending();
+        tx->merge(transaction_iuptr_t(tx2));
+        require_instruction(i1, 2);
+        require_instruction(i2, 2);
+    }
+}
+
 TEST_CASE("Transaction Impl Signals")
 {
     mock_loop::get().start(0);

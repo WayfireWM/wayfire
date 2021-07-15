@@ -50,7 +50,8 @@ class transaction_impl_t : public transaction_t, public signal_provider_t
      * Move instructions from the other transaction to this,
      * thereby destroying the other transaction.
      *
-     * Only NEW transactions can be merged into NEW or PENDING transactions.
+     * NEW transactions can be merged into NEW or PENDING transactions.
+     * PENDING transactions can be merged into PENDING transactions.
      */
     void merge(transaction_iuptr_t other);
 
@@ -61,6 +62,8 @@ class transaction_impl_t : public transaction_t, public signal_provider_t
     bool does_intersect(const transaction_impl_t& other) const;
 
     void add_instruction(instruction_uptr_t instr) override;
+    void add_instruction(instruction_uptr_t instr, bool already_pending);
+
     std::set<std::string> get_objects() const override;
     std::set<wayfire_view> get_views() const override;
 

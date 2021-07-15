@@ -77,12 +77,13 @@ transaction_state_t transaction_impl_t::get_state() const
 
 void transaction_impl_t::merge(transaction_iuptr_t other)
 {
-    assert(other->get_state() == TXN_NEW);
+    assert(other->get_state() == TXN_NEW || other->get_state() == TXN_PENDING);
     assert(state == TXN_NEW || state == TXN_PENDING);
+    assert(!(state == TXN_NEW && other->get_state() == TXN_PENDING));
 
     for (auto& i : other->instructions)
     {
-        add_instruction(std::move(i));
+        add_instruction(std::move(i), other->get_state() == TXN_PENDING);
     }
 
     // drop other
@@ -103,12 +104,21 @@ bool transaction_impl_t::does_intersect(const transaction_impl_t& other) const
 
 void transaction_impl_t::add_instruction(instruction_uptr_t instr)
 {
+    add_instruction(std::move(instr), false);
+}
+
+void transaction_impl_t::add_instruction(instruction_uptr_t instr,
+    bool already_pending)
+{
     assert(state == TXN_NEW || state == TXN_PENDING);
 
     if (state == TXN_PENDING)
     {
         instr->connect_signal("cancel", &on_instruction_cancel);
-        instr->set_pending();
+        if (!already_pending)
+        {
+            instr->set_pending();
+        }
     }
 
     this->instructions.push_back(std::move(instr));
