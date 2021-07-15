@@ -1,0 +1,4 @@
+WarningsAsErrors:    '*'
+Checks: >-
+  -*,
+  cppcoreguidelines-special-member-functions
