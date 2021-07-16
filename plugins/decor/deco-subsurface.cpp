@@ -282,6 +282,11 @@ class simple_decorator_t : public wf::decorator_frame_t_t
         }
     }
 
+    simple_decorator_t(const simple_decorator_t &) = delete;
+    simple_decorator_t(simple_decorator_t &&) = delete;
+    simple_decorator_t& operator =(const simple_decorator_t&) = delete;
+    simple_decorator_t& operator =(simple_decorator_t&&) = delete;
+
     wf::signal_connection_t on_subsurface_removed = [&] (auto data)
     {
         auto ev = static_cast<wf::subsurface_removed_signal*>(data);

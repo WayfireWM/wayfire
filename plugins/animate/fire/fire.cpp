@@ -42,6 +42,11 @@ class FireTransformer : public wf::view_transformer_t
     ~FireTransformer()
     {}
 
+    FireTransformer(const FireTransformer &) = delete;
+    FireTransformer(FireTransformer &&) = delete;
+    FireTransformer& operator =(const FireTransformer&) = delete;
+    FireTransformer& operator =(FireTransformer&&) = delete;
+
     wf::pointf_t transform_point(wf::geometry_t view, wf::pointf_t point) override
     {
         return point;

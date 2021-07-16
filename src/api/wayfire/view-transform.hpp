@@ -107,8 +107,12 @@ class view_transformer_t
         wlr_box scissor_box, const wf::framebuffer_t& target_fb)
     {}
 
-    virtual ~view_transformer_t()
-    {}
+    view_transformer_t() = default;
+    virtual ~view_transformer_t() = default;
+    view_transformer_t(const view_transformer_t &) = default;
+    view_transformer_t(view_transformer_t &&) = default;
+    view_transformer_t& operator =(const view_transformer_t&) = default;
+    view_transformer_t& operator =(view_transformer_t&&) = default;
 };
 
 /* 2D transforms operate with a coordinate system centered at the

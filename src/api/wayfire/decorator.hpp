@@ -23,8 +23,12 @@ class decorator_frame_t_t
     virtual void notify_view_fullscreen()
     {}
 
-    virtual ~decorator_frame_t_t()
-    {}
+    decorator_frame_t_t() = default;
+    virtual ~decorator_frame_t_t() = default;
+    decorator_frame_t_t(const decorator_frame_t_t &) = default;
+    decorator_frame_t_t(decorator_frame_t_t &&) = default;
+    decorator_frame_t_t& operator =(const decorator_frame_t_t&) = default;
+    decorator_frame_t_t& operator =(decorator_frame_t_t&&) = default;
 };
 }
 

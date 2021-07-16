@@ -1,6 +1,5 @@
 #pragma once
 
-#include <wayfire/nonstd/noncopyable.hpp>
 #include <wayfire/config/option.hpp>
 #include <wayfire/view.hpp>
 
@@ -13,7 +12,7 @@ namespace wf
  * For information about the syntax or the possible conditions, see
  * wf::view_condition_interface_t and wf::condition_parser_t.
  */
-class view_matcher_t : public noncopyable_t
+class view_matcher_t
 {
   public:
     /**
@@ -33,6 +32,11 @@ class view_matcher_t : public noncopyable_t
      *   is not a string.
      */
     view_matcher_t(const std::string& option_name);
+
+    view_matcher_t(const view_matcher_t &) = delete;
+    view_matcher_t(view_matcher_t &&) = default;
+    view_matcher_t& operator =(const view_matcher_t&) = delete;
+    view_matcher_t& operator =(view_matcher_t&&) = default;
 
     /**
      * Set the condition option after initialization.

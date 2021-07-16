@@ -23,7 +23,12 @@ class animation_base
   public:
     virtual void init(wayfire_view view, int duration, wf_animation_type type);
     virtual bool step(); /* return true if continue, false otherwise */
+    animation_base() = default;
     virtual ~animation_base();
+    animation_base(const animation_base &) = default;
+    animation_base(animation_base &&) = default;
+    animation_base& operator =(const animation_base&) = default;
+    animation_base& operator =(animation_base&&) = default;
 };
 
 #endif

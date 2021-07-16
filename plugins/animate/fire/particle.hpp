@@ -36,6 +36,11 @@ class ParticleSystem
         ParticleIniter part_init_func);
     ~ParticleSystem();
 
+    ParticleSystem(const ParticleSystem &) = delete;
+    ParticleSystem(ParticleSystem &&) = delete;
+    ParticleSystem& operator =(const ParticleSystem&) = delete;
+    ParticleSystem& operator =(ParticleSystem&&) = delete;
+
     /* spawn at most num new particles.
      * returns the number of actually spawned particles */
     int spawn(int num);

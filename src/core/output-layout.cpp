@@ -965,6 +965,11 @@ class output_layout_t::impl
         get_core().disconnect_signal("reload-config", &on_config_reload);
     }
 
+    impl(const impl &) = delete;
+    impl(impl &&) = delete;
+    impl& operator =(const impl&) = delete;
+    impl& operator =(impl&&) = delete;
+
     output_configuration_t output_configuration_from_wlr_configuration(
         wlr_output_configuration_v1 *configuration)
     {
@@ -1585,6 +1590,7 @@ class output_layout_t::impl
 output_layout_t::output_layout_t(wlr_backend *b) : pimpl(new impl(b))
 {}
 output_layout_t::~output_layout_t() = default;
+
 wlr_output_layout*output_layout_t::get_handle()
 {
     return pimpl->get_handle();

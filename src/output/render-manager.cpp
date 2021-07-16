@@ -399,7 +399,7 @@ struct postprocessing_manager_t
  * It keeps at most 3 depth buffers at any given time to conserve
  * resources.
  */
-class depth_buffer_manager_t : public noncopyable_t
+class depth_buffer_manager_t
 {
   public:
     void ensure_depth_buffer(int fb, int width, int height)
@@ -414,6 +414,8 @@ class depth_buffer_manager_t : public noncopyable_t
         attach_buffer(find_buffer(fb), fb, width, height);
     }
 
+    depth_buffer_manager_t() = default;
+
     ~depth_buffer_manager_t()
     {
         OpenGL::render_begin();
@@ -424,6 +426,11 @@ class depth_buffer_manager_t : public noncopyable_t
 
         OpenGL::render_end();
     }
+
+    depth_buffer_manager_t(const depth_buffer_manager_t &) = delete;
+    depth_buffer_manager_t(depth_buffer_manager_t &&) = delete;
+    depth_buffer_manager_t& operator =(const depth_buffer_manager_t&) = delete;
+    depth_buffer_manager_t& operator =(depth_buffer_manager_t&&) = delete;
 
   private:
     static constexpr size_t MAX_BUFFERS = 3;

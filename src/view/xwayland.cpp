@@ -514,9 +514,6 @@ class wayfire_unmanaged_xwayland_view : public wayfire_xwayland_view_base
     {
         return xwayland_view_type_t::UNMANAGED;
     }
-
-    ~wayfire_unmanaged_xwayland_view()
-    {}
 };
 
 class wayfire_xwayland_view : public wayfire_xwayland_view_base

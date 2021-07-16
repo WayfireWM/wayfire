@@ -5,7 +5,6 @@
 #include <wayfire/opengl.hpp>
 #include <wayfire/surface.hpp>
 #include <wayfire/render-manager.hpp>
-#include <wayfire/nonstd/noncopyable.hpp>
 #include <wayfire/util/duration.hpp>
 #include <wayfire/plugins/common/simple-texture.hpp>
 
@@ -24,7 +23,7 @@ enum button_type_t
     BUTTON_MINIMIZE,
 };
 
-class button_t : public noncopyable_t
+class button_t
 {
   public:
     /**
@@ -35,6 +34,12 @@ class button_t : public noncopyable_t
      */
     button_t(const decoration_theme_t& theme,
         std::function<void()> damage_callback);
+
+    ~button_t() = default;
+    button_t(const button_t &) = delete;
+    button_t(button_t &&) = delete;
+    button_t& operator =(const button_t&) = delete;
+    button_t& operator =(button_t&&) = delete;
 
     /**
      * Set the type of the button. This will affect the displayed icon and

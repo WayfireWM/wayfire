@@ -19,12 +19,17 @@ using input_surface_selector_t =
 /**
  * Responsible for managing touch gestures and forwarding events to clients.
  */
-class touch_interface_t : public noncopyable_t
+class touch_interface_t
 {
   public:
     touch_interface_t(wlr_cursor *cursor, wlr_seat *seat,
         input_surface_selector_t surface_at);
     ~touch_interface_t();
+
+    touch_interface_t(const touch_interface_t &) = delete;
+    touch_interface_t(touch_interface_t &&) = delete;
+    touch_interface_t& operator =(const touch_interface_t&) = delete;
+    touch_interface_t& operator =(touch_interface_t&&) = delete;
 
     /** Get the positions of the fingers */
     const touch::gesture_state_t& get_state() const;

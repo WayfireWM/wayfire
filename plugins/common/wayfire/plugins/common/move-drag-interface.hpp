@@ -267,7 +267,7 @@ inline std::vector<wayfire_view> get_target_views(wayfire_view grabbed,
 /**
  * An object for storing per-output data.
  */
-class output_data_t : public noncopyable_t, public custom_data_t
+class output_data_t : public custom_data_t
 {
   public:
     output_data_t(wf::output_t *output, std::vector<dragged_view_t> views)
@@ -284,6 +284,11 @@ class output_data_t : public noncopyable_t, public custom_data_t
         output->render->rem_effect(&damage_overlay);
         output->render->rem_effect(&render_overlay);
     }
+
+    output_data_t(const output_data_t &) = delete;
+    output_data_t(output_data_t &&) = delete;
+    output_data_t& operator =(const output_data_t&) = delete;
+    output_data_t& operator =(output_data_t&&) = delete;
 
     void apply_damage()
     {

@@ -41,6 +41,11 @@ class surface_interface_t : public wf::object_base_t
   public:
     virtual ~surface_interface_t();
 
+    surface_interface_t(const surface_interface_t &) = delete;
+    surface_interface_t(surface_interface_t &&) = delete;
+    surface_interface_t& operator =(const surface_interface_t&) = delete;
+    surface_interface_t& operator =(surface_interface_t&&) = delete;
+
     /**
      * Check whether the surface is mapped. Mapped surfaces are "alive", i.e
      * they are rendered, can receive input, etc.

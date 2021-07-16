@@ -458,6 +458,11 @@ class view_interface_t : public surface_interface_t
 
     virtual ~view_interface_t();
 
+    view_interface_t(const view_interface_t &) = delete;
+    view_interface_t(view_interface_t &&) = delete;
+    view_interface_t& operator =(const view_interface_t&) = delete;
+    view_interface_t& operator =(view_interface_t&&) = delete;
+
     class view_priv_impl;
     std::unique_ptr<view_priv_impl> view_impl;
 

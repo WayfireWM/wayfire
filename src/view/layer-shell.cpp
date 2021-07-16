@@ -33,8 +33,11 @@ class wayfire_layer_shell_view : public wf::wlr_view_t
     void remove_anchored(bool reflow);
 
     wayfire_layer_shell_view(wlr_layer_surface_v1 *lsurf);
-    virtual ~wayfire_layer_shell_view()
-    {}
+    virtual ~wayfire_layer_shell_view() = default;
+    wayfire_layer_shell_view(const wayfire_layer_shell_view &) = delete;
+    wayfire_layer_shell_view(wayfire_layer_shell_view &&) = delete;
+    wayfire_layer_shell_view& operator =(const wayfire_layer_shell_view&) = delete;
+    wayfire_layer_shell_view& operator =(wayfire_layer_shell_view&&) = delete;
 
     void map(wlr_surface *surface) override;
     void unmap() override;

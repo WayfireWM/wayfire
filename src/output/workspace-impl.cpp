@@ -442,8 +442,16 @@ struct default_workspace_implementation_t : public workspace_implementation_t
         return true;
     }
 
-    virtual ~default_workspace_implementation_t()
-    {}
+    default_workspace_implementation_t() = default;
+    virtual ~default_workspace_implementation_t() = default;
+    default_workspace_implementation_t(const default_workspace_implementation_t &) =
+    default;
+    default_workspace_implementation_t(default_workspace_implementation_t &&) =
+    default;
+    default_workspace_implementation_t& operator =(
+        const default_workspace_implementation_t&) = default;
+    default_workspace_implementation_t& operator =(
+        default_workspace_implementation_t&&) = default;
 };
 
 /**

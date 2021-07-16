@@ -4,7 +4,6 @@
 #include <algorithm>
 #include <functional>
 #include <pixman.h>
-#include <wayfire/nonstd/noncopyable.hpp>
 
 #include "wayfire/geometry.hpp"
 
@@ -103,11 +102,16 @@ namespace wf
 /**
  * A wrapper around wl_listener compatible with C++11 std::functions
  */
-struct wl_listener_wrapper : public noncopyable_t
+struct wl_listener_wrapper
 {
     using callback_t = std::function<void (void*)>;
     wl_listener_wrapper();
     ~wl_listener_wrapper();
+
+    wl_listener_wrapper(const wl_listener_wrapper &) = delete;
+    wl_listener_wrapper(wl_listener_wrapper &&) = delete;
+    wl_listener_wrapper& operator =(const wl_listener_wrapper&) = delete;
+    wl_listener_wrapper& operator =(wl_listener_wrapper&&) = delete;
 
     /** Set the callback to be used when the signal is fired. Can be called
      * multiple times to update it */
@@ -137,7 +141,7 @@ struct wl_listener_wrapper : public noncopyable_t
 /**
  * A wrapper for adding idle callbacks to the event loop
  */
-class wl_idle_call : public noncopyable_t
+class wl_idle_call
 {
   public:
     using callback_t = std::function<void ()>;
@@ -147,6 +151,12 @@ class wl_idle_call : public noncopyable_t
     wl_idle_call();
     /** Will disconnect if connected */
     ~wl_idle_call();
+
+    // Non-movable since wayland holds pointers to this object.
+    wl_idle_call(const wl_idle_call &) = delete;
+    wl_idle_call(wl_idle_call &&) = delete;
+    wl_idle_call& operator =(const wl_idle_call&) = delete;
+    wl_idle_call& operator =(wl_idle_call&&) = delete;
 
     /** Set the event loop. This will disconnect the wl_idle_call if it
      * is connected. If no event loop is set (or if NULL loop), the default
@@ -187,8 +197,16 @@ class wl_timer
     // Return true if the timer should be fired again after the same amount of time
     using callback_t = std::function<bool ()>;
 
+    wl_timer() = default;
+
     /** Disconnects the timer if connected */
     ~wl_timer();
+
+    // Non-movable since wayland holds pointers to this object.
+    wl_timer(const wl_timer &) = delete;
+    wl_timer(wl_timer &&) = delete;
+    wl_timer& operator =(const wl_timer&) = delete;
+    wl_timer& operator =(wl_timer&&) = delete;
 
     /** Execute call after a timeout of timeout_ms */
     void set_timeout(uint32_t timeout_ms, callback_t call);

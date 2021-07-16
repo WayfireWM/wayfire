@@ -9,6 +9,7 @@
 
 struct wayfire_decoration_global_cleanup_t
 {
+    wayfire_decoration_global_cleanup_t() = default;
     ~wayfire_decoration_global_cleanup_t()
     {
         for (auto view : wf::get_core().get_all_views())
@@ -16,6 +17,15 @@ struct wayfire_decoration_global_cleanup_t
             deinit_view(view);
         }
     }
+
+    wayfire_decoration_global_cleanup_t(const wayfire_decoration_global_cleanup_t &)
+    = delete;
+    wayfire_decoration_global_cleanup_t(wayfire_decoration_global_cleanup_t &&) =
+    delete;
+    wayfire_decoration_global_cleanup_t& operator =(
+        const wayfire_decoration_global_cleanup_t&) = delete;
+    wayfire_decoration_global_cleanup_t& operator =(
+        wayfire_decoration_global_cleanup_t&&) = delete;
 };
 
 class wayfire_decoration :

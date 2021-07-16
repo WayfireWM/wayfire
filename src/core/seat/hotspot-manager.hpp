@@ -30,11 +30,17 @@ template<class Option, class Callback> using binding_container_t =
 /**
  * Represents an instance of a hotspot.
  */
-class hotspot_instance_t : public noncopyable_t
+class hotspot_instance_t
 {
   public:
+    ~hotspot_instance_t() = default;
     hotspot_instance_t(wf::output_t *output, uint32_t edges, uint32_t along,
         uint32_t away, int32_t timeout, std::function<void(uint32_t)> callback);
+
+    hotspot_instance_t(const hotspot_instance_t &) = delete;
+    hotspot_instance_t(hotspot_instance_t &&) = delete;
+    hotspot_instance_t& operator =(const hotspot_instance_t&) = delete;
+    hotspot_instance_t& operator =(hotspot_instance_t&&) = delete;
 
   private:
     /** The output this hotspot is on */

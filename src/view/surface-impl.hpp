@@ -54,6 +54,11 @@ class wlr_surface_base_t
 
     virtual ~wlr_surface_base_t();
 
+    wlr_surface_base_t(const wlr_surface_base_t &) = delete;
+    wlr_surface_base_t(wlr_surface_base_t &&) = delete;
+    wlr_surface_base_t& operator =(const wlr_surface_base_t&) = delete;
+    wlr_surface_base_t& operator =(wlr_surface_base_t&&) = delete;
+
     /** @return The offset from the surface coordinates to the actual geometry */
     virtual wf::point_t get_window_offset();
 
@@ -90,6 +95,11 @@ class wlr_child_surface_base_t :
   public:
     wlr_child_surface_base_t(surface_interface_t *self);
     virtual ~wlr_child_surface_base_t();
+
+    wlr_child_surface_base_t(const wlr_child_surface_base_t &) = delete;
+    wlr_child_surface_base_t(wlr_child_surface_base_t &&) = delete;
+    wlr_child_surface_base_t& operator =(const wlr_child_surface_base_t&) = delete;
+    wlr_child_surface_base_t& operator =(wlr_child_surface_base_t&&) = delete;
 
     /* Just pass to the default wlr surface implementation */
     virtual bool is_mapped() const override

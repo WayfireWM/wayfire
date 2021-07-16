@@ -71,10 +71,16 @@ class wf::view_matcher_t::impl
         }
     }
 
+    impl() = default;
     ~impl()
     {
         disconnect_updated_handler();
     }
+
+    impl(const impl &) = delete;
+    impl(impl &&) = delete;
+    impl& operator =(const impl&) = delete;
+    impl& operator =(impl&&) = delete;
 };
 
 wf::view_matcher_t::view_matcher_t()

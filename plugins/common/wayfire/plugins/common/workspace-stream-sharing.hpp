@@ -1,6 +1,5 @@
 #pragma once
 
-#include <wayfire/nonstd/noncopyable.hpp>
 #include <wayfire/object.hpp>
 #include <wayfire/output.hpp>
 #include <wayfire/geometry.hpp>
@@ -16,7 +15,7 @@ namespace wf
  * Using this interface allows all plugins to use the same OpenGL textures for
  * the workspaces, thereby reducing the memory overhead of a workspace stream.
  */
-class workspace_stream_pool_t : public noncopyable_t, public wf::custom_data_t
+class workspace_stream_pool_t : public wf::custom_data_t
 {
   public:
     /**
@@ -55,6 +54,11 @@ class workspace_stream_pool_t : public noncopyable_t, public wf::custom_data_t
     {
         resize_pool({0, 0});
     }
+
+    workspace_stream_pool_t(const workspace_stream_pool_t &) = delete;
+    workspace_stream_pool_t(workspace_stream_pool_t &&) = delete;
+    workspace_stream_pool_t& operator =(const workspace_stream_pool_t&) = delete;
+    workspace_stream_pool_t& operator =(workspace_stream_pool_t&&) = delete;
 
     /**
      * Get the workspace stream for the given workspace

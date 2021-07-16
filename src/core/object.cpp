@@ -152,8 +152,7 @@ wf::object_base_t::object_base_t()
     obase_priv->object_id = global_id++;
 }
 
-wf::object_base_t::~object_base_t()
-{}
+wf::object_base_t::~object_base_t() = default;
 
 std::string wf::object_base_t::to_string() const
 {

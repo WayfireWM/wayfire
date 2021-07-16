@@ -190,8 +190,11 @@ enum ewobbly_state_t
 class iwobbly_state_t
 {
   public:
-    virtual ~iwobbly_state_t()
-    {}
+    virtual ~iwobbly_state_t() = default;
+    iwobbly_state_t(const iwobbly_state_t &) = delete;
+    iwobbly_state_t(iwobbly_state_t &&) = delete;
+    iwobbly_state_t& operator =(const iwobbly_state_t&) = delete;
+    iwobbly_state_t& operator =(iwobbly_state_t&&) = delete;
 
     /** Called when the state has been updated. */
     virtual void handle_state_update_done()
@@ -399,6 +402,11 @@ class wobbly_state_tiled_t : public iwobbly_state_t
         wobbly_unenforce_geometry(model.get());
     }
 
+    wobbly_state_tiled_t(const wobbly_state_tiled_t &) = delete;
+    wobbly_state_tiled_t(wobbly_state_tiled_t &&) = delete;
+    wobbly_state_tiled_t& operator =(const wobbly_state_tiled_t&) = delete;
+    wobbly_state_tiled_t& operator =(wobbly_state_tiled_t&&) = delete;
+
     ewobbly_state_t get_wobbly_state() const override
     {
         return WOBBLY_STATE_TILED;
@@ -433,6 +441,13 @@ class wobbly_state_tiled_grabbed_t : public wobbly_state_grabbed_t
     {
         wobbly_unenforce_geometry(model.get());
     }
+
+    wobbly_state_tiled_grabbed_t(const wobbly_state_tiled_grabbed_t &) = delete;
+    wobbly_state_tiled_grabbed_t(wobbly_state_tiled_grabbed_t &&) = delete;
+    wobbly_state_tiled_grabbed_t& operator =(const wobbly_state_tiled_grabbed_t&) =
+    delete;
+    wobbly_state_tiled_grabbed_t& operator =(
+        wobbly_state_tiled_grabbed_t&&) = delete;
 
     ewobbly_state_t get_wobbly_state() const override
     {
@@ -877,6 +892,11 @@ class wf_wobbly : public wf::view_transformer_t
         view->disconnect_signal("set-output", &view_output_changed);
         view->disconnect_signal("geometry-changed", &view_geometry_changed);
     }
+
+    wf_wobbly(const wf_wobbly &) = delete;
+    wf_wobbly(wf_wobbly &&) = delete;
+    wf_wobbly& operator =(const wf_wobbly&) = delete;
+    wf_wobbly& operator =(wf_wobbly&&) = delete;
 };
 
 class wayfire_wobbly : public wf::plugin_interface_t

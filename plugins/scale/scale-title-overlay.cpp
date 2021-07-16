@@ -428,6 +428,11 @@ class view_title_overlay_t : public wf::scale_transformer_t::overlay_t
             }
         }
     }
+
+    view_title_overlay_t(const view_title_overlay_t &) = delete;
+    view_title_overlay_t(view_title_overlay_t &&) = delete;
+    view_title_overlay_t& operator =(const view_title_overlay_t&) = delete;
+    view_title_overlay_t& operator =(view_title_overlay_t&&) = delete;
 };
 
 scale_show_title_t::scale_show_title_t() :

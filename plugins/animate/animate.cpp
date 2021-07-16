@@ -3,7 +3,6 @@
 #include <wayfire/signal-definitions.hpp>
 #include <wayfire/render-manager.hpp>
 #include <wayfire/workspace-manager.hpp>
-#include <wayfire/nonstd/noncopyable.hpp>
 #include <type_traits>
 #include <map>
 #include <wayfire/core.hpp>
@@ -28,8 +27,14 @@ static constexpr const char *animate_custom_data_id = "animation-hook";
  * animation_t is which animation to use (i.e fire, zoom, etc). */
 struct animation_hook_base : public wf::custom_data_t
 {
-    virtual void stop_hook(bool)   = 0;
+    virtual void stop_hook(bool) = 0;
+    animation_hook_base() = default;
     virtual ~animation_hook_base() = default;
+
+    animation_hook_base(const animation_hook_base &) = default;
+    animation_hook_base(animation_hook_base &&) = default;
+    animation_hook_base& operator =(const animation_hook_base&) = default;
+    animation_hook_base& operator =(animation_hook_base&&) = default;
 };
 
 template<class animation_t>
@@ -128,6 +133,11 @@ struct animation_hook : public animation_hook_base
             view->unref();
         }
     }
+
+    animation_hook(const animation_hook &) = delete;
+    animation_hook(animation_hook &&) = delete;
+    animation_hook& operator =(const animation_hook&) = delete;
+    animation_hook& operator =(animation_hook&&) = delete;
 };
 
 static void cleanup_views_on_output(wf::output_t *output)
@@ -151,12 +161,19 @@ static void cleanup_views_on_output(wf::output_t *output)
 /**
  * Cleanup when the last animate plugin is unloaded.
  */
-struct animation_global_cleanup_t : public noncopyable_t
+struct animation_global_cleanup_t
 {
+    animation_global_cleanup_t() = default;
     ~animation_global_cleanup_t()
     {
         cleanup_views_on_output(nullptr);
     }
+
+    animation_global_cleanup_t(const animation_global_cleanup_t &) = delete;
+    animation_global_cleanup_t(animation_global_cleanup_t &&) = delete;
+    animation_global_cleanup_t& operator =(const animation_global_cleanup_t&) =
+    delete;
+    animation_global_cleanup_t& operator =(animation_global_cleanup_t&&) = delete;
 };
 
 class wayfire_animation : public wf::singleton_plugin_t<animation_global_cleanup_t,

@@ -6,7 +6,6 @@
 #include <string>
 
 #include <wayfire/nonstd/observer_ptr.h>
-#include <wayfire/nonstd/noncopyable.hpp>
 
 namespace wf
 {
@@ -15,8 +14,12 @@ namespace wf
  */
 struct signal_data_t
 {
-    virtual ~signal_data_t()
-    {}
+    signal_data_t() = default;
+    virtual ~signal_data_t() = default;
+    signal_data_t(const signal_data_t &) = default;
+    signal_data_t(signal_data_t &&) = default;
+    signal_data_t& operator =(const signal_data_t&) = default;
+    signal_data_t& operator =(signal_data_t&&) = default;
 };
 
 using signal_callback_t = std::function<void (signal_data_t*)>;
@@ -28,7 +31,7 @@ class signal_provider_t;
  * The same signal connection object can be used to connect to multiple signal
  * providers.
  */
-class signal_connection_t : public noncopyable_t
+class signal_connection_t
 {
   public:
     /** Initialize an empty signal connection */
@@ -57,8 +60,11 @@ class signal_connection_t : public noncopyable_t
     class impl;
     std::unique_ptr<impl> priv;
 
-  private:
-    /* Non-movable, non-copyable */
+    /* Non-copyable */
+    signal_connection_t(const signal_connection_t& other) = delete;
+    signal_connection_t& operator =(const signal_connection_t& other) = delete;
+
+    /* Non-movable (signal-providers store pointers to this object) */
     signal_connection_t(signal_connection_t&& other) = delete;
     signal_connection_t& operator =(signal_connection_t&& other) = delete;
 };
@@ -87,6 +93,13 @@ class signal_provider_t
 
     virtual ~signal_provider_t();
 
+    signal_provider_t(const signal_provider_t& other) = delete;
+    signal_provider_t& operator =(const signal_provider_t& other) = delete;
+
+    /* Non-movable (signal-connections hold pointers to this object) */
+    signal_provider_t(signal_provider_t&& other) = delete;
+    signal_provider_t& operator =(signal_provider_t&& other) = delete;
+
   protected:
     signal_provider_t();
 
@@ -101,8 +114,12 @@ class signal_provider_t
 class custom_data_t
 {
   public:
-    virtual ~custom_data_t()
-    {}
+    custom_data_t() = default;
+    virtual ~custom_data_t() = default;
+    custom_data_t(custom_data_t&& other) = default;
+    custom_data_t(const custom_data_t& other) = default;
+    custom_data_t& operator =(custom_data_t&& other) = default;
+    custom_data_t& operator =(const custom_data_t& other) = default;
 };
 
 /**
@@ -194,6 +211,11 @@ class object_base_t : public signal_provider_t
     }
 
     virtual ~object_base_t();
+
+    object_base_t(const object_base_t &) = delete;
+    object_base_t(object_base_t &&) = delete;
+    object_base_t& operator =(const object_base_t&) = delete;
+    object_base_t& operator =(object_base_t&&) = delete;
 
   protected:
     object_base_t();

@@ -1,10 +1,9 @@
 #pragma once
 #include <wayfire/opengl.hpp>
-#include <wayfire/nonstd/noncopyable.hpp>
 
 namespace wf
 {
-struct simple_texture_t : public noncopyable_t
+struct simple_texture_t
 {
     GLuint tex = -1;
     int width  = 0;
@@ -27,10 +26,38 @@ struct simple_texture_t : public noncopyable_t
         this->tex = -1;
     }
 
+    simple_texture_t() = default;
+
     /** Auto-release the texture when the object is destroyed */
     ~simple_texture_t()
     {
         release();
+    }
+
+    simple_texture_t(const simple_texture_t &) = delete;
+    simple_texture_t& operator =(const simple_texture_t&) = delete;
+
+    simple_texture_t(simple_texture_t && o) noexcept : tex(o.tex), width(o.width),
+        height(o.height)
+    {
+        o.tex = (GLuint) - 1;
+    }
+
+    simple_texture_t& operator =(simple_texture_t&& o) noexcept
+    {
+        if (&o == this)
+        {
+            return *this;
+        }
+
+        release();
+
+        tex    = o.tex;
+        width  = o.width;
+        height = o.height;
+        o.tex  = (GLuint) - 1;
+
+        return *this;
     }
 };
 }

@@ -186,6 +186,11 @@ class grid_animation_t : public wf::custom_data_t
         output->render->rem_effect(&pre_hook);
     }
 
+    grid_animation_t(const grid_animation_t &) = delete;
+    grid_animation_t(grid_animation_t &&) = delete;
+    grid_animation_t& operator =(const grid_animation_t&) = delete;
+    grid_animation_t& operator =(grid_animation_t&&) = delete;
+
   protected:
     wf::effect_hook_t pre_hook = [=] ()
     {

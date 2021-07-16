@@ -317,6 +317,11 @@ class tile_view_animation_t : public wf::grid::grid_animation_t
         view->pop_transformer("grid-crossfade");
         view->emit_signal("simple-tile-adjust-transformer", nullptr);
     }
+
+    tile_view_animation_t(const tile_view_animation_t &) = delete;
+    tile_view_animation_t(tile_view_animation_t &&) = delete;
+    tile_view_animation_t& operator =(const tile_view_animation_t&) = delete;
+    tile_view_animation_t& operator =(tile_view_animation_t&&) = delete;
 };
 
 view_node_t::view_node_t(wayfire_view view)

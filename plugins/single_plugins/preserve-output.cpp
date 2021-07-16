@@ -80,7 +80,7 @@ void view_erase_data(wayfire_view view)
 wf::option_wrapper_t<int> last_output_focus_timeout{
     "preserve-output/last_output_focus_timeout"};
 
-class preserve_output_t : public noncopyable_t
+class preserve_output_t
 {
   public:
     int instances = 0;
@@ -89,6 +89,7 @@ class preserve_output_t : public noncopyable_t
 
     std::map<std::string, wf::point_t> output_saved_workspace;
 
+    preserve_output_t() = default;
     ~preserve_output_t()
     {
         LOGD("This is last instance - deleting all data");
@@ -98,6 +99,12 @@ class preserve_output_t : public noncopyable_t
             view_erase_data(view);
         }
     }
+
+    preserve_output_t(preserve_output_t&&) = delete;
+    preserve_output_t& operator =(preserve_output_t&&) = delete;
+
+    preserve_output_t(const preserve_output_t&) = delete;
+    preserve_output_t& operator =(const preserve_output_t&) = delete;
 };
 
 /**

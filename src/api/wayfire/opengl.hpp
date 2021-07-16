@@ -5,7 +5,6 @@
 
 #include <wayfire/config/types.hpp>
 #include <wayfire/util.hpp>
-#include <wayfire/nonstd/noncopyable.hpp>
 #include <wayfire/nonstd/wlroots.hpp>
 
 #include <wayfire/geometry.hpp>
@@ -37,14 +36,17 @@ namespace wf
  * streams.
  *
  * Resources (tex/fb) are not automatically destroyed */
-struct framebuffer_base_t : public noncopyable_t
+struct framebuffer_base_t
 {
     GLuint tex = -1, fb = -1;
     int32_t viewport_width = 0, viewport_height = 0;
 
     framebuffer_base_t() = default;
+    virtual ~framebuffer_base_t() = default;
     framebuffer_base_t(framebuffer_base_t&& other);
     framebuffer_base_t& operator =(framebuffer_base_t&& other);
+    framebuffer_base_t(const framebuffer_base_t&) = delete;
+    framebuffer_base_t& operator =(const framebuffer_base_t&) = delete;
 
     /* The functions below assume they are called between
      * OpenGL::render_begin() and OpenGL::render_end() */
@@ -306,13 +308,18 @@ void render_rectangle(wf::geometry_t box, wf::color_t color, glm::mat4 matrix);
  * All of the program_t's functions should only be used inside a rendering
  * block guarded by render_begin/end()
  */
-class program_t : public noncopyable_t
+class program_t
 {
   public:
     program_t();
 
     /* Does nothing */
     ~program_t();
+
+    program_t(const program_t &) = delete;
+    program_t(program_t &&) = default;
+    program_t& operator =(const program_t&) = delete;
+    program_t& operator =(program_t&&) = default;
 
     /**
      * Compile the program consisting of @vertex_source and @fragment_source.

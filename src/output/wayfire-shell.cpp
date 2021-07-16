@@ -18,7 +18,7 @@ static void handle_hotspot_destroy(wl_resource *resource);
  * Represents a zwf_shell_hotspot_v2.
  * Lifetime is managed by the resource.
  */
-class wfs_hotspot : public noncopyable_t
+class wfs_hotspot
 {
   private:
     wf::geometry_t hotspot_geometry;
@@ -111,6 +111,11 @@ class wfs_hotspot : public noncopyable_t
         return slot;
     }
 
+    wfs_hotspot(const wfs_hotspot &) = delete;
+    wfs_hotspot(wfs_hotspot &&) = delete;
+    wfs_hotspot& operator =(const wfs_hotspot&) = delete;
+    wfs_hotspot& operator =(wfs_hotspot&&) = delete;
+
   public:
     /**
      * Create a new hotspot.
@@ -185,7 +190,7 @@ static struct zwf_output_v2_interface zwf_output_impl = {
  * Represents a zwf_output_v2.
  * Lifetime is managed by the wl_resource
  */
-class wfs_output : public noncopyable_t
+class wfs_output
 {
     uint32_t num_inhibits = 0;
     wl_resource *resource;
@@ -252,6 +257,11 @@ class wfs_output : public noncopyable_t
             --num_inhibits;
         }
     }
+
+    wfs_output(const wfs_output &) = delete;
+    wfs_output(wfs_output &&) = delete;
+    wfs_output& operator =(const wfs_output&) = delete;
+    wfs_output& operator =(wfs_output&&) = delete;
 
     void inhibit_output()
     {
@@ -328,7 +338,7 @@ static struct zwf_surface_v2_interface zwf_surface_impl = {
  * Represents a zwf_surface_v2.
  * Lifetime is managed by the wl_resource
  */
-class wfs_surface : public noncopyable_t
+class wfs_surface
 {
     wl_resource *resource;
     wayfire_view view;
@@ -357,6 +367,11 @@ class wfs_surface : public noncopyable_t
             view->disconnect_signal("unmapped", &on_unmap);
         }
     }
+
+    wfs_surface(const wfs_surface &) = delete;
+    wfs_surface(wfs_surface &&) = delete;
+    wfs_surface& operator =(const wfs_surface&) = delete;
+    wfs_surface& operator =(wfs_surface&&) = delete;
 
     void interactive_move()
     {

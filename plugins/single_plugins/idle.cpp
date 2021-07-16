@@ -50,6 +50,11 @@ class wayfire_idle
         create_dpms_timeout(dpms_timeout);
     }
 
+    wayfire_idle(const wayfire_idle&) = delete;
+    wayfire_idle& operator =(const wayfire_idle&) = delete;
+    wayfire_idle(wayfire_idle&&) = delete;
+    wayfire_idle& operator =(wayfire_idle&&) = delete;
+
     void destroy_dpms_timeout()
     {
         if (timeout_dpms)

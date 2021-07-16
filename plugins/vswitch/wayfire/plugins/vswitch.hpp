@@ -258,7 +258,7 @@ class workspace_switch_t
 /**
  * A simple class to register the vswitch bindings and get a custom callback called.
  */
-class control_bindings_t : public noncopyable_t
+class control_bindings_t
 {
   public:
     /**
@@ -276,6 +276,10 @@ class control_bindings_t : public noncopyable_t
     }
 
     virtual ~control_bindings_t() = default;
+    control_bindings_t(const control_bindings_t &) = delete;
+    control_bindings_t(control_bindings_t &&) = delete;
+    control_bindings_t& operator =(const control_bindings_t&) = delete;
+    control_bindings_t& operator =(control_bindings_t&&) = delete;
 
     /**
      * A binding callback for vswitch.

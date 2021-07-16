@@ -221,9 +221,41 @@ struct cairo_text_t
         return ret;
     }
 
+    cairo_text_t() = default;
+
     ~cairo_text_t()
     {
         cairo_free();
+    }
+
+    cairo_text_t(const cairo_text_t &) = delete;
+    cairo_text_t& operator =(const cairo_text_t&) = delete;
+
+    cairo_text_t(cairo_text_t && o) noexcept : tex(std::move(o.tex)), cr(o.cr),
+        surface(o.surface), surface_size(o.surface_size)
+    {
+        o.cr = nullptr;
+        o.surface = nullptr;
+    }
+
+    cairo_text_t& operator =(cairo_text_t&& o) noexcept
+    {
+        if (&o == this)
+        {
+            return *this;
+        }
+
+        cairo_free();
+
+        tex = std::move(o.tex);
+        cr  = o.cr;
+        surface = o.surface;
+        surface_size = o.surface_size;
+
+        o.cr = nullptr;
+        o.surface = nullptr;
+
+        return *this;
     }
 
     /**

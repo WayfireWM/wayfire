@@ -16,7 +16,7 @@ struct wlr_seat;
 namespace wf
 {
 struct sublayer_t;
-struct view_transform_block_t : public noncopyable_t
+struct view_transform_block_t
 {
     std::string plugin_name = "";
     std::unique_ptr<wf::view_transformer_t> transform;
@@ -24,6 +24,11 @@ struct view_transform_block_t : public noncopyable_t
 
     view_transform_block_t();
     ~view_transform_block_t();
+
+    view_transform_block_t(const view_transform_block_t &) = delete;
+    view_transform_block_t(view_transform_block_t &&) = delete;
+    view_transform_block_t& operator =(const view_transform_block_t&) = delete;
+    view_transform_block_t& operator =(view_transform_block_t&&) = delete;
 };
 
 /** Private data used by the default view_interface_t implementation */
@@ -112,8 +117,11 @@ class wlr_view_t :
 {
   public:
     wlr_view_t();
-    virtual ~wlr_view_t()
-    {}
+    virtual ~wlr_view_t() = default;
+    wlr_view_t(const wlr_view_t &) = delete;
+    wlr_view_t(wlr_view_t &&) = delete;
+    wlr_view_t& operator =(const wlr_view_t&) = delete;
+    wlr_view_t& operator =(wlr_view_t&&) = delete;
 
     /* Functions which are shell-independent */
     virtual void set_role(view_role_t new_role) override final;

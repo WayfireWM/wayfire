@@ -1,6 +1,5 @@
 #pragma once
 
-#include <wayfire/nonstd/noncopyable.hpp>
 #include <wayfire/config/option.hpp>
 #include <wayfire/config/option-wrapper.hpp>
 #include <wayfire/core.hpp>
