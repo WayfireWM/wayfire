@@ -1,4 +1,6 @@
 #include <wayfire/transaction/instruction.hpp>
+#include <doctest/doctest.h>
+#include <optional>
 
 class mock_instruction_t : public wf::txn::instruction_t
 {
@@ -9,6 +11,7 @@ class mock_instruction_t : public wf::txn::instruction_t
     }
 
     int *cnt_destroy = nullptr;
+    std::optional<int> require_destroy_on_commit;
 
     std::string object;
     mock_instruction_t(std::string object = "")
@@ -40,6 +43,12 @@ class mock_instruction_t : public wf::txn::instruction_t
 
     void commit() override
     {
+        if (require_destroy_on_commit.has_value() &&
+            cnt_destroy)
+        {
+            REQUIRE(*cnt_destroy == require_destroy_on_commit);
+        }
+
         ++committed;
     }
 

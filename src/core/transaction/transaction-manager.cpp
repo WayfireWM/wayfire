@@ -187,12 +187,21 @@ class transaction_manager_t::impl
             emit_signal("ready", &emit_ev);
             tx->apply();
             emit_signal("done", &emit_ev);
+
+            // NB: we need to first commit the next instruction, and clean up
+            // after that. This way, surface locks can be transferred from the
+            // previous to the next transaction.
+            idle_commit.run_once();
             idle_cleanup.run_once();
             break;
 
           case TXN_CANCELLED:
             LOGC(TXN, "Transaction ", tx->get_id(), " cancelled");
             emit_signal("done", &emit_ev);
+
+            // NB: we need to first commit the next instruction, and clean up
+            // after that. This way, surface locks can be transferred from the
+            // previous to the next transaction.
             idle_commit.run_once();
             idle_cleanup.run_once();
             break;

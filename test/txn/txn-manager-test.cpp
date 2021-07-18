@@ -178,6 +178,38 @@ TEST_CASE("Commit and then apply transaction")
         require(id1, i, 4);
     }
 
+    SUBCASE("Immediately applying transaction after another is done")
+    {
+        auto tx2 = transaction_t::create();
+        auto i2  = new mock_instruction_t("a");
+        i2->cnt_destroy = &nr_instruction_freed;
+        tx2->add_instruction(instruction_uptr_t(i2));
+        auto id2 = manager.submit(std::move(tx2));
+
+        mock_loop::get().dispatch_idle();
+
+        SUBCASE("Ready")
+        {
+            i->send_ready();
+            require(id1, i, 4);
+        }
+
+        SUBCASE("Cancelled")
+        {
+            i->send_cancel();
+        }
+
+        SUBCASE("Timed out")
+        {
+            mock_loop::get().move_forward(100);
+        }
+
+        // Make sure that we commit, and then cancel previous transaction!
+        i2->require_destroy_on_commit = 0;
+
+        mock_loop::get().dispatch_idle();
+        require(id2, i2, 2);
+    }
 
     const auto& require_cancel = [&] (int id, mock_instruction_t *i)
     {
