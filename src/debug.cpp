@@ -286,4 +286,18 @@ wf::pointf_t operator *(const glm::mat4& m, const wf::point_t& p)
     return m * wf::pointf_t{1.0 * p.x, 1.0 * p.y};
 }
 
+std::ostream& wf::operator <<(std::ostream& out, wayfire_view view)
+{
+    if (view)
+    {
+        out << "view id=" << view->get_id() << " title=\"" << view->get_title() <<
+            "\"" << " app_id=\"" << view->get_app_id() << "\"";
+    } else
+    {
+        out << "(null view)";
+    }
+
+    return out;
+}
+
 std::bitset<(size_t)wf::log::logging_category::TOTAL> wf::log::enabled_categories;

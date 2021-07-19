@@ -53,9 +53,15 @@ extern std::bitset<(size_t)logging_category::TOTAL> enabled_categories;
 #include <ostream>
 #include <glm/glm.hpp>
 #include <wayfire/geometry.hpp>
+#include <wayfire/view.hpp>
 
 std::ostream& operator <<(std::ostream& out, const glm::mat4& mat);
 wf::pointf_t operator *(const glm::mat4& m, const wf::pointf_t& p);
 wf::pointf_t operator *(const glm::mat4& m, const wf::point_t& p);
+
+namespace wf
+{
+std::ostream& operator <<(std::ostream& out, wayfire_view view);
+}
 
 #endif
