@@ -10,7 +10,8 @@ class mock_instruction_t : public wf::txn::instruction_t
         return std::make_unique<mock_instruction_t>(object);
     }
 
-    int *cnt_destroy = nullptr;
+    bool ready_on_commit = false;
+    int *cnt_destroy     = nullptr;
     std::optional<int> require_destroy_on_commit;
 
     std::string object;
@@ -50,6 +51,11 @@ class mock_instruction_t : public wf::txn::instruction_t
         }
 
         ++committed;
+
+        if (ready_on_commit)
+        {
+            send_ready();
+        }
     }
 
     void apply() override

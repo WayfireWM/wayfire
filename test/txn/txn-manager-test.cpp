@@ -178,6 +178,21 @@ TEST_CASE("Commit and then apply transaction")
         require(id1, i, 4);
     }
 
+    SUBCASE("Transactions become ready inside commit")
+    {
+        auto tx2 = transaction_t::create();
+        auto i2  = new mock_instruction_t("b");
+        tx2->add_instruction(instruction_uptr_t(i2));
+        auto id2 = manager.submit(std::move(tx2));
+
+        i->ready_on_commit  = true;
+        i2->ready_on_commit = true;
+
+        mock_loop::get().dispatch_idle();
+        require(id1, i, 4);
+        require(id2, i2, 4);
+    }
+
     SUBCASE("Immediately applying transaction after another is done")
     {
         auto tx2 = transaction_t::create();

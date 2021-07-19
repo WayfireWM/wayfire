@@ -220,7 +220,8 @@ class transaction_manager_t::impl
 
         for (auto& tx : pending_idle)
         {
-            if (tx->get_id() == id)
+            // tx may be null if we're in the process of committing it
+            if (tx && (tx->get_id() == id))
             {
                 return tx;
             }
@@ -228,7 +229,7 @@ class transaction_manager_t::impl
 
         for (auto& tx : committed)
         {
-            if (tx->get_id() == id)
+            if (tx && (tx->get_id() == id))
             {
                 return tx;
             }
@@ -240,8 +241,8 @@ class transaction_manager_t::impl
     void do_commit(transaction_iuptr_t tx)
     {
         LOGC(TXN, "Committing transaction ", tx->get_id());
-        tx->commit();
         committed.push_back(std::move(tx));
+        committed.back()->commit();
     }
 
     void emit_signal(const std::string& name, transaction_signal *data)
