@@ -33,7 +33,9 @@ namespace log
  */
 enum class logging_category : size_t
 {
-    TXN = 0,
+    TXN  = 0,
+    TXNV = 1,
+    WLR  = 2,
     TOTAL,
 };
 

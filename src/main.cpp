@@ -97,6 +97,13 @@ static void wlr_log_handler(wlr_log_importance level,
         return;
     }
 
+    bool enabled =
+        wf::log::enabled_categories.test((int)wf::log::logging_category::WLR);
+    if ((wlevel == wf::log::LOG_LEVEL_DEBUG) && !enabled)
+    {
+        return;
+    }
+
     wf::log::log_plain(wlevel, buffer);
 }
 
@@ -166,6 +173,16 @@ void parse_extended_debugging(const std::vector<std::string>& categories)
             LOGD("Enabling extended debugging for transactions");
             wf::log::enabled_categories.set(
                 (size_t)wf::log::logging_category::TXN, 1);
+        } else if (cat == "txnview")
+        {
+            LOGD("Enabling extended debugging for view instructions");
+            wf::log::enabled_categories.set(
+                (size_t)wf::log::logging_category::TXNV, 1);
+        } else if (cat == "wlroots")
+        {
+            LOGD("Enabling extended debugging for wlroots");
+            wf::log::enabled_categories.set(
+                (size_t)wf::log::logging_category::WLR, 1);
         } else
         {
             LOGE("Unrecognized debugging category \"", cat, "\"");
@@ -250,12 +267,10 @@ int main(int argc, char *argv[])
         }
     }
 
-    auto wlr_log_level =
-        (log_level == wf::log::LOG_LEVEL_DEBUG ? WLR_DEBUG : WLR_ERROR);
-    wlr_log_init(wlr_log_level, wlr_log_handler);
     wf::log::initialize_logging(std::cout, log_level, detect_color_mode());
 
     parse_extended_debugging(extended_debug_categories);
+    wlr_log_init(WLR_DEBUG, wlr_log_handler);
 
 #ifdef PRINT_TRACE
     /* In case of crash, print the stacktrace for debugging.
