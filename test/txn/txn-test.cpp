@@ -206,6 +206,15 @@ TEST_CASE("Transaction Impl Signals")
         check_states(0, 1, 0);
     }
 
+    SUBCASE("Transaction immediately ready on commit")
+    {
+        i1->ready_on_commit = true;
+        tx_ab->set_pending();
+        tx_ab->commit();
+        mock_loop::get().move_forward(10000);
+        check_states(1, 0, 0);
+    }
+
     SUBCASE("No merging")
     {
         tx_ab->add_instruction(instruction_uptr_t(i2));

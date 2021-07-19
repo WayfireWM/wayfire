@@ -189,8 +189,11 @@ TEST_CASE("Commit and then apply transaction")
         i2->ready_on_commit = true;
 
         mock_loop::get().dispatch_idle();
-        require(id1, i, 4);
-        require(id2, i2, 4);
+
+        // i, i2 are freed now, because the mock loop has dispatched
+        // all idles, including the cleanup
+        REQUIRE(nr_done[id1] == 1);
+        REQUIRE(nr_done[id2] == 1);
     }
 
     SUBCASE("Immediately applying transaction after another is done")

@@ -43,20 +43,20 @@ void transaction_impl_t::set_pending()
 void transaction_impl_t::commit()
 {
     assert(this->state == TXN_PENDING);
-    for (auto& i : this->instructions)
-    {
-        i->connect_signal("ready", &on_instruction_ready);
-        i->commit();
-    }
 
     this->state = TXN_COMMITTED;
-
     commit_timeout.set_timeout(100, [=] ()
     {
         state = TXN_TIMED_OUT;
         emit_done(TXN_TIMED_OUT);
         return false;
     });
+
+    for (auto& i : this->instructions)
+    {
+        i->connect_signal("ready", &on_instruction_ready);
+        i->commit();
+    }
 }
 
 void transaction_impl_t::apply()
