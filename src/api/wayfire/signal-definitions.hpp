@@ -379,6 +379,13 @@ struct _view_signal : public wf::signal_data_t
 wayfire_view get_signaled_view(wf::signal_data_t *data);
 
 /**
+ * name: view-created
+ * on: core
+ * when: A view is created.
+ */
+using view_created_signal = _view_signal;
+
+/**
  * name: mapped
  * on: view, output(view-)
  * when: After the view becomes mapped. This signal must also be emitted from
