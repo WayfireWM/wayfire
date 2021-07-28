@@ -16,9 +16,16 @@ transaction_impl_t::transaction_impl_t()
         commit_timeout.disconnect();
     });
 
-    this->on_instruction_ready.set_callback([=] (wf::signal_data_t*)
+    this->on_instruction_ready.set_callback([=] (wf::signal_data_t *data)
     {
+        auto ev = static_cast<instruction_ready_signal*>(data);
+
         ++instructions_done;
+        LOGC(TXNI, "Transaction id=", this->id,
+            ": instruction ", ev->instruction.get(),
+            " is ready(ready=", instructions_done,
+            " total=", instructions.size(), ").");
+
         if (instructions_done == (int32_t)instructions.size())
         {
             state = TXN_READY;
@@ -33,6 +40,8 @@ void transaction_impl_t::set_pending()
     assert(this->state == TXN_NEW);
     for (auto& i : this->instructions)
     {
+        LOGC(TXNI, "Transaction id=", this->id,
+            ": instruction ", i.get(), " is pending.");
         i->set_pending();
         i->connect_signal("cancel", &on_instruction_cancel);
     }
@@ -117,6 +126,8 @@ void transaction_impl_t::add_instruction(instruction_uptr_t instr,
         instr->connect_signal("cancel", &on_instruction_cancel);
         if (!already_pending)
         {
+            LOGC(TXNI, "Transaction id=", this->id,
+                ": instruction ", instr.get(), " is pending.");
             instr->set_pending();
         }
     }

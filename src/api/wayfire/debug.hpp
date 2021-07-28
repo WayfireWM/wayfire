@@ -33,9 +33,14 @@ namespace log
  */
 enum class logging_category : size_t
 {
+    // Transactions - general
     TXN  = 0,
+    // Transactions - view instructions
     TXNV = 1,
-    WLR  = 2,
+    // Transactions - instructions lifetime (pending, ready, timeout, etc.)
+    TXNI = 2,
+    // Wlroots messages
+    WLR  = 3,
     TOTAL,
 };
 
