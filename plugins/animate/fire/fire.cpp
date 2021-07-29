@@ -98,7 +98,7 @@ class FireTransformer : public wf::view_transformer_t
         float b;
 
         if (!random_colors) {
-            // The calculation here makes the variation lower 
+            // The calculation here makes the variation lower at darker values
             float randomize_amount_r = (color_setting.r * 0.857) / 2;
             float randomize_amount_g = (color_setting.g * 0.857) / 2;
             float randomize_amount_b = (color_setting.b * 0.857) / 2;
