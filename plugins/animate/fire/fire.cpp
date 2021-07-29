@@ -91,13 +91,12 @@ class FireTransformer : public wf::view_transformer_t
         p.fade = random(0.1, 0.6);
 
         wf::color_t color_setting = fire_color;
-        bool random_colors = random_fire_color;
         
         float r;
         float g;
         float b;
 
-        if (!random_colors) {
+        if (!random_fire_color) {
             // The calculation here makes the variation lower at darker values
             float randomize_amount_r = (color_setting.r * 0.857) / 2;
             float randomize_amount_g = (color_setting.g * 0.857) / 2;
@@ -118,15 +117,19 @@ class FireTransformer : public wf::view_transformer_t
             b = random(0, 1);
 
             // Squrae the values several times to make them less of a blinding light and more of a spray of colors
-            for (int i = 0; i < 4; i++) {
-                r *= r;
-                g *= g;
-                b *= b;
-            }
+            // for (int i = 0; i < 4; i++) {
+            //     r *= r;
+            //     g *= g;
+            //     b *= b;
+            // }
 
-            r *= 2;
-            g *= 2;
-            b *= 2;
+            // r *= 2;
+            // g *= 2;
+            // b *= 2;
+
+            r = 2 * pow(r, 16);
+            g = 2 * pow(g, 16);
+            b = 2 * pow(b, 16);
         }
 
         p.color = {r, g, b, 1};
