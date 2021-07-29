@@ -106,5 +106,15 @@
 			<_long>Sets the size of the fire particles in pixels.</_long>
 			<default>16.0</default>
 		</option>
+		<option name="random_fire_color" type="bool">
+			<_short>Random fire colors</_short>
+			<_long>Sets wether to use one solid color or select a random color for each particle</_long>
+			<default>false</default>
+		</option>
+		<option name="fire_color" type="color">
+			<_short>Color of the fire</_short>
+			<_long>Sets the color of the fire effects, alpha is ignored</_long>
+			<default>#b22303ff</default>
+		</option>
 	</plugin>
 </wayfire>

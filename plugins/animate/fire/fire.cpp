@@ -8,6 +8,8 @@
 
 static wf::option_wrapper_t<int> fire_particles{"animate/fire_particles"};
 static wf::option_wrapper_t<double> fire_particle_size{"animate/fire_particle_size"};
+static wf::option_wrapper_t<bool> random_fire_color{"animate/random_fire_color"};
+static wf::option_wrapper_t<wf::color_t> fire_color{"animate/fire_color"};
 
 // generate a random float between s and e
 static float random(float s, float e)
@@ -88,7 +90,46 @@ class FireTransformer : public wf::view_transformer_t
         p.life = 1;
         p.fade = random(0.1, 0.6);
 
-        p.color = {random(0.4, 1), random(0.08, 0.2), random(0.008, 0.018), 1};
+        wf::color_t color_setting = fire_color;
+        bool random_colors = random_fire_color;
+        
+        float r;
+        float g;
+        float b;
+
+        if (!random_colors) {
+            // The calculation here makes the variation lower 
+            float randomize_amount_r = (color_setting.r * 0.857) / 2;
+            float randomize_amount_g = (color_setting.g * 0.857) / 2;
+            float randomize_amount_b = (color_setting.b * 0.857) / 2;
+
+            r = random(color_setting.r - randomize_amount_r, 
+                       std::min(color_setting.r + randomize_amount_r, 
+                       1.0));
+            g = random(color_setting.g - randomize_amount_g, 
+                       std::min(color_setting.g + randomize_amount_g, 
+                       1.0));
+            b = random(color_setting.b - randomize_amount_b, 
+                       std::min(color_setting.b + randomize_amount_b, 
+                       1.0));
+        } else {
+            r = random(0, 1);
+            g = random(0, 1);
+            b = random(0, 1);
+
+            // Squrae the values several times to make them less of a blinding light and more of a spray of colors
+            for (int i = 0; i < 4; i++) {
+                r *= r;
+                g *= g;
+                b *= b;
+            }
+
+            r *= 2;
+            g *= 2;
+            b *= 2;
+        }
+
+        p.color = {r, g, b, 1};
 
         p.pos = {random(0, last_boundingbox.width),
             random(last_boundingbox.height * progress_line - 10,
