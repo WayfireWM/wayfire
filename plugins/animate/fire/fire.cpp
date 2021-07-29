@@ -116,17 +116,6 @@ class FireTransformer : public wf::view_transformer_t
             g = random(0, 1);
             b = random(0, 1);
 
-            // Squrae the values several times to make them less of a blinding light and more of a spray of colors
-            // for (int i = 0; i < 4; i++) {
-            //     r *= r;
-            //     g *= g;
-            //     b *= b;
-            // }
-
-            // r *= 2;
-            // g *= 2;
-            // b *= 2;
-
             r = 2 * pow(r, 16);
             g = 2 * pow(g, 16);
             b = 2 * pow(b, 16);
