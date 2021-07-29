@@ -17,6 +17,12 @@ class transaction_manager_t::impl
 
     uint64_t submit(transaction_uptr_t tx)
     {
+        if (tx->get_objects().empty())
+        {
+            // TODO: add tests for this case, and add docs
+            return 0;
+        }
+
         auto tx_impl = dynamic_cast<transaction_impl_t*>(tx.release());
 
         // We first set id to the transaction.
