@@ -10,6 +10,7 @@
 using namespace wf::txn;
 TEST_CASE("Getting IDs")
 {
+    setup_txn_timeout(100);
     auto tx     = transaction_t::create();
     auto tx_raw = tx.get();
     tx->add_instruction(mock_instruction_t::get("a"));
@@ -30,6 +31,7 @@ TEST_CASE("Getting IDs")
 
 TEST_CASE("Submit and extend transaction")
 {
+    setup_txn_timeout(100);
     auto& manager = get_fresh_transaction_manager();
     auto& core    = mock_core();
 
@@ -89,6 +91,7 @@ TEST_CASE("Submit and extend transaction")
 
 TEST_CASE("Commit and then apply transaction")
 {
+    setup_txn_timeout(100);
     auto& manager = get_fresh_transaction_manager();
     auto tx = transaction_t::create();
 

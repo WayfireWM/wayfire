@@ -55,6 +55,12 @@
 			<_long>Sets the compositor render delay in milliseconds, which allows applications to render with low latency.</_long>
 			<default>-1</default>
 		</option>
+		<option name="transaction_timeout" type="int">
+			<_short>Timeout for transactions</_short>
+			<_long>Maximum time in milliseconds to wait for clients to respond to compositor requests.</_long>
+			<default>100</default>
+      <min>0</min>
+		</option>
 		<option name="focus_button_with_modifiers" type="bool">
 			<_short>Focus on click if keyboard modifiers are pressed</_short>
 			<_long>Allow focusing the clicked view even if keyboard modifiers are pressed. Without this option, click-to-focus only works if no modifiers are pressed.</_long>

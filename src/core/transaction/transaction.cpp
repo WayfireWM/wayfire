@@ -54,7 +54,7 @@ void transaction_impl_t::commit()
     assert(this->state == TXN_PENDING);
 
     this->state = TXN_COMMITTED;
-    commit_timeout.set_timeout(100, [=] ()
+    commit_timeout.set_timeout(timeout_ms, [=] ()
     {
         state = TXN_TIMED_OUT;
         emit_done(TXN_TIMED_OUT);

@@ -10,6 +10,7 @@ using namespace wf::txn;
 
 TEST_CASE("Transaction Impl Basics")
 {
+    setup_txn_timeout(100);
     // Register a fake view a
     mock_core().fake_views["a"] =
         wayfire_view((wf::view_interface_t*)0x1234);
@@ -93,6 +94,7 @@ TEST_CASE("Transaction Impl Basics")
 
 TEST_CASE("Merging transactions")
 {
+    setup_txn_timeout(100);
     auto i1 = new mock_instruction_t("a");
     auto i2 = new mock_instruction_t("b");
 
@@ -142,6 +144,7 @@ TEST_CASE("Merging transactions")
 TEST_CASE("Transaction Impl Signals")
 {
     mock_loop::get().start(0);
+    setup_txn_timeout(100);
 
     auto tx_pub = transaction_t::create();
     auto tx_ab  = dynamic_cast<transaction_impl_t*>(tx_pub.get());
@@ -259,6 +262,7 @@ TEST_CASE("Transaction Impl Signals")
 
 TEST_CASE("Transaction impl dirty flag")
 {
+    setup_txn_timeout(100);
     auto tx_pub = transaction_t::create();
     auto tx_ab  = dynamic_cast<transaction_impl_t*>(tx_pub.get());
     REQUIRE(tx_ab != nullptr);

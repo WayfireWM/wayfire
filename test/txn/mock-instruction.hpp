@@ -1,6 +1,8 @@
+#include <wayfire/config/option-wrapper.hpp>
 #include <wayfire/transaction/instruction.hpp>
 #include <doctest/doctest.h>
 #include <optional>
+#include "../mock-core.hpp"
 
 class mock_instruction_t : public wf::txn::instruction_t
 {
@@ -77,3 +79,12 @@ class mock_instruction_t : public wf::txn::instruction_t
         this->emit_signal("cancel", &data);
     }
 };
+
+inline void setup_txn_timeout(int timeout)
+{
+    auto section = std::make_shared<wf::config::section_t>("core");
+    auto val     = std::make_shared<wf::config::option_t<int>>(
+        "transaction_timeout", timeout);
+    section->register_new_option(val);
+    mock_core().config.merge_section(section);
+}

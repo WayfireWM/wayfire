@@ -3,6 +3,7 @@
 #include <map>
 #include <wayfire/transaction/transaction.hpp>
 #include <wayfire/util.hpp>
+#include <wayfire/option-wrapper.hpp>
 
 namespace wf
 {
@@ -102,6 +103,7 @@ class transaction_impl_t : public transaction_t, public signal_provider_t
     wf::signal_connection_t on_instruction_cancel;
     wf::signal_connection_t on_instruction_ready;
 
+    wf::option_wrapper_t<int> timeout_ms{"core/transaction_timeout"};
     wf::wl_timer commit_timeout;
     void emit_done(transaction_state_t end_state);
 };
