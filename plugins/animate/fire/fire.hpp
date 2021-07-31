@@ -20,6 +20,7 @@ class FireAnimation : public animation_base
     ~FireAnimation();
     void init(wayfire_view view, int duration, wf_animation_type type) override;
     bool step() override; /* return true if continue, false otherwise */
+    void reverse() override; /* reverse the animation */
 };
 
 #endif /* end of include guard: FIRE_ANIMATION_HPP */

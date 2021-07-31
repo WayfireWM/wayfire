@@ -41,6 +41,16 @@ class fade_animation : public animation_base
         return progression.running();
     }
 
+    void reverse() override
+    {
+        this->progression.reverse();
+    }
+
+    int get_direction() override
+    {
+        return this->progression.get_direction();
+    }
+
     ~fade_animation()
     {
         view->pop_transformer(name);
@@ -131,6 +141,11 @@ class zoom_animation : public animation_base
         our_transform->translation_y = this->progression.offset_y;
 
         return this->progression.running();
+    }
+
+    void reverse() override
+    {
+        this->progression.reverse();
     }
 
     ~zoom_animation()

@@ -209,6 +209,11 @@ bool FireAnimation::step()
     return this->progression.running() || transformer->ps.statistic();
 }
 
+void FireAnimation::reverse()
+{
+    this->progression.reverse();
+}
+
 FireAnimation::~FireAnimation()
 {
     view->pop_transformer(name);

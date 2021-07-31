@@ -18,19 +18,36 @@ bool animation_base::step()
     return false;
 }
 
+void animation_base::reverse()
+{}
+
+int animation_base::get_direction()
+{
+    return 1;
+}
+
 animation_base::~animation_base()
 {}
 
-static constexpr const char *animate_custom_data_id = "animation-hook";
+static constexpr const char *animate_custom_data_fire     = "animation-hook-fire";
+static constexpr const char *animate_custom_data_zoom     = "animation-hook-zoom";
+static constexpr const char *animate_custom_data_fade     = "animation-hook-fade";
+static constexpr const char *animate_custom_data_minimize =
+    "animation-hook-minimize";
+
+static constexpr int HIDDEN = 0;
+static constexpr int SHOWN  = 1;
 
 /* Represents an animation running for a specific view
  * animation_t is which animation to use (i.e fire, zoom, etc). */
 struct animation_hook_base : public wf::custom_data_t
 {
     virtual void stop_hook(bool) = 0;
+    virtual void reverse(wf_animation_type) = 0;
+    virtual int get_direction() = 0;
+
     animation_hook_base() = default;
     virtual ~animation_hook_base() = default;
-
     animation_hook_base(const animation_hook_base &) = default;
     animation_hook_base(animation_hook_base &&) = default;
     animation_hook_base& operator =(const animation_hook_base&) = default;
@@ -45,6 +62,7 @@ struct animation_hook : public animation_hook_base
 
     wf_animation_type type;
     wayfire_view view;
+    std::string name;
     wf::output_t *current_output = nullptr;
     std::unique_ptr<animation_base> animation;
 
@@ -85,15 +103,12 @@ struct animation_hook : public animation_hook_base
         { set_output(view->get_output()); }
     };
 
-    animation_hook(wayfire_view view, int duration, wf_animation_type type)
+    animation_hook(wayfire_view view, int duration, wf_animation_type type,
+        std::string name)
     {
         this->type = type;
         this->view = view;
-        if (type == ANIMATION_TYPE_UNMAP)
-        {
-            view->take_ref();
-            view->take_snapshot();
-        }
+        this->name = name;
 
         animation = std::make_unique<animation_t>();
         animation->init(view, duration, type);
@@ -112,8 +127,21 @@ struct animation_hook : public animation_hook_base
             view->set_minimized(true);
         }
 
-        /* Will also delete this */
-        view->erase_data(animate_custom_data_id);
+        view->erase_data(name);
+    }
+
+    void reverse(wf_animation_type type) override
+    {
+        this->type = type;
+        if (animation)
+        {
+            animation->reverse();
+        }
+    }
+
+    int get_direction() override
+    {
+        return animation->get_direction();
     }
 
     ~animation_hook()
@@ -150,10 +178,28 @@ static void cleanup_views_on_output(wf::output_t *output)
             continue;
         }
 
-        if (view->has_data(animate_custom_data_id))
+        if (view->has_data(animate_custom_data_fire))
         {
             view->get_data<animation_hook_base>(
-                animate_custom_data_id)->stop_hook(true);
+                animate_custom_data_fire)->stop_hook(true);
+        }
+
+        if (view->has_data(animate_custom_data_zoom))
+        {
+            view->get_data<animation_hook_base>(
+                animate_custom_data_zoom)->stop_hook(true);
+        }
+
+        if (view->has_data(animate_custom_data_fade))
+        {
+            view->get_data<animation_hook_base>(
+                animate_custom_data_fade)->stop_hook(true);
+        }
+
+        if (view->has_data(animate_custom_data_minimize))
+        {
+            view->get_data<animation_hook_base>(
+                animate_custom_data_minimize)->stop_hook(true);
         }
     }
 }
@@ -243,13 +289,71 @@ class wayfire_animation : public wf::singleton_plugin_t<animation_global_cleanup
         return {"none", 0};
     }
 
+    bool try_reverse(wayfire_view view, wf_animation_type type, std::string name,
+        int visibility)
+    {
+        visibility = !visibility;
+        if (view->has_data(name))
+        {
+            auto data = view->get_data<animation_hook_base>(name);
+            if (data->get_direction() == visibility)
+            {
+                data->reverse(type);
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     template<class animation_t>
     void set_animation(wayfire_view view,
-        wf_animation_type type, int duration)
+        wf_animation_type type, int duration, std::string name)
     {
-        view->store_data(
-            std::make_unique<animation_hook<animation_t>>(view, duration, type),
-            animate_custom_data_id);
+        name = "animation-hook-" + name;
+
+        if (type == ANIMATION_TYPE_UNMAP)
+        {
+            view->take_ref();
+            view->take_snapshot();
+        }
+
+        if (type == ANIMATION_TYPE_MAP)
+        {
+            if (try_reverse(view, type, name, SHOWN))
+            {
+                return;
+            }
+
+            auto animation = get_animation_for_view(open_animation, view);
+            view->store_data(
+                std::make_unique<animation_hook<animation_t>>(view, duration, type,
+                    name), name);
+        } else if (type == ANIMATION_TYPE_UNMAP)
+        {
+            if (try_reverse(view, type, name, HIDDEN))
+            {
+                return;
+            }
+
+            auto animation = get_animation_for_view(close_animation, view);
+            view->store_data(
+                std::make_unique<animation_hook<animation_t>>(view, duration, type,
+                    name), name);
+        } else if (type & MINIMIZE_STATE_ANIMATION)
+        {
+            if (view->has_data(animate_custom_data_minimize))
+            {
+                view->get_data<animation_hook_base>(
+                    animate_custom_data_minimize)->reverse(type);
+                return;
+            }
+
+            view->store_data(
+                std::make_unique<animation_hook<animation_t>>(view, duration, type,
+                    animate_custom_data_minimize),
+                animate_custom_data_minimize);
+        }
     }
 
     /* TODO: enhance - add more animations */
@@ -262,15 +366,15 @@ class wayfire_animation : public wf::singleton_plugin_t<animation_global_cleanup
         if (animation.animation_name == "fade")
         {
             set_animation<fade_animation>(view, ANIMATION_TYPE_MAP,
-                animation.duration);
+                animation.duration, animation.animation_name);
         } else if (animation.animation_name == "zoom")
         {
             set_animation<zoom_animation>(view, ANIMATION_TYPE_MAP,
-                animation.duration);
+                animation.duration, animation.animation_name);
         } else if (animation.animation_name == "fire")
         {
             set_animation<FireAnimation>(view, ANIMATION_TYPE_MAP,
-                animation.duration);
+                animation.duration, animation.animation_name);
         }
     };
 
@@ -282,15 +386,15 @@ class wayfire_animation : public wf::singleton_plugin_t<animation_global_cleanup
         if (animation.animation_name == "fade")
         {
             set_animation<fade_animation>(view, ANIMATION_TYPE_UNMAP,
-                animation.duration);
+                animation.duration, animation.animation_name);
         } else if (animation.animation_name == "zoom")
         {
             set_animation<zoom_animation>(view, ANIMATION_TYPE_UNMAP,
-                animation.duration);
+                animation.duration, animation.animation_name);
         } else if (animation.animation_name == "fire")
         {
             set_animation<FireAnimation>(view, ANIMATION_TYPE_UNMAP,
-                animation.duration);
+                animation.duration, animation.animation_name);
         }
     };
 
@@ -301,11 +405,11 @@ class wayfire_animation : public wf::singleton_plugin_t<animation_global_cleanup
         {
             ev->carried_out = true;
             set_animation<zoom_animation>(
-                ev->view, ANIMATION_TYPE_MINIMIZE, default_duration);
+                ev->view, ANIMATION_TYPE_MINIMIZE, default_duration, "minimize");
         } else
         {
             set_animation<zoom_animation>(
-                ev->view, ANIMATION_TYPE_RESTORE, default_duration);
+                ev->view, ANIMATION_TYPE_RESTORE, default_duration, "minimize");
         }
     };
 
