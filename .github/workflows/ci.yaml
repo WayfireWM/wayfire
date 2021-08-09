@@ -19,6 +19,7 @@ jobs:
     container:
         image: archlinux:latest
     steps:
+    - run: sed -i 's/SigLevel    = Required DatabaseOptional/SigLevel    = Optional TrustAll/' /etc/pacman.conf
     - run: pacman --noconfirm --noprogressbar -Syyu
     - run: pacman --noconfirm --noprogressbar -Sy git clang lld libc++ pkgconf meson ninja wayland wayland-protocols libinput libxkbcommon pixman glm libdrm libglvnd cairo systemd scdoc base-devel
 
