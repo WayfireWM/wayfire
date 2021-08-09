@@ -20,17 +20,13 @@ jobs:
         image: archlinux:latest
     steps:
     - run: pacman --noconfirm --noprogressbar -Syyu
-    - run: pacman --noconfirm --noprogressbar -Sy git clang lld libc++ pkgconf meson ninja wayland wayland-protocols libinput libxkbcommon pixman glm libdrm libglvnd cairo
+    - run: pacman --noconfirm --noprogressbar -Sy git clang lld libc++ pkgconf meson ninja wayland wayland-protocols libinput libxkbcommon pixman glm libdrm libglvnd cairo systemd scdoc base-devel
 
       # Build seatd from AUR
     - run: git clone https://aur.archlinux.org/seatd.git
     - run: useradd makepkgtest
     - run: (cd seatd && chown makepkgtest:root . && su makepkgtest -c "makepkg --printsrcinfo" > .SRCINFO)
-    - uses: edlanglois/pkgbuild-action@v1
-      id: makepkg
-      with:
-          pkgdir: "seatd"
-    - run: pacman --noconfirm -U ${{ steps.makepkg.outputs.pkgfile0 }}
+    - run: (cd seatd && su makepkgtest -c "makepkg" && pacman --noconfirm -U *.pkg.tar.zst)
     - run: rm -rf seatd # Cleanup current dir
 
       # Build Wayfire
