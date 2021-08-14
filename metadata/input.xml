@@ -2,79 +2,109 @@
 <wayfire>
 	<plugin name="input">
 		<_short>Input</_short>
+		<_short xml:lang="tr">Input</_short>
 		<_long>Input configuration.</_long>
+		<_long xml:lang="tr">Input configuration.</_long>
 		<category>General</category>
 		<!-- Keyboard -->
 		<group>
 			<_short>Keyboard</_short>
+			<_short xml:lang="tr">Keyboard</_short>
 			<_long>Configure the keyboard.</_long>
+			<_long xml:lang="tr">Configure the keyboard.</_long>
 			<!-- Modifier -->
 			<option name="modifier_binding_timeout" type="int">
 				<_short>Modifier binding timeout</_short>
+				<_short xml:lang="tr">Modifier binding timeout</_short>
 				<_long>Cancels modifier actions (like `Super` for the `expo` plugin) when held for the specified timeout (in milliseconds).  Setting the value to **0** never cancels.</_long>
+				<_long xml:lang="tr">Cancels modifier actions (like `Super` for the `expo` plugin) when held for the specified timeout (in milliseconds).  Setting the value to **0** never cancels.</_long>
 				<default>400</default>
 			</option>
 			<!-- Keyboard configuration -->
 			<option name="kb_repeat_delay" type="int">
 				<_short>Key repeat delay</_short>
+				<_short xml:lang="tr">Key repeat delay</_short>
 				<_long>Sets the amount of time a key must be held before it starts repeating.</_long>
+				<_long xml:lang="tr">Sets the amount of time a key must be held before it starts repeating.</_long>
 				<default>400</default>
 			</option>
 			<option name="kb_repeat_rate" type="int">
 				<_short>Key repeat rate</_short>
+				<_short xml:lang="tr">Key repeat rate</_short>
 				<_long>Sets the frequency of key repeats once the `input.kb_repeat_delay` has passed.</_long>
+				<_long xml:lang="tr">Sets the frequency of key repeats once the `input.kb_repeat_delay` has passed.</_long>
 				<default>40</default>
 			</option>
 			<option name="kb_numlock_default_state" type="bool">
 				<_short>Numlock default state</_short>
+				<_short xml:lang="tr">Numlock default state</_short>
 				<_long>Default numlock state when wayfire starts.</_long>
+				<_long xml:lang="tr">Default numlock state when wayfire starts.</_long>
 				<default>false</default>
 			</option>
 			<option name="kb_capslock_default_state" type="bool">
 				<_short>Capslock default state</_short>
+				<_short xml:lang="tr">Capslock default state</_short>
 				<_long>Default capslock state when wayfire starts.</_long>
+				<_long xml:lang="tr">Default capslock state when wayfire starts.</_long>
 				<default>false</default>
 			</option>
 			<!-- XKB configuration -->
 			<option name="xkb_layout" type="string">
 				<_short>XKB layout</_short>
+				<_short xml:lang="tr">XKB layout</_short>
 				<_long>Sets the layout of the keyboard, like `us` or `fr`.  Multiple layouts can be specified by separating them with commas.</_long>
+				<_long xml:lang="tr">Sets the layout of the keyboard, like `us` or `fr`.  Multiple layouts can be specified by separating them with commas.</_long>
 				<default>us</default>
 			</option>
 			<option name="xkb_model" type="string">
 				<_short>XKB model</_short>
+				<_short xml:lang="tr">XKB model</_short>
 				<_long>Sets the model of the keyboard.  This has an influence for some extra keys your keyboard might have.</_long>
+				<_long xml:lang="tr">Sets the model of the keyboard.  This has an influence for some extra keys your keyboard might have.</_long>
 				<default></default>
 			</option>
 			<option name="xkb_options" type="string">
 				<_short>XKB options</_short>
+				<_short xml:lang="tr">XKB options</_short>
 				<_long>Sets extra XKB configuration options for the keyboard.  Multiple options can be specified by separating them with commas.</_long>
+				<_long xml:lang="tr">Sets extra XKB configuration options for the keyboard.  Multiple options can be specified by separating them with commas.</_long>
 				<default></default>
 			</option>
 			<option name="xkb_rules" type="string">
 				<_short>XKB rules</_short>
+				<_short xml:lang="tr">XKB rules</_short>
 				<_long>Sets files of rules to be used for keyboard mapping composition.</_long>
+				<_long xml:lang="tr">Sets files of rules to be used for keyboard mapping composition.</_long>
 				<default>evdev</default>
 			</option>
 			<option name="xkb_variant" type="string">
 				<_short>XKB variant</_short>
+				<_short xml:lang="tr">XKB variant</_short>
 				<_long>Sets the variant of the keyboard, like `dvorak` or `colemak`.</_long>
+				<_long xml:lang="tr">Sets the variant of the keyboard, like `dvorak` or `colemak`.</_long>
 				<default></default>
 			</option>
 		</group>
 		<!-- Mouse -->
 		<group>
 			<_short>Mouse</_short>
+			<_short xml:lang="tr">Mouse</_short>
 			<_long>Configure the mouse.</_long>
+			<_long xml:lang="tr">Configure the mouse.</_long>
 			<!-- libinput configuration -->
 			<option name="middle_emulation" type="bool">
 				<_short>Middle-click emulation</_short>
+				<_short xml:lang="tr">Middle-click emulation</_short>
 				<_long>Enables middle button emulation by hitting the left and right buttons simultaneously.</_long>
+				<_long xml:lang="tr">Enables middle button emulation by hitting the left and right buttons simultaneously.</_long>
 				<default>false</default>
 			</option>
 			<option name="mouse_accel_profile" type="string">
 				<_short>Mouse acceleration profile</_short>
+				<_short xml:lang="tr">Mouse acceleration profile</_short>
 				<_long>Sets the pointer acceleration profile.</_long>
+				<_long xml:lang="tr">Sets the pointer acceleration profile.</_long>
 				<default>default</default>
 				<desc>
 					<value>default</value>
@@ -95,14 +125,18 @@
 			</option>
 			<option name="mouse_cursor_speed" type="double">
 				<_short>Mouse cursor speed</_short>
+				<_short xml:lang="tr">Mouse cursor speed</_short>
 				<_long>Changes the pointer acceleration.</_long>
+				<_long xml:lang="tr">Changes the pointer acceleration.</_long>
 				<default>0.0</default>
 				<min>-1.0</min>
 				<max>1.0</max>
 			</option>
 			<option name="mouse_scroll_speed" type="double">
 				<_short>Mouse scroll speed</_short>
+				<_short xml:lang="tr">Mouse scroll speed</_short>
 				<_long>Changes the mouse scroll factor.  Scroll speed will be scaled by the given value, which must be non-negative.</_long>
+				<_long xml:lang="tr">Changes the mouse scroll factor.  Scroll speed will be scaled by the given value, which must be non-negative.</_long>
 				<default>1.0</default>
 				<min>0.0</min>
 			</option>
@@ -110,10 +144,14 @@
 		<!-- Touchpad -->
 		<group>
 			<_short>Touchpad</_short>
+			<_short xml:lang="tr">Touchpad</_short>
 			<_long>Configure the touchpad.</_long>
+			<_long xml:lang="tr">Configure the touchpad.</_long>
 			<option name="touchpad_accel_profile" type="string">
 				<_short>Touchpad acceleration profile</_short>
+				<_short xml:lang="tr">Touchpad acceleration profile</_short>
 				<_long>Sets the touchpad acceleration profile.</_long>
+				<_long xml:lang="tr">Sets the touchpad acceleration profile.</_long>
 				<default>default</default>
 				<desc>
 					<value>default</value>
@@ -134,12 +172,16 @@
 			</option>
 			<option name="tap_to_click" type="bool">
 				<_short>Tap-to-click</_short>
+				<_short xml:lang="tr">Tap-to-click</_short>
 				<_long>Enables or disables tap-to-click.</_long>
+				<_long xml:lang="tr">Enables or disables tap-to-click.</_long>
 				<default>true</default>
 			</option>
 			<option name="click_method" type="string">
 				<_short>Click method</_short>
+				<_short xml:lang="tr">Click method</_short>
 				<_long>Changes the click method.</_long>
+				<_long xml:lang="tr">Changes the click method.</_long>
 				<default>default</default>
 				<desc>
 					<value>default</value>
@@ -160,7 +202,9 @@
 			</option>
 			<option name="scroll_method" type="string">
 				<_short>Scroll method</_short>
+				<_short xml:lang="tr">Scroll method</_short>
 				<_long>Changes the scroll method.</_long>
+				<_long xml:lang="tr">Changes the scroll method.</_long>
 				<default>default</default>
 				<desc>
 					<value>default</value>
@@ -185,36 +229,48 @@
 			</option>
 			<option name="disable_touchpad_while_typing" type="bool">
 				<_short>Disable touchpad while typing</_short>
+				<_short xml:lang="tr">Disable touchpad while typing</_short>
 				<_long>Disables the touchpad while typing.</_long>
+				<_long xml:lang="tr">Disables the touchpad while typing.</_long>
 				<default>false</default>
 			</option>
 			<option name="disable_touchpad_while_mouse" type="bool">
 				<_short>Disable touchpad while using the mouse</_short>
+				<_short xml:lang="tr">Disable touchpad while using the mouse</_short>
 				<_long>Disables the touchpad while using the mouse.</_long>
+				<_long xml:lang="tr">Disables the touchpad while using the mouse.</_long>
 				<default>false</default>
 			</option>
 			<option name="natural_scroll" type="bool">
 				<_short>Natural scroll</_short>
+				<_short xml:lang="tr">Natural scroll</_short>
 				<_long>Enables or disables natural (inverted) scrolling.</_long>
+				<_long xml:lang="tr">Enables or disables natural (inverted) scrolling.</_long>
 				<default>false</default>
 			</option>
 			<option name="touchpad_cursor_speed" type="double">
 				<_short>Touchpad cursor speed</_short>
+				<_short xml:lang="tr">Touchpad cursor speed</_short>
 				<_long>Changes the touchpad acceleration.</_long>
+				<_long xml:lang="tr">Changes the touchpad acceleration.</_long>
 				<default>0.0</default>
 				<min>-1.0</min>
 				<max>1.0</max>
 			</option>
 			<option name="gesture_sensitivity" type="double">
 				<_short>Touchscreen gesture sensitivity</_short>
+				<_short xml:lang="tr">Touchscreen gesture sensitivity</_short>
 				<_long>Change the sensitivity of the built-in gesture detection. Higher values mean that less finger movement is required to trigger the gesture.</_long>
+				<_long xml:lang="tr">Change the sensitivity of the built-in gesture detection. Higher values mean that less finger movement is required to trigger the gesture.</_long>
 				<default>1.0</default>
 				<min>0.1</min>
 				<max>5.0</max>
 			</option>
 			<option name="touchpad_scroll_speed" type="double">
 				<_short>Touchpad scroll speed</_short>
+				<_short xml:lang="tr">Touchpad scroll speed</_short>
 				<_long>Changes the touchpad scroll factor.  Scroll speed will be scaled by the given value, which must be non-negative.</_long>
+				<_long xml:lang="tr">Changes the touchpad scroll factor.  Scroll speed will be scaled by the given value, which must be non-negative.</_long>
 				<default>1.0</default>
 				<min>0.0</min>
 			</option>
@@ -222,15 +278,21 @@
 		<!-- Cursor configuration -->
 		<group>
 			<_short>Cursor</_short>
+			<_short xml:lang="tr">Cursor</_short>
 			<_long>Configure the cursor.</_long>
+			<_long xml:lang="tr">Configure the cursor.</_long>
 			<option name="cursor_theme" type="string">
 				<_short>Cursor theme</_short>
+				<_short xml:lang="tr">Cursor theme</_short>
 				<_long>Overrides the system default `XCursor` theme.</_long>
+				<_long xml:lang="tr">Overrides the system default `XCursor` theme.</_long>
 				<default>default</default>
 			</option>
 			<option name="cursor_size" type="int">
 				<_short>Cursor size</_short>
+				<_short xml:lang="tr">Cursor size</_short>
 				<_long>Overrides the system default `XCursor` size.</_long>
+				<_long xml:lang="tr">Overrides the system default `XCursor` size.</_long>
 				<default>24</default>
 			</option>
 		</group>

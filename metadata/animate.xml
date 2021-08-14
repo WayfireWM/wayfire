@@ -2,12 +2,16 @@
 <wayfire>
 	<plugin name="animate">
 		<_short>Animate</_short>
+		<_short xml:lang="tr">Animate</_short>
 		<_long>A plugin which provides animations when a window is opened or closed.</_long>
+		<_long xml:lang="tr">A plugin which provides animations when a window is opened or closed.</_long>
 		<category>Effects</category>
 		<!-- Open/Close animation -->
 		<option name="open_animation" type="string">
 			<_short>Open animation</_short>
+			<_short xml:lang="tr">Open animation</_short>
 			<_long>Specifies the type of animation when opening a window.</_long>
+			<_long xml:lang="tr">Specifies the type of animation when opening a window.</_long>
 			<default>zoom</default>
 			<desc>
 				<value>none</value>
@@ -28,7 +32,9 @@
 		</option>
 		<option name="close_animation" type="string">
 			<_short>Close animation</_short>
+			<_short xml:lang="tr">Close animation</_short>
 			<_long>Specifies the type of animation when closing a window.</_long>
+			<_long xml:lang="tr">Specifies the type of animation when closing a window.</_long>
 			<default>zoom</default>
 			<desc>
 				<value>none</value>
@@ -50,70 +56,96 @@
 		<!-- Preferred animation -->
 		<option name="enabled_for" type="string">
 			<_short>Animation enabled for specified window types</_short>
+			<_short xml:lang="tr">Animation enabled for specified window types</_short>
 			<_long>Specifies the window types to be animated.</_long>
+			<_long xml:lang="tr">Specifies the window types to be animated.</_long>
 			<default>(type equals "toplevel" | (type equals "x-or" &amp; focusable equals true))</default>
 		</option>
 		<option name="duration" type="int">
 			<_short>Duration</_short>
+			<_short xml:lang="tr">Duration</_short>
 			<_long>Sets the duration of the animation in milliseconds.</_long>
+			<_long xml:lang="tr">Sets the duration of the animation in milliseconds.</_long>
 			<default>400</default>
 		</option>
 		<option name="startup_duration" type="int">
 			<_short>System fade duration when Wayfire starts</_short>
+			<_short xml:lang="tr">System fade duration when Wayfire starts</_short>
 			<_long>Sets the duration of fading (in milliseconds) when Wayfire starts.</_long>
+			<_long xml:lang="tr">Sets the duration of fading (in milliseconds) when Wayfire starts.</_long>
 			<default>600</default>
 		</option>
 		<!-- Fade animation -->
 		<option name="fade_enabled_for" type="string">
 			<_short>Fade animation enabled for specified window types</_short>
+			<_short xml:lang="tr">Fade animation enabled for specified window types</_short>
 			<_long>Specifies the window types to be animated with a fade effect.</_long>
+			<_long xml:lang="tr">Specifies the window types to be animated with a fade effect.</_long>
 			<default>type equals "overlay"</default>
 		</option>
 		<option name="fade_duration" type="int">
 			<_short>Fade duration</_short>
+			<_short xml:lang="tr">Fade duration</_short>
 			<_long>Sets the duration for the _fade_ animation in milliseconds.  Only applies for windows matched by `animate.fade_enabled_for`.</_long>
+			<_long xml:lang="tr">Sets the duration for the _fade_ animation in milliseconds.  Only applies for windows matched by `animate.fade_enabled_for`.</_long>
 			<default>400</default>
 		</option>
 		<!-- Zoom animation -->
 		<option name="zoom_enabled_for" type="string">
 			<_short>Zoom animation enabled for specified window types</_short>
+			<_short xml:lang="tr">Zoom animation enabled for specified window types</_short>
 			<_long>Specifies the window types to be animated with a zoom effect.</_long>
+			<_long xml:lang="tr">Specifies the window types to be animated with a zoom effect.</_long>
 			<default>none</default>
 		</option>
 		<option name="zoom_duration" type="int">
 			<_short>Zoom duration</_short>
+			<_short xml:lang="tr">Zoom duration</_short>
 			<_long>Sets the duration for the _zoom_ animation in milliseconds.  Only applies for windows matched by `animate.zoom_enabled_for`.</_long>
+			<_long xml:lang="tr">Sets the duration for the _zoom_ animation in milliseconds.  Only applies for windows matched by `animate.zoom_enabled_for`.</_long>
 			<default>500</default>
 		</option>
 		<!-- Fire animation -->
 		<option name="fire_enabled_for" type="string">
 			<_short>Fire animation enabled for specified window types</_short>
+			<_short xml:lang="tr">Fire animation enabled for specified window types</_short>
 			<_long>Specifies the window types to be animated with a fire effect.</_long>
+			<_long xml:lang="tr">Specifies the window types to be animated with a fire effect.</_long>
 			<default>none</default>
 		</option>
 		<option name="fire_duration" type="int">
 			<_short>Fire duration</_short>
+			<_short xml:lang="tr">Fire duration</_short>
 			<_long>Sets the duration for the _fire_ animation in milliseconds.  Only applies for windows matched by `animate.fire_enabled_for`.</_long>
+			<_long xml:lang="tr">Sets the duration for the _fire_ animation in milliseconds.  Only applies for windows matched by `animate.fire_enabled_for`.</_long>
 			<default>300</default>
 		</option>
 		<option name="fire_particles" type="int">
 			<_short>Fire particles</_short>
+			<_short xml:lang="tr">Fire particles</_short>
 			<_long>Sets the number of fire particles.</_long>
+			<_long xml:lang="tr">Sets the number of fire particles.</_long>
 			<default>2000</default>
 		</option>
 		<option name="fire_particle_size" type="double">
 			<_short>Fire particle size</_short>
+			<_short xml:lang="tr">Fire particle size</_short>
 			<_long>Sets the size of the fire particles in pixels.</_long>
+			<_long xml:lang="tr">Sets the size of the fire particles in pixels.</_long>
 			<default>16.0</default>
 		</option>
 		<option name="random_fire_color" type="bool">
 			<_short>Random fire colors</_short>
+			<_short xml:lang="tr">Random fire colors</_short>
 			<_long>Sets wether to use one solid color or select a random color for each particle</_long>
+			<_long xml:lang="tr">Sets wether to use one solid color or select a random color for each particle</_long>
 			<default>false</default>
 		</option>
 		<option name="fire_color" type="color">
 			<_short>Color of the fire</_short>
+			<_short xml:lang="tr">Color of the fire</_short>
 			<_long>Sets the color of the fire effects, alpha is ignored</_long>
+			<_long xml:lang="tr">Sets the color of the fire effects, alpha is ignored</_long>
 			<default>#b22303ff</default>
 		</option>
 	</plugin>

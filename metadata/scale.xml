@@ -2,39 +2,54 @@
 <wayfire>
 	<plugin name="scale">
 		<_short>Scale</_short>
+		<_short xml:lang="tr">Scale</_short>
 		<_long>Show all views on screen.</_long>
+		<_long xml:lang="tr">Show all views on screen.</_long>
 		<category>Accessibility</category>
 		<group>
 			<_short>Behavior</_short>
+			<_short xml:lang="tr">Behavior</_short>
 			<option name="toggle" type="activator">
 				<_short>Toggle</_short>
+				<_short xml:lang="tr">Toggle</_short>
 				<_long>Toggles scale with the specified activator.</_long>
+				<_long xml:lang="tr">Toggles scale with the specified activator.</_long>
 				<default>&lt;super&gt; KEY_P</default>
 			</option>
 			<option name="toggle_all" type="activator">
 				<_short>Toggle for all workspaces</_short>
+				<_short xml:lang="tr">Toggle for all workspaces</_short>
 				<_long>Toggles scale showing windows from all workspaces.</_long>
+				<_long xml:lang="tr">Toggles scale showing windows from all workspaces.</_long>
 				<default></default>
 			</option>
 			<option name="duration" type="int">
 				<_short>Animation Transition Time</_short>
+				<_short xml:lang="tr">Animation Transition Time</_short>
 				<_long>Time it takes for views to transition. Units are in milliseconds.</_long>
+				<_long xml:lang="tr">Time it takes for views to transition. Units are in milliseconds.</_long>
 				<default>750</default>
 				<min>0</min>
 			</option>
 			<option name="interact" type="bool">
 				<_short>Interact With Views</_short>
+				<_short xml:lang="tr">Interact With Views</_short>
 				<_long>If this option is set, views will accept input in scale state. Otherwise, all events will be ignored except left click, which will activate the clicked view and terminate scale.</_long>
+				<_long xml:lang="tr">If this option is set, views will accept input in scale state. Otherwise, all events will be ignored except left click, which will activate the clicked view and terminate scale.</_long>
 				<default>false</default>
 			</option>
 			<option name="allow_zoom" type="bool">
 				<_short>Allow Zoomed Views</_short>
+				<_short xml:lang="tr">Allow Zoomed Views</_short>
 				<_long>Whether scaled views can have a size larger than their original size.</_long>
+				<_long xml:lang="tr">Whether scaled views can have a size larger than their original size.</_long>
 				<default>false</default>
 			</option>
 			<option name="middle_click_close" type="bool">
 				<_short>Close views with middle click</_short>
+				<_short xml:lang="tr">Close views with middle click</_short>
 				<_long>Use the middle mouse button to close views in the scale state. Only applies if interactive mode is not enabled.</_long>
+				<_long xml:lang="tr">Use the middle mouse button to close views in the scale state. Only applies if interactive mode is not enabled.</_long>
 				<default>false</default>
 			</option>
 		</group>
@@ -42,13 +57,17 @@
 			<_short>Appearance</_short>
 			<option name="spacing" type="int">
 				<_short>Spacing</_short>
+				<_short xml:lang="tr">Spacing</_short>
 				<_long>Sets the spacing between the views.</_long>
+				<_long xml:lang="tr">Sets the spacing between the views.</_long>
 				<default>50</default>
 				<min>0</min>
 			</option>
 			<option name="inactive_alpha" type="double">
 				<_short>Inactive Opacity</_short>
+				<_short xml:lang="tr">Inactive Opacity</_short>
 				<_long>Set the opacity value of the inactive windows.</_long>
+				<_long xml:lang="tr">Set the opacity value of the inactive windows.</_long>
 				<default>0.75</default>
 				<precision>0.05</precision>
 				<min>0.0</min>
@@ -56,7 +75,9 @@
 			</option>
 			<option name="title_overlay" type="string">
 				<_short>Show views' title</_short>
+				<_short xml:lang="tr">Show views' title</_short>
 				<_long>Whether to display the title of each view as an overlay.</_long>
+				<_long xml:lang="tr">Whether to display the title of each view as an overlay.</_long>
 				<default>all</default>
 				<desc>
 					<value>never</value>
@@ -73,12 +94,16 @@
 			</option>
 			<option name="title_font_size" type="int">
 				<_short>Font size for title</_short>
+				<_short xml:lang="tr">Font size for title</_short>
 				<_long>Size of font used to display an overlay of each view's title.</_long>
+				<_long xml:lang="tr">Size of font used to display an overlay of each view's title.</_long>
 				<default>16</default>
 			</option>
 			<option name="title_position" type="string">
 				<_short>Position for title</_short>
+				<_short xml:lang="tr">Position for title</_short>
 				<_long>Position for overlays of views' titles when shown.</_long>
+				<_long xml:lang="tr">Position for overlays of views' titles when shown.</_long>
 				<default>center</default>
 				<desc>
 					<value>top</value>
@@ -95,12 +120,16 @@
 			</option>
 			<option name="bg_color" type="color">
 				<_short>Background color</_short>
+				<_short xml:lang="tr">Background color</_short>
 				<_long>Background color for title overlay text.</_long>
+				<_long xml:lang="tr">Background color for title overlay text.</_long>
 				<default>0.1 0.1 0.1 0.9</default>
 			</option>
 			<option name="text_color" type="color">
 				<_short>Text color</_short>
+				<_short xml:lang="tr">Text color</_short>
 				<_long>Text color for title overlay.</_long>
+				<_long xml:lang="tr">Text color for title overlay.</_long>
 				<default>0.8 0.8 0.8 1.0</default>
 			</option>
 		</group>

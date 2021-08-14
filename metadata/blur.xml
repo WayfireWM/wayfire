@@ -2,24 +2,32 @@
 <wayfire>
 	<plugin name="blur">
 		<_short>Blur</_short>
+		<_short xml:lang="tr">Blur</_short>
 		<_long>A plugin to blur windows.</_long>
+		<_long xml:lang="tr">A plugin to blur windows.</_long>
 		<category>Effects</category>
 		<!-- Mode -->
 		<option name="blur_by_default" type="string">
 			<_short>Blur by default</_short>
+			<_short xml:lang="tr">Blur by default</_short>
 			<_long>Criteria for which apps to be blurred when they are opened</_long>
+			<_long xml:lang="tr">Criteria for which apps to be blurred when they are opened</_long>
 			<default>type is "toplevel"</default>
 		</option>
 		<!-- Key-bindings -->
 		<option name="toggle" type="button">
 			<_short>Toggle</_short>
+			<_short xml:lang="tr">Toggle</_short>
 			<_long>Sets the shortcut to toggle blurring for a specific window.</_long>
+			<_long xml:lang="tr">Sets the shortcut to toggle blurring for a specific window.</_long>
 			<default>none</default>
 		</option>
 		<!-- Methods -->
 		<option name="method" type="string">
 			<_short>Method</_short>
+			<_short xml:lang="tr">Method</_short>
 			<_long>Chooses a blur algorithm.</_long>
+			<_long xml:lang="tr">Chooses a blur algorithm.</_long>
 			<default>kawase</default>
 			<desc>
 				<value>box</value>
@@ -40,7 +48,9 @@
 		</option>
 		<option name="saturation" type="double">
 			<_short>Blur saturation</_short>
+			<_short xml:lang="tr">Blur saturation</_short>
 			<_long>Sets the saturation of the blurred content.</_long>
+			<_long xml:lang="tr">Sets the saturation of the blurred content.</_long>
 			<default>1.0</default>
 			<min>0.0</min>
 			<max>3.0</max>
@@ -48,21 +58,27 @@
 		<!-- Box -->
 		<option name="box_offset" type="double">
 			<_short>Box offset</_short>
+			<_short xml:lang="tr">Box offset</_short>
 			<_long>Sets the offset value for the box method.</_long>
+			<_long xml:lang="tr">Sets the offset value for the box method.</_long>
 			<default>1</default>
 			<min>0</min>
 			<max>25</max>
 		</option>
 		<option name="box_degrade" type="int">
 			<_short>Box degrade</_short>
+			<_short xml:lang="tr">Box degrade</_short>
 			<_long>Sets the degrade value for the box method.</_long>
+			<_long xml:lang="tr">Sets the degrade value for the box method.</_long>
 			<default>1</default>
 			<min>1</min>
 			<max>10</max>
 		</option>
 		<option name="box_iterations" type="int">
 			<_short>Box iterations</_short>
+			<_short xml:lang="tr">Box iterations</_short>
 			<_long>Sets the iterations for the box method.</_long>
+			<_long xml:lang="tr">Sets the iterations for the box method.</_long>
 			<default>2</default>
 			<min>0</min>
 			<max>25</max>
@@ -70,21 +86,27 @@
 		<!-- Gaussian -->
 		<option name="gaussian_offset" type="double">
 			<_short>Gaussian offset</_short>
+			<_short xml:lang="tr">Gaussian offset</_short>
 			<_long>Sets the offset value for the gaussian method.</_long>
+			<_long xml:lang="tr">Sets the offset value for the gaussian method.</_long>
 			<default>1</default>
 			<min>0</min>
 			<max>25</max>
 		</option>
 		<option name="gaussian_degrade" type="int">
 			<_short>Gaussian degrade</_short>
+			<_short xml:lang="tr">Gaussian degrade</_short>
 			<_long>Sets the degrade value for the gaussian method.</_long>
+			<_long xml:lang="tr">Sets the degrade value for the gaussian method.</_long>
 			<default>1</default>
 			<min>1</min>
 			<max>10</max>
 		</option>
 		<option name="gaussian_iterations" type="int">
 			<_short>Gaussian iterations</_short>
+			<_short xml:lang="tr">Gaussian iterations</_short>
 			<_long>Sets the iterations for the gaussian method.</_long>
+			<_long xml:lang="tr">Sets the iterations for the gaussian method.</_long>
 			<default>2</default>
 			<min>0</min>
 			<max>25</max>
@@ -92,21 +114,27 @@
 		<!-- Kawase -->
 		<option name="kawase_offset" type="double">
 			<_short>Kawase offset</_short>
+			<_short xml:lang="tr">Kawase offset</_short>
 			<_long>Sets the offset value for the kawase method.</_long>
+			<_long xml:lang="tr">Sets the offset value for the kawase method.</_long>
 			<default>2</default>
 			<min>0</min>
 			<max>25</max>
 		</option>
 		<option name="kawase_degrade" type="int">
 			<_short>Kawase degrade</_short>
+			<_short xml:lang="tr">Kawase degrade</_short>
 			<_long>Sets the degrade value for the kawase method.</_long>
+			<_long xml:lang="tr">Sets the degrade value for the kawase method.</_long>
 			<default>8</default>
 			<min>1</min>
 			<max>10</max>
 		</option>
 		<option name="kawase_iterations" type="int">
 			<_short>Kawase iterations</_short>
+			<_short xml:lang="tr">Kawase iterations</_short>
 			<_long>Sets the iterations for the kawase method.</_long>
+			<_long xml:lang="tr">Sets the iterations for the kawase method.</_long>
 			<default>2</default>
 			<min>0</min>
 			<max>10</max>
@@ -114,21 +142,27 @@
 		<!-- Bokeh -->
 		<option name="bokeh_offset" type="double">
 			<_short>Bokeh offset</_short>
+			<_short xml:lang="tr">Bokeh offset</_short>
 			<_long>Sets the offset value for the bokeh method.</_long>
+			<_long xml:lang="tr">Sets the offset value for the bokeh method.</_long>
 			<default>5</default>
 			<min>0</min>
 			<max>50</max>
 		</option>
 		<option name="bokeh_degrade" type="int">
 			<_short>Bokeh degrade</_short>
+			<_short xml:lang="tr">Bokeh degrade</_short>
 			<_long>Sets the degrade value for the bokeh method.</_long>
+			<_long xml:lang="tr">Sets the degrade value for the bokeh method.</_long>
 			<default>1</default>
 			<min>1</min>
 			<max>10</max>
 		</option>
 		<option name="bokeh_iterations" type="int">
 			<_short>Bokeh iterations</_short>
+			<_short xml:lang="tr">Bokeh iterations</_short>
 			<_long>Sets the iterations for the bokeh method.</_long>
+			<_long xml:lang="tr">Sets the iterations for the bokeh method.</_long>
 			<default>15</default>
 			<min>0</min>
 			<max>250</max>

@@ -2,28 +2,38 @@
 <wayfire>
 	<plugin name="switcher">
 		<_short>Switcher</_short>
+		<_short xml:lang="tr">Switcher</_short>
 		<_long>A plugin to change active window with an animation.</_long>
+		<_long xml:lang="tr">A plugin to change active window with an animation.</_long>
 		<category>Window Management</category>
 		<!-- Key-bindings -->
 		<option name="next_view" type="key">
 			<_short>Next view</_short>
+			<_short xml:lang="tr">Next view</_short>
 			<_long>Switches to the next view with the specified key.</_long>
+			<_long xml:lang="tr">Switches to the next view with the specified key.</_long>
 			<default>&lt;alt&gt; KEY_TAB</default>
 		</option>
 		<option name="prev_view" type="key">
 			<_short>Previous view</_short>
+			<_short xml:lang="tr">Previous view</_short>
 			<_long>Switches to the previous view with the specified key.</_long>
+			<_long xml:lang="tr">Switches to the previous view with the specified key.</_long>
 			<default>&lt;alt&gt; &lt;shift&gt; KEY_TAB</default>
 		</option>
 		<!-- Effects -->
 		<option name="speed" type="int">
 			<_short>Duration</_short>
+			<_short xml:lang="tr">Duration</_short>
 			<_long>Sets the duration of the animation in milliseconds.</_long>
+			<_long xml:lang="tr">Sets the duration of the animation in milliseconds.</_long>
 			<default>500</default>
 		</option>
 		<option name="view_thumbnail_scale" type="double">
 			<_short>Thumbnail size</_short>
+			<_short xml:lang="tr">Thumbnail size</_short>
 			<_long>Sets the thumbnail size.</_long>
+			<_long xml:lang="tr">Sets the thumbnail size.</_long>
 			<default>1.0</default>
 		</option>
 	</plugin>

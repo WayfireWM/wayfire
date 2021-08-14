@@ -2,16 +2,22 @@
 <wayfire>
 	<plugin name="grid">
 		<_short>Grid</_short>
+		<_short xml:lang="tr">Grid</_short>
 		<_long>A plugin to position the windows in certain regions of the output.</_long>
+		<_long xml:lang="tr">A plugin to position the windows in certain regions of the output.</_long>
 		<category>Window Management</category>
 		<option name="duration" type="int">
 			<_short>Duration</_short>
+			<_short xml:lang="tr">Duration</_short>
 			<_long>Sets the duration of the animation in milliseconds.</_long>
+			<_long xml:lang="tr">Sets the duration of the animation in milliseconds.</_long>
 			<default>300</default>
 		</option>
 		<option name="type" type="string">
 			<_short>Type</_short>
+			<_short xml:lang="tr">Type</_short>
 			<_long>Sets the type of the animation.</_long>
+			<_long xml:lang="tr">Sets the type of the animation.</_long>
 			<default>crossfade</default>
 			<desc>
 				<value>none</value>
@@ -29,52 +35,72 @@
 		<!-- Key-bindings -->
 		<option name="slot_bl" type="activator">
 			<_short>Bottom left</_short>
+			<_short xml:lang="tr">Bottom left</_short>
 			<_long>Positions the window in the bottom left corner of the screen with the specified activator.  The window takes 1/4 of the screen.</_long>
+			<_long xml:lang="tr">Positions the window in the bottom left corner of the screen with the specified activator.  The window takes 1/4 of the screen.</_long>
 			<default>&lt;super&gt; KEY_KP1</default>
 		</option>
 		<option name="slot_b" type="activator">
 			<_short>Bottom</_short>
+			<_short xml:lang="tr">Bottom</_short>
 			<_long>Positions the window in the bottom edge of the screen with the specified activator.  The window takes half of the screen.</_long>
+			<_long xml:lang="tr">Positions the window in the bottom edge of the screen with the specified activator.  The window takes half of the screen.</_long>
 			<default>&lt;super&gt; KEY_KP2</default>
 		</option>
 		<option name="slot_br" type="activator">
 			<_short>Bottom right</_short>
+			<_short xml:lang="tr">Bottom right</_short>
 			<_long>Positions the window in the bottom right corner of the screen with the specified activator.  The window takes 1/4 of the screen.</_long>
+			<_long xml:lang="tr">Positions the window in the bottom right corner of the screen with the specified activator.  The window takes 1/4 of the screen.</_long>
 			<default>&lt;super&gt; KEY_KP3</default>
 		</option>
 		<option name="slot_l" type="activator">
 			<_short>Left</_short>
+			<_short xml:lang="tr">Left</_short>
 			<_long>Positions the window in the left edge of the screen with the specified activator.  The window takes half of the screen.</_long>
+			<_long xml:lang="tr">Positions the window in the left edge of the screen with the specified activator.  The window takes half of the screen.</_long>
 			<default>&lt;super&gt; KEY_LEFT | &lt;super&gt; KEY_KP4</default>
 		</option>
 		<option name="slot_c" type="activator">
 			<_short>Center</_short>
+			<_short xml:lang="tr">Center</_short>
 			<_long>Positions the window in the center of the screen with the specified activator.  The window is maximized.</_long>
+			<_long xml:lang="tr">Positions the window in the center of the screen with the specified activator.  The window is maximized.</_long>
 			<default>&lt;super&gt; KEY_UP | &lt;super&gt; KEY_KP5</default>
 		</option>
 		<option name="slot_r" type="activator">
 			<_short>Right</_short>
+			<_short xml:lang="tr">Right</_short>
 			<_long>Positions the window in the right edge of the screen with the specified activator.  The window takes half of the screen.</_long>
+			<_long xml:lang="tr">Positions the window in the right edge of the screen with the specified activator.  The window takes half of the screen.</_long>
 			<default>&lt;super&gt; KEY_RIGHT | &lt;super&gt; KEY_KP6</default>
 		</option>
 		<option name="slot_tl" type="activator">
 			<_short>Top left</_short>
+			<_short xml:lang="tr">Top left</_short>
 			<_long>Positions the window in the top left corner of the screen with the specified activator.  The window takes 1/4 of the screen.</_long>
+			<_long xml:lang="tr">Positions the window in the top left corner of the screen with the specified activator.  The window takes 1/4 of the screen.</_long>
 			<default>&lt;super&gt; KEY_KP7</default>
 		</option>
 		<option name="slot_t" type="activator">
 			<_short>Top</_short>
+			<_short xml:lang="tr">Top</_short>
 			<_long>Positions the window in the top edge of the screen with the specified activator.  The window takes half of the screen.</_long>
+			<_long xml:lang="tr">Positions the window in the top edge of the screen with the specified activator.  The window takes half of the screen.</_long>
 			<default>&lt;super&gt; KEY_KP8</default>
 		</option>
 		<option name="slot_tr" type="activator">
 			<_short>Top right</_short>
+			<_short xml:lang="tr">Top right</_short>
 			<_long>Positions the window in the top right corner of the screen with the specified activator.  The window takes 1/4 of the screen.</_long>
+			<_long xml:lang="tr">Positions the window in the top right corner of the screen with the specified activator.  The window takes 1/4 of the screen.</_long>
 			<default>&lt;super&gt; KEY_KP9</default>
 		</option>
 		<option name="restore" type="activator">
 			<_short>Restore</_short>
+			<_short xml:lang="tr">Restore</_short>
 			<_long>Restores the window to its original size and position with the specified activator.</_long>
+			<_long xml:lang="tr">Restores the window to its original size and position with the specified activator.</_long>
 			<default>&lt;super&gt; KEY_DOWN | &lt;super&gt; KEY_KP0</default>
 		</option>
 	</plugin>

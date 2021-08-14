@@ -2,16 +2,21 @@
 <wayfire>
 	<plugin name="oswitch">
 		<_short>Output Switcher</_short>
+		<_short xml:lang="tr">Output Switcher</_short>
 		<_long>A plugin to change the focused output.</_long>
+		<_long xml:lang="tr">A plugin to change the focused output.</_long>
 		<category>Desktop</category>
 		<option name="next_output" type="activator">
 			<_short>Next output</_short>
+			<_short xml:lang="tr">Next output</_short>
 			<_long>Moves focus to the next output with the specified activator.</_long>
+			<_long xml:lang="tr">Moves focus to the next output with the specified activator.</_long>
 			<default>&lt;super&gt; KEY_O</default>
 		</option>
 		<option name="next_output_with_win" type="activator">
 			<_short>Next output with window</_short>
-			<_long>Moves focus to the next output with the focused window with the specified activator.</_long>
+			<_short xml:lang="tr">Next output with window</_short>
+			<_long xml:lang="tr">Moves focus to the next output with the focused window with the specified activator.</_long>
 			<default>&lt;super&gt; &lt;shift&gt; KEY_O</default>
 		</option>
 	</plugin>

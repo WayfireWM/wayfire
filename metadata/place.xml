@@ -2,11 +2,15 @@
 <wayfire>
 	<plugin name="place">
 		<_short>Place</_short>
+		<_short xml:lang="tr">Place</_short>
 		<_long>A plugin to position newly opened windows.</_long>
+		<_long xml:lang="tr">A plugin to position newly opened windows.</_long>
 		<category>Window Management</category>
 		<option name="mode" type="string">
 			<_short>Window placement mode</_short>
+			<_short xml:lang="tr">Window placement mode</_short>
 			<_long>Specifies how to position newly opened windows.</_long>
+			<_long xml:lang="tr">Specifies how to position newly opened windows.</_long>
 			<default>center</default>
 			<desc>
 				<value>center</value>

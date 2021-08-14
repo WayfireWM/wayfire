@@ -2,7 +2,9 @@
 <wayfire>
 	<plugin name="window-rules">
 		<_short>Window Rules</_short>
+		<_short xml:lang="tr">Window Rules</_short>
 		<_long>A plugin to apply specific commands to windows by using various criteria.</_long>
+		<_long xml:lang="tr">A plugin to apply specific commands to windows by using various criteria.</_long>
 		<category>Window Management</category>
 	</plugin>
 </wayfire>

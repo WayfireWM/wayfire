@@ -2,47 +2,67 @@
 <wayfire>
 	<plugin name="command">
 		<_short>Command</_short>
+		<_short xml:lang="tr">Command</_short>
 		<_long>A plugin to bind key combo (key, button, touch) to execute shell commands.</_long>
+		<_long xml:lang="tr">A plugin to bind key combo (key, button, touch) to execute shell commands.</_long>
 		<category>General</category>
 		<option name="bindings" type="dynamic-list">
 			<_short>Regular bindings</_short>
+			<_short xml:lang="tr">Regular bindings</_short>
 			<_long>Regular bindings</_long>
+			<_long xml:lang="tr">Regular bindings</_long>
 			<entry prefix="command_" type="string">
 				<_short>Command</_short>
+				<_short xml:lang="tr">Command</_short>
 				<_long>Sets the command to execute.</_long>
+				<_long xml:lang="tr">Sets the command to execute.</_long>
 				<hint>file</hint>
 			</entry>
 			<entry prefix="binding_" type="activator">
 				<_short>Binding</_short>
+				<_short xml:lang="tr">Binding</_short>
 				<_long>Sets the triggering activator binding.</_long>
+				<_long xml:lang="tr">Sets the triggering activator binding.</_long>
 			</entry>
 		</option>
 
 		<option name="repeatable_bindings" type="dynamic-list">
 			<_short>Repeatable bindings</_short>
+			<_short xml:lang="tr">Repeatable bindings</_short>
 			<_long>Bindings which repeat their command if their key or button is held pressed.</_long>
+			<_long xml:lang="tr">Bindings which repeat their command if their key or button is held pressed.</_long>
 			<entry prefix="command_" type="string">
 				<_short>Command</_short>
+				<_short xml:lang="tr">Command</_short>
 				<_long>Sets the command to execute.</_long>
+				<_long xml:lang="tr">Sets the command to execute.</_long>
 				<hint>file</hint>
 			</entry>
 			<entry prefix="repeatable_binding_" type="activator">
 				<_short>Binding</_short>
+				<_short xml:lang="tr">Binding</_short>
 				<_long>Sets the triggering activator binding.</_long>
+				<_long xml:lang="tr">Sets the triggering activator binding.</_long>
 			</entry>
 		</option>
 
 		<option name="always_bindings" type="dynamic-list">
 			<_short>Always bindings</_short>
+			<_short xml:lang="tr">Always bindings</_short>
 			<_long>Sets the bindings which are always available, even when screen is locked.</_long>
+			<_long xml:lang="tr">Sets the bindings which are always available, even when screen is locked.</_long>
 			<entry prefix="command_" type="string">
 				<_short>Command</_short>
+				<_short xml:lang="tr">Command</_short>
 				<_long>Sets the command to execute.</_long>
+				<_long xml:lang="tr">Sets the command to execute.</_long>
 				<hint>file</hint>
 			</entry>
 			<entry prefix="always_binding_" type="activator">
 				<_short>Binding</_short>
+				<_short xml:lang="tr">Binding</_short>
 				<_long>Sets the triggering activator binding.</_long>
+				<_long xml:lang="tr">Sets the triggering activator binding.</_long>
 			</entry>
 		</option>
 	</plugin>

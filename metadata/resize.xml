@@ -2,11 +2,15 @@
 <wayfire>
 	<plugin name="resize">
 		<_short>Resize</_short>
+		<_short xml:lang="tr">Resize</_short>
 		<_long>A plugin to resize windows by dragging them from any part (not just the edges).</_long>
+		<_long xml:lang="tr">A plugin to resize windows by dragging them from any part (not just the edges).</_long>
 		<category>Window Management</category>
 		<option name="activate" type="button">
 			<_short>Activate</_short>
+			<_short xml:lang="tr">Activate</_short>
 			<_long>When the specified button is held down, you can drag windows to resize them.</_long>
+			<_long xml:lang="tr">When the specified button is held down, you can drag windows to resize them.</_long>
 			<default>&lt;super&gt; BTN_RIGHT</default>
 		</option>
 	</plugin>

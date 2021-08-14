@@ -2,32 +2,44 @@
 <wayfire>
 	<plugin name="cube">
 		<_short>Cube</_short>
+		<_short xml:lang="tr">Cube</_short>
 		<_long>A plugin to show the current workspace row as a cube.</_long>
+		<_long xml:lang="tr">A plugin to show the current workspace row as a cube.</_long>
 		<category>Desktop</category>
 		<!-- Bindings -->
 		<group>
 			<_short>Bindings</_short>
+			<_short xml:lang="tr">Bindings</_short>
 			<_long>Sets the cube bindings.</_long>
+			<_long xml:lang="tr">Sets the cube bindings.</_long>
 			<option name="activate" type="button">
 				<_short>Activate</_short>
+				<_short xml:lang="tr">Activate</_short>
 				<_long>Activates the cube with the specified button.</_long>
+				<_long xml:lang="tr">Activates the cube with the specified button.</_long>
 				<default>&lt;ctrl&gt; &lt;alt&gt; BTN_LEFT</default>
 			</option>
 			<option name="rotate_left" type="activator">
 				<_short>Rotate left</_short>
+				<_short xml:lang="tr">Rotate left</_short>
 				<_long>Rotates left with the specified activator.</_long>
+				<_long xml:lang="tr">Rotates left with the specified activator.</_long>
 				<default>none</default>
 			</option>
 			<option name="rotate_right" type="activator">
 				<_short>Rotate right</_short>
+				<_short xml:lang="tr">Rotate right</_short>
 				<_long>Rotates right with the specified activator.</_long>
+				<_long xml:lang="tr">Rotates right with the specified activator.</_long>
 				<default>none</default>
 			</option>
 		</group>
 		<!-- Effects -->
 		<option name="deform" type="int">
 			<_short>Deformation</_short>
+			<_short xml:lang="tr">Deformation</_short>
 			<_long>Specifies the deformation to be used.</_long>
+			<_long xml:lang="tr">Specifies the deformation to be used.</_long>
 			<default>0</default>
 			<min>0</min>
 			<max>2</max>
@@ -46,44 +58,58 @@
 		</option>
 		<option name="light" type="bool">
 			<_short>Use lighting</_short>
+			<_short xml:lang="tr">Use lighting</_short>
 			<_long>Specifies whether to use lighting.</_long>
+			<_long xml:lang="tr">Specifies whether to use lighting.</_long>
 			<default>true</default>
 		</option>
 		<!-- Zoom -->
 		<option name="zoom" type="double">
 			<_short>Zoom</_short>
+			<_short xml:lang="tr">Zoom</_short>
 			<_long>Sets the level of zoom out.  Setting the value to **0.0** means to not zoom out.</_long>
+			<_long xml:lang="tr">Sets the level of zoom out.  Setting the value to **0.0** means to not zoom out.</_long>
 			<default>0.1</default>
 			<precision>0.01</precision>
 		</option>
 		<option name="initial_animation" type="int">
 			<_short>Duration</_short>
+			<_short xml:lang="tr">Duration</_short>
 			<_long>Sets the initial animation duration in milliseconds.</_long>
+			<_long xml:lang="tr">Sets the initial animation duration in milliseconds.</_long>
 			<default>350</default>
 		</option>
 		<!-- Velocity -->
 		<option name="speed_zoom" type="double">
 			<_short>Zoom speed</_short>
+			<_short xml:lang="tr">Zoom speed</_short>
 			<_long>Sets the speed factor for zooming.</_long>
+			<_long xml:lang="tr">Sets the speed factor for zooming.</_long>
 			<default>0.07</default>
 			<precision>0.01</precision>
 		</option>
 		<option name="speed_spin_horiz" type="double">
 			<_short>Horizontal spin speed</_short>
+			<_short xml:lang="tr">Horizontal spin speed</_short>
 			<_long>Sets the velocity of horizontal spinning.</_long>
+			<_long xml:lang="tr">Sets the velocity of horizontal spinning.</_long>
 			<default>0.02</default>
 			<precision>0.01</precision>
 		</option>
 		<option name="speed_spin_vert" type="double">
 			<_short>Vertical spin speed</_short>
+			<_short xml:lang="tr">Vertical spin speed</_short>
 			<_long>Sets the velocity of vertical spinning.</_long>
+			<_long xml:lang="tr">Sets the velocity of vertical spinning.</_long>
 			<default>0.02</default>
 			<precision>0.01</precision>
 		</option>
 		<!-- Background -->
 		<option name="background_mode" type="string">
 			<_short>Background mode</_short>
+			<_short xml:lang="tr">Background mode</_short>
 			<_long>Sets the background mode.</_long>
+			<_long xml:lang="tr">Sets the background mode.</_long>
 			<default>simple</default>
 			<desc>
 				<value>simple</value>
@@ -100,25 +126,33 @@
 		</option>
 		<option name="background" type="color">
 			<_short>Background color</_short>
+			<_short xml:lang="tr">Background color</_short>
 			<_long>Sets the background color for the simple background mode.</_long>
+			<_long xml:lang="tr">Sets the background color for the simple background mode.</_long>
 			<default>0.1 0.1 0.1 1.0</default>
 		</option>
 		<!-- Skydome -->
 		<option name="skydome_mirror" type="bool">
 			<_short>Skydome mirror</_short>
+			<_short xml:lang="tr">Skydome mirror</_short>
 			<_long>Specifies whether to mirror skydome.</_long>
+			<_long xml:lang="tr">Specifies whether to mirror skydome.</_long>
 			<default>true</default>
 		</option>
 		<option name="skydome_texture" type="string">
 			<_short>Skydome texture</_short>
+			<_short xml:lang="tr">Skydome texture</_short>
 			<_long>Loads the specified texture for the skydome background mode.</_long>
+			<_long xml:lang="tr">Loads the specified texture for the skydome background mode.</_long>
 			<hint>file</hint>
 			<default></default>
 		</option>
 		<!-- Cubemap -->
 		<option name="cubemap_image" type="string">
 			<_short>Cubemap image</_short>
+			<_short xml:lang="tr">Cubemap image</_short>
 			<_long>Loads the specified image for the cubemap background mode.</_long>
+			<_long xml:lang="tr">Loads the specified image for the cubemap background mode.</_long>
 			<hint>file</hint>
 			<default></default>
 		</option>
