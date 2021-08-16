@@ -2,33 +2,33 @@
 <wayfire>
 	<plugin name="extra-gestures">
 		<_short>Extra Touchscreen Gestures</_short>
-		<_short xml:lang="tr">Extra Touchscreen Gestures</_short>
+		<_short xml:lang="tr">Dokunmatik ekran</_short>
 		<_long>A plugin which provides several touchscreen gestures.</_long>
-		<_long xml:lang="tr">A plugin which provides several touchscreen gestures.</_long>
+		<_long xml:lang="tr">Birkaç dokunmatik ekran hareketleri sağlayan bir eklenti.</_long>
 		<category>Desktop</category>
 		<option name="move_fingers" type="int">
 			<_short>Fingers to move</_short>
-			<_short xml:lang="tr">Fingers to move</_short>
+			<_short xml:lang="tr">Hareket etmek için parmak sayısı</_short>
 			<_long>Number of fingers to press and hold to start interactive move of the view.</_long>
-			<_long xml:lang="tr">Number of fingers to press and hold to start interactive move of the view.</_long>
+			<_long xml:lang="tr">Görünümün etkileşim hareketini başlatmak için basılı tutulması gereken parmak sayısı.</_long>
 			<default>3</default>
 			<min>1</min>
 			<max>20</max>
 		</option>
 		<option name="move_delay" type="int">
 			<_short>Start moving after</_short>
-			<_short xml:lang="tr">Start moving after</_short>
+			<_short xml:lang="tr">Hareket başlama süresi</_short>
 			<_long>Amount of time in milliseconds to hold fingers before starting interactive move of the view.</_long>
-			<_long xml:lang="tr">Amount of time in milliseconds to hold fingers before starting interactive move of the view.</_long>
+			<_long xml:lang="tr">Etkileşim hareketini başlatmadan önce parmakların basılı tutma süresi(milisaniye).</_long>
 			<default>500</default>
 			<min>1</min>
 			<max>10000</max>
 		</option>
 		<option name="close_fingers" type="int">
 			<_short>Tap to close</_short>
-			<_short xml:lang="tr">Tap to close</_short>
+			<_short xml:lang="tr">Kapatmak için dokunun</_short>
 			<_long>Number of fingers to tap with to close a window. Set to very high(20) to disable.</_long>
-			<_long xml:lang="tr">Number of fingers to tap with to close a window. Set to very high(20) to disable.</_long>
+			<_long xml:lang="tr">Bir pencereyi kapatmak için dokunmakması gereken parmak sayısı. Devre dışı bırakmak için çok yüksek (20) ayarlayın.</_long>
 			<default>20</default>
 			<min>1</min>
 			<max>20</max>

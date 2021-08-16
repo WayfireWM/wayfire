@@ -2,16 +2,16 @@
 <wayfire>
 	<plugin name="animate">
 		<_short>Animate</_short>
-		<_short xml:lang="tr">Animate</_short>
+		<_short xml:lang="tr">Animasyon</_short>
 		<_long>A plugin which provides animations when a window is opened or closed.</_long>
-		<_long xml:lang="tr">A plugin which provides animations when a window is opened or closed.</_long>
+		<_long xml:lang="tr">Bir pencere açıldığında veya kapatıldığında animasyonlar sağlayan bir eklenti.</_long>
 		<category>Effects</category>
 		<!-- Open/Close animation -->
 		<option name="open_animation" type="string">
 			<_short>Open animation</_short>
-			<_short xml:lang="tr">Open animation</_short>
+			<_short xml:lang="tr">Açılış animasyonu</_short>
 			<_long>Specifies the type of animation when opening a window.</_long>
-			<_long xml:lang="tr">Specifies the type of animation when opening a window.</_long>
+			<_long xml:lang="tr">Bir pencere açarken animasyonun türünü belirtir.</_long>
 			<default>zoom</default>
 			<desc>
 				<value>none</value>
@@ -32,9 +32,9 @@
 		</option>
 		<option name="close_animation" type="string">
 			<_short>Close animation</_short>
-			<_short xml:lang="tr">Close animation</_short>
+			<_short xml:lang="tr">Kapatma Animasyonu</_short>
 			<_long>Specifies the type of animation when closing a window.</_long>
-			<_long xml:lang="tr">Specifies the type of animation when closing a window.</_long>
+			<_long xml:lang="tr">Bir pencereyi kapatırken animasyonun türünü belirtir.</_long>
 			<default>zoom</default>
 			<desc>
 				<value>none</value>
@@ -56,96 +56,96 @@
 		<!-- Preferred animation -->
 		<option name="enabled_for" type="string">
 			<_short>Animation enabled for specified window types</_short>
-			<_short xml:lang="tr">Animation enabled for specified window types</_short>
+			<_short xml:lang="tr">Animasyonu belirtilen pencere türleri için etkinleştir.</_short>
 			<_long>Specifies the window types to be animated.</_long>
-			<_long xml:lang="tr">Specifies the window types to be animated.</_long>
+			<_long xml:lang="tr">Animasyon uygulanacak pencere türlerini belirtir.</_long>
 			<default>(type equals "toplevel" | (type equals "x-or" &amp; focusable equals true))</default>
 		</option>
 		<option name="duration" type="int">
 			<_short>Duration</_short>
-			<_short xml:lang="tr">Duration</_short>
+			<_short xml:lang="tr">Süre</_short>
 			<_long>Sets the duration of the animation in milliseconds.</_long>
-			<_long xml:lang="tr">Sets the duration of the animation in milliseconds.</_long>
+			<_long xml:lang="tr">Animasyonun süresini milisaniye cinsinden ayarlar.</_long>
 			<default>400</default>
 		</option>
 		<option name="startup_duration" type="int">
 			<_short>System fade duration when Wayfire starts</_short>
-			<_short xml:lang="tr">System fade duration when Wayfire starts</_short>
+			<_short xml:lang="tr">Wayfire başlangıcı kaybolma efekti süresi</_short>
 			<_long>Sets the duration of fading (in milliseconds) when Wayfire starts.</_long>
-			<_long xml:lang="tr">Sets the duration of fading (in milliseconds) when Wayfire starts.</_long>
+			<_long xml:lang="tr">Wayfire başladığında kaybolma (milisaniye cinsinden) süresini ayarlar.</_long>
 			<default>600</default>
 		</option>
 		<!-- Fade animation -->
 		<option name="fade_enabled_for" type="string">
 			<_short>Fade animation enabled for specified window types</_short>
-			<_short xml:lang="tr">Fade animation enabled for specified window types</_short>
+			<_short xml:lang="tr">Belirtilen pencere türleri için kaybolma animasyonu etkinleştir.</_short>
 			<_long>Specifies the window types to be animated with a fade effect.</_long>
-			<_long xml:lang="tr">Specifies the window types to be animated with a fade effect.</_long>
+			<_long xml:lang="tr">Kaybolma efekti ile animasyonlu pencere türlerini belirtir.</_long>
 			<default>type equals "overlay"</default>
 		</option>
 		<option name="fade_duration" type="int">
 			<_short>Fade duration</_short>
-			<_short xml:lang="tr">Fade duration</_short>
+			<_short xml:lang="tr">Kaybolma animasyonu süresi</_short>
 			<_long>Sets the duration for the _fade_ animation in milliseconds.  Only applies for windows matched by `animate.fade_enabled_for`.</_long>
-			<_long xml:lang="tr">Sets the duration for the _fade_ animation in milliseconds.  Only applies for windows matched by `animate.fade_enabled_for`.</_long>
+			<_long xml:lang="tr">Milisaniye cinsinden kaybolma animasyonu için süreyi ayarlar. Sadece belirlenen pencere türleri için geçerlidir.</_long>
 			<default>400</default>
 		</option>
 		<!-- Zoom animation -->
 		<option name="zoom_enabled_for" type="string">
 			<_short>Zoom animation enabled for specified window types</_short>
-			<_short xml:lang="tr">Zoom animation enabled for specified window types</_short>
+			<_short xml:lang="tr">Belirtilen pencere türleri için yakınlaştırma animasyonu etkin</_short>
 			<_long>Specifies the window types to be animated with a zoom effect.</_long>
-			<_long xml:lang="tr">Specifies the window types to be animated with a zoom effect.</_long>
+			<_long xml:lang="tr">Yakınlaştırma efekti ile animasyonlu pencere türlerini belirtir.</_long>
 			<default>none</default>
 		</option>
 		<option name="zoom_duration" type="int">
 			<_short>Zoom duration</_short>
-			<_short xml:lang="tr">Zoom duration</_short>
+			<_short xml:lang="tr">Yakınlaştırma animasyonu süresi</_short>
 			<_long>Sets the duration for the _zoom_ animation in milliseconds.  Only applies for windows matched by `animate.zoom_enabled_for`.</_long>
-			<_long xml:lang="tr">Sets the duration for the _zoom_ animation in milliseconds.  Only applies for windows matched by `animate.zoom_enabled_for`.</_long>
+			<_long xml:lang="tr">Milisaniye cinsinden yakınlaştırma animasyonu için süreyi ayarlar. Sadece belirtilen pencereler için geçerlidir.</_long>
 			<default>500</default>
 		</option>
 		<!-- Fire animation -->
 		<option name="fire_enabled_for" type="string">
 			<_short>Fire animation enabled for specified window types</_short>
-			<_short xml:lang="tr">Fire animation enabled for specified window types</_short>
+			<_short xml:lang="tr">Belirtilen pencere türleri için yangın animasyonu etkin</_short>
 			<_long>Specifies the window types to be animated with a fire effect.</_long>
-			<_long xml:lang="tr">Specifies the window types to be animated with a fire effect.</_long>
+			<_long xml:lang="tr">Yangın etkisi ile animasyonlu pencere türlerini belirtir.</_long>
 			<default>none</default>
 		</option>
 		<option name="fire_duration" type="int">
 			<_short>Fire duration</_short>
-			<_short xml:lang="tr">Fire duration</_short>
+			<_short xml:lang="tr">Yangın animasyonu süresi</_short>
 			<_long>Sets the duration for the _fire_ animation in milliseconds.  Only applies for windows matched by `animate.fire_enabled_for`.</_long>
-			<_long xml:lang="tr">Sets the duration for the _fire_ animation in milliseconds.  Only applies for windows matched by `animate.fire_enabled_for`.</_long>
+			<_long xml:lang="tr">Milisaniye cinsinden yangın animasyonu için süreyi ayarlar. Sadece belirtilen pencereler türleri için geçerlidir.</_long>
 			<default>300</default>
 		</option>
 		<option name="fire_particles" type="int">
 			<_short>Fire particles</_short>
-			<_short xml:lang="tr">Fire particles</_short>
+			<_short xml:lang="tr">Yangın parçacıkları</_short>
 			<_long>Sets the number of fire particles.</_long>
-			<_long xml:lang="tr">Sets the number of fire particles.</_long>
+			<_long xml:lang="tr">Yangın parçacıklarının sayısını ayarlar.</_long>
 			<default>2000</default>
 		</option>
 		<option name="fire_particle_size" type="double">
 			<_short>Fire particle size</_short>
-			<_short xml:lang="tr">Fire particle size</_short>
+			<_short xml:lang="tr">Yangın parçacıkları boyutu</_short>
 			<_long>Sets the size of the fire particles in pixels.</_long>
-			<_long xml:lang="tr">Sets the size of the fire particles in pixels.</_long>
+			<_long xml:lang="tr">Yangın parçacıklarının boyutunu piksel cinsinden ayarlar.</_long>
 			<default>16.0</default>
 		</option>
 		<option name="random_fire_color" type="bool">
 			<_short>Random fire colors</_short>
-			<_short xml:lang="tr">Random fire colors</_short>
+			<_short xml:lang="tr">Rastgele Yangın Renkleri</_short>
 			<_long>Sets wether to use one solid color or select a random color for each particle</_long>
-			<_long xml:lang="tr">Sets wether to use one solid color or select a random color for each particle</_long>
+			<_long xml:lang="tr">Bir katı renk kullanılıp kullanılmayacağını veya her bir parçacık için rastgele bir renk seçip seçmeyeceğini ayarlar.</_long>
 			<default>false</default>
 		</option>
 		<option name="fire_color" type="color">
 			<_short>Color of the fire</_short>
-			<_short xml:lang="tr">Color of the fire</_short>
+			<_short xml:lang="tr">Ateşin rengi</_short>
 			<_long>Sets the color of the fire effects, alpha is ignored</_long>
-			<_long xml:lang="tr">Sets the color of the fire effects, alpha is ignored</_long>
+			<_long xml:lang="tr">Yangın etkilerinin rengini ayarlar, alfa renk göz ardı edilir</_long>
 			<default>#b22303ff</default>
 		</option>
 	</plugin>

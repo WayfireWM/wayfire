@@ -2,20 +2,20 @@
 <wayfire>
 	<plugin name="autostart">
 		<_short>Autostart</_short>
-		<_short xml:lang="tr">Autostart</_short>
+		<_short xml:lang="tr">Oto başlatıcı</_short>
 		<_long>A plugin to run shell commands on startup.</_long>
-		<_long xml:lang="tr">A plugin to run shell commands on startup.</_long>
+		<_long xml:lang="tr">Başlangıçta Shell komutlarını çalıştırmak için bir eklenti.</_long>
 		<category>General</category>
 		<group>
 			<_short>Autostart</_short>
-			<_short xml:lang="tr">Autostart</_short>
+			<_short xml:lang="tr">Oto başlatıcı</_short>
 			<_long>Specifies the shell commands to run on startup.</_long>
-			<_long xml:lang="tr">Specifies the shell commands to run on startup.</_long>
+			<_long xml:lang="tr">Başlangıçta çalıştırılacak Shell komutlarını belirtir.</_long>
 			<option name="autostart" type="dynamic-list">
 				<_short>Autostart</_short>
-				<_short xml:lang="tr">Autostart</_short>
+				<_short xml:lang="tr">Oto başlatıcı</_short>
 				<_long>Executes shell command with `sh` on startup. The program ID does not matter, but must be different for distinct commands.</_long>
-				<_long xml:lang="tr">Executes shell command with `sh` on startup. The program ID does not matter, but must be different for distinct commands.</_long>
+				<_long xml:lang="tr">Shell komutunu başlangıçta `sh` ile yürütür. Program kimliği önemli değil, ancak farklı komutlar için farklı olmalıdır.</_long>
 				<entry prefix="" type="string"/>
 				<type>string</type>
 				<hint>file</hint>
@@ -23,9 +23,9 @@
 		</group>
 		<option name="autostart_wf_shell" type="bool">
 			<_short>Autostart shell clients</_short>
-			<_short xml:lang="tr">Autostart shell clients</_short>
+			<_short xml:lang="tr">Oto Başlatıcı Shell istemcileri</_short>
 			<_long>Start wf-panel and wf-background if they are not listed as autostart entries.</_long>
-			<_long xml:lang="tr">Start wf-panel and wf-background if they are not listed as autostart entries.</_long>
+			<_long xml:lang="tr">Oto başlatıcı girişleri olarak listelenmemişlerse wf-panel ve wf-pullower'ı başlatın.</_long>
 			<default>true</default>
 		</option>
 	</plugin>

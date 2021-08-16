@@ -2,58 +2,58 @@
 <wayfire>
 	<plugin name="decoration">
 		<_short>Decoration</_short>
-		<_short xml:lang="tr">Decoration</_short>
+		<_short xml:lang="tr">Dekorasyon</_short>
 		<_long>Default decorations around XWayland windows.</_long>
-		<_long xml:lang="tr">Default decorations around XWayland windows.</_long>
+		<_long xml:lang="tr">Xwayland pencerelerinin varsayılan dekorasyonu.</_long>
 		<category>Effects</category>
 		<option name="font" type="string">
 			<_short>Font</_short>
-			<_short xml:lang="tr">Font</_short>
+			<_short xml:lang="tr">Yazı tipi</_short>
 			<_long>Sets the font to use for the title bars.</_long>
-			<_long xml:lang="tr">Sets the font to use for the title bars.</_long>
+			<_long xml:lang="tr">Başlık çubukları için yazı tipini ayarlar.</_long>
 			<default>sans-serif</default>
 		</option>
 		<option name="title_height" type="int">
 			<_short>Title bar height</_short>
-			<_short xml:lang="tr">Title bar height</_short>
+			<_short xml:lang="tr">Başlık çubuğu yüksekliği</_short>
 			<_long>Sets the height of the title bars in pixels.</_long>
-			<_long xml:lang="tr">Sets the height of the title bars in pixels.</_long>
+			<_long xml:lang="tr">Başlık çubuklarının yüksekliğini piksel cinsinden ayarlar.</_long>
 			<default>30</default>
 		</option>
 		<option name="border_size" type="int">
 			<_short>Border size</_short>
-			<_short xml:lang="tr">Border size</_short>
+			<_short xml:lang="tr">Kenarlık boyutu</_short>
 			<_long>Sets the border size in pixels.</_long>
-			<_long xml:lang="tr">Sets the border size in pixels.</_long>
+			<_long xml:lang="tr">Sınır boyutunu piksellerde ayarlar.</_long>
 			<default>4</default>
 		</option>
 		<option name="button_order" type="string">
 			<_short>Order of window buttons</_short>
-			<_short xml:lang="tr">Order of window buttons</_short>
+			<_short xml:lang="tr">Pencere düğmelerinin sırası</_short>
 			<_long>Sets the order of the window buttons.</_long>
-			<_long xml:lang="tr">Sets the order of the window buttons.</_long>
+			<_long xml:lang="tr">Pencere düğmelerinin sırasını ayarlar.</_long>
 			<default>minimize maximize close</default>
 		</option>
 		<!-- Colors -->
 		<option name="active_color" type="color">
 			<_short>Color when window is active</_short>
-			<_short xml:lang="tr">Color when window is active</_short>
+			<_short xml:lang="tr">Pencere aktif olduğunda renk</_short>
 			<_long>Sets the color when the window is active.</_long>
-			<_long xml:lang="tr">Sets the color when the window is active.</_long>
+			<_long xml:lang="tr">Pencere etkin olduğunda rengi ayarlar.</_long>
 			<default>#222222aa</default>
 		</option>
 		<option name="inactive_color" type="color">
 			<_short>Color when window is inactive</_short>
-			<_short xml:lang="tr">Color when window is inactive</_short>
+			<_short xml:lang="tr">Pencere etkin değilken renk</_short>
 			<_long>Sets the color when the window is inactive.</_long>
-			<_long xml:lang="tr">Sets the color when the window is inactive.</_long>
+			<_long xml:lang="tr">Pencere etkin değilken rengi ayarlar.</_long>
 			<default>#333333dd</default>
 		</option>
 		<option name="ignore_views" type="string">
 			<_short>Decoration disabled for specified window types</_short>
-			<_short xml:lang="tr">Decoration disabled for specified window types</_short>
+			<_short xml:lang="tr">Belirtilen pencere türleri için dekorasyon devre dışı</_short>
 			<_long>Disables window decoration for windows matching the specified criteria.</_long>
-			<_long xml:lang="tr">Disables window decoration for windows matching the specified criteria.</_long>
+			<_long xml:lang="tr">Belirtilen pencereler için pencere dekorasyonunu devre dışı bırakır.</_long>
 			<default>none</default>
 		</option>
 	</plugin>

@@ -2,50 +2,50 @@
 <wayfire>
 	<plugin name="expo">
 		<_short>Expo</_short>
-		<_short xml:lang="tr">Expo</_short>
+		<_short xml:lang="tr">Çalışma alanları</_short>
 		<_long>A plugin to show an overview of all workspaces.</_long>
-		<_long xml:lang="tr">A plugin to show an overview of all workspaces.</_long>
+		<_long xml:lang="tr">Tüm çalışma alanlarına genel bir bakış göstermek için bir eklenti.</_long>
 		<category>Desktop</category>
 		<option name="toggle" type="activator">
 			<_short>Toggle</_short>
-			<_short xml:lang="tr">Toggle</_short>
+			<_short xml:lang="tr">Klavye kısayolu</_short>
 			<_long>Shows an overview of all workspaces with the specified activator.  Pressing again exits.</_long>
-			<_long xml:lang="tr">Shows an overview of all workspaces with the specified activator.  Pressing again exits.</_long>
+			<_long xml:lang="tr">Belirtilen kısayol ile tüm çalışma alanlarına genel bir bakış gösterir. Tekrar basarak çıkar.</_long>
 			<default>&lt;super&gt;</default>
 		</option>
 		<option name="background" type="color">
 			<_short>Background color</_short>
-			<_short xml:lang="tr">Background color</_short>
+			<_short xml:lang="tr">Arka plan rengi</_short>
 			<_long>Sets the background color.</_long>
-			<_long xml:lang="tr">Sets the background color.</_long>
+			<_long xml:lang="tr">Arka plan rengini ayarlar.</_long>
 			<default>0.1 0.1 0.1 1.0</default>
 		</option>
 		<option name="duration" type="int">
 			<_short>Zoom duration</_short>
-			<_short xml:lang="tr">Zoom duration</_short>
+			<_short xml:lang="tr">Yakınlaştırma süresi</_short>
 			<_long>Sets the zoom duration in milliseconds.</_long>
-			<_long xml:lang="tr">Sets the zoom duration in milliseconds.</_long>
+			<_long xml:lang="tr">Zoom süresini milisaniye cinsinden ayarlar.</_long>
 			<default>300</default>
 		</option>
 		<option name="offset" type="int">
 			<_short>Delimiter offset</_short>
-			<_short xml:lang="tr">Delimiter offset</_short>
+			<_short xml:lang="tr">Sınırlayıcı ofset</_short>
 			<_long>Sets the delimiter offset (in pixels) between workspaces.</_long>
-			<_long xml:lang="tr">Sets the delimiter offset (in pixels) between workspaces.</_long>
+			<_long xml:lang="tr">Sınırlayıcı ofsetini (piksel cinsinden) çalışma alanları arasında ayarlar.</_long>
 			<default>10</default>
 		</option>
 		<option name="keyboard_interaction" type="bool">
 			<_short>Keyboard interaction</_short>
-			<_short xml:lang="tr">Keyboard interaction</_short>
+			<_short xml:lang="tr">Klavye etkileşimi</_short>
 			<_long>Allow the use of arrow keys to select a workspace, ESC to cancel and ENTER to accept.</_long>
-			<_long xml:lang="tr">Allow the use of arrow keys to select a workspace, ESC to cancel and ENTER to accept.</_long>
+			<_long xml:lang="tr">Bir çalışma alanı seçmek için ok tuşlarının kullanılmasına izin verin, iptal etmek ve kabul etmek için girin.</_long>
 			<default>true</default>
 		</option>
 		<option name="inactive_brightness" type="double">
 			<_short>Brightness of inactive workspaces</_short>
-			<_short xml:lang="tr">Brightness of inactive workspaces</_short>
+			<_short xml:lang="tr">Etkin olmayan çalışma alanlarının parlaklığı</_short>
 			<_long>Decrease the brightness of all workspaces except the currently selected one to this value.</_long>
-			<_long xml:lang="tr">Decrease the brightness of all workspaces except the currently selected one to this value.</_long>
+			<_long xml:lang="tr">O anda seçilen çalışma alanı hariç, tüm çalışma alanlarının parlaklığını bu değere düşürün.</_long>
 			<default>0.7</default>
 			<min>0.0</min>
 			<max>1.0</max>
@@ -53,16 +53,16 @@
 		</option>
 		<option name="transition_length" type="int">
 			<_short>Brightness transition duration</_short>
-			<_short xml:lang="tr">Brightness transition duration</_short>
+			<_short xml:lang="tr">Parlaklık Geçiş Süresi</_short>
 			<_long>Duration of the transition of brightness when a new workspace is selected in milliseconds.</_long>
-			<_long xml:lang="tr">Duration of the transition of brightness when a new workspace is selected in milliseconds.</_long>
+			<_long xml:lang="tr">Yeni bir çalışma alanı seçildiğinde parlaklığın milisaniye cinsinden geçiş süresi.</_long>
 			<default>200</default>
 		</option>
 		<option name="workspace_bindings" type="dynamic-list">
 			<_short>Select workspace</_short>
-			<_short xml:lang="tr">Select workspace</_short>
+			<_short xml:lang="tr">Çalışma alanını seç</_short>
 			<_long>When the binding is triggered while expo is active, the corresponding workspace will be focused and Expo will exit.</_long>
-			<_long xml:lang="tr">When the binding is triggered while expo is active, the corresponding workspace will be focused and Expo will exit.</_long>
+			<_long xml:lang="tr">Çalışma alanı gösterimi etkinken kısayol tetiklendiğinde, karşılık gelen çalışma alanı odaklanacak ve çalışma alanı göstericiden çıkacaktır.</_long>
       <entry prefix="select_workspace_" type="activator"/>
 		</option>
 	</plugin>

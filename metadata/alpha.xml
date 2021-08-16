@@ -8,16 +8,16 @@
 		<category>Desktop</category>
 		<option name="modifier" type="key">
 			<_short>Modifier</_short>
-			<_short xml:lang="tr">Modifier</_short>
+			<_short xml:lang="tr">Klavye Kısayolu</_short>
 			<_long>When the modifier key is held down, you can scroll down and up to adjust the opacity of the window.</_long>
-			<_long xml:lang="tr">When the modifier key is held down, you can scroll down and up to adjust the opacity of the window.</_long>
+			<_long xml:lang="tr">Klavye kısayoluna basıldığında, fare tekerleği ile opaklığı değiştirebilirsiniz.</_long>
 			<default>&lt;super&gt; &lt;alt&gt;</default>
 		</option>
 		<option name="min_value" type="double">
 			<_short>Minimum</_short>
 			<_short xml:lang="tr">Minimum</_short>
 			<_long>Sets the minimum opacity of the window between 0 (completely transparent) and 1 (completely opaque).</_long>
-			<_long xml:lang="tr">Sets the minimum opacity of the window between 0 (completely transparent) and 1 (completely opaque).</_long>
+			<_long xml:lang="tr">Pencerenin minimum opaklığını 0 (tamamen saydam) ve 1 (tamamen opak) arasında ayarlar.</_long>
 			<default>0.1</default>
 			<min>0.0</min>
 			<max>1.0</max>
