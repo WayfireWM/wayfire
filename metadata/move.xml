@@ -2,65 +2,65 @@
 <wayfire>
 	<plugin name="move">
 		<_short>Move</_short>
-		<_short xml:lang="tr">Move</_short>
+		<_short xml:lang="tr">Pencere Taşıma</_short>
 		<_long>A plugin to move windows around by dragging them from any part (not just the title bar).</_long>
-		<_long xml:lang="tr">A plugin to move windows around by dragging them from any part (not just the title bar).</_long>
+		<_long xml:lang="tr">Pencereleri herhangi bir yerinden tutarak hareket ettirmek için bir eklenti (sadece başlık çubuğu değil).</_long>
 		<category>Window Management</category>
 		<option name="activate" type="button">
 			<_short>Activate</_short>
-			<_short xml:lang="tr">Activate</_short>
+			<_short xml:lang="tr">Klavye kısayolu</_short>
 			<_long>When the specified button is held down, you can drag windows to move them.</_long>
-			<_long xml:lang="tr">When the specified button is held down, you can drag windows to move them.</_long>
+			<_long xml:lang="tr">Belirtilen tuş basıldığında, pencereleri sürükleyebilirsiniz.</_long>
 			<default>&lt;super&gt; BTN_LEFT</default>
 		</option>
 		<!-- "Aero Snap" -->
 		<option name="enable_snap" type="bool">
 			<_short>Snap</_short>
-			<_short xml:lang="tr">Snap</_short>
+			<_short xml:lang="tr">Ekran kenarına yapıştır</_short>
 			<_long>Enables or disables snapping the window being moved to an edge of the screen.</_long>
-			<_long xml:lang="tr">Enables or disables snapping the window being moved to an edge of the screen.</_long>
+			<_long xml:lang="tr">Ekranın bir kenarına taşınan pencerenin yapışmasını sağlar veya devre dışı bırakır.</_long>
 			<default>true</default>
 		</option>
 		<option name="snap_threshold" type="int">
 			<_short>Snap threshold</_short>
-			<_short xml:lang="tr">Snap threshold</_short>
+			<_short xml:lang="tr">Kenar yapıştırma eşiği</_short>
 			<_long>Sets the amount of pixels from the edge of the screen for which aero-snap gets triggered.</_long>
-			<_long xml:lang="tr">Sets the amount of pixels from the edge of the screen for which aero-snap gets triggered.</_long>
+			<_long xml:lang="tr">Kenar yapıştırma eşiğini, ekranın kenarına kaç piksel yakınlaştığında tetikleneceği miktarı ayarlar.</_long>
 			<default>10</default>
 		</option>
 		<option name="quarter_snap_threshold" type="int">
 			<_short>Quarter snap theshold</_short>
-			<_short xml:lang="tr">Quarter snap theshold</_short>
+			<_short xml:lang="tr">Ekran köşesi yapıştırma eşiği</_short>
 			<_long>Sets the amount of pixels from the corner of the screen for which quarter aero-snap gets triggered. The mouse should still be within snap_threshold of at least one edge of the screen.</_long>
-			<_long xml:lang="tr">Sets the amount of pixels from the corner of the screen for which quarter aero-snap gets triggered. The mouse should still be within snap_threshold of at least one edge of the screen.</_long>
+			<_long xml:lang="tr">Ekran köşesi yapıştırma eşiğinin piksel miktarını ayarlar. Fare hala ekranın en az bir köşe yapıştırma eşiğinin içinde olmalıdır.</_long>
 			<default>50</default>
 		</option>
 		<option name="enable_snap_off" type="bool">
 			<_short>Snap off</_short>
-			<_short xml:lang="tr">Snap off</_short>
+			<_short xml:lang="tr">Ekran kenarından ayır</_short>
 			<_long>Enables or disables snapping off the window being grabbed from an edge of the screen.</_long>
-			<_long xml:lang="tr">Enables or disables snapping off the window being grabbed from an edge of the screen.</_long>
+			<_long xml:lang="tr">Ekranın kenarına yapıştırılmış pencereyi koparmayı etkinleştirir veya devre dışı bırakır.</_long>
 			<default>true</default>
 		</option>
 		<option name="snap_off_threshold" type="int">
 			<_short>Snap off threshold</_short>
-			<_short xml:lang="tr">Snap off threshold</_short>
+			<_short xml:lang="tr">Ekran köşesinden ayırma eşiği</_short>
 			<_long>When attempting to move a snapped window, this option requires the user to move at least the specified amount of pixels before the window actually moves.  This only takes effect with `move.enable_snap_off`.</_long>
-			<_long xml:lang="tr">When attempting to move a snapped window, this option requires the user to move at least the specified amount of pixels before the window actually moves.  This only takes effect with `move.enable_snap_off`.</_long>
+			<_long xml:lang="tr">Yapıştırılmış pencere taşınmak istendiğinde, pencerenin fiilen hareket etmesi için gereken piksel miktarını belirtir.  Bu sadece `Ekran kenarından ayır` aktif ise etkili olur.</_long>
 			<default>10</default>
 		</option>
 		<option name="join_views" type="bool">
 			<_short>Disallow independently moving dialogues</_short>
-			<_short xml:lang="tr">Disallow independently moving dialogues</_short>
+			<_short xml:lang="tr">Bağımsız hareket eden diyalog izin verme</_short>
 			<_long>Disallows independently moving dialogues.</_long>
-			<_long xml:lang="tr">Disallows independently moving dialogues.</_long>
+			<_long xml:lang="tr">Bağımsız olarak hareket eden diyalog pencerelerine izin vermez</_long>
 			<default>false</default>
 		</option>
     <option name="workspace_switch_after" type="int">
       <_short>Switch workspace after</_short>
-	  <_short xml:lang="tr">Switch workspace after</_short>
+	  <_short xml:lang="tr">Çalışma alanını değiştir</_short>
       <_long>Switch workspace when the mouse stays on the output edge for the given duration in milliseconds (-1 to disable).</_long>
-	  <_long xml:lang="tr">Switch workspace when the mouse stays on the output edge for the given duration in milliseconds (-1 to disable).</_long>
+	  <_long xml:lang="tr">Fare milisaniye cinsinden belirtilen süre boyunca çıkış kenarında kaldığında çalışma alanını değiştirin (devre dışı bırakmak için -1).</_long>
       <default>-1</default>
       <min>-1</min>
     </option>

@@ -2,22 +2,22 @@
 <wayfire>
 	<plugin name="invert">
 		<_short>Invert</_short>
-		<_short xml:lang="tr">Invert</_short>
+		<_short xml:lang="tr">Karşıtlık</_short>
 		<_long>A plugin to invert the colors of the whole output.</_long>
-		<_long xml:lang="tr">A plugin to invert the colors of the whole output.</_long>
+		<_long xml:lang="tr">Ekranın tüm renklerini ters çevirmek için bir eklenti.</_long>
 		<category>Accessibility</category>
 		<option name="toggle" type="activator">
 			<_short>Toggle</_short>
-			<_short xml:lang="tr">Toggle</_short>
+			<_short xml:lang="tr">Klavye kısayolu</_short>
 			<_long>Inverts the colors of the whole output with the specified activator.</_long>
-			<_long xml:lang="tr">Inverts the colors of the whole output with the specified activator.</_long>
+			<_long xml:lang="tr">Ekranın tüm renklerini belirtilen kısayolla ters çevirir.</_long>
 			<default>&lt;super&gt; KEY_I</default>
 		</option>
 		<option name="preserve_hue" type="bool">
 			<_short>Preserve Hue</_short>
-			<_short xml:lang="tr">Preserve Hue</_short>
+			<_short xml:lang="tr">Renk tonunu koru</_short>
 			<_long>Only operate on black and white, preserving the hue</_long>
-			<_long xml:lang="tr">Only operate on black and white, preserving the hue</_long>
+			<_long xml:lang="tr">Tonu koruyarak yalnızca siyah beyaz üzerinde çalışın.</_long>
 			<default>false</default>
 		</option>
 	</plugin>

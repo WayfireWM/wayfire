@@ -4,13 +4,13 @@
 		<_short>Preserve Output</_short>
 		<_short xml:lang="tr">Preserve Output</_short>
 		<_long>A plugin to restore windows to their original position if outputs are temporarily disconnected.</_long>
-		<_long xml:lang="tr">A plugin to restore windows to their original position if outputs are temporarily disconnected.</_long>
+		<_long xml:lang="tr">Ekranların geçici olarak bağlantısı kesilirse pencereleri orijinal konumlarına geri yüklemek için bir eklenti.</_long>
 		<category>Window Management</category>
 		<option name="last_output_focus_timeout" type="int">
 			<_short>Last output focus timeout</_short>
-			<_short xml:lang="tr">Last output focus timeout</_short>
+			<_short xml:lang="tr">Son ekran odağı zaman aşımı</_short>
 			<_long>Length of time in milliseconds to remember a destroyed output as the last output with focus, before it can be overridden by another destroyed output with focus.</_long>
-			<_long xml:lang="tr">Length of time in milliseconds to remember a destroyed output as the last output with focus, before it can be overridden by another destroyed output with focus.</_long>
+			<_long xml:lang="tr">Odaklı başka bir yok edilmiş ekran tarafından geçersiz kılınmadan önce, odaklanılan son ekran olarak yok edilen bir ekranı hatırlamak için milisaniye cinsinden süre.</_long>
 			<default>10000</default>
 			<min>0</min>
 		</option>

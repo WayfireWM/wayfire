@@ -2,22 +2,22 @@
 <wayfire>
 	<plugin name="grid">
 		<_short>Grid</_short>
-		<_short xml:lang="tr">Grid</_short>
+		<_short xml:lang="tr">Izgara görünümü</_short>
 		<_long>A plugin to position the windows in certain regions of the output.</_long>
-		<_long xml:lang="tr">A plugin to position the windows in certain regions of the output.</_long>
+		<_long xml:lang="tr">Pencereleri ekranın belirli bölgelerinde konumlandırmak için bir eklenti.</_long>
 		<category>Window Management</category>
 		<option name="duration" type="int">
 			<_short>Duration</_short>
-			<_short xml:lang="tr">Duration</_short>
+			<_short xml:lang="tr">Süre</_short>
 			<_long>Sets the duration of the animation in milliseconds.</_long>
-			<_long xml:lang="tr">Sets the duration of the animation in milliseconds.</_long>
+			<_long xml:lang="tr">Animasyonun süresini milisaniye cinsinden ayarlar.</_long>
 			<default>300</default>
 		</option>
 		<option name="type" type="string">
 			<_short>Type</_short>
-			<_short xml:lang="tr">Type</_short>
+			<_short xml:lang="tr">Animasyon türü</_short>
 			<_long>Sets the type of the animation.</_long>
-			<_long xml:lang="tr">Sets the type of the animation.</_long>
+			<_long xml:lang="tr">Animasyonun türünü ayarlar.</_long>
 			<default>crossfade</default>
 			<desc>
 				<value>none</value>
@@ -35,72 +35,72 @@
 		<!-- Key-bindings -->
 		<option name="slot_bl" type="activator">
 			<_short>Bottom left</_short>
-			<_short xml:lang="tr">Bottom left</_short>
+			<_short xml:lang="tr">Sol alt</_short>
 			<_long>Positions the window in the bottom left corner of the screen with the specified activator.  The window takes 1/4 of the screen.</_long>
-			<_long xml:lang="tr">Positions the window in the bottom left corner of the screen with the specified activator.  The window takes 1/4 of the screen.</_long>
+			<_long xml:lang="tr">Pencereyi belirtilen kısayol ile ekranın sol alt köşesine yerleştirir. Pencere ekranın 1/4'ü alır.</_long>
 			<default>&lt;super&gt; KEY_KP1</default>
 		</option>
 		<option name="slot_b" type="activator">
 			<_short>Bottom</_short>
-			<_short xml:lang="tr">Bottom</_short>
+			<_short xml:lang="tr">Alt</_short>
 			<_long>Positions the window in the bottom edge of the screen with the specified activator.  The window takes half of the screen.</_long>
-			<_long xml:lang="tr">Positions the window in the bottom edge of the screen with the specified activator.  The window takes half of the screen.</_long>
+			<_long xml:lang="tr">Pencereyi belirtilen kısayol ile ekranın alt kenarına yerleştirir. Pencere ekranın yarısını alır.</_long>
 			<default>&lt;super&gt; KEY_KP2</default>
 		</option>
 		<option name="slot_br" type="activator">
 			<_short>Bottom right</_short>
-			<_short xml:lang="tr">Bottom right</_short>
+			<_short xml:lang="tr">Sağ alt</_short>
 			<_long>Positions the window in the bottom right corner of the screen with the specified activator.  The window takes 1/4 of the screen.</_long>
-			<_long xml:lang="tr">Positions the window in the bottom right corner of the screen with the specified activator.  The window takes 1/4 of the screen.</_long>
+			<_long xml:lang="tr">Pencereyi belirtilen kısayol ile ekranın sağ alt köşesine konumlandırır. Pencere ekranın 1/4'ü alır.</_long>
 			<default>&lt;super&gt; KEY_KP3</default>
 		</option>
 		<option name="slot_l" type="activator">
 			<_short>Left</_short>
-			<_short xml:lang="tr">Left</_short>
+			<_short xml:lang="tr">Sol</_short>
 			<_long>Positions the window in the left edge of the screen with the specified activator.  The window takes half of the screen.</_long>
-			<_long xml:lang="tr">Positions the window in the left edge of the screen with the specified activator.  The window takes half of the screen.</_long>
+			<_long xml:lang="tr">Belirtilen kısayol ile pencereyi ekranın sol kenarına yerleştirir. Pencere ekranın yarısını alır.</_long>
 			<default>&lt;super&gt; KEY_LEFT | &lt;super&gt; KEY_KP4</default>
 		</option>
 		<option name="slot_c" type="activator">
 			<_short>Center</_short>
-			<_short xml:lang="tr">Center</_short>
+			<_short xml:lang="tr">Merkez</_short>
 			<_long>Positions the window in the center of the screen with the specified activator.  The window is maximized.</_long>
-			<_long xml:lang="tr">Positions the window in the center of the screen with the specified activator.  The window is maximized.</_long>
+			<_long xml:lang="tr">Belirtilen kısayol ile pencereyi ekranın ortasına yerleştirir. Pencereyi tam ekran yapar.</_long>
 			<default>&lt;super&gt; KEY_UP | &lt;super&gt; KEY_KP5</default>
 		</option>
 		<option name="slot_r" type="activator">
 			<_short>Right</_short>
-			<_short xml:lang="tr">Right</_short>
+			<_short xml:lang="tr">Sağ</_short>
 			<_long>Positions the window in the right edge of the screen with the specified activator.  The window takes half of the screen.</_long>
-			<_long xml:lang="tr">Positions the window in the right edge of the screen with the specified activator.  The window takes half of the screen.</_long>
+			<_long xml:lang="tr">Belirtilen kısayol ile pencereyi ekranın sağ kenarına yerleştirir. Pencere ekranın yarısını alır.</_long>
 			<default>&lt;super&gt; KEY_RIGHT | &lt;super&gt; KEY_KP6</default>
 		</option>
 		<option name="slot_tl" type="activator">
 			<_short>Top left</_short>
-			<_short xml:lang="tr">Top left</_short>
+			<_short xml:lang="tr">Sol üst</_short>
 			<_long>Positions the window in the top left corner of the screen with the specified activator.  The window takes 1/4 of the screen.</_long>
-			<_long xml:lang="tr">Positions the window in the top left corner of the screen with the specified activator.  The window takes 1/4 of the screen.</_long>
+			<_long xml:lang="tr">Belirtilen kısayol ile pencereyi ekranın sol üst köşesine konumlandırır. Pencere ekranın 1/4'ü alır.</_long>
 			<default>&lt;super&gt; KEY_KP7</default>
 		</option>
 		<option name="slot_t" type="activator">
 			<_short>Top</_short>
-			<_short xml:lang="tr">Top</_short>
+			<_short xml:lang="tr">Üst</_short>
 			<_long>Positions the window in the top edge of the screen with the specified activator.  The window takes half of the screen.</_long>
-			<_long xml:lang="tr">Positions the window in the top edge of the screen with the specified activator.  The window takes half of the screen.</_long>
+			<_long xml:lang="tr">Belirtilen kısayol ile pencereyi ekranın üst kısmına konumlandırır. Pencere ekranın yarısını alır.</_long>
 			<default>&lt;super&gt; KEY_KP8</default>
 		</option>
 		<option name="slot_tr" type="activator">
 			<_short>Top right</_short>
-			<_short xml:lang="tr">Top right</_short>
+			<_short xml:lang="tr">Sağ üst</_short>
 			<_long>Positions the window in the top right corner of the screen with the specified activator.  The window takes 1/4 of the screen.</_long>
-			<_long xml:lang="tr">Positions the window in the top right corner of the screen with the specified activator.  The window takes 1/4 of the screen.</_long>
+			<_long xml:lang="tr">Belirtilen kısayol ile pencereyi ekranın sağ üst köşesine yerleştirir. Pencere ekranın 1/4'ü alır.</_long>
 			<default>&lt;super&gt; KEY_KP9</default>
 		</option>
 		<option name="restore" type="activator">
 			<_short>Restore</_short>
-			<_short xml:lang="tr">Restore</_short>
+			<_short xml:lang="tr">Eski konum</_short>
 			<_long>Restores the window to its original size and position with the specified activator.</_long>
-			<_long xml:lang="tr">Restores the window to its original size and position with the specified activator.</_long>
+			<_long xml:lang="tr">Pencereyi belirtilen kısayol ile orijinal boyutuna ve konumuna getirin.</_long>
 			<default>&lt;super&gt; KEY_DOWN | &lt;super&gt; KEY_KP0</default>
 		</option>
 	</plugin>

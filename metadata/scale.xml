@@ -2,72 +2,73 @@
 <wayfire>
 	<plugin name="scale">
 		<_short>Scale</_short>
-		<_short xml:lang="tr">Scale</_short>
+		<_short xml:lang="tr">Ölçeklendirme</_short>
 		<_long>Show all views on screen.</_long>
-		<_long xml:lang="tr">Show all views on screen.</_long>
+		<_long xml:lang="tr">Tüm görünümleri ekranda göster.</_long>
 		<category>Accessibility</category>
 		<group>
 			<_short>Behavior</_short>
-			<_short xml:lang="tr">Behavior</_short>
+			<_short xml:lang="tr">Davranış</_short>
 			<option name="toggle" type="activator">
 				<_short>Toggle</_short>
-				<_short xml:lang="tr">Toggle</_short>
+				<_short xml:lang="tr">Klavye kısayolu</_short>
 				<_long>Toggles scale with the specified activator.</_long>
-				<_long xml:lang="tr">Toggles scale with the specified activator.</_long>
+				<_long xml:lang="tr">Belirtilen kısayol ile ölçeği değiştirir.</_long>
 				<default>&lt;super&gt; KEY_P</default>
 			</option>
 			<option name="toggle_all" type="activator">
 				<_short>Toggle for all workspaces</_short>
-				<_short xml:lang="tr">Toggle for all workspaces</_short>
+				<_short xml:lang="tr">Tüm çalışma alanları için geçerli</_short>
 				<_long>Toggles scale showing windows from all workspaces.</_long>
-				<_long xml:lang="tr">Toggles scale showing windows from all workspaces.</_long>
+				<_long xml:lang="tr">Tüm çalışma alanlarındaki pencereleri gösteren ölçeği değiştirir.</_long>
 				<default></default>
 			</option>
 			<option name="duration" type="int">
 				<_short>Animation Transition Time</_short>
-				<_short xml:lang="tr">Animation Transition Time</_short>
+				<_short xml:lang="tr">Animasyon geçiş süresi</_short>
 				<_long>Time it takes for views to transition. Units are in milliseconds.</_long>
-				<_long xml:lang="tr">Time it takes for views to transition. Units are in milliseconds.</_long>
+				<_long xml:lang="tr">Görünümlerin geçişi için geçen süre. Birimler milisaniye cinsindendir.</_long>
 				<default>750</default>
 				<min>0</min>
 			</option>
 			<option name="interact" type="bool">
 				<_short>Interact With Views</_short>
-				<_short xml:lang="tr">Interact With Views</_short>
+				<_short xml:lang="tr">Görünümlerle etkileşim</_short>
 				<_long>If this option is set, views will accept input in scale state. Otherwise, all events will be ignored except left click, which will activate the clicked view and terminate scale.</_long>
-				<_long xml:lang="tr">If this option is set, views will accept input in scale state. Otherwise, all events will be ignored except left click, which will activate the clicked view and terminate scale.</_long>
+				<_long xml:lang="tr">Bu seçenek ayarlanırsa, görünümler ölçek durumunda girişi kabul eder. Aksi takdirde, tıklanan görünümü etkinleştirecek ve ölçeği sonlandıracak olan sol tıklama dışında tüm olaylar göz ardı edilecektir.</_long>
 				<default>false</default>
 			</option>
 			<option name="allow_zoom" type="bool">
 				<_short>Allow Zoomed Views</_short>
-				<_short xml:lang="tr">Allow Zoomed Views</_short>
+				<_short xml:lang="tr">Yakınlaştırılmış görünümlere izin ver</_short>
 				<_long>Whether scaled views can have a size larger than their original size.</_long>
-				<_long xml:lang="tr">Whether scaled views can have a size larger than their original size.</_long>
+				<_long xml:lang="tr">Ölçeklendirilmiş görünümlerin orijinal boyutlarından daha büyük bir boyuta sahip olup olmayacağı.</_long>
 				<default>false</default>
 			</option>
 			<option name="middle_click_close" type="bool">
 				<_short>Close views with middle click</_short>
-				<_short xml:lang="tr">Close views with middle click</_short>
+				<_short xml:lang="tr">Görünümleri orta tıklamayla kapatın</_short>
 				<_long>Use the middle mouse button to close views in the scale state. Only applies if interactive mode is not enabled.</_long>
-				<_long xml:lang="tr">Use the middle mouse button to close views in the scale state. Only applies if interactive mode is not enabled.</_long>
+				<_long xml:lang="tr">Ölçek durumundaki görünümleri kapatmak için orta fare düğmesini kullanın. Yalnızca etkileşimli mod etkinleştirilmemişse geçerlidir.</_long>
 				<default>false</default>
 			</option>
 		</group>
 		<group>
 			<_short>Appearance</_short>
+			<_short xml:lang="tr">Görünüm</_short>
 			<option name="spacing" type="int">
 				<_short>Spacing</_short>
-				<_short xml:lang="tr">Spacing</_short>
+				<_short xml:lang="tr">Aralık</_short>
 				<_long>Sets the spacing between the views.</_long>
-				<_long xml:lang="tr">Sets the spacing between the views.</_long>
+				<_long xml:lang="tr">Görünümler arasındaki boşluğu ayarlar.</_long>
 				<default>50</default>
 				<min>0</min>
 			</option>
 			<option name="inactive_alpha" type="double">
 				<_short>Inactive Opacity</_short>
-				<_short xml:lang="tr">Inactive Opacity</_short>
+				<_short xml:lang="tr">Etkin olmayan opaklık</_short>
 				<_long>Set the opacity value of the inactive windows.</_long>
-				<_long xml:lang="tr">Set the opacity value of the inactive windows.</_long>
+				<_long xml:lang="tr">Etkin olmayan pencerelerin opaklık değerini ayarlayın.</_long>
 				<default>0.75</default>
 				<precision>0.05</precision>
 				<min>0.0</min>
@@ -75,9 +76,9 @@
 			</option>
 			<option name="title_overlay" type="string">
 				<_short>Show views' title</_short>
-				<_short xml:lang="tr">Show views' title</_short>
+				<_short xml:lang="tr">Görünümlerin başlığını göster</_short>
 				<_long>Whether to display the title of each view as an overlay.</_long>
-				<_long xml:lang="tr">Whether to display the title of each view as an overlay.</_long>
+				<_long xml:lang="tr">Pencere başlıklarının görünümlerin üzerinde gösterilip gösterilmeyeceğini ayarlar.</_long>
 				<default>all</default>
 				<desc>
 					<value>never</value>
@@ -94,16 +95,16 @@
 			</option>
 			<option name="title_font_size" type="int">
 				<_short>Font size for title</_short>
-				<_short xml:lang="tr">Font size for title</_short>
+				<_short xml:lang="tr">Başlık yazı tipi büyüklüğü</_short>
 				<_long>Size of font used to display an overlay of each view's title.</_long>
-				<_long xml:lang="tr">Size of font used to display an overlay of each view's title.</_long>
+				<_long xml:lang="tr">Her görünümün başlığının yer paylaşımını görüntülemek için kullanılan yazı tipi boyutu.</_long>
 				<default>16</default>
 			</option>
 			<option name="title_position" type="string">
 				<_short>Position for title</_short>
-				<_short xml:lang="tr">Position for title</_short>
+				<_short xml:lang="tr">Başlık için konum</_short>
 				<_long>Position for overlays of views' titles when shown.</_long>
-				<_long xml:lang="tr">Position for overlays of views' titles when shown.</_long>
+				<_long xml:lang="tr">Pencerelerin başlıkları için görünüm üzerindeki konumu.</_long>
 				<default>center</default>
 				<desc>
 					<value>top</value>
@@ -120,16 +121,16 @@
 			</option>
 			<option name="bg_color" type="color">
 				<_short>Background color</_short>
-				<_short xml:lang="tr">Background color</_short>
+				<_short xml:lang="tr">Arkaplan rengi</_short>
 				<_long>Background color for title overlay text.</_long>
-				<_long xml:lang="tr">Background color for title overlay text.</_long>
+				<_long xml:lang="tr">Başlık yerleşimi metni için arka plan rengi.</_long>
 				<default>0.1 0.1 0.1 0.9</default>
 			</option>
 			<option name="text_color" type="color">
 				<_short>Text color</_short>
-				<_short xml:lang="tr">Text color</_short>
+				<_short xml:lang="tr">Yazı rengi</_short>
 				<_long>Text color for title overlay.</_long>
-				<_long xml:lang="tr">Text color for title overlay.</_long>
+				<_long xml:lang="tr">Başlık yerleşimi için metin rengi.</_long>
 				<default>0.8 0.8 0.8 1.0</default>
 			</option>
 		</group>

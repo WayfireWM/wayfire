@@ -2,51 +2,51 @@
 <wayfire>
 	<plugin name="scale-title-filter">
 		<_short>Scale Title Filter</_short>
-		<_short xml:lang="tr">Scale Title Filter</_short>
+		<_short xml:lang="tr">Başlık Filtresi Ölçeği</_short>
 		<_long>Filter the views shown by scale by typing.</_long>
-		<_long xml:lang="tr">Filter the views shown by scale by typing.</_long>
+		<_long xml:lang="tr">Yazarak ölçeğe göre gösterilen görünümleri filtreleyin.</_long>
 		<category>Utility</category>
 		<option name="case_sensitive" type="bool">
 			<_short>Case sensitive</_short>
-			<_short xml:lang="tr">Case sensitive</_short>
+			<_short xml:lang="tr">Büyük/Küçük harfe duyarlı</_short>
 			<_long>Match titles in a case sensitive way.</_long>
-			<_long xml:lang="tr">Match titles in a case sensitive way.</_long>
+			<_long xml:lang="tr">Başlıkları büyük/küçük harfe duyarlı bir şekilde eşleştirin.</_long>
 			<default>false</default>
 		</option>
 		<option name="share_filter" type="bool">
 			<_short>Share filter among outputs</_short>
-			<_short xml:lang="tr">Share filter among outputs</_short>
+			<_short xml:lang="tr">Filtreyi ekranlar arasında paylaşın</_short>
 			<_long>Whether the active filter is shared among all outputs. Set to false to filter independently on each output.</_long>
-			<_long xml:lang="tr">Whether the active filter is shared among all outputs. Set to false to filter independently on each output.</_long>
+			<_long xml:lang="tr">Aktif filtrenin tüm ekranlar arasında paylaşılıp paylaşılmadığı. Her ekranda bağımsız olarak filtrelemek için false olarak ayarlayın.</_long>
 			<default>false</default>
 		</option>
 		<option name="overlay" type="bool">
 			<_short>Show overlay</_short>
-			<_short xml:lang="tr">Show overlay</_short>
+			<_short xml:lang="tr">Yer paylaşımını göster</_short>
 			<_long>Whether the current filter value is shown as an overlay.</_long>
-			<_long xml:lang="tr">Whether the current filter value is shown as an overlay.</_long>
+			<_long xml:lang="tr">Geçerli filtre değerinin bindirme olarak gösterilip gösterilmeyeceği.</_long>
 			<default>true</default>
 		</option>
 		<option name="font_size" type="int">
 			<_short>Text font size</_short>
-			<_short xml:lang="tr">Text font size</_short>
+			<_short xml:lang="tr">Metin yazı tipi boyutu</_short>
 			<_long>Size of the text used in the overlay.</_long>
-			<_long xml:lang="tr">Size of the text used in the overlay.</_long>
+			<_long xml:lang="tr">Bindirmede kullanılan metnin boyutu.</_long>
 			<default>30</default>
 			<min>1</min>
 		</option>
 		<option name="bg_color" type="color">
 			<_short>Background color</_short>
-			<_short xml:lang="tr">Background color</_short>
+			<_short xml:lang="tr">Arkaplan rengi</_short>
 			<_long>Background color for overlay text.</_long>
-			<_long xml:lang="tr">Background color for overlay text.</_long>
+			<_long xml:lang="tr">Bindirme metni için arka plan rengi.</_long>
 			<default>0.0 0.0 0.0 0.5</default>
 		</option>
 		<option name="text_color" type="color">
 			<_short>Text color</_short>
-			<_short xml:lang="tr">Text color</_short>
+			<_short xml:lang="tr">Yazı rengi</_short>
 			<_long>Text color for overlay.</_long>
-			<_long xml:lang="tr">Text color for overlay.</_long>
+			<_long xml:lang="tr">Bindirme için metin rengi.</_long>
 			<default>0.8 0.8 0.8 0.8</default>
 		</option>
 	</plugin>

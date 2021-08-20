@@ -2,109 +2,109 @@
 <wayfire>
 	<plugin name="input">
 		<_short>Input</_short>
-		<_short xml:lang="tr">Input</_short>
+		<_short xml:lang="tr">Giriş Aygıtları</_short>
 		<_long>Input configuration.</_long>
-		<_long xml:lang="tr">Input configuration.</_long>
+		<_long xml:lang="tr">Giriş aygıtları yapılandırması.</_long>
 		<category>General</category>
 		<!-- Keyboard -->
 		<group>
 			<_short>Keyboard</_short>
-			<_short xml:lang="tr">Keyboard</_short>
+			<_short xml:lang="tr">Klavye</_short>
 			<_long>Configure the keyboard.</_long>
-			<_long xml:lang="tr">Configure the keyboard.</_long>
+			<_long xml:lang="tr">Klavyeyi yapılandırın.</_long>
 			<!-- Modifier -->
 			<option name="modifier_binding_timeout" type="int">
-				<_short>Modifier binding timeout</_short>
-				<_short xml:lang="tr">Modifier binding timeout</_short>
+				<_short>Modifier binding timeout</_short><!-- Kontrol et -->
+				<_short xml:lang="tr">Değiştirici ciltleme zaman aşımı</_short>
 				<_long>Cancels modifier actions (like `Super` for the `expo` plugin) when held for the specified timeout (in milliseconds).  Setting the value to **0** never cancels.</_long>
-				<_long xml:lang="tr">Cancels modifier actions (like `Super` for the `expo` plugin) when held for the specified timeout (in milliseconds).  Setting the value to **0** never cancels.</_long>
+				<_long xml:lang="tr">Belirtilen zaman aşımı için (milisaniyede) tutulduğunda değiştirici eylemleri (`Expo` eklentisi için) ('süper' gibi).  Setting the value to **0** never cancels.</_long>
 				<default>400</default>
 			</option>
 			<!-- Keyboard configuration -->
 			<option name="kb_repeat_delay" type="int">
 				<_short>Key repeat delay</_short>
-				<_short xml:lang="tr">Key repeat delay</_short>
+				<_short xml:lang="tr">Tuş tekrarlama gecikmesi</_short>
 				<_long>Sets the amount of time a key must be held before it starts repeating.</_long>
-				<_long xml:lang="tr">Sets the amount of time a key must be held before it starts repeating.</_long>
+				<_long xml:lang="tr">Yinelenemeden önce bir tuşa basılı tutulması gereken süreyi ayarlar.</_long>
 				<default>400</default>
 			</option>
 			<option name="kb_repeat_rate" type="int">
 				<_short>Key repeat rate</_short>
-				<_short xml:lang="tr">Key repeat rate</_short>
+				<_short xml:lang="tr">Tuş tekrarlama oranı</_short>
 				<_long>Sets the frequency of key repeats once the `input.kb_repeat_delay` has passed.</_long>
-				<_long xml:lang="tr">Sets the frequency of key repeats once the `input.kb_repeat_delay` has passed.</_long>
+				<_long xml:lang="tr">`Tuş tekrarlama gecikmesi` geçtikten sonra tuşun frekansını ayarlar.</_long>
 				<default>40</default>
 			</option>
 			<option name="kb_numlock_default_state" type="bool">
 				<_short>Numlock default state</_short>
-				<_short xml:lang="tr">Numlock default state</_short>
+				<_short xml:lang="tr">Numlock varsayılan durumu</_short>
 				<_long>Default numlock state when wayfire starts.</_long>
-				<_long xml:lang="tr">Default numlock state when wayfire starts.</_long>
+				<_long xml:lang="tr">Masaüstü başladığında Numlock varsayılan durumu.</_long>
 				<default>false</default>
 			</option>
 			<option name="kb_capslock_default_state" type="bool">
 				<_short>Capslock default state</_short>
-				<_short xml:lang="tr">Capslock default state</_short>
+				<_short xml:lang="tr">Capslock Varsayılan durumu</_short>
 				<_long>Default capslock state when wayfire starts.</_long>
-				<_long xml:lang="tr">Default capslock state when wayfire starts.</_long>
+				<_long xml:lang="tr">Masaüstü başladığında Capslock varsayılan durumu.</_long>
 				<default>false</default>
 			</option>
 			<!-- XKB configuration -->
 			<option name="xkb_layout" type="string">
 				<_short>XKB layout</_short>
-				<_short xml:lang="tr">XKB layout</_short>
+				<_short xml:lang="tr">XKB Klavye düzeni</_short>
 				<_long>Sets the layout of the keyboard, like `us` or `fr`.  Multiple layouts can be specified by separating them with commas.</_long>
-				<_long xml:lang="tr">Sets the layout of the keyboard, like `us` or `fr`.  Multiple layouts can be specified by separating them with commas.</_long>
+				<_long xml:lang="tr">Klavyenin düzenini ayarlar, `us` ya da `fr` gibi. Birden fazla düzen virgülle ayrılarak belirtilebilir.</_long>
 				<default>us</default>
 			</option>
 			<option name="xkb_model" type="string">
 				<_short>XKB model</_short>
-				<_short xml:lang="tr">XKB model</_short>
+				<_short xml:lang="tr">XKB Klavye modeli</_short>
 				<_long>Sets the model of the keyboard.  This has an influence for some extra keys your keyboard might have.</_long>
-				<_long xml:lang="tr">Sets the model of the keyboard.  This has an influence for some extra keys your keyboard might have.</_long>
+				<_long xml:lang="tr">Klavyenin modelini ayarlar. Klavyenizin sahip olabileceği bazı ekstra tuşlar için bir etkisi vardır.</_long>
 				<default></default>
 			</option>
 			<option name="xkb_options" type="string">
 				<_short>XKB options</_short>
-				<_short xml:lang="tr">XKB options</_short>
+				<_short xml:lang="tr">XKB Ayarları</_short>
 				<_long>Sets extra XKB configuration options for the keyboard.  Multiple options can be specified by separating them with commas.</_long>
-				<_long xml:lang="tr">Sets extra XKB configuration options for the keyboard.  Multiple options can be specified by separating them with commas.</_long>
+				<_long xml:lang="tr">Klavye için ekstra XKB yapılandırma seçeneklerini ayarlar. Birden fazla seçenek virgülle ayırarak belirtilebilir.</_long>
 				<default></default>
 			</option>
 			<option name="xkb_rules" type="string">
 				<_short>XKB rules</_short>
-				<_short xml:lang="tr">XKB rules</_short>
+				<_short xml:lang="tr">XKB Rolleri</_short>
 				<_long>Sets files of rules to be used for keyboard mapping composition.</_long>
-				<_long xml:lang="tr">Sets files of rules to be used for keyboard mapping composition.</_long>
+				<_long xml:lang="tr">Klavye haritalama bileşimi için kullanılacak kuralların dosyalarını ayarlar.</_long>
 				<default>evdev</default>
 			</option>
 			<option name="xkb_variant" type="string">
 				<_short>XKB variant</_short>
-				<_short xml:lang="tr">XKB variant</_short>
+				<_short xml:lang="tr">XKB varyantı</_short>
 				<_long>Sets the variant of the keyboard, like `dvorak` or `colemak`.</_long>
-				<_long xml:lang="tr">Sets the variant of the keyboard, like `dvorak` or `colemak`.</_long>
+				<_long xml:lang="tr">'Dvorak` ya da "Colemak` gibi klavyenin varyantını ayarlar.</_long>
 				<default></default>
 			</option>
 		</group>
 		<!-- Mouse -->
 		<group>
 			<_short>Mouse</_short>
-			<_short xml:lang="tr">Mouse</_short>
+			<_short xml:lang="tr">Fare</_short>
 			<_long>Configure the mouse.</_long>
-			<_long xml:lang="tr">Configure the mouse.</_long>
+			<_long xml:lang="tr">Fareyi yapılandırın.</_long>
 			<!-- libinput configuration -->
 			<option name="middle_emulation" type="bool">
 				<_short>Middle-click emulation</_short>
-				<_short xml:lang="tr">Middle-click emulation</_short>
+				<_short xml:lang="tr">Orta Tıklama Emülasyonu</_short>
 				<_long>Enables middle button emulation by hitting the left and right buttons simultaneously.</_long>
-				<_long xml:lang="tr">Enables middle button emulation by hitting the left and right buttons simultaneously.</_long>
+				<_long xml:lang="tr">Sol ve sağ düğmeleri aynı anda vurarak orta düğme emülasyonunu etkinleştirir.</_long>
 				<default>false</default>
 			</option>
 			<option name="mouse_accel_profile" type="string">
 				<_short>Mouse acceleration profile</_short>
-				<_short xml:lang="tr">Mouse acceleration profile</_short>
+				<_short xml:lang="tr">Fare ivmelenme profili</_short>
 				<_long>Sets the pointer acceleration profile.</_long>
-				<_long xml:lang="tr">Sets the pointer acceleration profile.</_long>
+				<_long xml:lang="tr">İşaretçi ivme profilini ayarlar.</_long>
 				<default>default</default>
 				<desc>
 					<value>default</value>
@@ -125,18 +125,18 @@
 			</option>
 			<option name="mouse_cursor_speed" type="double">
 				<_short>Mouse cursor speed</_short>
-				<_short xml:lang="tr">Mouse cursor speed</_short>
+				<_short xml:lang="tr">Fare imleci hızı</_short>
 				<_long>Changes the pointer acceleration.</_long>
-				<_long xml:lang="tr">Changes the pointer acceleration.</_long>
+				<_long xml:lang="tr">İşaretçi ivmesini değiştirir.</_long>
 				<default>0.0</default>
 				<min>-1.0</min>
 				<max>1.0</max>
 			</option>
 			<option name="mouse_scroll_speed" type="double">
 				<_short>Mouse scroll speed</_short>
-				<_short xml:lang="tr">Mouse scroll speed</_short>
+				<_short xml:lang="tr">Fare kaydırma hızı</_short>
 				<_long>Changes the mouse scroll factor.  Scroll speed will be scaled by the given value, which must be non-negative.</_long>
-				<_long xml:lang="tr">Changes the mouse scroll factor.  Scroll speed will be scaled by the given value, which must be non-negative.</_long>
+				<_long xml:lang="tr">Fare kaydırma faktörünü değiştirir. Kaydırma hızı için verilen değer negatif olmamalıdır.</_long>
 				<default>1.0</default>
 				<min>0.0</min>
 			</option>
@@ -144,14 +144,14 @@
 		<!-- Touchpad -->
 		<group>
 			<_short>Touchpad</_short>
-			<_short xml:lang="tr">Touchpad</_short>
+			<_short xml:lang="tr">Dokunmatik Yüzey</_short>
 			<_long>Configure the touchpad.</_long>
-			<_long xml:lang="tr">Configure the touchpad.</_long>
+			<_long xml:lang="tr">Dokunmatik yüzeyi yapılandırın.</_long>
 			<option name="touchpad_accel_profile" type="string">
 				<_short>Touchpad acceleration profile</_short>
-				<_short xml:lang="tr">Touchpad acceleration profile</_short>
+				<_short xml:lang="tr">Dokunmatik yüzey hızlanma profili</_short>
 				<_long>Sets the touchpad acceleration profile.</_long>
-				<_long xml:lang="tr">Sets the touchpad acceleration profile.</_long>
+				<_long xml:lang="tr">Dokunmatik yüzey hızlandırma profilini ayarlar.</_long>
 				<default>default</default>
 				<desc>
 					<value>default</value>
@@ -172,16 +172,16 @@
 			</option>
 			<option name="tap_to_click" type="bool">
 				<_short>Tap-to-click</_short>
-				<_short xml:lang="tr">Tap-to-click</_short>
+				<_short xml:lang="tr">Tıklamak için vur</_short>
 				<_long>Enables or disables tap-to-click.</_long>
-				<_long xml:lang="tr">Enables or disables tap-to-click.</_long>
+				<_long xml:lang="tr">'Tıklamak için vur' aktifleştirir ya da pasifleştirir.</_long>
 				<default>true</default>
 			</option>
 			<option name="click_method" type="string">
 				<_short>Click method</_short>
-				<_short xml:lang="tr">Click method</_short>
+				<_short xml:lang="tr">Tıklama yöntemi</_short>
 				<_long>Changes the click method.</_long>
-				<_long xml:lang="tr">Changes the click method.</_long>
+				<_long xml:lang="tr">Tıklama yöntemini değiştirir.</_long>
 				<default>default</default>
 				<desc>
 					<value>default</value>
@@ -202,9 +202,9 @@
 			</option>
 			<option name="scroll_method" type="string">
 				<_short>Scroll method</_short>
-				<_short xml:lang="tr">Scroll method</_short>
+				<_short xml:lang="tr">Kaydırma yöntemi</_short>
 				<_long>Changes the scroll method.</_long>
-				<_long xml:lang="tr">Changes the scroll method.</_long>
+				<_long xml:lang="tr">Kaydırma yöntemini değiştirir.</_long>
 				<default>default</default>
 				<desc>
 					<value>default</value>
@@ -229,48 +229,48 @@
 			</option>
 			<option name="disable_touchpad_while_typing" type="bool">
 				<_short>Disable touchpad while typing</_short>
-				<_short xml:lang="tr">Disable touchpad while typing</_short>
+				<_short xml:lang="tr">Yazarken dokunmatik yüzeyi devre dışı bırakın</_short>
 				<_long>Disables the touchpad while typing.</_long>
-				<_long xml:lang="tr">Disables the touchpad while typing.</_long>
+				<_long xml:lang="tr">Yazarken dokunmatik yüzeyi devre dışı bırakır.</_long>
 				<default>false</default>
 			</option>
 			<option name="disable_touchpad_while_mouse" type="bool">
 				<_short>Disable touchpad while using the mouse</_short>
-				<_short xml:lang="tr">Disable touchpad while using the mouse</_short>
+				<_short xml:lang="tr">Fareyi kullanırken dokunmatik yüzeyi devre dışı bırakın</_short>
 				<_long>Disables the touchpad while using the mouse.</_long>
-				<_long xml:lang="tr">Disables the touchpad while using the mouse.</_long>
+				<_long xml:lang="tr">Fareyi kullanırken dokunmatik yüzeyi devre dışı bırakır.</_long>
 				<default>false</default>
 			</option>
 			<option name="natural_scroll" type="bool">
 				<_short>Natural scroll</_short>
-				<_short xml:lang="tr">Natural scroll</_short>
+				<_short xml:lang="tr">Doğal kaydırma</_short>
 				<_long>Enables or disables natural (inverted) scrolling.</_long>
-				<_long xml:lang="tr">Enables or disables natural (inverted) scrolling.</_long>
+				<_long xml:lang="tr">Doğal (ters çevrilmiş) kaydırmayı etkinleştirir veya devre dışı bırakır.</_long>
 				<default>false</default>
 			</option>
 			<option name="touchpad_cursor_speed" type="double">
 				<_short>Touchpad cursor speed</_short>
-				<_short xml:lang="tr">Touchpad cursor speed</_short>
+				<_short xml:lang="tr">Dokunmatik yüzey işaretçi hızı</_short>
 				<_long>Changes the touchpad acceleration.</_long>
-				<_long xml:lang="tr">Changes the touchpad acceleration.</_long>
+				<_long xml:lang="tr">Dokunmatik yüzey hızını değiştirir.</_long>
 				<default>0.0</default>
 				<min>-1.0</min>
 				<max>1.0</max>
 			</option>
 			<option name="gesture_sensitivity" type="double">
 				<_short>Touchscreen gesture sensitivity</_short>
-				<_short xml:lang="tr">Touchscreen gesture sensitivity</_short>
+				<_short xml:lang="tr">Dokunmatik ekran hareket hassasiyeti</_short>
 				<_long>Change the sensitivity of the built-in gesture detection. Higher values mean that less finger movement is required to trigger the gesture.</_long>
-				<_long xml:lang="tr">Change the sensitivity of the built-in gesture detection. Higher values mean that less finger movement is required to trigger the gesture.</_long>
+				<_long xml:lang="tr">Dahili hareket algılamasının hassasiyetini değiştirin. Daha yüksek değerler, hareketi tetiklemek için daha az parmak hareketi gerektiği anlamına gelir.</_long>
 				<default>1.0</default>
 				<min>0.1</min>
 				<max>5.0</max>
 			</option>
 			<option name="touchpad_scroll_speed" type="double">
 				<_short>Touchpad scroll speed</_short>
-				<_short xml:lang="tr">Touchpad scroll speed</_short>
+				<_short xml:lang="tr">Dokunmatik yüzey kaydırma hızı</_short>
 				<_long>Changes the touchpad scroll factor.  Scroll speed will be scaled by the given value, which must be non-negative.</_long>
-				<_long xml:lang="tr">Changes the touchpad scroll factor.  Scroll speed will be scaled by the given value, which must be non-negative.</_long>
+				<_long xml:lang="tr">Dokunmatik yüzey kaydırma faktörünü değiştirir. Kaydırma hızı için verilen değer negatif olmamalıdır.</_long>
 				<default>1.0</default>
 				<min>0.0</min>
 			</option>
@@ -278,21 +278,21 @@
 		<!-- Cursor configuration -->
 		<group>
 			<_short>Cursor</_short>
-			<_short xml:lang="tr">Cursor</_short>
+			<_short xml:lang="tr">İmleç</_short>
 			<_long>Configure the cursor.</_long>
-			<_long xml:lang="tr">Configure the cursor.</_long>
+			<_long xml:lang="tr">İmleci yapılandırın.</_long>
 			<option name="cursor_theme" type="string">
 				<_short>Cursor theme</_short>
-				<_short xml:lang="tr">Cursor theme</_short>
+				<_short xml:lang="tr">İmleç teması</_short>
 				<_long>Overrides the system default `XCursor` theme.</_long>
-				<_long xml:lang="tr">Overrides the system default `XCursor` theme.</_long>
+				<_long xml:lang="tr">Sistem varsayılan `xcursor' temasını geçersiz kılar.</_long>
 				<default>default</default>
 			</option>
 			<option name="cursor_size" type="int">
 				<_short>Cursor size</_short>
-				<_short xml:lang="tr">Cursor size</_short>
+				<_short xml:lang="tr">İmleç boyutu</_short>
 				<_long>Overrides the system default `XCursor` size.</_long>
-				<_long xml:lang="tr">Overrides the system default `XCursor` size.</_long>
+				<_long xml:lang="tr">Sistem varsayılan `xcursor' boyutunu geçersiz kılar.</_long>
 				<default>24</default>
 			</option>
 		</group>

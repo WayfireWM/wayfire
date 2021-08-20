@@ -2,63 +2,63 @@
 <wayfire>
 	<plugin name="idle">
 		<_short>Idle</_short>
-		<_short xml:lang="tr">Idle</_short>
+		<_short xml:lang="tr">Ekran Koruyucu ve Güç Tasarrufu</_short>
 		<_long>A plugin for idle settings, such as the screensaver and DPMS.</_long>
-		<_long xml:lang="tr">A plugin for idle settings, such as the screensaver and DPMS.</_long>
+		<_long xml:lang="tr">Ekran Koruyucu ve Güç Tasarrufu gibi boşta ayarlar için bir eklenti.</_long>
 		<category>Desktop</category>
 		<!-- Key-bindings -->
 		<option name="toggle" type="activator">
 			<_short>Toggle</_short>
-			<_short xml:lang="tr">Toggle</_short>
+			<_short xml:lang="tr">Klavye kısayolu</_short>
 			<_long>Disables the compositor going idle with the specified activator.  Pressing again reactivates.</_long>
-			<_long xml:lang="tr">Disables the compositor going idle with the specified activator.  Pressing again reactivates.</_long>
+			<_long xml:lang="tr">Belirtilen kısayol ile ekran koruyucu işlemini devre dışı bırakır. Tekrar basmak yeniden etkinleştirir.</_long>
 			<default>none</default>
 		</option>
 		<!-- Screensaver -->
 		<option name="screensaver_timeout" type="int">
 			<_short>Screensaver timeout</_short>
-			<_short xml:lang="tr">Screensaver timeout</_short>
+			<_short xml:lang="tr">Ekran koruyucu zaman aşımı</_short>
 			<_long>Displays the screensaver after the specified seconds of inactivity.  Setting the value to **-1** disables the screensaver.</_long>
-			<_long xml:lang="tr">Displays the screensaver after the specified seconds of inactivity.  Setting the value to **-1** disables the screensaver.</_long>
+			<_long xml:lang="tr">Ekran koruyucuyu belirtilen sürede ki hareketsizlikten sonra görüntüler. Değeri **-1** olarak ayarlama ekran koruyucuyu devre dışı bırakır.</_long>
 			<default>3600</default>
 		</option>
 		<!-- DPMS -->
 		<option name="dpms_timeout" type="int">
 			<_short>DPMS timeout</_short>
-			<_short xml:lang="tr">DPMS timeout</_short>
+			<_short xml:lang="tr">Güç tasarrufu zaman aşımı</_short>
 			<_long>Enters power saving mode after the specified seconds of inactivity.  Setting the value to **-1** disables power saving.</_long>
-			<_long xml:lang="tr">Enters power saving mode after the specified seconds of inactivity.  Setting the value to **-1** disables power saving.</_long>
+			<_long xml:lang="tr">Belirtilen sürede hareketsizlikten sonra güç tasarrufu moduna girer. Değeri **-1** olarak ayarlama güç tasarrufunu devre dışı bırakır.</_long>
 			<default>-1</default>
 		</option>
 		<!-- Disable on fullscreen -->
 		<option name="disable_on_fullscreen" type="bool">
 			<_short>Disable on fullscreen</_short>
-			<_short xml:lang="tr">Disable on fullscreen</_short>
+			<_short xml:lang="tr">Tam ekranda devre dışı bırak</_short>
 			<_long>Disables idle on fullscreen.</_long>
-			<_long xml:lang="tr">Disables idle on fullscreen.</_long>
+			<_long xml:lang="tr">Tam ekranda ve sistem boştayken devre dışı bırakır.</_long>
 			<default>true</default>
 		</option>
 		<!-- Screensaver animation -->
 		<option name="cube_zoom_speed" type="int">
 			<_short>Cube zoom speed</_short>
-			<_short xml:lang="tr">Cube zoom speed</_short>
+			<_short xml:lang="tr">Küp yakınlaştırma hızı</_short>
 			<_long>Sets the zoom speed.  The speed means how long it will take from the time the screensaver starts to the time the cube reaches `idle.cube_max_zoom`.</_long>
-			<_long xml:lang="tr">Sets the zoom speed.  The speed means how long it will take from the time the screensaver starts to the time the cube reaches `idle.cube_max_zoom`.</_long>
+			<_long xml:lang="tr">Yakınlaştırma hızını ayarlar. Ekran koruyucu küpün maksimum yakınlaştırma boyutuna ne kadar sürede ulaşacağını belirtir.</_long>
 			<default>1000</default>
 		</option>
 		<option name="cube_rotate_speed" type="double">
 			<_short>Cube rotate speed</_short>
-			<_short xml:lang="tr">Cube rotate speed</_short>
+			<_short xml:lang="tr">Küp dönüş hızı</_short>
 			<_long>Sets the speed rotation of the cube.</_long>
-			<_long xml:lang="tr">Sets the speed rotation of the cube.</_long>
+			<_long xml:lang="tr">Küpün dönüş hızını ayarlar.</_long>
 			<default>1.0</default>
 			<precision>0.01</precision>
 		</option>
 		<option name="cube_max_zoom" type="double">
 			<_short>Cube max zoom</_short>
-			<_short xml:lang="tr">Cube max zoom</_short>
+			<_short xml:lang="tr">Küp maksimum yakınlaştırma</_short>
 			<_long>Sets the maximum zoom level.</_long>
-			<_long xml:lang="tr">Sets the maximum zoom level.</_long>
+			<_long xml:lang="tr">Maksimum zoom seviyesini ayarlar.</_long>
 			<default>1.5</default>
 		</option>
 	</plugin>

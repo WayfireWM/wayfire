@@ -4,20 +4,20 @@
 		<_short>Fast Switcher</_short>
 		<_short xml:lang="tr">Fast Switcher</_short>
 		<_long>A plugin to switch active window.</_long>
-		<_long xml:lang="tr">A plugin to switch active window.</_long>
+		<_long xml:lang="tr">Etkin pencereyi değiştirmek için bir eklenti.</_long>
 		<category>Window Management</category>
 		<option name="activate" type="key">
 			<_short>Next view</_short>
-			<_short xml:lang="tr">Next view</_short>
+			<_short xml:lang="tr">Bir sonraki pencere kısayolu</_short>
 			<_long>Activates fast switcher with the specified key, moving to the next view.</_long>
-			<_long xml:lang="tr">Activates fast switcher with the specified key, moving to the next view.</_long>
+			<_long xml:lang="tr">Bir sonraki pencereye geçerek, belirtilen anahtarla hızlı anahtarlayıcıyı etkinleştirir.</_long>
 			<default>&lt;alt&gt; KEY_ESC</default>
 		</option>
 		<option name="activate_backward" type="key">
 			<_short>Previous view</_short>
-			<_short xml:lang="tr">Previous view</_short>
+			<_short xml:lang="tr">Bir önceki pencere kısayolu</_short>
 			<_long>Activates fast switcher with the specified key, moving to the previous view.</_long>
-			<_long xml:lang="tr">Activates fast switcher with the specified key, moving to the previous view.</_long>
+			<_long xml:lang="tr">Bir önceki pencereye geçerek, belirtilen anahtarla hızlı anahtarlayıcıyı etkinleştirir.</_long>
 			<default>&lt;alt&gt; &lt;shift&gt; KEY_ESC</default>
 		</option>
 	</plugin>
