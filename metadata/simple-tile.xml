@@ -2,100 +2,100 @@
 <wayfire>
 	<plugin name="simple-tile">
 		<_short>Simple Tile</_short>
-		<_short xml:lang="tr">Simple Tile</_short>
+		<_short xml:lang="tr">Basit Pencere Döşeme</_short>
 		<_long>A plugin which provides some tiling features, inspired by Sway.  The plugin is meant to contain only the basics.</_long>
-		<_long xml:lang="tr">A plugin which provides some tiling features, inspired by Sway.  The plugin is meant to contain only the basics.</_long>
+		<_long xml:lang="tr">Sway'den ilham alan bazı döşeme özellikleri sağlayan bir eklenti. Eklentinin yalnızca temel bilgileri içermesi amaçlanmıştır.</_long>
 		<category>Window Management</category>
 		<option name="tile_by_default" type="string">
 			<_short>Tile enabled for specified window types</_short>
-			<_short xml:lang="tr">Tile enabled for specified window types</_short>
+			<_short xml:lang="tr">Belirtilen pencere türleri için döşemeyi etkinleştir</_short>
 			<_long>Enables tiling for windows matching the specified criteria.</_long>
-			<_long xml:lang="tr">Enables tiling for windows matching the specified criteria.</_long>
+			<_long xml:lang="tr">Belirtilen kriterlere uyan pencereler için döşemeyi etkinleştirir.</_long>
 			<default>all</default>
 		</option>
 		<option name="keep_fullscreen_on_adjacent" type="bool">
 			<_short>Keep fullscreen on adjacent</_short>
-			<_short xml:lang="tr">Keep fullscreen on adjacent</_short>
+			<_short xml:lang="tr">Tam ekranı bitişikte tut</_short>
 			<_long>Specifies whether to keep fullscreen state when changing the focus.  If **true**, the next focused window will also get fullscreen.  If **false**, leaves fullscreen.</_long>
-			<_long xml:lang="tr">Specifies whether to keep fullscreen state when changing the focus.  If **true**, the next focused window will also get fullscreen.  If **false**, leaves fullscreen.</_long>
+			<_long xml:lang="tr">Odağı değiştirirken tam ekran durumunun korunup korunmayacağını belirtir. **True** ise, bir sonraki odaklanılan pencere de tam ekran olacaktır. **false** ise, tam ekrandan çıkar.</_long>
 			<default>true</default>
 		</option>
 		<!-- Key-bindings -->
 		<option name="button_move" type="button">
 			<_short>Button move</_short>
-			<_short xml:lang="tr">Button move</_short>
+			<_short xml:lang="tr">Taşıma kısayolu</_short>
 			<_long>When the specified button is held down, you can drag and drop tiled windows to reorder them and to change the tiling direction.</_long>
-			<_long xml:lang="tr">When the specified button is held down, you can drag and drop tiled windows to reorder them and to change the tiling direction.</_long>
+			<_long xml:lang="tr">Belirtilen kısayol basılı tutulduğunda, döşenen pencereleri yeniden sıralamak ve döşeme yönünü değiştirmek için sürükleyip bırakabilirsiniz.</_long>
 			<default>&lt;super&gt; BTN_LEFT</default>
 		</option>
 		<option name="button_resize" type="button">
 			<_short>Button resize</_short>
-			<_short xml:lang="tr">Button resize</_short>
+			<_short xml:lang="tr">Yeniden boyutlandırma kısayolu</_short>
 			<_long>When the specified button is held down, you can drag tiled windows to resize them.</_long>
-			<_long xml:lang="tr">When the specified button is held down, you can drag tiled windows to resize them.</_long>
+			<_long xml:lang="tr">Belirtilen kısayol basılı tutulduğunda, yeniden boyutlandırmak için döşenmiş pencereleri sürükleyebilirsiniz.</_long>
 			<default>&lt;super&gt; BTN_RIGHT</default>
 		</option>
 		<option name="key_toggle" type="key">
 			<_short>Key toggle</_short>
-			<_short xml:lang="tr">Key toggle</_short>
+			<_short xml:lang="tr">Döşemeyi değiştir</_short>
 			<_long>Toggles tiling mode with the specified key.</_long>
-			<_long xml:lang="tr">Toggles tiling mode with the specified key.</_long>
+			<_long xml:lang="tr">Belirtilen kısayolla döşeme modunu değiştirir.</_long>
 			<default>&lt;super&gt; KEY_T</default>
 		</option>
 		<option name="key_focus_left" type="key">
 			<_short>Key focus left</_short>
-			<_short xml:lang="tr">Key focus left</_short>
+			<_short xml:lang="tr">Sola odaklama kısayolu</_short>
 			<_long>Moves focus to the window left with the specified key.</_long>
-			<_long xml:lang="tr">Moves focus to the window left with the specified key.</_long>
+			<_long xml:lang="tr">Odağı belirtilen kısayolla soldaki pencereye taşır.</_long>
 			<default>&lt;super&gt; KEY_H</default>
 		</option>
 		<option name="key_focus_right" type="key">
 			<_short>Key focus right</_short>
-			<_short xml:lang="tr">Key focus right</_short>
+			<_short xml:lang="tr">Sağa odaklanma kısayolu</_short>
 			<_long>Moves focus to the window right with the specified key.</_long>
-			<_long xml:lang="tr">Moves focus to the window right with the specified key.</_long>
+			<_long xml:lang="tr">Odağı belirtilen kısayolla sağdaki pencereye taşır.</_long>
 			<default>&lt;super&gt; KEY_L</default>
 		</option>
 		<option name="key_focus_above" type="key">
 			<_short>Key focus above</_short>
-			<_short xml:lang="tr">Key focus above</_short>
+			<_short xml:lang="tr">Yukarı odaklama kısayolu</_short>
 			<_long>Moves focus to the window above with the specified key.</_long>
-			<_long xml:lang="tr">Moves focus to the window above with the specified key.</_long>
+			<_long xml:lang="tr">Odağı belirtilen kısayolla yukarıdaki pencereye taşır.</_long>
 			<default>&lt;super&gt; KEY_K</default>
 		</option>
 		<option name="key_focus_below" type="key">
 			<_short>Key focus below</_short>
-			<_short xml:lang="tr">Key focus below</_short>
+			<_short xml:lang="tr">Aşağı odaklma kısayolu</_short>
 			<_long>Moves focus to the window below with the specified key.</_long>
-			<_long xml:lang="tr">Moves focus to the window below with the specified key.</_long>
+			<_long xml:lang="tr">Odağı belirtilen kısayolla aşağıdaki pencereye taşır.</_long>
 			<default>&lt;super&gt; KEY_J</default>
 		</option>
     <option name="inner_gap_size" type="int">
       <_short>Inner gap size</_short>
-	  <_short xml:lang="tr">Inner gap size</_short>
+	  <_short xml:lang="tr">İç boşluk boyutu</_short>
       <_long>Number of pixels to shrink of a view when it has a neighbor in a given direction.</_long>
-	  <_long xml:lang="tr">Number of pixels to shrink of a view when it has a neighbor in a given direction.</_long>
+	  <_long xml:lang="tr">Belirli bir yönde komşusu olduğunda bir görünümün küçültülecek piksel sayısı.</_long>
       <default>5</default>
     </option>
     <option name="outer_horiz_gap_size" type="int">
       <_short>Outer horizontal gap size</_short>
-	  <_short xml:lang="tr">Outer horizontal gap size</_short>
+	  <_short xml:lang="tr">Dış yatay boşluk boyutu</_short>
       <_long>Number of pixels to shrink of a view when it has no neighbor on the left or on the right.</_long>
-	  <_long xml:lang="tr">Number of pixels to shrink of a view when it has no neighbor on the left or on the right.</_long>
+	  <_long xml:lang="tr">Bir görünümün solunda veya sağında komşusu olmadığında küçültülecek piksel sayısı.</_long>
       <default>0</default>
     </option>
     <option name="outer_vert_gap_size" type="int">
       <_short>Outer vertical gap size</_short>
-	  <_short xml:lang="tr">Outer vertical gap size</_short>
+	  <_short xml:lang="tr">Dış dikey boşluk boyutu</_short>
       <_long>Number of pixels to shrink of a view when it has no neighbor above or below.</_long>
 	  <_long xml:lang="tr">Number of pixels to shrink of a view when it has no neighbor above or below.</_long>
       <default>0</default>
     </option>
     <option name="animation_duration" type="int">
       <_short>Resize animation duration</_short>
-	  <_short xml:lang="tr">Resize animation duration</_short>
+	  <_short xml:lang="tr">Yeniden boyutlandırma animasyon süresi</_short>
       <_long>The duration of the crossfade animation in situations where a tiled view's geometry changes.</_long>
-	  <_long xml:lang="tr">The duration of the crossfade animation in situations where a tiled view's geometry changes.</_long>
+	  <_long xml:lang="tr">Döşenmiş görünüm geometrisinin değiştiği durumlarda çapraz geçiş animasyonunun süresi.</_long>
       <default>0</default>
       <min>0</min>
     </option>

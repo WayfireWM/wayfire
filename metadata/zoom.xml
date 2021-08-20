@@ -2,37 +2,37 @@
 <wayfire>
 	<plugin name="zoom">
 		<_short>Zoom</_short>
-		<_short xml:lang="tr">Zoom</_short>
+		<_short xml:lang="tr">Çalışma Alanı Yakınlaştırma</_short>
 		<_long>A plugin to zoom in the desktop with the mouse.</_long>
-		<_long xml:lang="tr">A plugin to zoom in the desktop with the mouse.</_long>
+		<_long xml:lang="tr">Fare ile masaüstünü yakınlaştırmak için bir eklenti.</_long>
 		<category>Accessibility</category>
 		<option name="modifier" type="key">
 			<_short>Zoom in the desktop by scrolling with modifier</_short>
-			<_short xml:lang="tr">Zoom in the desktop by scrolling with modifier</_short>
+			<_short xml:lang="tr">Kısayol ile kaydırarak masaüstünü yakınlaştırın</_short>
 			<_long>Scrolls with the specified modifier to zoom in and out.</_long>
-			<_long xml:lang="tr">Scrolls with the specified modifier to zoom in and out.</_long>
+			<_long xml:lang="tr">Yakınlaştırmak ve uzaklaştırmak için belirtilen kısayol ile kaydırır.</_long>
 			<default>&lt;super&gt;</default>
 		</option>
 		<option name="speed" type="double">
 			<_short>Speed</_short>
-			<_short xml:lang="tr">Speed</_short>
+			<_short xml:lang="tr">Hız</_short>
 			<_long>Sets the speed factor for zooming.</_long>
-			<_long xml:lang="tr">Sets the speed factor for zooming.</_long>
+			<_long xml:lang="tr">Yakınlaştırma için hız faktörünü ayarlar.</_long>
 			<default>0.01</default>
 			<precision>0.001</precision>
 		</option>
 		<option name="smoothing_duration" type="int">
 			<_short>Smoothing duration</_short>
-			<_short xml:lang="tr">Smoothing duration</_short>
+			<_short xml:lang="tr">Yumuşatma süresi</_short>
 			<_long>Sets the smoothing duration in milliseconds.</_long>
-			<_long xml:lang="tr">Sets the smoothing duration in milliseconds.</_long>
+			<_long xml:lang="tr">Yumuşatma süresini milisaniye cinsinden ayarlar.</_long>
 			<default>300</default>
 		</option>
 		<option name="interpolation_method" type="int">
 			<_short>Interpolation method</_short>
-			<_short xml:lang="tr">Interpolation method</_short>
+			<_short xml:lang="tr">Enterpolasyon yöntemi</_short>
 			<_long>Sets the pixel interpolation method to use.</_long>
-			<_long xml:lang="tr">Sets the pixel interpolation method to use.</_long>
+			<_long xml:lang="tr">Kullanılacak piksel enterpolasyon yöntemini ayarlar.</_long>
 			<default>0</default>
 			<min>0</min>
 			<max>1</max>

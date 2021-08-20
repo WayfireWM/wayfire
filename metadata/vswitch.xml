@@ -2,160 +2,160 @@
 <wayfire>
 	<plugin name="vswitch">
 		<_short>Viewport Switcher</_short>
-		<_short xml:lang="tr">Viewport Switcher</_short>
+		<_short xml:lang="tr">Çalışma Alanı Değiştiricisi</_short>
 		<_long>A plugin to switch workspaces in a grid.</_long>
-		<_long xml:lang="tr">A plugin to switch workspaces in a grid.</_long>
+		<_long xml:lang="tr">Bir ızgaradaki çalışma alanlarını değiştirmek için bir eklenti.</_long>
 		<category>Desktop</category>
 		<option name="binding_left" type="activator">
 			<_short>Left</_short>
-			<_short xml:lang="tr">Left</_short>
+			<_short xml:lang="tr">Sola geç</_short>
 			<_long>Switches to workspace left with the specified activator.</_long>
-			<_long xml:lang="tr">Switches to workspace left with the specified activator.</_long>
+			<_long xml:lang="tr">Belirtilen kısayol ile solda ki çalışma alanına geçiş yapar.</_long>
 			<default>&lt;super&gt; &lt;alt&gt; KEY_LEFT</default>
 		</option>
 		<option name="binding_right" type="activator">
 			<_short>Right</_short>
-			<_short xml:lang="tr">Right</_short>
+			<_short xml:lang="tr">Sağa geç</_short>
 			<_long>Switches to workspace right with the specified activator.</_long>
-			<_long xml:lang="tr">Switches to workspace right with the specified activator.</_long>
+			<_long xml:lang="tr">Belirtilen kısayol ile sağda ki çalışma alanına geçiş yapar.</_long>
 			<default>&lt;super&gt; &lt;alt&gt; KEY_RIGHT</default>
 		</option>
 		<option name="binding_up" type="activator">
 			<_short>Up</_short>
-			<_short xml:lang="tr">Up</_short>
+			<_short xml:lang="tr">Üste geç</_short>
 			<_long>Switches to workspace up with the specified activator.</_long>
-			<_long xml:lang="tr">Switches to workspace up with the specified activator.</_long>
+			<_long xml:lang="tr">Belirtilen kısayol ile üstte ki çalışma alanına geçiş yapar.</_long>
 			<default>&lt;super&gt; &lt;alt&gt; KEY_UP</default>
 		</option>
 		<option name="binding_down" type="activator">
 			<_short>Down</_short>
-			<_short xml:lang="tr">Down</_short>
+			<_short xml:lang="tr">Alta geç</_short>
 			<_long>Switches to workspace down with the specified activator.</_long>
-			<_long xml:lang="tr">Switches to workspace down with the specified activator.</_long>
+			<_long xml:lang="tr">Belirtilen kısayol ile altta ki çalışma alanına geçiş yapar.</_long>
 			<default>&lt;super&gt; &lt;alt&gt; KEY_DOWN</default>
 		</option>
 		<option name="with_win_left" type="activator">
 			<_short>Left with window</_short>
-			<_short xml:lang="tr">Left with window</_short>
+			<_short xml:lang="tr">Sola aktif pencere ile geç</_short>
 			<_long>Switches to workspace left with the focused window with the specified activator.</_long>
-			<_long xml:lang="tr">Switches to workspace left with the focused window with the specified activator.</_long>
+			<_long xml:lang="tr">Belirtilen kısayol ile sol çalışma alanına pencere ile geçiş yapar.</_long>
 			<default>&lt;super&gt; &lt;alt&gt; &lt;shift&gt; KEY_LEFT</default>
 		</option>
 		<option name="with_win_right" type="activator">
 			<_short>Right with window</_short>
-			<_short xml:lang="tr">Right with window</_short>
+			<_short xml:lang="tr">Sağa aktif pencere ile geç</_short>
 			<_long>Switches to workspace right with the focused window with the specified activator.</_long>
-			<_long xml:lang="tr">Switches to workspace right with the focused window with the specified activator.</_long>
+			<_long xml:lang="tr">Belirtilen kısayol ile sağ çalışma alanına pencere ile geçiş yapar.</_long>
 			<default>&lt;super&gt; &lt;alt&gt; &lt;shift&gt; KEY_RIGHT</default>
 		</option>
 		<option name="with_win_up" type="activator">
 			<_short>Up with window</_short>
-			<_short xml:lang="tr">Up with window</_short>
+			<_short xml:lang="tr">Üste aktif pencere ile geç</_short>
 			<_long>Switches to workspace up with the focused window with the specified activator.</_long>
-			<_long xml:lang="tr">Switches to workspace up with the focused window with the specified activator.</_long>
+			<_long xml:lang="tr">Belirtilen kısayol ile üst çalışma alanına pencere ile geçiş yapar.</_long>
 			<default>&lt;super&gt; &lt;alt&gt; &lt;shift&gt; KEY_UP</default>
 		</option>
 		<option name="with_win_down" type="activator">
 			<_short>Down with window</_short>
-			<_short xml:lang="tr">Down with window</_short>
+			<_short xml:lang="tr">Alta aktif pencere ile geç</_short>
 			<_long>Switches to workspace down with the focused window with the specified activator.</_long>
-			<_long xml:lang="tr">Switches to workspace down with the focused window with the specified activator.</_long>
+			<_long xml:lang="tr">Belirtilen kısayol ile alt çalışma alanına pencere ile geçiş yapar.</_long>
 			<default></default>
 		</option>
 		<option name="send_win_left" type="activator">
 			<_short>Send window to the left</_short>
-			<_short xml:lang="tr">Send window to the left</_short>
+			<_short xml:lang="tr">Aktif pencereyi sola gönder</_short>
 			<_long>Send the focused window to the workspace on the left.</_long>
-			<_long xml:lang="tr">Send the focused window to the workspace on the left.</_long>
+			<_long xml:lang="tr">Aktif pencereyi sol çalışma alanına gönderir.</_long>
 			<default></default>
 		</option>
 		<option name="send_win_right" type="activator">
 			<_short>Send window to the right</_short>
-			<_short xml:lang="tr">Send window to the right</_short>
+			<_short xml:lang="tr">Aktif pencereyi sağa gönder</_short>
 			<_long>Send the focused window to the workspace on the right.</_long>
-			<_long xml:lang="tr">Send the focused window to the workspace on the right.</_long>
+			<_long xml:lang="tr">Aktif pencereyi sağ çalışma alanına gönderir.</_long>
 			<default></default>
 		</option>
 		<option name="send_win_up" type="activator">
 			<_short>Send window above</_short>
-			<_short xml:lang="tr">Send window above</_short>
+			<_short xml:lang="tr">Aktif pencereyi üste gönder</_short>
 			<_long>Send the focused window to the workspace above.</_long>
-			<_long xml:lang="tr">Send the focused window to the workspace above.</_long>
+			<_long xml:lang="tr">Aktif pencereyi üst çalışma alanına gönderir.</_long>
 			<default></default>
 		</option>
 		<option name="send_win_down" type="activator">
 			<_short>Send window below</_short>
-			<_short xml:lang="tr">Send window below</_short>
+			<_short xml:lang="tr">Aktif pencereyi alta gönder</_short>
 			<_long>Send the focused window to the workspace below.</_long>
-			<_long xml:lang="tr">Send the focused window to the workspace below.</_long>
+			<_long xml:lang="tr">Aktif pencereyi altta ki çalışma alanına gönderir.</_long>
 			<default></default>
 		</option>
 
 		<option name="workspace_bindings" type="dynamic-list">
 			<_short>Go-To-Workspace bindings</_short>
-			<_short xml:lang="tr">Go-To-Workspace bindings</_short>
+			<_short xml:lang="tr">Çalışma alanına git</_short>
 			<_long>Go-To-Workspace bindings</_long>
-			<_long xml:lang="tr">Go-To-Workspace bindings</_long>
+			<_long xml:lang="tr">Çalışma alanına git</_long>
 			<entry prefix="binding_" type="activator">
 				<_short>Binding for workspace N</_short>
-				<_short xml:lang="tr">Binding for workspace N</_short>
+				<_short xml:lang="tr">Çalışma alanı kısayolu N</_short>
 				<_long>Sets the binding to go to workspace N.</_long>
-				<_long xml:lang="tr">Sets the binding to go to workspace N.</_long>
+				<_long xml:lang="tr">N. Çalışma alanına gitmek için kısayolu belirtir.</_long>
 			</entry>
 		</option>
 
 		<option name="workspace_bindings_win" type="dynamic-list">
 			<_short>Go-To-Workspace with window bindings</_short>
-			<_short xml:lang="tr">Go-To-Workspace with window bindings</_short>
+			<_short xml:lang="tr">Çalışma alanına pencere ile gitme kısayolu</_short>
 			<_long>Go-To-Workspace with window bindings</_long>
-			<_long xml:lang="tr">Go-To-Workspace with window bindings</_long>
+			<_long xml:lang="tr">Çalışma alanına pencere ile gitme kısayolu</_long>
 			<entry prefix="with_win_" type="activator">
 				<_short>Binding for workspace N</_short>
-				<_short xml:lang="tr">Binding for workspace N</_short>
+				<_short xml:lang="tr">N. çalışma alanı kısayolu</_short>
 				<_long>Sets the binding to go to workspace N with currently focused window.</_long>
-				<_long xml:lang="tr">Sets the binding to go to workspace N with currently focused window.</_long>
+				<_long xml:lang="tr">Şu anda odaklanmış pencereyle N. çalışma alanına gitmek için kısayolu ayarlar.</_long>
 			</entry>
 		</option>
 
 		<option name="bindings_win" type="dynamic-list">
 			<_short>Go-To-Workspace with window bindings</_short>
-			<_short xml:lang="tr">Go-To-Workspace with window bindings</_short>
+			<_short xml:lang="tr">Pencere kısayolu ile çalışma alanına git</_short>
 			<_long>Go-To-Workspace with window bindings</_long>
-			<_long xml:lang="tr">Go-To-Workspace with window bindings</_long>
+			<_long xml:lang="tr">Pencere kısayolu ile çalışma alanına git.</_long>
 			<entry prefix="send_win_" type="activator">
 				<_short>Move window to workspace N</_short>
-				<_short xml:lang="tr">Move window to workspace N</_short>
+				<_short xml:lang="tr">Pencereyi N. çalışma alanına taşı</_short>
 				<_long>Sets the binding to move focused window to workspace N.</_long>
-				<_long xml:lang="tr">Sets the binding to move focused window to workspace N.</_long>
+				<_long xml:lang="tr">Odaklanılmış pencereyi N. çalışma alanına taşıma için kısayolu ayarlar.</_long>
 			</entry>
 		</option>
 
 		<option name="duration" type="int">
 			<_short>Duration</_short>
-			<_short xml:lang="tr">Duration</_short>
+			<_short xml:lang="tr">Süre</_short>
 			<_long>Sets the duration of the workspace switching animation in milliseconds.</_long>
-			<_long xml:lang="tr">Sets the duration of the workspace switching animation in milliseconds.</_long>
+			<_long xml:lang="tr">Çalışma alanı değiştirme animasyonunun süresini milisaniye olarak ayarlar.</_long>
 			<default>300</default>
 		</option>
 		<option name="gap" type="int">
 			<_short>Gap size</_short>
-			<_short xml:lang="tr">Gap size</_short>
+			<_short xml:lang="tr">Boşluk boyutu</_short>
 			<_long>Sets the gap between workspaces when animating the transition between them.</_long>
-			<_long xml:lang="tr">Sets the gap between workspaces when animating the transition between them.</_long>
+			<_long xml:lang="tr">Çalışma alanları arasındaki geçiş animasyonu sırasında aralarındaki boşluğu ayarlar.</_long>
 			<default>20</default>
 		</option>
 		<option name="background" type="color">
 			<_short>Background color</_short>
-			<_short xml:lang="tr">Background color</_short>
+			<_short xml:lang="tr">Arkaplan rengi</_short>
 			<_long>Sets the background color of gaps.</_long>
-			<_long xml:lang="tr">Sets the background color of gaps.</_long>
+			<_long xml:lang="tr">Boşluktaki arkaplan rengini ayarlar.</_long>
 			<default>0.1 0.1 0.1 1.0</default>
 		</option>
 		<option name="wraparound" type="bool">
 			<_short>Wraparound</_short>
-			<_short xml:lang="tr">Wraparound</_short>
+			<_short xml:lang="tr">Çalışma alanı etrafını sar</_short>
 			<_long>Whether to wrap around when at the edge of the workspace grid.</_long>
-			<_long xml:lang="tr">Whether to wrap around when at the edge of the workspace grid.</_long>
+			<_long xml:lang="tr">Çalışma alanı ızgarasının kenarındayken sarma yapılıp yapılmayacağı.</_long>
 			<default>false</default>
 		</option>
 	</plugin>

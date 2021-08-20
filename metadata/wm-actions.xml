@@ -2,50 +2,50 @@
 <wayfire>
 	<plugin name="wm-actions">
 		<_short>WM Actions</_short>
-		<_short xml:lang="tr">WM Actions</_short>
+		<_short xml:lang="tr">Pencere Yönetimi</_short>
 		<_long>A plugin which provides various window management functionalities.</_long>
-		<_long xml:lang="tr">A plugin which provides various window management functionalities.</_long>
+		<_long xml:lang="tr">Çeşitli pencere yönetimi işlevleri sağlayan bir eklenti.</_long>
 		<category>Window Management</category>
 		<option name="toggle_always_on_top" type="activator">
 			<_short>Toggle Always on Top</_short>
-			<_short xml:lang="tr">Toggle Always on Top</_short>
+			<_short xml:lang="tr">Her zaman en üstte</_short>
 			<_long>Toggle the always-on-top state of a view.</_long>
-			<_long xml:lang="tr">Toggle the always-on-top state of a view.</_long>
+			<_long xml:lang="tr">Bir pencerenin her zaman üstte durumunu değiştirin.</_long>
 			<default>disabled</default>
 		</option>
 		<option name="toggle_fullscreen" type="activator">
 			<_short>Toggle Fullscreen</_short>
-			<_short xml:lang="tr">Toggle Fullscreen</_short>
+			<_short xml:lang="tr">Ekranı kapla</_short>
 			<_long>Toggle the fullscreen state of a view.</_long>
-			<_long xml:lang="tr">Toggle the fullscreen state of a view.</_long>
+			<_long xml:lang="tr">Bir pencereyi tam ekrana geçirir.</_long>
 			<default>disabled</default>
 		</option>
 		<option name="toggle_sticky" type="activator">
 			<_short>Toggle Sticky</_short>
-			<_short xml:lang="tr">Toggle Sticky</_short>
+			<_short xml:lang="tr">Sabitleme</_short>
 			<_long>Toggle the sticky state of a view.</_long>
-			<_long xml:lang="tr">Toggle the sticky state of a view.</_long>
+			<_long xml:lang="tr">Bir pencereyi sabitlemeyi aç/kapat.</_long>
 			<default>disabled</default>
 		</option>
 		<option name="toggle_maximize" type="activator">
 			<_short>Toggle Maximize</_short>
-			<_short xml:lang="tr">Toggle Maximize</_short>
+			<_short xml:lang="tr">Tam ekrana geç</_short>
 			<_long>Toggle the maximize state of the active view.</_long>
-			<_long xml:lang="tr">Toggle the maximize state of the active view.</_long>
+			<_long xml:lang="tr">Etkin pencerenin ekranı kaplama durumunu değiştirin.</_long>
 			<default>disabled</default>
 		</option>
 		<option name="minimize" type="activator">
 			<_short>Minimize View</_short>
-			<_short xml:lang="tr">Minimize View</_short>
+			<_short xml:lang="tr">Simge durumuna geç</_short>
 			<_long>Minimize the active view.</_long>
-			<_long xml:lang="tr">Minimize the active view.</_long>
+			<_long xml:lang="tr">Aktif pencereyi simge durumuna geçirir.</_long>
 			<default>disabled</default>
 		</option>
 		<option name="toggle_showdesktop" type="activator">
 			<_short>Toggle Show Desktop</_short>
-			<_short xml:lang="tr">Toggle Show Desktop</_short>
+			<_short xml:lang="tr">Masaüstünü göster.</_short>
 			<_long>Show the desktop.</_long>
-			<_long xml:lang="tr">Show the desktop.</_long>
+			<_long xml:lang="tr">Tüm pencereleri simge durumuna küçülterek masaüstünü gösterir.</_long>
 			<default>disabled</default>
 		</option>
 	</plugin>

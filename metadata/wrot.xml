@@ -2,58 +2,58 @@
 <wayfire>
 	<plugin name="wrot">
 		<_short>Window Rotate</_short>
-		<_short xml:lang="tr">Window Rotate</_short>
+		<_short xml:lang="tr">Pencereleri Çevir</_short>
 		<_long>A plugin to rotate windows with the mouse.</_long>
-		<_long xml:lang="tr">A plugin to rotate windows with the mouse.</_long>
+		<_long xml:lang="tr">Pencereleri fare ile döndürmek için bir eklenti.</_long>
 		<category>Effects</category>
 		<option name="activate" type="button">
 			<_short>Rotate 2D</_short>
-			<_short xml:lang="tr">Rotate 2D</_short>
+			<_short xml:lang="tr">Döndür 2D</_short>
 			<_long>Rotates the window around its z-axis.</_long>
-			<_long xml:lang="tr">Rotates the window around its z-axis.</_long>
+			<_long xml:lang="tr">Pencereyi z-ekseni etrafında döndürür.</_long>
 			<default>&lt;super&gt; &lt;ctrl&gt; BTN_RIGHT</default>
 		</option>
 		<option name="activate-3d" type="button">
 			<_short>Rotate 3D</_short>
-			<_short xml:lang="tr">Rotate 3D</_short>
+			<_short xml:lang="tr">Döndür 3D</_short>
 			<_long>Rotates the window around its x and y axes..</_long>
-			<_long xml:lang="tr">Rotates the window around its x and y axes..</_long>
+			<_long xml:lang="tr">Pencereyi x ve y eksenleri etrafında döndürür.</_long>
 			<default>&lt;super&gt; &lt;shift&gt; BTN_RIGHT</default>
 		</option>
 		<option name="reset_radius" type="double">
 			<_short>Reset Radius</_short>
-			<_short xml:lang="tr">Reset Radius</_short>
+			<_short xml:lang="tr">Yarıçapı sıfırla</_short>
 			<_long>The radius of the reset area for 2D rotations. The reset area is located at the center of the view and resets the rotation.</_long>
-			<_long xml:lang="tr">The radius of the reset area for 2D rotations. The reset area is located at the center of the view and resets the rotation.</_long>
+			<_long xml:lang="tr">2D dönüşler için sıfırlama alanının yarıçapı. Sıfırlama alanı görünümün merkezinde bulunur ve dönüşü sıfırlar.</_long>
 			<default>25.0</default>
 			<min>1.0</min>
 		</option>
 		<option name="reset-one" type="key">
 			<_short>Reset Current</_short>
-			<_short xml:lang="tr">Reset Current</_short>
+			<_short xml:lang="tr">Etkin pencereyi sıfırla</_short>
 			<_long>Remove rotation from the currently focused view.</_long>
-			<_long xml:lang="tr">Remove rotation from the currently focused view.</_long>
+			<_long xml:lang="tr">Şu anda odaklanmış pencereden döndürmeyi kaldırın.</_long>
 			<default>&lt;super&gt; KEY_R</default>
 		</option>
 		<option name="reset" type="key">
 			<_short>Reset All</_short>
-			<_short xml:lang="tr">Reset All</_short>
+			<_short xml:lang="tr">Tümünü sıfırla</_short>
 			<_long>Remove rotation from all views.</_long>
-			<_long xml:lang="tr">Remove rotation from all views.</_long>
+			<_long xml:lang="tr">Tüm pencerelerin döndürmesini sıfırlar.</_long>
 			<default>&lt;super&gt; &lt;ctrl&gt; KEY_R</default>
 		</option>
 		<option name="sensitivity" type="int">
 			<_short>Sensitivity (3D)</_short>
-			<_short xml:lang="tr">Sensitivity (3D)</_short>
+			<_short xml:lang="tr">Hassasiyet (3D)</_short>
 			<_long>How quickly 3D rotations happen with mouse movements (in arminutes per pixel).</_long>
-			<_long xml:lang="tr">How quickly 3D rotations happen with mouse movements (in arminutes per pixel).</_long>
+			<_long xml:lang="tr">Fare hareketleriyle 3D döndürmelerin ne kadar hızlı gerçekleştiği (piksel başına dakika olarak).</_long>
 			<default>24</default>
 		</option>
 		<option name="invert" type="bool">
 			<_short>Invert 3D rotation directions</_short>
-			<_short xml:lang="tr">Invert 3D rotation directions</_short>
+			<_short xml:lang="tr">3D döndürme yönlerini ters çevir</_short>
 			<_long>Invert the direction of movement for 3D rotations.</_long>
-			<_long xml:lang="tr">Invert the direction of movement for 3D rotations.</_long>
+			<_long xml:lang="tr">3D döndürmeler için hareket yönünü ters çevirin.</_long>
 			<default>false</default>
 		</option>
 	</plugin>

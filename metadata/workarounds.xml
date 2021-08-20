@@ -2,15 +2,15 @@
 <wayfire>
 	<plugin name="workarounds">
 		<_short>Workarounds</_short>
-		<_short xml:lang="tr">Workarounds</_short>
+		<_short xml:lang="tr">Geçiçi Çözümler</_short>
 		<_long>Some hacks that might be required to make things work.</_long>
-		<_long xml:lang="tr">Some hacks that might be required to make things work.</_long>
+		<_long xml:lang="tr">İşlerin yürümesi için gerekli olabilecek bazı hack'ler.</_long>
 		<category>Utility</category>
 		<option name="app_id_mode" type="string">
 			<_short>Application ID mode</_short>
-			<_short xml:lang="tr">Application ID mode</_short>
+			<_short xml:lang="tr">Uygulama kimlik modu</_short>
 			<_long>Specifies the application ID mode.</_long>
-			<_long xml:lang="tr">Specifies the application ID mode.</_long>
+			<_long xml:lang="tr">Uygulama kimliği modunu belirtir.</_long>
 			<default>stock</default>
 			<desc>
 				<value>stock</value>
@@ -27,24 +27,26 @@
 		</option>
 		<option name="all_dialogs_modal" type="bool">
 			<_short>Make all dialogs modal</_short>
-			<_short xml:lang="tr">Make all dialogs modal</_short>
+			<_short xml:lang="tr">Tüm diyalogları kalıcı yap</_short>
 			<_long>If false, the main window can be focused even if it has a dialog. The dialog is nevertheless kept on top of the main window. Kwin defaults to false.</_long>
-			<_long xml:lang="tr">If false, the main window can be focused even if it has a dialog. The dialog is nevertheless kept on top of the main window. Kwin defaults to false.</_long>
+			<_long xml:lang="tr">False ise, ana pencerede bir diyalog olsa bile odaklanılabilir. Yine de diyalog ana pencerenin üstünde tutulur. Kwin varsayılanı false olarak ayarlar. </_long>
 			<default>true</default>
 		</option>
     <option name="dynamic_repaint_delay" type="bool">
       <_short>Allow dynamic repaint delay</_short>
-	  <_short xml:lang="tr">Allow dynamic repaint delay</_short>
+	  <_short xml:lang="tr">Dinamik yeniden boyama gecikmesine izin ver</_short>
       <_long>If true, allows Wayfire to dynamically recalculate its max_render_time, i.e allow render time higher than max_render_time.</_long>
+	  <!-- KONTROL ET -->
 	  <_long xml:lang="tr">If true, allows Wayfire to dynamically recalculate its max_render_time, i.e allow render time higher than max_render_time.</_long>
       <default>false</default>
     </option>
     <option name="use_external_output_configuration" type="bool">
       <_short>Use external output configuration instead of Wayfire's own.</_short>
-	  <_short xml:lang="tr">Use external output configuration instead of Wayfire's own.</_short>
+	  <_short xml:lang="tr">Wayfire'ın kendi yapılandırması yerine harici çıktı yapılandırmasını kullanın.</_short>
       <_long>If true, Wayfire will not handle any configuration options for outputs in the config file once an
       external daemon like https://github.com/emersion/kanshi sets the output configuration via the wlr-output-management protocol.
       Exceptions are made for options not available via wlr-output-management, like output mirroring and custom modelines.</_long>
+	  <!-- KONTROL ET -->
 	  <_long xml:lang="tr">If true, Wayfire will not handle any configuration options for outputs in the config file once an
       external daemon like https://github.com/emersion/kanshi sets the output configuration via the wlr-output-management protocol.
       Exceptions are made for options not available via wlr-output-management, like output mirroring and custom modelines.</_long>
