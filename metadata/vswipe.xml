@@ -2,7 +2,7 @@
 <wayfire>
 	<plugin name="vswipe">
 		<_short>Viewport Swipe</_short>
-		<_short xml:lang="tr">Çalışma Alanı Geçişi(</_short>
+		<_short xml:lang="tr">Çalışma Alanı Geçişi</_short>
 		<_long>A plugin to swipe workspaces in a grid.</_long>
 		<_long xml:lang="tr">Bir ızgaradaki çalışma alanlarını kaydırmak için bir eklenti.</_long>
 		<category>Desktop</category>

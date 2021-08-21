@@ -10,7 +10,7 @@
 			<_short>Activate</_short>
 			<_short xml:lang="tr">Klavye kısayolu</_short>
 			<_long>When the specified button is held down, you can drag windows to move them.</_long>
-			<_long xml:lang="tr">Belirtilen tuş basıldığında, pencereleri sürükleyebilirsiniz.</_long>
+			<_long xml:lang="tr">Belirtilen kısayol basıldığında, pencereleri sürükleyebilirsiniz.</_long>
 			<default>&lt;super&gt; BTN_LEFT</default>
 		</option>
 		<!-- "Aero Snap" -->
