@@ -87,7 +87,7 @@
 			<_short>Fade duration</_short>
 			<_short xml:lang="tr">Kaybolma animasyonu süresi</_short>
 			<_long>Sets the duration for the _fade_ animation in milliseconds.  Only applies for windows matched by `animate.fade_enabled_for`.</_long>
-			<_long xml:lang="tr">Milisaniye cinsinden kaybolma animasyonu için süreyi ayarlar. Sadece belirlenen pencere türleri için geçerlidir.</_long>
+			<_long xml:lang="tr">Kaybolma animasyonu için milisaniye cinsinden süreyi ayarlar. Sadece belirlenen pencere türleri için geçerlidir.</_long>
 			<default>400</default>
 		</option>
 		<!-- Zoom animation -->
@@ -102,7 +102,7 @@
 			<_short>Zoom duration</_short>
 			<_short xml:lang="tr">Yakınlaştırma animasyonu süresi</_short>
 			<_long>Sets the duration for the _zoom_ animation in milliseconds.  Only applies for windows matched by `animate.zoom_enabled_for`.</_long>
-			<_long xml:lang="tr">Milisaniye cinsinden yakınlaştırma animasyonu için süreyi ayarlar. Sadece belirtilen pencereler için geçerlidir.</_long>
+			<_long xml:lang="tr">Yakınlaştırma animasyonu için milisaniye cinsinden süreyi ayarlar. Sadece belirtilen pencereler için geçerlidir.</_long>
 			<default>500</default>
 		</option>
 		<!-- Fire animation -->
@@ -110,14 +110,14 @@
 			<_short>Fire animation enabled for specified window types</_short>
 			<_short xml:lang="tr">Belirtilen pencere türleri için yangın animasyonu etkin</_short>
 			<_long>Specifies the window types to be animated with a fire effect.</_long>
-			<_long xml:lang="tr">Yangın etkisi ile animasyonlu pencere türlerini belirtir.</_long>
+			<_long xml:lang="tr">Yangın efekti ile animasyonlu pencere türlerini belirtir.</_long>
 			<default>none</default>
 		</option>
 		<option name="fire_duration" type="int">
 			<_short>Fire duration</_short>
 			<_short xml:lang="tr">Yangın animasyonu süresi</_short>
 			<_long>Sets the duration for the _fire_ animation in milliseconds.  Only applies for windows matched by `animate.fire_enabled_for`.</_long>
-			<_long xml:lang="tr">Milisaniye cinsinden yangın animasyonu için süreyi ayarlar. Sadece belirtilen pencereler türleri için geçerlidir.</_long>
+			<_long xml:lang="tr">Yangın animasyonu için milisaniye cinsinden süreyi ayarlar. Sadece belirtilen pencereler türleri için geçerlidir.</_long>
 			<default>300</default>
 		</option>
 		<option name="fire_particles" type="int">
@@ -145,7 +145,7 @@
 			<_short>Color of the fire</_short>
 			<_short xml:lang="tr">Ateşin rengi</_short>
 			<_long>Sets the color of the fire effects, alpha is ignored</_long>
-			<_long xml:lang="tr">Yangın etkilerinin rengini ayarlar, alfa renk göz ardı edilir</_long>
+			<_long xml:lang="tr">Yangın ateşinin rengini ayarlar, alfa renk göz ardı edilir</_long>
 			<default>#b22303ff</default>
 		</option>
 	</plugin>

@@ -15,9 +15,9 @@
 			<!-- Modifier -->
 			<option name="modifier_binding_timeout" type="int">
 				<_short>Modifier binding timeout</_short><!-- Kontrol et -->
-				<_short xml:lang="tr">Değiştirici ciltleme zaman aşımı</_short>
+				<_short xml:lang="tr">Klavye kısayolları zaman aşımı</_short>
 				<_long>Cancels modifier actions (like `Super` for the `expo` plugin) when held for the specified timeout (in milliseconds).  Setting the value to **0** never cancels.</_long>
-				<_long xml:lang="tr">Belirtilen zaman aşımı için (milisaniyede) tutulduğunda değiştirici eylemleri (`Expo` eklentisi için) ('süper' gibi).  Setting the value to **0** never cancels.</_long>
+				<_long xml:lang="tr">Klavye kısayol eylemleri basıldığında milisaniye cinsinden zaman aşımı için (`Expo` eklentisi için 'süper' gibi). Değeri **0** olarak ayarlamak hiçbir zaman iptal etmez.</_long>
 				<default>400</default>
 			</option>
 			<!-- Keyboard configuration -->

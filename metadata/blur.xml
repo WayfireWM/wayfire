@@ -11,7 +11,7 @@
 			<_short>Blur by default</_short>
 			<_short xml:lang="tr">Varsayılan olarak bulanıklık</_short>
 			<_long>Criteria for which apps to be blurred when they are opened</_long>
-			<_long xml:lang="tr">Açıldığında Uygulamaların Bulanık Olduğu Kriterler</_long>
+			<_long xml:lang="tr">Açıldığında uygulamaların bulanık olduğu kriterler</_long>
 			<default>type is "toplevel"</default>
 		</option>
 		<!-- Key-bindings -->
@@ -19,7 +19,7 @@
 			<_short>Toggle</_short>
 			<_short xml:lang="tr">Klavye kısayolu</_short>
 			<_long>Sets the shortcut to toggle blurring for a specific window.</_long>
-			<_long xml:lang="tr">Belirli bir pencere için bulanıklaştırma için kısayolu ayarlar.</_long>
+			<_long xml:lang="tr">Belirli bir pencere için bulanıklaştırma kısayolu ayarlar.</_long>
 			<default>none</default>
 		</option>
 		<!-- Methods -->

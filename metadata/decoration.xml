@@ -39,14 +39,14 @@
 			<_short>Color when window is active</_short>
 			<_short xml:lang="tr">Pencere aktif olduğunda renk</_short>
 			<_long>Sets the color when the window is active.</_long>
-			<_long xml:lang="tr">Pencere etkin olduğunda rengi ayarlar.</_long>
+			<_long xml:lang="tr">Pencere etkin olduğunda rengini ayarlar.</_long>
 			<default>#222222aa</default>
 		</option>
 		<option name="inactive_color" type="color">
 			<_short>Color when window is inactive</_short>
 			<_short xml:lang="tr">Pencere etkin değilken renk</_short>
 			<_long>Sets the color when the window is inactive.</_long>
-			<_long xml:lang="tr">Pencere etkin değilken rengi ayarlar.</_long>
+			<_long xml:lang="tr">Pencere etkin değilken rengini ayarlar.</_long>
 			<default>#333333dd</default>
 		</option>
 		<option name="ignore_views" type="string">

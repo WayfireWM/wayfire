@@ -4,7 +4,7 @@
 		<_short>Scale</_short>
 		<_short xml:lang="tr">Ölçeklendirme</_short>
 		<_long>Show all views on screen.</_long>
-		<_long xml:lang="tr">Tüm görünümleri ekranda göster.</_long>
+		<_long xml:lang="tr">Tüm pencereleri ekranda göster.</_long>
 		<category>Accessibility</category>
 		<group>
 			<_short>Behavior</_short>
@@ -13,7 +13,7 @@
 				<_short>Toggle</_short>
 				<_short xml:lang="tr">Klavye kısayolu</_short>
 				<_long>Toggles scale with the specified activator.</_long>
-				<_long xml:lang="tr">Belirtilen kısayol ile ölçeği değiştirir.</_long>
+				<_long xml:lang="tr">Belirtilen kısayol ile pencereleri değiştirir.</_long>
 				<default>&lt;super&gt; KEY_P</default>
 			</option>
 			<option name="toggle_all" type="activator">
@@ -33,7 +33,7 @@
 			</option>
 			<option name="interact" type="bool">
 				<_short>Interact With Views</_short>
-				<_short xml:lang="tr">Görünümlerle etkileşim</_short>
+				<_short xml:lang="tr">Pencerelerle etkileşim</_short>
 				<_long>If this option is set, views will accept input in scale state. Otherwise, all events will be ignored except left click, which will activate the clicked view and terminate scale.</_long>
 				<_long xml:lang="tr">Bu seçenek ayarlanırsa, görünümler ölçek durumunda girişi kabul eder. Aksi takdirde, tıklanan görünümü etkinleştirecek ve ölçeği sonlandıracak olan sol tıklama dışında tüm olaylar göz ardı edilecektir.</_long>
 				<default>false</default>

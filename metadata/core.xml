@@ -2,51 +2,51 @@
 <wayfire>
 	<plugin name="core">
 		<_short>Core</_short>
-		<_short xml:lang="tr">Core</_short>
+		<_short xml:lang="tr">Çekirdek</_short>
 		<_long>General options.</_long>
-		<_long xml:lang="tr">General options.</_long>
+		<_long xml:lang="tr">Genel Seçenekler</_long>
 		<category>General</category>
 		<option name="plugins" type="string">
 			<_short>Plugins</_short>
-			<_short xml:lang="tr">Plugins</_short>
+			<_short xml:lang="tr">Eklentiler</_short>
 			<_long>Loads the specified plugins, space-separated list.</_long>
-			<_long xml:lang="tr">Loads the specified plugins, space-separated list.</_long>
+			<_long xml:lang="tr">Belirtilen eklentileri, boşlukla ayrılmış listeyi yükler.</_long>
 			<default>alpha animate autostart command cube decoration expo fast-switcher fisheye grid idle invert move oswitch place resize switcher vswitch window-rules wobbly wrot zoom</default>
 		</option>
 		<option name="close_top_view" type="activator">
 			<_short>Close view</_short>
-			<_short xml:lang="tr">Close view</_short>
+			<_short xml:lang="tr">Aktif pencereyi kapat</_short>
 			<_long>Closes the currently focused window with the specified key.</_long>
-			<_long xml:lang="tr">Closes the currently focused window with the specified key.</_long>
+			<_long xml:lang="tr">Belirtilen kısayolla o anda odaklanılan pencereyi kapatır.</_long>
 			<default>&lt;super&gt; KEY_Q | &lt;alt&gt; KEY_F4</default>
 		</option>
 		<!-- Horizontal/Vertical workspaces -->
 		<option name="vwidth" type="int">
 			<_short>Horizontal virtual size</_short>
-			<_short xml:lang="tr">Horizontal virtual size</_short>
+			<_short xml:lang="tr">Yatay sanal boyut</_short>
 			<_long>Sets the number of horizontal workspaces.  Currently, cannot be changed at runtime.</_long>
-			<_long xml:lang="tr">Sets the number of horizontal workspaces.  Currently, cannot be changed at runtime.</_long>
+			<_long xml:lang="tr">Yatay çalışma alanlarının sayısını ayarlar. Şu anda, çalışma zamanında değiştirilemez.</_long>
 			<default>3</default>
 		</option>
 		<option name="vheight" type="int">
 			<_short>Vertical virtual size</_short>
-			<_short xml:lang="tr">Vertical virtual size</_short>
+			<_short xml:lang="tr">Dikey sanal boyut</_short>
 			<_long>Sets the number of vertical workspaces.  Currently, cannot be changed at runtime.</_long>
-			<_long xml:lang="tr">Sets the number of vertical workspaces.  Currently, cannot be changed at runtime.</_long>
+			<_long xml:lang="tr">Dikey çalışma alanlarının sayısını ayarlar. Şu anda, çalışma zamanında değiştirilemez.</_long>
 			<default>3</default>
 		</option>
 		<option name="background_color" type="color">
 			<_short>Background color</_short>
-			<_short xml:lang="tr">Background color</_short>
+			<_short xml:lang="tr">Arkaplan rengi/_short>
 			<_long>Sets the background color of workspaces.  Visible when nothing is drawing the background.</_long>
-			<_long xml:lang="tr">Sets the background color of workspaces.  Visible when nothing is drawing the background.</_long>
+			<_long xml:lang="tr">Çalışma alanlarının arka plan rengini ayarlar. Arkaplana hiçbir şey çizilmediğinde görünür.</_long>
 			<default>0.1 0.1 0.1 1.0</default>
 		</option>
 		<option name="preferred_decoration_mode" type="string">
 			<_short>Preferred decoration mode</_short>
-			<_short xml:lang="tr">Preferred decoration mode</_short>
+			<_short xml:lang="tr">Tercih edilen dekorasyon modu</_short>
 			<_long>Sets the preferred window decoration mode.  Possible values are `client` and `server`.  `client` allows the client to draw its own decorations.</_long>
-			<_long xml:lang="tr">Sets the preferred window decoration mode.  Possible values are `client` and `server`.  `client` allows the client to draw its own decorations.</_long>
+			<_long xml:lang="tr">Tercih edilen pencere dekorasyon modunu ayarlar. Olası değerler "istemci" ve "sunucu" dur. 'istemci', istemcinin kendi dekorasyonlarını çizmesine izin verir.</_long>
 			<default>client</default>
 			<desc>
 				<value>client</value>
@@ -61,35 +61,35 @@
 			<_short>XWayland</_short>
 			<_short xml:lang="tr">XWayland</_short> <!-- DEĞİŞTİRME -->
 			<_long>Enables or disables XWayland support, which allows X11 applications to be used.</_long>
-			<_long xml:lang="tr">Enables or disables XWayland support, which allows X11 applications to be used.</_long>
+			<_long xml:lang="tr">X11 uygulamalarının kullanılmasına izin veren XWayland desteğini etkinleştirir veya devre dışı bırakır.</_long>
 			<default>true</default>
 		</option>
 		<option name="max_render_time" type="int">
 			<_short>Maximum render time</_short>
-			<_short xml:lang="tr">Maximum render time</_short>
+			<_short xml:lang="tr">Maksimum oluşturma süresi</_short>
 			<_long>Sets the compositor render delay in milliseconds, which allows applications to render with low latency.</_long>
-			<_long xml:lang="tr">Sets the compositor render delay in milliseconds, which allows applications to render with low latency.</_long>
+			<_long xml:lang="tr">Birleştirici oluşturma gecikmesini milisaniye cinsinden ayarlar, bu da uygulamaların düşük gecikmeyle oluşturmasına olanak tanır.</_long>
 			<default>-1</default>
 		</option>
 		<option name="focus_button_with_modifiers" type="bool">
 			<_short>Focus on click if keyboard modifiers are pressed</_short>
-			<_short xml:lang="tr">Focus on click if keyboard modifiers are pressed</_short>
+			<_short xml:lang="tr">Klavye değiştiricilerine basılsa bile tıklanan pencereye odaklan</_short>
 			<_long>Allow focusing the clicked view even if keyboard modifiers are pressed. Without this option, click-to-focus only works if no modifiers are pressed.</_long>
-			<_long xml:lang="tr">Allow focusing the clicked view even if keyboard modifiers are pressed. Without this option, click-to-focus only works if no modifiers are pressed.</_long>
+			<_long xml:lang="tr">Klavye değiştiricilerine basılsa bile tıklanan pencereye odaklanmaya izin verin. Bu seçenek olmadan, tıkla-odakla yalnızca hiçbir değiştiriciye basılmadığında çalışır.</_long>
 			<default>false</default>
 		</option>
 		<option name="focus_buttons" type="activator">
 			<_short>Mouse buttons to focus views</_short>
-			<_short xml:lang="tr">Mouse buttons to focus views</_short>
+			<_short xml:lang="tr">Pencereye odaklanmak için fare butonları</_short>
 			<_long>Clicking on a view with any of the mouse buttons of these will focus it.</_long>
-			<_long xml:lang="tr">Clicking on a view with any of the mouse buttons of these will focus it.</_long>
+			<_long xml:lang="tr">Bu fare düğmelerinden herhangi biriyle bir pencereye tıklamak onu odaklayacaktır.</_long>
 			<default>BTN_LEFT | BTN_MIDDLE | BTN_RIGHT</default>
 		</option>
 		<option name="focus_buttons_passthrough" type="bool">
 			<_short>Pass through buttons to client</_short>
-			<_short xml:lang="tr">Pass through buttons to client</_short>
+			<_short xml:lang="tr">Butonlarla istemciye geç</_short>
 			<_long>Whether to pass buttons through to the client when switching the focus via clicking</_long>
-			<_long xml:lang="tr">Whether to pass buttons through to the client when switching the focus via clicking</_long>
+			<_long xml:lang="tr">Tıklayarak odağı değiştirirken butonların istemciye geçip geçmeyeceği</_long>
 			<default>true</default>
 		</option>
 	</plugin>

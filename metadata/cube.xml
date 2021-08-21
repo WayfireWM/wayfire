@@ -68,7 +68,7 @@
 			<_short>Zoom</_short>
 			<_short xml:lang="tr">Yakınlaştırma</_short>
 			<_long>Sets the level of zoom out.  Setting the value to **0.0** means to not zoom out.</_long>
-			<_long xml:lang="tr">Uzaklaştırın seviyesini ayarlar. Değeri ** 0.0 ** olarak ayarlamak, uzaklaştırmamak demektir.</_long>
+			<_long xml:lang="tr">Yakınlaştırma seviyesini ayarlar. Değeri ** 0.0 ** olarak ayarlamak, yakınlaştırmak demektir.</_long>
 			<default>0.1</default>
 			<precision>0.01</precision>
 		</option>

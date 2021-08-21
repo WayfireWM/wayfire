@@ -4,7 +4,7 @@
 		<_short>Command</_short>
 		<_short xml:lang="tr">Komut</_short>
 		<_long>A plugin to bind key combo (key, button, touch) to execute shell commands.</_long>
-		<_long xml:lang="tr">Kabuk komutlarını yürütmek için anahtar combo (tuşu, düğme, dokunma) bağlamak için bir eklenti.</_long>
+		<_long xml:lang="tr">Kabuk komutlarını yürütmek için anahtar kombo (tuşu, düğme, dokunma) bağlamak için bir eklenti.</_long>
 		<category>General</category>
 		<option name="bindings" type="dynamic-list">
 			<_short>Regular bindings</_short>
@@ -22,7 +22,7 @@
 				<_short>Binding</_short>
 				<_short xml:lang="tr">Klavye kısayolu</_short>
 				<_long>Sets the triggering activator binding.</_long>
-				<_long xml:lang="tr">Tetikleyici aktivatör bağlamayı ayarlar.</_long>
+				<_long xml:lang="tr">Tetikleyici kısayol aktivatörü ayarlar.</_long>
 			</entry>
 		</option>
 

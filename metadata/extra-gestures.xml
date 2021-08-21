@@ -2,7 +2,7 @@
 <wayfire>
 	<plugin name="extra-gestures">
 		<_short>Extra Touchscreen Gestures</_short>
-		<_short xml:lang="tr">Dokunmatik ekran</_short>
+		<_short xml:lang="tr">Dokunmatik ekran jestleri</_short>
 		<_long>A plugin which provides several touchscreen gestures.</_long>
 		<_long xml:lang="tr">Birkaç dokunmatik ekran hareketleri sağlayan bir eklenti.</_long>
 		<category>Desktop</category>
