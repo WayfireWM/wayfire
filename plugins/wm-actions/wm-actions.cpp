@@ -22,6 +22,8 @@ class wayfire_wm_actions_t : public wf::plugin_interface_t
         "wm-actions/toggle_fullscreen"};
     wf::option_wrapper_t<wf::activatorbinding_t> toggle_sticky{
         "wm-actions/toggle_sticky"};
+    wf::option_wrapper_t<wf::activatorbinding_t> send_to_back{
+        "wm-actions/send_to_back"};
 
     bool toggle_keep_above(wayfire_view view)
     {
@@ -50,8 +52,8 @@ class wayfire_wm_actions_t : public wf::plugin_interface_t
     }
 
     /**
-     * Find the selected toplevel view, or nullptr if the selected
-     * view is not toplevel.
+     * Find the selected toplevel view, or nullptr if the selected view is not
+     * toplevel.
      */
     wayfire_view choose_view(wf::activator_source_t source)
     {
@@ -88,8 +90,7 @@ class wayfire_wm_actions_t : public wf::plugin_interface_t
     };
 
     /**
-     * Ensures views marked as above are still above
-     * if their output changes.
+     * Ensures views marked as above are still above if their output changes.
      */
     wf::signal_connection_t on_view_output_changed
     {[=] (wf::signal_data_t *data)
@@ -115,8 +116,8 @@ class wayfire_wm_actions_t : public wf::plugin_interface_t
     };
 
     /**
-     * Ensures views marked as above are still above
-     * if they are minimized and unminimized.
+     * Ensures views marked as above are still above if they are minimized and
+     * unminimized.
      */
     wf::signal_connection_t on_view_minimized
     {[=] (wf::signal_data_t *data)
@@ -142,8 +143,8 @@ class wayfire_wm_actions_t : public wf::plugin_interface_t
     };
 
     /**
-     * Disables show desktop if the workspace is changed or any view is
-     * attached, mapped or unminimized.
+     * Disables show desktop if the workspace is changed or any view is attached,
+     * mapped or unminimized.
      */
     wf::signal_connection_t view_attached = [this] (wf::signal_data_t *data)
     {
@@ -267,6 +268,31 @@ class wayfire_wm_actions_t : public wf::plugin_interface_t
         return true;
     };
 
+    wf::activator_callback on_send_to_back = [=] (auto ev) -> bool
+    {
+        return execute_for_selected_view(ev.source, [] (wayfire_view view)
+        {
+            auto ws    = view->get_output()->workspace->get_current_workspace();
+            auto views =
+                view->get_output()->workspace->get_views_on_workspace(ws,
+                    wf::LAYER_WORKSPACE);
+            wayfire_view bottom_view = views[views.size() - 1];
+            if (view != bottom_view)
+            {
+                // Move view to bottom by stacking it below the bottom-most view
+                view->get_output()->workspace->restack_below(view, bottom_view);
+
+                // Change focus to the last focused view on this workspace
+                views =
+                    view->get_output()->workspace->get_views_on_workspace(ws,
+                        wf::LAYER_WORKSPACE);
+                view->get_output()->focus_view(views[0], false);
+            }
+
+            return true;
+        });
+    };
+
     void disable_showdesktop()
     {
         view_attached.disconnect();
@@ -296,6 +322,7 @@ class wayfire_wm_actions_t : public wf::plugin_interface_t
         output->add_activator(toggle_above, &on_toggle_above);
         output->add_activator(toggle_fullscreen, &on_toggle_fullscreen);
         output->add_activator(toggle_sticky, &on_toggle_sticky);
+        output->add_activator(send_to_back, &on_send_to_back);
         output->connect_signal("wm-actions-toggle-above", &on_toggle_above_signal);
         output->connect_signal("view-minimized", &on_view_minimized);
         wf::get_core().connect_signal("view-moved-to-output",
@@ -319,6 +346,7 @@ class wayfire_wm_actions_t : public wf::plugin_interface_t
         output->rem_binding(&on_toggle_above);
         output->rem_binding(&on_toggle_fullscreen);
         output->rem_binding(&on_toggle_sticky);
+        output->rem_binding(&on_send_to_back);
     }
 };
 

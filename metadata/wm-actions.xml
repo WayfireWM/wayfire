@@ -34,5 +34,10 @@
 			<_long>Show the desktop.</_long>
 			<default>disabled</default>
 		</option>
+		<option name="send_to_back" type="activator">
+			<_short>Send to back</_short>
+			<_long>Send the active view to behind all other views.</_long>
+			<default>disabled</default>
+		</option>
 	</plugin>
 </wayfire>
