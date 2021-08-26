@@ -318,6 +318,7 @@ class wayfire_wm_actions_t : public wf::plugin_interface_t
         output->rem_binding(&on_toggle_maximize);
         output->rem_binding(&on_toggle_above);
         output->rem_binding(&on_toggle_fullscreen);
+        output->rem_binding(&on_toggle_sticky);
     }
 };
 
