@@ -14,6 +14,7 @@ struct pointing_device_t : public input_device_impl_t
 
     static struct config_t
     {
+        wf::option_wrapper_t<bool> left_handed_mode;
         wf::option_wrapper_t<bool> middle_emulation;
         wf::option_wrapper_t<double> mouse_cursor_speed;
         wf::option_wrapper_t<double> mouse_scroll_speed;

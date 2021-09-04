@@ -9,6 +9,7 @@ wf::pointing_device_t::pointing_device_t(wlr_input_device *dev) :
 wf::pointing_device_t::config_t wf::pointing_device_t::config;
 void wf::pointing_device_t::config_t::load()
 {
+    left_handed_mode.load_option("input/left_handed_mode");
     middle_emulation.load_option("input/middle_emulation");
 
     mouse_scroll_speed.load_option("input/mouse_scroll_speed");
@@ -59,6 +60,8 @@ void wf::pointing_device_t::update_options()
 
     auto dev = wlr_libinput_get_device_handle(get_wlr_handle());
     assert(dev);
+
+    libinput_device_config_left_handed_set(dev, config.left_handed_mode);
 
     libinput_device_config_middle_emulation_set_enabled(dev,
         config.middle_emulation ?

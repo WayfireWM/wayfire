@@ -4,6 +4,11 @@
 		<_short>Input</_short>
 		<_long>Input configuration.</_long>
 		<category>General</category>
+			<option name="left_handed_mode" type="bool">
+				<_short>Left-handed mode</_short>
+				<_long>Switches the device’s functionality to be more accommodating for left-handed users.</_long>
+				<default>false</default>
+			</option>
 		<!-- Keyboard -->
 		<group>
 			<_short>Keyboard</_short>
