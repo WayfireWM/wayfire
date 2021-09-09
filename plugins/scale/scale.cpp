@@ -1442,6 +1442,10 @@ class wayfire_scale : public wf::plugin_interface_t
         workspace_changed.disconnect();
         view_geometry_changed.disconnect();
         output->deactivate_plugin(grab_interface);
+
+        wf::stack_order_changed_signal data;
+        data.output = output;
+        wf::get_core().emit_signal("output-stack-order-changed", &data);
     }
 
     /* Utility hook setter */
