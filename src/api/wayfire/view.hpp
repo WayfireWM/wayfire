@@ -434,14 +434,10 @@ class view_interface_t : public surface_interface_t
     /**
      * A snapshot of the view is a copy of the view's contents into a
      * framebuffer. It is used to get an image of the view while it is mapped,
-     * and continue displaying it afterwards.
+     * and continue displaying it afterwards. Additionally, return the captured
+     * framebuffter
      */
-    virtual void take_snapshot();
-
-    /**
-     * Get current snapshot framebuffer taken by take_snapshot().
-     */
-    const wf::framebuffer_t& get_snapshot();
+    virtual const wf::framebuffer_t& take_snapshot();
 
     /**
      * View lifetime is managed by reference counting. To take a reference,

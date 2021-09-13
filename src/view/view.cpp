@@ -1173,11 +1173,11 @@ wf::view_transform_block_t::~view_transform_block_t()
     OpenGL::render_end();
 }
 
-void wf::view_interface_t::take_snapshot()
+const wf::framebuffer_t& wf::view_interface_t::take_snapshot()
 {
     if (!is_mapped())
     {
-        return;
+        return view_impl->offscreen_buffer;
     }
 
     auto& offscreen_buffer = view_impl->offscreen_buffer;
@@ -1191,7 +1191,7 @@ void wf::view_interface_t::take_snapshot()
     /* Nothing has changed, the last buffer is still valid */
     if (offscreen_buffer.cached_damage.empty())
     {
-        return;
+        return view_impl->offscreen_buffer;
     }
 
     int scaled_width  = buffer_geometry.width * scale;
@@ -1231,10 +1231,7 @@ void wf::view_interface_t::take_snapshot()
     }
 
     offscreen_buffer.cached_damage.clear();
-}
 
-const wf::framebuffer_t& wf::view_interface_t::get_snapshot()
-{
     return view_impl->offscreen_buffer;
 }
 
