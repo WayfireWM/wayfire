@@ -263,7 +263,8 @@ void wf::compositor_core_impl_t::init()
         input->handle_new_input(&ptr->input_device);
         if (event->suggested_output)
         {
-            wlr_cursor_map_input_to_output(seat->cursor->cursor, &ptr->input_device, event->suggested_output);
+            wlr_cursor_map_input_to_output(seat->cursor->cursor, &ptr->input_device,
+                event->suggested_output);
         }
     });
     vptr_created.connect(&protocols.vptr_manager->events.new_virtual_pointer);
