@@ -4,7 +4,6 @@
 #include <wayfire/output-layout.hpp>
 #include <wayfire/debug.hpp>
 
-#include <wayfire/plugins/common/view-change-viewport-signal.hpp>
 #include <wayfire/plugins/common/workspace-wall.hpp>
 #include <wayfire/plugins/common/geometry-animation.hpp>
 #include <wayfire/plugins/common/move-drag-interface.hpp>
@@ -259,7 +258,7 @@ class wayfire_expo : public wf::plugin_interface_t
 
             if (same_output && (move_started_ws != offscreen_point))
             {
-                view_change_viewport_signal data;
+                wf::view_change_viewport_signal data;
                 data.view = ev->main_view;
                 data.from = move_started_ws;
                 data.to   = target_ws;

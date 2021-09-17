@@ -82,7 +82,7 @@ class vswitch : public wf::plugin_interface_t
                             origin.y + delta.y * size.height);
                     }
 
-                    view_change_viewport_signal data;
+                    wf::view_change_viewport_signal data;
                     data.view = view;
                     data.from = output->workspace->get_current_workspace();
                     data.to   = data.from + delta;

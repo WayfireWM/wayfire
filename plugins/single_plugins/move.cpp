@@ -17,7 +17,6 @@
 
 #include <wayfire/plugins/common/shared-core-data.hpp>
 #include <wayfire/plugins/common/move-drag-interface.hpp>
-#include <wayfire/plugins/common/view-change-viewport-signal.hpp>
 #include <wayfire/plugins/grid.hpp>
 
 class wayfire_move : public wf::plugin_interface_t
@@ -99,7 +98,7 @@ class wayfire_move : public wf::plugin_interface_t
                 update_slot(wf::grid::SLOT_NONE);
             }
 
-            view_change_viewport_signal data;
+            wf::view_change_viewport_signal data;
             data.view = ev->main_view;
             data.to   = output->workspace->get_current_workspace();
             data.old_viewport_invalid = false;

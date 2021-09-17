@@ -767,11 +767,21 @@ class output_viewport_manager_t
         auto dx     = (data.old_viewport.x - nws.x) * screen.width;
         auto dy     = (data.old_viewport.y - nws.y) * screen.height;
 
+        std::vector<std::pair<wayfire_view, wf::point_t>>
+        old_fixed_view_workspaces;
+        old_fixed_view_workspaces.reserve(fixed_views.size());
+
         for (auto& view : output->workspace->get_views_in_layer(
             MIDDLE_LAYERS | LAYER_MINIMIZED))
         {
-            auto it = std::find(fixed_views.cbegin(), fixed_views.cend(), view);
-            if ((it == fixed_views.end()) && !view->sticky)
+            const auto is_fixed = std::find(fixed_views.cbegin(),
+                fixed_views.cend(), view) != fixed_views.end();
+
+            if (is_fixed)
+            {
+                old_fixed_view_workspaces.push_back({view,
+                    get_view_main_workspace(view)});
+            } else if (!view->sticky)
             {
                 for (auto v : view->enumerate_views())
                 {
@@ -781,8 +791,13 @@ class output_viewport_manager_t
             }
         }
 
-        for (auto& v : fixed_views)
+        for (auto& [v, old_workspace] : old_fixed_view_workspaces)
         {
+            wf::view_change_viewport_signal vdata;
+            vdata.view = v;
+            vdata.from = old_workspace;
+            vdata.to   = get_view_main_workspace(v);
+            output->emit_signal("view-change-viewport", &vdata);
             output->focus_view(v, true);
         }
 

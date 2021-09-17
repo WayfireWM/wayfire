@@ -596,6 +596,23 @@ struct view_geometry_changed_signal : public _view_signal
 };
 
 /**
+ * name: view-change-viewport
+ * on: output
+ * when: Whenever the view's workspace changes. (Every plugin changing the
+ *   view's workspace should emit this signal).
+ */
+struct view_change_viewport_signal : public _view_signal
+{
+    wf::point_t from, to;
+
+    /**
+     * Indicates whether the old viewport is known.
+     * If false, then the `from` field should be ignored.
+     */
+    bool old_viewport_invalid = true;
+};
+
+/**
  * name: region-damaged
  * on: view
  * when: Whenever a region of the view becomes damaged, for ex. when the client

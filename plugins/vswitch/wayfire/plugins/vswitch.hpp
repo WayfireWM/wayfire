@@ -1,6 +1,6 @@
 #pragma once
 
-#include <wayfire/plugins/common/view-change-viewport-signal.hpp>
+#include <wayfire/signal-definitions.hpp>
 #include <wayfire/plugins/common/geometry-animation.hpp>
 #include <wayfire/plugins/common/workspace-wall.hpp>
 #include <wayfire/util/duration.hpp>
@@ -245,7 +245,7 @@ class workspace_switch_t
             return;
         }
 
-        view_change_viewport_signal data;
+        wf::view_change_viewport_signal data;
         data.view = overlay_view;
         data.from = old_workspace;
         data.to   = output->workspace->get_current_workspace();

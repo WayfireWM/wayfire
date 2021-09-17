@@ -4,7 +4,6 @@
 #include <wayfire/matcher.hpp>
 #include <wayfire/workspace-manager.hpp>
 #include <wayfire/signal-definitions.hpp>
-#include <wayfire/plugins/common/view-change-viewport-signal.hpp>
 
 #include "tree-controller.hpp"
 

@@ -6,7 +6,6 @@
 #include <wayfire/workspace-manager.hpp>
 #include <linux/input.h>
 #include <wayfire/signal-definitions.hpp>
-#include <wayfire/plugins/common/view-change-viewport-signal.hpp>
 #include <wayfire/plugins/wobbly/wobbly-signal.hpp>
 #include <wayfire/nonstd/wlroots-full.hpp>
 
@@ -270,7 +269,7 @@ class wayfire_resize : public wf::plugin_interface_t
             view->set_resizing(false);
             end_wobbly(view);
 
-            view_change_viewport_signal workspace_may_changed;
+            wf::view_change_viewport_signal workspace_may_changed;
             workspace_may_changed.view = this->view;
             workspace_may_changed.to   = output->workspace->get_current_workspace();
             workspace_may_changed.old_viewport_invalid = false;
