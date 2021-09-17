@@ -64,6 +64,11 @@ void transaction_impl_t::commit()
     for (auto& i : this->instructions)
     {
         i->connect_signal("ready", &on_instruction_ready);
+        i->precommit();
+    }
+
+    for (auto& i : this->instructions)
+    {
         i->commit();
     }
 }

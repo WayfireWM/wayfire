@@ -67,6 +67,13 @@ class instruction_t : public wf::signal_provider_t
     {}
 
     /**
+     * The transaction containing this instruction is just about to be
+     * committed.
+     */
+    virtual void precommit()
+    {}
+
+    /**
      * Commit the instruction.
      * This usually involves sending configure events to client surfaces,
      * or other similar mechanism for non-view instructions.

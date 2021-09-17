@@ -92,6 +92,71 @@ TEST_CASE("Transaction Impl Basics")
     REQUIRE(tx_ab->get_state() == TXN_APPLIED);
 }
 
+class precommit_test_instruction_t : public wf::txn::instruction_t
+{
+  public:
+    int *other_committed;
+
+    std::string object;
+    precommit_test_instruction_t(std::string object = "")
+    {
+        this->object = object;
+    }
+
+    ~precommit_test_instruction_t()
+    {}
+
+    std::string get_object() override
+    {
+        return object;
+    }
+
+    void set_pending() override
+    {}
+
+    int precommitted = 0;
+    int committed    = 0;
+
+    void precommit() override
+    {
+        REQUIRE(*other_committed == 0);
+        REQUIRE(committed == 0);
+        ++precommitted;
+    }
+
+    void commit() override
+    {
+        REQUIRE(precommitted == 1);
+        ++committed;
+    }
+
+    void apply() override
+    {}
+};
+
+TEST_CASE("Precommitting")
+{
+    setup_txn_timeout(100);
+
+    auto tx_pub = transaction_t::create();
+    auto tx_ab  = dynamic_cast<transaction_impl_t*>(tx_pub.get());
+
+    auto i1 = new precommit_test_instruction_t{"a"};
+    auto i2 = new precommit_test_instruction_t{"b"};
+
+    i1->other_committed = &i2->committed;
+    i2->other_committed = &i1->committed;
+
+    tx_ab->add_instruction(instruction_uptr_t(i1));
+    tx_ab->add_instruction(instruction_uptr_t(i2));
+
+    tx_ab->set_pending();
+    tx_ab->commit();
+
+    REQUIRE(i1->committed == 1);
+    REQUIRE(i2->committed == 1);
+}
+
 TEST_CASE("Merging transactions")
 {
     setup_txn_timeout(100);
