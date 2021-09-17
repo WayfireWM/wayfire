@@ -124,9 +124,9 @@ class pointer_t
      * Handle an update of the cursor's position, which includes updating the
      * surface currently under the pointer.
      *
-     * @param time_msec The time when the event causing this update occured
+     * @param time_msec The time when the event causing this update occurred
      * @param real_update Whether the update is caused by a hardware event or
-     *                    was artifically generated.
+     *                    was artificially generated.
      */
     void update_cursor_position(uint32_t time_msec, bool real_update = true);
 

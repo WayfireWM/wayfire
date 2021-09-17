@@ -478,7 +478,7 @@ void wayfire_layer_shell_view::commit()
 
     if (std::memcmp(state, &prev_state, sizeof(*state)))
     {
-        /* Update layer manualy */
+        /* Update layer manually */
         if (prev_state.layer != state->layer)
         {
             get_output()->workspace->add_view(self(), get_layer());

@@ -184,7 +184,7 @@ class output_t : public wf::object_base_t
 
     /**
      * Switch the workspace so that view becomes visible.
-     * @return true if workspace switch really occured
+     * @return true if workspace switch really occurred
      */
     bool ensure_visible(wayfire_view view);
 

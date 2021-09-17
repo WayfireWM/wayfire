@@ -381,7 +381,7 @@ class program_t
         int size, int stride, const void *ptr, GLenum type = GL_FLOAT);
 
     /*
-     * Set the attrib divisor. Analoguous to glVertexAttribDivisor().
+     * Set the attrib divisor. Analogous to glVertexAttribDivisor().
      *
      * @param attrib The name of the attribute.
      * @param divisor The divisor value.
@@ -395,7 +395,7 @@ class program_t
     void set_active_texture(const wf::texture_t& texture);
 
     /**
-     * Deactive the vertex attributes activated by attrib_pointer and
+     * Deactivate the vertex attributes activated by attrib_pointer and
      * attrib_divisor, and reset the active OpenGL program.
      */
     void deactivate();

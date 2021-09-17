@@ -79,7 +79,7 @@ static void handle_gtk_surface_unset_modal(wl_client *client, wl_resource *resou
  * gnome-control-center, gnome-clocks, dconf-editor are single instance and if
  * they are already running and launched again, this will request that they get
  * focused.
- * This function is superseeded by handle_gtk_surface_request_focus a newer
+ * This function is superseded by handle_gtk_surface_request_focus a newer
  * equivalelent
  * used by gtk-applications now. This function is for compatibility reasons.
  */

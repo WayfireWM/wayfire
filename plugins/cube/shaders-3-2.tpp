@@ -31,7 +31,7 @@ void main() {
     uv[ID] = uvpos[ID];
 
     if(ID == 0){
-        /* deformation requires tesselation
+        /* deformation requires tessellation
            and lighting even higher degree to
            make lighting smoother */
 

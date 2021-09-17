@@ -108,7 +108,7 @@
 		</option>
 		<option name="random_fire_color" type="bool">
 			<_short>Random fire colors</_short>
-			<_long>Sets wether to use one solid color or select a random color for each particle</_long>
+			<_long>Sets whether to use one solid color or select a random color for each particle</_long>
 			<default>false</default>
 		</option>
 		<option name="fire_color" type="color">

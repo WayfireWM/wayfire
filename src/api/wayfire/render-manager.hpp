@@ -115,7 +115,7 @@ class render_manager : public wf::signal_provider_t
     /**
      * Add a new post hook.
      *
-     * @param hook The hook callack
+     * @param hook The hook callback
      */
     void add_post(post_hook_t *hook);
 

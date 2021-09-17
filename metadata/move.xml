@@ -21,7 +21,7 @@
 			<default>10</default>
 		</option>
 		<option name="quarter_snap_threshold" type="int">
-			<_short>Quarter snap theshold</_short>
+			<_short>Quarter snap threshold</_short>
 			<_long>Sets the amount of pixels from the corner of the screen for which quarter aero-snap gets triggered. The mouse should still be within snap_threshold of at least one edge of the screen.</_long>
 			<default>50</default>
 		</option>

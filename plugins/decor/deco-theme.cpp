@@ -25,7 +25,7 @@ int decoration_theme_t::get_border_size() const
 }
 
 /**
- * Fill the given rectange with the background color(s).
+ * Fill the given rectangle with the background color(s).
  *
  * @param fb The target framebuffer, must have been bound already
  * @param rectangle The rectangle to redraw.

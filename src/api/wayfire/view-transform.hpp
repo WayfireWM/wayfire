@@ -14,7 +14,7 @@ enum transformer_z_order_t
     TRANSFORMER_3D        = 2,
     /* Highlevels transforms and above do special effects, for ex. wobbly or fire */
     TRANSFORMER_HIGHLEVEL = 500,
-    /* Do not use Z oder blur or more,
+    /* Do not use Z order blur or more,
      * except if you are willing to break it */
     TRANSFORMER_BLUR      = 999,
 };

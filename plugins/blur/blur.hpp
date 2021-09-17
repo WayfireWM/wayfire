@@ -18,7 +18,7 @@
  * the buffer containing the last frame. This will be used to redraw
  * the area that will contain artifacts after rendering. This is ok
  * because this area is outside of the original damage area, so the
- * pixels wont be changing in this region of the scene. pre_render is
+ * pixels won't be changing in this region of the scene. pre_render is
  * called with the padded damage region as an argument (2). The padded
  * damage extents (3) are used for blitting from the framebuffer, which
  * contains the scene rendered up until the view for which pre_render

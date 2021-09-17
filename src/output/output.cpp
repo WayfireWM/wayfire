@@ -309,7 +309,7 @@ void wf::output_impl_t::focus_view(wayfire_view v, uint32_t flags)
              * grab. We can't do that straight away because the client still
              * holds the focus layer request.
              *
-             * Instead, we want to deactive the $unfocus view, so that it can
+             * Instead, we want to deactivate the $unfocus view, so that it can
              * release the grab. At the same time, we bring the to-be-focused
              * view on top, so that it gets the focus next. */
             update_active_view(nullptr, flags);

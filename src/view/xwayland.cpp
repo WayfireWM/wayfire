@@ -637,7 +637,7 @@ class wayfire_xwayland_view : public wayfire_xwayland_view_base
     {
         /* Some X clients position themselves on map, and others let the window
          * manager determine this. We try to heuristically guess which of the
-         * two cases we're dealing with by checking whether we have recevied
+         * two cases we're dealing with by checking whether we have received
          * a valid ConfigureRequest before mapping */
         bool client_self_positioned = self_positioned;
         emit_view_map_signal(self(), client_self_positioned);
