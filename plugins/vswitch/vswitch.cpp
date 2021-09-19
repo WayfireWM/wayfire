@@ -82,11 +82,11 @@ class vswitch : public wf::plugin_interface_t
                             origin.y + delta.y * size.height);
                     }
 
-                    wf::view_change_viewport_signal data;
+                    wf::view_change_workspace_signal data;
                     data.view = view;
                     data.from = output->workspace->get_current_workspace();
                     data.to   = data.from + delta;
-                    output->emit_signal("view-change-viewport", &data);
+                    output->emit_signal("view-change-workspace", &data);
                     output->refocus();
 
                     return true;

@@ -258,11 +258,11 @@ class wayfire_expo : public wf::plugin_interface_t
 
             if (same_output && (move_started_ws != offscreen_point))
             {
-                wf::view_change_viewport_signal data;
+                wf::view_change_workspace_signal data;
                 data.view = ev->main_view;
                 data.from = move_started_ws;
                 data.to   = target_ws;
-                output->emit_signal("view-change-viewport", &data);
+                output->emit_signal("view-change-workspace", &data);
             }
 
             move_started_ws = offscreen_point;

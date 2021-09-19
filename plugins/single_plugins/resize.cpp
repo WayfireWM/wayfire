@@ -269,11 +269,11 @@ class wayfire_resize : public wf::plugin_interface_t
             view->set_resizing(false);
             end_wobbly(view);
 
-            wf::view_change_viewport_signal workspace_may_changed;
+            wf::view_change_workspace_signal workspace_may_changed;
             workspace_may_changed.view = this->view;
             workspace_may_changed.to   = output->workspace->get_current_workspace();
-            workspace_may_changed.old_viewport_invalid = false;
-            output->emit_signal("view-change-viewport", &workspace_may_changed);
+            workspace_may_changed.old_workspace_invalid = false;
+            output->emit_signal("view-change-workspace", &workspace_may_changed);
         }
     }
 

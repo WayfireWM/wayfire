@@ -403,10 +403,10 @@ class tile_plugin_t : public wf::plugin_interface_t
         }
     }
 
-    signal_callback_t on_view_change_viewport = [=] (signal_data_t *data)
+    signal_callback_t on_view_change_workspace = [=] (signal_data_t *data)
     {
-        auto ev = (view_change_viewport_signal*)(data);
-        if (ev->old_viewport_invalid)
+        auto ev = (view_change_workspace_signal*)(data);
+        if (ev->old_workspace_invalid)
         {
             change_view_workspace(ev->view, ev->to);
         }
@@ -582,7 +582,7 @@ class tile_plugin_t : public wf::plugin_interface_t
         output->connect_signal("view-fullscreen-request",
             &on_fullscreen_request);
         output->connect_signal("view-focused", &on_focus_changed);
-        output->connect_signal("view-change-viewport", &on_view_change_viewport);
+        output->connect_signal("view-change-workspace", &on_view_change_workspace);
         output->connect_signal("view-minimize-request", &on_view_minimized);
         output->connect_signal("workspace-grid-changed",
             &on_workspace_grid_changed);
@@ -617,8 +617,8 @@ class tile_plugin_t : public wf::plugin_interface_t
         output->disconnect_signal("view-fullscreen-request",
             &on_fullscreen_request);
         output->disconnect_signal("view-focused", &on_focus_changed);
-        output->disconnect_signal("view-change-viewport",
-            &on_view_change_viewport);
+        output->disconnect_signal("view-change-workspace",
+            &on_view_change_workspace);
         output->disconnect_signal("view-minimize-request", &on_view_minimized);
     }
 };

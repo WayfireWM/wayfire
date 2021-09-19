@@ -235,7 +235,7 @@ class workspace_switch_t
     }
 
     /**
-     * Emit the view-change-viewport signal from the old workspace to the current
+     * Emit the view-change-workspace signal from the old workspace to the current
      * workspace and unset the view.
      */
     virtual void adjust_overlay_view_switch_done(wf::point_t old_workspace)
@@ -245,11 +245,11 @@ class workspace_switch_t
             return;
         }
 
-        wf::view_change_viewport_signal data;
+        wf::view_change_workspace_signal data;
         data.view = overlay_view;
         data.from = old_workspace;
         data.to   = output->workspace->get_current_workspace();
-        output->emit_signal("view-change-viewport", &data);
+        output->emit_signal("view-change-workspace", &data);
 
         set_overlay_view(nullptr);
     }

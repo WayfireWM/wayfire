@@ -98,11 +98,11 @@ class wayfire_move : public wf::plugin_interface_t
                 update_slot(wf::grid::SLOT_NONE);
             }
 
-            wf::view_change_viewport_signal data;
+            wf::view_change_workspace_signal data;
             data.view = ev->main_view;
             data.to   = output->workspace->get_current_workspace();
-            data.old_viewport_invalid = false;
-            output->emit_signal("view-change-viewport", &data);
+            data.old_workspace_invalid = false;
+            output->emit_signal("view-change-workspace", &data);
         }
 
         deactivate();

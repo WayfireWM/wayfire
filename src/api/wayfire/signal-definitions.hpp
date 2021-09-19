@@ -596,20 +596,20 @@ struct view_geometry_changed_signal : public _view_signal
 };
 
 /**
- * name: view-change-viewport
+ * name: view-change-workspace
  * on: output
  * when: Whenever the view's workspace changes. (Every plugin changing the
  *   view's workspace should emit this signal).
  */
-struct view_change_viewport_signal : public _view_signal
+struct view_change_workspace_signal : public _view_signal
 {
     wf::point_t from, to;
 
     /**
-     * Indicates whether the old viewport is known.
+     * Indicates whether the old workspace is known.
      * If false, then the `from` field should be ignored.
      */
-    bool old_viewport_invalid = true;
+    bool old_workspace_invalid = true;
 };
 
 /**

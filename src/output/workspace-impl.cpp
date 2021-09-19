@@ -793,11 +793,11 @@ class output_viewport_manager_t
 
         for (auto& [v, old_workspace] : old_fixed_view_workspaces)
         {
-            wf::view_change_viewport_signal vdata;
+            wf::view_change_workspace_signal vdata;
             vdata.view = v;
             vdata.from = old_workspace;
             vdata.to   = get_view_main_workspace(v);
-            output->emit_signal("view-change-viewport", &vdata);
+            output->emit_signal("view-change-workspace", &vdata);
             output->focus_view(v, true);
         }
 
@@ -956,7 +956,7 @@ class workspace_manager::impl
         workarea_manager.reflow_reserved_areas();
     };
 
-    signal_callback_t view_changed_viewport = [=] (signal_data_t *data)
+    signal_callback_t view_changed_workspace = [=] (signal_data_t *data)
     {
         check_autohide_panels();
     };
@@ -984,7 +984,7 @@ class workspace_manager::impl
         output = o;
         output_geometry = output->get_relative_geometry();
 
-        o->connect_signal("view-change-viewport", &view_changed_viewport);
+        o->connect_signal("view-change-workspace", &view_changed_workspace);
         o->connect_signal("output-configuration-changed", &output_geometry_changed);
         o->connect_signal("view-fullscreen", &on_view_state_updated);
         o->connect_signal("view-unmapped", &on_view_state_updated);
