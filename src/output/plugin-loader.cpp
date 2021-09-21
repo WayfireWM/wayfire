@@ -74,7 +74,19 @@ void plugin_manager::destroy_plugin(wayfire_plugin& p)
      * as many times as we opened it.
      *
      * We also need to close the handle after deallocating the plugin, otherwise
-     * we unload its destructor before calling it. */
+     * we unload its destructor before calling it.
+     *
+     * Note however, that dlclose() is merely a "statement of intent" as per
+     * POSIX[1]:
+     * - On glibc[2], this decreases the reference count and potentially unloads
+     *   the binary.
+     * - On musl-libc[3] this is a noop.
+     *
+     * [1]: https://pubs.opengroup.org/onlinepubs/9699919799/functions/dlclose.html
+     * [2]: https://man7.org/linux/man-pages/man3/dlclose.3.html
+     * [3]:
+     * https://wiki.musl-libc.org/functional-differences-from-glibc.html#Unloading-libraries
+     * */
     if (handle)
     {
         dlclose(handle);

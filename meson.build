@@ -94,7 +94,7 @@ cpp = meson.get_compiler('cpp')
 add_project_link_arguments(['-rdynamic', '-Wl,-E'], language: 'cpp')
 
 project_args = ['-DWLR_USE_UNSTABLE']
-# Needed for dlclose to actually free plugin memory
+# Needed for dlclose to actually free plugin memory on gcc+glibc
 if cpp.has_argument('-fno-gnu-unique')
   project_args += '-fno-gnu-unique'
 endif
