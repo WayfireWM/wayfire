@@ -609,7 +609,7 @@ struct view_change_workspace_signal : public _view_signal
      * Indicates whether the old workspace is known.
      * If false, then the `from` field should be ignored.
      */
-    bool old_workspace_invalid = true;
+    bool old_workspace_valid = true;
 };
 
 /**

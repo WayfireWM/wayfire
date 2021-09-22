@@ -406,7 +406,7 @@ class tile_plugin_t : public wf::plugin_interface_t
     signal_callback_t on_view_change_workspace = [=] (signal_data_t *data)
     {
         auto ev = (view_change_workspace_signal*)(data);
-        if (ev->old_workspace_invalid)
+        if (ev->old_workspace_valid)
         {
             change_view_workspace(ev->view, ev->to);
         }

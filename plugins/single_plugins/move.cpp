@@ -101,7 +101,7 @@ class wayfire_move : public wf::plugin_interface_t
             wf::view_change_workspace_signal data;
             data.view = ev->main_view;
             data.to   = output->workspace->get_current_workspace();
-            data.old_workspace_invalid = false;
+            data.old_workspace_valid = false;
             output->emit_signal("view-change-workspace", &data);
         }
 
