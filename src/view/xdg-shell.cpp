@@ -258,7 +258,7 @@ void wayfire_xdg_view::initialize()
     on_request_minimize.set_callback([&] (void*) { minimize_request(true); });
     on_request_maximize.set_callback([&] (void *data)
     {
-        tile_request(xdg_toplevel->client_pending.maximized ?
+        tile_request(xdg_toplevel->pending.maximized ?
             wf::TILED_EDGES_ALL : 0);
     });
     on_request_fullscreen.set_callback([&] (void *data)
@@ -288,12 +288,12 @@ void wayfire_xdg_view::initialize()
     // set initial parent
     on_set_parent.emit(nullptr);
 
-    if (xdg_toplevel->client_pending.fullscreen)
+    if (xdg_toplevel->pending.fullscreen)
     {
         fullscreen_request(get_output(), true);
     }
 
-    if (xdg_toplevel->client_pending.maximized)
+    if (xdg_toplevel->pending.maximized)
     {
         tile_request(wf::TILED_EDGES_ALL);
     }

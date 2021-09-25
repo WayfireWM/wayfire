@@ -267,7 +267,7 @@ struct wf_layer_shell_manager
          * The rest are then placed into the free area */
         for (auto v : views)
         {
-            if (v->lsurface->client_pending.exclusive_zone > 0)
+            if (v->lsurface->pending.exclusive_zone > 0)
             {
                 set_exclusive_zone(v);
             } else
@@ -282,7 +282,7 @@ struct wf_layer_shell_manager
         {
             /* The protocol dictates that the values -1 and 0 for exclusive zone
              * mean that it doesn't have one */
-            if (v->lsurface->client_pending.exclusive_zone < 1)
+            if (v->lsurface->pending.exclusive_zone < 1)
             {
                 pin_view(v, usable_workarea);
             }
@@ -291,7 +291,7 @@ struct wf_layer_shell_manager
 
     void arrange_unmapped_view(wayfire_layer_shell_view *view)
     {
-        if (view->lsurface->client_pending.exclusive_zone < 1)
+        if (view->lsurface->pending.exclusive_zone < 1)
         {
             return pin_view(view, view->get_output()->workspace->get_workarea());
         }
@@ -308,7 +308,7 @@ struct wf_layer_shell_manager
             for (auto& v : layer)
             {
                 if (v->is_mapped() &&
-                    (v->lsurface->client_pending.keyboard_interactive == 1))
+                    (v->lsurface->pending.keyboard_interactive == 1))
                 {
                     focus_mask = std::max(focus_mask, (uint32_t)v->get_layer());
                 }
