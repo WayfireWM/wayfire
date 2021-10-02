@@ -154,8 +154,8 @@ void wayfire_xdg_popup::destroy()
 wf::point_t wayfire_xdg_popup::get_window_offset()
 {
     return {
-        popup->base->geometry.x,
-        popup->base->geometry.y,
+        popup->base->current.geometry.x,
+        popup->base->current.geometry.y,
     };
 }
 
@@ -335,7 +335,7 @@ void wayfire_xdg_view::commit()
         set_position(wm.x, wm.y, wm, true);
     }
 
-    if (xdg_toplevel->base->configure_serial == this->last_configure_serial)
+    if (xdg_toplevel->base->current.configure_serial == this->last_configure_serial)
     {
         this->last_size_request = wf::dimensions(xdg_g);
     }
