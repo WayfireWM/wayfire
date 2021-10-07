@@ -84,7 +84,7 @@ struct wf_xdg_decoration_t
             default_mode = WLR_XDG_TOPLEVEL_DECORATION_V1_MODE_SERVER_SIDE;
         }
 
-        auto mode = decor->client_pending_mode;
+        auto mode = decor->pending.mode;
         if (mode == WLR_XDG_TOPLEVEL_DECORATION_V1_MODE_NONE)
         {
             mode = default_mode;
@@ -96,7 +96,7 @@ struct wf_xdg_decoration_t
     std::function<void(void*)> commit = [&] (void*)
     {
         bool use_csd =
-            decor->current_mode == WLR_XDG_TOPLEVEL_DECORATION_V1_MODE_CLIENT_SIDE;
+            decor->current.mode == WLR_XDG_TOPLEVEL_DECORATION_V1_MODE_CLIENT_SIDE;
         wf::get_core_impl().uses_csd[decor->surface->surface] = use_csd;
 
         auto wf_surface = dynamic_cast<wf::wlr_view_t*>(
