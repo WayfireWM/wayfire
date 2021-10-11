@@ -9,5 +9,25 @@
 			<_long>When the specified button is held down, you can drag windows to resize them.</_long>
 			<default>&lt;super&gt; BTN_RIGHT</default>
 		</option>
+		<option name="up" type="activator">
+			<_short>Shrink window vertically</_short>
+			<_long>Shrink window vertically by its bottom edge.</_long>
+			<default>&lt;alt&gt; &lt;shift&gt; KEY_K</default>
+		</option>
+		<option name="down" type="activator">
+			<_short>Grow window vertically</_short>
+			<_long>Grow window vertically by its bottom edge.</_long>
+			<default>&lt;alt&gt; &lt;shift&gt; KEY_J</default>
+		</option>
+		<option name="left" type="activator">
+			<_short>Shrink window horizontally</_short>
+			<_long>Shrink window horizontally by its right edge.</_long>
+			<default>&lt;alt&gt; &lt;shift&gt; KEY_H</default>
+		</option>
+		<option name="right" type="activator">
+			<_short>Grow window horizontally</_short>
+			<_long>Grow window horizontally by its right edge.</_long>
+			<default>&lt;alt&gt; &lt;shift&gt; KEY_L</default>
+		</option>
 	</plugin>
 </wayfire>

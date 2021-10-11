@@ -13,6 +13,7 @@ class wayfire_resize : public wf::plugin_interface_t
 {
     wf::signal_callback_t resize_request, view_destroyed;
     wf::button_callback activate_binding;
+    wf::activator_callback resize_up_callback, resize_down_callback, resize_left_callback, resize_right_callback;
 
     wayfire_view view;
 
@@ -22,7 +23,6 @@ class wayfire_resize : public wf::plugin_interface_t
 
     uint32_t edges;
     wf::option_wrapper_t<wf::buttonbinding_t> button{"resize/activate"};
-
   public:
     void init() override
     {
@@ -43,6 +43,37 @@ class wayfire_resize : public wf::plugin_interface_t
 
             return false;
         };
+
+        resize_up_callback = [=] (auto)
+        {
+            return keyboard_resize(0, -80);
+        };
+        resize_down_callback = [=] (auto)
+        {
+            return keyboard_resize(0, 80);
+        };
+        resize_left_callback = [=] (auto)
+        {
+            return keyboard_resize(-80, 0);
+        };
+        resize_right_callback = [=] (auto)
+        {
+            return keyboard_resize(80, 0);
+        };
+
+        output->add_activator(
+            wf::option_wrapper_t<wf::activatorbinding_t>{"resize/up"},
+            &resize_up_callback);
+        output->add_activator(
+            wf::option_wrapper_t<wf::activatorbinding_t>{"resize/down"},
+            &resize_down_callback);
+        output->add_activator(
+            wf::option_wrapper_t<wf::activatorbinding_t>{"resize/left"},
+            &resize_left_callback);
+        output->add_activator(
+            wf::option_wrapper_t<wf::activatorbinding_t>{"resize/right"},
+            &resize_right_callback);
+
 
         output->add_button(button, &activate_binding);
         grab_interface->callbacks.pointer.button = [=] (uint32_t b, uint32_t state)
@@ -102,6 +133,35 @@ class wayfire_resize : public wf::plugin_interface_t
         };
 
         output->connect_signal("view-disappeared", &view_destroyed);
+    }
+
+    bool keyboard_resize(int dx, int dy)
+    {
+        auto view = output->get_active_view();
+        if (view)
+        {
+            is_using_touch     = false;
+            was_client_request = false;
+
+            if (!initiate(view))
+            {
+                return false;
+            };
+
+            // When using the keyboard always resize bottom and right edge irespective of the mouse position
+            view->set_resizing(true, WLR_EDGE_RIGHT | WLR_EDGE_BOTTOM);
+            wf::geometry_t g = view->get_wm_geometry();
+            g.width += dx;
+            g.height += dy;
+
+            g.width = std::max(g.width, 1);
+            g.height = std::max(g.height, 1);
+            view->set_geometry(g);
+            input_pressed(WLR_BUTTON_RELEASED);
+            return true;
+        }
+
+        return false;
     }
 
     void resize_requested(wf::signal_data_t *data)
