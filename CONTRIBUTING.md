@@ -1,7 +1,5 @@
 # Contributing
 
-## 
-
 ## Documentation
 
 Updating the documentation is one of the easiest way to contribute to the project.
