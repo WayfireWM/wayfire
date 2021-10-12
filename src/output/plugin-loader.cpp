@@ -193,14 +193,22 @@ void plugin_manager::reload_dynamic_plugins()
                 continue;
             }
 
+            bool found = false;
             for (std::filesystem::path plugin_prefix : plugin_prefixes)
             {
                 auto plugin_path = plugin_prefix / ("lib" + plugin_name + ".so");
                 if (std::filesystem::exists(plugin_path))
                 {
+                    found = true;
                     next_plugins.push_back(plugin_path);
                     break;
                 }
+            }
+
+            if (!found)
+            {
+                LOGE("Could not find plugin \"", plugin_name, "\"",
+                    " in WAYFIRE_PLUGIN_PATH or in \"", PLUGIN_PATH, "\"");
             }
         }
     }
