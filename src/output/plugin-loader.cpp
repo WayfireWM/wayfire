@@ -193,14 +193,23 @@ void plugin_manager::reload_dynamic_plugins()
                 continue;
             }
 
+            bool plugin_found = false;
             for (std::filesystem::path plugin_prefix : plugin_prefixes)
             {
                 auto plugin_path = plugin_prefix / ("lib" + plugin_name + ".so");
                 if (std::filesystem::exists(plugin_path))
                 {
+                    plugin_found = true;
                     next_plugins.push_back(plugin_path);
                     break;
                 }
+            }
+
+            if (!plugin_found)
+            {
+                LOGE("Failed to load plugin \"", plugin_name, "\". ",
+                    "Make sure it is installed in ", PLUGIN_PATH,
+                    " or in $WAYFIRE_PLUGIN_PATH.");
             }
         }
     }
