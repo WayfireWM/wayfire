@@ -7,7 +7,6 @@
 #include <wayfire/util/log.hpp>
 #include <wayfire/core.hpp>
 #include <wayfire/output-layout.hpp>
-#include <wayfire/compositor-surface.hpp>
 
 wf::pointer_t::pointer_t(nonstd::observer_ptr<wf::input_manager_t> input,
     nonstd::observer_ptr<seat_t> seat)
@@ -101,6 +100,17 @@ void wf::pointer_t::update_cursor_position(uint32_t time_msec, bool real_update)
     seat->update_drag_icon();
 }
 
+void wf::pointer_t::release_all_buttons()
+{
+    for (auto button : this->currently_sent_buttons)
+    {
+        wlr_seat_pointer_notify_button(seat->seat,
+            get_current_time(), button, WLR_BUTTON_RELEASED);
+    }
+
+    currently_sent_buttons.clear();
+}
+
 void wf::pointer_t::update_cursor_focus(
     wf::surface_interface_t *focus, wf::pointf_t local)
 {
@@ -118,64 +128,34 @@ void wf::pointer_t::update_cursor_focus(
     if (focus_change)
     {
         LOGD("change cursor focus ", cursor_focus, " -> ", focus);
-    }
 
-    /* Send leave to old focus if compositor surface */
-    wf::compositor_surface_t *compositor_surface =
-        compositor_surface_from_surface(cursor_focus);
-    if (compositor_surface && focus_change)
-    {
-        compositor_surface->on_pointer_leave();
-    }
-
-    // Clear currently sent buttons when switching focus
-    // However, if we are in drag-and-drop mode, do not release
-    // buttons since otherwise we'll cancel DnD
-    if (cursor_focus && focus_change && !seat->drag_active)
-    {
-        for (auto button : this->currently_sent_buttons)
+        if (cursor_focus)
         {
-            wlr_seat_pointer_notify_button(seat->seat,
-                get_current_time(), button, WLR_BUTTON_RELEASED);
+            // Clear currently sent buttons when switching focus
+            // However, if we are in drag-and-drop mode, do not release
+            // buttons since otherwise we'll cancel DnD
+            if (!seat->drag_active)
+            {
+                release_all_buttons();
+            }
+
+            cursor_focus->input().handle_pointer_leave();
         }
 
-        currently_sent_buttons.clear();
+        // Unset pointer constraint
+        set_pointer_constraint({});
     }
 
+    // Now, set new focus
     cursor_focus = focus;
     seat->ensure_input_surface(focus);
 
-    wlr_surface *next_focus_wlr_surface = nullptr;
-    if (focus && focus->get_wlr_surface())
+    if (focus)
     {
-        next_focus_wlr_surface = focus->get_wlr_surface();
-        wlr_seat_pointer_notify_enter(seat->seat, next_focus_wlr_surface,
-            local.x, local.y);
-    } else
-    {
-        wlr_seat_pointer_notify_clear_focus(seat->seat);
-    }
-
-    if (focus_change &&
-        (compositor_surface = compositor_surface_from_surface(focus)))
-    {
-        compositor_surface->on_pointer_enter(local.x, local.y);
-    }
-
-    if (focus_change)
-    {
-        wlr_pointer_constraint_v1 *constraint = NULL;
-        if (next_focus_wlr_surface)
-        {
-            constraint = wlr_pointer_constraints_v1_constraint_for_surface(
-                wf::get_core().protocols.pointer_constraints,
-                next_focus_wlr_surface, seat->seat);
-        }
-
+        auto constraint = focus->input().handle_pointer_enter(local, !focus_change);
+        LOGI("Got constraint ", constraint.has_value());
         set_pointer_constraint(constraint);
-    }
-
-    if (!cursor_focus)
+    } else
     {
         wf::get_core().set_cursor("default");
     }
@@ -187,11 +167,6 @@ wf::surface_interface_t*wf::pointer_t::get_focus() const
 }
 
 /* --------------------- Pointer constraints implementation ----------------- */
-wlr_pointer_constraint_v1*wf::pointer_t::get_active_pointer_constraint()
-{
-    return this->active_pointer_constraint;
-}
-
 wf::pointf_t wf::pointer_t::get_absolute_position_from_relative(
     wf::pointf_t relative)
 {
@@ -254,57 +229,31 @@ static wf::pointf_t region_closest_point(const wf::region_t& region,
 wf::pointf_t wf::pointer_t::constrain_point(wf::pointf_t point)
 {
     point = get_surface_relative_coords(this->cursor_focus, point);
-    auto closest = region_closest_point(this->constraint_region, point);
+    auto closest =
+        region_closest_point(this->active_constraint_region.value(), point);
     closest = get_absolute_position_from_relative(closest);
 
     return closest;
 }
 
-void wf::pointer_t::set_pointer_constraint(
-    wlr_pointer_constraint_v1 *constraint, bool last_destroyed)
+void wf::pointer_t::set_pointer_constraint(std::optional<wf::region_t> region)
 {
-    if (constraint == this->active_pointer_constraint)
+    if (region.has_value() == active_constraint_region.has_value())
     {
+        // When we switch surfaces, we first unset the constraint region.
+        // This guarantees that if we get the same region twice
         return;
     }
 
-    /* First set the constraint to the new constraint.
-     * send_deactivated might cause destruction of the active constraint,
-     * and then before we've finished this request we'd get another to reset
-     * the constraint to NULL.
-     *
-     * XXX: a race is still possible if we directly switch from one constraint
-     * to another, and the first one gets destroyed. This is however almost
-     * impossible, since a constraint keeps the cursor inside its surface, so
-     * the only way to cancel this would be to either cancel the constraint by
-     * activating a plugin or when the constraint itself gets destroyed. In both
-     * cases, we first get a set_pointer_constraint(NULL) request */
-    auto last_constraint = this->active_pointer_constraint;
-    this->active_pointer_constraint = constraint;
-
-    if (last_constraint && !last_destroyed)
+    if (!region.has_value())
     {
-        wlr_pointer_constraint_v1_send_deactivated(last_constraint);
-        // TODO: restore cursor position from the constraint hint
-    }
-
-    this->constraint_region.clear();
-    if (!constraint)
-    {
+        this->active_constraint_region = {};
         return;
     }
 
-    wlr_pointer_constraint_v1_send_activated(constraint);
-    if (constraint->type == WLR_POINTER_CONSTRAINT_V1_CONFINED)
-    {
-        this->constraint_region = wf::region_t{&constraint->region};
-    }
-
-    if (this->cursor_focus)
-    {
-        auto current = seat->cursor->get_cursor_position();
-        seat->cursor->warp_cursor(constrain_point(current));
-    }
+    this->active_constraint_region = region;
+    auto current = seat->cursor->get_cursor_position();
+    seat->cursor->warp_cursor(constrain_point(current));
 }
 
 /* -------------------------- Implicit grab --------------------------------- */
@@ -413,14 +362,8 @@ void wf::pointer_t::send_button(wlr_event_pointer_button *ev, bool has_binding)
             currently_sent_buttons.find(ev->button));
     }
 
-    auto custom = compositor_surface_from_surface(cursor_focus);
-    if (custom)
-    {
-        custom->on_pointer_button(ev->button, ev->state);
-    }
-
-    wlr_seat_pointer_notify_button(seat->seat, ev->time_msec,
-        ev->button, ev->state);
+    cursor_focus->input().handle_pointer_button(ev->time_msec, ev->button,
+        ev->state);
 }
 
 void wf::pointer_t::send_motion(uint32_t time_msec, wf::pointf_t local)
@@ -434,15 +377,9 @@ void wf::pointer_t::send_motion(uint32_t time_msec, wf::pointf_t local)
         }
     }
 
-    auto compositor_surface =
-        compositor_surface_from_surface(this->cursor_focus);
-    if (compositor_surface)
+    if (cursor_focus)
     {
-        compositor_surface->on_pointer_motion(local.x, local.y);
-    } else
-    {
-        wlr_seat_pointer_notify_motion(
-            seat->seat, time_msec, local.x, local.y);
+        cursor_focus->input().handle_pointer_motion(time_msec, local);
     }
 }
 
@@ -465,9 +402,9 @@ void wf::pointer_t::handle_pointer_motion(wlr_event_pointer_motion *ev,
     double dy = ev->delta_y;
 
     // confine inside constraints
-    if (this->active_pointer_constraint && this->cursor_focus)
+    if (this->active_constraint_region.has_value() && this->cursor_focus)
     {
-        if (constraint_region.empty())
+        if (active_constraint_region.value().empty())
         {
             /* Empty region */
             dx = dy = 0;
@@ -503,10 +440,10 @@ void wf::pointer_t::handle_pointer_motion_absolute(
         (uint64_t)ev->time_msec * 1000, dx, dy, dx, dy);
 
     // check constraints
-    if (this->active_pointer_constraint && this->cursor_focus)
+    if (this->active_constraint_region.has_value() && this->cursor_focus)
     {
         auto local = get_surface_relative_coords(this->cursor_focus, {cx, cy});
-        if (!constraint_region.contains_pointf(local))
+        if (!active_constraint_region.value().contains_pointf(local))
         {
             return;
         }
@@ -536,7 +473,7 @@ void wf::pointer_t::handle_pointer_axis(wlr_event_pointer_axis *ev,
 
     /* Do not send scroll events to clients if an axis binding has used up the
      * event */
-    if (handled_in_binding)
+    if (handled_in_binding || !cursor_focus)
     {
         return;
     }
@@ -546,14 +483,7 @@ void wf::pointer_t::handle_pointer_axis(wlr_event_pointer_axis *ev,
         wf::pointing_device_t::config.touchpad_scroll_speed :
         wf::pointing_device_t::config.mouse_scroll_speed;
 
-    auto custom = compositor_surface_from_surface(cursor_focus);
-    if (custom)
-    {
-        custom->on_pointer_axis(ev->orientation, mult * ev->delta,
-            mult * ev->delta_discrete);
-    }
-
-    wlr_seat_pointer_notify_axis(seat->seat, ev->time_msec, ev->orientation,
+    cursor_focus->input().handle_pointer_axis(ev->time_msec, ev->orientation,
         mult * ev->delta, mult * ev->delta_discrete, ev->source);
 }
 

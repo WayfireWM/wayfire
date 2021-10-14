@@ -578,12 +578,6 @@ wf::view_interface_t*wf::wf_view_from_void(void *handle)
     return static_cast<wf::view_interface_t*>(handle);
 }
 
-wf::compositor_surface_t*wf::compositor_surface_from_surface(
-    wf::surface_interface_t *surface)
-{
-    return dynamic_cast<wf::compositor_surface_t*>(surface);
-}
-
 wf::compositor_interactive_view_t*wf::interactive_view_from_view(
     wf::view_interface_t *view)
 {

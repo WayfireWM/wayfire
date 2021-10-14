@@ -10,6 +10,9 @@
 #include "wayfire/render-manager.hpp"
 #include "wayfire/signal-definitions.hpp"
 
+#include "../core/seat/pointer.hpp"
+#include "../core/seat/seat.hpp"
+
 /****************************
 * surface_interface_t functions
 ****************************/
@@ -168,16 +171,6 @@ void wf::surface_interface_t::send_frame_done(const timespec& time)
     {
         wlr_surface_send_frame_done(priv->wsurface, &time);
     }
-}
-
-bool wf::surface_interface_t::accepts_input(int32_t sx, int32_t sy)
-{
-    if (!priv->wsurface)
-    {
-        return false;
-    }
-
-    return wlr_surface_point_accepts_input(priv->wsurface, sx, sy);
 }
 
 wf::region_t wf::surface_interface_t::get_opaque_region(wf::point_t origin)
@@ -454,3 +447,127 @@ wf::wlr_child_surface_base_t::wlr_child_surface_base_t(
 
 wf::wlr_child_surface_base_t::~wlr_child_surface_base_t()
 {}
+
+bool wf::wlr_surface_base_t::accepts_input(wf::pointf_t at)
+{
+    if (!_as_si->priv->wsurface)
+    {
+        return false;
+    }
+
+    return wlr_surface_point_accepts_input(_as_si->priv->wsurface, at.x, at.y);
+}
+
+std::optional<wf::region_t> wf::wlr_surface_base_t::handle_pointer_enter(
+    wf::pointf_t at, bool reenter)
+{
+    auto surf = _as_si->priv->wsurface;
+    if (surf)
+    {
+        auto seat = wf::get_core().get_current_seat();
+        wlr_seat_pointer_notify_enter(seat, surf, at.x, at.y);
+
+        auto constraint = wlr_pointer_constraints_v1_constraint_for_surface(
+            wf::get_core().protocols.pointer_constraints, surf, seat);
+        if (constraint == nullptr)
+        {
+            return {};
+        }
+
+        LOGI("Now ", constraint, " ", current_constraint);
+
+        if (current_constraint != constraint)
+        {
+            if (current_constraint)
+            {
+                wlr_pointer_constraint_v1_send_deactivated(current_constraint);
+            }
+
+            wlr_pointer_constraint_v1_send_activated(constraint);
+            on_current_constraint_destroy.set_callback([=] (void*)
+            {
+                this->current_constraint = NULL;
+            });
+            on_current_constraint_destroy.disconnect();
+            on_current_constraint_destroy.connect(&constraint->events.destroy);
+
+            current_constraint = constraint;
+        }
+
+        wf::region_t region;
+        if (constraint->type == WLR_POINTER_CONSTRAINT_V1_CONFINED)
+        {
+            region = wf::region_t{&constraint->region};
+        }
+
+        return region;
+    }
+
+    return {};
+}
+
+void wf::wlr_surface_base_t::handle_pointer_leave()
+{
+    if (current_constraint)
+    {
+        wlr_pointer_constraint_v1_send_deactivated(current_constraint);
+        current_constraint = NULL;
+    }
+}
+
+void wf::wlr_surface_base_t::handle_pointer_button(uint32_t time_ms, uint32_t button,
+    wlr_button_state state)
+{
+    auto seat = wf::get_core().get_current_seat();
+    wlr_seat_pointer_notify_button(seat, time_ms, button, state);
+}
+
+void wf::wlr_surface_base_t::handle_pointer_motion(uint32_t time_ms, wf::pointf_t at)
+{
+    auto seat = wf::get_core().get_current_seat();
+    wlr_seat_pointer_notify_motion(seat, time_ms, at.x, at.y);
+}
+
+void wf::wlr_surface_base_t::handle_pointer_axis(uint32_t time_ms,
+    wlr_axis_orientation orientation, double delta,
+    int32_t delta_discrete, wlr_axis_source source)
+{
+    auto seat = wf::get_core().get_current_seat();
+    wlr_seat_pointer_notify_axis(seat, time_ms, orientation,
+        delta, delta_discrete, source);
+}
+
+void wf::wlr_surface_base_t::handle_touch_down(
+    uint32_t time_ms, int32_t id, wf::pointf_t at)
+{
+    auto seat = wf::get_core().get_current_seat();
+    auto surf = _as_si->priv->wsurface;
+    if (surf)
+    {
+        auto touch_point = wlr_seat_touch_get_point(seat, id);
+        if (!touch_point)
+        {
+            wlr_seat_touch_notify_down(seat, surf, time_ms, id, at.x, at.y);
+        } else if (surf != touch_point->focus_surface)
+        {
+            wlr_seat_touch_point_focus(seat, surf, time_ms, id, at.x, at.y);
+        }
+    }
+}
+
+void wf::wlr_surface_base_t::handle_touch_motion(
+    uint32_t time_ms, int32_t id, wf::pointf_t at)
+{
+    auto seat = wf::get_core().get_current_seat();
+    wlr_seat_touch_notify_motion(seat, time_ms, id, at.x, at.y);
+}
+
+void wf::wlr_surface_base_t::handle_touch_up(
+    uint32_t time_ms, int32_t id, bool finger_lifted)
+{
+    auto seat = wf::get_core().get_current_seat();
+    if (finger_lifted)
+    {
+        wlr_seat_touch_notify_up(seat, time_ms, id);
+    }
+}

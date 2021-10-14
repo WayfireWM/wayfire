@@ -8,7 +8,6 @@
 #include "../core-impl.hpp"
 #include "wayfire/output.hpp"
 #include "wayfire/workspace-manager.hpp"
-#include "wayfire/compositor-surface.hpp"
 #include "wayfire/output-layout.hpp"
 
 wf::touch_interface_t::touch_interface_t(wlr_cursor *cursor, wlr_seat *seat,
@@ -105,7 +104,8 @@ const wf::touch::gesture_state_t& wf::touch_interface_t::get_state() const
 
 wf::surface_interface_t*wf::touch_interface_t::get_focus() const
 {
-    return this->focus;
+    auto it = this->focus.find(0);
+    return (it == this->focus.end() ? nullptr : it->second);
 }
 
 void wf::touch_interface_t::set_grab(wf::plugin_grab_interface_t *grab)
@@ -146,51 +146,21 @@ void wf::touch_interface_t::rem_touch_gesture(
 void wf::touch_interface_t::set_touch_focus(wf::surface_interface_t *surface,
     int id, uint32_t time, wf::pointf_t point)
 {
-    bool focus_compositor_surface = wf::compositor_surface_from_surface(surface);
-    bool had_focus = wlr_seat_touch_get_point(seat, id);
+    if (focus[id] == surface)
+    {
+        return;
+    }
+
+    if (focus[id] != nullptr)
+    {
+        focus[id]->input().handle_touch_up(time, id, surface == nullptr);
+    }
+
+    focus[id] = surface;
     wf::get_core_impl().seat->ensure_input_surface(surface);
-
-    wlr_surface *next_focus = NULL;
-    if (surface && !focus_compositor_surface)
+    if (surface)
     {
-        next_focus = surface->get_wlr_surface();
-    }
-
-    // create a new touch point, we have a valid new focus
-    if (!had_focus && next_focus)
-    {
-        wlr_seat_touch_notify_down(seat, next_focus, time, id, point.x, point.y);
-    }
-
-    if (had_focus && !next_focus)
-    {
-        wlr_seat_touch_notify_up(seat, time, id);
-    }
-
-    if (next_focus)
-    {
-        wlr_seat_touch_point_focus(seat, next_focus, time, id, point.x, point.y);
-    }
-
-    /* Manage the touch_focus, we take only the first finger for that */
-    if (id == 0)
-    {
-        // first change the focus, so that plugins can freely grab input in
-        // response to touch_down/up
-        auto old_focus = this->focus;
-        this->focus = surface;
-
-        auto compositor_surface = compositor_surface_from_surface(old_focus);
-        if (compositor_surface)
-        {
-            compositor_surface->on_touch_up();
-        }
-
-        compositor_surface = compositor_surface_from_surface(surface);
-        if (compositor_surface)
-        {
-            compositor_surface->on_touch_down(point.x, point.y);
-        }
+        surface->input().handle_touch_down(time, id, point);
     }
 }
 
@@ -313,14 +283,13 @@ void wf::touch_interface_t::handle_touch_motion(int32_t id, uint32_t time,
         set_touch_focus(surface, id, time, local);
     }
 
-    wlr_seat_touch_notify_motion(seat->seat, time, id, local.x, local.y);
-    seat->update_drag_icon();
-
-    auto compositor_surface = wf::compositor_surface_from_surface(surface);
-    if ((id == 0) && compositor_surface && is_real_event)
+    LOGI("motion ", focus[id]);
+    if (focus[id])
     {
-        compositor_surface->on_touch_motion(local.x, local.y);
+        focus[id]->input().handle_touch_motion(time, id, local);
     }
+
+    seat->update_drag_icon();
 }
 
 void wf::touch_interface_t::handle_touch_up(int32_t id, uint32_t time,

@@ -5,6 +5,7 @@
 #include <string>
 #include <vector>
 #include <memory>
+#include <optional>
 
 #include <wayfire/nonstd/wlroots.hpp>
 #include <wayfire/nonstd/observer_ptr.h>
@@ -30,6 +31,117 @@ struct surface_iterator_t
      * surface tree
      */
     wf::point_t position;
+};
+
+/**
+ * The input side of a surface.
+ * It is responsible for taking the raw events from core and forwarding them
+ * to the client or processing them.
+ */
+class input_surface_t
+{
+  protected:
+    input_surface_t(const input_surface_t&) = delete;
+    input_surface_t(input_surface_t&&) = delete;
+    input_surface_t& operator =(const input_surface_t&) = delete;
+    input_surface_t& operator =(input_surface_t&&) = delete;
+    input_surface_t() = default;
+
+  public:
+    virtual ~input_surface_t() = default;
+
+    /**
+     * Test whether the surface accepts touch or pointer input at the given
+     * surface-local position.
+     *
+     * @param at The point to test for.
+     * @return True if the point lies inside the input region of the surface,
+     *   false otherwise.
+     */
+    virtual bool accepts_input(wf::pointf_t at) = 0;
+
+    /**
+     * The pointer entered the surface at coordinates @at.
+     *
+     * When entering a surface, the pointer can be confined to a particular
+     * region of the surface. This means that no matter what the user input is,
+     * the cursor will remain there, until the surface itself or a plugin
+     * breaks the constraint.
+     *
+     * @param at The pointer coordinates relative to the surface.
+     * @param refocus True if the pointer focus was already on the surface.
+     * @return The region the input should be constrained to, in surface-local
+     *   coordinates. No value means that no constraint should be activated.
+     */
+    virtual std::optional<wf::region_t> handle_pointer_enter(wf::pointf_t at,
+        bool refocus) = 0;
+
+    /**
+     * The pointer left the surface.
+     */
+    virtual void handle_pointer_leave() = 0;
+
+    /**
+     * The user pressed or released a pointer button while in the surface.
+     *
+     * @param time_ms The time reported by the device when the event happened.
+     * @param buttom The button which this event is about.
+     * @param state The new state of the button.
+     */
+    virtual void handle_pointer_button(uint32_t time_ms, uint32_t button,
+        wlr_button_state state) = 0;
+
+    /**
+     * The user moved the pointer.
+     *
+     * @param time_ms The time reported by the device when the event happened.
+     * @param at The new position of the pointer relative to the surface.
+     */
+    virtual void handle_pointer_motion(uint32_t time_ms, wf::pointf_t at) = 0;
+
+    /**
+     * The user scrolled.
+     *
+     * @param time_ms The time reported by the device when the event happened.
+     * @param delta The amount scrolled.
+     */
+    virtual void handle_pointer_axis(uint32_t time_ms,
+        wlr_axis_orientation orientation, double delta,
+        int32_t delta_discrete, wlr_axis_source source) = 0;
+
+    /**
+     * The user touched the screen.
+     *
+     * @param time_ms The time reported by the device when the event happened.
+     * @param id The number of the finger pressed down (first is 0,
+     *   then 1, 2, ...)
+     * @param at The coordinates of the finger relative to the surface.
+     */
+    virtual void handle_touch_down(uint32_t time_ms, int32_t id,
+        wf::pointf_t at) = 0;
+
+    /**
+     * The finger is no longer on the surface.
+     *
+     * @param time_ms The time reported by the device when the event happened.
+     * @param id The number of the released finger
+     *   (same as in handle_touch_down).
+     * @param finger_lifted Whether the finger was lifted off the screen, or it
+     *   has moved to a different surface.
+     */
+    virtual void handle_touch_up(uint32_t time_ms, int32_t id,
+        bool finger_lifted) = 0;
+
+    /**
+     * The user moved their finger across the screen.
+     *
+     * @param time_ms The time reported by the device when the event happened.
+     * @param id The number of the finger which was moved
+     *   (same as in handle_touch_down).
+     * @param at The new coordinates of the finger relative to the surface.
+     */
+    virtual void handle_touch_motion(uint32_t time_ms, int32_t id,
+        wf::pointf_t at) = 0;
 };
 
 /**
@@ -121,16 +233,6 @@ class surface_interface_t : public wf::object_base_t
     virtual wf::dimensions_t get_size() const = 0;
 
     /**
-     * Test whether the surface accepts touch or pointer input at the given
-     * surface-local position. By default, the surface doesn't accept any
-     * input.
-     *
-     * @return true if the point lies inside the input region of the surface,
-     * false otherwise.
-     */
-    virtual bool accepts_input(int32_t sx, int32_t sy);
-
-    /**
      * Send wl_surface.frame event. Surfaces which aren't backed by a
      * wlr_surface don't need to do anything here.
      *
@@ -185,6 +287,8 @@ class surface_interface_t : public wf::object_base_t
      */
     virtual void simple_render(const wf::framebuffer_t& fb, int x, int y,
         const wf::region_t& damage) = 0;
+
+    virtual input_surface_t& input() = 0;
 
     /** Private data for surface_interface_t, used for the implementation of
      * provided functions */

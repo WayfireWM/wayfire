@@ -73,11 +73,10 @@ class touch_interface_t
         int32_t id, uint32_t time, wf::pointf_t current);
 
     touch::gesture_state_t finger_state;
-    bool is_grabbed = false;
 
     /** Pressed a finger on a surface and dragging outside of it now */
     wf::surface_interface_t *grabbed_surface = nullptr;
-    wf::surface_interface_t *focus = nullptr;
+    std::map<int32_t, wf::surface_interface_t*> focus;
     void start_touch_down_grab(wf::surface_interface_t *surface);
     void end_touch_down_grab();
 

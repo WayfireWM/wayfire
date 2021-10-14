@@ -280,3 +280,52 @@ bool wf::color_rect_view_t::should_be_decorated()
 {
     return false;
 }
+
+void wf::no_input_surface_t::handle_pointer_axis(uint32_t time_ms,
+    wlr_axis_orientation orientation, double delta, int32_t delta_discrete,
+    wlr_axis_source source)
+{}
+
+void wf::no_input_surface_t::handle_pointer_motion(
+    uint32_t time_ms, wf::pointf_t at)
+{}
+
+void wf::no_input_surface_t::handle_pointer_button(
+    uint32_t time_ms, uint32_t button, wlr_button_state state)
+{}
+
+void wf::no_input_surface_t::handle_pointer_leave()
+{}
+
+std::optional<wf::region_t> wf::no_input_surface_t::handle_pointer_enter(
+    wf::pointf_t at, bool refocus)
+{
+    return {};
+}
+
+void wf::no_input_surface_t::handle_touch_down(
+    uint32_t time_ms, int32_t id, wf::pointf_t at)
+{}
+
+void wf::no_input_surface_t::handle_touch_up(
+    uint32_t time_ms, int32_t id, bool finger_lifted)
+{}
+
+void wf::no_input_surface_t::handle_touch_motion(
+    uint32_t time_ms, int32_t id, wf::pointf_t at)
+{}
+
+bool wf::no_input_surface_t::accepts_input(wf::pointf_t at)
+{
+    return false;
+}
+
+wf::input_surface_t& wf::color_rect_view_t::input()
+{
+    return *this;
+}
+
+wf::input_surface_t& wf::mirror_view_t::input()
+{
+    return *this;
+}

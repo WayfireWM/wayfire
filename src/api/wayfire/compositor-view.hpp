@@ -1,7 +1,5 @@
-#ifndef COMPOSITOR_VIEW_HPP
-#define COMPOSITOR_VIEW_HPP
+#pragma once
 
-#include "wayfire/compositor-surface.hpp"
 #include "wayfire/view.hpp"
 #include <wayfire/config/types.hpp>
 
@@ -25,6 +23,29 @@ compositor_interactive_view_t *interactive_view_from_view(
     wf::view_interface_t *view);
 
 /**
+ * Input surface implementation which denies all input.
+ */
+class no_input_surface_t : public wf::input_surface_t
+{
+  public:
+    no_input_surface_t() = default;
+
+    bool accepts_input(wf::pointf_t at) final;
+    std::optional<wf::region_t> handle_pointer_enter(
+        wf::pointf_t at, bool refocus) final;
+    void handle_pointer_leave() final;
+    void handle_pointer_button(
+        uint32_t time_ms, uint32_t button, wlr_button_state state) final;
+    void handle_pointer_motion(uint32_t time_ms, wf::pointf_t at) final;
+    void handle_pointer_axis(uint32_t time_ms, wlr_axis_orientation orientation,
+        double delta, int32_t delta_discrete, wlr_axis_source source) final;
+
+    void handle_touch_down(uint32_t time_ms, int32_t id, wf::pointf_t at) final;
+    void handle_touch_up(uint32_t time_ms, int32_t id, bool finger_lifted) final;
+    void handle_touch_motion(uint32_t time_ms, int32_t id, wf::pointf_t at) final;
+};
+
+/**
  * mirror_view_t is a specialized type of views.
  *
  * They have the same contents as another view. A mirror view's size is
@@ -35,7 +56,7 @@ compositor_interactive_view_t *interactive_view_from_view(
  * A mirror view is mapped as long as its base view is mapped. Afterwards, the
  * view becomes unmapped, until it is destroyed.
  */
-class mirror_view_t : public wf::view_interface_t, wf::compositor_surface_t
+class mirror_view_t : public wf::view_interface_t, wf::no_input_surface_t
 {
   protected:
     signal_callback_t base_view_unmapped, base_view_damaged;
@@ -75,13 +96,15 @@ class mirror_view_t : public wf::view_interface_t, wf::compositor_surface_t
     virtual wlr_surface *get_keyboard_focus_surface() override;
     virtual bool is_focuseable() const override;
     virtual bool should_be_decorated() override;
+
+    input_surface_t& input() override;
 };
 
 /**
  * color_rect_view_t represents another common type of compositor view - a
  * view which is simply a colored rectangle with a border.
  */
-class color_rect_view_t : public wf::view_interface_t, wf::compositor_surface_t
+class color_rect_view_t : public wf::view_interface_t, wf::no_input_surface_t
 {
   protected:
     wf::color_t _color;
@@ -124,7 +147,7 @@ class color_rect_view_t : public wf::view_interface_t, wf::compositor_surface_t
     virtual wlr_surface *get_keyboard_focus_surface() override;
     virtual bool is_focuseable() const override;
     virtual bool should_be_decorated() override;
+
+    input_surface_t& input() override;
 };
 }
-
-#endif /* end of include guard: COMPOSITOR_VIEW_HPP */

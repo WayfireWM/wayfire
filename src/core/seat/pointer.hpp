@@ -42,28 +42,6 @@ class pointer_t
     /** Get the currenntlly set cursor focus */
     wf::surface_interface_t *get_focus() const;
 
-    /**
-     * Set the active pointer constraint
-     *
-     * @param last_destroyed In case a constraint is destroyed, the constraint
-     * should be set to NULL, but this requires special handling, because not
-     * all operations are supported on destroyed constraints
-     */
-    void set_pointer_constraint(wlr_pointer_constraint_v1 *constraint,
-        bool last_destroyed = false);
-
-    /**
-     * Calculate the point inside the constraint region closest to the given
-     * point.
-     *
-     * @param point The point to be constrained inside the region.
-     * @return The closest point
-     */
-    wf::pointf_t constrain_point(wf::pointf_t point);
-
-    /** @return The currently active pointer constraint */
-    wlr_pointer_constraint_v1 *get_active_pointer_constraint();
-
     /** Handle events coming from the input devices */
     void handle_pointer_axis(wlr_event_pointer_axis *ev,
         input_event_processing_mode_t mode);
@@ -91,6 +69,16 @@ class pointer_t
 
     /** Whether there are pressed buttons currently */
     bool has_pressed_buttons() const;
+
+    /**
+     * Handle an update of the cursor's position, which includes updating the
+     * surface currently under the pointer.
+     *
+     * @param time_msec The time when the event causing this update occurred
+     * @param real_update Whether the update is caused by a hardware event or
+     *                    was artificially generated.
+     */
+    void update_cursor_position(uint32_t time_msec, bool real_update = true);
 
   private:
     nonstd::observer_ptr<wf::input_manager_t> input;
@@ -120,20 +108,9 @@ class pointer_t
      */
     void update_cursor_focus(wf::surface_interface_t *surface, wf::pointf_t local);
 
-    /**
-     * Handle an update of the cursor's position, which includes updating the
-     * surface currently under the pointer.
-     *
-     * @param time_msec The time when the event causing this update occurred
-     * @param real_update Whether the update is caused by a hardware event or
-     *                    was artificially generated.
-     */
-    void update_cursor_position(uint32_t time_msec, bool real_update = true);
-
     /** Number of currently-pressed mouse buttons */
     int count_pressed_buttons = 0;
-    wf::region_t constraint_region;
-    wlr_pointer_constraint_v1 *active_pointer_constraint = nullptr;
+    std::optional<wf::region_t> active_constraint_region;
 
     /** Figure out the global position of the given point.
      * @param relative The point relative to the cursor focus */
@@ -161,6 +138,25 @@ class pointer_t
      * focus
      */
     void send_motion(uint32_t time_msec, wf::pointf_t local);
+
+    /**
+     * Send release for all currently pressed buttons.
+     */
+    void release_all_buttons();
+
+    /**
+     * Set the active constraint relative to the currently focused surface.
+     */
+    void set_pointer_constraint(std::optional<wf::region_t> region);
+
+    /**
+     * Calculate the point inside the constraint region closest to the given
+     * point.
+     *
+     * @param point The point to be constrained inside the region.
+     * @return The closest point
+     */
+    wf::pointf_t constrain_point(wf::pointf_t point);
 };
 }
 

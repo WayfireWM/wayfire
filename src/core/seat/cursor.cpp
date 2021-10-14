@@ -5,7 +5,6 @@
 #include "../../view/view-impl.hpp"
 #include "input-manager.hpp"
 #include "wayfire/workspace-manager.hpp"
-#include "wayfire/compositor-surface.hpp"
 #include "wayfire/output-layout.hpp"
 #include "tablet.hpp"
 #include "wayfire/signal-definitions.hpp"

@@ -134,12 +134,13 @@ struct wf_pointer_constraint
     {
         on_destroy.set_callback([=] (void*)
         {
-            // reset constraint
-            auto& lpointer = wf::get_core_impl().seat->lpointer;
-            if (lpointer->get_active_pointer_constraint() == constraint)
-            {
-                lpointer->set_pointer_constraint(nullptr, true);
-            }
+            // Make sure we don't accidentally match this constraint when
+            // updating cursor focus
+            constraint->seat = NULL;
+
+            // Clear the constraint
+            wf::get_core_impl().seat->lpointer->update_cursor_position(
+                wf::get_current_time(), false);
 
             on_destroy.disconnect();
             delete this;
@@ -147,13 +148,9 @@ struct wf_pointer_constraint
 
         on_destroy.connect(&constraint->events.destroy);
 
-        // set correct constraint
-        auto& lpointer = wf::get_core_impl().seat->lpointer;
-        auto focus     = lpointer->get_focus();
-        if (focus && (focus->priv->wsurface == constraint->surface))
-        {
-            lpointer->set_pointer_constraint(constraint);
-        }
+        // Activate constraint
+        wf::get_core_impl().seat->lpointer->update_cursor_position(
+            wf::get_current_time(), false);
     }
 };
 

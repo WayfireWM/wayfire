@@ -4,7 +4,6 @@
 #include <linux/input-event-codes.h>
 
 #include <wayfire/nonstd/wlroots.hpp>
-#include <wayfire/compositor-surface.hpp>
 #include <wayfire/output.hpp>
 #include <wayfire/opengl.hpp>
 #include <wayfire/core.hpp>
@@ -20,7 +19,7 @@
 #include <cairo.h>
 
 class simple_decoration_surface : public wf::surface_interface_t,
-    public wf::compositor_surface_t
+    public wf::input_surface_t
 {
     bool _mapped = true;
 
@@ -138,38 +137,6 @@ class simple_decoration_surface : public wf::surface_interface_t,
         }
     }
 
-    bool accepts_input(int32_t sx, int32_t sy) override
-    {
-        return pixman_region32_contains_point(cached_region.to_pixman(),
-            sx, sy, NULL);
-    }
-
-    /* wf::compositor_surface_t implementation */
-    virtual void on_pointer_enter(int x, int y) override
-    {
-        layout.handle_motion(x, y);
-    }
-
-    virtual void on_pointer_leave() override
-    {
-        layout.handle_focus_lost();
-    }
-
-    virtual void on_pointer_motion(int x, int y) override
-    {
-        handle_action(layout.handle_motion(x, y));
-    }
-
-    virtual void on_pointer_button(uint32_t button, uint32_t state) override
-    {
-        if (button != BTN_LEFT)
-        {
-            return;
-        }
-
-        handle_action(layout.handle_press_event(state == WLR_BUTTON_PRESSED));
-    }
-
     void handle_action(wf::decor::decoration_layout_t::action_response_t action)
     {
         switch (action.action)
@@ -203,21 +170,67 @@ class simple_decoration_surface : public wf::surface_interface_t,
         }
     }
 
-    virtual void on_touch_down(int x, int y) override
+    bool accepts_input(wf::pointf_t at) override
     {
-        layout.handle_motion(x, y);
+        return cached_region.contains_pointf(at);
+    }
+
+    std::optional<wf::region_t> handle_pointer_enter(wf::pointf_t at,
+        bool refocus) override
+    {
+        layout.handle_motion(at.x, at.y);
+        return {};
+    }
+
+    void handle_pointer_leave() override
+    {
+        layout.handle_focus_lost();
+    }
+
+    void handle_pointer_button(uint32_t time_ms, uint32_t button,
+        wlr_button_state state) override
+    {
+        if (button != BTN_LEFT)
+        {
+            return;
+        }
+
+        handle_action(layout.handle_press_event(state == WLR_BUTTON_PRESSED));
+    }
+
+    void handle_pointer_motion(uint32_t time_ms, wf::pointf_t at) override
+    {
+        handle_action(layout.handle_motion(at.x, at.y));
+    }
+
+    void handle_pointer_axis(uint32_t time_ms,
+        wlr_axis_orientation orientation, double delta,
+        int32_t delta_discrete, wlr_axis_source source) override
+    {}
+
+    void handle_touch_down(uint32_t time_ms, int32_t id,
+        wf::pointf_t at) override
+    {
+        layout.handle_motion(at.x, at.y);
         handle_action(layout.handle_press_event());
     }
 
-    virtual void on_touch_motion(int x, int y) override
-    {
-        handle_action(layout.handle_motion(x, y));
-    }
-
-    virtual void on_touch_up() override
+    void handle_touch_up(uint32_t time_ms, int32_t id,
+        bool finger_lifted) override
     {
         handle_action(layout.handle_press_event(false));
         layout.handle_focus_lost();
+    }
+
+    void handle_touch_motion(uint32_t time_ms, int32_t id,
+        wf::pointf_t at) override
+    {
+        handle_action(layout.handle_motion(at.x, at.y));
+    }
+
+    wf::input_surface_t& input() override
+    {
+        return *this;
     }
 
     void unmap()

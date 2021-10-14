@@ -10,7 +10,6 @@
 
 // for emit_map_*()
 #include <wayfire/compositor-view.hpp>
-#include <wayfire/compositor-surface.hpp>
 
 struct wlr_seat;
 namespace wf
@@ -233,6 +232,11 @@ class wlr_view_t :
         const wf::region_t& damage) override
     {
         _simple_render(fb, x, y, damage);
+    }
+
+    virtual input_surface_t& input() override
+    {
+        return *this;
     }
 };
 

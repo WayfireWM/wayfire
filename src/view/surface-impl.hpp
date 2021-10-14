@@ -4,6 +4,7 @@
 #include <wayfire/opengl.hpp>
 #include <wayfire/surface.hpp>
 #include <wayfire/util.hpp>
+#include <wayfire/nonstd/wlroots-full.hpp>
 
 namespace wf
 {
@@ -37,7 +38,7 @@ class surface_interface_t::impl
  * Any class that derives from wlr_surface_base_t must also derive from
  * surface_interface_t!
  */
-class wlr_surface_base_t
+class wlr_surface_base_t : public input_surface_t
 {
   protected:
     wf::wl_listener_wrapper::callback_t handle_new_subsurface;
@@ -74,6 +75,25 @@ class wlr_surface_base_t
     virtual wf::dimensions_t _get_size() const;
     virtual void _simple_render(const wf::framebuffer_t& fb, int x, int y,
         const wf::region_t& damage);
+
+    /** Implementation of input_surface_t */
+    wlr_pointer_constraint_v1 *current_constraint = NULL;
+    wf::wl_listener_wrapper on_current_constraint_destroy;
+
+    bool accepts_input(wf::pointf_t at) final;
+    std::optional<wf::region_t> handle_pointer_enter(wf::pointf_t at,
+        bool reenter) final;
+    void handle_pointer_leave() final;
+    void handle_pointer_button(uint32_t time_ms, uint32_t button,
+        wlr_button_state state) final;
+    void handle_pointer_motion(uint32_t time_ms, wf::pointf_t at) final;
+    void handle_pointer_axis(uint32_t time_ms,
+        wlr_axis_orientation orientation, double delta,
+        int32_t delta_discrete, wlr_axis_source source) final;
+
+    void handle_touch_down(uint32_t time_ms, int32_t id, wf::pointf_t at) final;
+    void handle_touch_up(uint32_t time_ms, int32_t id, bool finger_lifted) final;
+    void handle_touch_motion(uint32_t time_ms, int32_t id, wf::pointf_t at) final;
 
   protected:
     virtual void map(wlr_surface *surface);
@@ -122,6 +142,11 @@ class wlr_child_surface_base_t :
     {
         update_output(get_output(), output);
         surface_interface_t::set_output(output);
+    }
+
+    virtual input_surface_t& input() override
+    {
+        return *this;
     }
 };
 }
