@@ -47,5 +47,25 @@
       <default>-1</default>
       <min>-1</min>
     </option>
+		<option name="up" type="activator">
+			<_short>Move window up</_short>
+			<_long>Move window up</_long>
+			<default>&lt;super&gt; KEY_W</default>
+		</option>
+		<option name="down" type="activator">
+			<_short>Move window down</_short>
+			<_long>Move window down</_long>
+			<default>&lt;super&gt; KEY_S</default>
+		</option>
+		<option name="left" type="activator">
+			<_short>Move window left</_short>
+			<_long>Move window left</_long>
+			<default>&lt;super&gt; KEY_A</default>
+		</option>
+		<option name="right" type="activator">
+			<_short>Move window right</_short>
+			<_long>Move window right</_long>
+			<default>&lt;super&gt; KEY_D</default>
+		</option>
 	</plugin>
 </wayfire>

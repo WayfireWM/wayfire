@@ -33,6 +33,8 @@ class wayfire_move : public wf::plugin_interface_t
     wf::option_wrapper_t<bool> move_enable_snap_off{"move/enable_snap_off"};
     wf::option_wrapper_t<int> move_snap_off_threshold{"move/snap_off_threshold"};
 
+    wf::activator_callback move_up_callback, move_down_callback, move_left_callback, move_right_callback;
+
     bool is_using_touch;
     bool was_client_request;
 
@@ -131,6 +133,35 @@ class wayfire_move : public wf::plugin_interface_t
 
         output->add_button(activate_button, &activate_binding);
 
+        move_up_callback = [=] (auto)
+        {
+            return keyboard_move(0, -80);
+        };
+        move_down_callback = [=] (auto)
+        {
+            return keyboard_move(0, 80);
+        };
+        move_left_callback = [=] (auto)
+        {
+            return keyboard_move(-80, 0);
+        };
+        move_right_callback = [=] (auto)
+        {
+            return keyboard_move(80, 0);
+        };
+        output->add_activator(
+            wf::option_wrapper_t<wf::activatorbinding_t>{"move/up"},
+            &move_up_callback);
+        output->add_activator(
+            wf::option_wrapper_t<wf::activatorbinding_t>{"move/down"},
+            &move_down_callback);
+        output->add_activator(
+            wf::option_wrapper_t<wf::activatorbinding_t>{"move/left"},
+            &move_left_callback);
+        output->add_activator(
+            wf::option_wrapper_t<wf::activatorbinding_t>{"move/right"},
+            &move_right_callback);
+
         using namespace std::placeholders;
         grab_interface->callbacks.pointer.button =
             [=] (uint32_t b, uint32_t state)
@@ -181,6 +212,32 @@ class wayfire_move : public wf::plugin_interface_t
         drag_helper->connect_signal("focus-output", &on_drag_output_focus);
         drag_helper->connect_signal("snap-off", &on_drag_snap_off);
         drag_helper->connect_signal("done", &on_drag_done);
+    }
+
+    bool keyboard_move(int dx, int dy)
+    {
+        is_using_touch     = false;
+        was_client_request = false;
+        auto view = output->get_active_view();
+
+        if (view && (view->role != wf::VIEW_ROLE_DESKTOP_ENVIRONMENT))
+        {
+            if (!initiate(view))
+            {
+                return false;
+            };
+            wf::geometry_t g = view->get_wm_geometry();
+            g.x += dx;
+            g.y += dy;
+
+            g.width = std::max(g.width, 1);
+            g.height = std::max(g.height, 1);
+            view->set_geometry(g);
+            input_pressed(WLR_BUTTON_RELEASED);
+            return true;
+        }
+
+        return false;
     }
 
     wf::signal_connection_t move_request = [=] (auto data)
