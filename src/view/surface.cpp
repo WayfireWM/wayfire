@@ -83,16 +83,20 @@ wf::surface_interface_t*wf::surface_interface_t::get_parent()
 }
 
 std::vector<wf::surface_iterator_t> wf::surface_interface_t::enumerate_surfaces(
-    wf::point_t surface_origin, bool mapped_only)
+    bool mapped_only)
 {
     std::vector<wf::surface_iterator_t> result;
     result.reserve(priv->last_cnt_surfaces);
     auto add_surfaces_recursive = [&] (surface_interface_t *child)
     {
-        auto child_surfaces = child->enumerate_surfaces(
-            child->get_offset() + surface_origin, mapped_only);
-        result.insert(result.end(),
-            child_surfaces.begin(), child_surfaces.end());
+        auto child_surfaces = child->enumerate_surfaces(mapped_only);
+        std::transform(child_surfaces.begin(), child_surfaces.end(),
+            std::back_inserter(result), [=] (wf::surface_iterator_t child)
+        {
+            child.position =
+                child.position + child.surface->output().get_offset();
+            return child;
+        });
     };
 
     for (auto& child : priv->surface_children_above)
@@ -102,7 +106,7 @@ std::vector<wf::surface_iterator_t> wf::surface_interface_t::enumerate_surfaces(
 
     if (!mapped_only || is_mapped())
     {
-        result.push_back({this, surface_origin});
+        result.push_back({this, wf::point_t{0, 0}});
     }
 
     for (auto& child : priv->surface_children_below)
@@ -141,38 +145,6 @@ int wf::surface_interface_t::get_active_shrink_constraint()
 * surface_interface_t functions for surfaces which are
 * backed by a wlr_surface
 ****************************/
-void wf::surface_interface_t::send_frame_done(const timespec& time)
-{
-    if (priv->wsurface)
-    {
-        wlr_surface_send_frame_done(priv->wsurface, &time);
-    }
-}
-
-wf::region_t wf::surface_interface_t::get_opaque_region(wf::point_t origin)
-{
-    if (!priv->wsurface)
-    {
-        return {};
-    }
-
-    wf::region_t opaque{&priv->wsurface->opaque_region};
-    opaque += origin;
-    opaque.expand_edges(-get_active_shrink_constraint());
-
-    return opaque;
-}
-
-wl_client*wf::surface_interface_t::get_client()
-{
-    if (priv->wsurface)
-    {
-        return wl_resource_get_client(priv->wsurface->resource);
-    }
-
-    return nullptr;
-}
-
 wlr_surface*wf::surface_interface_t::get_wlr_surface()
 {
     return priv->wsurface;
@@ -189,16 +161,12 @@ void wf::surface_interface_t::emit_damage(wf::region_t damage)
 
     while (surface->is_mapped() && surface->get_parent())
     {
-        toplevel_offset = toplevel_offset + surface->get_offset();
+        toplevel_offset = toplevel_offset + surface->output().get_offset();
         surface = surface->get_parent();
     }
 
-    if (surface->is_mapped())
-    {
-        damage += toplevel_offset;
-        surface_damage_signal ds(damage);
-        surface->emit_signal("damage", &ds);
-    }
+    surface_damage_signal ds(damage);
+    surface->emit_signal("damage", &ds);
 }
 
 void wf::surface_interface_t::clear_subsurfaces()
@@ -248,7 +216,7 @@ wf::wlr_surface_base_t::wlr_surface_base_t(surface_interface_t *self)
         wl_list_for_each(output, &sub->parent->current_outputs, link)
         {
             auto wo = wf::get_core().output_layout->find_output(output->output);
-            ptr->set_visible_on_output(wo, true);
+            ptr->output().set_visible_on_output(wo, true);
         }
 
         if (sub->mapped)
@@ -264,29 +232,9 @@ wf::wlr_surface_base_t::wlr_surface_base_t(surface_interface_t *self)
 wf::wlr_surface_base_t::~wlr_surface_base_t()
 {}
 
-
-
 wf::point_t wf::wlr_surface_base_t::get_window_offset()
 {
     return {0, 0};
-}
-
-bool wf::wlr_surface_base_t::_is_mapped() const
-{
-    return surface;
-}
-
-wf::dimensions_t wf::wlr_surface_base_t::_get_size() const
-{
-    if (!_is_mapped())
-    {
-        return {0, 0};
-    }
-
-    return {
-        surface->current.width,
-        surface->current.height,
-    };
 }
 
 void wf::emit_map_state_change(wf::surface_interface_t *surface)
@@ -324,9 +272,8 @@ void wf::wlr_surface_base_t::unmap()
 {
     assert(this->surface);
     apply_surface_damage();
-
     wf::region_t dmg{{.x = 0, .y = 0,
-        .width = _get_size().width, .height = _get_size().height}};
+        .width = get_size().width, .height = get_size().height}};
     _as_si->emit_damage(dmg);
 
     this->surface->data = NULL;
@@ -355,7 +302,7 @@ wlr_buffer*wf::wlr_surface_base_t::get_buffer()
 
 void wf::wlr_surface_base_t::apply_surface_damage()
 {
-    if (!_is_mapped())
+    if (!_as_si->is_mapped())
     {
         return;
     }
@@ -384,39 +331,10 @@ void wf::wlr_surface_base_t::apply_surface_damage()
 void wf::wlr_surface_base_t::commit()
 {
     apply_surface_damage();
-
     for (auto& [wo, cnt] : this->visibility)
     {
-        if (cnt > 0)
-        {
-            wo->render->schedule_redraw();
-        }
+        wo->render->schedule_redraw();
     }
-}
-
-void wf::wlr_surface_base_t::_simple_render(const wf::framebuffer_t& fb,
-    int x, int y, const wf::region_t& damage)
-{
-    if (!get_buffer())
-    {
-        return;
-    }
-
-    auto size = this->_get_size();
-    wf::geometry_t geometry = {x, y, size.width, size.height};
-    wf::texture_t texture{surface};
-
-    OpenGL::render_begin(fb);
-    OpenGL::render_texture(texture, fb, geometry, glm::vec4(1.f),
-        OpenGL::RENDER_FLAG_CACHED);
-    for (const auto& rect : damage)
-    {
-        fb.logic_scissor(wlr_box_from_pixman_box(rect));
-        OpenGL::draw_cached();
-    }
-
-    OpenGL::clear_cached();
-    OpenGL::render_end();
 }
 
 wf::wlr_child_surface_base_t::wlr_child_surface_base_t(
@@ -550,9 +468,40 @@ void wf::wlr_surface_base_t::handle_touch_up(
     }
 }
 
-void wf::wlr_surface_base_t::update_output(wf::output_t *output, bool is_visible)
+wf::point_t wf::wlr_surface_base_t::get_offset()
+{
+    // A default offset, subsurfaces override this anyway
+    return {0, 0};
+}
+
+wf::dimensions_t wf::wlr_surface_base_t::get_size() const
+{
+    auto surf = _as_si->priv->wsurface;
+    if (!surf)
+    {
+        return {0, 0};
+    }
+
+    return {
+        surf->current.width,
+        surf->current.height,
+    };
+}
+
+void wf::wlr_surface_base_t::schedule_redraw(const timespec& frame_end)
+{
+    auto surf = _as_si->priv->wsurface;
+    if (surf)
+    {
+        wlr_surface_send_frame_done(surf, &frame_end);
+    }
+}
+
+void wf::wlr_surface_base_t::set_visible_on_output(
+    wf::output_t *output, bool is_visible)
 {
     visibility[output] += (is_visible ? 1 : -1);
+
     auto surf = _as_si->priv->wsurface;
     if (!surf)
     {
@@ -572,7 +521,42 @@ void wf::wlr_surface_base_t::update_output(wf::output_t *output, bool is_visible
     }
 }
 
-void wf::surface_interface_t::set_visible_on_output(
-    wf::output_t *output, bool is_visible)
+wf::region_t wf::wlr_surface_base_t::get_opaque_region()
 {
-    /* no-op by default, this is just a hint */ }
+    auto surf = _as_si->priv->wsurface;
+    if (surf)
+    {
+        return {};
+    }
+
+    wf::region_t opaque{&surf->opaque_region};
+    opaque.expand_edges(
+        -wf::surface_interface_t::get_active_shrink_constraint());
+
+    return opaque;
+}
+
+void wf::wlr_surface_base_t::simple_render(
+    const wf::framebuffer_t& fb, wf::point_t pos, const wf::region_t& damage)
+{
+    if (!get_buffer())
+    {
+        return;
+    }
+
+    auto size = this->get_size();
+    wf::geometry_t geometry = {pos.x, pos.y, size.width, size.height};
+    wf::texture_t texture{surface};
+
+    OpenGL::render_begin(fb);
+    OpenGL::render_texture(texture, fb, geometry, glm::vec4(1.f),
+        OpenGL::RENDER_FLAG_CACHED);
+    for (const auto& rect : damage)
+    {
+        fb.logic_scissor(wlr_box_from_pixman_box(rect));
+        OpenGL::draw_cached();
+    }
+
+    OpenGL::clear_cached();
+    OpenGL::render_end();
+}

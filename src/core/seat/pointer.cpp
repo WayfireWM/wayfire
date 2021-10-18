@@ -173,9 +173,10 @@ wf::pointf_t wf::pointer_t::get_absolute_position_from_relative(
     wf::pointf_t relative)
 {
     auto output_geometry = cursor_focus.view()->get_output_geometry();
-    wf::point_t origin   = {output_geometry.x, output_geometry.y};
+    relative.x += output_geometry.x;
+    relative.y += output_geometry.y;
 
-    for (auto& surf : cursor_focus.view()->enumerate_surfaces(origin))
+    for (auto& surf : cursor_focus.view()->enumerate_surfaces())
     {
         if (surf.surface == this->cursor_focus.surface())
         {

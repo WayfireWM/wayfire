@@ -37,18 +37,13 @@ class crossfade_t : public wf::view_2D
         OpenGL::render_end();
 
         auto og = view->get_output_geometry();
-        for (auto& surface : view->enumerate_surfaces(wf::origin(og)))
+        for (auto& surface : view->enumerate_surfaces())
         {
-            wf::region_t damage = wf::geometry_t{
-                surface.position.x,
-                surface.position.y,
-                surface.surface->get_size().width,
-                surface.surface->get_size().height
-            };
-
+            auto pos = wf::origin(og) + surface.position;
+            wf::region_t damage =
+                wf::construct_box(pos, surface.surface->output().get_size());
             damage &= original_buffer.geometry;
-            surface.surface->simple_render(original_buffer,
-                surface.position.x, surface.position.y, damage);
+            surface.surface->output().simple_render(original_buffer, pos, damage);
         }
     }
 

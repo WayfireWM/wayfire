@@ -208,12 +208,12 @@ void wf::view_interface_t::set_output(wf::output_t *new_output)
         {
             if (data.output)
             {
-                surf.surface->set_visible_on_output(data.output, false);
+                surf.surface->output().set_visible_on_output(data.output, false);
             }
 
             if (new_output)
             {
-                surf.surface->set_visible_on_output(new_output, true);
+                surf.surface->output().set_visible_on_output(new_output, true);
             }
         }
 
@@ -364,7 +364,7 @@ wf::pointf_t wf::view_interface_t::global_to_local_point(const wf::pointf_t& arg
     /* Go up from the surface, finding offsets */
     while (surface && surface != this)
     {
-        auto offset = surface->get_offset();
+        auto offset = surface->output().get_offset();
         result.x -= offset.x;
         result.y -= offset.y;
 
@@ -385,7 +385,7 @@ wf::surface_interface_t*wf::view_interface_t::map_input_coordinates(
     auto view_relative_coordinates =
         global_to_local_point(cursor, nullptr);
 
-    for (auto& child : enumerate_surfaces({0, 0}, true))
+    for (auto& child : enumerate_surfaces(true))
     {
         local.x = view_relative_coordinates.x - child.position.x;
         local.y = view_relative_coordinates.y - child.position.y;
@@ -955,11 +955,11 @@ wf::geometry_t wf::view_interface_t::get_untransformed_bounding_box()
     auto bbox = get_output_geometry();
     wf::region_t bounding_region = bbox;
 
-    for (auto& child : enumerate_surfaces({bbox.x, bbox.y}, true))
+    for (auto& child : enumerate_surfaces(true))
     {
-        auto dim = child.surface->get_size();
-        bounding_region |= {child.position.x, child.position.y,
-            dim.width, dim.height};
+        auto dim = child.surface->output().get_size();
+        auto pos = child.position + wf::origin(bbox);
+        bounding_region |= wf::construct_box(pos, dim);
     }
 
     return wlr_box_from_pixman_box(bounding_region.get_extents());
@@ -1034,10 +1034,11 @@ bool wf::view_interface_t::intersects_region(const wlr_box& region)
     }
 
     auto origin = get_output_geometry();
-    for (auto& child : enumerate_surfaces({origin.x, origin.y}, true))
+    for (auto& child : enumerate_surfaces(true))
     {
-        wlr_box box = {child.position.x, child.position.y,
-            child.surface->get_size().width, child.surface->get_size().height};
+        auto box = wf::construct_box(
+            child.position + wf::origin(origin),
+            child.surface->output().get_size());
         box = transform_region(box);
 
         if (region & box)
@@ -1060,9 +1061,11 @@ wf::region_t wf::view_interface_t::get_transformed_opaque_region()
     auto og   = get_output_geometry();
 
     wf::region_t opaque;
-    for (auto& surf : enumerate_surfaces({og.x, og.y}, true))
+    for (auto& surf : enumerate_surfaces(true))
     {
-        opaque |= surf.surface->get_opaque_region(surf.position);
+        auto surf_opaque = surf.surface->output().get_opaque_region();
+        surf_opaque += wf::origin(og) + surf.position;
+        opaque |= surf_opaque;
     }
 
     auto bbox = obox;
@@ -1088,7 +1091,7 @@ bool wf::view_interface_t::render_transformed(const wf::framebuffer_t& framebuff
     wf::texture_t previous_texture;
     float texture_scale;
 
-    if (is_mapped() && (enumerate_surfaces({0, 0}, true).size() == 1) &&
+    if (is_mapped() && (enumerate_surfaces(true).size() == 1) &&
         get_wlr_surface())
     {
         /* Optimized case: there is a single mapped surface.
@@ -1238,19 +1241,14 @@ const wf::framebuffer_t& wf::view_interface_t::take_snapshot()
     OpenGL::render_end();
 
     auto output_geometry = get_output_geometry();
-    auto children = enumerate_surfaces({output_geometry.x, output_geometry.y}, true);
+    auto children = enumerate_surfaces(true);
     for (auto& child : wf::reverse(children))
     {
-        wlr_box child_box{
-            child.position.x,
-            child.position.y,
-            child.surface->get_size().width,
-            child.surface->get_size().height
-        };
-
-        child.surface->simple_render(offscreen_buffer,
-            child.position.x, child.position.y,
-            offscreen_buffer.cached_damage & child_box);
+        auto pos = child.position + wf::origin(output_geometry);
+        auto child_box = wf::construct_box(
+            pos, child.surface->output().get_size());
+        child.surface->output().simple_render(offscreen_buffer,
+            pos, offscreen_buffer.cached_damage & child_box);
     }
 
     offscreen_buffer.cached_damage.clear();
@@ -1360,9 +1358,4 @@ void wf::view_interface_t::destruct()
 {
     view_impl->is_alive = false;
     wf::get_core_impl().erase_view(self());
-}
-
-wf::point_t wf::view_interface_t::get_offset()
-{
-    return {0, 0};
 }

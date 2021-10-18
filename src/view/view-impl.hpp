@@ -224,21 +224,15 @@ class wlr_view_t :
     /* Just pass to the default wlr surface implementation */
     virtual bool is_mapped() const override
     {
-        return _is_mapped();
-    }
-
-    virtual wf::dimensions_t get_size() const override
-    {
-        return _get_size();
-    }
-
-    virtual void simple_render(const wf::framebuffer_t& fb, int x, int y,
-        const wf::region_t& damage) override
-    {
-        _simple_render(fb, x, y, damage);
+        return priv->wsurface;
     }
 
     virtual input_surface_t& input() override
+    {
+        return *this;
+    }
+
+    virtual output_surface_t& output() override
     {
         return *this;
     }

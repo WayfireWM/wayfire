@@ -38,7 +38,7 @@ class surface_interface_t::impl
  * Any class that derives from wlr_surface_base_t must also derive from
  * surface_interface_t!
  */
-class wlr_surface_base_t : public input_surface_t
+class wlr_surface_base_t : public input_surface_t, public output_surface_t
 {
   protected:
     wf::wl_listener_wrapper::callback_t handle_new_subsurface;
@@ -65,18 +65,6 @@ class wlr_surface_base_t : public input_surface_t
     /** @return The offset from the surface coordinates to the actual geometry */
     virtual wf::point_t get_window_offset();
 
-    /** Update the surface output */
-    virtual void update_output(wf::output_t *output, bool visible);
-
-    /*
-     * Functions that need to be implemented/overridden from the
-     * surface_implementation_t
-     */
-    virtual bool _is_mapped() const;
-    virtual wf::dimensions_t _get_size() const;
-    virtual void _simple_render(const wf::framebuffer_t& fb, int x, int y,
-        const wf::region_t& damage);
-
     /** Implementation of input_surface_t */
     wlr_pointer_constraint_v1 *current_constraint = NULL;
     wf::wl_listener_wrapper on_current_constraint_destroy;
@@ -95,6 +83,15 @@ class wlr_surface_base_t : public input_surface_t
     void handle_touch_down(uint32_t time_ms, int32_t id, wf::pointf_t at) final;
     void handle_touch_up(uint32_t time_ms, int32_t id, bool finger_lifted) final;
     void handle_touch_motion(uint32_t time_ms, int32_t id, wf::pointf_t at) final;
+
+    /** Implementation of output_surface_t */
+    wf::point_t get_offset() override;
+    wf::dimensions_t get_size() const final;
+    void schedule_redraw(const timespec& frame_end) final;
+    void set_visible_on_output(wf::output_t *output, bool is_visible) override;
+    wf::region_t get_opaque_region() final;
+    void simple_render(const wf::framebuffer_t& fb, wf::point_t pos,
+        const wf::region_t& damage) final;
 
   protected:
     virtual void map(wlr_surface *surface);
@@ -122,29 +119,17 @@ class wlr_child_surface_base_t :
     wlr_child_surface_base_t& operator =(const wlr_child_surface_base_t&) = delete;
     wlr_child_surface_base_t& operator =(wlr_child_surface_base_t&&) = delete;
 
-    /* Just pass to the default wlr surface implementation */
-    virtual bool is_mapped() const override
+    bool is_mapped() const override
     {
-        return _is_mapped();
-    }
-
-    virtual wf::dimensions_t get_size() const override
-    {
-        return _get_size();
-    }
-
-    virtual void simple_render(const wf::framebuffer_t& fb, int x, int y,
-        const wf::region_t& damage) override
-    {
-        _simple_render(fb, x, y, damage);
-    }
-
-    void set_visible_on_output(wf::output_t *output, bool is_visible) override
-    {
-        update_output(output, is_visible);
+        return priv->wsurface != nullptr;
     }
 
     virtual input_surface_t& input() override
+    {
+        return *this;
+    }
+
+    virtual output_surface_t& output() override
     {
         return *this;
     }

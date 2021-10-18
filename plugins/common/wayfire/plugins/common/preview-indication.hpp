@@ -108,7 +108,7 @@ class preview_indication_view_t : public wf::color_rect_view_t
     void update_animation()
     {
         wf::geometry_t current = animation;
-        if (current != geometry)
+        if (current != get_wm_geometry())
         {
             set_geometry(current);
         }

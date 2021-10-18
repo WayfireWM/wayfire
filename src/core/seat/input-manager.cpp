@@ -229,7 +229,9 @@ bool wf::input_manager_t::input_grabbed()
 
 bool wf::input_manager_t::can_focus_surface(wf::focused_view_t surface)
 {
-    if (exclusive_client && (surface.surface()->get_client() != exclusive_client))
+    auto wlr_surf = surface.surface()->get_wlr_surface();
+    auto client   = wlr_surf ? wl_resource_get_client(wlr_surf->resource) : nullptr;
+    if (exclusive_client && (client != exclusive_client))
     {
         /* We have exclusive focus surface, for ex. a lockscreen.
          * The only kind of things we can focus are OSKs and similar */

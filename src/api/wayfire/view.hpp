@@ -539,9 +539,6 @@ class view_interface_t : public surface_interface_t
      * signal is mandatory for all views.
      */
     virtual void emit_view_pre_unmap();
-
-  private:
-    wf::point_t get_offset() final;
 };
 
 wayfire_view wl_surface_to_wayfire_view(wl_resource *surface);

@@ -928,18 +928,6 @@ class wayfire_dnd_xwayland_view : public wayfire_unmanaged_xwayland_view
         return xwayland_view_type_t::DND;
     }
 
-    void simple_render(const wf::framebuffer_t& fb,
-        int x, int y, const wf::region_t& damage) override
-    {
-        wayfire_unmanaged_xwayland_view::simple_render(fb, x, y, damage);
-
-        timespec repaint_ended;
-        clockid_t presentation_clock =
-            wlr_backend_get_presentation_clock(wf::get_core_impl().backend);
-        clock_gettime(presentation_clock, &repaint_ended);
-        send_frame_done(repaint_ended);
-    }
-
     void destruct() override
     {
         LOGD("Destroying a Xwayland drag icon");

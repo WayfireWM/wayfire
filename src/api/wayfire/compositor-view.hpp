@@ -46,6 +46,34 @@ class no_input_surface_t : public wf::input_surface_t
 };
 
 /**
+ * Output surface implementation which mirrors an existing view.
+ */
+class mirror_surface_t : public wf::output_surface_t
+{
+  public:
+    /**
+     * Create a new mirror surface. It will get the dimensions of @source
+     * and will have the same contents.
+     *
+     * @param toplevel_damage A callback to handle damage regions in the surface.
+     */
+    mirror_surface_t(
+        wayfire_view source, std::function<void(wf::region_t)> damage_callback);
+
+    wf::point_t get_offset() override;
+    wf::dimensions_t get_size() const final;
+    void schedule_redraw(const timespec& frame_end) final;
+    void set_visible_on_output(wf::output_t *output, bool is_visible) override;
+    wf::region_t get_opaque_region() final;
+    void simple_render(const wf::framebuffer_t& fb, wf::point_t pos,
+        const wf::region_t& damage) final;
+
+  private:
+    wayfire_view base_view;
+    wf::signal_connection_t on_source_view_unmapped, on_source_view_damaged;
+};
+
+/**
  * mirror_view_t is a specialized type of views.
  *
  * They have the same contents as another view. A mirror view's size is
@@ -56,13 +84,19 @@ class no_input_surface_t : public wf::input_surface_t
  * A mirror view is mapped as long as its base view is mapped. Afterwards, the
  * view becomes unmapped, until it is destroyed.
  */
-class mirror_view_t : public wf::view_interface_t, wf::no_input_surface_t
+class mirror_view_t : public wf::view_interface_t,
+    public wf::no_input_surface_t, public wf::mirror_surface_t
 {
   protected:
-    signal_connection_t base_view_unmapped, base_view_damaged;
+    wf::signal_connection_t on_source_view_unmapped;
     wayfire_view base_view;
     int x;
     int y;
+
+    mirror_view_t(const mirror_view_t&) = delete;
+    mirror_view_t(mirror_view_t&&) = delete;
+    mirror_view_t& operator =(const mirror_view_t&) = delete;
+    mirror_view_t& operator =(mirror_view_t&&) = delete;
 
   public:
     /**
@@ -85,9 +119,6 @@ class mirror_view_t : public wf::view_interface_t, wf::no_input_surface_t
 
     /* surface_interface_t implementation */
     virtual bool is_mapped() const override;
-    virtual wf::dimensions_t get_size() const override;
-    virtual void simple_render(const wf::framebuffer_t& fb, int x, int y,
-        const wf::region_t& damage) override;
 
     /* view_interface_t implementation */
     virtual void move(int x, int y) override;
@@ -98,21 +129,59 @@ class mirror_view_t : public wf::view_interface_t, wf::no_input_surface_t
     virtual bool should_be_decorated() override;
 
     input_surface_t& input() override;
+    output_surface_t& output() override;
+};
+
+/**
+ * Output surface implementation which provides a solid color rectangle with
+ * a border.
+ */
+class solid_bordered_surface_t : public wf::output_surface_t
+{
+  public:
+    /**
+     * Create a new solid bordered surface.
+     *
+     * @param damage_cb A callback to be called whenever the color, the border
+     *   of the surface and/or its geometry changes.
+     */
+    solid_bordered_surface_t(std::function<void()> damage_cb);
+
+    wf::point_t get_offset() override;
+    wf::dimensions_t get_size() const final;
+    void schedule_redraw(const timespec& frame_end) final;
+    void set_visible_on_output(wf::output_t *output, bool is_visible) override;
+    wf::region_t get_opaque_region() final;
+    void simple_render(const wf::framebuffer_t& fb, wf::point_t pos,
+        const wf::region_t& damage) final;
+
+    /** Set the rectangle size. */
+    void set_size(wf::dimensions_t new_size);
+    /** Set the view color. Color's alpha is not premultiplied */
+    void set_color(wf::color_t color);
+    /** Set the view border color. Color's alpha is not premultiplied */
+    void set_border_color(wf::color_t border);
+    /** Set the border width. */
+    void set_border(int width);
+
+  protected:
+    wf::color_t _color = {0, 0, 0, 0};
+    wf::color_t _border_color = {0, 0, 0, 0};
+    int border = 0;
+
+    wf::dimensions_t size = {1, 1};
+    std::function<void()> damage_cb;
 };
 
 /**
  * color_rect_view_t represents another common type of compositor view - a
  * view which is simply a colored rectangle with a border.
  */
-class color_rect_view_t : public wf::view_interface_t, wf::no_input_surface_t
+class color_rect_view_t : public wf::view_interface_t,
+    public wf::no_input_surface_t, public wf::solid_bordered_surface_t
 {
-  protected:
-    wf::color_t _color;
-    wf::color_t _border_color;
-    int border;
-
-    wf::geometry_t geometry;
-    bool _is_mapped;
+    wf::point_t position = {0, 0};
+    bool _is_mapped = true;
 
   public:
     /**
@@ -126,18 +195,11 @@ class color_rect_view_t : public wf::view_interface_t, wf::no_input_surface_t
      */
     virtual void close() override;
 
-    /** Set the view color. Color's alpha is not premultiplied */
-    virtual void set_color(wf::color_t color);
-    /** Set the view border color. Color's alpha is not premultiplied */
-    virtual void set_border_color(wf::color_t border);
-    /** Set the border width. */
-    virtual void set_border(int width);
-
     /* required for surface_interface_t */
     virtual bool is_mapped() const override;
-    virtual wf::dimensions_t get_size() const override;
-    virtual void simple_render(const wf::framebuffer_t& fb, int x, int y,
-        const wf::region_t& damage) override;
+
+    input_surface_t& input() override;
+    output_surface_t& output() override;
 
     /* required for view_interface_t */
     virtual void move(int x, int y) override;
@@ -147,7 +209,5 @@ class color_rect_view_t : public wf::view_interface_t, wf::no_input_surface_t
     virtual wlr_surface *get_keyboard_focus_surface() override;
     virtual bool is_focuseable() const override;
     virtual bool should_be_decorated() override;
-
-    input_surface_t& input() override;
 };
 }

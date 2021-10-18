@@ -19,7 +19,7 @@
 #include <cairo.h>
 
 class simple_decoration_surface : public wf::surface_interface_t,
-    public wf::input_surface_t
+    public wf::input_surface_t, public wf::output_surface_t
 {
     bool _mapped = true;
 
@@ -125,16 +125,27 @@ class simple_decoration_surface : public wf::surface_interface_t,
         }
     }
 
-    virtual void simple_render(const wf::framebuffer_t& fb, int x, int y,
+    virtual void simple_render(const wf::framebuffer_t& fb, wf::point_t pos,
         const wf::region_t& damage) override
     {
-        wf::region_t frame = this->cached_region + wf::point_t{x, y};
+        wf::region_t frame = this->cached_region + pos;
         frame &= damage;
 
         for (const auto& box : frame)
         {
-            render_scissor_box(fb, {x, y}, wlr_box_from_pixman_box(box));
+            render_scissor_box(fb, pos, wlr_box_from_pixman_box(box));
         }
+    }
+
+    void schedule_redraw(const timespec& frame_end) final
+    {}
+
+    void set_visible_on_output(wf::output_t *output, bool is_visible) final
+    {}
+
+    wf::region_t get_opaque_region() final
+    {
+        return {};
     }
 
     void handle_action(wf::decor::decoration_layout_t::action_response_t action)
@@ -229,6 +240,11 @@ class simple_decoration_surface : public wf::surface_interface_t,
     }
 
     wf::input_surface_t& input() override
+    {
+        return *this;
+    }
+
+    wf::output_surface_t& output() override
     {
         return *this;
     }

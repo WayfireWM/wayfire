@@ -865,7 +865,7 @@ class wf::render_manager::impl
 
         // Finally, the opaque region must be the full surface.
         wf::region_t non_opaque = output->get_relative_geometry();
-        non_opaque ^= candidate->get_opaque_region(wf::point_t{0, 0});
+        non_opaque ^= candidate->output().get_opaque_region();
         if (!non_opaque.empty())
         {
             return false;
@@ -1072,8 +1072,18 @@ class wf::render_manager::impl
 
                 for (auto& child : view->enumerate_surfaces())
                 {
-                    child.surface->send_frame_done(repaint_ended);
+                    child.surface->output().schedule_redraw(repaint_ended);
                 }
+            }
+        }
+
+        // Drag icons are scheduled separately
+        auto xw_di = wf::get_xwayland_drag_icon();
+        if (xw_di)
+        {
+            for (auto& child : xw_di->enumerate_surfaces())
+            {
+                child.surface->output().schedule_redraw(repaint_ended);
             }
         }
     }
@@ -1165,8 +1175,8 @@ class wf::render_manager::impl
         wlr_box obox = {
             .x     = pos.x,
             .y     = pos.y,
-            .width = surface->get_size().width,
-            .height = surface->get_size().height
+            .width = surface->output().get_size().width,
+            .height = surface->output().get_size().height
         };
 
         ds->damage = repaint.ws_damage & obox;
@@ -1177,7 +1187,7 @@ class wf::render_manager::impl
 
             /* Subtract opaque region from workspace damage. The views below
              * won't be visible, so no need to damage them */
-            repaint.ws_damage ^= ds->surface->get_opaque_region(pos);
+            repaint.ws_damage ^= ds->surface->output().get_opaque_region() + pos;
             repaint.to_render.push_back(std::move(ds));
         }
     }
@@ -1197,9 +1207,9 @@ class wf::render_manager::impl
             wf::point_t current_output = wf::origin(output->get_layout_geometry());
             auto origin = wf::origin(xw_dnd_icon->get_output_geometry()) +
                 dnd_output + -current_output;
-            for (auto& child : xw_dnd_icon->enumerate_surfaces(origin, true))
+            for (auto& child : xw_dnd_icon->enumerate_surfaces(true))
             {
-                schedule_surface(repaint, child.surface, child.position);
+                schedule_surface(repaint, child.surface, origin + child.position);
             }
         }
 
@@ -1214,9 +1224,9 @@ class wf::render_manager::impl
         offset.x -= og.x;
         offset.y -= og.y;
 
-        for (auto& child : drag_icon->enumerate_surfaces(offset, true))
+        for (auto& child : drag_icon->enumerate_surfaces(true))
         {
-            schedule_surface(repaint, child.surface, child.position);
+            schedule_surface(repaint, child.surface, offset + child.position);
         }
     }
 
@@ -1264,9 +1274,10 @@ class wf::render_manager::impl
                      * being rendered */
                     auto obox = view->get_output_geometry() + view_delta;
                     for (auto& child :
-                         view->enumerate_surfaces({obox.x, obox.y}, true))
+                         view->enumerate_surfaces(true))
                     {
-                        schedule_surface(repaint, child.surface, child.position);
+                        schedule_surface(repaint, child.surface,
+                            wf::origin(obox) + child.position);
                     }
                 }
             }
@@ -1352,15 +1363,14 @@ class wf::render_manager::impl
             {
                 repaint.fb.geometry = fb_geometry + ds->pos;
                 ds->view->render_transformed(repaint.fb, ds->damage);
-                for (auto& child : ds->view->enumerate_surfaces({0, 0}))
+                for (auto& child : ds->view->enumerate_surfaces(true))
                 {
                     send_sampled_on_output(child.surface);
                 }
             } else
             {
                 repaint.fb.geometry = fb_geometry;
-                ds->surface->simple_render(repaint.fb,
-                    ds->pos.x, ds->pos.y, ds->damage);
+                ds->surface->output().simple_render(repaint.fb, ds->pos, ds->damage);
                 send_sampled_on_output(ds->surface);
             }
         }

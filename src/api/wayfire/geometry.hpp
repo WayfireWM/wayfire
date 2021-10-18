@@ -26,6 +26,8 @@ using geometry_t = wlr_box;
 
 point_t origin(const geometry_t& geometry);
 dimensions_t dimensions(const geometry_t& geometry);
+geometry_t construct_box(
+    const wf::point_t& origin, const wf::dimensions_t& dimensions);
 
 /* Returns the intersection of the two boxes, if the boxes don't intersect,
  * the resulting geometry has undefined (x,y) and width == height == 0 */
