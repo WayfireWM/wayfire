@@ -39,7 +39,7 @@ class wayfire_layer_shell_view : public wf::wlr_view_t
     wayfire_layer_shell_view& operator =(const wayfire_layer_shell_view&) = delete;
     wayfire_layer_shell_view& operator =(wayfire_layer_shell_view&&) = delete;
 
-    void map(wlr_surface *surface) override;
+    void map() override;
     void unmap() override;
     void commit() override;
     void close() override;
@@ -341,6 +341,9 @@ wayfire_layer_shell_view::wayfire_layer_shell_view(wlr_layer_surface_v1 *lsurf) 
     LOGD("Create a layer surface: namespace ", lsurf->namespace_t,
         " layer ", lsurf->current.layer);
 
+    auto surf = std::make_shared<wf::wlr_surface_base_t>(lsurf->surface);
+    this->set_main_surface(surf);
+
     role = wf::VIEW_ROLE_DESKTOP_ENVIRONMENT;
     std::memset(&this->prev_state, 0, sizeof(prev_state));
     sticky = true;
@@ -368,7 +371,7 @@ void wayfire_layer_shell_view::initialize()
     lsurface->output = get_output()->handle;
     lsurface->data   = dynamic_cast<wf::view_interface_t*>(this);
 
-    on_map.set_callback([&] (void*) { map(lsurface->surface); });
+    on_map.set_callback([&] (void*) { map(); });
     on_unmap.set_callback([&] (void*) { unmap(); });
     on_destroy.set_callback([&] (void*) { destroy(); });
     on_new_popup.set_callback([&] (void *data)
@@ -447,7 +450,7 @@ wf::layer_t wayfire_layer_shell_view::get_layer()
     }
 }
 
-void wayfire_layer_shell_view::map(wlr_surface *surface)
+void wayfire_layer_shell_view::map()
 {
     // Disconnect, from now on regular commits will work
     on_commit_unmapped.disconnect();
@@ -457,7 +460,7 @@ void wayfire_layer_shell_view::map(wlr_surface *surface)
     handle_app_id_changed(nonull(lsurface->namespace_t));
 
     get_output()->workspace->add_view(self(), get_layer());
-    wf::wlr_view_t::map(surface);
+    wf::wlr_view_t::map();
     wf_layer_shell_manager::get_instance().handle_map(this);
 }
 

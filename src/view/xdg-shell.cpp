@@ -12,8 +12,13 @@
 wayfire_xdg_popup::wayfire_xdg_popup(wlr_xdg_popup *popup) :
     wf::wlr_view_t()
 {
-    this->popup_parent =
-        dynamic_cast<wlr_view_t*>(wf::wf_surface_from_void(popup->parent->data));
+    auto surf = std::make_shared<wf::wlr_surface_base_t>(popup->base->surface);
+    set_main_surface(surf);
+
+    auto parent_surface = wf::wf_surface_from_void(popup->parent->data);
+    auto view = wf::get_core().find_views_with_surface(parent_surface).front();
+    this->popup_parent = dynamic_cast<wlr_view_t*>(view.get());
+
     this->popup = popup;
     this->role  = wf::VIEW_ROLE_UNMANAGED;
     this->view_impl->keyboard_focus_enabled = false;
@@ -23,7 +28,7 @@ wayfire_xdg_popup::wayfire_xdg_popup(wlr_xdg_popup *popup) :
 void wayfire_xdg_popup::initialize()
 {
     LOGI("New xdg popup");
-    on_map.set_callback([&] (void*) { map(this->popup->base->surface); });
+    on_map.set_callback([&] (void*) { map(); });
     on_unmap.set_callback([&] (void*)
     {
         pending_close.disconnect();
@@ -69,7 +74,7 @@ void wayfire_xdg_popup::initialize()
     unconstrain();
 }
 
-void wayfire_xdg_popup::map(wlr_surface *surface)
+void wayfire_xdg_popup::map()
 {
     uint32_t parent_layer =
         get_output()->workspace->get_view_layer(popup_parent->self());
@@ -82,7 +87,7 @@ void wayfire_xdg_popup::map(wlr_surface *surface)
 
     get_output()->workspace->add_view(self(), target_layer);
 
-    wlr_view_t::map(surface);
+    wlr_view_t::map();
     update_position();
 }
 
@@ -193,7 +198,10 @@ void create_xdg_popup(wlr_xdg_popup *popup)
 
 wayfire_xdg_view::wayfire_xdg_view(wlr_xdg_toplevel *top) :
     wf::wlr_view_t(), xdg_toplevel(top)
-{}
+{
+    auto surf = std::make_shared<wf::wlr_surface_base_t>(top->base->surface);
+    set_main_surface(surf);
+}
 
 void wayfire_xdg_view::initialize()
 {
@@ -204,7 +212,7 @@ void wayfire_xdg_view::initialize()
     handle_title_changed(nonull(xdg_toplevel->title));
     handle_app_id_changed(nonull(xdg_toplevel->app_id));
 
-    on_map.set_callback([&] (void*) { map(xdg_toplevel->base->surface); });
+    on_map.set_callback([&] (void*) { map(); });
     on_unmap.set_callback([&] (void*) { unmap(); });
     on_destroy.set_callback([&] (void*) { destroy(); });
     on_new_popup.set_callback([&] (void *data)
@@ -241,7 +249,7 @@ void wayfire_xdg_view::initialize()
     on_set_parent.set_callback([&] (void*)
     {
         auto parent = xdg_toplevel->parent ?
-            wf::wf_view_from_void(xdg_toplevel->parent->data)->self() : nullptr;
+            static_cast<wf::view_interface_t*>(xdg_toplevel->parent->data) : nullptr;
         set_toplevel_parent(parent);
     });
     on_ping_timeout.set_callback([&] (void*)
@@ -310,9 +318,9 @@ wf::geometry_t get_xdg_geometry(wlr_xdg_toplevel *toplevel)
     return xdg_geometry;
 }
 
-void wayfire_xdg_view::map(wlr_surface *surface)
+void wayfire_xdg_view::map()
 {
-    wlr_view_t::map(surface);
+    wlr_view_t::map();
     create_toplevel();
 }
 

@@ -4,12 +4,12 @@
 #include <cassert>
 
 wf::subsurface_implementation_t::subsurface_implementation_t(wlr_subsurface *_sub) :
-    wlr_child_surface_base_t(this)
+    wlr_surface_base_t(_sub->surface)
 {
     this->sub = _sub;
     on_map.set_callback([&] (void*)
     {
-        this->map(this->sub->surface);
+        this->map();
     });
     on_unmap.set_callback([&] (void*) { this->unmap(); });
     on_destroy.set_callback([&] (void*)
@@ -41,8 +41,6 @@ wf::subsurface_implementation_t::subsurface_implementation_t(wlr_subsurface *_su
 
 wf::point_t wf::subsurface_implementation_t::get_offset()
 {
-    assert(is_mapped());
-
     return {
         sub->current.x,
         sub->current.y,

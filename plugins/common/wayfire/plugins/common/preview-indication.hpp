@@ -35,6 +35,10 @@ class preview_indication_view_t : public wf::color_rect_view_t
     bool should_close = false;
 
   public:
+    preview_indication_view_t(const preview_indication_view_t&) = delete;
+    preview_indication_view_t(preview_indication_view_t&&) = delete;
+    preview_indication_view_t& operator =(const preview_indication_view_t&) = delete;
+    preview_indication_view_t& operator =(preview_indication_view_t&&) = delete;
 
     /**
      * Create a new indication preview on the indicated output.
@@ -54,9 +58,9 @@ class preview_indication_view_t : public wf::color_rect_view_t
         pre_paint = [=] () { update_animation(); };
         get_output()->render->add_effect(&pre_paint, wf::OUTPUT_EFFECT_PRE);
 
-        set_color(base_color);
-        set_border_color(base_border);
-        set_border(base_border_w);
+        get_color_surface()->set_color(base_color);
+        get_color_surface()->set_border_color(base_border);
+        get_color_surface()->set_border(base_border_w);
 
         this->role = VIEW_ROLE_DESKTOP_ENVIRONMENT;
     }
@@ -114,13 +118,15 @@ class preview_indication_view_t : public wf::color_rect_view_t
         }
 
         double alpha = animation.alpha;
-        if (base_color.a * alpha != _color.a)
+        if (base_color.a * alpha != get_color_surface()->_color.a)
         {
-            _color.a = alpha * base_color.a;
-            _border_color.a = alpha * base_border.a;
+            auto new_color  = get_color_surface()->_color;
+            auto new_border = get_color_surface()->_border_color;
+            new_color.a  = alpha * base_color.a;
+            new_border.a = alpha * base_border.a;
 
-            set_color(_color);
-            set_border_color(_border_color);
+            get_color_surface()->set_color(new_color);
+            get_color_surface()->set_border_color(new_border);
         }
 
         /* The end of unmap animation, just exit */

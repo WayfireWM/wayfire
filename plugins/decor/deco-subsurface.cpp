@@ -297,7 +297,7 @@ class simple_decorator_t : public wf::decorator_frame_t_t
 
         auto sub = std::make_unique<simple_decoration_surface>(view);
         deco = {sub};
-        view->add_subsurface(std::move(sub), true);
+        view->get_main_surface()->add_subsurface(std::move(sub), true);
         view->damage();
         view->connect_signal("subsurface-removed", &on_subsurface_removed);
     }
@@ -307,7 +307,7 @@ class simple_decorator_t : public wf::decorator_frame_t_t
         if (deco)
         {
             // subsurface_removed unmaps it
-            view->remove_subsurface(deco);
+            view->get_main_surface()->remove_subsurface(deco);
         }
     }
 

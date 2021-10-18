@@ -93,7 +93,7 @@ class keyboard_focus_view_t
  * view_interface_t is the base class for all "toplevel windows", i.e surfaces
  * which have no parent.
  */
-class view_interface_t : public surface_interface_t
+class view_interface_t : public wf::object_base_t
 {
   public:
     /**
@@ -135,6 +135,11 @@ class view_interface_t : public surface_interface_t
 
     /** Wrap the view into a nonstd::observer_ptr<> */
     wayfire_view self();
+
+    /**
+     * Get the view's main surface.
+     */
+    nonstd::observer_ptr<wf::surface_interface_t> get_main_surface();
 
     /**
      * Set the view's output.
@@ -513,8 +518,28 @@ class view_interface_t : public surface_interface_t
      */
     uint64_t last_focus_timestamp = 0;
 
+    /**
+     * Same as get_main_surface()->is_mapped()
+     */
+    virtual bool is_mapped() const;
+
   protected:
-    view_interface_t();
+    /**
+     * Create a new view interface.
+     *
+     * @param main_surface The main surface of the view. It is possible to skip
+     *   setting it in the constructor, but it should be set before the view is
+     *   initialized. In any case, the main surface can be only set once.
+     */
+    view_interface_t(
+        std::shared_ptr<wf::surface_interface_t> main_surface = nullptr);
+
+    /**
+     * Set the main surface.
+     * This should be done only once in the lifetime of the view and must
+     * happen before initializing the view!
+     */
+    void set_main_surface(std::shared_ptr<wf::surface_interface_t> main_surface);
 
     friend class compositor_core_impl_t;
     /**

@@ -87,6 +87,8 @@ class view_interface_t::view_priv_impl
 
     wf::output_t *output = nullptr;
 
+    std::shared_ptr<wf::surface_interface_t> main_surface;
+
   private:
     /** Last geometry the view has had in non-tiled and non-fullscreen state.
      * -1 as width/height means that no such geometry has been stored. */
@@ -114,13 +116,10 @@ void view_damage_raw(wayfire_view view, const wlr_box& box);
 /**
  * Implementation of a view backed by a wlr_* shell struct.
  */
-class wlr_view_t :
-    public wlr_surface_base_t,
-    public view_interface_t,
-    public keyboard_focus_view_t
+class wlr_view_t : public view_interface_t, public keyboard_focus_view_t
 {
   public:
-    wlr_view_t();
+    using view_interface_t::view_interface_t;
     virtual ~wlr_view_t() = default;
     wlr_view_t(const wlr_view_t &) = delete;
     wlr_view_t(wlr_view_t &&) = delete;
@@ -150,6 +149,9 @@ class wlr_view_t :
     virtual void set_output(wf::output_t*) override;
     bool has_client_decoration = true;
 
+    /** @return The offset from the surface coordinates to the actual geometry */
+    virtual wf::point_t get_window_offset();
+
   protected:
     std::string title, app_id;
     /** Used by view implementations when the app id changes */
@@ -157,7 +159,7 @@ class wlr_view_t :
     /** Used by view implementations when the title changes */
     void handle_title_changed(std::string new_title);
     /* Update the minimize hint */
-    void handle_minimize_hint(wf::surface_interface_t *relative_to,
+    void handle_minimize_hint(wf::view_interface_t *relative_to,
         const wlr_box& hint);
 
     /**
@@ -191,9 +193,9 @@ class wlr_view_t :
     virtual bool should_resize_client(wf::dimensions_t request,
         wf::dimensions_t current_size);
 
-    virtual void commit() override;
-    virtual void map(wlr_surface *surface) override;
-    virtual void unmap() override;
+    virtual void commit();
+    virtual void map();
+    virtual void unmap();
 
     /* Handle the destruction of the underlying wlroots object */
     virtual void destroy();
@@ -224,23 +226,6 @@ class wlr_view_t :
     virtual void toplevel_update_output(wf::output_t *output, bool enter);
 
     virtual void desktop_state_updated() override;
-
-  public:
-    /* Just pass to the default wlr surface implementation */
-    virtual bool is_mapped() const override
-    {
-        return priv->wsurface;
-    }
-
-    virtual input_surface_t& input() override
-    {
-        return *this;
-    }
-
-    virtual output_surface_t& output() override
-    {
-        return *this;
-    }
 };
 
 /** Emit the map signal for the given view */
@@ -248,7 +233,6 @@ void emit_view_map_signal(wayfire_view view, bool has_position);
 void emit_ping_timeout_signal(wayfire_view view);
 
 wf::surface_interface_t *wf_surface_from_void(void *handle);
-wf::view_interface_t *wf_view_from_void(void *handle);
 
 void init_xdg_shell();
 void init_xwayland();

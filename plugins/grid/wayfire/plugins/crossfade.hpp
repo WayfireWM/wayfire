@@ -20,6 +20,11 @@ namespace grid
 class crossfade_t : public wf::view_2D
 {
   public:
+    crossfade_t(const crossfade_t&) = delete;
+    crossfade_t(crossfade_t&&) = delete;
+    crossfade_t& operator =(const crossfade_t&) = delete;
+    crossfade_t& operator =(crossfade_t&&) = delete;
+
     crossfade_t(wayfire_view view) :
         wf::view_2D(view)
     {
@@ -37,7 +42,7 @@ class crossfade_t : public wf::view_2D
         OpenGL::render_end();
 
         auto og = view->get_output_geometry();
-        for (auto& surface : view->enumerate_surfaces())
+        for (auto& surface : view->get_main_surface()->enumerate_surfaces())
         {
             auto pos = wf::origin(og) + surface.position;
             wf::region_t damage =

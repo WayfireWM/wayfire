@@ -453,7 +453,8 @@ void wf::tablet_pad_t::update_focus()
     auto active_output = wf::get_core().get_active_output();
     auto focus_view    =
         active_output ? active_output->get_active_view() : nullptr;
-    auto focus_surface = focus_view ? focus_view->priv->wsurface : nullptr;
+    auto focus_surface =
+        focus_view ? focus_view->get_main_surface()->get_wlr_surface() : nullptr;
     update_focus(focus_surface);
 }
 

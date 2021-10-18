@@ -183,6 +183,16 @@ wayfire_view wf::view_interface_t::self()
     return wayfire_view(this);
 }
 
+nonstd::observer_ptr<wf::surface_interface_t> wf::view_interface_t::get_main_surface()
+{
+    return view_impl->main_surface.get();
+}
+
+bool wf::view_interface_t::is_mapped() const
+{
+    return view_impl->main_surface->is_mapped();
+}
+
 /** Set the view's output. */
 void wf::view_interface_t::set_output(wf::output_t *new_output)
 {
@@ -204,7 +214,7 @@ void wf::view_interface_t::set_output(wf::output_t *new_output)
     if (data.output != new_output)
     {
         // Notify all surfaces of the new output
-        for (auto& surf : this->enumerate_surfaces())
+        for (auto& surf : this->get_main_surface()->enumerate_surfaces())
         {
             if (data.output)
             {
@@ -362,7 +372,7 @@ wf::pointf_t wf::view_interface_t::global_to_local_point(const wf::pointf_t& arg
     result.y -= og.y;
 
     /* Go up from the surface, finding offsets */
-    while (surface && surface != this)
+    while (surface && surface->get_parent() != nullptr)
     {
         auto offset = surface->output().get_offset();
         result.x -= offset.x;
@@ -385,7 +395,7 @@ wf::surface_interface_t*wf::view_interface_t::map_input_coordinates(
     auto view_relative_coordinates =
         global_to_local_point(cursor, nullptr);
 
-    for (auto& child : enumerate_surfaces(true))
+    for (auto& child : get_main_surface()->enumerate_surfaces(true))
     {
         local.x = view_relative_coordinates.x - child.position.x;
         local.y = view_relative_coordinates.y - child.position.y;
@@ -955,7 +965,7 @@ wf::geometry_t wf::view_interface_t::get_untransformed_bounding_box()
     auto bbox = get_output_geometry();
     wf::region_t bounding_region = bbox;
 
-    for (auto& child : enumerate_surfaces(true))
+    for (auto& child : get_main_surface()->enumerate_surfaces(true))
     {
         auto dim = child.surface->output().get_size();
         auto pos = child.position + wf::origin(bbox);
@@ -1034,7 +1044,7 @@ bool wf::view_interface_t::intersects_region(const wlr_box& region)
     }
 
     auto origin = get_output_geometry();
-    for (auto& child : enumerate_surfaces(true))
+    for (auto& child : get_main_surface()->enumerate_surfaces(true))
     {
         auto box = wf::construct_box(
             child.position + wf::origin(origin),
@@ -1061,7 +1071,7 @@ wf::region_t wf::view_interface_t::get_transformed_opaque_region()
     auto og   = get_output_geometry();
 
     wf::region_t opaque;
-    for (auto& surf : enumerate_surfaces(true))
+    for (auto& surf : get_main_surface()->enumerate_surfaces(true))
     {
         auto surf_opaque = surf.surface->output().get_opaque_region();
         surf_opaque += wf::origin(og) + surf.position;
@@ -1091,13 +1101,17 @@ bool wf::view_interface_t::render_transformed(const wf::framebuffer_t& framebuff
     wf::texture_t previous_texture;
     float texture_scale;
 
-    if (is_mapped() && (enumerate_surfaces(true).size() == 1) &&
-        get_wlr_surface())
+    bool can_direct_scanout = is_mapped();
+    can_direct_scanout &= get_main_surface()->enumerate_surfaces(true).size() == 1;
+    can_direct_scanout &= get_main_surface()->get_wlr_surface() != nullptr;
+
+    if (can_direct_scanout)
     {
         /* Optimized case: there is a single mapped surface.
          * We can directly start with its texture */
-        previous_texture = wf::texture_t{this->get_wlr_surface()};
-        texture_scale    = this->get_wlr_surface()->current.scale;
+        previous_texture =
+            wf::texture_t{this->get_main_surface()->get_wlr_surface()};
+        texture_scale = get_main_surface()->get_wlr_surface()->current.scale;
     } else
     {
         take_snapshot();
@@ -1241,7 +1255,7 @@ const wf::framebuffer_t& wf::view_interface_t::take_snapshot()
     OpenGL::render_end();
 
     auto output_geometry = get_output_geometry();
-    auto children = enumerate_surfaces(true);
+    auto children = get_main_surface()->enumerate_surfaces(true);
     for (auto& child : wf::reverse(children))
     {
         auto pos = child.position + wf::origin(output_geometry);
@@ -1256,10 +1270,19 @@ const wf::framebuffer_t& wf::view_interface_t::take_snapshot()
     return view_impl->offscreen_buffer;
 }
 
-wf::view_interface_t::view_interface_t()
+wf::view_interface_t::view_interface_t(
+    std::shared_ptr<wf::surface_interface_t> main_surface)
 {
     this->view_impl = std::make_unique<wf::view_interface_t::view_priv_impl>();
+    set_main_surface(main_surface);
     take_ref();
+}
+
+void wf::view_interface_t::set_main_surface(
+    std::shared_ptr<wf::surface_interface_t> main_surface)
+{
+    assert(!this->view_impl->main_surface);
+    this->view_impl->main_surface = std::move(main_surface);
 }
 
 void wf::view_interface_t::take_ref()
@@ -1291,7 +1314,8 @@ void wf::view_interface_t::initialize()
         }
     });
 
-    this->connect_signal("damage", &view_impl->on_main_surface_damage);
+    view_impl->main_surface->connect_signal("damage",
+        &view_impl->on_main_surface_damage);
 }
 
 void wf::view_interface_t::deinitialize()
@@ -1304,7 +1328,6 @@ void wf::view_interface_t::deinitialize()
 
     set_decoration(nullptr);
 
-    this->clear_subsurfaces();
     this->view_impl->transforms.clear();
     this->_clear_data();
 

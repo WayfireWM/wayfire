@@ -6,12 +6,9 @@
 #include "wayfire/signal-definitions.hpp"
 #include "wayfire/workspace-manager.hpp"
 #include <wayfire/util/log.hpp>
+#include <wayfire/debug.hpp>
 
 #include "xdg-shell.hpp"
-
-wf::wlr_view_t::wlr_view_t() :
-    wf::wlr_surface_base_t(this), wf::view_interface_t()
-{}
 
 void wf::wlr_view_t::set_role(view_role_t new_role)
 {
@@ -52,27 +49,17 @@ std::string wf::wlr_view_t::get_title()
     return this->title;
 }
 
-void wf::wlr_view_t::handle_minimize_hint(wf::surface_interface_t *relative_to,
+void wf::wlr_view_t::handle_minimize_hint(wf::view_interface_t *relative_to,
     const wlr_box & hint)
 {
-    auto relative_to_view =
-        dynamic_cast<view_interface_t*>(relative_to);
-    if (!relative_to_view)
-    {
-        LOGE("Setting minimize hint to unknown surface. Wayfire currently"
-             "supports only setting hints relative to views.");
-
-        return;
-    }
-
-    if (relative_to_view->get_output() != get_output())
+    if (relative_to->get_output() != get_output())
     {
         LOGE("Minimize hint set to surface on a different output, "
              "problems might arise");
         /* TODO: translate coordinates in case minimize hint is on another output */
     }
 
-    auto box = relative_to_view->get_output_geometry();
+    auto box = relative_to->get_output_geometry();
     box.x    += hint.x;
     box.y    += hint.y;
     box.width = hint.width;
@@ -173,7 +160,7 @@ void wf::wlr_view_t::update_size()
         return;
     }
 
-    auto current_size = get_size();
+    auto current_size = get_main_surface()->output().get_size();
     if ((current_size.width == geometry.width) &&
         (current_size.height == geometry.height))
     {
@@ -252,7 +239,7 @@ void wf::wlr_view_t::handle_keyboard_enter()
 {
     auto seat = wf::get_core().get_current_seat();
     auto kbd  = wlr_seat_get_keyboard(seat);
-    wlr_seat_keyboard_notify_enter(seat, surface,
+    wlr_seat_keyboard_notify_enter(seat, get_main_surface()->get_wlr_surface(),
         kbd ? kbd->keycodes : NULL,
         kbd ? kbd->num_keycodes : 0,
         kbd ? &kbd->modifiers : NULL);
@@ -308,7 +295,6 @@ void wf::wlr_view_t::set_output(wf::output_t *wo)
 
 void wf::wlr_view_t::commit()
 {
-    wlr_surface_base_t::commit();
     update_size();
 
     /* Clear the resize edges.
@@ -323,14 +309,15 @@ void wf::wlr_view_t::commit()
     this->last_bounding_box = get_bounding_box();
 }
 
-void wf::wlr_view_t::map(wlr_surface *surface)
+void wf::wlr_view_t::map()
 {
-    wlr_surface_base_t::map(surface);
+    auto surface = get_main_surface()->get_wlr_surface();
     if (wf::get_core_impl().uses_csd.count(surface))
     {
         this->has_client_decoration = wf::get_core_impl().uses_csd[surface];
     }
 
+    dynamic_cast<wf::wlr_surface_base_t*>(get_main_surface().get())->map();
     update_size();
 
     if (role == VIEW_ROLE_TOPLEVEL)
@@ -353,12 +340,9 @@ void wf::wlr_view_t::unmap()
 {
     damage();
     emit_view_pre_unmap();
-
     destroy_toplevel();
-
     set_decoration(nullptr);
-
-    wlr_surface_base_t::unmap();
+    dynamic_cast<wf::wlr_surface_base_t*>(get_main_surface().get())->unmap();
     emit_view_unmap();
 }
 
@@ -453,8 +437,18 @@ void wf::wlr_view_t::create_toplevel()
     {
         auto ev = static_cast<
             wlr_foreign_toplevel_handle_v1_set_rectangle_event*>(data);
-        auto surface = wf_view_from_void(ev->surface->data);
-        handle_minimize_hint(surface, {ev->x, ev->y, ev->width, ev->height});
+        auto surf  = wf_surface_from_void(ev->surface->data);
+        auto views = wf::get_core().find_views_with_surface(surf);
+
+        if (views.empty())
+        {
+            LOGE("Minimize hint for view ", self(),
+                " set to non-toplevel or invalid surface!");
+            return;
+        }
+
+        handle_minimize_hint(views.front().get(),
+            {ev->x, ev->y, ev->width, ev->height});
     });
 
     toplevel_handle_v1_maximize_request.connect(
@@ -511,6 +505,7 @@ void wf::wlr_view_t::toplevel_send_app_id()
 
     std::string app_id;
 
+    auto surface = get_main_surface()->get_wlr_surface();
     auto default_app_id   = get_app_id();
     auto gtk_shell_app_id = wf_gtk_shell_get_custom_app_id(
         wf::get_core_impl().gtk_shell, surface->resource);
@@ -568,6 +563,11 @@ void wf::wlr_view_t::toplevel_update_output(wf::output_t *wo, bool enter)
     }
 }
 
+wf::point_t wf::wlr_view_t::get_window_offset()
+{
+    return {0, 0};
+}
+
 void wf::wlr_view_t::desktop_state_updated()
 {
     toplevel_send_state();
@@ -588,11 +588,6 @@ void wf::init_desktop_apis()
 wf::surface_interface_t*wf::wf_surface_from_void(void *handle)
 {
     return static_cast<wf::surface_interface_t*>(handle);
-}
-
-wf::view_interface_t*wf::wf_view_from_void(void *handle)
-{
-    return static_cast<wf::view_interface_t*>(handle);
 }
 
 wayfire_view wf::wl_surface_to_wayfire_view(wl_resource *resource)
@@ -618,7 +613,6 @@ wayfire_view wf::wl_surface_to_wayfire_view(wl_resource *resource)
 
 #endif
 
-    wf::view_interface_t *view = wf::wf_view_from_void(handle);
-
+    wf::view_interface_t *view = static_cast<wf::view_interface_t*>(handle);
     return view ? view->self() : nullptr;
 }

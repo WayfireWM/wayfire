@@ -664,7 +664,7 @@ struct repaint_delay_manager_t
     // Time of last frame
     int64_t last_pageflip = -1; // -1 is invalid
 
-    int64_t refresh_nsec;
+    int64_t refresh_nsec = 1000;
     wf::option_wrapper_t<int> max_render_time{"core/max_render_time"};
     wf::option_wrapper_t<bool> dynamic_delay{"workarounds/dynamic_repaint_delay"};
 
@@ -848,14 +848,14 @@ class wf::render_manager::impl
 
         // The view must have only a single surface and no transformers
         if (candidate->has_transformer() ||
-            !candidate->priv->surface_children_above.empty() ||
+            !candidate->get_main_surface()->priv->surface_children_above.empty() ||
             !candidate->children.empty())
         {
             return false;
         }
 
         // Must have a wlr surface with the correct scale and transform
-        auto surface = candidate->get_wlr_surface();
+        auto surface = candidate->get_main_surface()->get_wlr_surface();
         if (!surface ||
             (surface->current.scale != output->handle->scale) ||
             (surface->current.transform != output->handle->transform))
@@ -865,7 +865,7 @@ class wf::render_manager::impl
 
         // Finally, the opaque region must be the full surface.
         wf::region_t non_opaque = output->get_relative_geometry();
-        non_opaque ^= candidate->output().get_opaque_region();
+        non_opaque ^= candidate->get_main_surface()->output().get_opaque_region();
         if (!non_opaque.empty())
         {
             return false;
@@ -1070,7 +1070,7 @@ class wf::render_manager::impl
                     continue;
                 }
 
-                for (auto& child : view->enumerate_surfaces())
+                for (auto& child : view->get_main_surface()->enumerate_surfaces())
                 {
                     child.surface->output().schedule_redraw(repaint_ended);
                 }
@@ -1081,7 +1081,7 @@ class wf::render_manager::impl
         auto xw_di = wf::get_xwayland_drag_icon();
         if (xw_di)
         {
-            for (auto& child : xw_di->enumerate_surfaces())
+            for (auto& child : xw_di->get_main_surface()->enumerate_surfaces())
             {
                 child.surface->output().schedule_redraw(repaint_ended);
             }
@@ -1207,7 +1207,9 @@ class wf::render_manager::impl
             wf::point_t current_output = wf::origin(output->get_layout_geometry());
             auto origin = wf::origin(xw_dnd_icon->get_output_geometry()) +
                 dnd_output + -current_output;
-            for (auto& child : xw_dnd_icon->enumerate_surfaces(true))
+
+            auto dnd_surface = xw_dnd_icon->get_main_surface();
+            for (auto& child : dnd_surface->enumerate_surfaces(true))
             {
                 schedule_surface(repaint, child.surface, origin + child.position);
             }
@@ -1274,7 +1276,7 @@ class wf::render_manager::impl
                      * being rendered */
                     auto obox = view->get_output_geometry() + view_delta;
                     for (auto& child :
-                         view->enumerate_surfaces(true))
+                         view->get_main_surface()->enumerate_surfaces(true))
                     {
                         schedule_surface(repaint, child.surface,
                             wf::origin(obox) + child.position);
@@ -1363,7 +1365,8 @@ class wf::render_manager::impl
             {
                 repaint.fb.geometry = fb_geometry + ds->pos;
                 ds->view->render_transformed(repaint.fb, ds->damage);
-                for (auto& child : ds->view->enumerate_surfaces(true))
+                auto main_surf = ds->view->get_main_surface();
+                for (auto& child : main_surf->enumerate_surfaces(true))
                 {
                     send_sampled_on_output(child.surface);
                 }

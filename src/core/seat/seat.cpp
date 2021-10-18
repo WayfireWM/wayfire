@@ -16,9 +16,9 @@
 
 /* ------------------------ Drag icon impl ---------------------------------- */
 wf::drag_icon_t::drag_icon_t(wlr_drag_icon *ic) :
-    wf::wlr_child_surface_base_t(this), icon(ic)
+    wf::wlr_surface_base_t(ic->surface), icon(ic)
 {
-    on_map.set_callback([&] (void*) { this->map(icon->surface); });
+    on_map.set_callback([&] (void*) { this->map(); });
     on_unmap.set_callback([&] (void*) { this->unmap(); });
     on_destroy.set_callback([&] (void*)
     {
@@ -45,6 +45,7 @@ wf::drag_icon_t::drag_icon_t(wlr_drag_icon *ic) :
             damage_surface_box_global(box + this->get_offset());
         }
     });
+    this->connect_signal("damage", &on_self_damage);
 }
 
 wf::point_t wf::drag_icon_t::get_offset()
@@ -119,7 +120,7 @@ wf::seat_t::seat_t()
             // In this case, when the drag starts, the icon is already mapped.
             if (d->icon->surface && wlr_surface_has_buffer(d->icon->surface))
             {
-                this->drag_icon->force_map();
+                this->drag_icon->map();
             }
         }
 
@@ -322,7 +323,7 @@ void wf::seat_t::set_keyboard_focus(wayfire_view view)
 
     wf::keyboard_focus_changed_signal data;
     data.view    = view;
-    data.surface = (view ? view->get_wlr_surface() : nullptr);
+    data.surface = (view ? view->get_main_surface()->get_wlr_surface() : nullptr);
     wf::get_core().emit_signal("keyboard-focus-changed", &data);
 }
 

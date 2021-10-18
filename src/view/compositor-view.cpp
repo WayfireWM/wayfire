@@ -8,10 +8,12 @@
 #include <glm/gtc/matrix_transform.hpp>
 
 /* Implementation of mirror_view_t */
-wf::mirror_view_t::mirror_view_t(wayfire_view base_view) :
-    wf::view_interface_t(), wf::mirror_surface_t(base_view,
-        [=] (wf::region_t reg) { emit_damage(reg); })
+wf::mirror_view_t::mirror_view_t(wayfire_view base_view) : wf::view_interface_t(
+        nullptr)
 {
+    this->mirror_surface = std::make_shared<wf::mirror_surface_t>(base_view);
+    this->set_main_surface(mirror_surface);
+
     this->base_view = base_view;
 
     on_source_view_unmapped.set_callback([=] (wf::signal_data_t*)
@@ -38,15 +40,10 @@ void wf::mirror_view_t::close()
     on_source_view_unmapped.disconnect();
     base_view = nullptr;
 
-    emit_map_state_change(this);
+    emit_map_state_change(this->get_main_surface().get());
     emit_view_unmap();
 
     unref();
-}
-
-bool wf::mirror_view_t::is_mapped() const
-{
-    return base_view && base_view->is_mapped();
 }
 
 void wf::mirror_view_t::move(int x, int y)
@@ -73,7 +70,7 @@ wf::geometry_t wf::mirror_view_t::get_output_geometry()
     geometry.x = this->x;
     geometry.y = this->y;
 
-    auto dims = get_size();
+    auto dims = mirror_surface->output().get_size();
     geometry.width  = dims.width;
     geometry.height = dims.height;
 
@@ -90,24 +87,13 @@ bool wf::mirror_view_t::should_be_decorated()
     return false;
 }
 
-wf::input_surface_t& wf::mirror_view_t::input()
-{
-    return *this;
-}
-
-wf::output_surface_t& wf::mirror_view_t::output()
-{
-    return *this;
-}
-
-wf::mirror_surface_t::mirror_surface_t(
-    wayfire_view source, std::function<void(wf::region_t)> damage_callback)
+wf::mirror_surface_t::mirror_surface_t(wayfire_view source)
 {
     this->base_view = source;
 
     on_source_view_damaged.set_callback([=] (wf::signal_data_t*)
     {
-        damage_callback(wf::region_t{{0, 0, get_size().width, get_size().height}});
+        emit_damage(wf::region_t{{0, 0, get_size().width, get_size().height}});
     });
 
     base_view->connect_signal("region-damaged", &on_source_view_damaged);
@@ -117,6 +103,21 @@ wf::mirror_surface_t::mirror_surface_t(
         this->base_view = nullptr;
     });
     base_view->connect_signal("unmapped", &on_source_view_unmapped);
+}
+
+bool wf::mirror_surface_t::is_mapped() const
+{
+    return base_view && base_view->is_mapped();
+}
+
+wf::input_surface_t& wf::mirror_surface_t::input()
+{
+    return *this;
+}
+
+wf::output_surface_t& wf::mirror_surface_t::output()
+{
+    return *this;
 }
 
 wf::point_t wf::mirror_surface_t::get_offset()
@@ -176,25 +177,18 @@ void wf::mirror_surface_t::simple_render(
 
 /* Implementation of color_rect_view_t */
 
-wf::color_rect_view_t::color_rect_view_t() :
-    wf::view_interface_t(), wf::solid_bordered_surface_t([=] () { damage(); })
+wf::color_rect_view_t::color_rect_view_t() : wf::view_interface_t(nullptr)
 {
+    this->color_surface = std::make_shared<wf::solid_bordered_surface_t>();
+    this->set_main_surface(color_surface);
     this->_is_mapped = true;
 }
 
 void wf::color_rect_view_t::close()
 {
-    this->_is_mapped = false;
-
     emit_view_unmap();
-    emit_map_state_change(this);
-
+    color_surface->unmap();
     unref();
-}
-
-bool wf::color_rect_view_t::is_mapped() const
-{
-    return _is_mapped;
 }
 
 static void render_colored_rect(const wf::framebuffer_t& fb,
@@ -227,16 +221,14 @@ void wf::color_rect_view_t::resize(int w, int h)
     data.old_geometry = get_wm_geometry();
 
     // This will also apply the damage
-    this->set_size({w, h});
+    color_surface->set_size({w, h});
 
     emit_signal("geometry-changed", &data);
 }
 
 wf::geometry_t wf::color_rect_view_t::get_output_geometry()
 {
-    return {
-        position.x, position.y, get_size().width, get_size().height
-    };
+    return wf::construct_box(position, color_surface->output().get_size());
 }
 
 bool wf::color_rect_view_t::is_focuseable() const
@@ -288,41 +280,29 @@ bool wf::no_input_surface_t::accepts_input(wf::pointf_t at)
     return false;
 }
 
-wf::input_surface_t& wf::color_rect_view_t::input()
-{
-    return *this;
-}
-
-wf::output_surface_t& wf::color_rect_view_t::output()
-{
-    return *this;
-}
-
 void wf::solid_bordered_surface_t::set_border(int width)
 {
     this->border = width;
-    damage_cb();
+    emit_damage(wf::construct_box({0, 0}, get_size()));
 }
 
 void wf::solid_bordered_surface_t::set_border_color(wf::color_t border)
 {
     this->_border_color = border;
-    damage_cb();
+    emit_damage(wf::construct_box({0, 0}, get_size()));
 }
 
 void wf::solid_bordered_surface_t::set_color(wf::color_t color)
 {
     this->_color = color;
-    damage_cb();
+    emit_damage(wf::construct_box({0, 0}, get_size()));
 }
 
 void wf::solid_bordered_surface_t::set_size(wf::dimensions_t new_size)
-{}
-
-wf::solid_bordered_surface_t::solid_bordered_surface_t(
-    std::function<void()> damage_cb)
 {
-    this->damage_cb = damage_cb;
+    emit_damage(wf::construct_box({0, 0}, get_size()));
+    this->size = new_size;
+    emit_damage(wf::construct_box({0, 0}, get_size()));
 }
 
 wf::point_t wf::solid_bordered_surface_t::get_offset()
@@ -401,4 +381,31 @@ wf::keyboard_focus_view_t& wf::color_rect_view_t::get_keyboard_focus()
 wf::keyboard_focus_view_t& wf::mirror_view_t::get_keyboard_focus()
 {
     return *this;
+}
+
+bool wf::solid_bordered_surface_t::is_mapped() const
+{
+    return mapped;
+}
+
+wf::input_surface_t& wf::solid_bordered_surface_t::input()
+{
+    return *this;
+}
+
+wf::output_surface_t& wf::solid_bordered_surface_t::output()
+{
+    return *this;
+}
+
+nonstd::observer_ptr<wf::solid_bordered_surface_t> wf::color_rect_view_t::
+get_color_surface() const
+{
+    return {this->color_surface.get()};
+}
+
+void wf::solid_bordered_surface_t::unmap()
+{
+    this->mapped = false;
+    emit_map_state_change(this);
 }

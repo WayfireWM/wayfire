@@ -151,12 +151,15 @@ class wayfire_xwayland_view_base : public wf::wlr_view_t
   public:
     wayfire_xwayland_view_base(wlr_xwayland_surface *xww) :
         wlr_view_t(), xw(xww)
-    {}
+    {
+        auto surf = std::make_shared<wf::wlr_surface_base_t>(xww->surface);
+        this->set_main_surface(surf);
+    }
 
     virtual void initialize() override
     {
         wf::wlr_view_t::initialize();
-        on_map.set_callback([&] (void*) { map(xw->surface); });
+        on_map.set_callback([&] (void*) { map(); });
         on_unmap.set_callback([&] (void*) { unmap(); });
         on_destroy.set_callback([&] (void*) { destroy(); });
         on_configure.set_callback([&] (void *data)
@@ -505,7 +508,7 @@ class wayfire_unmanaged_xwayland_view : public wayfire_xwayland_view_base
 
     int global_x, global_y;
 
-    void map(wlr_surface *surface) override;
+    void map() override;
     void destroy() override;
 
     bool should_be_decorated() override;
@@ -577,7 +580,7 @@ class wayfire_xwayland_view : public wayfire_xwayland_view_base
             }
 
             auto parent = xw->parent ?
-                wf::wf_view_from_void(xw->parent->data)->self() : nullptr;
+                static_cast<wf::view_interface_t*>(xw->parent->data)->self() : nullptr;
 
             // Make sure the parent is mapped, and that we are not a toplevel view
             if (parent)
@@ -643,7 +646,7 @@ class wayfire_xwayland_view : public wayfire_xwayland_view_base
         emit_view_map_signal(self(), client_self_positioned);
     }
 
-    void map(wlr_surface *surface) override
+    void map() override
     {
         view_impl->keyboard_focus_enabled =
             wlr_xwayland_or_surface_wants_focus(xw);
@@ -676,7 +679,7 @@ class wayfire_xwayland_view : public wayfire_xwayland_view_base
             configure_request({xw->x, xw->y, xw->width, xw->height});
         }
 
-        wf::wlr_view_t::map(surface);
+        wf::wlr_view_t::map();
         create_toplevel();
     }
 
@@ -685,8 +688,8 @@ class wayfire_xwayland_view : public wayfire_xwayland_view_base
         if (!xw->has_alpha)
         {
             pixman_region32_union_rect(
-                &surface->opaque_region, &surface->opaque_region,
-                0, 0, surface->current.width, surface->current.height);
+                &xw->surface->opaque_region, &xw->surface->opaque_region,
+                0, 0, xw->surface->current.width, xw->surface->current.height);
         }
 
         wf::wlr_view_t::commit();
@@ -841,7 +844,7 @@ wayfire_unmanaged_xwayland_view::wayfire_unmanaged_xwayland_view(
     on_set_geometry.connect(&xw->events.set_geometry);
 }
 
-void wayfire_unmanaged_xwayland_view::map(wlr_surface *surface)
+void wayfire_unmanaged_xwayland_view::map()
 {
     /* move to the output where our center is
      * FIXME: this is a bad idea, because a dropdown menu might get sent to
@@ -849,7 +852,8 @@ void wayfire_unmanaged_xwayland_view::map(wlr_surface *surface)
      * output, we just can't be 100% compatible because in X all windows are
      * positioned in a global coordinate space */
     auto wo = wf::get_core().output_layout->get_output_at(
-        xw->x + surface->current.width / 2, xw->y + surface->current.height / 2);
+        xw->x + xw->surface->current.width / 2,
+        xw->y + xw->surface->current.height / 2);
 
     if (!wo)
     {
@@ -893,7 +897,7 @@ void wayfire_unmanaged_xwayland_view::map(wlr_surface *surface)
         wlr_xwayland_or_surface_wants_focus(xw));
 
     get_output()->workspace->add_view(self(), wf::LAYER_UNMANAGED);
-    wf::wlr_view_t::map(surface);
+    wf::wlr_view_t::map();
 
     if (view_impl->keyboard_focus_enabled)
     {
@@ -968,11 +972,11 @@ class wayfire_dnd_xwayland_view : public wayfire_unmanaged_xwayland_view
         last_global_bbox = bbox;
     }
 
-    void map(wlr_surface *surface) override
+    void map() override
     {
         LOGD("Mapping a Xwayland drag icon");
         this->set_output(wf::get_core().get_active_output());
-        wayfire_xwayland_view_base::map(surface);
+        wayfire_xwayland_view_base::map();
         this->damage();
     }
 };
@@ -1032,7 +1036,7 @@ void wayfire_xwayland_view_base::recreate_view()
     wf::get_core().add_view(std::unique_ptr<view_interface_t>(new_view));
     if (was_mapped)
     {
-        new_view->map(xw_surf->surface);
+        new_view->map();
     }
 }
 

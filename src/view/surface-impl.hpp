@@ -23,37 +23,34 @@ class surface_interface_t::impl
 
     wf::output_t *output = nullptr;
     static int active_shrink_constraint;
-
-    /**
-     * Most surfaces don't have a wlr_surface. However, internal surface
-     * implementations can set the underlying surface so that functions like
-     *
-     * subtract_opaque(), send_frame_done(), etc. work for the surface
-     */
-    wlr_surface *wsurface = nullptr;
 };
 
 /**
- * A base class for views and surfaces which are based on a wlr_surface
- * Any class that derives from wlr_surface_base_t must also derive from
- * surface_interface_t!
+ * An implementation of surface_interface_t for wlr_surface-based surfaces.
  */
-class wlr_surface_base_t : public input_surface_t, public output_surface_t
+class wlr_surface_base_t : public wf::surface_interface_t,
+        input_surface_t, public output_surface_t
 {
   protected:
     wf::wl_listener_wrapper::callback_t handle_new_subsurface;
     wf::wl_listener_wrapper on_commit, on_destroy, on_new_subsurface;
 
     void apply_surface_damage();
-    wlr_surface_base_t(wf::surface_interface_t *self);
-    /* Pointer to this as surface_interface, see requirement above */
-    wf::surface_interface_t *_as_si = nullptr;
 
+    bool mapped = false;
     std::map<wf::output_t*, int> visibility;
 
   public:
-    /* if surface != nullptr, then the surface is mapped */
-    wlr_surface *surface = nullptr;
+    wlr_surface *surface;
+    wlr_surface_base_t(wlr_surface *surface);
+
+    /** Set the surface state to mapped. */
+    void map();
+
+    /** Set the surface state to unmapped. */
+    void unmap();
+
+    void handle_commit();
 
     virtual ~wlr_surface_base_t();
 
@@ -61,9 +58,6 @@ class wlr_surface_base_t : public input_surface_t, public output_surface_t
     wlr_surface_base_t(wlr_surface_base_t &&) = delete;
     wlr_surface_base_t& operator =(const wlr_surface_base_t&) = delete;
     wlr_surface_base_t& operator =(wlr_surface_base_t&&) = delete;
-
-    /** @return The offset from the surface coordinates to the actual geometry */
-    virtual wf::point_t get_window_offset();
 
     /** Implementation of input_surface_t */
     wlr_pointer_constraint_v1 *current_constraint = NULL;
@@ -93,45 +87,10 @@ class wlr_surface_base_t : public input_surface_t, public output_surface_t
     void simple_render(const wf::framebuffer_t& fb, wf::point_t pos,
         const wf::region_t& damage) final;
 
-  protected:
-    virtual void map(wlr_surface *surface);
-    virtual void unmap();
-    virtual void commit();
-
-    virtual wlr_buffer *get_buffer();
-};
-
-/**
- * wlr_child_surface_base_t is a base class for wlr-surface based child
- * surfaces, i.e subsurfaces.
- *
- * However, they can still exist without a parent, for ex. drag icons.
- */
-class wlr_child_surface_base_t :
-    public surface_interface_t, public wlr_surface_base_t
-{
-  public:
-    wlr_child_surface_base_t(surface_interface_t *self);
-    virtual ~wlr_child_surface_base_t();
-
-    wlr_child_surface_base_t(const wlr_child_surface_base_t &) = delete;
-    wlr_child_surface_base_t(wlr_child_surface_base_t &&) = delete;
-    wlr_child_surface_base_t& operator =(const wlr_child_surface_base_t&) = delete;
-    wlr_child_surface_base_t& operator =(wlr_child_surface_base_t&&) = delete;
-
-    bool is_mapped() const override
-    {
-        return priv->wsurface != nullptr;
-    }
-
-    virtual input_surface_t& input() override
-    {
-        return *this;
-    }
-
-    virtual output_surface_t& output() override
-    {
-        return *this;
-    }
+    /** Implementation of surface_interface_t */
+    bool is_mapped() const final;
+    input_surface_t& input() final;
+    output_surface_t& output() final;
+    wlr_surface *get_wlr_surface() final;
 };
 }

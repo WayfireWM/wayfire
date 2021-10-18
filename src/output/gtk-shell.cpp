@@ -377,7 +377,7 @@ std::string get_gtk_shell_app_id(wayfire_view view)
         return "";
     }
 
-    auto surface = view->get_wlr_surface();
+    auto surface = view->get_main_surface()->get_wlr_surface();
 
     if (!surface)
     {

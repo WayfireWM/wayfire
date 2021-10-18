@@ -271,6 +271,12 @@ class compositor_core_t : public wf::object_base_t
     virtual std::vector<wayfire_view> get_all_views() = 0;
 
     /**
+     * Find all views whose main surface is the given surface.
+     */
+    std::vector<wayfire_view> find_views_with_surface(
+        wf::surface_interface_t *surface);
+
+    /**
      * Set the keyboard focus view. The stacking order on the view's output
      * won't be changed.
      */

@@ -141,15 +141,15 @@ int wf::surface_interface_t::get_active_shrink_constraint()
     return impl::active_shrink_constraint;
 }
 
+wlr_surface*wf::surface_interface_t::get_wlr_surface()
+{
+    return nullptr;
+}
+
 /****************************
 * surface_interface_t functions for surfaces which are
 * backed by a wlr_surface
 ****************************/
-wlr_surface*wf::surface_interface_t::get_wlr_surface()
-{
-    return priv->wsurface;
-}
-
 wf::surface_damage_signal::surface_damage_signal(const wf::region_t& damage) :
     damage(damage)
 {}
@@ -159,12 +159,13 @@ void wf::surface_interface_t::emit_damage(wf::region_t damage)
     wf::point_t toplevel_offset = {0, 0};
     auto surface = this;
 
-    while (surface->is_mapped() && surface->get_parent())
+    while (surface->get_parent())
     {
         toplevel_offset = toplevel_offset + surface->output().get_offset();
         surface = surface->get_parent();
     }
 
+    damage = damage + toplevel_offset;
     surface_damage_signal ds(damage);
     surface->emit_signal("damage", &ds);
 }
@@ -188,9 +189,11 @@ void wf::surface_interface_t::clear_subsurfaces()
     finish_subsurfaces(priv->surface_children_below);
 }
 
-wf::wlr_surface_base_t::wlr_surface_base_t(surface_interface_t *self)
+wf::wlr_surface_base_t::wlr_surface_base_t(wlr_surface *surf)
 {
-    _as_si = self;
+    this->surface = surf;
+    surf->data    = this;
+
     handle_new_subsurface = [&] (void *data)
     {
         auto sub = static_cast<wlr_subsurface*>(data);
@@ -209,7 +212,7 @@ wf::wlr_surface_base_t::wlr_surface_base_t(surface_interface_t *self)
 
         auto subsurface = std::make_unique<subsurface_implementation_t>(sub);
         nonstd::observer_ptr<subsurface_implementation_t> ptr{subsurface};
-        _as_si->add_subsurface(std::move(subsurface), false);
+        this->add_subsurface(std::move(subsurface), false);
 
         // Add outputs from the parent surface
         wlr_surface_output *output;
@@ -221,20 +224,17 @@ wf::wlr_surface_base_t::wlr_surface_base_t(surface_interface_t *self)
 
         if (sub->mapped)
         {
-            ptr->map(sub->surface);
+            ptr->map();
         }
     };
 
     on_new_subsurface.set_callback(handle_new_subsurface);
-    on_commit.set_callback([&] (void*) { commit(); });
+    on_commit.set_callback([&] (void*) { this->handle_commit(); });
 }
 
 wf::wlr_surface_base_t::~wlr_surface_base_t()
-{}
-
-wf::point_t wf::wlr_surface_base_t::get_window_offset()
 {
-    return {0, 0};
+    this->surface->data = NULL;
 }
 
 void wf::emit_map_state_change(wf::surface_interface_t *surface)
@@ -247,16 +247,14 @@ void wf::emit_map_state_change(wf::surface_interface_t *surface)
     wf::get_core().emit_signal(state, &data);
 }
 
-void wf::wlr_surface_base_t::map(wlr_surface *surface)
+void wf::wlr_surface_base_t::map()
 {
-    assert(!this->surface && surface);
-    this->surface = surface;
+    assert(!this->mapped);
+    this->mapped = true;
 
-    _as_si->priv->wsurface = surface;
+    emit_damage(wf::construct_box({0, 0}, output().get_size()));
     on_new_subsurface.connect(&surface->events.new_subsurface);
     on_commit.connect(&surface->events.commit);
-
-    surface->data = _as_si;
 
     /* Handle subsurfaces which were created before this surface was mapped */
     wlr_subsurface *sub;
@@ -265,21 +263,20 @@ void wf::wlr_surface_base_t::map(wlr_surface *surface)
     wl_list_for_each(sub, &surface->current.subsurfaces_above, current.link)
     handle_new_subsurface(sub);
 
-    emit_map_state_change(_as_si);
+    emit_map_state_change(this);
 }
 
 void wf::wlr_surface_base_t::unmap()
 {
-    assert(this->surface);
+    assert(this->mapped);
+
     apply_surface_damage();
     wf::region_t dmg{{.x = 0, .y = 0,
         .width = get_size().width, .height = get_size().height}};
-    _as_si->emit_damage(dmg);
+    emit_damage(dmg);
 
-    this->surface->data = NULL;
-    this->surface = nullptr;
-    this->_as_si->priv->wsurface = nullptr;
-    emit_map_state_change(_as_si);
+    this->mapped = false;
+    emit_map_state_change(this);
 
     on_new_subsurface.disconnect();
     on_destroy.disconnect();
@@ -287,22 +284,12 @@ void wf::wlr_surface_base_t::unmap()
 
     // Clear all subsurfaces we have.
     // This might remove subsurfaces that will be re-created again on map.
-    this->_as_si->clear_subsurfaces();
-}
-
-wlr_buffer*wf::wlr_surface_base_t::get_buffer()
-{
-    if (surface && wlr_surface_has_buffer(surface))
-    {
-        return &surface->buffer->base;
-    }
-
-    return nullptr;
+    this->clear_subsurfaces();
 }
 
 void wf::wlr_surface_base_t::apply_surface_damage()
 {
-    if (!_as_si->is_mapped())
+    if (!is_mapped())
     {
         return;
     }
@@ -325,10 +312,10 @@ void wf::wlr_surface_base_t::apply_surface_damage()
         dmg.expand_edges(1);
     }
 
-    _as_si->emit_damage(dmg);
+    emit_damage(dmg);
 }
 
-void wf::wlr_surface_base_t::commit()
+void wf::wlr_surface_base_t::handle_commit()
 {
     apply_surface_damage();
     for (auto& [wo, cnt] : this->visibility)
@@ -337,40 +324,30 @@ void wf::wlr_surface_base_t::commit()
     }
 }
 
-wf::wlr_child_surface_base_t::wlr_child_surface_base_t(
-    surface_interface_t *self) : wlr_surface_base_t(self)
-{}
-
-wf::wlr_child_surface_base_t::~wlr_child_surface_base_t()
-{}
-
 bool wf::wlr_surface_base_t::accepts_input(wf::pointf_t at)
 {
-    if (!_as_si->priv->wsurface)
+    if (!surface)
     {
         return false;
     }
 
-    return wlr_surface_point_accepts_input(_as_si->priv->wsurface, at.x, at.y);
+    return wlr_surface_point_accepts_input(surface, at.x, at.y);
 }
 
 std::optional<wf::region_t> wf::wlr_surface_base_t::handle_pointer_enter(
     wf::pointf_t at, bool reenter)
 {
-    auto surf = _as_si->priv->wsurface;
-    if (surf)
+    if (surface)
     {
         auto seat = wf::get_core().get_current_seat();
-        wlr_seat_pointer_notify_enter(seat, surf, at.x, at.y);
+        wlr_seat_pointer_notify_enter(seat, surface, at.x, at.y);
 
         auto constraint = wlr_pointer_constraints_v1_constraint_for_surface(
-            wf::get_core().protocols.pointer_constraints, surf, seat);
+            wf::get_core().protocols.pointer_constraints, surface, seat);
         if (constraint == nullptr)
         {
             return {};
         }
-
-        LOGI("Now ", constraint, " ", current_constraint);
 
         if (current_constraint != constraint)
         {
@@ -437,16 +414,15 @@ void wf::wlr_surface_base_t::handle_touch_down(
     uint32_t time_ms, int32_t id, wf::pointf_t at)
 {
     auto seat = wf::get_core().get_current_seat();
-    auto surf = _as_si->priv->wsurface;
-    if (surf)
+    if (surface)
     {
         auto touch_point = wlr_seat_touch_get_point(seat, id);
         if (!touch_point)
         {
-            wlr_seat_touch_notify_down(seat, surf, time_ms, id, at.x, at.y);
-        } else if (surf != touch_point->focus_surface)
+            wlr_seat_touch_notify_down(seat, surface, time_ms, id, at.x, at.y);
+        } else if (surface != touch_point->focus_surface)
         {
-            wlr_seat_touch_point_focus(seat, surf, time_ms, id, at.x, at.y);
+            wlr_seat_touch_point_focus(seat, surface, time_ms, id, at.x, at.y);
         }
     }
 }
@@ -476,24 +452,22 @@ wf::point_t wf::wlr_surface_base_t::get_offset()
 
 wf::dimensions_t wf::wlr_surface_base_t::get_size() const
 {
-    auto surf = _as_si->priv->wsurface;
-    if (!surf)
+    if (!surface)
     {
         return {0, 0};
     }
 
     return {
-        surf->current.width,
-        surf->current.height,
+        surface->current.width,
+        surface->current.height,
     };
 }
 
 void wf::wlr_surface_base_t::schedule_redraw(const timespec& frame_end)
 {
-    auto surf = _as_si->priv->wsurface;
-    if (surf)
+    if (surface)
     {
-        wlr_surface_send_frame_done(surf, &frame_end);
+        wlr_surface_send_frame_done(surface, &frame_end);
     }
 }
 
@@ -502,8 +476,7 @@ void wf::wlr_surface_base_t::set_visible_on_output(
 {
     visibility[output] += (is_visible ? 1 : -1);
 
-    auto surf = _as_si->priv->wsurface;
-    if (!surf)
+    if (!surface)
     {
         return;
     }
@@ -523,13 +496,12 @@ void wf::wlr_surface_base_t::set_visible_on_output(
 
 wf::region_t wf::wlr_surface_base_t::get_opaque_region()
 {
-    auto surf = _as_si->priv->wsurface;
-    if (surf)
+    if (!is_mapped())
     {
         return {};
     }
 
-    wf::region_t opaque{&surf->opaque_region};
+    wf::region_t opaque{&surface->opaque_region};
     opaque.expand_edges(
         -wf::surface_interface_t::get_active_shrink_constraint());
 
@@ -539,7 +511,7 @@ wf::region_t wf::wlr_surface_base_t::get_opaque_region()
 void wf::wlr_surface_base_t::simple_render(
     const wf::framebuffer_t& fb, wf::point_t pos, const wf::region_t& damage)
 {
-    if (!get_buffer())
+    if (!is_mapped())
     {
         return;
     }
@@ -559,4 +531,24 @@ void wf::wlr_surface_base_t::simple_render(
 
     OpenGL::clear_cached();
     OpenGL::render_end();
+}
+
+bool wf::wlr_surface_base_t::is_mapped() const
+{
+    return mapped;
+}
+
+wlr_surface*wf::wlr_surface_base_t::get_wlr_surface()
+{
+    return surface;
+}
+
+wf::input_surface_t& wf::wlr_surface_base_t::input()
+{
+    return *this;
+}
+
+wf::output_surface_t& wf::wlr_surface_base_t::output()
+{
+    return *this;
 }

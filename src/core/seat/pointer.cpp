@@ -155,7 +155,6 @@ void wf::pointer_t::update_cursor_focus(
     {
         auto constraint = focus.surface()->input().handle_pointer_enter(local,
             !focus_change);
-        LOGI("Got constraint ", constraint.has_value());
         set_pointer_constraint(constraint);
     } else
     {
@@ -176,7 +175,7 @@ wf::pointf_t wf::pointer_t::get_absolute_position_from_relative(
     relative.x += output_geometry.x;
     relative.y += output_geometry.y;
 
-    for (auto& surf : cursor_focus.view()->enumerate_surfaces())
+    for (auto& surf : cursor_focus.view()->get_main_surface()->enumerate_surfaces())
     {
         if (surf.surface == this->cursor_focus.surface())
         {

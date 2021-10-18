@@ -13,7 +13,7 @@ namespace wf
 struct cursor_t;
 class keyboard_t;
 
-struct drag_icon_t : public wlr_child_surface_base_t
+struct drag_icon_t : public wlr_surface_base_t
 {
     wlr_drag_icon *icon;
     wl_listener_wrapper on_map, on_unmap, on_destroy;
@@ -23,12 +23,6 @@ struct drag_icon_t : public wlr_child_surface_base_t
 
     /** Called each time the DnD icon position changes. */
     void damage();
-
-    /* Force map without receiving a wlroots event */
-    void force_map()
-    {
-        this->map(icon->surface);
-    }
 
   private:
     /** Last icon box. */
