@@ -201,7 +201,25 @@ void wf::view_interface_t::set_output(wf::output_t *new_output)
     _output_signal data;
     data.output = get_output();
 
-    surface_interface_t::set_output(new_output);
+    if (data.output != new_output)
+    {
+        // Notify all surfaces of the new output
+        for (auto& surf : this->enumerate_surfaces())
+        {
+            if (data.output)
+            {
+                surf.surface->set_visible_on_output(data.output, false);
+            }
+
+            if (new_output)
+            {
+                surf.surface->set_visible_on_output(new_output, true);
+            }
+        }
+
+        this->view_impl->output = new_output;
+    }
+
     if ((new_output != data.output) && new_output)
     {
         view_attached_signal data;
@@ -215,6 +233,11 @@ void wf::view_interface_t::set_output(wf::output_t *new_output)
     {
         view->set_output(new_output);
     }
+}
+
+wf::output_t*wf::view_interface_t::get_output()
+{
+    return view_impl->output;
 }
 
 void wf::view_interface_t::resize(int w, int h)
@@ -1255,7 +1278,22 @@ void wf::view_interface_t::unref()
 }
 
 void wf::view_interface_t::initialize()
-{}
+{
+    view_impl->on_main_surface_damage.set_callback([=] (void *data)
+    {
+        auto ev = static_cast<wf::surface_damage_signal*>(data);
+        auto damaged = ev->damage + wf::origin(get_output_geometry());
+
+        view_impl->offscreen_buffer.cached_damage |= damaged;
+        for (auto& box : damaged)
+        {
+            auto wbox = wlr_box_from_pixman_box(box);
+            view_damage_raw(self(), transform_region(wbox));
+        }
+    });
+
+    this->connect_signal("damage", &view_impl->on_main_surface_damage);
+}
 
 void wf::view_interface_t::deinitialize()
 {
@@ -1280,17 +1318,6 @@ wf::view_interface_t::~view_interface_t()
 {
     /* Note: at this point, it is invalid to call most functions */
     unset_toplevel_parent(self());
-}
-
-void wf::view_interface_t::damage_surface_box(const wlr_box& box)
-{
-    auto obox = get_output_geometry();
-
-    auto damaged = box;
-    damaged.x += obox.x;
-    damaged.y += obox.y;
-    view_impl->offscreen_buffer.cached_damage |= damaged;
-    view_damage_raw(self(), transform_region(damaged));
 }
 
 void wf::view_damage_raw(wayfire_view view, const wlr_box& box)
@@ -1332,4 +1359,9 @@ void wf::view_interface_t::destruct()
 {
     view_impl->is_alive = false;
     wf::get_core_impl().erase_view(self());
+}
+
+wf::point_t wf::view_interface_t::get_offset()
+{
+    return {0, 0};
 }

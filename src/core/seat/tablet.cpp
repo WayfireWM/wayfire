@@ -36,9 +36,10 @@ wf::tablet_tool_t::tablet_tool_t(wlr_tablet_tool *tool,
     on_surface_map_state_changed.set_callback([=] (signal_data_t *data)
     {
         auto ev = static_cast<surface_map_state_changed_signal*>(data);
-        if (!ev->surface->is_mapped() && (ev->surface == this->grabbed_surface))
+        if (!ev->surface->is_mapped() &&
+            (ev->surface == this->grabbed_surface.surface()))
         {
-            this->grabbed_surface = nullptr;
+            this->grabbed_surface = {};
         }
 
         update_tool_position();
@@ -117,7 +118,7 @@ void wf::tablet_tool_t::update_tool_position()
 
     /* Figure out what surface is under the tool */
     wf::pointf_t local; // local to the surface
-    wf::surface_interface_t *surface = nullptr;
+    wf::focused_view_t surface;
     if (this->grabbed_surface)
     {
         surface = this->grabbed_surface;
@@ -130,25 +131,27 @@ void wf::tablet_tool_t::update_tool_position()
     set_focus(surface);
 
     /* If focus is a wlr surface, send position */
-    wlr_surface *next_focus = surface ? surface->get_wlr_surface() : nullptr;
+    wlr_surface *next_focus =
+        surface ? surface.surface()->get_wlr_surface() : nullptr;
     if (next_focus)
     {
         wlr_tablet_v2_tablet_tool_notify_motion(tool_v2, local.x, local.y);
     }
 }
 
-void wf::tablet_tool_t::set_focus(wf::surface_interface_t *surface)
+void wf::tablet_tool_t::set_focus(wf::focused_view_t surface)
 {
     /* Unfocus old surface */
     if ((surface != this->proximity_surface) && this->proximity_surface)
     {
         wlr_tablet_v2_tablet_tool_notify_proximity_out(tool_v2);
-        this->proximity_surface = nullptr;
+        this->proximity_surface = {};
     }
 
     /* Set the new focus, if it is a wlr surface */
     wf::get_core_impl().seat->ensure_input_surface(surface);
-    wlr_surface *next_focus = surface ? surface->get_wlr_surface() : nullptr;
+    wlr_surface *next_focus =
+        surface ? surface.surface()->get_wlr_surface() : nullptr;
     if (next_focus && wlr_surface_accepts_tablet_v2(tablet_v2, next_focus))
     {
         this->proximity_surface = surface;
@@ -221,18 +224,14 @@ void wf::tablet_tool_t::handle_tip(wlr_event_tablet_tool_tip *ev)
         this->grabbed_surface = this->proximity_surface;
 
         /* Try to focus the view under the tool */
-        auto view = dynamic_cast<wf::view_interface_t*>(
-            this->proximity_surface->get_main_surface());
-        if (view)
-        {
-            wm_focus_request data;
-            data.surface = this->proximity_surface;
-            view->get_output()->emit_signal("wm-focus-request", &data);
-        }
+        wm_focus_request data;
+        data.focus = this->proximity_surface;
+        proximity_surface.view()->get_output()->emit_signal(
+            "wm-focus-request", &data);
     } else
     {
         wlr_send_tablet_v2_tablet_tool_up(tool_v2);
-        this->grabbed_surface = nullptr;
+        this->grabbed_surface = {};
     }
 }
 
@@ -247,7 +246,7 @@ void wf::tablet_tool_t::handle_proximity(wlr_event_tablet_tool_proximity *ev)
 {
     if (ev->state == WLR_TABLET_TOOL_PROXIMITY_OUT)
     {
-        set_focus(nullptr);
+        set_focus({});
         is_active = false;
     } else
     {

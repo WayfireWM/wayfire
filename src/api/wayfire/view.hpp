@@ -98,7 +98,12 @@ class view_interface_t : public surface_interface_t
      * If the new output is different from the previous, the view will be
      * removed from the layer it was on the old output.
      */
-    virtual void set_output(wf::output_t *new_output) override;
+    virtual void set_output(wf::output_t *new_output);
+
+    /**
+     * Get the view's output.
+     */
+    virtual wf::output_t *get_output();
 
     /** Move the view to the given output-local coordinates.  */
     virtual void move(int x, int y) = 0;
@@ -496,21 +501,11 @@ class view_interface_t : public surface_interface_t
      */
     virtual void deinitialize();
 
-    /** get_offset() is not valid for views */
-    virtual wf::point_t get_offset() override
-    {
-        return {0, 0};
-    }
-
-    /** Damage the given box, in surface-local coordinates */
-    virtual void damage_surface_box(const wlr_box& box) override;
-
     /**
      * @return the bounding box of the view before transformers,
      *  in output-local coordinates
      */
     virtual wf::geometry_t get_untransformed_bounding_box();
-
 
     /**
      * Called when the reference count reaches 0.
@@ -544,6 +539,9 @@ class view_interface_t : public surface_interface_t
      * signal is mandatory for all views.
      */
     virtual void emit_view_pre_unmap();
+
+  private:
+    wf::point_t get_offset() final;
 };
 
 wayfire_view wl_surface_to_wayfire_view(wl_resource *surface);

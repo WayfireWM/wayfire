@@ -25,7 +25,7 @@ struct tablet_tool_t
     void update_tool_position();
 
     /** Set the proximity surface */
-    void set_focus(wf::surface_interface_t *surface);
+    void set_focus(wf::focused_view_t surface);
 
     /**
      * Send the axis updates directly.
@@ -54,9 +54,9 @@ struct tablet_tool_t
     wlr_tablet_v2_tablet *tablet_v2;
 
     /** Surface where the tool is in */
-    wf::surface_interface_t *proximity_surface = nullptr;
+    wf::focused_view_t proximity_surface;
     /** Surface where the tool was grabbed */
-    wf::surface_interface_t *grabbed_surface = nullptr;
+    wf::focused_view_t grabbed_surface;
 
     double tilt_x = 0.0;
     double tilt_y = 0.0;

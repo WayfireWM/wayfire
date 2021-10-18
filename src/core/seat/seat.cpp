@@ -30,6 +30,21 @@ wf::drag_icon_t::drag_icon_t(wlr_drag_icon *ic) :
     on_map.connect(&icon->events.map);
     on_unmap.connect(&icon->events.unmap);
     on_destroy.connect(&icon->events.destroy);
+
+    on_self_damage.set_callback([&] (void *data)
+    {
+        if (!is_mapped())
+        {
+            return;
+        }
+
+        auto ev = static_cast<wf::surface_damage_signal*>(data);
+        for (auto& pbox : ev->damage)
+        {
+            auto box = wlr_box_from_pixman_box(pbox);
+            damage_surface_box_global(box + this->get_offset());
+        }
+    });
 }
 
 wf::point_t wf::drag_icon_t::get_offset()
@@ -56,16 +71,6 @@ void wf::drag_icon_t::damage()
     last_box = {0, 0, get_size().width, get_size().height};
     last_box = last_box + get_offset();
     damage_surface_box_global(last_box);
-}
-
-void wf::drag_icon_t::damage_surface_box(const wlr_box& box)
-{
-    if (!is_mapped())
-    {
-        return;
-    }
-
-    damage_surface_box_global(box + this->get_offset());
 }
 
 void wf::drag_icon_t::damage_surface_box_global(const wlr_box& rect)
@@ -338,15 +343,15 @@ void wf::seat_t::set_keyboard_focus(wayfire_view view)
     wf::get_core().emit_signal("keyboard-focus-changed", &data);
 }
 
-void wf::seat_t::ensure_input_surface(wf::surface_interface_t *surface)
+void wf::seat_t::ensure_input_surface(wf::focused_view_t surface)
 {
-    if (!surface || !surface->get_wlr_surface())
+    if (!surface || !surface.surface()->get_wlr_surface())
     {
-        last_focus_surface = nullptr;
+        this->last_focus_surface = nullptr;
         return;
     }
 
-    auto wlr_surf = surface->get_wlr_surface();
+    auto wlr_surf = surface.surface()->get_wlr_surface();
     if (this->last_focus_surface == wlr_surf)
     {
         return;
@@ -417,16 +422,13 @@ wf::input_device_impl_t::input_device_impl_t(wlr_input_device *dev) :
     on_destroy.connect(&dev->events.destroy);
 }
 
-wf::pointf_t get_surface_relative_coords(wf::surface_interface_t *surface,
+wf::pointf_t get_surface_relative_coords(wf::focused_view_t focus,
     const wf::pointf_t& point)
 {
-    auto og    = surface->get_output()->get_layout_geometry();
+    auto og    = focus.view()->get_output()->get_layout_geometry();
     auto local = point;
     local.x -= og.x;
     local.y -= og.y;
 
-    auto view =
-        dynamic_cast<wf::view_interface_t*>(surface->get_main_surface());
-
-    return view->global_to_local_point(local, surface);
+    return focus.view()->global_to_local_point(local, focus.surface());
 }

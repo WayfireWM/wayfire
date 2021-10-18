@@ -58,9 +58,51 @@ enum class compositor_state_t
     SHUTDOWN,
 };
 
+/**
+ * Represents a focused view together with its surface which has the input
+ * focus (or can receive it).
+ */
+struct focused_view_t
+{
+    /**
+     * Initialize a focused view with a surface focused.
+     *
+     * Either both parameters are null, or none of them are.
+     */
+    focused_view_t(
+        wayfire_view view = nullptr, wf::surface_interface_t *surface = nullptr);
+
+    /**
+     * Convert to bool, e.g. check whether the view/surface combination is null.
+     */
+    operator bool() const;
+
+    inline wayfire_view view() const
+    {
+        return _view;
+    }
+
+    inline wf::surface_interface_t *surface() const
+    {
+        return _surface;
+    }
+
+  private:
+    wayfire_view _view;
+    wf::surface_interface_t *_surface;
+};
+
+bool operator ==(const focused_view_t& a, const focused_view_t& b);
+bool operator !=(const focused_view_t& a, const focused_view_t& b);
+
 class compositor_core_t : public wf::object_base_t
 {
   public:
+    compositor_core_t(const compositor_core_t&) = delete;
+    compositor_core_t(compositor_core_t&&) = delete;
+    compositor_core_t& operator =(const compositor_core_t&) = delete;
+    compositor_core_t& operator =(compositor_core_t&&) = delete;
+
     /**
      * The current configuration used by Wayfire
      */
@@ -181,26 +223,16 @@ class compositor_core_t : public wf::object_base_t
     /**
      * @return The surface which has the cursor focus, or null if none.
      */
-    virtual wf::surface_interface_t *get_cursor_focus() = 0;
+    virtual focused_view_t get_cursor_focus() = 0;
 
     /**
      * @return The surface which has touch focus, or null if none.
      */
-    virtual wf::surface_interface_t *get_touch_focus() = 0;
-
+    virtual focused_view_t get_touch_focus() = 0;
     /**
      * @return The surface under the given global coordinates, or null if none.
      */
-    virtual wf::surface_interface_t *get_surface_at(wf::pointf_t point) = 0;
-
-    /** @return The view whose surface is cursor focus */
-    wayfire_view get_cursor_focus_view();
-    /** @return The view whose surface is touch focus */
-    wayfire_view get_touch_focus_view();
-    /**
-     * @return The view whose surface is under the given global coordinates,
-     *  or null if none */
-    wayfire_view get_view_at(wf::pointf_t point);
+    virtual focused_view_t get_surface_at(wf::pointf_t point) = 0;
 
     /**
      * @return A list of all currently attached input devices.

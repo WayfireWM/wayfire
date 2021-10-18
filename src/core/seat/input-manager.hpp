@@ -30,6 +30,11 @@ class input_manager_t
     wf::signal_connection_t config_updated;
     wf::signal_connection_t output_added;
 
+    input_manager_t(const input_manager_t&) = delete;
+    input_manager_t(input_manager_t&&) = delete;
+    input_manager_t& operator =(const input_manager_t&) = delete;
+    input_manager_t& operator =(input_manager_t&&) = delete;
+
   public:
     /**
      * Locked mods are stored globally because the keyboard devices might be
@@ -74,11 +79,11 @@ class input_manager_t
      * Check if the given surface is focuseable at the moment.
      * This depends on things like exclusive clients, etc.
      */
-    bool can_focus_surface(wf::surface_interface_t *surface);
+    bool can_focus_surface(wf::focused_view_t surface);
 
     // returns the surface under the given global coordinates
     // if no such surface (return NULL), lx and ly are undefined
-    wf::surface_interface_t *input_surface_at(wf::pointf_t global,
+    wf::focused_view_t input_surface_at(wf::pointf_t global,
         wf::pointf_t& local);
 
     /** @return the bindings for the active output */

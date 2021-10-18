@@ -227,18 +227,16 @@ bool wf::input_manager_t::input_grabbed()
     return active_grab;
 }
 
-bool wf::input_manager_t::can_focus_surface(wf::surface_interface_t *surface)
+bool wf::input_manager_t::can_focus_surface(wf::focused_view_t surface)
 {
-    if (exclusive_client && (surface->get_client() != exclusive_client))
+    if (exclusive_client && (surface.surface()->get_client() != exclusive_client))
     {
         /* We have exclusive focus surface, for ex. a lockscreen.
          * The only kind of things we can focus are OSKs and similar */
-        auto view = (wf::view_interface_t*)surface->get_main_surface();
-        if (view && view->get_output())
+        auto wo = surface.view()->get_output();
+        if (wo)
         {
-            auto layer =
-                view->get_output()->workspace->get_view_layer(view->self());
-
+            auto layer = wo->workspace->get_view_layer(surface.view());
             return layer == wf::LAYER_DESKTOP_WIDGET;
         }
 
@@ -248,7 +246,7 @@ bool wf::input_manager_t::can_focus_surface(wf::surface_interface_t *surface)
     return true;
 }
 
-wf::surface_interface_t*wf::input_manager_t::input_surface_at(
+wf::focused_view_t wf::input_manager_t::input_surface_at(
     wf::pointf_t global, wf::pointf_t& local)
 {
     auto output = wf::get_core().output_layout->get_output_coords_at(global, global);
@@ -256,7 +254,7 @@ wf::surface_interface_t*wf::input_manager_t::input_surface_at(
      * */
     if (!output)
     {
-        return nullptr;
+        return {nullptr, nullptr};
     }
 
     auto og = output->get_layout_geometry();
@@ -268,18 +266,18 @@ wf::surface_interface_t*wf::input_manager_t::input_surface_at(
         for (auto& view : v->enumerate_views())
         {
             if (!view->minimized && view->is_visible() &&
-                can_focus_surface(view.get()))
+                can_focus_surface({view, view.get()}))
             {
                 auto surface = view->map_input_coordinates(global, local);
                 if (surface)
                 {
-                    return surface;
+                    return {view, surface};
                 }
             }
         }
     }
 
-    return nullptr;
+    return {nullptr, nullptr};
 }
 
 void wf::input_manager_t::set_exclusive_focus(wl_client *client)

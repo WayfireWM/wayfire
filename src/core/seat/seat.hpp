@@ -23,7 +23,6 @@ struct drag_icon_t : public wlr_child_surface_base_t
 
     /** Called each time the DnD icon position changes. */
     void damage();
-    void damage_surface_box(const wlr_box& rect) override;
 
     /* Force map without receiving a wlroots event */
     void force_map()
@@ -34,6 +33,8 @@ struct drag_icon_t : public wlr_child_surface_base_t
   private:
     /** Last icon box. */
     wf::geometry_t last_box = {0, 0, 0, 0};
+
+    wf::signal_connection_t on_self_damage;
 
     /** Damage surface box in global coordinates. */
     void damage_surface_box_global(const wlr_box& rect);
@@ -102,7 +103,7 @@ class seat_t
      * Make sure that the surface can receive input focus.
      * If it is a xwayland surface, it will be restacked to the top.
      */
-    void ensure_input_surface(wf::surface_interface_t *surface);
+    void ensure_input_surface(wf::focused_view_t surface);
 
   private:
     wf::wl_listener_wrapper request_start_drag, start_drag, end_drag,
@@ -130,7 +131,7 @@ class seat_t
 }
 
 /** Convert the given point to a surface-local point */
-wf::pointf_t get_surface_relative_coords(wf::surface_interface_t *surface,
+wf::pointf_t get_surface_relative_coords(wf::focused_view_t surface,
     const wf::pointf_t& point);
 
 #endif /* end of include guard: SEAT_HPP */

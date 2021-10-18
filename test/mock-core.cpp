@@ -65,20 +65,20 @@ const wf::touch::gesture_state_t& mock_core_t::get_touch_state()
     return ::state;
 }
 
-wf::surface_interface_t*mock_core_t::get_cursor_focus()
+wf::focused_view_t mock_core_t::get_cursor_focus()
 {
-    return nullptr;
+    return {nullptr, nullptr};
 }
 
-wf::surface_interface_t*mock_core_t::get_surface_at(
+wf::focused_view_t mock_core_t::get_surface_at(
     wf::pointf_t point)
 {
-    return nullptr;
+    return {nullptr, nullptr};
 }
 
-wf::surface_interface_t*mock_core_t::get_touch_focus()
+wf::focused_view_t mock_core_t::get_touch_focus()
 {
-    return nullptr;
+    return {nullptr, nullptr};
 }
 
 void mock_core_t::add_touch_gesture(

@@ -529,11 +529,11 @@ void scale_show_title_t::update_title_overlay_mouse()
     if (interact)
     {
         /* we can use normal focus tracking */
-        v = wf::get_core().get_cursor_focus_view();
+        v = wf::get_core().get_cursor_focus().view();
     } else
     {
         auto& core = wf::get_core();
-        v = core.get_view_at(core.get_cursor_position());
+        v = core.get_surface_at(core.get_cursor_position()).view();
     }
 
     if (v)

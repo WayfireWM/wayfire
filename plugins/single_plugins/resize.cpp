@@ -32,7 +32,7 @@ class wayfire_resize : public wf::plugin_interface_t
 
         activate_binding = [=] (auto)
         {
-            auto view = wf::get_core().get_cursor_focus_view();
+            auto view = wf::get_core().get_cursor_focus().view();
             if (view)
             {
                 is_using_touch     = false;

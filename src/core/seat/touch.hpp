@@ -14,7 +14,7 @@ namespace wf
 {
 struct plugin_grab_interface_t;
 using input_surface_selector_t =
-    std::function<wf::surface_interface_t*(const wf::pointf_t&, wf::pointf_t&)>;
+    std::function<wf::focused_view_t(const wf::pointf_t&, wf::pointf_t&)>;
 
 /**
  * Responsible for managing touch gestures and forwarding events to clients.
@@ -35,7 +35,7 @@ class touch_interface_t
     const touch::gesture_state_t& get_state() const;
 
     /** Get the focused surface */
-    wf::surface_interface_t *get_focus() const;
+    wf::focused_view_t get_focus() const;
 
     /**
      * Set the active grab interface.
@@ -69,15 +69,15 @@ class touch_interface_t
     void handle_touch_up(int32_t id, uint32_t time,
         input_event_processing_mode_t mode);
 
-    void set_touch_focus(wf::surface_interface_t *surface,
+    void set_touch_focus(wf::focused_view_t surface,
         int32_t id, uint32_t time, wf::pointf_t current);
 
     touch::gesture_state_t finger_state;
 
     /** Pressed a finger on a surface and dragging outside of it now */
-    wf::surface_interface_t *grabbed_surface = nullptr;
-    std::map<int32_t, wf::surface_interface_t*> focus;
-    void start_touch_down_grab(wf::surface_interface_t *surface);
+    wf::focused_view_t grabbed_surface;
+    std::map<int32_t, wf::focused_view_t> focus;
+    void start_touch_down_grab(wf::focused_view_t surface);
     void end_touch_down_grab();
 
     void update_gestures(const wf::touch::gesture_event_t& event);

@@ -62,7 +62,7 @@ class wf_wrot : public wf::plugin_interface_t
             return false;
         }
 
-        current_view = wf::get_core().get_cursor_focus_view();
+        current_view = wf::get_core().get_cursor_focus().view();
         if (!current_view || (current_view->role != wf::VIEW_ROLE_TOPLEVEL))
         {
             output->deactivate_plugin(grab_interface);
@@ -190,7 +190,7 @@ class wf_wrot : public wf::plugin_interface_t
                 return false;
             }
 
-            current_view = wf::get_core().get_cursor_focus_view();
+            current_view = wf::get_core().get_cursor_focus().view();
             if (!current_view || (current_view->role != wf::VIEW_ROLE_TOPLEVEL))
             {
                 output->deactivate_plugin(grab_interface);

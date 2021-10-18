@@ -1209,8 +1209,6 @@ class wf::render_manager::impl
             return;
         }
 
-        drag_icon->set_output(output);
-
         auto offset = drag_icon->get_offset();
         auto og     = output->get_layout_geometry();
         offset.x -= og.x;
@@ -1219,18 +1217,6 @@ class wf::render_manager::impl
         for (auto& child : drag_icon->enumerate_surfaces(offset))
         {
             schedule_surface(repaint, child.surface, child.position);
-        }
-    }
-
-    /**
-     * Reset the drag icon state for this output
-     */
-    void unschedule_drag_icon()
-    {
-        auto& drag_icon = wf::get_core_impl().seat->drag_icon;
-        if (drag_icon && drag_icon->is_mapped())
-        {
-            drag_icon->set_output(nullptr);
         }
     }
 
@@ -1410,7 +1396,6 @@ class wf::render_manager::impl
 
         render_views(repaint);
 
-        unschedule_drag_icon();
         {
             stream_signal_t data(stream.ws, repaint.ws_damage, repaint.fb);
             output->render->emit_signal("workspace-stream-post", &data);

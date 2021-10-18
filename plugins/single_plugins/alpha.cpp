@@ -87,7 +87,7 @@ class wayfire_alpha : public wf::plugin_interface_t
 
         output->deactivate_plugin(grab_interface);
 
-        auto view = wf::get_core().get_cursor_focus_view();
+        auto view = wf::get_core().get_cursor_focus().view();
         if (!view)
         {
             return false;

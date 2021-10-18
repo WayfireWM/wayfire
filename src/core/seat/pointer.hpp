@@ -40,7 +40,7 @@ class pointer_t
     void set_enable_focus(bool enabled = true);
 
     /** Get the currenntlly set cursor focus */
-    wf::surface_interface_t *get_focus() const;
+    wf::focused_view_t get_focus() const;
 
     /** Handle events coming from the input devices */
     void handle_pointer_axis(wlr_event_pointer_axis *ev,
@@ -94,7 +94,7 @@ class pointer_t
     wf::signal_connection_t on_views_updated;
 
     /** The surface which currently has cursor focus */
-    wf::surface_interface_t *cursor_focus = nullptr;
+    wf::focused_view_t cursor_focus = {nullptr, nullptr};
     /** Whether focusing is enabled */
     int focus_enabled_count = 1;
     bool focus_enabled() const;
@@ -106,7 +106,7 @@ class pointer_t
      * @param local   The coordinates of the pointer relative to surface.
      *                No meaning if the surface is nullptr
      */
-    void update_cursor_focus(wf::surface_interface_t *surface, wf::pointf_t local);
+    void update_cursor_focus(wf::focused_view_t surface, wf::pointf_t local);
 
     /** Number of currently-pressed mouse buttons */
     int count_pressed_buttons = 0;
@@ -120,11 +120,11 @@ class pointer_t
     void check_implicit_grab();
 
     /** Implicitly grabbed surface when a button is being held */
-    wf::surface_interface_t *grabbed_surface = nullptr;
+    wf::focused_view_t grabbed_surface;
 
     /** Set the currently grabbed surface
      * @param surface The surface to be grabbed, or nullptr to reset grab */
-    void grab_surface(wf::surface_interface_t *surface);
+    void grab_surface(wf::focused_view_t focus);
 
     /** Send a button event to the currently active receiver, i.e to the
      * active input grab(if any), or to the focused surface */

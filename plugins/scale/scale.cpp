@@ -485,7 +485,7 @@ class wayfire_scale : public wf::plugin_interface_t
 
         if (state == WLR_BUTTON_PRESSED)
         {
-            auto view = wf::get_core().get_view_at(input_position);
+            auto view = wf::get_core().get_surface_at(input_position).view();
             if (view && should_scale_view(view))
             {
                 // Mark the view as the target of the next input release operation
@@ -503,7 +503,7 @@ class wayfire_scale : public wf::plugin_interface_t
             drag_helper->handle_input_released();
         }
 
-        auto view = wf::get_core().get_view_at(input_position);
+        auto view = wf::get_core().get_surface_at(input_position).view();
         if (!view || (last_selected_view != view))
         {
             last_selected_view = nullptr;

@@ -5,6 +5,7 @@
 #include "subsurface.hpp"
 #include "wayfire/opengl.hpp"
 #include "../core/core-impl.hpp"
+#include "wayfire/output-layout.hpp"
 #include "wayfire/output.hpp"
 #include <wayfire/util/log.hpp>
 #include "wayfire/render-manager.hpp"
@@ -26,7 +27,6 @@ void wf::surface_interface_t::add_subsurface(
     std::unique_ptr<surface_interface_t> subsurface, bool is_below_parent)
 {
     subsurface->priv->parent_surface = this;
-    subsurface->set_output(get_output());
     auto& container = is_below_parent ?
         priv->surface_children_below : priv->surface_children_above;
 
@@ -72,14 +72,14 @@ std::unique_ptr<wf::surface_interface_t> wf::surface_interface_t::remove_subsurf
 wf::surface_interface_t::~surface_interface_t()
 {}
 
-wf::surface_interface_t*wf::surface_interface_t::get_main_surface()
+wf::surface_interface_t*wf::surface_interface_t::get_parent()
 {
     if (priv->parent_surface)
     {
-        return priv->parent_surface->get_main_surface();
+        return priv->parent_surface;
     }
 
-    return this;
+    return nullptr;
 }
 
 std::vector<wf::surface_iterator_t> wf::surface_interface_t::enumerate_surfaces(
@@ -117,25 +117,6 @@ std::vector<wf::surface_iterator_t> wf::surface_interface_t::enumerate_surfaces(
 
     priv->last_cnt_surfaces = result.size();
     return result;
-}
-
-wf::output_t*wf::surface_interface_t::get_output()
-{
-    return priv->output;
-}
-
-void wf::surface_interface_t::set_output(wf::output_t *output)
-{
-    priv->output = output;
-    for (auto& c : priv->surface_children_above)
-    {
-        c->set_output(output);
-    }
-
-    for (auto& c : priv->surface_children_below)
-    {
-        c->set_output(output);
-    }
 }
 
 /* Static method */
@@ -202,24 +183,26 @@ wlr_surface*wf::surface_interface_t::get_wlr_surface()
     return priv->wsurface;
 }
 
-void wf::surface_interface_t::damage_surface_region(
-    const wf::region_t& dmg)
-{
-    for (const auto& rect : dmg)
-    {
-        damage_surface_box(wlr_box_from_pixman_box(rect));
-    }
-}
+wf::surface_damage_signal::surface_damage_signal(const wf::region_t& damage) :
+    damage(damage)
+{}
 
-void wf::surface_interface_t::damage_surface_box(const wlr_box& box)
+void wf::surface_interface_t::emit_damage(wf::region_t damage)
 {
-    /* wlr_view_t overrides damage_surface_box and applies it to the output */
-    if (priv->parent_surface && priv->parent_surface->is_mapped())
+    wf::point_t toplevel_offset = {0, 0};
+    auto surface = this;
+
+    while (surface->is_mapped() && surface->get_parent())
     {
-        wlr_box parent_box = box;
-        parent_box.x += get_offset().x;
-        parent_box.y += get_offset().y;
-        priv->parent_surface->damage_surface_box(parent_box);
+        toplevel_offset = toplevel_offset + surface->get_offset();
+        surface = surface->get_parent();
+    }
+
+    if (surface->is_mapped())
+    {
+        damage += toplevel_offset;
+        surface_damage_signal ds(damage);
+        surface->emit_signal("damage", &ds);
     }
 }
 
@@ -264,6 +247,15 @@ wf::wlr_surface_base_t::wlr_surface_base_t(surface_interface_t *self)
         auto subsurface = std::make_unique<subsurface_implementation_t>(sub);
         nonstd::observer_ptr<subsurface_implementation_t> ptr{subsurface};
         _as_si->add_subsurface(std::move(subsurface), false);
+
+        // Add outputs from the parent surface
+        wlr_surface_output *output;
+        wl_list_for_each(output, &sub->parent->current_outputs, link)
+        {
+            auto wo = wf::get_core().output_layout->find_output(output->output);
+            ptr->set_visible_on_output(wo, true);
+        }
+
         if (sub->mapped)
         {
             ptr->map(sub->surface);
@@ -318,13 +310,6 @@ void wf::wlr_surface_base_t::map(wlr_surface *surface)
     this->surface = surface;
 
     _as_si->priv->wsurface = surface;
-
-    /* force surface_send_enter(), and also check whether parent surface
-     * output hasn't changed while we were unmapped */
-    wf::output_t *output = _as_si->priv->parent_surface ?
-        _as_si->priv->parent_surface->get_output() : _as_si->get_output();
-    _as_si->set_output(output);
-
     on_new_subsurface.connect(&surface->events.new_subsurface);
     on_commit.connect(&surface->events.commit);
 
@@ -344,8 +329,10 @@ void wf::wlr_surface_base_t::unmap()
 {
     assert(this->surface);
     apply_surface_damage();
-    _as_si->damage_surface_box({.x = 0, .y = 0,
-        .width = _get_size().width, .height = _get_size().height});
+
+    wf::region_t dmg{{.x = 0, .y = 0,
+        .width = _get_size().width, .height = _get_size().height}};
+    _as_si->emit_damage(dmg);
 
     this->surface->data = NULL;
     this->surface = nullptr;
@@ -373,7 +360,7 @@ wlr_buffer*wf::wlr_surface_base_t::get_buffer()
 
 void wf::wlr_surface_base_t::apply_surface_damage()
 {
-    if (!_as_si->get_output() || !_is_mapped())
+    if (!_is_mapped())
     {
         return;
     }
@@ -381,38 +368,35 @@ void wf::wlr_surface_base_t::apply_surface_damage()
     wf::region_t dmg;
     wlr_surface_get_effective_damage(surface, dmg.to_pixman());
 
-    if ((surface->current.scale != 1) ||
-        (surface->current.scale != _as_si->get_output()->handle->scale))
+    // If the surface is scaled or doesn't match the scale of an output it is
+    // on, then when we render it, it may get rendered over a fractional amount
+    // of pixels. This means that we need to damage the neighboring pixels as
+    // well, hence we expand the damage by 1 pixel.
+    bool needs_expansion = (surface->current.scale != 1);
+    wlr_surface_output *output;
+    wl_list_for_each(output, &surface->current_outputs, link)
+    {
+        needs_expansion |= (output->output->scale != surface->current.scale);
+    }
+
+    if (needs_expansion)
     {
         dmg.expand_edges(1);
     }
 
-    _as_si->damage_surface_region(dmg);
+    _as_si->emit_damage(dmg);
 }
 
 void wf::wlr_surface_base_t::commit()
 {
     apply_surface_damage();
-    if (_as_si->get_output())
-    {
-        /* we schedule redraw, because the surface might expect
-         * a frame callback */
-        _as_si->get_output()->render->schedule_redraw();
-    }
-}
 
-void wf::wlr_surface_base_t::update_output(wf::output_t *old_output,
-    wf::output_t *new_output)
-{
-    /* We should send send_leave only if the output is different from the last. */
-    if (old_output && (old_output != new_output) && surface)
+    for (auto& [wo, cnt] : this->visibility)
     {
-        wlr_surface_send_leave(surface, old_output->handle);
-    }
-
-    if (new_output && surface)
-    {
-        wlr_surface_send_enter(surface, new_output->handle);
+        if (cnt > 0)
+        {
+            wo->render->schedule_redraw();
+        }
     }
 }
 
@@ -571,3 +555,30 @@ void wf::wlr_surface_base_t::handle_touch_up(
         wlr_seat_touch_notify_up(seat, time_ms, id);
     }
 }
+
+void wf::wlr_surface_base_t::update_output(wf::output_t *output, bool is_visible)
+{
+    visibility[output] += (is_visible ? 1 : -1);
+    auto surf = _as_si->priv->wsurface;
+    if (!surf)
+    {
+        return;
+    }
+
+    if (is_visible && (visibility[output] == 1))
+    {
+        wlr_surface_send_enter(surface, output->handle);
+    }
+
+    if (!is_visible && (visibility[output] == 0))
+    {
+        wlr_surface_send_leave(surface, output->handle);
+        // Do not leak memory for an output we are not on anymore
+        visibility.erase(output);
+    }
+}
+
+void wf::surface_interface_t::set_visible_on_output(
+    wf::output_t *output, bool is_visible)
+{
+    /* no-op by default, this is just a hint */ }

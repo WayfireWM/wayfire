@@ -15,9 +15,10 @@ wf::pointer_t::pointer_t(nonstd::observer_ptr<wf::input_manager_t> input,
     this->seat  = seat;
     on_surface_map_state_change.set_callback([=] (auto surface)
     {
-        if (surface && (grabbed_surface == surface) && !surface->is_mapped())
+        if (surface && (grabbed_surface.surface() == surface) &&
+            !surface->is_mapped())
         {
-            grab_surface(nullptr);
+            grab_surface({});
         } else
         {
             update_cursor_position(get_current_time(), false);
@@ -52,8 +53,8 @@ void wf::pointer_t::set_enable_focus(bool enabled)
     // reset grab
     if (!focus_enabled())
     {
-        grab_surface(nullptr);
-        this->update_cursor_focus(nullptr, {0.0, 0.0});
+        grab_surface({});
+        this->update_cursor_focus({}, {0.0, 0.0});
     } else
     {
         update_cursor_position(get_current_time(), false);
@@ -70,7 +71,7 @@ void wf::pointer_t::update_cursor_position(uint32_t time_msec, bool real_update)
     wf::pointf_t gc = seat->cursor->get_cursor_position();
 
     wf::pointf_t local = {0.0, 0.0};
-    wf::surface_interface_t *new_focus = nullptr;
+    wf::focused_view_t new_focus = {nullptr, nullptr};
     /* If we have a grabbed surface, but no drag, we want to continue sending
      * events to the grabbed surface, even if the pointer goes outside of it.
      * This enables Xwayland DnD to work correctly, and also lets the user for
@@ -112,7 +113,7 @@ void wf::pointer_t::release_all_buttons()
 }
 
 void wf::pointer_t::update_cursor_focus(
-    wf::surface_interface_t *focus, wf::pointf_t local)
+    wf::focused_view_t focus, wf::pointf_t local)
 {
     if (focus && !input->can_focus_surface(focus))
     {
@@ -139,7 +140,7 @@ void wf::pointer_t::update_cursor_focus(
                 release_all_buttons();
             }
 
-            cursor_focus->input().handle_pointer_leave();
+            cursor_focus.surface()->input().handle_pointer_leave();
         }
 
         // Unset pointer constraint
@@ -152,7 +153,8 @@ void wf::pointer_t::update_cursor_focus(
 
     if (focus)
     {
-        auto constraint = focus->input().handle_pointer_enter(local, !focus_change);
+        auto constraint = focus.surface()->input().handle_pointer_enter(local,
+            !focus_change);
         LOGI("Got constraint ", constraint.has_value());
         set_pointer_constraint(constraint);
     } else
@@ -161,7 +163,7 @@ void wf::pointer_t::update_cursor_focus(
     }
 }
 
-wf::surface_interface_t*wf::pointer_t::get_focus() const
+wf::focused_view_t wf::pointer_t::get_focus() const
 {
     return this->cursor_focus;
 }
@@ -170,23 +172,20 @@ wf::surface_interface_t*wf::pointer_t::get_focus() const
 wf::pointf_t wf::pointer_t::get_absolute_position_from_relative(
     wf::pointf_t relative)
 {
-    auto view =
-        (wf::view_interface_t*)(this->cursor_focus->get_main_surface());
-
-    auto output_geometry = view->get_output_geometry();
+    auto output_geometry = cursor_focus.view()->get_output_geometry();
     wf::point_t origin   = {output_geometry.x, output_geometry.y};
 
-    for (auto& surf : view->enumerate_surfaces(origin))
+    for (auto& surf : cursor_focus.view()->enumerate_surfaces(origin))
     {
-        if (surf.surface == this->cursor_focus)
+        if (surf.surface == this->cursor_focus.surface())
         {
             relative.x += surf.position.x;
             relative.y += surf.position.y;
         }
     }
 
-    relative = view->transform_point(relative);
-    auto output = view->get_output()->get_layout_geometry();
+    relative = cursor_focus.view()->transform_point(relative);
+    auto output = cursor_focus.view()->get_output()->get_layout_geometry();
 
     return {relative.x + output.x, relative.y + output.y};
 }
@@ -257,7 +256,7 @@ void wf::pointer_t::set_pointer_constraint(std::optional<wf::region_t> region)
 }
 
 /* -------------------------- Implicit grab --------------------------------- */
-void wf::pointer_t::grab_surface(wf::surface_interface_t *surface)
+void wf::pointer_t::grab_surface(wf::focused_view_t surface)
 {
     if (surface == grabbed_surface)
     {
@@ -273,7 +272,7 @@ void wf::pointer_t::grab_surface(wf::surface_interface_t *surface)
     }
 
     /* End grab */
-    grabbed_surface = nullptr;
+    grabbed_surface = {};
     update_cursor_position(get_current_time(), false);
 }
 
@@ -324,7 +323,7 @@ void wf::pointer_t::check_implicit_grab()
      * the last button release event, so that buttons don't get stuck in clients */
     if (count_pressed_buttons == 0)
     {
-        grab_surface(nullptr);
+        grab_surface({});
     }
 }
 
@@ -362,7 +361,7 @@ void wf::pointer_t::send_button(wlr_event_pointer_button *ev, bool has_binding)
             currently_sent_buttons.find(ev->button));
     }
 
-    cursor_focus->input().handle_pointer_button(ev->time_msec, ev->button,
+    cursor_focus.surface()->input().handle_pointer_button(ev->time_msec, ev->button,
         ev->state);
 }
 
@@ -379,7 +378,7 @@ void wf::pointer_t::send_motion(uint32_t time_msec, wf::pointf_t local)
 
     if (cursor_focus)
     {
-        cursor_focus->input().handle_pointer_motion(time_msec, local);
+        cursor_focus.surface()->input().handle_pointer_motion(time_msec, local);
     }
 }
 
@@ -483,7 +482,8 @@ void wf::pointer_t::handle_pointer_axis(wlr_event_pointer_axis *ev,
         wf::pointing_device_t::config.touchpad_scroll_speed :
         wf::pointing_device_t::config.mouse_scroll_speed;
 
-    cursor_focus->input().handle_pointer_axis(ev->time_msec, ev->orientation,
+    cursor_focus.surface()->input().handle_pointer_axis(ev->time_msec,
+        ev->orientation,
         mult * ev->delta, mult * ev->delta_discrete, ev->source);
 }
 

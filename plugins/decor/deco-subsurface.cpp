@@ -67,7 +67,7 @@ class simple_decoration_surface : public wf::surface_interface_t,
 
     simple_decoration_surface(wayfire_view view) :
         theme{},
-        layout{theme, [=] (wlr_box box) {this->damage_surface_box(box); }}
+        layout{theme, [=] (wlr_box box) { emit_damage({box}); }}
     {
         this->view = view;
         view->connect_signal("title-changed", &title_set);

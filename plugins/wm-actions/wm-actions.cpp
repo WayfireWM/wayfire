@@ -60,7 +60,7 @@ class wayfire_wm_actions_t : public wf::plugin_interface_t
         wayfire_view view;
         if (source == wf::activator_source_t::BUTTONBINDING)
         {
-            view = wf::get_core().get_cursor_focus_view();
+            view = wf::get_core().get_cursor_focus().view();
         }
 
         view = output->get_active_view();

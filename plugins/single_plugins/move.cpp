@@ -119,7 +119,7 @@ class wayfire_move : public wf::plugin_interface_t
         {
             is_using_touch     = false;
             was_client_request = false;
-            auto view = wf::get_core().get_cursor_focus_view();
+            auto view = wf::get_core().get_cursor_focus().view();
 
             if (view && (view->role != wf::VIEW_ROLE_DESKTOP_ENVIRONMENT))
             {

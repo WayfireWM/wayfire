@@ -1,5 +1,4 @@
-#ifndef WF_SURFACE_HPP
-#define WF_SURFACE_HPP
+#pragma once
 
 #include <cstdint>
 #include <string>
@@ -170,12 +169,10 @@ class surface_interface_t : public wf::object_base_t
     virtual bool is_mapped() const = 0;
 
     /**
-     * Related surfaces usually form hierarchies, where the topmost surface
-     * is a view, except for drag icons or surfaces managed by plugins.
-     *
-     * @return The topmost surface in the hierarchy of the surface.
+     * Get the parent of the surface in the surface tree, or null if there is
+     * no parent for the surface.
      */
-    virtual surface_interface_t *get_main_surface();
+    surface_interface_t *get_parent();
 
     /**
      * Add a new subsurface to the surface.
@@ -212,19 +209,24 @@ class surface_interface_t : public wf::object_base_t
         wf::point_t surface_origin = {0, 0});
 
     /**
-     * @return The output the surface is currently attached to. Note this
-     * doesn't necessarily mean that it is visible.
-     */
-    virtual wf::output_t *get_output();
-
-    /**
-     * Set the current output of the surface and all surfaces in its surface
-     * tree. Note that calling this for a surface with a parent is an invalid
-     * operation and may have undefined consequences.
+     * Notify the surface that it is visible or no longer visible on a
+     * specific output. This is hint to the surface, so that it can use
+     * a rendering scale fitting the outputs it is visible on.
      *
-     * @param output The new output, may be null
+     * Note that a surface may receive visibility on an output multiple times,
+     * for example if multiple views display it on the same output. In this
+     * case the number of visibility events is counted, and the surface stops
+     * being visible when the counter reaches 0.
+     *
+     * Another consideration is that the outputs that a surface is visible on
+     * are not automatically inherited, so implementations should initially
+     * populate the list of visible outputs manually, if they care about this.
+     *
+     * @param output The output on which the surface is now visible or no
+     *   longer visible.
+     * @param is_visible Whether the view is visible on the output or not.
      */
-    virtual void set_output(wf::output_t *output);
+    virtual void set_visible_on_output(wf::output_t *output, bool is_visible);
 
     /** @return The offset of this surface relative to its parent surface.  */
     virtual wf::point_t get_offset() = 0;
@@ -302,19 +304,40 @@ class surface_interface_t : public wf::object_base_t
     /** @return the active shrink constraint */
     static int get_active_shrink_constraint();
 
-    /** Damage the given box, in surface-local coordinates */
-    virtual void damage_surface_box(const wlr_box& box);
-    /** Damage the given region, in surface-local coordinates */
-    virtual void damage_surface_region(const wf::region_t& region);
-
     /** Remove all subsurfaces that we have. Should to be called after unmapping! */
     virtual void clear_subsurfaces();
 
     /* Allow wlr surface implementation to access surface internals */
     friend class wlr_surface_base_t;
+
+    /**
+     * Notify views that a portion of the surface changed.
+     * Internally, this will emit the damage signal on the topmost surface in
+     * the surface tree, see the damage signal.
+     *
+     * @param damage The region of the surface which changed.
+     */
+    void emit_damage(wf::region_t damage);
 };
 
+/**
+ * Emit a map state change event for the provided surface.
+ * A surface should generally emit this signal every time that the map state
+ * changes.
+ */
 void emit_map_state_change(wf::surface_interface_t *surface);
-}
 
-#endif /* end of include guard: WF_SURFACE_HPP */
+/**
+ * name: damage
+ * on: surface
+ * when: When the surface's contents have changed, it should emit this signal
+ *   on the topmost surface in its tree. View implementations are required to
+ *   listen for this signal on their main surface and propagate the changes to
+ *   the output they are on.
+ */
+struct surface_damage_signal : public wf::signal_data_t
+{
+    surface_damage_signal(const wf::region_t& damage);
+    const wf::region_t& damage;
+};
+}

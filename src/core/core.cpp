@@ -424,21 +424,12 @@ const wf::touch::gesture_state_t& wf::compositor_core_impl_t::get_touch_state()
     return seat->touch->get_state();
 }
 
-wf::surface_interface_t*wf::compositor_core_impl_t::get_cursor_focus()
+wf::focused_view_t wf::compositor_core_impl_t::get_cursor_focus()
 {
     return seat->lpointer->get_focus();
 }
 
-wayfire_view wf::compositor_core_t::get_cursor_focus_view()
-{
-    auto focus = get_cursor_focus();
-    auto view  = dynamic_cast<wf::view_interface_t*>(
-        focus ? focus->get_main_surface() : nullptr);
-
-    return view ? view->self() : nullptr;
-}
-
-wf::surface_interface_t*wf::compositor_core_impl_t::get_surface_at(
+wf::focused_view_t wf::compositor_core_impl_t::get_surface_at(
     wf::pointf_t point)
 {
     wf::pointf_t local = {0.0, 0.0};
@@ -446,31 +437,9 @@ wf::surface_interface_t*wf::compositor_core_impl_t::get_surface_at(
     return input->input_surface_at(point, local);
 }
 
-wayfire_view wf::compositor_core_t::get_view_at(wf::pointf_t point)
-{
-    auto surface = get_surface_at(point);
-    if (!surface)
-    {
-        return nullptr;
-    }
-
-    auto view = dynamic_cast<wf::view_interface_t*>(surface->get_main_surface());
-
-    return view ? view->self() : nullptr;
-}
-
-wf::surface_interface_t*wf::compositor_core_impl_t::get_touch_focus()
+wf::focused_view_t wf::compositor_core_impl_t::get_touch_focus()
 {
     return seat->touch->get_focus();
-}
-
-wayfire_view wf::compositor_core_t::get_touch_focus_view()
-{
-    auto focus = get_touch_focus();
-    auto view  = dynamic_cast<wf::view_interface_t*>(
-        focus ? focus->get_main_surface() : nullptr);
-
-    return view ? view->self() : nullptr;
 }
 
 void wf::compositor_core_impl_t::add_touch_gesture(
@@ -917,6 +886,29 @@ wf::compositor_core_t& wf::get_core()
 wf::compositor_core_impl_t& wf::get_core_impl()
 {
     return wf::compositor_core_impl_t::get();
+}
+
+wf::focused_view_t::focused_view_t(
+    wayfire_view view, wf::surface_interface_t *surface)
+{
+    this->_view    = view;
+    this->_surface = surface;
+    assert((view && surface) || (!view && !surface));
+}
+
+bool wf::operator ==(const focused_view_t& a, const focused_view_t& b)
+{
+    return (a.view() == b.view()) && (a.surface() == b.surface());
+}
+
+bool wf::operator !=(const focused_view_t& a, const focused_view_t& b)
+{
+    return !(a == b);
+}
+
+wf::focused_view_t::operator bool() const
+{
+    return _view != nullptr;
 }
 
 // TODO: move this to a better location

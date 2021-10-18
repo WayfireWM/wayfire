@@ -58,7 +58,7 @@ class extra_gestures_plugin_t : public plugin_interface_t
             return;
         }
 
-        auto view = core.get_view_at({center.x, center.y});
+        auto view = core.get_surface_at({center.x, center.y}).view();
         if (view && (view->role == VIEW_ROLE_TOPLEVEL))
         {
             action(view);

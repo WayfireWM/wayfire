@@ -268,7 +268,7 @@ class wayfire_blur : public wf::plugin_interface_t
                 return false;
             }
 
-            auto view = wf::get_core().get_cursor_focus_view();
+            auto view = wf::get_core().get_cursor_focus().view();
             if (!view)
             {
                 return false;

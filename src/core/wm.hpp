@@ -9,7 +9,7 @@
 
 struct wm_focus_request : public wf::signal_data_t
 {
-    wf::surface_interface_t *surface;
+    wf::focused_view_t focus;
 };
 
 class wayfire_close : public wf::plugin_interface_t
@@ -29,7 +29,7 @@ class wayfire_focus : public wf::plugin_interface_t
     std::unique_ptr<wf::touch::gesture_t> tap_gesture;
 
     // @return True if the focus has changed
-    bool check_focus_surface(wf::surface_interface_t *surface);
+    bool check_focus_surface(wf::focused_view_t surface);
 
     wf::option_wrapper_t<bool> focus_modifiers{"core/focus_button_with_modifiers"};
     wf::option_wrapper_t<bool> pass_btns{"core/focus_buttons_passthrough"};

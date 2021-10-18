@@ -83,6 +83,10 @@ class view_interface_t::view_priv_impl
     /* Promoted to the fullscreen layer? For workspace-manager. */
     bool is_promoted = false;
 
+    wf::signal_connection_t on_main_surface_damage;
+
+    wf::output_t *output = nullptr;
+
   private:
     /** Last geometry the view has had in non-tiled and non-fullscreen state.
      * -1 as width/height means that no such geometry has been stored. */

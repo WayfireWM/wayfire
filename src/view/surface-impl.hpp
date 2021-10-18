@@ -1,6 +1,6 @@
-#ifndef SURFACE_IMPL_HPP
-#define SURFACE_IMPL_HPP
+#pragma once
 
+#include <map>
 #include <wayfire/opengl.hpp>
 #include <wayfire/surface.hpp>
 #include <wayfire/util.hpp>
@@ -49,6 +49,8 @@ class wlr_surface_base_t : public input_surface_t
     /* Pointer to this as surface_interface, see requirement above */
     wf::surface_interface_t *_as_si = nullptr;
 
+    std::map<wf::output_t*, int> visibility;
+
   public:
     /* if surface != nullptr, then the surface is mapped */
     wlr_surface *surface = nullptr;
@@ -64,8 +66,7 @@ class wlr_surface_base_t : public input_surface_t
     virtual wf::point_t get_window_offset();
 
     /** Update the surface output */
-    virtual void update_output(wf::output_t *old_output,
-        wf::output_t *new_output);
+    virtual void update_output(wf::output_t *output, bool visible);
 
     /*
      * Functions that need to be implemented/overridden from the
@@ -138,10 +139,9 @@ class wlr_child_surface_base_t :
         _simple_render(fb, x, y, damage);
     }
 
-    virtual void set_output(wf::output_t *output) override
+    void set_visible_on_output(wf::output_t *output, bool is_visible) override
     {
-        update_output(get_output(), output);
-        surface_interface_t::set_output(output);
+        update_output(output, is_visible);
     }
 
     virtual input_surface_t& input() override
@@ -150,5 +150,3 @@ class wlr_child_surface_base_t :
     }
 };
 }
-
-#endif /* end of include guard: SURFACE_IMPL_HPP */

@@ -203,9 +203,8 @@ class tile_plugin_t : public wf::plugin_interface_t
     /** Check whether the current pointer focus is tiled view */
     bool has_tiled_focus()
     {
-        auto focus = wf::get_core().get_cursor_focus_view();
-
-        return focus && tile::view_node_t::get_node(focus);
+        auto focus = wf::get_core().get_cursor_focus();
+        return focus && tile::view_node_t::get_node(focus.view());
     }
 
     template<class Controller>
