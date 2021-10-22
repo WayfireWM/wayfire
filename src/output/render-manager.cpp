@@ -1197,7 +1197,7 @@ class wf::render_manager::impl
             wf::point_t current_output = wf::origin(output->get_layout_geometry());
             auto origin = wf::origin(xw_dnd_icon->get_output_geometry()) +
                 dnd_output + -current_output;
-            for (auto& child : xw_dnd_icon->enumerate_surfaces(origin))
+            for (auto& child : xw_dnd_icon->enumerate_surfaces(origin, true))
             {
                 schedule_surface(repaint, child.surface, child.position);
             }
@@ -1214,7 +1214,7 @@ class wf::render_manager::impl
         offset.x -= og.x;
         offset.y -= og.y;
 
-        for (auto& child : drag_icon->enumerate_surfaces(offset))
+        for (auto& child : drag_icon->enumerate_surfaces(offset, true))
         {
             schedule_surface(repaint, child.surface, child.position);
         }
@@ -1263,7 +1263,8 @@ class wf::render_manager::impl
                     /* Make sure view position is relative to the workspace
                      * being rendered */
                     auto obox = view->get_output_geometry() + view_delta;
-                    for (auto& child : view->enumerate_surfaces({obox.x, obox.y}))
+                    for (auto& child :
+                         view->enumerate_surfaces({obox.x, obox.y}, true))
                     {
                         schedule_surface(repaint, child.surface, child.position);
                     }

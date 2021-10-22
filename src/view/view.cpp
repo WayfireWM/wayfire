@@ -385,7 +385,7 @@ wf::surface_interface_t*wf::view_interface_t::map_input_coordinates(
     auto view_relative_coordinates =
         global_to_local_point(cursor, nullptr);
 
-    for (auto& child : enumerate_surfaces({0, 0}))
+    for (auto& child : enumerate_surfaces({0, 0}, true))
     {
         local.x = view_relative_coordinates.x - child.position.x;
         local.y = view_relative_coordinates.y - child.position.y;
@@ -955,7 +955,7 @@ wf::geometry_t wf::view_interface_t::get_untransformed_bounding_box()
     auto bbox = get_output_geometry();
     wf::region_t bounding_region = bbox;
 
-    for (auto& child : enumerate_surfaces({bbox.x, bbox.y}))
+    for (auto& child : enumerate_surfaces({bbox.x, bbox.y}, true))
     {
         auto dim = child.surface->get_size();
         bounding_region |= {child.position.x, child.position.y,
@@ -1034,7 +1034,7 @@ bool wf::view_interface_t::intersects_region(const wlr_box& region)
     }
 
     auto origin = get_output_geometry();
-    for (auto& child : enumerate_surfaces({origin.x, origin.y}))
+    for (auto& child : enumerate_surfaces({origin.x, origin.y}, true))
     {
         wlr_box box = {child.position.x, child.position.y,
             child.surface->get_size().width, child.surface->get_size().height};
@@ -1060,7 +1060,7 @@ wf::region_t wf::view_interface_t::get_transformed_opaque_region()
     auto og   = get_output_geometry();
 
     wf::region_t opaque;
-    for (auto& surf : enumerate_surfaces({og.x, og.y}))
+    for (auto& surf : enumerate_surfaces({og.x, og.y}, true))
     {
         opaque |= surf.surface->get_opaque_region(surf.position);
     }
@@ -1088,7 +1088,8 @@ bool wf::view_interface_t::render_transformed(const wf::framebuffer_t& framebuff
     wf::texture_t previous_texture;
     float texture_scale;
 
-    if (is_mapped() && (enumerate_surfaces().size() == 1) && get_wlr_surface())
+    if (is_mapped() && (enumerate_surfaces({0, 0}, true).size() == 1) &&
+        get_wlr_surface())
     {
         /* Optimized case: there is a single mapped surface.
          * We can directly start with its texture */
@@ -1237,7 +1238,7 @@ const wf::framebuffer_t& wf::view_interface_t::take_snapshot()
     OpenGL::render_end();
 
     auto output_geometry = get_output_geometry();
-    auto children = enumerate_surfaces({output_geometry.x, output_geometry.y});
+    auto children = enumerate_surfaces({output_geometry.x, output_geometry.y}, true);
     for (auto& child : wf::reverse(children))
     {
         wlr_box child_box{

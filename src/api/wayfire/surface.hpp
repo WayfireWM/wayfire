@@ -200,13 +200,15 @@ class surface_interface_t : public wf::object_base_t
      * @param surface_origin The coordinates of the top-left corner of the
      * surface.
      *
+     * @param mapped_only Whether to include only mapped surfaces in the result.
+     *
      * @return a list of each mapped surface in the surface tree, including the
      * surface itself.
      *
      * The surfaces should be ordered from the topmost to the bottom-most one.
      */
     virtual std::vector<surface_iterator_t> enumerate_surfaces(
-        wf::point_t surface_origin = {0, 0});
+        wf::point_t surface_origin = {0, 0}, bool mapped_only = false);
 
     /**
      * Notify the surface that it is visible or no longer visible on a

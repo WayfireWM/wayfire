@@ -83,19 +83,14 @@ wf::surface_interface_t*wf::surface_interface_t::get_parent()
 }
 
 std::vector<wf::surface_iterator_t> wf::surface_interface_t::enumerate_surfaces(
-    wf::point_t surface_origin)
+    wf::point_t surface_origin, bool mapped_only)
 {
     std::vector<wf::surface_iterator_t> result;
     result.reserve(priv->last_cnt_surfaces);
     auto add_surfaces_recursive = [&] (surface_interface_t *child)
     {
-        if (!child->is_mapped())
-        {
-            return;
-        }
-
         auto child_surfaces = child->enumerate_surfaces(
-            child->get_offset() + surface_origin);
+            child->get_offset() + surface_origin, mapped_only);
         result.insert(result.end(),
             child_surfaces.begin(), child_surfaces.end());
     };
@@ -105,7 +100,7 @@ std::vector<wf::surface_iterator_t> wf::surface_interface_t::enumerate_surfaces(
         add_surfaces_recursive(child.get());
     }
 
-    if (is_mapped())
+    if (!mapped_only || is_mapped())
     {
         result.push_back({this, surface_origin});
     }
@@ -373,10 +368,9 @@ void wf::wlr_surface_base_t::apply_surface_damage()
     // of pixels. This means that we need to damage the neighboring pixels as
     // well, hence we expand the damage by 1 pixel.
     bool needs_expansion = (surface->current.scale != 1);
-    wlr_surface_output *output;
-    wl_list_for_each(output, &surface->current_outputs, link)
+    for (auto [wo, cnt] : visibility)
     {
-        needs_expansion |= (output->output->scale != surface->current.scale);
+        needs_expansion |= (wo->handle->scale != surface->current.scale);
     }
 
     if (needs_expansion)
