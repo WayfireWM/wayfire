@@ -148,6 +148,7 @@ class wayfire_scale : public wf::plugin_interface_t
 
         drag_helper->connect_signal("focus-output", &on_drag_output_focus);
         drag_helper->connect_signal("done", &on_drag_done);
+        drag_helper->connect_signal("snap-off", &on_drag_snap_off);
 
         show_title.init(output);
     }
@@ -547,7 +548,7 @@ class wayfire_scale : public wf::plugin_interface_t
 
     void process_motion(wf::point_t to)
     {
-        if (last_selected_view)
+        if (!drag_helper->view && last_selected_view)
         {
             wf::move_drag::drag_options_t opts;
             opts.join_views = true;
@@ -555,7 +556,6 @@ class wayfire_scale : public wf::plugin_interface_t
             opts.snap_off_threshold = 200;
 
             drag_helper->start_drag(last_selected_view, to, opts);
-            last_selected_view = nullptr;
         } else if (drag_helper->view)
         {
             drag_helper->handle_motion(to);
@@ -1317,6 +1317,11 @@ class wayfire_scale : public wf::plugin_interface_t
 
             wf::move_drag::adjust_view_on_output(ev);
         }
+    };
+
+    wf::signal_connection_t on_drag_snap_off = [=] (auto data)
+    {
+        last_selected_view = nullptr;
     };
 
     /* Activate and start scale animation */
