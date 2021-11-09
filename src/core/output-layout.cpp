@@ -637,16 +637,9 @@ struct output_layout_output_t
         wlr_output_attach_render(handle, NULL);
         wlr_renderer_begin(renderer, handle->width, handle->height);
 
-        /* Project a box filling the whole screen */
-        float projection[9], box[9];
-        wlr_matrix_projection(projection, handle->width, handle->height,
-            WL_OUTPUT_TRANSFORM_NORMAL);
+        wf::texture_t tex{texture};
+        OpenGL::render_transformed_texture(tex, {-1, -1, 2, 2});
 
-        wlr_box geometry = {0, 0, handle->width, handle->height};
-        wlr_matrix_project_box(box, &geometry, WL_OUTPUT_TRANSFORM_NORMAL,
-            0.0, projection);
-
-        wlr_render_texture_with_matrix(renderer, texture, box, 1.0);
         wlr_renderer_end(renderer);
         wlr_output_commit(handle);
     }
@@ -737,9 +730,10 @@ struct output_layout_output_t
         {
             /* The mirrored output was repainted, schedule repaint
              * for us as well */
+            wlr_output_damage_whole(handle);
             wlr_output_schedule_frame(handle);
         });
-        on_mirrored_frame.connect(&wo->handle->events.precommit);
+        on_mirrored_frame.connect(&wo->handle->events.commit);
 
         on_frame.set_callback([=] (void*) { handle_frame(); });
         on_frame.connect(&handle->events.frame);
