@@ -14,5 +14,13 @@
 			<_long>Activates fast switcher with the specified key, moving to the previous view.</_long>
 			<default>&lt;alt&gt; &lt;shift&gt; KEY_ESC</default>
 		</option>
+		<option name="inactive_alpha" type="double">
+			<_short>Inactive Opacity</_short>
+			<_long>Set the opacity value of the inactive windows.</_long>
+			<default>0.70</default>
+			<precision>0.05</precision>
+			<min>0.0</min>
+			<max>1.0</max>
+		</option>
 	</plugin>
 </wayfire>
