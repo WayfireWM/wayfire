@@ -107,6 +107,7 @@ class wayfire_scale : public wf::plugin_interface_t
     bool all_workspaces;
     std::unique_ptr<wf::vswitch::control_bindings_t> workspace_bindings;
 
+    wf::point_t drag_origin;
     wf::shared_data::ref_ptr_t<wf::move_drag::core_drag_t> drag_helper;
 
   public:
@@ -556,9 +557,17 @@ class wayfire_scale : public wf::plugin_interface_t
             opts.snap_off_threshold = 200;
 
             drag_helper->start_drag(last_selected_view, to, opts);
+            drag_origin = to;
         } else if (drag_helper->view)
         {
             drag_helper->handle_motion(to);
+            if (last_selected_view)
+            {
+                wf::point_t drag = to - drag_origin;
+                const int threshold = 20;
+                if (drag.x * drag.x + drag.y * drag.y > threshold * threshold)
+                    last_selected_view = nullptr;
+            }
         }
     }
 
