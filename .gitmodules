@@ -3,7 +3,7 @@
 	url = https://github.com/WayfireWM/wf-config
 [submodule "subprojects/wlroots"]
 	path = subprojects/wlroots
-	url = https://github.com/swaywm/wlroots
+	url = https://gitlab.freedesktop.org/wlroots/wlroots.git
 [submodule "subprojects/wf-utils"]
 	path = subprojects/wf-utils
 	url = https://github.com/WayfireWM/wf-utils.git
