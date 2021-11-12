@@ -665,7 +665,7 @@ struct output_layout_output_t
         }
 
         wlr_dmabuf_attributes attributes;
-        if (!wlr_output_export_dmabuf(wo->handle, &attributes))
+	if (!wlr_buffer_get_dmabuf( wo->handle->front_buffer, &attributes))
         {
             LOGE("Failed reading mirrored output contents from ", wo->handle);
 
