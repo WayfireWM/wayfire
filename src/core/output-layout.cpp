@@ -665,7 +665,14 @@ struct output_layout_output_t
         }
 
         wlr_dmabuf_attributes attributes;
-	if (!wlr_buffer_get_dmabuf( wo->handle->front_buffer, &attributes))
+        if (wo->handle->front_buffer == NULL)
+        {
+            LOGE("Got empty buffer on ", wo->handle);
+
+            return;
+        }
+
+        if (!wlr_buffer_get_dmabuf(wo->handle->front_buffer, &attributes))
         {
             LOGE("Failed reading mirrored output contents from ", wo->handle);
 
