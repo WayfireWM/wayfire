@@ -467,6 +467,28 @@ void wayfire_layer_shell_view::unmap()
     wf_layer_shell_manager::get_instance().handle_unmap(this);
 }
 
+static bool same_state(const wlr_layer_surface_v1_state* a, const wlr_layer_surface_v1_state* b)
+{
+    if(a->committed == b->committed &&
+            a->anchor == b->anchor &&
+            a->exclusive_zone == b->exclusive_zone &&
+            a->margin.top == b->margin.top &&
+            a->margin.bottom == b->margin.bottom &&
+            a->margin.left == b->margin.left &&
+            a->margin.right == b->margin.right &&
+            a->keyboard_interactive == b->keyboard_interactive &&
+            a->desired_width == b->desired_width &&
+            a->desired_height == b->desired_height &&
+            a->layer == b->layer &&
+            a->actual_width == b->actual_width &&
+            a->actual_height == b->actual_height)
+    {
+        return true;
+    } else {
+        return false;
+    }
+}
+
 void wayfire_layer_shell_view::commit()
 {
     wf::wlr_view_t::commit();
@@ -476,7 +498,7 @@ void wayfire_layer_shell_view::commit()
      * the view state changed, then this will happen when arranging layers */
     view_impl->keyboard_focus_enabled = state->keyboard_interactive;
 
-    if (std::memcmp(state, &prev_state, sizeof(*state)))
+    if (!same_state(state, &prev_state))
     {
         /* Update layer manually */
         if (prev_state.layer != state->layer)
