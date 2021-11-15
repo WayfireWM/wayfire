@@ -438,6 +438,14 @@ void wf::wlr_surface_base_t::_simple_render(const wf::framebuffer_t& fb,
     OpenGL::render_begin(fb);
     OpenGL::render_texture(texture, fb, geometry, glm::vec4(1.f),
         OpenGL::RENDER_FLAG_CACHED);
+    // use GL_NEAREST for integer scale.
+    // GL_NEAREST makes scaled text blocky instead of blurry, which looks better
+    // but only for integer scale.
+    if (fb.scale - floor(fb.scale) < 0.001)
+    {
+        GL_CALL(glTexParameteri(texture.target, GL_TEXTURE_MAG_FILTER, GL_NEAREST));
+    }
+
     for (const auto& rect : damage)
     {
         fb.logic_scissor(wlr_box_from_pixman_box(rect));
