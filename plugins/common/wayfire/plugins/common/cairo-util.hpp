@@ -4,6 +4,8 @@
 #include <wayfire/plugins/common/simple-texture.hpp>
 #include <wayfire/config/types.hpp>
 #include <cairo.h>
+#include <pango/pango.h>
+#include <pango/pangocairo.h>
 
 namespace wf
 {
@@ -104,20 +106,23 @@ struct cairo_text_t
             cairo_create_surface();
         }
 
-        cairo_text_extents_t extents;
-        cairo_font_extents_t font_extents;
+        PangoFontDescription *font_desc;
+        PangoLayout *layout;
+        PangoRectangle extents;
         /* TODO: font properties could be made parameters! */
-        cairo_select_font_face(cr, "sans-serif", CAIRO_FONT_SLANT_NORMAL,
-            CAIRO_FONT_WEIGHT_BOLD);
-        cairo_set_font_size(cr, par.font_size * par.output_scale);
-        cairo_text_extents(cr, text.c_str(), &extents);
-        cairo_font_extents(cr, &font_extents);
+        font_desc = pango_font_description_from_string("sans-serif bold");
+        pango_font_description_set_absolute_size(font_desc,
+            par.font_size * par.output_scale * PANGO_SCALE);
+        layout = pango_cairo_create_layout(cr);
+        pango_layout_set_font_description(layout, font_desc);
+        pango_layout_set_text(layout, text.c_str(), text.size());
+        pango_layout_get_extents(layout, NULL, &extents);
 
         double xpad = par.bg_rect ? 10.0 * par.output_scale : 0.0;
-        double ypad = par.bg_rect ? 0.2 * (font_extents.ascent +
-            font_extents.descent) : 0.0;
-        int w = (int)(extents.width + 2 * xpad);
-        int h = (int)(font_extents.ascent + font_extents.descent + 2 * ypad);
+        double ypad = par.bg_rect ?
+            0.2 * ((float)extents.height / PANGO_SCALE) : 0.0;
+        int w = (int)((float)extents.width / PANGO_SCALE + 2 * xpad);
+        int h = (int)((float)extents.height / PANGO_SCALE + 2 * ypad);
         wf::dimensions_t ret = {w, h};
         if (par.max_size.width && (w > par.max_size.width * par.output_scale))
         {
@@ -183,14 +188,15 @@ struct cairo_text_t
         }
 
         x += xpad;
-        y += ypad + font_extents.ascent;
-        cairo_select_font_face(cr, "sans-serif", CAIRO_FONT_SLANT_NORMAL,
-            CAIRO_FONT_WEIGHT_BOLD);
-        cairo_set_font_size(cr, par.font_size * par.output_scale);
-        cairo_move_to(cr, x - extents.x_bearing, y);
+        y += ypad;
+
+        cairo_move_to(cr, x - (float)extents.x / PANGO_SCALE, y);
         cairo_set_source_rgba(cr, par.text_color.r, par.text_color.g,
             par.text_color.b, par.text_color.a);
-        cairo_show_text(cr, text.c_str());
+
+        pango_cairo_show_layout(cr, layout);
+        pango_font_description_free(font_desc);
+        g_object_unref(layout);
 
         cairo_surface_flush(surface);
         OpenGL::render_begin();

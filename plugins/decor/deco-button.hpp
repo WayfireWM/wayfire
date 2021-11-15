@@ -9,6 +9,8 @@
 #include <wayfire/plugins/common/simple-texture.hpp>
 
 #include <cairo.h>
+#include <pango/pango.h>
+#include <pango/pangocairo.h>
 
 namespace wf
 {

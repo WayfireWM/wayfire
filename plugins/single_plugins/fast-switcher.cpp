@@ -15,6 +15,7 @@ class wayfire_fast_switcher : public wf::plugin_interface_t
     wf::option_wrapper_t<wf::keybinding_t> activate_key{"fast-switcher/activate"};
     wf::option_wrapper_t<wf::keybinding_t> activate_key_backward{
         "fast-switcher/activate_backward"};
+    wf::option_wrapper_t<double> inactive_alpha{"fast-switcher/inactive_alpha"};
     std::vector<wayfire_view> views; // all views on current viewport
     size_t current_view_index = 0;
     // the modifiers which were used to activate switcher
@@ -150,7 +151,7 @@ class wayfire_fast_switcher : public wf::plugin_interface_t
         /* Set all to semi-transparent */
         for (auto view : views)
         {
-            set_view_alpha(view, 0.7);
+            set_view_alpha(view, inactive_alpha);
         }
 
         grab_interface->grab();
@@ -193,7 +194,7 @@ class wayfire_fast_switcher : public wf::plugin_interface_t
     void switch_next(bool forward)
     {
 #define index current_view_index
-        set_view_alpha(views[index], 0.7);
+        set_view_alpha(views[index], inactive_alpha);
         if (forward)
         {
             index = (index + 1) % views.size();

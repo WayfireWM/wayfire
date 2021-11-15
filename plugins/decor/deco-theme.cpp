@@ -51,22 +51,31 @@ cairo_surface_t*decoration_theme_t::render_text(std::string text,
 {
     const auto format = CAIRO_FORMAT_ARGB32;
     auto surface = cairo_image_surface_create(format, width, height);
+
+    if (height == 0)
+    {
+        return surface;
+    }
+
     auto cr = cairo_create(surface);
 
     const float font_scale = 0.8;
     const float font_size  = height * font_scale;
 
+    PangoFontDescription *font_desc;
+    PangoLayout *layout;
+
     // render text
-    cairo_select_font_face(cr, ((std::string)font).c_str(),
-        CAIRO_FONT_SLANT_NORMAL, CAIRO_FONT_WEIGHT_NORMAL);
+    font_desc = pango_font_description_from_string(((std::string)font).c_str());
+    pango_font_description_set_absolute_size(font_desc, font_size * PANGO_SCALE);
+
+    layout = pango_cairo_create_layout(cr);
+    pango_layout_set_font_description(layout, font_desc);
+    pango_layout_set_text(layout, text.c_str(), text.size());
     cairo_set_source_rgba(cr, 1, 1, 1, 1);
-
-    cairo_set_font_size(cr, font_size);
-    cairo_move_to(cr, 0, font_size);
-
-    cairo_text_extents_t ext;
-    cairo_text_extents(cr, text.c_str(), &ext);
-    cairo_show_text(cr, text.c_str());
+    pango_cairo_show_layout(cr, layout);
+    pango_font_description_free(font_desc);
+    g_object_unref(layout);
     cairo_destroy(cr);
 
     return surface;

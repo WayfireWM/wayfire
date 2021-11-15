@@ -105,12 +105,24 @@ shared_module('default-config-backend', 'default-config-backend.cpp',
 install_subdir('api/wayfire',
     install_dir: get_option('includedir'))
 
+public_api_requirements = [
+    cairo,
+    pango,
+    pangocairo,
+    wayland_server,
+    pixman,
+    # These might be subprojects so we need to pass them as strings
+    'wlroots',
+    'wf-config',
+]
+
 pkgconfig = import('pkgconfig')
 pkgconfig.generate(
     version:      meson.project_version(),
     filebase:     meson.project_name(),
     name:         meson.project_name(),
     description: 'A Wayland Compositor',
+    requires:     public_api_requirements,
     variables:    ['metadatadir=${prefix}/' + metadata_dir_suffix,
                    'sysconfdir=' + sysconfdir,
                    'plugindir=${libdir}/wayfire',

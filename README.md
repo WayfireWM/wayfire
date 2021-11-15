@@ -33,6 +33,7 @@ It aims to create a customizable, extendable and lightweight environment without
 These are the dependencies needed for building Wayfire.
 
 - [Cairo](https://cairographics.org)
+- [Pango](https://pango.gnome.org/) and PangoCairo
 - [FreeType](https://freetype.org)
 - [GLM](https://glm.g-truc.net)
 - [libdrm](https://dri.freedesktop.org/wiki/DRM/)
