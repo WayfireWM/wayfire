@@ -1101,9 +1101,27 @@ class workspace_manager::impl
         });
         views.erase(it, views.end());
 
-        if (!views.empty() && views.front()->fullscreen)
+        if (!views.empty())
         {
-            views.front()->view_impl->is_promoted = true;
+            const auto promote_top_of_sublayer = [=] (sublayer_mode_t sublayer)
+            {
+                auto top =
+                    std::find_if(views.begin(), views.end(), [=] (
+                        wayfire_view view) -> bool
+                {
+                    const auto sl = layer_manager.get_view_sublayer(view);
+                    return sl && sl->mode == sublayer;
+                });
+
+                if ((top != views.end()) && (*top)->fullscreen)
+                {
+                    (*top)->view_impl->is_promoted = true;
+                }
+            };
+
+            promote_top_of_sublayer(SUBLAYER_DOCKED_BELOW);
+            promote_top_of_sublayer(SUBLAYER_FLOATING);
+            promote_top_of_sublayer(SUBLAYER_DOCKED_ABOVE);
         }
 
         layer_manager.rebuild_stack_order();
