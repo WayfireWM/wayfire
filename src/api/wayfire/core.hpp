@@ -85,6 +85,7 @@ class compositor_core_t : public wf::object_base_t
      */
     wlr_backend *backend;
     wlr_renderer *renderer;
+    wlr_allocator *allocator;
 
     std::unique_ptr<wf::config_backend_t> config_backend;
     std::unique_ptr<wf::output_layout_t> output_layout;

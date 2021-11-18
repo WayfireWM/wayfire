@@ -534,8 +534,8 @@ wf::texture_t::texture_t(wlr_texture *texture)
     wlr_gles2_texture_attribs attribs;
     wlr_gles2_texture_get_attribs(texture, &attribs);
 
-    /* Wayfire Y-inverts by default */
-    this->invert_y = !attribs.inverted_y;
+    /* Wayfire works in inverted Y while wlroots doesn't, so we do invert here */
+    this->invert_y = true;
     this->target   = attribs.target;
     this->tex_id   = attribs.tex;
 

@@ -295,10 +295,22 @@ int main(int argc, char *argv[])
     core.argv = argv;
 
     /** TODO: move this to core_impl constructor */
-    core.display  = display;
-    core.ev_loop  = wl_display_get_event_loop(core.display);
-    core.backend  = wlr_backend_autocreate(core.display);
-    core.renderer = wlr_backend_get_renderer(core.backend);
+    core.display = display;
+    core.ev_loop = wl_display_get_event_loop(core.display);
+    core.backend = wlr_backend_autocreate(core.display);
+
+    int drm_fd = wlr_backend_get_drm_fd(core.backend);
+    if (drm_fd < 0)
+    {
+        LOGE("Failed to get DRM file descriptor!");
+        wl_display_destroy_clients(core.display);
+        wl_display_destroy(core.display);
+        return EXIT_FAILURE;
+    }
+
+    core.renderer  = wlr_gles2_renderer_create_with_drm_fd(drm_fd);
+    core.allocator = wlr_allocator_autocreate(core.backend, core.renderer);
+    assert(core.allocator);
     core.egl = wlr_gles2_renderer_get_egl(core.renderer);
     assert(core.egl);
 
