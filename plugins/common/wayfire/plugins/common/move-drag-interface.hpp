@@ -480,13 +480,7 @@ class core_drag_t : public signal_provider_t
     {
         if (view_held_in_place)
         {
-            auto current_offset = to - grab_origin;
-            const int dst_sq    = current_offset.x * current_offset.x +
-                current_offset.y * current_offset.y;
-            const int thresh_sq =
-                params.snap_off_threshold * params.snap_off_threshold;
-
-            if (dst_sq >= thresh_sq)
+            if (distance_to_grab_origin(to) >= (double)params.snap_off_threshold)
             {
                 view_held_in_place = false;
                 for (auto& v : all_views)
@@ -513,6 +507,13 @@ class core_drag_t : public signal_provider_t
         }
 
         update_current_output(to);
+    }
+
+    double distance_to_grab_origin(wf::point_t to) const
+    {
+        auto offset = to - grab_origin;
+        const int dst_sq = offset.x * offset.x + offset.y * offset.y;
+        return std::sqrt(dst_sq);
     }
 
     void handle_input_released()
