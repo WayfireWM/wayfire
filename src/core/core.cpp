@@ -805,6 +805,7 @@ pid_t wf::compositor_core_impl_t::run(std::string command)
             int dev_null = open("/dev/null", O_WRONLY);
             dup2(dev_null, 1);
             dup2(dev_null, 2);
+            close(dev_null);
 
             _exit(execl("/bin/sh", "/bin/sh", "-c", command.c_str(), NULL));
         } else
