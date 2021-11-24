@@ -168,8 +168,7 @@ class output_t : public wf::object_base_t
     wayfire_view get_top_view() const;
 
     /**
-     * @return The currently focused view for the given output. The might not,
-     * however, be actually focused, if the output isn't focused itself.
+     * @return The most recently focused view on this output.
      */
     virtual wayfire_view get_active_view() const = 0;
 
