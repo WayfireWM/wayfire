@@ -302,7 +302,7 @@ class compositor_core_t : public wf::object_base_t
     virtual std::string get_xwayland_display() = 0;
 
     /**
-     * Execute the given command in a bash shell.
+     * Execute the given command in a POSIX shell. (/bin/sh)
      *
      * This also sets some environment variables for the new process, including
      * correct WAYLAND_DISPLAY and DISPLAY.
