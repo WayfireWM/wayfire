@@ -653,7 +653,7 @@ void wf::compositor_core_impl_t::set_active_view(wayfire_view new_focus)
         auto all_views = new_focus->enumerate_views();
         for (auto& view : all_views)
         {
-            if (view->get_keyboard_focus_surface())
+            if (view->get_keyboard_focus().accepts_focus())
             {
                 new_focus = view;
                 break;

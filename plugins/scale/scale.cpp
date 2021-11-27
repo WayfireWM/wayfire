@@ -1243,7 +1243,7 @@ class wayfire_scale : public wf::plugin_interface_t
         for (auto v : views)
         {
             if (v->is_mapped() &&
-                v->get_keyboard_focus_surface())
+                v->get_keyboard_focus().accepts_focus())
             {
                 next_focus = v;
                 break;

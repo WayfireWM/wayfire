@@ -32,8 +32,15 @@ void wf::keyboard_t::setup_listeners()
         if (!handle_keyboard_key(ev->keycode, ev->state) &&
             (mode != input_event_processing_mode_t::NO_CLIENT))
         {
-            wlr_seat_keyboard_notify_key(seat->seat,
-                ev->time_msec, ev->keycode, ev->state);
+            if (seat->keyboard_focus)
+            {
+                seat->keyboard_focus->get_keyboard_focus().handle_keyboard_key(*ev);
+            } else
+            {
+                // Just forward the event to the seat
+                wlr_seat_keyboard_notify_key(seat->seat,
+                    ev->time_msec, ev->keycode, ev->state);
+            }
         }
 
         wlr_idle_notify_activity(wf::get_core().protocols.idle, seat->seat);
@@ -46,7 +53,7 @@ void wf::keyboard_t::setup_listeners()
         auto seat = wf::get_core().get_current_seat();
 
         wlr_seat_set_keyboard(seat, this->device);
-        wlr_seat_keyboard_send_modifiers(seat, &kbd->modifiers);
+        wlr_seat_keyboard_notify_modifiers(seat, &kbd->modifiers);
         wlr_idle_notify_activity(wf::get_core().protocols.idle, seat);
     });
 
@@ -318,12 +325,6 @@ bool wf::keyboard_t::handle_keyboard_key(uint32_t key, uint32_t state)
         }
 
         mod_binding_key = 0;
-    }
-
-    auto iv = interactive_view_from_view(seat->keyboard_focus.get());
-    if (iv && !handled_in_plugin)
-    {
-        iv->handle_key(key, state);
     }
 
     return handled_in_plugin;

@@ -116,7 +116,8 @@ void view_damage_raw(wayfire_view view, const wlr_box& box);
  */
 class wlr_view_t :
     public wlr_surface_base_t,
-    public view_interface_t
+    public view_interface_t,
+    public keyboard_focus_view_t
 {
   public:
     wlr_view_t();
@@ -138,7 +139,11 @@ class wlr_view_t :
     virtual wf::geometry_t get_wm_geometry() override;
     virtual wf::geometry_t get_output_geometry() override;
 
-    virtual wlr_surface *get_keyboard_focus_surface() override;
+    virtual bool accepts_focus() const override;
+    virtual void handle_keyboard_enter() override;
+    virtual void handle_keyboard_leave() override;
+    virtual void handle_keyboard_key(wlr_event_keyboard_key event) override;
+    virtual keyboard_focus_view_t& get_keyboard_focus() override;
 
     virtual bool should_be_decorated() override;
     virtual void set_decoration_mode(bool use_csd);

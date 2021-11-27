@@ -46,6 +46,50 @@ constexpr uint32_t TILED_EDGES_ALL =
     WLR_EDGE_TOP | WLR_EDGE_BOTTOM | WLR_EDGE_LEFT | WLR_EDGE_RIGHT;
 
 /**
+ * An interface for views to interact with keyboard input.
+ */
+class keyboard_focus_view_t
+{
+  public:
+    keyboard_focus_view_t(const keyboard_focus_view_t&) = delete;
+    keyboard_focus_view_t(keyboard_focus_view_t&&) = delete;
+    keyboard_focus_view_t& operator =(const keyboard_focus_view_t&) = delete;
+    keyboard_focus_view_t& operator =(keyboard_focus_view_t&&) = delete;
+
+    /**
+     * Check whether the view wants to accept focus at all.
+     *
+     * The returned value does not have to remain constant for the whole
+     * lifetime of the view.
+     */
+    virtual bool accepts_focus() const = 0;
+
+    /**
+     * Handle a keyboard enter event.
+     * This means that the view is now focused.
+     */
+    virtual void handle_keyboard_enter() = 0;
+
+    /**
+     * Handle a keyboard leave event.
+     * The view is no longer focused.
+     */
+    virtual void handle_keyboard_leave() = 0;
+
+    /**
+     * Handle a keyboard key event.
+     *
+     * These are received only after the view has received keyboard focus and
+     * before it loses it.
+     */
+    virtual void handle_keyboard_key(wlr_event_keyboard_key event) = 0;
+
+  protected:
+    keyboard_focus_view_t() = default;
+    virtual ~keyboard_focus_view_t() = default;
+};
+
+/**
  * view_interface_t is the base class for all "toplevel windows", i.e surfaces
  * which have no parent.
  */
@@ -199,14 +243,9 @@ class view_interface_t : public surface_interface_t
         surface_interface_t *surface);
 
     /**
-     * @return the wlr_surface which should receive focus when focusing this
-     * view. Views which aren't backed by a wlr_surface should implement the
-     * compositor_view interface.
-     *
-     * In case no focus surface is available, or the view should not be focused,
-     * nullptr should be returned.
+     * Get the keyboard focus interface of this view.
      */
-    virtual wlr_surface *get_keyboard_focus_surface() = 0;
+    virtual keyboard_focus_view_t& get_keyboard_focus() = 0;
 
     /**
      * Check whether the surface is focuseable. Note the actual ability to give

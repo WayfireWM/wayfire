@@ -243,14 +243,37 @@ wf::geometry_t wf::wlr_view_t::get_wm_geometry()
     }
 }
 
-wlr_surface*wf::wlr_view_t::get_keyboard_focus_surface()
+bool wf::wlr_view_t::accepts_focus() const
 {
-    if (is_mapped() && view_impl->keyboard_focus_enabled)
-    {
-        return surface;
-    }
+    return is_mapped() && view_impl->keyboard_focus_enabled;
+}
 
-    return NULL;
+void wf::wlr_view_t::handle_keyboard_enter()
+{
+    auto seat = wf::get_core().get_current_seat();
+    auto kbd  = wlr_seat_get_keyboard(seat);
+    wlr_seat_keyboard_notify_enter(seat, surface,
+        kbd ? kbd->keycodes : NULL,
+        kbd ? kbd->num_keycodes : 0,
+        kbd ? &kbd->modifiers : NULL);
+}
+
+void wf::wlr_view_t::handle_keyboard_leave()
+{
+    auto seat = wf::get_core().get_current_seat();
+    wlr_seat_keyboard_clear_focus(seat);
+}
+
+void wf::wlr_view_t::handle_keyboard_key(wlr_event_keyboard_key event)
+{
+    auto seat = wf::get_core().get_current_seat();
+    wlr_seat_keyboard_notify_key(seat,
+        event.time_msec, event.keycode, event.state);
+}
+
+wf::keyboard_focus_view_t& wf::wlr_view_t::get_keyboard_focus()
+{
+    return *this;
 }
 
 bool wf::wlr_view_t::should_be_decorated()
@@ -570,12 +593,6 @@ wf::surface_interface_t*wf::wf_surface_from_void(void *handle)
 wf::view_interface_t*wf::wf_view_from_void(void *handle)
 {
     return static_cast<wf::view_interface_t*>(handle);
-}
-
-wf::compositor_interactive_view_t*wf::interactive_view_from_view(
-    wf::view_interface_t *view)
-{
-    return dynamic_cast<wf::compositor_interactive_view_t*>(view);
 }
 
 wayfire_view wf::wl_surface_to_wayfire_view(wl_resource *resource)

@@ -166,7 +166,7 @@ bool wayfire_focus::check_focus_surface(wf::focused_view_t focus)
 
     auto target_wo = focus.view()->get_output();
     auto old_focus = target_wo->get_active_view();
-    if (focus.view()->get_keyboard_focus_surface())
+    if (focus.view()->get_keyboard_focus().accepts_focus())
     {
         target_wo->focus_view(focus.view(), true);
     } else

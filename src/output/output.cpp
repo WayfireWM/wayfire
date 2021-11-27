@@ -69,7 +69,7 @@ void wf::output_impl_t::refocus(wayfire_view skip_view, uint32_t layers)
     const auto& suitable_for_focus = [&] (wayfire_view view)
     {
         return (view != skip_view) && view->is_mapped() &&
-               view->get_keyboard_focus_surface() && !view->minimized;
+               view->get_keyboard_focus().accepts_focus() && !view->minimized;
     };
 
     auto views = workspace->get_views_on_workspace(cur_ws, layers);
@@ -340,7 +340,7 @@ void wf::output_impl_t::focus_view(wayfire_view v, uint32_t flags)
     }
 
     /* If no keyboard focus surface is set, then we don't want to focus the view */
-    if (v->get_keyboard_focus_surface() || interactive_view_from_view(v.get()))
+    if (v->get_keyboard_focus().accepts_focus())
     {
         make_view_visible(v);
         if (!(flags & FOCUS_VIEW_NOBUMP))

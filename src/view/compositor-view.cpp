@@ -80,11 +80,6 @@ wf::geometry_t wf::mirror_view_t::get_output_geometry()
     return geometry;
 }
 
-wlr_surface*wf::mirror_view_t::get_keyboard_focus_surface()
-{
-    return nullptr;
-}
-
 bool wf::mirror_view_t::is_focuseable() const
 {
     return false;
@@ -244,11 +239,6 @@ wf::geometry_t wf::color_rect_view_t::get_output_geometry()
     };
 }
 
-wlr_surface*wf::color_rect_view_t::get_keyboard_focus_surface()
-{
-    return nullptr;
-}
-
 bool wf::color_rect_view_t::is_focuseable() const
 {
     return false;
@@ -387,4 +377,28 @@ void wf::solid_bordered_surface_t::simple_render(
     }
 
     OpenGL::render_end();
+}
+
+bool wf::no_input_view_t::accepts_focus() const
+{
+    return false;
+}
+
+void wf::no_input_view_t::handle_keyboard_enter()
+{}
+
+void wf::no_input_view_t::handle_keyboard_leave()
+{}
+
+void wf::no_input_view_t::handle_keyboard_key(wlr_event_keyboard_key event)
+{}
+
+wf::keyboard_focus_view_t& wf::color_rect_view_t::get_keyboard_focus()
+{
+    return *this;
+}
+
+wf::keyboard_focus_view_t& wf::mirror_view_t::get_keyboard_focus()
+{
+    return *this;
 }
