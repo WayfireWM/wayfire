@@ -414,6 +414,13 @@ class wayfire_expo : public wf::plugin_interface_t
             auto view = find_view_at_coordinates(to.x, to.y);
             if (view)
             {
+                auto workspace_impl =
+                    output->workspace->get_workspace_implementation();
+                if (!workspace_impl->view_movable(view))
+                {
+                    return;
+                }
+
                 auto ws_coords = input_coordinates_to_output_local_coordinates(to);
                 auto bbox = view->get_bounding_box("wobbly");
 
