@@ -77,6 +77,8 @@ void wf::cursor_t::setup_listeners()
     setup_passthrough_callback(pinch_begin);
     setup_passthrough_callback(pinch_update);
     setup_passthrough_callback(pinch_end);
+    setup_passthrough_callback(hold_begin);
+    setup_passthrough_callback(hold_end);
 #undef setup_passthrough_callback
 
     /**

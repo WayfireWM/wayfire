@@ -87,6 +87,10 @@ class pointer_t
         input_event_processing_mode_t mode);
     void handle_pointer_pinch_end(wlr_event_pointer_pinch_end *ev,
         input_event_processing_mode_t mode);
+    void handle_pointer_hold_begin(wlr_event_pointer_hold_begin *ev,
+        input_event_processing_mode_t mode);
+    void handle_pointer_hold_end(wlr_event_pointer_hold_end *ev,
+        input_event_processing_mode_t mode);
     void handle_pointer_frame();
 
     /** Whether there are pressed buttons currently */

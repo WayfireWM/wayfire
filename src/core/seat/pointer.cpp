@@ -605,6 +605,22 @@ void wf::pointer_t::handle_pointer_pinch_end(wlr_event_pointer_pinch_end *ev,
         ev->time_msec, ev->cancelled);
 }
 
+void wf::pointer_t::handle_pointer_hold_begin(wlr_event_pointer_hold_begin *ev,
+    input_event_processing_mode_t mode)
+{
+    wlr_pointer_gestures_v1_send_hold_begin(
+        wf::get_core().protocols.pointer_gestures, seat->seat,
+        ev->time_msec, ev->fingers);
+}
+
+void wf::pointer_t::handle_pointer_hold_end(wlr_event_pointer_hold_end *ev,
+    input_event_processing_mode_t mode)
+{
+    wlr_pointer_gestures_v1_send_hold_end(
+        wf::get_core().protocols.pointer_gestures, seat->seat,
+        ev->time_msec, ev->cancelled);
+}
+
 void wf::pointer_t::handle_pointer_frame()
 {
     wlr_seat_pointer_notify_frame(seat->seat);

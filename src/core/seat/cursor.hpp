@@ -55,6 +55,7 @@ struct cursor_t
 
         on_swipe_begin, on_swipe_update, on_swipe_end,
         on_pinch_begin, on_pinch_update, on_pinch_end,
+        on_hold_begin, on_hold_end,
 
         on_tablet_tip, on_tablet_axis,
         on_tablet_button, on_tablet_proximity,
