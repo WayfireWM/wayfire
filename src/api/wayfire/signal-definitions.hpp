@@ -115,7 +115,10 @@ struct input_event_signal : public wf::signal_data_t
      *
      * This is currently supported for only a subset of signals, namely:
      *
-     * pointer_button, keyboard_key, touch_down
+     * pointer_button, keyboard_key, touch_down,
+     * pointer_swipe_begin, pointer_swipe_update, pointer_swipe_end,
+     * pointer_pinch_begin, pointer_pinch_update, pointer_pinch_end,
+     * pointer_hold_begin, pointer_hold_end
      */
     input_event_processing_mode_t mode = input_event_processing_mode_t::FULL;
 

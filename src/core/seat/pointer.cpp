@@ -560,6 +560,11 @@ void wf::pointer_t::handle_pointer_axis(wlr_event_pointer_axis *ev,
 void wf::pointer_t::handle_pointer_swipe_begin(wlr_event_pointer_swipe_begin *ev,
     input_event_processing_mode_t mode)
 {
+    if (mode != input_event_processing_mode_t::FULL)
+    {
+        return;
+    }
+
     wlr_pointer_gestures_v1_send_swipe_begin(
         wf::get_core().protocols.pointer_gestures, seat->seat,
         ev->time_msec, ev->fingers);
@@ -568,6 +573,11 @@ void wf::pointer_t::handle_pointer_swipe_begin(wlr_event_pointer_swipe_begin *ev
 void wf::pointer_t::handle_pointer_swipe_update(
     wlr_event_pointer_swipe_update *ev, input_event_processing_mode_t mode)
 {
+    if (mode != input_event_processing_mode_t::FULL)
+    {
+        return;
+    }
+
     wlr_pointer_gestures_v1_send_swipe_update(
         wf::get_core().protocols.pointer_gestures, seat->seat,
         ev->time_msec, ev->dx, ev->dy);
@@ -576,6 +586,11 @@ void wf::pointer_t::handle_pointer_swipe_update(
 void wf::pointer_t::handle_pointer_swipe_end(wlr_event_pointer_swipe_end *ev,
     input_event_processing_mode_t mode)
 {
+    if (mode != input_event_processing_mode_t::FULL)
+    {
+        return;
+    }
+
     wlr_pointer_gestures_v1_send_swipe_end(
         wf::get_core().protocols.pointer_gestures, seat->seat,
         ev->time_msec, ev->cancelled);
@@ -584,6 +599,11 @@ void wf::pointer_t::handle_pointer_swipe_end(wlr_event_pointer_swipe_end *ev,
 void wf::pointer_t::handle_pointer_pinch_begin(wlr_event_pointer_pinch_begin *ev,
     input_event_processing_mode_t mode)
 {
+    if (mode != input_event_processing_mode_t::FULL)
+    {
+        return;
+    }
+
     wlr_pointer_gestures_v1_send_pinch_begin(
         wf::get_core().protocols.pointer_gestures, seat->seat,
         ev->time_msec, ev->fingers);
@@ -592,6 +612,11 @@ void wf::pointer_t::handle_pointer_pinch_begin(wlr_event_pointer_pinch_begin *ev
 void wf::pointer_t::handle_pointer_pinch_update(
     wlr_event_pointer_pinch_update *ev, input_event_processing_mode_t mode)
 {
+    if (mode != input_event_processing_mode_t::FULL)
+    {
+        return;
+    }
+
     wlr_pointer_gestures_v1_send_pinch_update(
         wf::get_core().protocols.pointer_gestures, seat->seat,
         ev->time_msec, ev->dx, ev->dy, ev->scale, ev->rotation);
@@ -600,6 +625,11 @@ void wf::pointer_t::handle_pointer_pinch_update(
 void wf::pointer_t::handle_pointer_pinch_end(wlr_event_pointer_pinch_end *ev,
     input_event_processing_mode_t mode)
 {
+    if (mode != input_event_processing_mode_t::FULL)
+    {
+        return;
+    }
+
     wlr_pointer_gestures_v1_send_pinch_end(
         wf::get_core().protocols.pointer_gestures, seat->seat,
         ev->time_msec, ev->cancelled);
@@ -608,6 +638,11 @@ void wf::pointer_t::handle_pointer_pinch_end(wlr_event_pointer_pinch_end *ev,
 void wf::pointer_t::handle_pointer_hold_begin(wlr_event_pointer_hold_begin *ev,
     input_event_processing_mode_t mode)
 {
+    if (mode != input_event_processing_mode_t::FULL)
+    {
+        return;
+    }
+
     wlr_pointer_gestures_v1_send_hold_begin(
         wf::get_core().protocols.pointer_gestures, seat->seat,
         ev->time_msec, ev->fingers);
@@ -616,6 +651,11 @@ void wf::pointer_t::handle_pointer_hold_begin(wlr_event_pointer_hold_begin *ev,
 void wf::pointer_t::handle_pointer_hold_end(wlr_event_pointer_hold_end *ev,
     input_event_processing_mode_t mode)
 {
+    if (mode != input_event_processing_mode_t::FULL)
+    {
+        return;
+    }
+
     wlr_pointer_gestures_v1_send_hold_end(
         wf::get_core().protocols.pointer_gestures, seat->seat,
         ev->time_msec, ev->cancelled);
