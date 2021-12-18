@@ -141,7 +141,7 @@ class vswipe : public wf::plugin_interface_t
     };
 
     template<class wlr_event> using event = wf::input_event_signal<wlr_event>;
-    wf::signal_connection_t on_swipe_begin = [=] (wf::signal_data_t *data)
+    wf::signal_connection_t on_swipe_begin = [=] (wf::signal_data_t *ddata)
     {
         if (!enable_horizontal && !enable_vertical)
         {
@@ -153,9 +153,9 @@ class vswipe : public wf::plugin_interface_t
             return;
         }
 
-        auto ev = static_cast<
-            event<wlr_event_pointer_swipe_begin>*>(data)->event;
-        if (static_cast<int>(ev->fingers) != fingers)
+        auto data = static_cast<event<wlr_event_pointer_swipe_begin>*>(ddata);
+        auto ev   = data->event;
+        if (data->carried_out || (static_cast<int>(ev->fingers) != fingers))
         {
             return;
         }
@@ -166,6 +166,8 @@ class vswipe : public wf::plugin_interface_t
         {
             return;
         }
+
+        data->carried_out = true;
 
         state.swiping   = true;
         state.direction = UNKNOWN;
@@ -249,15 +251,21 @@ class vswipe : public wf::plugin_interface_t
         return UNKNOWN;
     }
 
-    wf::signal_connection_t on_swipe_update = [&] (wf::signal_data_t *data)
+    wf::signal_connection_t on_swipe_update = [&] (wf::signal_data_t *ddata)
     {
         if (!state.swiping)
         {
             return;
         }
 
-        auto ev = static_cast<
-            event<wlr_event_pointer_swipe_update>*>(data)->event;
+        auto data = static_cast<event<wlr_event_pointer_swipe_update>*>(ddata);
+        if (data->carried_out)
+        {
+            return;
+        }
+
+        data->carried_out = true;
+        auto ev = data->event;
 
         state.delta_sum.x += ev->dx / speed_factor;
         state.delta_sum.y += ev->dy / speed_factor;
@@ -319,7 +327,7 @@ class vswipe : public wf::plugin_interface_t
         smooth_delta.start();
     };
 
-    wf::signal_connection_t on_swipe_end = [=] (wf::signal_data_t *data)
+    wf::signal_connection_t on_swipe_end = [=] (wf::signal_data_t *ddata)
     {
         if (!state.swiping || !output->is_plugin_active(grab_interface->name))
         {
@@ -327,6 +335,14 @@ class vswipe : public wf::plugin_interface_t
 
             return;
         }
+
+        auto data = static_cast<event<wlr_event_pointer_swipe_end>*>(ddata);
+        if (data->carried_out)
+        {
+            return;
+        }
+
+        data->carried_out = true;
 
         state.swiping = false;
         const double move_threshold = wf::clamp((double)threshold, 0.0, 1.0);
