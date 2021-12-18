@@ -97,6 +97,11 @@ wf::input_event_processing_mode_t emit_device_event_signal(
     data.event = event;
     wf::get_core().emit_signal(event_name, &data);
 
+    if (data.carried_out)
+    {
+        data.mode = wf::input_event_processing_mode_t::NO_CLIENT;
+    }
+
     return data.mode;
 }
 

@@ -118,6 +118,16 @@ struct input_event_signal : public wf::signal_data_t
      * pointer_button, keyboard_key, touch_down
      */
     input_event_processing_mode_t mode = input_event_processing_mode_t::FULL;
+
+    /**
+     * Whether the event has already been handled.
+     *
+     * This is useful for e.g. preventing conflicts between different plugins
+     * handling touchpad gestures.
+     *
+     * Setting this flag also implicitly sets the mode to NO_CLIENT.
+     */
+    bool carried_out = false;
 };
 
 /**
