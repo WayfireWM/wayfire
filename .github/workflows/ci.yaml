@@ -21,14 +21,7 @@ jobs:
     steps:
     - run: sed -i 's/SigLevel    = Required DatabaseOptional/SigLevel    = Optional TrustAll/' /etc/pacman.conf
     - run: pacman --noconfirm --noprogressbar -Syyu
-    - run: pacman --noconfirm --noprogressbar -Sy git clang lld libc++ pkgconf meson ninja wayland wayland-protocols libinput libxkbcommon pixman glm libdrm libglvnd cairo pango systemd scdoc base-devel
-
-      # Build seatd from AUR
-    - run: git clone https://aur.archlinux.org/seatd.git
-    - run: useradd makepkgtest
-    - run: (cd seatd && chown makepkgtest:root . && su makepkgtest -c "makepkg --printsrcinfo" > .SRCINFO)
-    - run: (cd seatd && su makepkgtest -c "makepkg" && pacman --noconfirm -U *.pkg.tar.zst)
-    - run: rm -rf seatd # Cleanup current dir
+    - run: pacman --noconfirm --noprogressbar -Sy git clang lld libc++ pkgconf meson ninja wayland wayland-protocols libinput libxkbcommon pixman glm libdrm libglvnd cairo pango systemd scdoc base-devel seatd
 
       # Build Wayfire
     - uses: actions/checkout@v1
