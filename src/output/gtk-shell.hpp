@@ -16,4 +16,8 @@ std::string get_gtk_shell_app_menu_path(wayfire_view view);
 
 std::string get_gtk_shell_menubar_path(wayfire_view view);
 
+std::string get_gtk_shell_win_path(wayfire_view view);
+
+std::string get_gtk_shell_app_path(wayfire_view view);
+
 std::string get_gtk_shell_dbus_name(wayfire_view view);

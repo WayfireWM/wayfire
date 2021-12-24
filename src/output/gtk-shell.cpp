@@ -15,6 +15,8 @@ struct wf_gtk_shell
     std::map<wl_resource*, std::string> surface_app_id;
     std::map<wl_resource*, std::string> surface_app_menu_path;
     std::map<wl_resource*, std::string> surface_menubar_path;
+    std::map<wl_resource*, std::string> surface_app_path;
+    std::map<wl_resource*, std::string> surface_win_path;
     std::map<wl_resource*, std::string> surface_dbus_name;
 };
 
@@ -52,6 +54,16 @@ static void handle_gtk_surface_set_dbus_properties(wl_client *client,
     {
         wf::get_core_impl().gtk_shell->surface_menubar_path[surface->wl_surface] =
             menubar_path;
+    }
+    if (window_object_path)
+    {
+        wf::get_core_impl().gtk_shell->surface_win_path[surface->wl_surface] =
+            window_object_path;
+    }
+    if (application_object_path)
+    {
+        wf::get_core_impl().gtk_shell->surface_app_path[surface->wl_surface] =
+            application_object_path;
     }
     if (unique_bus_name)
     {
@@ -438,6 +450,40 @@ std::string get_gtk_shell_menubar_path(wayfire_view view)
     }
 
     return wf::get_core_impl().gtk_shell->surface_menubar_path[surface->resource];
+}
+
+std::string get_gtk_shell_win_path(wayfire_view view)
+{
+    if (!view)
+    {
+        return "";
+    }
+
+    auto surface = view->get_wlr_surface();
+
+    if (!surface)
+    {
+        return "";
+    }
+
+    return wf::get_core_impl().gtk_shell->surface_win_path[surface->resource];
+}
+
+std::string get_gtk_shell_app_path(wayfire_view view)
+{
+    if (!view)
+    {
+        return "";
+    }
+
+    auto surface = view->get_wlr_surface();
+
+    if (!surface)
+    {
+        return "";
+    }
+
+    return wf::get_core_impl().gtk_shell->surface_app_path[surface->resource];
 }
 
 std::string get_gtk_shell_dbus_name(wayfire_view view)
