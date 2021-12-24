@@ -10,3 +10,9 @@
  * an empty string will be returned - ""
  */
 std::string get_gtk_shell_app_id(wayfire_view view);
+
+std::string get_gtk_shell_app_menu_path(wayfire_view view);
+
+std::string get_gtk_shell_menubar_path(wayfire_view view);
+
+std::string get_gtk_shell_dbus_name(wayfire_view view);
