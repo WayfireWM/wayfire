@@ -33,21 +33,19 @@ xkbcommon      = dependency('xkbcommon')
 libdl          = meson.get_compiler('cpp').find_library('dl')
 
 use_system_wlroots = not get_option('use_system_wlroots').disabled()
-wlroots_sub = subproject('wlroots', default_options: ['examples=false'], required: false)
 wlroots_sys = dependency('wlroots', version: ['>=0.15.0', '<0.16.0'], required: false)
 if wlroots_sys.found() and use_system_wlroots
   wlroots = wlroots_sys
 else
-  wlroots = wlroots_sub.get_variable('wlroots')
+  wlroots = subproject('wlroots', default_options: ['examples=false']).get_variable('wlroots')
 endif
 
-use_system_wfconfig = not get_option('use_system_wfconfig').disabled()
-wfconfig_sub = subproject('wf-config', required: false)
+use_system_wfconfig = not get_option('use_system_wfconfig').disabled() 
 wfconfig_sys = dependency('wf-config', version: ['>=0.8.0', '<0.9.0'], required: false)
 if wfconfig_sys.found() and use_system_wfconfig
   wfconfig = wfconfig_sys
 else
-  wfconfig = wfconfig_sub.get_variable('wfconfig')
+  wfconfig = subproject('wf-config', required: false).get_variable('wfconfig')
 endif
 
 wfutils = subproject('wf-utils').get_variable('wfutils')
@@ -136,7 +134,7 @@ add_project_arguments(['-Wno-unused-parameter'], language: 'cpp')
 
 have_xwayland = false
 have_x11_backend = false
-if not wlroots_sub.found()
+if wlroots_sys.found() and use_system_wlroots
   have_xwayland = cpp.get_define('WLR_HAS_XWAYLAND', prefix: '#include <wlr/config.h>', dependencies: wlroots) == '1'
   have_x11_backend = cpp.get_define('WLR_HAS_X11_BACKEND', prefix: '#include <wlr/config.h>', dependencies: wlroots) == '1'
 else
