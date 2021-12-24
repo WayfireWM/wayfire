@@ -410,14 +410,14 @@ std::string get_gtk_shell_app_menu_path(wayfire_view view)
 {
     if (!view)
     {
-        return nullptr;
+        return "";
     }
 
     auto surface = view->get_wlr_surface();
 
     if (!surface)
     {
-        return nullptr;
+        return "";
     }
 
     return wf::get_core_impl().gtk_shell->surface_app_menu_path[surface->resource];
@@ -427,14 +427,14 @@ std::string get_gtk_shell_menubar_path(wayfire_view view)
 {
     if (!view)
     {
-        return nullptr;
+        return "";
     }
 
     auto surface = view->get_wlr_surface();
 
     if (!surface)
     {
-        return nullptr;
+        return "";
     }
 
     return wf::get_core_impl().gtk_shell->surface_menubar_path[surface->resource];
@@ -444,14 +444,14 @@ std::string get_gtk_shell_dbus_name(wayfire_view view)
 {
     if (!view)
     {
-        return nullptr;
+        return "";
     }
 
     auto surface = view->get_wlr_surface();
 
     if (!surface)
     {
-        return nullptr;
+        return "";
     }
 
     return wf::get_core_impl().gtk_shell->surface_dbus_name[surface->resource];
