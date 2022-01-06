@@ -229,6 +229,8 @@ class view_interface_t : public surface_interface_t
      * If the view is tiled to all edges, it is considered maximized. */
     uint32_t tiled_edges = 0;
 
+    bool is_positioned = false;
+
     /** Set the minimized state of the view. */
     virtual void set_minimized(bool minimized);
     /** Set the tiled edges of the view */

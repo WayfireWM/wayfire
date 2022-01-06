@@ -139,6 +139,7 @@ void wf::wlr_view_t::set_position(int x, int y,
     }
 
     last_bounding_box = get_bounding_box();
+    is_positioned = true;
 }
 
 void wf::wlr_view_t::move(int x, int y)
@@ -363,7 +364,7 @@ void wf::emit_ping_timeout_signal(wayfire_view view)
 
 void wf::view_interface_t::emit_view_map()
 {
-    emit_view_map_signal(self(), false);
+    emit_view_map_signal(self(), is_positioned);
 }
 
 void wf::view_interface_t::emit_view_unmap()
