@@ -97,7 +97,7 @@ class crossfade_t : public wf::view_2D
 /**
  * A class used for crossfade/wobbly animation of a change in a view's geometry.
  */
-class grid_animation_t : public wf::custom_data_t
+class grid_animation_t
 {
   public:
     enum type_t

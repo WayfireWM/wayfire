@@ -98,12 +98,6 @@ class signal_provider_t
 };
 
 /**
- * DEPRECATED: Subclasses of custom_data_t can be stored inside an object_base_t
- */
-class custom_data_t
-{};
-
-/**
  * A base class for "objects". Objects provide signals and ways for plugins to
  * store custom data about the object.
  */

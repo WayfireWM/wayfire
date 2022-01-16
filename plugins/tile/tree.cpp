@@ -249,7 +249,7 @@ split_node_t::split_node_t(split_direction_t dir)
 }
 
 /* -------------------- view_node_t implementation -------------------------- */
-struct view_node_custom_data_t : public custom_data_t
+struct view_node_custom_data_t
 {
     nonstd::observer_ptr<view_node_t> ptr;
     view_node_custom_data_t(view_node_t *node)

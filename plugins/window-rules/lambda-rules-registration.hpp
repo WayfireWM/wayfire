@@ -110,7 +110,7 @@ struct lambda_rule_registration_t
  * wf:core, and lazy-init if the
  * instance is not yet present.
  */
-class lambda_rules_registrations_t : public custom_data_t
+class lambda_rules_registrations_t
 {
   public:
     /**

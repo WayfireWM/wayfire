@@ -19,9 +19,8 @@ namespace detail
 {
 /** Implementation detail: the actual data stored in core. */
 template<class T>
-class shared_data_t : public wf::custom_data_t
+struct shared_data_t
 {
-  public:
     T data;
     int32_t use_count = 0;
 };

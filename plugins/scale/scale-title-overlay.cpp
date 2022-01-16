@@ -21,7 +21,7 @@ static wayfire_view find_toplevel_parent(wayfire_view view)
 /**
  * Class storing an overlay with a view's title, only stored for parent views.
  */
-struct view_title_texture_t : public wf::custom_data_t
+struct view_title_texture_t
 {
     wayfire_view view;
     wf::cairo_text_t overlay;

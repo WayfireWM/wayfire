@@ -19,9 +19,8 @@ const std::string grid_view_id = "grid-view";
 
 
 
-class wf_grid_slot_data : public wf::custom_data_t
+struct wf_grid_slot_data
 {
-  public:
     int slot;
 };
 

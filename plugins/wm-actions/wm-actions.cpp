@@ -27,6 +27,8 @@ class wayfire_wm_actions_t : public wf::plugin_interface_t
 
     bool toggle_keep_above(wayfire_view view)
     {
+        struct marker_t {};
+
         if (!view || !output->can_activate_plugin(this->grab_interface))
         {
             return false;
@@ -40,7 +42,7 @@ class wayfire_wm_actions_t : public wf::plugin_interface_t
         } else
         {
             output->workspace->add_view_to_sublayer(view, always_above);
-            view->store_data(std::make_unique<wf::custom_data_t>(),
+            view->store_data(std::make_unique<marker_t>(),
                 "wm-actions-above");
         }
 
@@ -249,9 +251,11 @@ class wayfire_wm_actions_t : public wf::plugin_interface_t
             {
                 if (!view->minimized)
                 {
+                    struct marker_t {};
+
                     view->minimize_request(true);
                     view->store_data(
-                        std::make_unique<wf::custom_data_t>(),
+                        std::make_unique<marker_t>(),
                         "wm-actions-showdesktop");
                 }
             }

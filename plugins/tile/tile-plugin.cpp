@@ -32,7 +32,7 @@ class tile_workspace_implementation_t : public wf::workspace_implementation_t
  * 3. We now know we will receive attach as next event.
  *    Check for view_auto_tile_t, and tile the view again.
  */
-class view_auto_tile_t : public wf::custom_data_t
+class view_auto_tile_t
 {};
 
 class tile_plugin_t : public wf::plugin_interface_t

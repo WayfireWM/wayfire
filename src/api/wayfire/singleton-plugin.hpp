@@ -6,7 +6,7 @@ namespace wf
 namespace detail
 {
 template<class Plugin>
-struct singleton_data_t : public custom_data_t
+struct singleton_data_t
 {
     Plugin ptr;
 

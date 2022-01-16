@@ -40,7 +40,7 @@ static constexpr int SHOWN  = 1;
 
 /* Represents an animation running for a specific view
  * animation_t is which animation to use (i.e fire, zoom, etc). */
-struct animation_hook_base : public wf::custom_data_t
+struct animation_hook_base
 {
     virtual void stop_hook(bool) = 0;
     virtual void reverse(wf_animation_type) = 0;

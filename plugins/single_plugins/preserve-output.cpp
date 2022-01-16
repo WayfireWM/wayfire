@@ -20,9 +20,8 @@
  * View last output info
  */
 
-class last_output_info_t : public wf::custom_data_t
+struct last_output_info_t
 {
-  public:
     std::string output_identifier;
     wf::geometry_t geometry;
     bool fullscreen = false;

@@ -15,7 +15,7 @@ namespace wf
  * Using this interface allows all plugins to use the same OpenGL textures for
  * the workspaces, thereby reducing the memory overhead of a workspace stream.
  */
-class workspace_stream_pool_t : public wf::custom_data_t
+class workspace_stream_pool_t
 {
   public:
     /**

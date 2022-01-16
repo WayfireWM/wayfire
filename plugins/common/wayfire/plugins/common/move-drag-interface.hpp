@@ -267,7 +267,7 @@ inline std::vector<wayfire_view> get_target_views(wayfire_view grabbed,
 /**
  * An object for storing per-output data.
  */
-class output_data_t : public custom_data_t
+class output_data_t
 {
   public:
     output_data_t(wf::output_t *output, std::vector<dragged_view_t> views)

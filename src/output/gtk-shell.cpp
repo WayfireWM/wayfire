@@ -50,11 +50,13 @@ static void handle_gtk_surface_set_dbus_properties(wl_client *client,
  */
 static void handle_gtk_surface_set_modal(wl_client *client, wl_resource *resource)
 {
+    struct marker_t {};
+
     auto surface = static_cast<wf_gtk_surface*>(wl_resource_get_user_data(resource));
     wayfire_view view = wf::wl_surface_to_wayfire_view(surface->wl_surface);
     if (view)
     {
-        view->store_data(std::make_unique<wf::custom_data_t>(), "gtk-shell-modal");
+        view->store_data(std::make_unique<marker_t>(), "gtk-shell-modal");
     }
 }
 
