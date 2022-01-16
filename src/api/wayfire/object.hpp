@@ -98,18 +98,10 @@ class signal_provider_t
 };
 
 /**
- * Subclasses of custom_data_t can be stored inside an object_base_t
+ * DEPRECATED: Subclasses of custom_data_t can be stored inside an object_base_t
  */
 class custom_data_t
-{
-  public:
-    custom_data_t() = default;
-    virtual ~custom_data_t() = default;
-    custom_data_t(custom_data_t&& other) = default;
-    custom_data_t(const custom_data_t& other) = default;
-    custom_data_t& operator =(custom_data_t&& other) = default;
-    custom_data_t& operator =(const custom_data_t& other) = default;
-};
+{};
 
 /**
  * A base class for "objects". Objects provide signals and ways for plugins to
@@ -117,6 +109,28 @@ class custom_data_t
  */
 class object_base_t : public signal_provider_t
 {
+  private:
+    struct object_data_deleter_t
+    {
+        void (*deleter)(void*) = nullptr;
+        inline void operator ()(void *data)
+        {
+            deleter(data);
+        }
+
+        template<typename T>
+        static object_data_deleter_t for_type()
+        {
+            return {void_deleter<T> };
+        }
+
+        template<typename T>
+        static void void_deleter(void *data)
+        {
+            std::unique_ptr<T>((T*)data).reset();
+        }
+    };
+
   public:
     /** Get a human-readable description of the object */
     std::string to_string() const;
@@ -153,7 +167,7 @@ class object_base_t : public signal_provider_t
     nonstd::observer_ptr<T> get_data(
         std::string name = typeid(T).name())
     {
-        return nonstd::make_observer(dynamic_cast<T*>(_fetch_data(name)));
+        return nonstd::make_observer((T*)_fetch_data(name));
     }
 
     /* Assigns the given data to the given name */
@@ -161,7 +175,10 @@ class object_base_t : public signal_provider_t
     void store_data(std::unique_ptr<T> stored_data,
         std::string name = typeid(T).name())
     {
-        _store_data(std::move(stored_data), name);
+        _store_data(std::unique_ptr<void,
+            object_data_deleter_t>((void*)stored_data.release(),
+                object_data_deleter_t::for_type<T>()),
+            name);
     }
 
     /* Returns true if there is saved data under the given name */
@@ -194,9 +211,8 @@ class object_base_t : public signal_provider_t
             return {nullptr};
         }
 
-        auto stored = _fetch_erase(name);
-
-        return std::unique_ptr<T>(dynamic_cast<T*>(stored));
+        auto data = _fetch_erase(name);
+        return std::unique_ptr<T>((T*)(data.release()));
     }
 
     virtual ~object_base_t();
@@ -214,13 +230,14 @@ class object_base_t : public signal_provider_t
 
   private:
     /** Just get the data under the given name, or nullptr, if it does not exist */
-    custom_data_t *_fetch_data(std::string name);
+    void *_fetch_data(std::string name);
     /** Get the data under the given name, and release the pointer, deleting
      * the entry in the map */
-    custom_data_t *_fetch_erase(std::string name);
+    std::unique_ptr<void, object_data_deleter_t> _fetch_erase(std::string name);
 
     /** Store the given data under the given name */
-    void _store_data(std::unique_ptr<custom_data_t> data, std::string name);
+    void _store_data(std::unique_ptr<void, object_data_deleter_t> data,
+        std::string name);
 
     class obase_impl;
     std::unique_ptr<obase_impl> obase_priv;

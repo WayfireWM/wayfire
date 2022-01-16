@@ -122,7 +122,8 @@ void wf::signal_provider_t::emit_signal(std::string name, wf::signal_data_t *dat
 class wf::object_base_t::obase_impl
 {
   public:
-    std::unordered_map<std::string, std::unique_ptr<custom_data_t>> data;
+    std::unordered_map<std::string,
+        std::unique_ptr<void, object_data_deleter_t>> data;
     uint32_t object_id;
 };
 
@@ -161,7 +162,7 @@ void wf::object_base_t::erase_data(std::string name)
     }
 }
 
-wf::custom_data_t*wf::object_base_t::_fetch_data(std::string name)
+void*wf::object_base_t::_fetch_data(std::string name)
 {
     const auto it = obase_priv->data.find(name);
     if (it == obase_priv->data.end())
@@ -172,14 +173,14 @@ wf::custom_data_t*wf::object_base_t::_fetch_data(std::string name)
     return it->second.get();
 }
 
-wf::custom_data_t*wf::object_base_t::_fetch_erase(std::string name)
+auto wf::object_base_t::_fetch_erase(std::string name) -> std::unique_ptr<void,
+    object_data_deleter_t>
 {
     const auto it = obase_priv->data.find(name);
     if (it != obase_priv->data.end())
     {
-        const auto data = it->second.release();
+        auto data = std::move(it->second);
         obase_priv->data.erase(it);
-
         return data;
     } else
     {
@@ -187,7 +188,8 @@ wf::custom_data_t*wf::object_base_t::_fetch_erase(std::string name)
     }
 }
 
-void wf::object_base_t::_store_data(std::unique_ptr<wf::custom_data_t> data,
+void wf::object_base_t::_store_data(std::unique_ptr<void,
+    object_data_deleter_t> data,
     std::string name)
 {
     (void)obase_priv->data.insert_or_assign(name, std::move(data));
