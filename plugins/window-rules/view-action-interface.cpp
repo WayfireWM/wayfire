@@ -77,6 +77,11 @@ bool view_action_interface_t::execute(const std::string & name,
         _unminimize();
 
         return false;
+    } else if (name == "keepabove")
+    {
+        _keepabove();
+
+        return false;
     } else if (name == "snap")
     {
         if ((args.size() < 1) || (wf::is_string(args.at(0)) == false))
@@ -204,6 +209,15 @@ void view_action_interface_t::_minimize()
 void view_action_interface_t::_unminimize()
 {
     _view->set_minimized(false);
+}
+
+void view_action_interface_t::_keepabove()
+{
+    auto output = _view->get_output();
+    nonstd::observer_ptr<wf::sublayer_t> always_above;
+    always_above = output->workspace->create_sublayer(
+            wf::LAYER_TOP, wf::SUBLAYER_DOCKED_ABOVE);
+    output->workspace->add_view_to_sublayer(_view, always_above);
 }
 
 std::tuple<bool, float> view_action_interface_t::_expect_float(
