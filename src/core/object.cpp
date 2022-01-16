@@ -83,7 +83,7 @@ wf::signal_provider_t::~signal_provider_t()
 void wf::signal_provider_t::connect_signal(std::string name,
     signal_connection_t *callback)
 {
-    const auto it = sprovider_priv->signals.try_emplace(name).first;
+    const auto it = sprovider_priv->signals.try_emplace(std::move(name)).first;
     it->second.push_back(callback);
     callback->priv->add(this);
 }
@@ -109,7 +109,7 @@ void wf::signal_provider_t::disconnect_signal(signal_connection_t *connection)
 /* Emit the given signal. No type checking for data is required */
 void wf::signal_provider_t::emit_signal(std::string name, wf::signal_data_t *data)
 {
-    const auto it = sprovider_priv->signals.find(name);
+    const auto it = sprovider_priv->signals.find(std::move(name));
     if (it != sprovider_priv->signals.end())
     {
         it->second.for_each([data] (auto call)
@@ -149,12 +149,12 @@ uint32_t wf::object_base_t::get_id() const
 
 bool wf::object_base_t::has_data(std::string name)
 {
-    return obase_priv->data.count(name) != 0;
+    return obase_priv->data.count(std::move(name)) != 0;
 }
 
 void wf::object_base_t::erase_data(std::string name)
 {
-    const auto it = obase_priv->data.find(name);
+    const auto it = obase_priv->data.find(std::move(name));
     if (it != obase_priv->data.end())
     {
         it->second.reset();
@@ -164,7 +164,7 @@ void wf::object_base_t::erase_data(std::string name)
 
 void*wf::object_base_t::_fetch_data(std::string name)
 {
-    const auto it = obase_priv->data.find(name);
+    const auto it = obase_priv->data.find(std::move(name));
     if (it == obase_priv->data.end())
     {
         return nullptr;
@@ -176,7 +176,7 @@ void*wf::object_base_t::_fetch_data(std::string name)
 auto wf::object_base_t::_fetch_erase(std::string name) -> std::unique_ptr<void,
     object_data_deleter_t>
 {
-    const auto it = obase_priv->data.find(name);
+    const auto it = obase_priv->data.find(std::move(name));
     if (it != obase_priv->data.end())
     {
         auto data = std::move(it->second);
@@ -192,7 +192,7 @@ void wf::object_base_t::_store_data(std::unique_ptr<void,
     object_data_deleter_t> data,
     std::string name)
 {
-    (void)obase_priv->data.insert_or_assign(name, std::move(data));
+    (void)obase_priv->data.insert_or_assign(std::move(name), std::move(data));
 }
 
 void wf::object_base_t::_clear_data()

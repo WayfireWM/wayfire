@@ -149,9 +149,10 @@ class object_base_t : public signal_provider_t
             return data;
         } else
         {
-            store_data<T>(std::make_unique<T>(), name);
-
-            return get_data<T>(name);
+            auto new_data = std::make_unique<T>();
+            data = new_data.get();
+            store_data<T>(std::move(new_data), std::move(name));
+            return data;
         }
     }
 
@@ -161,7 +162,7 @@ class object_base_t : public signal_provider_t
     nonstd::observer_ptr<T> get_data(
         std::string name = typeid(T).name())
     {
-        return nonstd::make_observer((T*)_fetch_data(name));
+        return nonstd::make_observer((T*)_fetch_data(std::move(name)));
     }
 
     /* Assigns the given data to the given name */
@@ -172,7 +173,7 @@ class object_base_t : public signal_provider_t
         _store_data(std::unique_ptr<void,
             object_data_deleter_t>((void*)stored_data.release(),
                 object_data_deleter_t::for_type<T>()),
-            name);
+            std::move(name));
     }
 
     /* Returns true if there is saved data under the given name */
@@ -205,7 +206,7 @@ class object_base_t : public signal_provider_t
             return {nullptr};
         }
 
-        auto data = _fetch_erase(name);
+        auto data = _fetch_erase(std::move(name));
         return std::unique_ptr<T>((T*)(data.release()));
     }
 
