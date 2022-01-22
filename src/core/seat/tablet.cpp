@@ -321,19 +321,33 @@ void wf::tablet_t::handle_axis(wlr_event_tablet_tool_axis *ev,
     input_event_processing_mode_t mode)
 {
     auto& input = wf::get_core_impl().input;
+    std::string motion_mode = wf::option_wrapper_t<std::string>(
+        "input/tablet_motion_mode");
 
     /* Update cursor position */
-    switch (ev->tool->type)
+    if (motion_mode == "absolute")
     {
-      case WLR_TABLET_TOOL_TYPE_MOUSE:
-        wlr_cursor_move(cursor, ev->device, ev->dx, ev->dy);
-        break;
-
-      default:
         double x = (ev->updated_axes & WLR_TABLET_TOOL_AXIS_X) ? ev->x : NAN;
         double y = (ev->updated_axes & WLR_TABLET_TOOL_AXIS_Y) ? ev->y : NAN;
         wlr_cursor_warp_absolute(cursor, ev->device, x, y);
-    }
+    } else if (motion_mode == "relative")
+    {
+        wlr_cursor_move(cursor, ev->device, ev->dx, ev->dy);
+    } else 
+    {
+    	/* Use from libinput recommended defaults */
+		switch (ev->tool->type)
+		{
+		  case WLR_TABLET_TOOL_TYPE_MOUSE:
+		    wlr_cursor_move(cursor, ev->device, ev->dx, ev->dy);
+		    break;
+
+		  default:
+		    double x = (ev->updated_axes & WLR_TABLET_TOOL_AXIS_X) ? ev->x : NAN;
+		    double y = (ev->updated_axes & WLR_TABLET_TOOL_AXIS_Y) ? ev->y : NAN;
+		    wlr_cursor_warp_absolute(cursor, ev->device, x, y);
+		}
+	}
 
     if (input->input_grabbed())
     {

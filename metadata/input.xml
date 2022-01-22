@@ -224,6 +224,28 @@
 				<min>0.0</min>
 			</option>
 		</group>
+		<!-- Tablet configuration -->
+		<group>
+			<_short>Tablet</_short>
+			<_long>Configure graphic tablets.</_long>
+			<option name="tablet_motion_mode" type="string">
+				<_short>Motion Mode</_short>
+				<_long>Sets the motion mode for graphic tablets.</_long>
+				<default>default</default>
+				<desc>
+					<value>default</value>
+					<_name>Default</_name>
+				</desc>
+				<desc>
+					<value>absolute</value>
+					<_name>Absolute</_name>
+				</desc>
+				<desc>
+					<value>relative</value>
+					<_name>Relative</_name>
+				</desc>
+			</option>
+		</group>
 		<!-- Cursor configuration -->
 		<group>
 			<_short>Cursor</_short>
