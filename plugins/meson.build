@@ -1,4 +1,5 @@
 subdir('common')
+subdir('ipc')
 subdir('vswitch')
 subdir('wobbly')
 subdir('grid')
