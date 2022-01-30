@@ -30,37 +30,9 @@ void wayfire_exit::init()
         }
 
         idle_shutdown(nullptr);
-
         return true;
     };
 
-    // make sure to shut down wayfire if destroying the last
-    // nested backend output
-    on_output_removed.set_callback([=] (wf::signal_data_t *data)
-    {
-        auto output = wf::get_signaled_output(data);
-
-        bool is_nested_compositor = wlr_output_is_wl(output->handle);
-#if WLR_HAS_X11_BACKEND
-        is_nested_compositor |= wlr_output_is_x11(output->handle);
-#endif
-
-        int cnt_other_outputs = 0;
-        for (auto& wo : wf::get_core().output_layout->get_outputs())
-        {
-            if ((wo != output) && !wlr_output_is_noop(wo->handle))
-            {
-                ++cnt_other_outputs;
-            }
-        }
-
-        if (is_nested_compositor && (cnt_other_outputs == 0))
-        {
-            wl_event_loop_add_idle(wf::get_core().ev_loop, idle_shutdown, nullptr);
-        }
-    });
-
-    output->connect_signal("pre-remove", &on_output_removed);
     output->add_key(wf::create_option_string<wf::keybinding_t>(
         "<ctrl> <alt> KEY_BACKSPACE"), &key);
 }

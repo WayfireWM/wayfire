@@ -698,11 +698,6 @@ class wf::render_manager::impl
 
         on_frame.set_callback([&] (void*)
         {
-            if (wlr_output_is_noop(output->handle))
-            {
-                return;
-            }
-
             delay_manager->start_frame();
 
             auto repaint_delay = delay_manager->get_delay();

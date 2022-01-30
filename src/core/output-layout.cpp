@@ -20,6 +20,8 @@
 #include <wayfire/util/log.hpp>
 #include <wayfire/nonstd/wlroots-full.hpp>
 
+static void*const WF_NOOP_OUTPUT_MAGIC = (void*)0x1234;
+
 static wl_output_transform get_transform_from_string(std::string transform)
 {
     if (transform == "normal")
@@ -478,7 +480,7 @@ struct output_layout_output_t
          * focused */
         wlr_output *focused = get_core().get_active_output() ?
             get_core().get_active_output()->handle : nullptr;
-        if (!focused || wlr_output_is_noop(focused))
+        if (!focused || (focused->data == WF_NOOP_OUTPUT_MAGIC))
         {
             get_core().focus_output(wo);
         }
@@ -646,6 +648,8 @@ struct output_layout_output_t
     }
 
     /* Load output contents and render them */
+    wlr_buffer *source_back_buffer = NULL;
+
     void handle_frame()
     {
         auto wo = get_core().output_layout->find_output(
@@ -659,14 +663,13 @@ struct output_layout_output_t
         }
 
         wlr_dmabuf_attributes attributes;
-        if (wo->handle->front_buffer == NULL)
+        if (source_back_buffer == NULL)
         {
             LOGE("Got empty buffer on ", wo->handle->name);
-
             return;
         }
 
-        if (!wlr_buffer_get_dmabuf(wo->handle->front_buffer, &attributes))
+        if (!wlr_buffer_get_dmabuf(source_back_buffer, &attributes))
         {
             LOGE("Failed reading mirrored output contents from ", wo->handle->name);
 
@@ -685,11 +688,6 @@ struct output_layout_output_t
 
     void set_enabled(bool enabled)
     {
-        if (wlr_output_is_noop(handle))
-        {
-            return;
-        }
-
         wlr_output_enable(handle, enabled);
         if (!enabled)
         {
@@ -734,8 +732,21 @@ struct output_layout_output_t
         locked_cursors_on = wo->handle;
 
         wlr_output_schedule_frame(handle);
-        on_mirrored_frame.set_callback([=] (void*)
+        on_mirrored_frame.set_callback([=] (void *data)
         {
+            auto ev = (wlr_output_event_commit*)data;
+
+            if (ev->buffer)
+            {
+                if (source_back_buffer)
+                {
+                    wlr_buffer_unlock(source_back_buffer);
+                }
+
+                source_back_buffer = ev->buffer;
+                wlr_buffer_lock(ev->buffer);
+            }
+
             /* The mirrored output was repainted, schedule repaint
              * for us as well */
             wlr_output_damage_whole(handle);
@@ -753,6 +764,12 @@ struct output_layout_output_t
         {
             wlr_output_lock_software_cursors(locked_cursors_on, false);
             locked_cursors_on = NULL;
+        }
+
+        if (source_back_buffer)
+        {
+            wlr_buffer_unlock(source_back_buffer);
+            source_back_buffer = NULL;
         }
 
         on_mirrored_frame.disconnect();
@@ -773,7 +790,7 @@ struct output_layout_output_t
      */
     void emit_configuration_changed(uint32_t changed_fields)
     {
-        if (!wlr_output_is_noop(handle) && changed_fields)
+        if ((handle->data != WF_NOOP_OUTPUT_MAGIC) && changed_fields)
         {
             wf::output_configuration_changed_signal data{current_state};
             data.output = output.get();
@@ -936,7 +953,7 @@ class output_layout_t::impl
         on_config_reload.set_callback([=] (void*) { reconfigure_from_config(); });
         get_core().connect_signal("reload-config", &on_config_reload);
 
-        noop_backend = wlr_noop_backend_create(get_core().display);
+        noop_backend = wlr_headless_backend_create(get_core().display);
         wlr_backend_start(noop_backend);
 
         get_core().connect_signal("_backend_started", &on_backend_started);
@@ -1030,7 +1047,18 @@ class output_layout_t::impl
 
         if (!noop_output)
         {
-            auto handle = wlr_noop_add_output(noop_backend);
+            auto handle = wlr_headless_add_output(noop_backend, 1280, 720);
+            handle->data = WF_NOOP_OUTPUT_MAGIC;
+            strcpy(handle->name, "NOOP-1");
+
+            if (!wlr_output_init_render(handle,
+                get_core().allocator, get_core().renderer))
+            {
+                LOGE("failed to init wlr render for noop output!");
+                // XXX: can we even recover from this??
+                std::exit(0);
+            }
+
             noop_output = std::make_unique<output_layout_output_t>(handle);
         }
 

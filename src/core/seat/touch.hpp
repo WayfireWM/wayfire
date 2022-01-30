@@ -73,7 +73,6 @@ class touch_interface_t
         int32_t id, uint32_t time, wf::pointf_t current);
 
     touch::gesture_state_t finger_state;
-    bool is_grabbed = false;
 
     /** Pressed a finger on a surface and dragging outside of it now */
     wf::surface_interface_t *grabbed_surface = nullptr;
