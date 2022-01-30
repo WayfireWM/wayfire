@@ -6,6 +6,20 @@
 
 #include "ipc.hpp"
 
+extern "C" {
+#include <wlr/backend/wayland.h>
+#include <wlr/backend/multi.h>
+}
+
+static void locate_wayland_backend(wlr_backend *backend, void *data)
+{
+    if (wlr_backend_is_wl(backend))
+    {
+        wlr_backend **result = (wlr_backend**)data;
+        *result = backend;
+    }
+}
+
 namespace wf
 {
 static nlohmann::json geometry_to_json(wf::geometry_t g)
@@ -65,6 +79,7 @@ class ipc_plugin_t
 
         server = std::make_unique<ipc::server_t>(socket);
         server->register_method("core/list_views", list_views);
+        server->register_method("core/create_wayland_output", create_wayland_output);
     }
 
     using method_t = ipc::server_t::method_cb;
@@ -93,6 +108,27 @@ class ipc_plugin_t
         }
 
         return response;
+    };
+
+    method_t create_wayland_output = [] (nlohmann::json)
+    {
+        auto backend = wf::get_core().backend;
+
+        wlr_backend *wayland_backend = NULL;
+        wlr_multi_for_each_backend(backend, locate_wayland_backend,
+            &wayland_backend);
+
+        if (!wayland_backend)
+        {
+            return nlohmann::json{
+                {"error", "Wayfire is not running in nested wayland mode!"},
+            };
+        }
+
+        wlr_wl_output_create(wayland_backend);
+        return nlohmann::json{
+            {"result", "ok"}
+        };
     };
 
     std::unique_ptr<ipc::server_t> server;
