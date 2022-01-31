@@ -183,6 +183,7 @@ void wf::compositor_core_impl_t::init()
      * init_desktop_apis() should come before input.
      * 4. GTK expects primary selection early. */
     compositor = wlr_compositor_create(display, renderer);
+    wlr_subcompositor_create(display);
 
     protocols.data_device = wlr_data_device_manager_create(display);
     protocols.primary_selection_v1 =
