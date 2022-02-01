@@ -335,6 +335,17 @@ class ipc_plugin_t
         return get_ok();
     };
 
+    method_t run = [=] (nlohmann::json data)
+    {
+        if (!data.count("cmd") || !data["cmd"].is_string())
+        {
+            return get_error("run command needs a cmd to run");
+        }
+
+        wf::get_core().run(data["cmd"]);
+        return get_ok();
+    };
+
     std::unique_ptr<ipc::server_t> server;
     std::unique_ptr<headless_input_backend_t> input;
 };
