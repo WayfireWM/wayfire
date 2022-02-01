@@ -9,7 +9,15 @@
 extern "C" {
 #include <wlr/backend/wayland.h>
 #include <wlr/backend/multi.h>
+#include <wlr/backend/headless.h>
+#include <wlr/types/wlr_pointer.h>
+#include <wlr/types/wlr_keyboard.h>
+#include <wlr/interfaces/wlr_keyboard.h>
+#include <libevdev/libevdev.h>
 }
+
+#include <wayfire/util/log.hpp>
+#include <wayfire/core.hpp>
 
 static void locate_wayland_backend(wlr_backend *backend, void *data)
 {
@@ -67,11 +75,78 @@ static std::string layer_to_string(uint32_t layer)
     return "none";
 }
 
+class headless_input_backend_t
+{
+  public:
+    wlr_backend *backend;
+    wlr_input_device *pointer;
+    wlr_input_device *keyboard;
+
+    headless_input_backend_t()
+    {
+        auto& core = wf::get_core();
+        backend = wlr_headless_backend_create(core.display);
+        wlr_multi_backend_add(core.backend, backend);
+        wlr_backend_start(backend);
+
+        pointer  = wlr_headless_add_input_device(backend, WLR_INPUT_DEVICE_POINTER);
+        keyboard = wlr_headless_add_input_device(backend, WLR_INPUT_DEVICE_KEYBOARD);
+    }
+
+    ~headless_input_backend_t()
+    {
+        auto& core = wf::get_core();
+        wlr_multi_backend_remove(core.backend, backend);
+        wlr_backend_destroy(backend);
+    }
+
+    void do_key(uint32_t key, wl_keyboard_key_state state)
+    {
+        wlr_event_keyboard_key ev;
+        ev.keycode = key;
+        ev.state   = state;
+        ev.update_state = true;
+        ev.time_msec    = get_current_time();
+        wlr_keyboard_notify_key(keyboard->keyboard, &ev);
+    }
+
+    void do_button(uint32_t button, wlr_button_state state)
+    {
+        wlr_event_pointer_button ev;
+        ev.device    = pointer;
+        ev.button    = button;
+        ev.state     = state;
+        ev.time_msec = get_current_time();
+        wl_signal_emit(&pointer->pointer->events.button, &ev);
+    }
+
+    headless_input_backend_t(const headless_input_backend_t&) = delete;
+    headless_input_backend_t(headless_input_backend_t&&) = delete;
+    headless_input_backend_t& operator =(const headless_input_backend_t&) = delete;
+    headless_input_backend_t& operator =(headless_input_backend_t&&) = delete;
+};
+
+static inline nlohmann::json get_ok()
+{
+    return nlohmann::json{
+        {"result", "ok"}
+    };
+}
+
+static inline nlohmann::json get_error(std::string msg)
+{
+    return nlohmann::json{
+        {"error", std::string(msg)}
+    };
+}
+
 class ipc_plugin_t
 {
   public:
     ipc_plugin_t()
     {
+        input = std::make_unique<headless_input_backend_t>();
+
         char *pre_socket   = getenv("_WAYFIRE_SOCKET");
         const auto& dname  = wf::get_core().wayland_display;
         std::string socket = pre_socket ?: "/tmp/wayfire-" + dname + ".socket";
@@ -80,6 +155,7 @@ class ipc_plugin_t
         server = std::make_unique<ipc::server_t>(socket);
         server->register_method("core/list_views", list_views);
         server->register_method("core/create_wayland_output", create_wayland_output);
+        server->register_method("core/feed_key", feed_key);
     }
 
     using method_t = ipc::server_t::method_cb;
@@ -101,7 +177,12 @@ class ipc_plugin_t
                 {"minimized", view->minimized},
             };
 
-            auto layer = view->get_output()->workspace->get_view_layer(view);
+            uint32_t layer = -1;
+            if (view->get_output())
+            {
+                layer = view->get_output()->workspace->get_view_layer(view);
+            }
+
             v["layer"] = layer_to_string(layer);
 
             response.push_back(v);
@@ -120,18 +201,114 @@ class ipc_plugin_t
 
         if (!wayland_backend)
         {
-            return nlohmann::json{
-                {"error", "Wayfire is not running in nested wayland mode!"},
-            };
+            return get_error("Wayfire is not running in nested wayland mode!");
         }
 
         wlr_wl_output_create(wayland_backend);
-        return nlohmann::json{
-            {"result", "ok"}
-        };
+        return get_ok();
     };
 
+    struct key_t
+    {
+        bool modifier;
+        int code;
+    };
+
+    std::variant<key_t, std::string> parse_key(nlohmann::json data)
+    {
+        if (!data.count("combo") || !data["combo"].is_string())
+        {
+            return std::string("Missing or wrong json type for `combo`!");
+        }
+
+        std::string combo = data["combo"];
+        if (combo.size() < 4)
+        {
+            return std::string("Missing or wrong json type for `combo`!");
+        }
+
+        // Check super modifier
+        bool modifier = false;
+        if (combo.substr(0, 2) == "S-")
+        {
+            modifier = true;
+            combo    = combo.substr(2);
+        }
+
+        int key = libevdev_event_code_from_name(EV_KEY, combo.c_str());
+        if (key == -1)
+        {
+            return std::string("Failed to parse combo \"" + combo + "\"");
+        }
+
+        return key_t{modifier, key};
+    }
+
+    method_t feed_key = [=] (nlohmann::json data)
+    {
+        auto result = parse_key(data);
+        auto key    = std::get_if<key_t>(&result);
+        if (!key)
+        {
+            return get_error(std::get<std::string>(result));
+        }
+
+        if (key->modifier)
+        {
+            input->do_key(KEY_LEFTMETA, WL_KEYBOARD_KEY_STATE_PRESSED);
+        }
+
+        input->do_key(key->code, WL_KEYBOARD_KEY_STATE_PRESSED);
+        input->do_key(key->code, WL_KEYBOARD_KEY_STATE_RELEASED);
+        if (key->modifier)
+        {
+            input->do_key(KEY_LEFTMETA, WL_KEYBOARD_KEY_STATE_RELEASED);
+        }
+
+        return get_ok();
+    };
+
+    method_t feed_button = [=] (nlohmann::json data)
+    {
+        auto result = parse_key(data);
+        auto button = std::get_if<key_t>(&result);
+        if (!button)
+        {
+            return get_error(std::get<std::string>(result));
+        }
+
+        if (!data.count("mode") || !data["mode"].is_string())
+        {
+            return get_error("No mode specified");
+        }
+
+        auto mode = data["mode"];
+
+        if ((mode == "press") || (mode == "full"))
+        {
+            if (button->modifier)
+            {
+                input->do_key(KEY_LEFTMETA, WL_KEYBOARD_KEY_STATE_PRESSED);
+            }
+
+            input->do_button(button->code, WLR_BUTTON_PRESSED);
+        }
+
+        if ((mode == "release") || (mode == "full"))
+        {
+            input->do_button(button->code, WLR_BUTTON_RELEASED);
+            if (button->modifier)
+            {
+                input->do_key(KEY_LEFTMETA, WL_KEYBOARD_KEY_STATE_RELEASED);
+            }
+        }
+
+        return get_ok();
+    };
+
+
     std::unique_ptr<ipc::server_t> server;
+    std::unique_ptr<headless_input_backend_t> input;
 };
 }
 
