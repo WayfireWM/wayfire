@@ -2,6 +2,7 @@
 #include <wayfire/view.hpp>
 #include <wayfire/output.hpp>
 #include <wayfire/workspace-manager.hpp>
+#include <wayfire/output-layout.hpp>
 #include <getopt.h>
 
 #include "ipc.hpp"
@@ -13,6 +14,7 @@ extern "C" {
 #include <wlr/types/wlr_pointer.h>
 #include <wlr/types/wlr_keyboard.h>
 #include <wlr/interfaces/wlr_keyboard.h>
+#include <wlr/types/wlr_output_layout.h>
 #include <libevdev/libevdev.h>
 }
 
@@ -118,6 +120,19 @@ class headless_input_backend_t
         ev.state     = state;
         ev.time_msec = get_current_time();
         wl_signal_emit(&pointer->pointer->events.button, &ev);
+    }
+
+    void do_motion(double x, double y)
+    {
+        auto layout = wf::get_core().output_layout->get_handle();
+        auto box    = wlr_output_layout_get_box(layout, NULL);
+
+        wlr_event_pointer_motion_absolute ev;
+        ev.device    = pointer;
+        ev.time_msec = get_current_time();
+        ev.x = 1.0 * (x - box->x) / box->width;
+        ev.y = 1.0 * (y - box->y) / box->height;
+        wl_signal_emit(&pointer->pointer->events.motion_absolute, &ev);
     }
 
     headless_input_backend_t(const headless_input_backend_t&) = delete;
@@ -306,6 +321,19 @@ class ipc_plugin_t
         return get_ok();
     };
 
+    method_t move_cursor = [=] (nlohmann::json data)
+    {
+        if (!data.count("x") || !data.count("y") ||
+            !data["x"].is_number() || !data["y"].is_number())
+        {
+            return get_error("Move cursor needs double x/y arguments");
+        }
+
+        double x = data["x"];
+        double y = data["y"];
+        input->do_motion(x, y);
+        return get_ok();
+    };
 
     std::unique_ptr<ipc::server_t> server;
     std::unique_ptr<headless_input_backend_t> input;
