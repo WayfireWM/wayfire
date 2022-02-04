@@ -175,6 +175,7 @@ class ipc_plugin_t
         server->register_method("core/move_cursor", move_cursor);
         server->register_method("core/run", run);
         server->register_method("core/ping", ping);
+        server->register_method("core/get_display", get_display);
     }
 
     using method_t = ipc::server_t::method_cb;
@@ -353,6 +354,14 @@ class ipc_plugin_t
     method_t ping = [=] (nlohmann::json data)
     {
         return get_ok();
+    };
+
+    method_t get_display = [=] (nlohmann::json data)
+    {
+        nlohmann::json dpy;
+        dpy["wayland"]  = wf::get_core().wayland_display;
+        dpy["xwayland"] = wf::get_core().get_xwayland_display();
+        return dpy;
     };
 
     std::unique_ptr<ipc::server_t> server;
