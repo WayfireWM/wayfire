@@ -171,6 +171,10 @@ class ipc_plugin_t
         server->register_method("core/list_views", list_views);
         server->register_method("core/create_wayland_output", create_wayland_output);
         server->register_method("core/feed_key", feed_key);
+        server->register_method("core/feed_button", feed_button);
+        server->register_method("core/move_cursor", move_cursor);
+        server->register_method("core/run", run);
+        server->register_method("core/ping", ping);
     }
 
     using method_t = ipc::server_t::method_cb;
@@ -343,6 +347,11 @@ class ipc_plugin_t
         }
 
         wf::get_core().run(data["cmd"]);
+        return get_ok();
+    };
+
+    method_t ping = [=] (nlohmann::json data)
+    {
         return get_ok();
     };
 
