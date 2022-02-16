@@ -62,6 +62,9 @@ class simple_decoration_surface : public wf::surface_interface_t,
 
     wf::dimensions_t size;
 
+  private:
+  	wf::option_wrapper_t<std::string> middle_click_opt{"decoration/middle_click"};
+  	wf::option_wrapper_t<std::string> right_click_opt{"decoration/right_click"};
   public:
     int current_thickness;
     int current_titlebar;
@@ -162,7 +165,37 @@ class simple_decoration_surface : public wf::surface_interface_t,
 
     virtual void on_pointer_button(uint32_t button, uint32_t state) override
     {
-        if (button != BTN_LEFT)
+        if ((std::string)middle_click_opt != "none" && button == BTN_MIDDLE)
+    	{
+    		if ((std::string)middle_click_opt == "min")
+    		{
+    			handle_action({wf::decor::DECORATION_ACTION_MINIMIZE, 0});
+    		}
+    		else if ((std::string)middle_click_opt == "max")
+    		{
+    			handle_action({wf::decor::DECORATION_ACTION_TOGGLE_MAXIMIZE, 0});
+    		}
+    		else if ((std::string)middle_click_opt == "close")
+    		{
+    			handle_action({wf::decor::DECORATION_ACTION_CLOSE, 0});
+    		}
+    	}
+    	else if ((std::string)right_click_opt != "none" && button == BTN_RIGHT)
+    	{
+    		if ((std::string)right_click_opt == "min")
+    		{
+    			handle_action({wf::decor::DECORATION_ACTION_MINIMIZE, 0});
+    		}
+    		else if ((std::string)right_click_opt == "max")
+    		{
+    			handle_action({wf::decor::DECORATION_ACTION_TOGGLE_MAXIMIZE, 0});
+    		}
+    		else if ((std::string)right_click_opt == "close")
+    		{
+    			handle_action({wf::decor::DECORATION_ACTION_CLOSE, 0});
+    		}
+    	}
+        else if (button != BTN_LEFT)
         {
             return;
         }

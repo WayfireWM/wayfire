@@ -24,6 +24,48 @@
 			<_long>Sets the order of the window buttons.</_long>
 			<default>minimize maximize close</default>
 		</option>
+		<option name="middle_click" type="string">
+			<_short>Middle click action</_short>
+			<_long>Action to perform when the title bar is clicked with the middle mouse button.</_long>
+			<default>none</default>
+			<desc>
+				<value>none</value>
+				<_name>None</_name>
+			</desc>
+			<desc>
+				<value>min</value>
+				<_name>Minimize</_name>
+			</desc>
+			<desc>
+				<value>max</value>
+				<_name>Maximize (toggle)</_name>
+			</desc>
+			<desc>
+				<value>close</value>
+				<_name>Close</_name>
+			</desc>
+		</option>
+		<option name="right_click" type="string">
+			<_short>Right click action</_short>
+			<_long>Action to perform when the title bar is clicked with the right mouse button.</_long>
+			<default>none</default>
+			<desc>
+				<value>none</value>
+				<_name>None</_name>
+			</desc>
+			<desc>
+				<value>min</value>
+				<_name>Minimize</_name>
+			</desc>
+			<desc>
+				<value>max</value>
+				<_name>Maximize (toggle)</_name>
+			</desc>
+			<desc>
+				<value>close</value>
+				<_name>Close</_name>
+			</desc>
+		</option>
 		<!-- Colors -->
 		<option name="active_color" type="color">
 			<_short>Color when window is active</_short>
