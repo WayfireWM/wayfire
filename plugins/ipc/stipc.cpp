@@ -347,8 +347,9 @@ class ipc_plugin_t
             return get_error("run command needs a cmd to run");
         }
 
-        wf::get_core().run(data["cmd"]);
-        return get_ok();
+        auto response = get_ok();
+        response["pid"] = wf::get_core().run(data["cmd"]);
+        return response;
     };
 
     method_t ping = [=] (nlohmann::json data)
