@@ -23,7 +23,6 @@ extern "C"
 // Rendering
 #define static
 #include <wlr/types/wlr_compositor.h>
-#include <wlr/types/wlr_subcompositor.h>
 #include <wlr/render/wlr_renderer.h>
 #include <wlr/render/allocator.h>
 #include <wlr/render/gles2.h>
@@ -44,6 +43,7 @@ extern "C"
     #include <wlr/types/wlr_xdg_shell.h>
     #include <wlr/types/wlr_xdg_decoration_v1.h>
 #endif
+#include <wlr/types/wlr_surface.h>
 
 #include <wlr/types/wlr_foreign_toplevel_management_v1.h>
 #include <wlr/types/wlr_server_decoration.h>
