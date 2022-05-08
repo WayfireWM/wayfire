@@ -1,6 +1,11 @@
-json = subproject('json').get_variable('nlohmann_json_dep')
 evdev = dependency('libevdev')
+system_json = dependency('nlohmann_json', required: false)
 
+if system_json.found()
+  json = system_json
+else
+  json = subproject('json').get_variable('nlohmann_json_dep')
+endif
 
 ipc = shared_module('ipc',
     ['ipc.cpp', 'stipc.cpp'],
