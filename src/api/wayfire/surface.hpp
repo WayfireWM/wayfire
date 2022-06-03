@@ -10,6 +10,7 @@
 #include <wayfire/nonstd/observer_ptr.h>
 #include <wayfire/geometry.hpp>
 #include <wayfire/object.hpp>
+#include <wayfire/scene.hpp>
 
 namespace wf
 {

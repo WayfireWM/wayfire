@@ -10,6 +10,8 @@
 #include <wayfire/nonstd/reverse.hpp>
 #include <wayfire/util/log.hpp>
 
+#include <wayfire/scene-operations.hpp>
+
 #include "../view/view-impl.hpp"
 #include "output-impl.hpp"
 
@@ -81,6 +83,14 @@ struct sublayer_t
      * elsewhere.
      */
     bool is_single_view;
+
+    scene::floating_inner_ptr node;
+};
+
+struct sublayer_container_t
+{
+    std::list<std::unique_ptr<sublayer_t>> list;
+    scene::floating_inner_ptr node;
 };
 
 /**
@@ -91,7 +101,6 @@ struct layer_container_t
     /** The layer of the container */
     layer_t layer;
 
-    using sublayer_container_t = std::list<std::unique_ptr<sublayer_t>>;
     /** List of sublayers docked below */
     sublayer_container_t below;
     /** List of floating sublayers */
@@ -101,7 +110,7 @@ struct layer_container_t
 
     void remove_sublayer(nonstd::observer_ptr<sublayer_t> sublayer)
     {
-        for (auto container : {& below, & floating, & above})
+        for (auto container : {& below.list, & floating.list, & above.list})
         {
             remove_from(*container, sublayer);
         }
@@ -114,6 +123,18 @@ struct layer_container_t
  */
 class output_layer_manager_t
 {
+    void setup_scene()
+    {
+        auto& root = wf::get_core().scene();
+        for (size_t layer = 0; layer < (size_t)scene::layer::ALL_LAYERS; layer++)
+        {
+            nodes[layer] = std::make_shared<scene::output_node_t>();
+            scene::add_back(root->layers[layer], nodes[layer]);
+        }
+    }
+
+    std::shared_ptr<scene::output_node_t> nodes[TOTAL_LAYERS];
+
     // A hierarchical representation of the view stack order
     layer_container_t layers[TOTAL_LAYERS];
 
@@ -123,9 +144,27 @@ class output_layer_manager_t
   public:
     output_layer_manager_t()
     {
+        setup_scene();
+
         for (int i = 0; i < TOTAL_LAYERS; i++)
         {
             layers[i].layer = static_cast<layer_t>(1 << i);
+
+            layers[i].above.node = std::make_shared<scene::floating_inner_node_t>(
+                false);
+            layers[i].below.node = std::make_shared<scene::floating_inner_node_t>(
+                false);
+            layers[i].floating.node = std::make_shared<scene::floating_inner_node_t>(
+                false);
+
+            if ((1 << i) != LAYER_MINIMIZED)
+            {
+                nodes[i]->dynamic->set_children_list({
+                        layers[i].above.node,
+                        layers[i].floating.node,
+                        layers[i].below.node
+                    });
+            }
         }
     }
 
@@ -165,9 +204,16 @@ class output_layer_manager_t
         damage_views(view);
 
         remove_from(sublayer->views, view);
+        scene::remove_child(sublayer->node, view->get_scene_node());
+
         if (sublayer->is_single_view)
         {
             sublayer->layer->remove_sublayer(sublayer);
+            for (auto cat : {& sublayer->layer->above,
+                 & sublayer->layer->floating, & sublayer->layer->below})
+            {
+                scene::remove_child(cat->node, sublayer->node);
+            }
         }
 
         /* Reset the view's sublayer */
@@ -180,7 +226,10 @@ class output_layer_manager_t
     {
         remove_view(view);
         get_view_sublayer(view) = sublayer;
+
         sublayer->views.push_front(view);
+        scene::add_front(sublayer->node, view->get_scene_node());
+
         rebuild_stack_order();
     }
 
@@ -194,19 +243,35 @@ class output_layer_manager_t
         sublayer->layer = &layer;
         sublayer->mode  = mode;
         sublayer->is_single_view = false;
+        sublayer->node = std::make_shared<scene::floating_inner_node_t>(false);
 
         switch (mode)
         {
           case SUBLAYER_DOCKED_BELOW:
-            layer.below.emplace_back(std::move(sublayer));
+            if (layer_mask != LAYER_MINIMIZED)
+            {
+                scene::add_back(layer.below.node, sublayer->node);
+            }
+
+            layer.below.list.emplace_back(std::move(sublayer));
             break;
 
           case SUBLAYER_DOCKED_ABOVE:
-            layer.above.emplace_front(std::move(sublayer));
+            if (layer_mask != LAYER_MINIMIZED)
+            {
+                scene::add_front(layer.above.node, sublayer->node);
+            }
+
+            layer.above.list.emplace_front(std::move(sublayer));
             break;
 
           case SUBLAYER_FLOATING:
-            layer.floating.emplace_front(std::move(sublayer));
+            if (layer_mask != LAYER_MINIMIZED)
+            {
+                scene::add_front(layer.floating.node, sublayer->node);
+            }
+
+            layer.floating.list.emplace_front(std::move(sublayer));
             break;
         }
 
@@ -235,10 +300,20 @@ class output_layer_manager_t
 
         if (sublayer->mode == SUBLAYER_FLOATING)
         {
-            raise_to_front(sublayer->layer->floating, sublayer);
+            raise_to_front(sublayer->layer->floating.list, sublayer);
+
+            if (sublayer->layer->floating.node)
+            {
+                // floating.node might be null for minimized layer, which will
+                // be removed soon.
+                scene::raise_to_front(sublayer->layer->floating.node,
+                    sublayer->node);
+            }
         }
 
         raise_to_front(sublayer->views, view);
+        scene::raise_to_front(sublayer->node, view->get_scene_node());
+
         rebuild_stack_order();
     }
 
@@ -267,7 +342,7 @@ class output_layer_manager_t
         for (const auto& sublayers :
              {& layer.above, & layer.floating, & layer.below})
         {
-            for (const auto& sublayer : *sublayers)
+            for (const auto& sublayer : sublayers->list)
             {
                 auto& container = sublayer->views;
                 std::copy_if(container.begin(), container.end(),

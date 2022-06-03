@@ -9,6 +9,8 @@
 #include "wayfire/decorator.hpp"
 #include <wayfire/nonstd/wlroots.hpp>
 #include <wayfire/region.hpp>
+#include <wayfire/signal-provider.hpp>
+#include <wayfire/scene.hpp>
 
 namespace wf
 {
@@ -52,6 +54,8 @@ constexpr uint32_t TILED_EDGES_ALL =
 class view_interface_t : public surface_interface_t
 {
   public:
+    const scene::floating_inner_ptr& get_scene_node() const;
+
     /**
      * The toplevel parent of the view, for ex. the main view of a file chooser
      * dialogue.
@@ -547,6 +551,44 @@ class view_interface_t : public surface_interface_t
 };
 
 wayfire_view wl_surface_to_wayfire_view(wl_resource *surface);
+
+namespace scene
+{
+/**
+ * A node in the scenegraph representing a single view and its surfaces.
+ *
+ * A view is always contained in a floating_inner_node_t responsible for it
+ * and its view tree. This is necessary, because that floating parent also
+ * contains inner nodes for each child view (e.g. dialogs).
+ *
+ * An example of the structure of a main view with two dialogs,
+ * one of the dialog having a nested dialog in turn, is the following:
+ *
+ * floating_inner_node_t(main_view):
+ *   - view_node_t(main_view)
+ *   - floating_inner_node_t(dialog1):
+ *     - view_node_t(dialog1)
+ *   - floating_inner_node_t(dialog2):
+ *     - view_node_t(dialog2)
+ *     - floating_inner_node_t(dialog2.1):
+ *       - view_node_t(dialog2.1)
+ *
+ * Each view node is a structure node for its floating parent (e.g. cannot be
+ * removed from it). Instead, plugins should reorder/move the view's parent node,
+ * therefore ensuring that each view moves together with its children.
+ */
+class view_node_t : public scene::node_t, std::enable_shared_from_this<view_node_t>
+{
+  public:
+    view_node_t(wayfire_view view);
+
+    iteration visit(visitor_t *visitor) final;
+    std::optional<input_node_t> find_node_at(const wf::pointf_t& at) final;
+
+  private:
+    wayfire_view view;
+};
+}
 }
 
 #endif

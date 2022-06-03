@@ -102,6 +102,7 @@ class compositor_core_impl_t : public compositor_core_t
     pid_t run(std::string command) override;
     void shutdown() override;
     compositor_state_t get_current_state() override;
+    const std::shared_ptr<scene::root_node_t>& scene() final;
 
   protected:
     wf::wl_listener_wrapper decoration_created;
@@ -116,6 +117,8 @@ class compositor_core_impl_t : public compositor_core_t
     wf::output_t *active_output = nullptr;
     std::vector<std::unique_ptr<wf::view_interface_t>> views;
     std::unordered_map<std::string, wayfire_view> id_to_view;
+
+    std::shared_ptr<scene::root_node_t> scene_root;
 
     /* pairs (layer, request_id) */
     std::set<std::pair<uint32_t, int>> layer_focus_requests;

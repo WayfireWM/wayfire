@@ -173,6 +173,8 @@ struct wlr_idle_inhibitor_t : public wf::idle_inhibitor_t
 
 void wf::compositor_core_impl_t::init()
 {
+    this->scene_root = std::make_shared<scene::root_node_t>();
+
     wlr_renderer_init_wl_display(renderer, display);
 
     /* Order here is important:
@@ -889,6 +891,11 @@ void wf::compositor_core_impl_t::move_view_to_output(wayfire_view v,
     }
 
     this->emit_signal("view-moved-to-output", &data);
+}
+
+const std::shared_ptr<wf::scene::root_node_t>& wf::compositor_core_impl_t::scene()
+{
+    return scene_root;
 }
 
 wf::compositor_core_t::compositor_core_t()

@@ -20,6 +20,11 @@ namespace wf
 class surface_interface_t;
 class view_interface_t;
 
+namespace scene
+{
+class root_node_t;
+}
+
 namespace touch
 {
 class gesture_t;
@@ -323,6 +328,11 @@ class compositor_core_t : public wf::object_base_t
      * Stops event loops, destroys outputs, views, etc.
      */
     virtual void shutdown() = 0;
+
+    /**
+     * Get the root node of Wayfire's scenegraph.
+     */
+    virtual const std::shared_ptr<scene::root_node_t>& scene() = 0;
 
     /**
      * Returns a reference to the only core instance.
