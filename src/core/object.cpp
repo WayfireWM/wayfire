@@ -3,6 +3,17 @@
 #include <unordered_map>
 #include <set>
 
+#include <wayfire/signal-provider.hpp>
+
+void wf::signal::connection_base_t::disconnect()
+{
+    auto connected_copy = this->connected_to;
+    for (auto& x : connected_copy)
+    {
+        x->disconnect(this);
+    }
+}
+
 /* Implementation note: because of circular dependencies between
  * signal_connection_t and signal_provider_t, the chosen way to resolve
  * them is to have signal_provider_t directly modify signal_connection_t
