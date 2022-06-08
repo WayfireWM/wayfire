@@ -66,6 +66,11 @@
 				<_long>Sets the variant of the keyboard, like `dvorak` or `colemak`.</_long>
 				<default></default>
 			</option>
+			<option name="xkb_keymap_file" type="string">
+				<_short>XKB keymap file</_short>
+				<_long>Path to a complete XKB keymap to be used.  If this option is non-empty, the other xkb options are ignored in favor of it.</_long>
+				<default></default>
+			</option>
 		</group>
 		<!-- Mouse -->
 		<group>

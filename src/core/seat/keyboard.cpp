@@ -62,6 +62,7 @@ wf::keyboard_t::keyboard_t(wlr_input_device *dev) :
     layout.load_option("input/xkb_layout");
     options.load_option("input/xkb_options");
     rules.load_option("input/xkb_rules");
+    keymap_file.load_option("input/xkb_keymap_file");
 
     repeat_rate.load_option("input/kb_repeat_rate");
     repeat_delay.load_option("input/kb_repeat_delay");
@@ -73,6 +74,7 @@ wf::keyboard_t::keyboard_t(wlr_input_device *dev) :
     layout.set_callback([=] () { this->dirty_options = true; });
     options.set_callback([=] () { this->dirty_options = true; });
     rules.set_callback([=] () { this->dirty_options = true; });
+    keymap_file.set_callback([=] () { this->dirty_options = true; });
     repeat_rate.set_callback([=] () { this->dirty_options = true; });
     repeat_delay.set_callback([=] () { this->dirty_options = true; });
 
@@ -106,29 +108,54 @@ void wf::keyboard_t::reload_input_options()
 
     auto ctx = xkb_context_new(XKB_CONTEXT_NO_FLAGS);
 
-    /* Copy memory to stack, so that .c_str() is valid */
-    std::string rules   = this->rules;
-    std::string model   = this->model;
-    std::string layout  = this->layout;
-    std::string variant = this->variant;
-    std::string options = this->options;
+    struct xkb_keymap *keymap = nullptr;
 
-    xkb_rule_names names;
-    names.rules   = rules.c_str();
-    names.model   = model.c_str();
-    names.layout  = layout.c_str();
-    names.variant = variant.c_str();
-    names.options = options.c_str();
-    auto keymap = xkb_map_new_from_names(ctx, &names,
-        XKB_KEYMAP_COMPILE_NO_FLAGS);
+    if (!this->keymap_file.value().empty())
+    {
+        std::string path = this->keymap_file;
+        FILE *file = std::fopen(path.c_str(), "r");
+        if (file)
+        {
+            keymap = xkb_keymap_new_from_file(ctx, file,
+                XKB_KEYMAP_FORMAT_TEXT_V1,
+                XKB_KEYMAP_COMPILE_NO_FLAGS);
+            std::fclose(file);
+            if (!keymap)
+            {
+                LOGE("Could not create keymap from file \"", path, "\"");
+            }
+        } else
+        {
+            LOGE("Could not open keymap file \"", path, "\"");
+        }
+    } else
+    {
+        /* Copy memory to stack, so that .c_str() is valid */
+        std::string rules   = this->rules;
+        std::string model   = this->model;
+        std::string layout  = this->layout;
+        std::string variant = this->variant;
+        std::string options = this->options;
+
+        xkb_rule_names names;
+        names.rules   = rules.c_str();
+        names.model   = model.c_str();
+        names.layout  = layout.c_str();
+        names.variant = variant.c_str();
+        names.options = options.c_str();
+        keymap = xkb_keymap_new_from_names(ctx, &names,
+            XKB_KEYMAP_COMPILE_NO_FLAGS);
+        if (!keymap)
+        {
+            LOGE("Could not create keymap with given configuration:",
+                " rules=\"", rules, "\" model=\"", model, "\" layout=\"", layout,
+                "\" variant=\"", variant, "\" options=\"", options, "\"");
+        }
+    }
 
     if (!keymap)
     {
-        LOGE("Could not create keymap with given configuration:",
-            " rules=\"", rules, "\" model=\"", model, "\" layout=\"", layout,
-            "\" variant=\"", variant, "\" options=\"", options, "\"");
-
-        // reset to NULL
+        xkb_rule_names names;
         std::memset(&names, 0, sizeof(names));
         keymap = xkb_map_new_from_names(ctx, &names, XKB_KEYMAP_COMPILE_NO_FLAGS);
     }

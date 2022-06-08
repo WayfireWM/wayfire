@@ -39,7 +39,7 @@ class keyboard_t
     void reload_input_options();
 
     wf::option_wrapper_t<std::string>
-    model, variant, layout, options, rules;
+    model, variant, layout, options, rules, keymap_file;
     wf::option_wrapper_t<int> repeat_rate, repeat_delay;
     /** Options have changed in the config file */
     bool dirty_options = true;
