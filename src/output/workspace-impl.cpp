@@ -35,27 +35,6 @@ void raise_to_front(std::list<Haystack>& hay, const Needle& needle,
     hay.splice(reverse ? hay.end() : hay.begin(), hay, it);
 }
 
-/** Reorder list so that @element is directly above @below. */
-template<class Haystack, class Needle>
-void reorder_above(
-    std::list<Haystack>& list, const Needle& element, const Needle& below)
-{
-    auto element_it = find_in(list, element);
-    auto pos = find_in(list, below);
-    list.splice(pos, list, element_it);
-}
-
-/** Reorder list so that @element is directly below @above. */
-template<class Haystack, class Needle>
-void reorder_below(
-    std::list<Haystack>& list, const Needle& element, const Needle& above)
-{
-    auto element_it = find_in(list, element);
-    auto pos = find_in(list, above);
-    assert(pos != list.end());
-    list.splice(std::next(pos), list, element_it);
-}
-
 /**
  * Remove needle from haystack, where both needle and elements in haystack are
  * smart pointers.
@@ -272,62 +251,6 @@ class output_layer_manager_t
         }
 
         return views.front();
-    }
-
-    /** Precondition: view and below are in the same layer */
-    void restack_above(wayfire_view view, wayfire_view below)
-    {
-        damage_views(view);
-
-        auto view_sublayer  = get_view_sublayer(view);
-        auto below_sublayer = get_view_sublayer(below);
-        assert(view_sublayer->layer == below_sublayer->layer);
-
-        if (view_sublayer == below_sublayer)
-        {
-            reorder_above(view_sublayer->views, view, below);
-            rebuild_stack_order();
-
-            return;
-        }
-
-        if ((view_sublayer->mode != SUBLAYER_FLOATING) ||
-            (below_sublayer->mode != SUBLAYER_FLOATING))
-        {
-            return;
-        }
-
-        reorder_above(view_sublayer->layer->floating, view_sublayer, below_sublayer);
-        raise_to_front(view_sublayer->views, view, true); // bring to back == reverse
-        rebuild_stack_order();
-    }
-
-    /** Precondition: view and above are in the same layer */
-    void restack_below(wayfire_view view, wayfire_view above)
-    {
-        damage_views(view);
-
-        auto view_sublayer  = get_view_sublayer(view);
-        auto above_sublayer = get_view_sublayer(above);
-        assert(view_sublayer->layer == above_sublayer->layer);
-
-        if (view_sublayer == above_sublayer)
-        {
-            reorder_below(view_sublayer->views, view, above);
-            rebuild_stack_order();
-
-            return;
-        }
-
-        if ((view_sublayer->mode != SUBLAYER_FLOATING) ||
-            (above_sublayer->mode != SUBLAYER_FLOATING))
-        {
-            return;
-        }
-
-        reorder_below(view_sublayer->layer->floating, view_sublayer, above_sublayer);
-        raise_to_front(view_sublayer->views, view);
-        rebuild_stack_order();
     }
 
     enum class promoted_state_t
@@ -1162,54 +1085,6 @@ class workspace_manager::impl
         update_promoted_views();
     }
 
-    void restack_above(wayfire_view view, wayfire_view below)
-    {
-        if (!view || !below || (view == below))
-        {
-            LOGE("Cannot restack a view on top of itself");
-
-            return;
-        }
-
-        uint32_t view_layer  = layer_manager.get_view_layer(view);
-        uint32_t below_layer = layer_manager.get_view_layer(below);
-        if ((view_layer == 0) || (below_layer == 0) || (view_layer != below_layer))
-        {
-            LOGE("restacking views from different layers(",
-                view_layer, " vs ", below_layer, ")!");
-
-            return;
-        }
-
-        LOGD("restack ", view->get_title(), " on top of ", below->get_title());
-
-        layer_manager.restack_above(view, below);
-        update_promoted_views();
-    }
-
-    void restack_below(wayfire_view view, wayfire_view above)
-    {
-        if (!view || !above || (view == above))
-        {
-            LOGE("Cannot restack a view on top of itself");
-
-            return;
-        }
-
-        uint32_t view_layer  = layer_manager.get_view_layer(view);
-        uint32_t below_layer = layer_manager.get_view_layer(above);
-        if ((view_layer == 0) || (below_layer == 0) || (view_layer != below_layer))
-        {
-            LOGE("restacking views from different layers(",
-                view_layer, " vs ", below_layer, "!)");
-
-            return;
-        }
-
-        layer_manager.restack_below(view, above);
-        update_promoted_views();
-    }
-
     void remove_view(wayfire_view view)
     {
         uint32_t view_layer = layer_manager.get_view_layer(view);
@@ -1295,16 +1170,6 @@ void workspace_manager::add_view(wayfire_view view, layer_t layer)
 void workspace_manager::bring_to_front(wayfire_view view)
 {
     return pimpl->bring_to_front(view);
-}
-
-void workspace_manager::restack_above(wayfire_view view, wayfire_view below)
-{
-    return pimpl->restack_above(view, below);
-}
-
-void workspace_manager::restack_below(wayfire_view view, wayfire_view below)
-{
-    return pimpl->restack_below(view, below);
 }
 
 void workspace_manager::remove_view(wayfire_view view)

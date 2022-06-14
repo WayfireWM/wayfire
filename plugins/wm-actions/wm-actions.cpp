@@ -280,7 +280,11 @@ class wayfire_wm_actions_t : public wf::plugin_interface_t
             if (view != bottom_view)
             {
                 // Move view to bottom by stacking it below the bottom-most view
-                view->get_output()->workspace->restack_below(view, bottom_view);
+                // FIXME: restack_below was removed in favor of a scenegraph which
+                // manages this.
+                // Once the scenegraph contains the required functionality,
+                // we need to adapt send_to_back.
+                // view->get_output()->workspace->restack_below(view, bottom_view);
 
                 // Change focus to the last focused view on this workspace
                 views =

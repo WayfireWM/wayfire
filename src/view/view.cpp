@@ -131,16 +131,13 @@ void wf::view_interface_t::set_toplevel_parent(wayfire_view new_parent)
         check_refocus_parent(parent);
     } else if (old_parent)
     {
-        /* At this point, we are a regular view. We should try to position ourselves
-         * directly above the old parent */
+        /* At this point, we are a regular view. */
         if (this->get_output())
         {
             this->get_output()->workspace->add_view(
                 self(), wf::LAYER_WORKSPACE);
 
             check_refocus_parent(old_parent);
-            this->get_output()->workspace->restack_above(self(),
-                find_toplevel_parent(old_parent));
         }
     }
 }

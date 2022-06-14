@@ -181,32 +181,6 @@ class workspace_manager
     void bring_to_front(wayfire_view view);
 
     /**
-     * If views are in different sublayers: restack the sublayer of view so
-     * that it is directly above the sublayer of below, without changing other
-     * sublayers. The view itself is placed at the bottom of its sublayer.
-     *
-     * If the views are in the same sublayer, the sublayer is reordered in the
-     * same way.
-     *
-     * This function cannot be used for views of different sublayers if any of
-     * the sublayers is docked.
-     */
-    void restack_above(wayfire_view view, wayfire_view below);
-
-    /**
-     * If views are in different sublayers: restack the sublayer of view so
-     * that it is directly below the sublayer of above, without changing other
-     * sublayers. The view itself is placed at the top of its sublayer.
-     *
-     * If the views are in the same sublayer, the sublayer is reordered in the
-     * same way.
-     *
-     * This function cannot be used for views of different sublayers if any of
-     * the sublayers is docked.
-     */
-    void restack_below(wayfire_view view, wayfire_view above);
-
-    /**
      * Remove the view from its (sub)layer. This effectively means that the view is
      * now invisible on the output.
      */
