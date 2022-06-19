@@ -315,3 +315,116 @@ std::ostream& wf::operator <<(std::ostream& out, wayfire_view view)
 }
 
 std::bitset<(size_t)wf::log::logging_category::TOTAL> wf::log::enabled_categories;
+
+static int get_layer_index(wf::scene::node_ptr node)
+{
+    using namespace wf::scene;
+    if (auto root = dynamic_cast<root_node_t*>(node->parent()))
+    {
+        for (int layer = 0; layer < (int)layer::ALL_LAYERS; layer++)
+        {
+            if (root->layers[layer] == node)
+            {
+                return layer;
+            }
+        }
+    }
+
+    return -1;
+}
+
+static bool is_dynamic_output(wf::scene::node_ptr node)
+{
+    if (auto output = dynamic_cast<wf::scene::output_node_t*>(node->parent()))
+    {
+        return node == output->dynamic;
+    }
+
+    return false;
+}
+
+static bool is_static_output(wf::scene::node_ptr node)
+{
+    if (auto output = dynamic_cast<wf::scene::output_node_t*>(node->parent()))
+    {
+        return node == output->_static;
+    }
+
+    return false;
+}
+
+static void _dump_scene(wf::scene::node_ptr root, int depth = 0)
+{
+    using namespace wf::scene;
+
+    // root
+    // |-child
+    // | |-nested
+    // | | |-nested2
+    //
+
+    std::string node_line;
+    for (int i = 0; i < depth; i++)
+    {
+        node_line += "| ";
+    }
+
+    if (depth > 0)
+    {
+        node_line.back() = '-';
+    }
+
+    if (dynamic_cast<root_node_t*>(root.get()))
+    {
+        node_line += "root";
+    } else if (get_layer_index(root) >= 0)
+    {
+        int idx = get_layer_index(root);
+
+        static constexpr const char *layer_names[] = {
+            "background",
+            "bottom",
+            "workspace",
+            "top",
+            "unmanaged",
+            "overlay",
+            "dwidget"
+        };
+
+        static_assert((sizeof(layer_names) / sizeof(layer_names[0])) ==
+            (size_t)layer::ALL_LAYERS);
+        node_line += "layer_";
+        node_line += layer_names[idx];
+    } else if (auto node = dynamic_cast<output_node_t*>(root.get()))
+    {
+        node_line += "output";
+    } else if (is_static_output(root))
+    {
+        node_line += "static";
+    } else if (is_dynamic_output(root))
+    {
+        node_line += "dynamic";
+    } else if (auto inner = dynamic_cast<inner_node_t*>(root.get()))
+    {
+        node_line += "inner";
+    } else if (auto view_node = dynamic_cast<view_node_t*>(root.get()))
+    {
+        std::ostringstream out;
+        out << view_node->get_view();
+        node_line += out.str();
+    }
+
+    LOGD(node_line);
+    if (auto inner = dynamic_cast<inner_node_t*>(root.get()))
+    {
+        for (auto& ch : inner->get_children())
+        {
+            _dump_scene(ch, depth + 1);
+        }
+    }
+}
+
+void wf::dump_scene(scene::node_ptr root)
+{
+    _dump_scene(root);
+}

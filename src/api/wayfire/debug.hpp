@@ -7,6 +7,7 @@
 
 #define nonull(x) ((x) ? (x) : ("nil"))
 #include <wayfire/util/log.hpp>
+#include <wayfire/scene.hpp>
 #include <bitset>
 
 namespace wf
@@ -19,6 +20,11 @@ namespace wf
  *   information will be printed (for ex., line numbers may be missing).
  */
 void print_trace(bool fast_mode);
+
+/**
+ * Dump a scenegraph to the log.
+ */
+void dump_scene(scene::node_ptr root);
 }
 
 /* ------------------------ Logging categories -------------------------------*/
