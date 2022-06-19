@@ -13,6 +13,7 @@
 #include <algorithm>
 #include <glm/glm.hpp>
 #include "wayfire/signal-definitions.hpp"
+#include "../core/seat/input-manager.hpp"
 
 static void reposition_relative_to_parent(wayfire_view view)
 {
@@ -1339,7 +1340,8 @@ void wf::view_interface_t::destruct()
 std::optional<wf::scene::input_node_t> wf::scene::view_node_t::find_node_at(
     const wf::pointf_t& at)
 {
-    if (view->minimized || !view->is_visible())
+    if (view->minimized || !view->is_visible() ||
+        !wf::get_core_impl().input->can_focus_surface(view.get()))
     {
         return {};
     }

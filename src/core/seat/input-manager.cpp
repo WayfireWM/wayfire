@@ -251,32 +251,13 @@ bool wf::input_manager_t::can_focus_surface(wf::surface_interface_t *surface)
 wf::surface_interface_t*wf::input_manager_t::input_surface_at(
     wf::pointf_t global, wf::pointf_t& local)
 {
-    auto output = wf::get_core().output_layout->get_output_coords_at(global, global);
-    /* If the output at these coordinates was just destroyed or some other edge case
-     * */
-    if (!output)
-    {
-        return nullptr;
-    }
+    const auto& scene = wf::get_core().scene();
+    auto isec = scene->find_node_at(global);
 
-    auto og = output->get_layout_geometry();
-    global.x -= og.x;
-    global.y -= og.y;
-
-    for (auto& v : output->workspace->get_views_in_layer(wf::VISIBLE_LAYERS))
+    if (isec.has_value())
     {
-        for (auto& view : v->enumerate_views())
-        {
-            if (!view->minimized && view->is_visible() &&
-                can_focus_surface(view.get()))
-            {
-                auto surface = view->map_input_coordinates(global, local);
-                if (surface)
-                {
-                    return surface;
-                }
-            }
-        }
+        local = isec.value().local_coords;
+        return isec.value().surface;
     }
 
     return nullptr;
