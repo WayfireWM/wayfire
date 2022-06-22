@@ -133,13 +133,14 @@ class output_layer_manager_t
         }
     }
 
-    std::shared_ptr<scene::output_node_t> nodes[TOTAL_LAYERS];
+    // A flat representation of the view stack order
+    std::vector<wayfire_view> view_list;
 
     // A hierarchical representation of the view stack order
     layer_container_t layers[TOTAL_LAYERS];
 
-    // A flat representation of the view stack order
-    std::vector<wayfire_view> view_list;
+  public:
+    std::shared_ptr<scene::output_node_t> nodes[TOTAL_LAYERS];
 
   public:
     output_layer_manager_t()
@@ -936,6 +937,30 @@ class output_workarea_manager_t
     }
 };
 
+namespace scene
+{
+class copy_node_t final : public node_t
+{
+    node_ptr shadow;
+
+  public:
+    copy_node_t(const node_ptr& copy) : node_t(false)
+    {
+        this->shadow = copy;
+    }
+
+    std::optional<input_node_t> find_node_at(const wf::pointf_t& at) override
+    {
+        return shadow->find_node_at(at);
+    }
+
+    iteration visit(visitor_t *visitor) override
+    {
+        return visitor->generic_node(this);
+    }
+};
+}
+
 class workspace_manager::impl
 {
     wf::output_t *output;
@@ -1086,6 +1111,9 @@ class workspace_manager::impl
         for (auto& view : already_promoted)
         {
             view->view_impl->is_promoted = false;
+            scene::remove_child(
+                layer_manager.nodes[(size_t)scene::layer::TOP]->dynamic,
+                view->view_impl->promoted_copy_node);
         }
 
         auto views = viewport_manager.get_views_on_workspace(
@@ -1101,7 +1129,18 @@ class workspace_manager::impl
 
         if (!views.empty() && views.front()->fullscreen)
         {
-            views.front()->view_impl->is_promoted = true;
+            auto& fr = views.front();
+            fr->view_impl->is_promoted = true;
+
+            if (!fr->view_impl->promoted_copy_node)
+            {
+                fr->view_impl->promoted_copy_node =
+                    std::make_shared<scene::copy_node_t>(fr->get_scene_node());
+            }
+
+            scene::add_front(
+                layer_manager.nodes[(size_t)scene::layer::TOP]->dynamic,
+                fr->view_impl->promoted_copy_node);
         }
 
         layer_manager.rebuild_stack_order();

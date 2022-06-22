@@ -85,6 +85,7 @@ class view_interface_t::view_priv_impl
     bool is_promoted = false;
 
     scene::floating_inner_ptr scene_node;
+    scene::node_ptr promoted_copy_node;
 
   private:
     /** Last geometry the view has had in non-tiled and non-fullscreen state.
