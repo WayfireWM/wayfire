@@ -14,6 +14,7 @@
 #include <glm/glm.hpp>
 #include "wayfire/signal-definitions.hpp"
 #include "../core/seat/input-manager.hpp"
+#include <wayfire/scene-operations.hpp>
 
 static void reposition_relative_to_parent(wayfire_view view)
 {
@@ -67,6 +68,8 @@ static void unset_toplevel_parent(wayfire_view view)
         auto& container = view->parent->children;
         auto it = std::remove(container.begin(), container.end(), view);
         container.erase(it, container.end());
+        wf::scene::remove_child(view->parent->get_scene_node(),
+            view->get_scene_node());
     }
 }
 
@@ -129,6 +132,7 @@ void wf::view_interface_t::set_toplevel_parent(wayfire_view new_parent)
             reposition_relative_to_parent(self());
         }
 
+        wf::scene::add_front(parent->get_scene_node(), this->get_scene_node());
         check_refocus_parent(parent);
     } else if (old_parent)
     {
