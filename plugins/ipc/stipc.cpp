@@ -89,10 +89,14 @@ class headless_input_backend_t
         auto& core = wf::get_core();
         backend = wlr_headless_backend_create(core.display);
         wlr_multi_backend_add(core.backend, backend);
-        wlr_backend_start(backend);
 
         pointer  = wlr_headless_add_input_device(backend, WLR_INPUT_DEVICE_POINTER);
         keyboard = wlr_headless_add_input_device(backend, WLR_INPUT_DEVICE_KEYBOARD);
+
+        if (core.get_current_state() == compositor_state_t::RUNNING)
+        {
+            wlr_backend_start(backend);
+        }
     }
 
     ~headless_input_backend_t()
