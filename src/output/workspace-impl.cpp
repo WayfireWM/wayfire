@@ -604,8 +604,8 @@ class output_viewport_manager_t
 
         auto wm = view->transform_region(view->get_wm_geometry());
         wf::point_t workspace = {
-            (int)std::floor((wm.x + wm.width / 2.0) / og.width),
-            (int)std::floor((wm.y + wm.height / 2.0) / og.height)
+            current_vx + (int)std::floor((wm.x + wm.width / 2.0) / og.width),
+            current_vy + (int)std::floor((wm.y + wm.height / 2.0) / og.height)
         };
 
         return closest_valid_ws(workspace);
