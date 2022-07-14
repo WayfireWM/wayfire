@@ -643,18 +643,22 @@ class wayfire_scale : public wf::plugin_interface_t
         switch (key)
         {
           case KEY_UP:
+          case KEY_K:
             next_row--;
             break;
 
           case KEY_DOWN:
+          case KEY_J:
             next_row++;
             break;
 
           case KEY_LEFT:
+          case KEY_H:
             next_col--;
             break;
 
           case KEY_RIGHT:
+          case KEY_L:
             next_col++;
             break;
 
