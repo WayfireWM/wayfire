@@ -17,6 +17,11 @@ node_t::node_t(bool is_structure)
     this->_is_structure = is_structure;
 }
 
+void node_t::set_enabled(bool is_active)
+{
+    enabled_counter += (is_active ? 1 : -1);
+}
+
 inner_node_t::inner_node_t(bool _is_structure) : node_t(_is_structure)
 {}
 
@@ -47,6 +52,11 @@ iteration inner_node_t::visit(visitor_t *visitor)
         // Go through all children and see what they want
         for (auto& ch : get_children())
         {
+            if (ch->flags() & (int)node_flags::DISABLED)
+            {
+                continue;
+            }
+
             if (ch->visit(visitor) == iteration::STOP)
             {
                 return iteration::STOP;
@@ -54,7 +64,6 @@ iteration inner_node_t::visit(visitor_t *visitor)
         }
 
       // fallthrough
-
       case iteration::SKIP_CHILDREN:
         return iteration::ALL;
     }
