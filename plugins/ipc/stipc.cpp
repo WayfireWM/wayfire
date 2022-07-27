@@ -5,6 +5,9 @@
 #include <wayfire/output-layout.hpp>
 #include <getopt.h>
 
+#define WAYFIRE_PLUGIN
+#include <wayfire/debug.hpp>
+
 #include "ipc.hpp"
 
 extern "C" {
@@ -20,6 +23,16 @@ extern "C" {
 
 #include <wayfire/util/log.hpp>
 #include <wayfire/core.hpp>
+
+#define EXPECT_FIELD(data, field, type) \
+    if (!data.count(field)) \
+    { \
+        return get_error("Missing \"" field "\""); \
+    } \
+    else if (!data[field].is_ ## type()) \
+    { \
+        return get_error("Field \"" field "\" does not have the correct type " #type); \
+    }
 
 static void locate_wayland_backend(wlr_backend *backend, void *data)
 {
@@ -182,6 +195,7 @@ class ipc_plugin_t
         server->register_method("core/run", run);
         server->register_method("core/ping", ping);
         server->register_method("core/get_display", get_display);
+        server->register_method("core/layout_views", layout_views);
     }
 
     using method_t = ipc::server_t::method_cb;
@@ -193,8 +207,9 @@ class ipc_plugin_t
         for (auto& view : wf::get_core().get_all_views())
         {
             nlohmann::json v;
-            v["title"]    = view->get_title();
-            v["app-id"]   = view->get_app_id();
+            v["id"]     = view->get_id();
+            v["title"]  = view->get_title();
+            v["app-id"] = view->get_app_id();
             v["geometry"] = geometry_to_json(view->get_wm_geometry());
             v["base-geometry"] = geometry_to_json(view->get_output_geometry());
             v["state"] = {
@@ -215,6 +230,36 @@ class ipc_plugin_t
         }
 
         return response;
+    };
+
+    method_t layout_views = [] (nlohmann::json data)
+    {
+        auto views = wf::get_core().get_all_views();
+        EXPECT_FIELD(data, "views", array);
+        for (auto v : data["views"])
+        {
+            EXPECT_FIELD(v, "id", number);
+            EXPECT_FIELD(v, "x", number);
+            EXPECT_FIELD(v, "y", number);
+            EXPECT_FIELD(v, "width", number);
+            EXPECT_FIELD(v, "height", number);
+
+            auto it = std::find_if(views.begin(), views.end(), [&] (auto& view)
+            {
+                return view->get_id() == v["id"];
+            });
+
+            if (it == views.end())
+            {
+                return get_error("Could not find view with id " +
+                    std::to_string((int)v["id"]));
+            }
+
+            wf::geometry_t g{v["x"], v["y"], v["width"], v["height"]};
+            (*it)->set_geometry(g);
+        }
+
+        return get_ok();
     };
 
     method_t create_wayland_output = [] (nlohmann::json)
