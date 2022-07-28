@@ -233,7 +233,6 @@ void wf::ipc::client_t::handle_fd_activity(uint32_t event_mask)
 
         const int next_target = HEADER_LEN + len;
         int r = read_up_to(next_target, &available);
-        LOGE("We got ", r);
         if (r < 0)
         {
             ipc->client_disappeared(this);
