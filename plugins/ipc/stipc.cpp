@@ -255,6 +255,18 @@ class ipc_plugin_t
                     std::to_string((int)v["id"]));
             }
 
+            if (v.contains("output"))
+            {
+                EXPECT_FIELD(v, "output", string);
+                auto wo = wf::get_core().output_layout->find_output(v["output"]);
+                if (!wo)
+                {
+                    return get_error("Unknown output " + (std::string)v["output"]);
+                }
+
+                wf::get_core().move_view_to_output(*it, wo, false);
+            }
+
             wf::geometry_t g{v["x"], v["y"], v["width"], v["height"]};
             (*it)->set_geometry(g);
         }
