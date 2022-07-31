@@ -10,3 +10,6 @@
 [submodule "subprojects/wf-touch"]
 	path = subprojects/wf-touch
 	url = https://github.com/WayfireWM/wf-touch
+[submodule "subprojects/thread-pool"]
+	path = subprojects/thread-pool
+	url = https://github.com/bshoshany/thread-pool

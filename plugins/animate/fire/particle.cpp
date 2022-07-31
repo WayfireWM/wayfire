@@ -59,16 +59,22 @@ ParticleSystem::~ParticleSystem()
 
 int ParticleSystem::spawn(int num)
 {
-    // TODO: multithread this
-    int spawned = 0;
+    std::atomic<int> spawned(0);
+    std::vector<std::future<void>> pwait;
     for (size_t i = 0; i < ps.size() && spawned < num; i++)
     {
         if (ps[i].life <= 0)
         {
-            pinit_func(ps[i]);
-            ++spawned;
-            ++particles_alive;
+            pwait.push_back(wf::get_core().submit_task([&, i=i](void *_){
+                pinit_func(ps[i]);
+                ++spawned;
+                ++particles_alive;
+            }, nullptr));
         }
+    }
+    for(auto &pfuture : pwait)
+    {
+        pfuture.get();
     }
 
     return spawned;
@@ -81,13 +87,20 @@ void ParticleSystem::resize(int num)
         return;
     }
 
-    // TODO: multithread this
-    for (int i = num; i < (int)ps.size(); i++)
+    std::vector<std::future<void>> pwait;
+    for (size_t i = num; i < ps.size(); i++)
     {
-        if (ps[i].life >= 0)
-        {
-            --particles_alive;
-        }
+        pwait.push_back(wf::get_core().submit_task([&, i=i](void *_){
+            if (ps[i].life >= 0)
+            {
+                --particles_alive;
+            }
+        }, nullptr));
+    }
+
+    for (auto &pfuture : pwait)
+    {
+        pfuture.get();
     }
 
     ps.resize(num);

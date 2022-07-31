@@ -30,6 +30,7 @@
 #include "main.hpp"
 
 #include "core-impl.hpp"
+#include "thread-pool.hpp"
 
 /* decorations impl */
 struct wf_server_decoration_t
@@ -306,6 +307,8 @@ void wf::compositor_core_impl_t::init()
 
     init_last_view_tracking();
     this->state = compositor_state_t::START_BACKEND;
+
+    this->pool = std::make_unique<thread_pool>();
 }
 
 void wf::compositor_core_impl_t::init_last_view_tracking()
@@ -870,6 +873,11 @@ void wf::compositor_core_impl_t::move_view_to_output(wayfire_view v,
     }
 
     this->emit_signal("view-moved-to-output", &data);
+}
+
+std::future<void> wf::compositor_core_impl_t::submit_task(std::function<void(void *)> task, void *args)
+{
+  return this->pool->submit_task(task, args);
 }
 
 wf::compositor_core_t::compositor_core_t()

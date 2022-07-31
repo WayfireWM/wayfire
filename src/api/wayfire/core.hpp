@@ -7,6 +7,8 @@
 #include <wayfire/config-backend.hpp>
 
 #include <sys/types.h>
+#include <functional>
+#include <future>
 #include <limits>
 #include <vector>
 #include <wayfire/nonstd/observer_ptr.h>
@@ -353,6 +355,15 @@ class compositor_core_t : public wf::object_base_t
      * @return The current state of the compositor.
      */
     virtual compositor_state_t get_current_state() = 0;
+
+    /**
+     * Submit a task to the thread-pool.
+     *
+     * @param task The function to submit.
+     * @param args The arguments to pass to the function.
+     * @return A future to wait on for the function to finish executing.
+     */
+    virtual std::future<void> submit_task(std::function<void(void *)> task, void *args) = 0;
 
     /**
      * Shut down the whole compositor.

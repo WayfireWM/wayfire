@@ -5,6 +5,8 @@
 #include "wayfire/util.hpp"
 #include <wayfire/nonstd/wlroots-full.hpp>
 
+#include <functional>
+#include <future>
 #include <set>
 #include <unordered_map>
 
@@ -16,6 +18,7 @@ namespace wf
 class seat_t;
 class input_manager_t;
 class input_method_relay;
+class thread_pool;
 class compositor_core_impl_t : public compositor_core_t
 {
   public:
@@ -102,6 +105,7 @@ class compositor_core_impl_t : public compositor_core_t
     pid_t run(std::string command) override;
     void shutdown() override;
     compositor_state_t get_current_state() override;
+    std::future<void> submit_task(std::function<void(void *)> task, void *args) override;
 
   protected:
     wf::wl_listener_wrapper decoration_created;
@@ -134,6 +138,8 @@ class compositor_core_impl_t : public compositor_core_t
     wf::signal_connection_t on_new_output;
 
     compositor_state_t state = compositor_state_t::UNKNOWN;
+
+    std::unique_ptr<thread_pool> pool;
 
     compositor_core_impl_t();
     virtual ~compositor_core_impl_t();
