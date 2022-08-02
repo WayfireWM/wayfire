@@ -142,15 +142,14 @@ class headless_input_backend_t
 
     void do_motion(double x, double y)
     {
-        auto layout = wf::get_core().output_layout->get_handle();
-        auto box    = wlr_output_layout_get_box(layout, NULL);
+        auto cursor = wf::get_core().get_cursor_position();
 
-        wlr_event_pointer_motion_absolute ev;
+        wlr_event_pointer_motion ev;
         ev.device    = pointer;
         ev.time_msec = get_current_time();
-        ev.x = 1.0 * (x - box->x) / box->width;
-        ev.y = 1.0 * (y - box->y) / box->height;
-        wl_signal_emit(&pointer->pointer->events.motion_absolute, &ev);
+        ev.delta_x   = ev.unaccel_dx = x - cursor.x;
+        ev.delta_y   = ev.unaccel_dy = y - cursor.y;
+        wl_signal_emit(&pointer->pointer->events.motion, &ev);
         wl_signal_emit(&pointer->pointer->events.frame, NULL);
     }
 
