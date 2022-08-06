@@ -13,6 +13,9 @@
 struct wf_gtk_shell
 {
     std::map<wl_resource*, std::string> surface_app_id;
+    std::map<wl_resource*, std::string> surface_app_menu_path;
+    std::map<wl_resource*, std::string> surface_menubar_path;
+    std::map<wl_resource*, std::string> surface_dbus_name;
 };
 
 struct wf_gtk_surface
@@ -39,6 +42,21 @@ static void handle_gtk_surface_set_dbus_properties(wl_client *client,
     {
         wf::get_core_impl().gtk_shell->surface_app_id[surface->wl_surface] =
             application_id;
+    }
+    if (app_menu_path)
+    {
+        wf::get_core_impl().gtk_shell->surface_app_menu_path[surface->wl_surface] =
+            app_menu_path;
+    }
+    if (menubar_path)
+    {
+        wf::get_core_impl().gtk_shell->surface_menubar_path[surface->wl_surface] =
+            menubar_path;
+    }
+    if (unique_bus_name)
+    {
+        wf::get_core_impl().gtk_shell->surface_dbus_name[surface->wl_surface] =
+            unique_bus_name;
     }
 }
 
@@ -386,4 +404,55 @@ std::string get_gtk_shell_app_id(wayfire_view view)
 
     return wf_gtk_shell_get_custom_app_id(
         wf::get_core_impl().gtk_shell, surface->resource);
+}
+
+std::string get_gtk_shell_app_menu_path(wayfire_view view)
+{
+    if (!view)
+    {
+        return nullptr;
+    }
+
+    auto surface = view->get_wlr_surface();
+
+    if (!surface)
+    {
+        return nullptr;
+    }
+
+    return wf::get_core_impl().gtk_shell->surface_app_menu_path[surface->resource];
+}
+
+std::string get_gtk_shell_menubar_path(wayfire_view view)
+{
+    if (!view)
+    {
+        return nullptr;
+    }
+
+    auto surface = view->get_wlr_surface();
+
+    if (!surface)
+    {
+        return nullptr;
+    }
+
+    return wf::get_core_impl().gtk_shell->surface_menubar_path[surface->resource];
+}
+
+std::string get_gtk_shell_dbus_name(wayfire_view view)
+{
+    if (!view)
+    {
+        return nullptr;
+    }
+
+    auto surface = view->get_wlr_surface();
+
+    if (!surface)
+    {
+        return nullptr;
+    }
+
+    return wf::get_core_impl().gtk_shell->surface_dbus_name[surface->resource];
 }
