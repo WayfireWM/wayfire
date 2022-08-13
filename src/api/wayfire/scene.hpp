@@ -147,6 +147,13 @@ class node_t : public std::enable_shared_from_this<node_t>
     virtual iteration visit(visitor_t *visitor) = 0;
 
     /**
+     * Get a textual representation of the node, used for debugging purposes.
+     * For example, see wf::dump_scene().
+     * The representation should therefore not contain any newline characters.
+     */
+    virtual std::string stringify() const;
+
+    /**
      * Get the current flags of the node.
      */
     virtual int flags() const
@@ -203,6 +210,10 @@ class node_t : public std::enable_shared_from_this<node_t>
     int enabled_counter   = 1;
     inner_node_t *_parent = nullptr;
     friend class inner_node_t;
+
+    // A helper functions for stringify() implementations, serializes the flags()
+    // to a string, e.g. node with KEYBOARD and USER_INPUT -> '(ku)'
+    std::string stringify_flags() const;
 };
 
 /**
@@ -215,6 +226,7 @@ class inner_node_t : public node_t
 
     iteration visit(visitor_t *visitor) override;
     std::optional<input_node_t> find_node_at(const wf::pointf_t& at) override;
+    std::string stringify() const override;
 
     /**
      * Obtain an immutable list of the node's children.
@@ -272,6 +284,7 @@ class output_node_t final : public inner_node_t
 {
   public:
     output_node_t();
+    std::string stringify() const override;
 
     /**
      * A container for the static child nodes.
@@ -314,6 +327,7 @@ class root_node_t final : public inner_node_t
   public:
     root_node_t();
     virtual ~root_node_t();
+    std::string stringify() const override;
 
     /**
      * An ordered list of all layers' nodes.

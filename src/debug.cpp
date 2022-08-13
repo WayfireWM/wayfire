@@ -11,6 +11,7 @@
 #include <cstdio>
 #include <dlfcn.h>
 #include <sys/stat.h>
+#include <iostream>
 
 #define MAX_FRAMES 256
 #define MAX_FUNCTION_NAME 1024
@@ -316,41 +317,16 @@ std::ostream& wf::operator <<(std::ostream& out, wayfire_view view)
 
 std::bitset<(size_t)wf::log::logging_category::TOTAL> wf::log::enabled_categories;
 
-static int get_layer_index(wf::scene::node_ptr node)
+#define CLEAR_COLOR "\033[0m"
+#define GREY_COLOR "\033[30;1m"
+#define GREEN_COLOR "\033[32;1m"
+#define YELLOW_COLOR "\033[33;1m"
+#define MAGENTA_COLOR "\033[35;1m"
+
+template<class... Args>
+static void color_debug_log(const char *color, Args... args)
 {
-    using namespace wf::scene;
-    if (auto root = dynamic_cast<root_node_t*>(node->parent()))
-    {
-        for (int layer = 0; layer < (int)layer::ALL_LAYERS; layer++)
-        {
-            if (root->layers[layer] == node)
-            {
-                return layer;
-            }
-        }
-    }
-
-    return -1;
-}
-
-static bool is_dynamic_output(wf::scene::node_ptr node)
-{
-    if (auto output = dynamic_cast<wf::scene::output_node_t*>(node->parent()))
-    {
-        return node == output->dynamic;
-    }
-
-    return false;
-}
-
-static bool is_static_output(wf::scene::node_ptr node)
-{
-    if (auto output = dynamic_cast<wf::scene::output_node_t*>(node->parent()))
-    {
-        return node == output->_static;
-    }
-
-    return false;
+    LOGD(color, args..., CLEAR_COLOR);
 }
 
 static void _dump_scene(wf::scene::node_ptr root, int depth = 0)
@@ -362,7 +338,6 @@ static void _dump_scene(wf::scene::node_ptr root, int depth = 0)
     // | |-nested
     // | | |-nested2
     //
-
     std::string node_line;
     for (int i = 0; i < depth; i++)
     {
@@ -374,47 +349,17 @@ static void _dump_scene(wf::scene::node_ptr root, int depth = 0)
         node_line.back() = '-';
     }
 
-    if (dynamic_cast<root_node_t*>(root.get()))
-    {
-        node_line += "root";
-    } else if (get_layer_index(root) >= 0)
-    {
-        int idx = get_layer_index(root);
+    node_line += root->stringify();
 
-        static constexpr const char *layer_names[] = {
-            "background",
-            "bottom",
-            "workspace",
-            "top",
-            "unmanaged",
-            "overlay",
-            "dwidget"
-        };
-
-        static_assert((sizeof(layer_names) / sizeof(layer_names[0])) ==
-            (size_t)layer::ALL_LAYERS);
-        node_line += "layer_";
-        node_line += layer_names[idx];
-    } else if (auto node = dynamic_cast<output_node_t*>(root.get()))
+    const int greyed_flags = (int)node_flags::DISABLED;
+    if (root->flags() & greyed_flags)
     {
-        node_line += "output";
-    } else if (is_static_output(root))
+        color_debug_log(GREY_COLOR, node_line);
+    } else
     {
-        node_line += "static";
-    } else if (is_dynamic_output(root))
-    {
-        node_line += "dynamic";
-    } else if (auto inner = dynamic_cast<inner_node_t*>(root.get()))
-    {
-        node_line += "inner";
-    } else if (auto view_node = dynamic_cast<view_node_t*>(root.get()))
-    {
-        std::ostringstream out;
-        out << view_node->get_view();
-        node_line += out.str();
+        color_debug_log(CLEAR_COLOR, node_line);
     }
 
-    LOGD(node_line);
     if (auto inner = dynamic_cast<inner_node_t*>(root.get()))
     {
         for (auto& ch : inner->get_children())

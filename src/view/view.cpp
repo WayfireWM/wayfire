@@ -1451,6 +1451,13 @@ const
     return view_impl->main_node;
 }
 
+std::string wf::scene::view_node_t::stringify() const
+{
+    std::ostringstream out;
+    out << this->view;
+    return out.str() + " " + stringify_flags();
+}
+
 wf::scene::iteration wf::scene::view_node_t::visit(visitor_t *visitor)
 {
     visitor->view_node(this);

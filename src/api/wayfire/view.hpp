@@ -589,6 +589,7 @@ class view_node_t final : public scene::node_t
 
     iteration visit(visitor_t *visitor) final;
     std::optional<input_node_t> find_node_at(const wf::pointf_t& at) final;
+    std::string stringify() const override;
 
     wayfire_view get_view() const
     {

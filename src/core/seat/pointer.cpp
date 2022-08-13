@@ -4,6 +4,8 @@
 #include "input-manager.hpp"
 #include "wayfire/signal-definitions.hpp"
 
+#include "../scene-priv.hpp"
+#include <wayfire/debug.hpp>
 #include <wayfire/util/log.hpp>
 #include <wayfire/core.hpp>
 #include <wayfire/output-layout.hpp>
