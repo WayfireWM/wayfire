@@ -597,10 +597,12 @@ class view_node_t final : public scene::node_t
     }
 
     keyboard_interaction_t& keyboard_interaction() final;
+    pointer_interaction_t& pointer_interaction() final;
 
   private:
     wayfire_view view;
     std::unique_ptr<keyboard_interaction_t> kb_interaction;
+    std::unique_ptr<pointer_interaction_t> ptr_interaction;
 };
 }
 }

@@ -172,6 +172,12 @@ class node_t : public std::enable_shared_from_this<node_t>
         return noop;
     }
 
+    virtual pointer_interaction_t& pointer_interaction()
+    {
+        static pointer_interaction_t noop;
+        return noop;
+    }
+
     /**
      * Structure nodes are special nodes which core usually creates when Wayfire
      * is started (e.g. layer and output nodes). These nodes should not be
@@ -188,6 +194,14 @@ class node_t : public std::enable_shared_from_this<node_t>
     inner_node_t *parent() const
     {
         return this->_parent;
+    }
+
+    /**
+     * A helper function to get the status of the DISABLED flag.
+     */
+    inline bool is_disabled() const
+    {
+        return flags() & (int)node_flags::DISABLED;
     }
 
     /**

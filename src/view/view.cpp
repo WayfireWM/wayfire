@@ -9,12 +9,11 @@
 #include "wayfire/render-manager.hpp"
 #include "xdg-shell.hpp"
 #include "../output/gtk-shell.hpp"
-#include <wayfire/debug.hpp>
+#include "../core/seat/input-manager.hpp"
 
 #include <algorithm>
 #include <glm/glm.hpp>
 #include "wayfire/signal-definitions.hpp"
-#include "../core/seat/input-manager.hpp"
 #include <wayfire/scene-operations.hpp>
 
 static void reposition_relative_to_parent(wayfire_view view)
@@ -1342,104 +1341,6 @@ void wf::view_interface_t::destruct()
     wf::get_core_impl().erase_view(self());
 }
 
-std::optional<wf::scene::input_node_t> wf::scene::view_node_t::find_node_at(
-    const wf::pointf_t& at)
-{
-    if (view->minimized || !view->is_visible() ||
-        !wf::get_core_impl().input->can_focus_surface(view.get()))
-    {
-        return {};
-    }
-
-    wf::pointf_t local_coordinates = at;
-
-    // First, translate to the view's output
-    if (view->get_output())
-    {
-        auto offset = wf::origin(view->get_output()->get_layout_geometry());
-        local_coordinates.x -= offset.x;
-        local_coordinates.y -= offset.y;
-    }
-
-    input_node_t result;
-    result.surface =
-        view->map_input_coordinates(local_coordinates, result.local_coords);
-
-    if (result.surface)
-    {
-        result.node = this;
-        return result;
-    }
-
-    // Empty std::optional => No intersection
-    return {};
-}
-
-/**
- * An interface for scene nodes which interact with the keyboard.
- */
-class view_keyboard_interaction_t : public wf::keyboard_interaction_t
-{
-    wayfire_view view;
-
-  public:
-    view_keyboard_interaction_t(wayfire_view _view)
-    {
-        this->view = _view;
-    }
-
-    void handle_keyboard_enter() override
-    {
-        auto iv = interactive_view_from_view(view.get());
-        if (iv)
-        {
-            iv->handle_keyboard_enter();
-        } else if (view->get_wlr_surface())
-        {
-            auto seat = wf::get_core().get_current_seat();
-            auto kbd  = wlr_seat_get_keyboard(seat);
-            wlr_seat_keyboard_notify_enter(seat,
-                view->get_wlr_surface(),
-                kbd ? kbd->keycodes : NULL,
-                kbd ? kbd->num_keycodes : 0,
-                kbd ? &kbd->modifiers : NULL);
-        }
-    }
-
-    void handle_keyboard_leave() override
-    {
-        auto oiv = interactive_view_from_view(view.get());
-        if (oiv)
-        {
-            oiv->handle_keyboard_leave();
-        } else if (view->get_wlr_surface())
-        {
-            auto seat = wf::get_core().get_current_seat();
-            wlr_seat_keyboard_notify_clear_focus(seat);
-        }
-    }
-
-    wf::keyboard_action handle_keyboard_key(wlr_event_keyboard_key event) override
-    {
-        auto iv = interactive_view_from_view(view.get());
-        if (iv)
-        {
-            iv->handle_key(event.keycode, event.state);
-        }
-
-        auto seat = wf::get_core().get_current_seat();
-        wlr_seat_keyboard_notify_key(seat,
-            event.time_msec, event.keycode, event.state);
-
-        return wf::keyboard_action::CONSUME;
-    }
-};
-
-wf::scene::view_node_t::view_node_t(wayfire_view _view) : node_t(false), view(_view)
-{
-    this->kb_interaction = std::make_unique<view_keyboard_interaction_t>(view);
-}
-
 const wf::scene::floating_inner_ptr& wf::view_interface_t::get_scene_node() const
 {
     return view_impl->scene_node;
@@ -1451,20 +1352,5 @@ const
     return view_impl->main_node;
 }
 
-std::string wf::scene::view_node_t::stringify() const
-{
-    std::ostringstream out;
-    out << this->view;
-    return out.str() + " " + stringify_flags();
-}
-
-wf::scene::iteration wf::scene::view_node_t::visit(visitor_t *visitor)
-{
-    visitor->view_node(this);
-    return iteration::SKIP_CHILDREN;
-}
-
-wf::keyboard_interaction_t& wf::scene::view_node_t::keyboard_interaction()
-{
-    return *kb_interaction;
-}
+// FIXME: Consider splitting to header + source file
+#include "view-node.cpp"

@@ -132,27 +132,12 @@ struct wf_pointer_constraint
 
     wf_pointer_constraint(wlr_pointer_constraint_v1 *constraint)
     {
-        on_destroy.set_callback([=] (void*)
-        {
-            // reset constraint
-            auto& lpointer = wf::get_core_impl().seat->lpointer;
-            if (lpointer->get_active_pointer_constraint() == constraint)
-            {
-                lpointer->set_pointer_constraint(nullptr, true);
-            }
-
-            on_destroy.disconnect();
-            delete this;
-        });
-
-        on_destroy.connect(&constraint->events.destroy);
-
         // set correct constraint
         auto& lpointer = wf::get_core_impl().seat->lpointer;
         auto focus     = lpointer->get_focus();
-        if (focus && (focus->priv->wsurface == constraint->surface))
+        if (focus)
         {
-            lpointer->set_pointer_constraint(constraint);
+            lpointer->update_cursor_position(wf::get_current_time(), false);
         }
     }
 };
@@ -429,7 +414,7 @@ const wf::touch::gesture_state_t& wf::compositor_core_impl_t::get_touch_state()
     return seat->touch->get_state();
 }
 
-wf::surface_interface_t*wf::compositor_core_impl_t::get_cursor_focus()
+wf::scene::node_ptr wf::compositor_core_impl_t::get_cursor_focus()
 {
     return seat->lpointer->get_focus();
 }
@@ -437,10 +422,8 @@ wf::surface_interface_t*wf::compositor_core_impl_t::get_cursor_focus()
 wayfire_view wf::compositor_core_t::get_cursor_focus_view()
 {
     auto focus = get_cursor_focus();
-    auto view  = dynamic_cast<wf::view_interface_t*>(
-        focus ? focus->get_main_surface() : nullptr);
-
-    return view ? view->self() : nullptr;
+    auto view  = dynamic_cast<scene::view_node_t*>(focus.get());
+    return view ? view->get_view() : nullptr;
 }
 
 wf::surface_interface_t*wf::compositor_core_impl_t::get_surface_at(

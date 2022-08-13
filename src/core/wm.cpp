@@ -71,6 +71,17 @@ void wayfire_close::fini()
     output->rem_binding(&callback);
 }
 
+static wayfire_view view_from_surface(wf::surface_interface_t *surface)
+{
+    if (surface)
+    {
+        return dynamic_cast<wf::view_interface_t*>(surface->get_main_surface())
+               ->self();
+    }
+
+    return nullptr;
+}
+
 void wayfire_focus::init()
 {
     grab_interface->name = "_wf_focus";
@@ -79,7 +90,7 @@ void wayfire_focus::init()
     on_wm_focus_request.set_callback([=] (wf::signal_data_t *data)
     {
         auto ev = static_cast<wm_focus_request*>(data);
-        check_focus_surface(ev->surface);
+        check_focus_surface(view_from_surface(ev->surface));
     });
     output->connect_signal("wm-focus-request", &on_wm_focus_request);
 
@@ -102,7 +113,7 @@ void wayfire_focus::init()
         }
 
         bool changed_focus =
-            this->check_focus_surface(wf::get_core().get_cursor_focus());
+            this->check_focus_surface(wf::get_core().get_cursor_focus_view());
 
         bool pass_through = (pass_btns || !changed_focus);
         ev->mode = pass_through ? wf::input_event_processing_mode_t::FULL :
@@ -118,7 +129,7 @@ void wayfire_focus::init()
     {
         if (wf::get_core().get_active_output() == this->output)
         {
-            this->check_focus_surface(wf::get_core().get_touch_focus());
+            this->check_focus_surface(wf::get_core().get_touch_focus_view());
         }
     };
 
@@ -127,12 +138,8 @@ void wayfire_focus::init()
     wf::get_core().add_touch_gesture(tap_gesture);
 }
 
-bool wayfire_focus::check_focus_surface(wf::surface_interface_t *focus)
+bool wayfire_focus::check_focus_surface(wayfire_view view)
 {
-    /* Find the main view */
-    auto main_surface = focus ? focus->get_main_surface() : nullptr;
-    auto view = dynamic_cast<wf::view_interface_t*>(main_surface);
-
     if (!view || !view->is_mapped() ||
         !output->can_activate_plugin(grab_interface->capabilities))
     {

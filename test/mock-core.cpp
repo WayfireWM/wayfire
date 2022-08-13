@@ -65,7 +65,7 @@ const wf::touch::gesture_state_t& mock_core_t::get_touch_state()
     return ::state;
 }
 
-wf::surface_interface_t*mock_core_t::get_cursor_focus()
+wf::scene::node_ptr mock_core_t::get_cursor_focus()
 {
     return nullptr;
 }

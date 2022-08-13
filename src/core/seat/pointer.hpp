@@ -40,29 +40,7 @@ class pointer_t
     void set_enable_focus(bool enabled = true);
 
     /** Get the currenntlly set cursor focus */
-    wf::surface_interface_t *get_focus() const;
-
-    /**
-     * Set the active pointer constraint
-     *
-     * @param last_destroyed In case a constraint is destroyed, the constraint
-     * should be set to NULL, but this requires special handling, because not
-     * all operations are supported on destroyed constraints
-     */
-    void set_pointer_constraint(wlr_pointer_constraint_v1 *constraint,
-        bool last_destroyed = false);
-
-    /**
-     * Calculate the point inside the constraint region closest to the given
-     * point.
-     *
-     * @param point The point to be constrained inside the region.
-     * @return The closest point
-     */
-    wf::pointf_t constrain_point(wf::pointf_t point);
-
-    /** @return The currently active pointer constraint */
-    wlr_pointer_constraint_v1 *get_active_pointer_constraint();
+    wf::scene::node_ptr get_focus() const;
 
     /** Handle events coming from the input devices */
     void handle_pointer_axis(wlr_event_pointer_axis *ev,
@@ -96,6 +74,16 @@ class pointer_t
     /** Whether there are pressed buttons currently */
     bool has_pressed_buttons() const;
 
+    /**
+     * Handle an update of the cursor's position, which includes updating the
+     * surface currently under the pointer.
+     *
+     * @param time_msec The time when the event causing this update occurred
+     * @param real_update Whether the update is caused by a hardware event or
+     *                    was artificially generated.
+     */
+    void update_cursor_position(uint32_t time_msec, bool real_update = true);
+
   private:
     nonstd::observer_ptr<wf::input_manager_t> input;
     nonstd::observer_ptr<seat_t> seat;
@@ -110,48 +98,28 @@ class pointer_t
     wf::signal_connection_t on_views_updated;
 
     /** The surface which currently has cursor focus */
-    wf::surface_interface_t *cursor_focus = nullptr;
+    wf::scene::node_ptr cursor_focus = nullptr;
     /** Whether focusing is enabled */
     int focus_enabled_count = 1;
     bool focus_enabled() const;
 
     /**
      * Set the pointer focus.
-     *
-     * @param surface The surface which should receive focus
-     * @param local   The coordinates of the pointer relative to surface.
-     *                No meaning if the surface is nullptr
      */
-    void update_cursor_focus(wf::surface_interface_t *surface, wf::pointf_t local);
-
-    /**
-     * Handle an update of the cursor's position, which includes updating the
-     * surface currently under the pointer.
-     *
-     * @param time_msec The time when the event causing this update occurred
-     * @param real_update Whether the update is caused by a hardware event or
-     *                    was artificially generated.
-     */
-    void update_cursor_position(uint32_t time_msec, bool real_update = true);
+    void update_cursor_focus(wf::scene::node_ptr node);
 
     /** Number of currently-pressed mouse buttons */
     int count_pressed_buttons = 0;
-    wf::region_t constraint_region;
-    wlr_pointer_constraint_v1 *active_pointer_constraint = nullptr;
-
-    /** Figure out the global position of the given point.
-     * @param relative The point relative to the cursor focus */
-    wf::pointf_t get_absolute_position_from_relative(wf::pointf_t relative);
 
     /** Check whether an implicit grab should start/end */
     void check_implicit_grab();
 
-    /** Implicitly grabbed surface when a button is being held */
-    wf::surface_interface_t *grabbed_surface = nullptr;
+    /** Implicitly grabbed node when a button is being held */
+    wf::scene::node_ptr grabbed_node = nullptr;
 
-    /** Set the currently grabbed surface
-     * @param surface The surface to be grabbed, or nullptr to reset grab */
-    void grab_surface(wf::surface_interface_t *surface);
+    /** Set the currently grabbed node
+     * @param node The node to be grabbed, or nullptr to reset grab */
+    void grab_surface(wf::scene::node_ptr node);
 
     /** Send a button event to the currently active receiver, i.e to the
      * active input grab(if any), or to the focused surface */
@@ -160,11 +128,8 @@ class pointer_t
     /**
      * Send a motion event to the currently active receiver, i.e to the
      * active grab or the focused surface.
-     *
-     * @param local The coordinates of the cursor relative to the current
-     * focus
      */
-    void send_motion(uint32_t time_msec, wf::pointf_t local);
+    void send_motion(uint32_t time_msec);
 };
 }
 

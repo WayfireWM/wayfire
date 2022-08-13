@@ -5,6 +5,7 @@
 #include <wayfire/geometry.hpp>
 #include <wayfire/idle.hpp>
 #include <wayfire/config-backend.hpp>
+#include <wayfire/scene.hpp>
 
 #include <sys/types.h>
 #include <limits>
@@ -187,7 +188,7 @@ class compositor_core_t : public wf::object_base_t
     /**
      * @return The surface which has the cursor focus, or null if none.
      */
-    virtual wf::surface_interface_t *get_cursor_focus() = 0;
+    virtual wf::scene::node_ptr get_cursor_focus() = 0;
 
     /**
      * @return The surface which has touch focus, or null if none.

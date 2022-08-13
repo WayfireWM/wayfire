@@ -1288,7 +1288,9 @@ void workspace_manager::bring_to_front(wayfire_view view)
 
 void workspace_manager::remove_view(wayfire_view view)
 {
-    return pimpl->remove_view(view);
+    pimpl->remove_view(view);
+    // Trigger recomputation of the input state
+    wf::get_core().scene()->update();
 }
 
 uint32_t workspace_manager::get_view_layer(wayfire_view view)

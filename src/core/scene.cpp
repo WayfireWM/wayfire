@@ -225,6 +225,7 @@ root_node_t::root_node_t() : inner_node_t(true)
 {
     std::vector<node_ptr> children;
 
+    this->priv = std::make_unique<root_node_t::priv_t>();
     for (int i = (int)layer::ALL_LAYERS - 1; i >= 0; i--)
     {
         layers[i] = std::make_shared<floating_inner_node_t>(true);
@@ -232,7 +233,6 @@ root_node_t::root_node_t() : inner_node_t(true)
     }
 
     set_children_unchecked(children);
-    this->priv = std::make_unique<root_node_t::priv_t>();
 }
 
 root_node_t::~root_node_t()
