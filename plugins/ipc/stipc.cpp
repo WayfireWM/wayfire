@@ -9,6 +9,7 @@
 #include <wayfire/debug.hpp>
 
 #include "ipc.hpp"
+#include <wayfire/touch/touch.hpp>
 
 extern "C" {
 #include <wlr/backend/wayland.h>
@@ -96,6 +97,7 @@ class headless_input_backend_t
     wlr_backend *backend;
     wlr_input_device *pointer;
     wlr_input_device *keyboard;
+    wlr_input_device *touch;
 
     headless_input_backend_t()
     {
@@ -105,6 +107,7 @@ class headless_input_backend_t
 
         pointer  = wlr_headless_add_input_device(backend, WLR_INPUT_DEVICE_POINTER);
         keyboard = wlr_headless_add_input_device(backend, WLR_INPUT_DEVICE_KEYBOARD);
+        touch    = wlr_headless_add_input_device(backend, WLR_INPUT_DEVICE_TOUCH);
 
         if (core.get_current_state() == compositor_state_t::RUNNING)
         {
@@ -153,6 +156,44 @@ class headless_input_backend_t
         wl_signal_emit(&pointer->pointer->events.frame, NULL);
     }
 
+    void do_touch(int finger, double x, double y)
+    {
+        auto layout = wf::get_core().output_layout->get_handle();
+        auto box    = wlr_output_layout_get_box(layout, NULL);
+
+        if (!wf::get_core().get_touch_state().fingers.count(finger))
+        {
+            wlr_event_touch_down ev;
+            ev.device    = touch;
+            ev.time_msec = get_current_time();
+            ev.x = 1.0 * (x - box->x) / box->width;
+            ev.y = 1.0 * (y - box->y) / box->height;
+            ev.touch_id = finger;
+            wl_signal_emit(&touch->touch->events.down, &ev);
+        } else
+        {
+            wlr_event_touch_motion ev;
+            ev.device    = touch;
+            ev.time_msec = get_current_time();
+            ev.x = 1.0 * (x - box->x) / box->width;
+            ev.y = 1.0 * (y - box->y) / box->height;
+            ev.touch_id = finger;
+            wl_signal_emit(&touch->touch->events.motion, &ev);
+        }
+
+        wl_signal_emit(&touch->touch->events.frame, NULL);
+    }
+
+    void do_touch_release(int finger)
+    {
+        wlr_event_touch_up ev;
+        ev.device    = touch;
+        ev.time_msec = get_current_time();
+        ev.touch_id  = finger;
+        wl_signal_emit(&touch->touch->events.up, &ev);
+        wl_signal_emit(&touch->touch->events.frame, NULL);
+    }
+
     headless_input_backend_t(const headless_input_backend_t&) = delete;
     headless_input_backend_t(headless_input_backend_t&&) = delete;
     headless_input_backend_t& operator =(const headless_input_backend_t&) = delete;
@@ -195,6 +236,8 @@ class ipc_plugin_t
         server->register_method("core/ping", ping);
         server->register_method("core/get_display", get_display);
         server->register_method("core/layout_views", layout_views);
+        server->register_method("core/touch", do_touch);
+        server->register_method("core/touch_release", do_touch_release);
     }
 
     using method_t = ipc::server_t::method_cb;
@@ -399,6 +442,23 @@ class ipc_plugin_t
         double x = data["x"];
         double y = data["y"];
         input->do_motion(x, y);
+        return get_ok();
+    };
+
+    method_t do_touch = [=] (nlohmann::json data)
+    {
+        EXPECT_FIELD(data, "finger", number_integer);
+        EXPECT_FIELD(data, "x", number);
+        EXPECT_FIELD(data, "y", number);
+
+        input->do_touch(data["finger"], data["x"], data["y"]);
+        return get_ok();
+    };
+
+    method_t do_touch_release = [=] (nlohmann::json data)
+    {
+        EXPECT_FIELD(data, "finger", number_integer);
+        input->do_touch_release(data["finger"]);
         return get_ok();
     };
 
