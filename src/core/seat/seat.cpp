@@ -294,47 +294,27 @@ uint32_t wf::seat_t::get_modifiers()
     return current_keyboard ? current_keyboard->get_modifiers() : 0;
 }
 
-void wf::seat_t::set_keyboard_focus(wayfire_view view)
+void wf::seat_t::set_keyboard_focus(wf::scene::node_ptr new_focus)
 {
-    auto surface = view ? view->get_keyboard_focus_surface() : NULL;
-    auto iv  = interactive_view_from_view(view.get());
-    auto oiv = interactive_view_from_view(keyboard_focus.get());
-
-    if (oiv)
-    {
-        oiv->handle_keyboard_leave();
-    }
-
-    if (iv)
-    {
-        iv->handle_keyboard_enter();
-    }
-
     /* Don't focus if we have an active grab */
-    if (!wf::get_core_impl().input->active_grab)
+    if (wf::get_core_impl().input->active_grab)
     {
-        if (surface)
-        {
-            auto kbd = wlr_seat_get_keyboard(seat);
-            wlr_seat_keyboard_notify_enter(seat, surface,
-                kbd ? kbd->keycodes : NULL,
-                kbd ? kbd->num_keycodes : 0,
-                kbd ? &kbd->modifiers : NULL);
-        } else
-        {
-            wlr_seat_keyboard_notify_clear_focus(seat);
-        }
+        new_focus = nullptr;
+    }
 
-        keyboard_focus = view;
-    } else
+    if (this->keyboard_focus)
     {
-        wlr_seat_keyboard_notify_clear_focus(seat);
-        keyboard_focus = nullptr;
+        this->keyboard_focus->keyboard_interaction().handle_keyboard_leave();
+    }
+
+    this->keyboard_focus = new_focus;
+    if (new_focus)
+    {
+        new_focus->keyboard_interaction().handle_keyboard_enter();
     }
 
     wf::keyboard_focus_changed_signal data;
-    data.view    = view;
-    data.surface = surface;
+    data.new_focus = new_focus;
     wf::get_core().emit_signal("keyboard-focus-changed", &data);
 }
 

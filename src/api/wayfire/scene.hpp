@@ -7,6 +7,7 @@
 #include <wayfire/geometry.hpp>
 #include <wayfire/region.hpp>
 #include <wayfire/nonstd/observer_ptr.h>
+#include <wayfire/scene-input.hpp>
 
 namespace wf
 {
@@ -112,7 +113,7 @@ struct input_node_t
 /**
  * The base class for all nodes in the scenegraph.
  */
-class node_t
+class node_t : public std::enable_shared_from_this<node_t>
 {
   public:
     virtual ~node_t();
@@ -126,6 +127,24 @@ class node_t
      * First visit the node and then its children from front to back.
      */
     virtual iteration visit(visitor_t *visitor) = 0;
+
+    /**
+     * Get the current flags of the node.
+     */
+    virtual int flags() const
+    {
+        return 0;
+    }
+
+    /**
+     * Get the keyboard interaction interface of this node.
+     * By default, a no-op.
+     */
+    virtual keyboard_interaction_t& keyboard_interaction()
+    {
+        static keyboard_interaction_t noop;
+        return noop;
+    }
 
     /**
      * Structure nodes are special nodes which core usually creates when Wayfire
@@ -266,11 +285,26 @@ class root_node_t final : public inner_node_t
 {
   public:
     root_node_t();
+    virtual ~root_node_t();
 
     /**
      * An ordered list of all layers' nodes.
      */
     std::shared_ptr<floating_inner_node_t> layers[(size_t)layer::ALL_LAYERS];
+
+    /**
+     * Signal to the root node that some node's flags have changed.
+     * Doing this will trigger a recomputation of the input and output state
+     * and must be called every time such a change is made.
+     *
+     * FIXME: this API has the potential to become very slow as the scenegraph
+     * grows. In the future, we need to add specialized functions which receive
+     * a list of updated nodes and then applies partial updates.
+     */
+    void update();
+
+    struct priv_t;
+    std::unique_ptr<priv_t> priv;
 };
 
 class view_node_t;
@@ -284,6 +318,7 @@ class visitor_t
     visitor_t(visitor_t&&) = delete;
     visitor_t& operator =(const visitor_t&) = delete;
     visitor_t& operator =(visitor_t&&) = delete;
+    visitor_t() = default;
     virtual ~visitor_t() = default;
 
     /** Visit an inner node with children. */

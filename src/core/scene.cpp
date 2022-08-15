@@ -1,6 +1,9 @@
 #include <wayfire/scene.hpp>
+#include <wayfire/view.hpp>
 #include <set>
 #include <algorithm>
+
+#include "scene-priv.hpp"
 
 namespace wf
 {
@@ -122,6 +125,14 @@ root_node_t::root_node_t() : inner_node_t(true)
     }
 
     set_children_unchecked(children);
+    this->priv = std::make_unique<root_node_t::priv_t>();
+}
+
+root_node_t::~root_node_t()
+{}
+
+void root_node_t::update()
+{
 }
 } // namespace scene
 }

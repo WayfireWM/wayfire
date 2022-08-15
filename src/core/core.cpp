@@ -715,7 +715,7 @@ void wf::compositor_core_impl_t::set_active_view(wayfire_view new_focus)
 
     if (new_focus)
     {
-        seat->set_keyboard_focus(new_focus);
+        seat->set_keyboard_focus(new_focus->get_main_node());
         new_focus->set_activated(true);
     } else
     {

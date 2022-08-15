@@ -156,8 +156,7 @@ struct surface_map_state_changed_signal : public wf::signal_data_t
  */
 struct keyboard_focus_changed_signal : public wf::signal_data_t
 {
-    wayfire_view view;
-    wlr_surface *surface;
+    wf::scene::node_ptr new_focus;
 };
 
 /* ----------------------------------------------------------------------------/

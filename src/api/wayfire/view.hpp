@@ -24,6 +24,10 @@ using wayfire_view = nonstd::observer_ptr<wf::view_interface_t>;
 namespace wf
 {
 class output_t;
+namespace scene
+{
+class view_node_t;
+}
 
 /* abstraction for desktop-apis, no real need for plugins
  * This is a base class to all "drawables" - desktop views, subsurfaces, popups */
@@ -55,6 +59,7 @@ class view_interface_t : public surface_interface_t
 {
   public:
     const scene::floating_inner_ptr& get_scene_node() const;
+    const std::shared_ptr<scene::view_node_t>& get_main_node() const;
 
     /**
      * The toplevel parent of the view, for ex. the main view of a file chooser
@@ -577,7 +582,7 @@ namespace scene
  * removed from it). Instead, plugins should reorder/move the view's parent node,
  * therefore ensuring that each view moves together with its children.
  */
-class view_node_t : public scene::node_t, std::enable_shared_from_this<view_node_t>
+class view_node_t final : public scene::node_t
 {
   public:
     view_node_t(wayfire_view view);
@@ -590,8 +595,11 @@ class view_node_t : public scene::node_t, std::enable_shared_from_this<view_node
         return view;
     }
 
+    keyboard_interaction_t& keyboard_interaction() final;
+
   private:
     wayfire_view view;
+    std::unique_ptr<keyboard_interaction_t> kb_interaction;
 };
 }
 }

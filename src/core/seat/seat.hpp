@@ -77,8 +77,8 @@ class seat_t
 
     void break_mod_bindings();
 
-    void set_keyboard_focus(wayfire_view view);
-    wayfire_view keyboard_focus;
+    void set_keyboard_focus(wf::scene::node_ptr keyboard_focus);
+    wf::scene::node_ptr keyboard_focus;
 
     /**
      * Set the currently active keyboard on the seat.

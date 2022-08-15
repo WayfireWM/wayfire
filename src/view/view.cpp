@@ -9,6 +9,7 @@
 #include "wayfire/render-manager.hpp"
 #include "xdg-shell.hpp"
 #include "../output/gtk-shell.hpp"
+#include <wayfire/debug.hpp>
 
 #include <algorithm>
 #include <glm/glm.hpp>
@@ -1243,8 +1244,8 @@ wf::view_interface_t::view_interface_t()
     take_ref();
 
     view_impl->scene_node = std::make_shared<scene::floating_inner_node_t>(false);
-    auto view_node = std::make_shared<scene::view_node_t>(this);
-    view_impl->scene_node->set_children_list({view_node});
+    view_impl->main_node  = std::make_shared<scene::view_node_t>(this);
+    view_impl->scene_node->set_children_list({view_impl->main_node});
 }
 
 void wf::view_interface_t::take_ref()
@@ -1374,16 +1375,89 @@ std::optional<wf::scene::input_node_t> wf::scene::view_node_t::find_node_at(
     return {};
 }
 
+/**
+ * An interface for scene nodes which interact with the keyboard.
+ */
+class view_keyboard_interaction_t : public wf::keyboard_interaction_t
+{
+    wayfire_view view;
+
+  public:
+    view_keyboard_interaction_t(wayfire_view _view)
+    {
+        this->view = _view;
+    }
+
+    void handle_keyboard_enter() override
+    {
+        auto iv = interactive_view_from_view(view.get());
+        if (iv)
+        {
+            iv->handle_keyboard_enter();
+        } else if (view->get_wlr_surface())
+        {
+            auto seat = wf::get_core().get_current_seat();
+            auto kbd  = wlr_seat_get_keyboard(seat);
+            wlr_seat_keyboard_notify_enter(seat,
+                view->get_wlr_surface(),
+                kbd ? kbd->keycodes : NULL,
+                kbd ? kbd->num_keycodes : 0,
+                kbd ? &kbd->modifiers : NULL);
+        }
+    }
+
+    void handle_keyboard_leave() override
+    {
+        auto oiv = interactive_view_from_view(view.get());
+        if (oiv)
+        {
+            oiv->handle_keyboard_leave();
+        } else if (view->get_wlr_surface())
+        {
+            auto seat = wf::get_core().get_current_seat();
+            wlr_seat_keyboard_notify_clear_focus(seat);
+        }
+    }
+
+    wf::keyboard_action handle_keyboard_key(wlr_event_keyboard_key event) override
+    {
+        auto iv = interactive_view_from_view(view.get());
+        if (iv)
+        {
+            iv->handle_key(event.keycode, event.state);
+        }
+
+        auto seat = wf::get_core().get_current_seat();
+        wlr_seat_keyboard_notify_key(seat,
+            event.time_msec, event.keycode, event.state);
+
+        return wf::keyboard_action::CONSUME;
+    }
+};
+
 wf::scene::view_node_t::view_node_t(wayfire_view _view) : node_t(false), view(_view)
-{}
+{
+    this->kb_interaction = std::make_unique<view_keyboard_interaction_t>(view);
+}
 
 const wf::scene::floating_inner_ptr& wf::view_interface_t::get_scene_node() const
 {
     return view_impl->scene_node;
 }
 
+const std::shared_ptr<wf::scene::view_node_t>& wf::view_interface_t::get_main_node()
+const
+{
+    return view_impl->main_node;
+}
+
 wf::scene::iteration wf::scene::view_node_t::visit(visitor_t *visitor)
 {
     visitor->view_node(this);
     return iteration::SKIP_CHILDREN;
+}
+
+wf::keyboard_interaction_t& wf::scene::view_node_t::keyboard_interaction()
+{
+    return *kb_interaction;
 }
