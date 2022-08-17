@@ -160,3 +160,11 @@ wf::geometry_t wf::clamp(wf::geometry_t window, wf::geometry_t output)
 
     return window;
 }
+
+wf::geometry_t wf::construct_box(
+    const wf::point_t& origin, const wf::dimensions_t& dimensions)
+{
+    return {
+        origin.x, origin.y, dimensions.width, dimensions.height
+    };
+}
