@@ -421,9 +421,10 @@ wf::scene::node_ptr wf::compositor_core_impl_t::get_cursor_focus()
 
 wayfire_view wf::compositor_core_t::get_cursor_focus_view()
 {
-    auto focus = get_cursor_focus();
-    auto view  = dynamic_cast<scene::view_node_t*>(focus.get());
-    return view ? view->get_view() : nullptr;
+    auto focus   = get_cursor_focus();
+    auto surface = dynamic_cast<scene::surface_node_t*>(focus.get());
+    return surface ? dynamic_cast<view_interface_t*>(
+        surface->get_surface()->get_main_surface()) : nullptr;
 }
 
 wf::surface_interface_t*wf::compositor_core_impl_t::get_surface_at(

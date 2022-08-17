@@ -18,9 +18,9 @@ wf::pointer_t::pointer_t(nonstd::observer_ptr<wf::input_manager_t> input,
     this->seat  = seat;
     on_surface_map_state_change.set_callback([=] (auto surface)
     {
-        if (auto vnode = dynamic_cast<wf::scene::view_node_t*>(grabbed_node.get()))
+        if (auto vnode = dynamic_cast<wf::scene::surface_node_t*>(grabbed_node.get()))
         {
-            if (!vnode->get_view()->is_mapped())
+            if (!vnode->get_surface()->is_mapped())
             {
                 grab_surface(nullptr);
             }

@@ -187,6 +187,12 @@ class surface_interface_t : public wf::object_base_t
     virtual void simple_render(const wf::framebuffer_t& fb, int x, int y,
         const wf::region_t& damage) = 0;
 
+    /**
+     * Get the main node of the surface which contains its content (as opposed
+     * to the node which contains content + subsurfaces).
+     */
+    wf::scene::node_ptr get_content_node() const;
+
     /** Private data for surface_interface_t, used for the implementation of
      * provided functions */
     class impl;
@@ -210,6 +216,41 @@ class surface_interface_t : public wf::object_base_t
     /* Allow wlr surface implementation to access surface internals */
     friend class wlr_surface_base_t;
 };
+
+namespace scene
+{
+/**
+ * Each surface is represented by two nodes. One of them is a floating_node_t,
+ * which contains the surface node itself and its children's floating_node_t's,
+ * for example like this:
+ *
+ * - floating_node_t(main surface):
+ *   - floating_node_t(subsurface above)
+ *     - surface_node_t(subsurface above)
+ *   - surface_node_t(main surface)
+ *   - floating_node_t(subsurface below)
+ *     - surface_node_t(subsurface below)
+ */
+class surface_node_t : public wf::scene::node_t
+{
+  public:
+    surface_node_t(wf::surface_interface_t *si);
+
+    std::optional<input_node_t> find_node_at(const wf::pointf_t& at) override;
+    iteration visit(visitor_t *visitor) override;
+    std::string stringify() const override;
+    pointer_interaction_t& pointer_interaction() override;
+
+    wf::surface_interface_t *get_surface() const
+    {
+        return si;
+    }
+
+  private:
+    std::unique_ptr<pointer_interaction_t> ptr_interaction;
+    wf::surface_interface_t *si;
+};
+}
 
 void emit_map_state_change(wf::surface_interface_t *surface);
 }

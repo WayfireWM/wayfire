@@ -1244,6 +1244,12 @@ wf::view_interface_t::view_interface_t()
 
     view_impl->scene_node = std::make_shared<scene::floating_inner_node_t>(false);
     view_impl->main_node  = std::make_shared<scene::view_node_t>(this);
+
+    // Set up the surface content relationship
+    view_impl->main_node->set_children_list({priv->content_node});
+    priv->root_node = view_impl->main_node;
+
+    // Set up view content to scene.
     view_impl->scene_node->set_children_list({view_impl->main_node});
 }
 

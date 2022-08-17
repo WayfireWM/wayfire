@@ -580,9 +580,12 @@ namespace scene
  *
  * Each view node is a structure node for its floating parent (e.g. cannot be
  * removed from it). Instead, plugins should reorder/move the view's parent node,
- * therefore ensuring that each view moves together with its children.
+ * therefore ensuring that each view moves in the scenegraph together with its
+ * children.
+ *
+ * Each view_node_t also exposes its surfaces as children.
  */
-class view_node_t final : public scene::node_t
+class view_node_t final : public scene::floating_inner_node_t
 {
   public:
     view_node_t(wayfire_view view);
@@ -597,12 +600,10 @@ class view_node_t final : public scene::node_t
     }
 
     keyboard_interaction_t& keyboard_interaction() final;
-    pointer_interaction_t& pointer_interaction() final;
 
   private:
     wayfire_view view;
     std::unique_ptr<keyboard_interaction_t> kb_interaction;
-    std::unique_ptr<pointer_interaction_t> ptr_interaction;
 };
 }
 }

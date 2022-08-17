@@ -15,6 +15,9 @@ class surface_interface_t::impl
     std::vector<std::unique_ptr<surface_interface_t>> surface_children_below;
     size_t last_cnt_surfaces = 0;
 
+    wf::scene::floating_inner_ptr root_node;
+    wf::scene::node_ptr content_node;
+
     /**
      * Remove all subsurfaces and emit signals for them.
      */

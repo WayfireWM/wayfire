@@ -10,6 +10,9 @@
 #include "wayfire/render-manager.hpp"
 #include "wayfire/signal-definitions.hpp"
 
+#include <wayfire/scene-operations.hpp>
+#include "surface-node.cpp"
+
 /****************************
 * surface_interface_t functions
 ****************************/
@@ -17,6 +20,11 @@ wf::surface_interface_t::surface_interface_t()
 {
     this->priv = std::make_unique<impl>();
     this->priv->parent_surface = nullptr;
+
+    this->priv->content_node = std::make_shared<wf::scene::surface_node_t>(this);
+    this->priv->root_node    = std::make_shared<wf::scene::floating_inner_node_t>(
+        false);
+    this->priv->root_node->set_children_list({priv->content_node});
 }
 
 void wf::surface_interface_t::add_subsurface(
@@ -24,6 +32,15 @@ void wf::surface_interface_t::add_subsurface(
 {
     subsurface->priv->parent_surface = this;
     subsurface->set_output(get_output());
+
+    if (is_below_parent)
+    {
+        wf::scene::add_back(priv->root_node, subsurface->priv->root_node);
+    } else
+    {
+        wf::scene::add_front(priv->root_node, subsurface->priv->root_node);
+    }
+
     auto& container = is_below_parent ?
         priv->surface_children_below : priv->surface_children_above;
 
@@ -58,6 +75,7 @@ std::unique_ptr<wf::surface_interface_t> wf::surface_interface_t::remove_subsurf
     ev.subsurface   = subsurface;
     this->emit_signal("subsurface-removed", &ev);
 
+    wf::scene::remove_child(this->priv->root_node, subsurface->priv->root_node);
     if (auto surf = remove_from(priv->surface_children_above))
     {
         return surf;
@@ -462,3 +480,8 @@ wf::wlr_child_surface_base_t::wlr_child_surface_base_t(
 
 wf::wlr_child_surface_base_t::~wlr_child_surface_base_t()
 {}
+
+wf::scene::node_ptr wf::surface_interface_t::get_content_node() const
+{
+    return priv->content_node;
+}
