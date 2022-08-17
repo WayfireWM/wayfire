@@ -123,12 +123,13 @@ struct layer_container_t
  */
 class output_layer_manager_t
 {
-    void setup_scene()
+    void setup_scene(wf::output_t *output)
     {
         auto& root = wf::get_core().scene();
         for (size_t layer = 0; layer < (size_t)scene::layer::ALL_LAYERS; layer++)
         {
             nodes[layer] = std::make_shared<scene::output_node_t>();
+            nodes[layer]->limit_region = output->get_layout_geometry();
             scene::add_back(root->layers[layer], nodes[layer]);
         }
     }
@@ -143,9 +144,9 @@ class output_layer_manager_t
     std::shared_ptr<scene::output_node_t> nodes[TOTAL_LAYERS];
 
   public:
-    output_layer_manager_t()
+    output_layer_manager_t(wf::output_t *output)
     {
-        setup_scene();
+        setup_scene(output);
 
         for (int i = 0; i < TOTAL_LAYERS; i++)
         {
@@ -968,6 +969,17 @@ class workspace_manager::impl
 
     signal_connection_t output_geometry_changed = [&] (void*)
     {
+        for (auto& node : layer_manager.nodes)
+        {
+            if (node) // TODO: minimize dlayer does not have a layer right now,
+                      // we should change this in the future.
+            {
+                node->limit_region = output->get_layout_geometry();
+            }
+        }
+
+        wf::get_core().scene()->update();
+
         auto old_w = output_geometry.width, old_h = output_geometry.height;
         auto new_size = output->get_screen_size();
         if ((old_w == new_size.width) && (old_h == new_size.height))
@@ -1020,7 +1032,7 @@ class workspace_manager::impl
     output_workarea_manager_t workarea_manager;
 
     impl(output_t *o) :
-        layer_manager(),
+        layer_manager(o),
         viewport_manager(o),
         workarea_manager(o)
     {
