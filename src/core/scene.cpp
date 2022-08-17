@@ -47,6 +47,11 @@ inner_node_t::inner_node_t(bool _is_structure) : node_t(_is_structure)
 
 std::optional<input_node_t> inner_node_t::find_node_at(const wf::pointf_t& at)
 {
+    if (!test_point_in_limit(at))
+    {
+        return {};
+    }
+
     for (auto& node : get_children())
     {
         auto child_node = node->find_node_at(at);

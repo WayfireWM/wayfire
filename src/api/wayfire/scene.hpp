@@ -108,7 +108,7 @@ enum class node_flags : int
      * Note that plugins might still force those nodes to receive input and be
      * rendered by calling the corresponding methods directly.
      */
-    DISABLED        = (1 << 0),
+    DISABLED = (1 << 0),
 };
 
 /**
@@ -212,6 +212,15 @@ class node_t : public std::enable_shared_from_this<node_t>
      */
     void set_enabled(bool is_enabled);
 
+    /**
+     * The limit region of a node.
+     * The limit region is described in the node's parent coordinate system and
+     * tells the node that it should not process input outside of it nor render
+     * outside. By default, nodes do not have a limit region set, which means
+     * they are not limited in any way.
+     */
+    std::optional<wf::geometry_t> limit_region;
+
   public:
     node_t(const node_t&) = delete;
     node_t(node_t&&) = delete;
@@ -224,6 +233,12 @@ class node_t : public std::enable_shared_from_this<node_t>
     int enabled_counter   = 1;
     inner_node_t *_parent = nullptr;
     friend class inner_node_t;
+
+    // A helper function for implementations of find_node_at.
+    inline bool test_point_in_limit(const wf::pointf_t& point)
+    {
+        return !limit_region || (*limit_region & point);
+    }
 
     // A helper functions for stringify() implementations, serializes the flags()
     // to a string, e.g. node with KEYBOARD and USER_INPUT -> '(ku)'

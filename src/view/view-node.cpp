@@ -31,6 +31,11 @@ wf::keyboard_interaction_t& wf::scene::view_node_t::keyboard_interaction()
 std::optional<wf::scene::input_node_t> wf::scene::view_node_t::find_node_at(
     const wf::pointf_t& at)
 {
+    if (!test_point_in_limit(at))
+    {
+        return {};
+    }
+
     if (view->minimized || !view->is_visible() ||
         !wf::get_core_impl().input->can_focus_surface(view.get()))
     {
