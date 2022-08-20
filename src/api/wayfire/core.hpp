@@ -2,6 +2,7 @@
 #define CORE_HPP
 
 #include "wayfire/object.hpp"
+#include "wayfire/scene-input.hpp"
 #include <wayfire/geometry.hpp>
 #include <wayfire/idle.hpp>
 #include <wayfire/config-backend.hpp>
@@ -193,7 +194,7 @@ class compositor_core_t : public wf::object_base_t
     /**
      * @return The surface which has touch focus, or null if none.
      */
-    virtual wf::surface_interface_t *get_touch_focus() = 0;
+    virtual wf::scene::node_ptr get_touch_focus() = 0;
 
     /**
      * @return The surface under the given global coordinates, or null if none.

@@ -240,6 +240,7 @@ class surface_node_t : public wf::scene::node_t
     iteration visit(visitor_t *visitor) override;
     std::string stringify() const override;
     pointer_interaction_t& pointer_interaction() override;
+    touch_interaction_t& touch_interaction() override;
 
     wf::surface_interface_t *get_surface() const
     {
@@ -248,6 +249,7 @@ class surface_node_t : public wf::scene::node_t
 
   private:
     std::unique_ptr<pointer_interaction_t> ptr_interaction;
+    std::unique_ptr<touch_interaction_t> tch_interaction;
     wf::surface_interface_t *si;
 };
 }

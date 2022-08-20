@@ -71,26 +71,17 @@ wf::touch_interface_t::touch_interface_t(wlr_cursor *cursor, wlr_seat *seat,
     on_surface_map_state_change.set_callback(
         [=] (wf::surface_interface_t *surface)
     {
-        if ((this->grabbed_surface == surface) && !surface->is_mapped())
+        for (auto& [finger_id, node] : this->focus)
         {
-            end_touch_down_grab();
-            on_stack_order_changed.emit(nullptr);
+            if (auto vnode = dynamic_cast<wf::scene::surface_node_t*>(node.get()))
+            {
+                if (!vnode->get_surface()->is_mapped())
+                {
+                    set_touch_focus(nullptr, finger_id, get_current_time(), {0, 0});
+                }
+            }
         }
     });
-
-    on_stack_order_changed.set_callback([=] (wf::signal_data_t *data)
-    {
-        for (auto f : this->get_state().fingers)
-        {
-            this->handle_touch_motion(f.first, get_current_time(),
-                {f.second.current.x, f.second.current.y}, false,
-                input_event_processing_mode_t::FULL);
-        }
-    });
-
-    wf::get_core().connect_signal("output-stack-order-changed",
-        &on_stack_order_changed);
-    wf::get_core().connect_signal("view-geometry-changed", &on_stack_order_changed);
 
     add_default_gestures();
 }
@@ -103,9 +94,10 @@ const wf::touch::gesture_state_t& wf::touch_interface_t::get_state() const
     return this->finger_state;
 }
 
-wf::surface_interface_t*wf::touch_interface_t::get_focus() const
+wf::scene::node_ptr wf::touch_interface_t::get_focus(int finger_id) const
 {
-    return this->focus;
+    auto it = this->focus.find(finger_id);
+    return (it == focus.end() ? nullptr : it->second);
 }
 
 void wf::touch_interface_t::set_grab(wf::plugin_grab_interface_t *grab)
@@ -113,7 +105,6 @@ void wf::touch_interface_t::set_grab(wf::plugin_grab_interface_t *grab)
     if (grab)
     {
         this->grab = grab;
-        end_touch_down_grab();
         for (auto& f : this->get_state().fingers)
         {
             set_touch_focus(nullptr, f.first, get_current_time(), {0, 0});
@@ -121,12 +112,6 @@ void wf::touch_interface_t::set_grab(wf::plugin_grab_interface_t *grab)
     } else
     {
         this->grab = nullptr;
-        for (auto& f : this->get_state().fingers)
-        {
-            handle_touch_motion(f.first, get_current_time(),
-                {f.second.current.x, f.second.current.y}, false,
-                input_event_processing_mode_t::FULL);
-        }
     }
 }
 
@@ -143,54 +128,23 @@ void wf::touch_interface_t::rem_touch_gesture(
         gestures.end());
 }
 
-void wf::touch_interface_t::set_touch_focus(wf::surface_interface_t *surface,
+void wf::touch_interface_t::set_touch_focus(wf::scene::node_ptr node,
     int id, uint32_t time, wf::pointf_t point)
 {
-    bool focus_compositor_surface = wf::compositor_surface_from_surface(surface);
-    bool had_focus = wlr_seat_touch_get_point(seat, id);
-    wf::get_core_impl().seat->ensure_input_surface(surface);
-
-    wlr_surface *next_focus = NULL;
-    if (surface && !focus_compositor_surface)
+    if (focus[id] == node)
     {
-        next_focus = surface->get_wlr_surface();
+        return;
     }
 
-    // create a new touch point, we have a valid new focus
-    if (!had_focus && next_focus)
+    if (focus[id])
     {
-        wlr_seat_touch_notify_down(seat, next_focus, time, id, point.x, point.y);
+        focus[id]->touch_interaction().handle_touch_up(time, id);
     }
 
-    if (had_focus && !next_focus)
+    focus[id] = node;
+    if (node)
     {
-        wlr_seat_touch_notify_up(seat, time, id);
-    }
-
-    if (next_focus)
-    {
-        wlr_seat_touch_point_focus(seat, next_focus, time, id, point.x, point.y);
-    }
-
-    /* Manage the touch_focus, we take only the first finger for that */
-    if (id == 0)
-    {
-        // first change the focus, so that plugins can freely grab input in
-        // response to touch_down/up
-        auto old_focus = this->focus;
-        this->focus = surface;
-
-        auto compositor_surface = compositor_surface_from_surface(old_focus);
-        if (compositor_surface)
-        {
-            compositor_surface->on_touch_up();
-        }
-
-        compositor_surface = compositor_surface_from_surface(surface);
-        if (compositor_surface)
-        {
-            compositor_surface->on_touch_down(point.x, point.y);
-        }
+        node->touch_interaction().handle_touch_down(time, id, point);
     }
 }
 
@@ -247,18 +201,8 @@ void wf::touch_interface_t::handle_touch_down(int32_t id, uint32_t time,
         return;
     }
 
-    wf::pointf_t local;
-    auto focus = this->surface_at(point, local);
-    if (finger_state.fingers.empty()) // finger state is not updated yet
-    {
-        start_touch_down_grab(focus);
-    } else if (grabbed_surface && !seat->drag_active)
-    {
-        focus = grabbed_surface;
-        local = get_surface_relative_coords(focus, point);
-    }
-
-    set_touch_focus(focus, id, time, local);
+    auto focus = this->surface_at(point);
+    set_touch_focus(focus, id, time, point);
 
     seat->update_drag_icon();
     update_gestures(gesture_event);
@@ -298,29 +242,13 @@ void wf::touch_interface_t::handle_touch_motion(int32_t id, uint32_t time,
         return;
     }
 
-    wf::pointf_t local;
-    wf::surface_interface_t *surface = nullptr;
+    if (focus[id])
+    {
+        focus[id]->touch_interaction().handle_touch_motion(time, id, point);
+    }
+
     auto& seat = wf::get_core_impl().seat;
-    /* Same as cursor motion handling: make sure we send to the grabbed surface,
-     * except if we need this for DnD */
-    if (grabbed_surface && !seat->drag_icon)
-    {
-        surface = grabbed_surface;
-        local   = get_surface_relative_coords(surface, point);
-    } else
-    {
-        surface = surface_at(point, local);
-        set_touch_focus(surface, id, time, local);
-    }
-
-    wlr_seat_touch_notify_motion(seat->seat, time, id, local.x, local.y);
     seat->update_drag_icon();
-
-    auto compositor_surface = wf::compositor_surface_from_surface(surface);
-    if ((id == 0) && compositor_surface && is_real_event)
-    {
-        compositor_surface->on_touch_motion(local.x, local.y);
-    }
 }
 
 void wf::touch_interface_t::handle_touch_up(int32_t id, uint32_t time,
@@ -348,30 +276,6 @@ void wf::touch_interface_t::handle_touch_up(int32_t id, uint32_t time,
     }
 
     set_touch_focus(nullptr, id, time, {0, 0});
-    if (finger_state.fingers.empty())
-    {
-        end_touch_down_grab();
-    }
-}
-
-void wf::touch_interface_t::start_touch_down_grab(
-    wf::surface_interface_t *surface)
-{
-    this->grabbed_surface = surface;
-}
-
-void wf::touch_interface_t::end_touch_down_grab()
-{
-    if (grabbed_surface)
-    {
-        grabbed_surface = nullptr;
-        for (auto& f : finger_state.fingers)
-        {
-            handle_touch_motion(f.first, wf::get_current_time(),
-                {f.second.current.x, f.second.current.y}, false,
-                input_event_processing_mode_t::FULL);
-        }
-    }
 }
 
 void wf::touch_interface_t::update_cursor_state()

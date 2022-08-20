@@ -159,4 +159,44 @@ class pointer_interaction_t
         return input_action::PROPAGATE;
     }
 };
+
+/**
+ * An interface for scene nodes which interact with touch input.
+ */
+class touch_interaction_t
+{
+  public:
+    touch_interaction_t() = default;
+    virtual ~touch_interaction_t() = default;
+
+    /**
+     * The user pressed down with a finger on the node.
+     *
+     * @param finger_id The id of the finger pressed down (first is 0, then 1,
+     *   2, ..). Note that it is possible that the finger 0 is pressed down on
+     *   another node, then the current node may start receiving touch down
+     *   events beginning with finger 1, 2, ...
+     *
+     * @param position The coordinates of the finger.
+     */
+    virtual void handle_touch_down(uint32_t time_ms, int finger_id,
+        wf::pointf_t position)
+    {}
+
+    /**
+     * The user lifted their finger off the node.
+     *
+     * @param finger_id The id of the finger being lifted. It is guaranteed that
+     *   the finger will have been pressed on the node before.
+     */
+    virtual void handle_touch_up(uint32_t time_ms, int finger_id)
+    {}
+
+    /**
+     * The user moved their finger without lifting it off.
+     */
+    virtual void handle_touch_motion(uint32_t time_ms, int finger_id,
+        wf::pointf_t position)
+    {}
+};
 }

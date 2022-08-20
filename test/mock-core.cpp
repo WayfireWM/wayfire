@@ -70,13 +70,13 @@ wf::scene::node_ptr mock_core_t::get_cursor_focus()
     return nullptr;
 }
 
-wf::surface_interface_t*mock_core_t::get_surface_at(
-    wf::pointf_t point)
+wf::scene::node_ptr mock_core_t::get_touch_focus()
 {
     return nullptr;
 }
 
-wf::surface_interface_t*mock_core_t::get_touch_focus()
+wf::surface_interface_t*mock_core_t::get_surface_at(
+    wf::pointf_t point)
 {
     return nullptr;
 }

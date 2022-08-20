@@ -26,7 +26,7 @@ class mock_core_t : public wf::compositor_core_impl_t
     const wf::touch::gesture_state_t& get_touch_state() override;
 
     wf::scene::node_ptr get_cursor_focus() override;
-    wf::surface_interface_t *get_touch_focus() override;
+    wf::scene::node_ptr get_touch_focus() override;
     wf::surface_interface_t *get_surface_at(wf::pointf_t point) override;
 
     void add_touch_gesture(

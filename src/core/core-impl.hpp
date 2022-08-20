@@ -2,6 +2,7 @@
 #define WF_CORE_CORE_IMPL_HPP
 
 #include "wayfire/core.hpp"
+#include "wayfire/scene-input.hpp"
 #include "wayfire/util.hpp"
 #include <wayfire/nonstd/wlroots-full.hpp>
 
@@ -74,7 +75,7 @@ class compositor_core_impl_t : public compositor_core_t
     const wf::touch::gesture_state_t& get_touch_state() override;
 
     wf::scene::node_ptr get_cursor_focus() override;
-    wf::surface_interface_t *get_touch_focus() override;
+    wf::scene::node_ptr get_touch_focus() override;
     wf::surface_interface_t *get_surface_at(wf::pointf_t point) override;
 
     void add_touch_gesture(

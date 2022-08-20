@@ -252,6 +252,7 @@ void wf::output_impl_t::close_popups()
     }
 }
 
+#include <wayfire/debug.hpp>
 void wf::output_impl_t::update_active_view(wayfire_view v, uint32_t flags)
 {
     this->active_view = v;

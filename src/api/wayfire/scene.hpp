@@ -178,6 +178,12 @@ class node_t : public std::enable_shared_from_this<node_t>
         return noop;
     }
 
+    virtual touch_interaction_t& touch_interaction()
+    {
+        static touch_interaction_t noop;
+        return noop;
+    }
+
     /**
      * Structure nodes are special nodes which core usually creates when Wayfire
      * is started (e.g. layer and output nodes). These nodes should not be

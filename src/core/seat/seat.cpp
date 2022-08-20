@@ -11,6 +11,7 @@
 #include "wayfire/render-manager.hpp"
 #include "wayfire/output-layout.hpp"
 #include <wayfire/util/log.hpp>
+#include "wayfire/scene-input.hpp"
 #include "wayfire/signal-definitions.hpp"
 #include <wayfire/nonstd/wlroots.hpp>
 
@@ -91,9 +92,10 @@ wf::seat_t::seat_t()
     lpointer = std::make_unique<wf::pointer_t>(
         wf::get_core_impl().input, nonstd::make_observer(this));
     touch = std::make_unique<wf::touch_interface_t>(cursor->cursor, seat,
-        [] (wf::pointf_t global, wf::pointf_t& local)
+        [] (const wf::pointf_t& global) -> wf::scene::node_ptr
     {
-        return wf::get_core_impl().input->input_surface_at(global, local);
+        auto value = wf::get_core().scene()->find_node_at(global);
+        return value ? value->node->shared_from_this() : nullptr;
     });
 
     request_start_drag.set_callback([&] (void *data)
@@ -250,7 +252,6 @@ void wf::seat_t::validate_drag_request(wlr_seat_request_start_drag_event *ev)
     if (wlr_seat_validate_pointer_grab_serial(seat, ev->origin, ev->serial))
     {
         wlr_seat_start_pointer_drag(seat, ev->drag, ev->serial);
-
         return;
     }
 
@@ -258,7 +259,6 @@ void wf::seat_t::validate_drag_request(wlr_seat_request_start_drag_event *ev)
     if (wlr_seat_validate_touch_grab_serial(seat, ev->origin, ev->serial, &point))
     {
         wlr_seat_start_touch_drag(seat, ev->drag, ev->serial, point);
-
         return;
     }
 
@@ -300,6 +300,11 @@ void wf::seat_t::set_keyboard_focus(wf::scene::node_ptr new_focus)
     if (wf::get_core_impl().input->active_grab)
     {
         new_focus = nullptr;
+    }
+
+    if (this->keyboard_focus == new_focus)
+    {
+        return;
     }
 
     if (this->keyboard_focus)

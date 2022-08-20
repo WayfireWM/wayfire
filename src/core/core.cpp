@@ -1,6 +1,7 @@
 /* Needed for pipe2 */
 #ifndef _GNU_SOURCE
     #define _GNU_SOURCE
+    #include "wayfire/scene-input.hpp"
 #endif
 
 #include <sys/wait.h>
@@ -448,18 +449,17 @@ wayfire_view wf::compositor_core_t::get_view_at(wf::pointf_t point)
     return view ? view->self() : nullptr;
 }
 
-wf::surface_interface_t*wf::compositor_core_impl_t::get_touch_focus()
+wf::scene::node_ptr wf::compositor_core_impl_t::get_touch_focus()
 {
     return seat->touch->get_focus();
 }
 
 wayfire_view wf::compositor_core_t::get_touch_focus_view()
 {
-    auto focus = get_touch_focus();
-    auto view  = dynamic_cast<wf::view_interface_t*>(
-        focus ? focus->get_main_surface() : nullptr);
-
-    return view ? view->self() : nullptr;
+    auto focus   = get_touch_focus();
+    auto surface = dynamic_cast<scene::surface_node_t*>(focus.get());
+    return surface ? dynamic_cast<view_interface_t*>(
+        surface->get_surface()->get_main_surface()) : nullptr;
 }
 
 void wf::compositor_core_impl_t::add_touch_gesture(
