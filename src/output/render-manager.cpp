@@ -279,7 +279,7 @@ struct postprocessing_manager_t
         this->output = output;
     }
 
-    void workaround_wlroots_backend_y_invert(wf::framebuffer_t& fb) const
+    void workaround_wlroots_backend_y_invert(wf::render_target_t& fb) const
     {
         /* Sometimes, the framebuffer by OpenGL is Y-inverted.
          * This is the case only if the target framebuffer is not 0 */
@@ -362,9 +362,9 @@ struct postprocessing_manager_t
         });
     }
 
-    wf::framebuffer_t get_target_framebuffer() const
+    wf::render_target_t get_target_framebuffer() const
     {
-        wf::framebuffer_t fb;
+        wf::render_target_t fb;
         fb.geometry     = output->get_relative_geometry();
         fb.wl_transform = output->handle->transform;
         fb.transform    = get_output_matrix_from_transform(
@@ -1115,7 +1115,7 @@ class wf::render_manager::impl
     {
         std::vector<damaged_surface> to_render;
         wf::region_t ws_damage;
-        wf::framebuffer_t fb;
+        wf::render_target_t fb;
 
         int ws_dx;
         int ws_dy;
@@ -1502,7 +1502,7 @@ wlr_box render_manager::get_ws_box(wf::point_t ws) const
     return pimpl->output_damage->get_ws_box(ws);
 }
 
-wf::framebuffer_t render_manager::get_target_framebuffer() const
+wf::render_target_t render_manager::get_target_framebuffer() const
 {
     return pimpl->postprocessing->get_target_framebuffer();
 }

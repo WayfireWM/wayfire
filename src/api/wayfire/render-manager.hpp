@@ -7,14 +7,14 @@
 namespace wf
 {
 struct framebuffer_base_t;
-struct framebuffer_t;
+struct render_target_t;
 struct workspace_stream_t;
 /** Render hooks can be used to override Wayfire's built-in rendering. The
  * plugin which sets the hook gains full control over what and how is drawn
  * to the screen. Workspace streams however are not affected.
  *
  * @param fb Indicates the framebuffer that the custom renderer should draw to */
-using render_hook_t = std::function<void (const wf::framebuffer_t& fb)>;
+using render_hook_t = std::function<void (const wf::render_target_t& fb)>;
 
 /* Effect hooks provide the plugins with a way to execute custom code
  * at certain parts of the repaint cycle */
@@ -178,7 +178,7 @@ class render_manager : public wf::signal_provider_t
      * @return The framebuffer on which all rendering operations except post
      * effects happen.
      */
-    wf::framebuffer_t get_target_framebuffer() const;
+    wf::render_target_t get_target_framebuffer() const;
 
     /**
      * Initialize a workspace stream. If you need to change the stream's

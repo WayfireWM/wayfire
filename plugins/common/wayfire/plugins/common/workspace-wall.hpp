@@ -14,8 +14,8 @@ namespace wf
  */
 struct wall_frame_event_t : public signal_data_t
 {
-    const wf::framebuffer_t& target;
-    wall_frame_event_t(const wf::framebuffer_t& t) : target(t)
+    const wf::render_target_t& target;
+    wall_frame_event_t(const wf::render_target_t& t) : target(t)
     {}
 };
 
@@ -103,7 +103,7 @@ class workspace_wall_t : public wf::signal_provider_t
      * @param geometry The rectangle in fb to draw to, in the same coordinate
      *   system as the framebuffer's geometry.
      */
-    void render_wall(const wf::framebuffer_t& fb, wf::geometry_t geometry)
+    void render_wall(const wf::render_target_t& fb, wf::geometry_t geometry)
     {
         update_streams();
 
@@ -292,7 +292,7 @@ class workspace_wall_t : public wf::signal_provider_t
     }
 
     bool render_hook_set = false;
-    wf::render_hook_t on_render = [=] (const wf::framebuffer_t& target)
+    wf::render_hook_t on_render = [=] (const wf::render_target_t& target)
     {
         render_wall(target, this->output->get_relative_geometry());
     };

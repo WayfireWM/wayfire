@@ -93,7 +93,7 @@ class simple_decoration_surface : public wf::surface_interface_t,
         return size;
     }
 
-    void render_title(const wf::framebuffer_t& fb,
+    void render_title(const wf::render_target_t& fb,
         wf::geometry_t geometry)
     {
         update_title(geometry.width, geometry.height, fb.scale);
@@ -101,7 +101,7 @@ class simple_decoration_surface : public wf::surface_interface_t,
             glm::vec4(1.0f), OpenGL::TEXTURE_TRANSFORM_INVERT_Y);
     }
 
-    void render_scissor_box(const wf::framebuffer_t& fb, wf::point_t origin,
+    void render_scissor_box(const wf::render_target_t& fb, wf::point_t origin,
         const wlr_box& scissor)
     {
         /* Clear background */
@@ -126,7 +126,7 @@ class simple_decoration_surface : public wf::surface_interface_t,
         }
     }
 
-    virtual void simple_render(const wf::framebuffer_t& fb, int x, int y,
+    virtual void simple_render(const wf::render_target_t& fb, int x, int y,
         const wf::region_t& damage) override
     {
         wf::region_t frame = this->cached_region + wf::point_t{x, y};

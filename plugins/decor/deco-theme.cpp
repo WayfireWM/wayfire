@@ -32,7 +32,7 @@ int decoration_theme_t::get_border_size() const
  * @param scissor The GL scissor rectangle to use.
  * @param active Whether to use active or inactive colors
  */
-void decoration_theme_t::render_background(const wf::framebuffer_t& fb,
+void decoration_theme_t::render_background(const wf::render_target_t& fb,
     wf::geometry_t rectangle, const wf::geometry_t& scissor, bool active) const
 {
     wf::color_t color = active ? active_color : inactive_color;

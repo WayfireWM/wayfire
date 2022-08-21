@@ -16,7 +16,7 @@ namespace wf
 {
 class output_t;
 class surface_interface_t;
-struct framebuffer_t;
+struct render_target_t;
 struct region_t;
 
 /**
@@ -184,7 +184,7 @@ class surface_interface_t : public wf::object_base_t
      *   system as the framebuffer's geometry. Nothing should be drawn outside
      *   of the damaged region.
      */
-    virtual void simple_render(const wf::framebuffer_t& fb, int x, int y,
+    virtual void simple_render(const wf::render_target_t& fb, int x, int y,
         const wf::region_t& damage) = 0;
 
     /**

@@ -20,7 +20,7 @@ struct view_transform_block_t
 {
     std::string plugin_name = "";
     std::unique_ptr<wf::view_transformer_t> transform;
-    wf::framebuffer_t fb;
+    wf::render_target_t fb;
 
     view_transform_block_t();
     ~view_transform_block_t();
@@ -68,7 +68,7 @@ class view_interface_t::view_priv_impl
 
     wf::safe_list_t<std::shared_ptr<view_transform_block_t>> transforms;
 
-    struct offscreen_buffer_t : public wf::framebuffer_t
+    struct offscreen_buffer_t : public wf::render_target_t
     {
         wf::region_t cached_damage;
         bool valid()
@@ -233,7 +233,7 @@ class wlr_view_t :
         return _get_size();
     }
 
-    virtual void simple_render(const wf::framebuffer_t& fb, int x, int y,
+    virtual void simple_render(const wf::render_target_t& fb, int x, int y,
         const wf::region_t& damage) override
     {
         _simple_render(fb, x, y, damage);

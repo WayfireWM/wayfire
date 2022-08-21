@@ -67,7 +67,7 @@ wf::dimensions_t wf::mirror_view_t::get_size() const
     return {box.width, box.height};
 }
 
-void wf::mirror_view_t::simple_render(const wf::framebuffer_t& fb, int x, int y,
+void wf::mirror_view_t::simple_render(const wf::render_target_t& fb, int x, int y,
     const wf::region_t& damage)
 {
     if (!is_mapped())
@@ -77,8 +77,8 @@ void wf::mirror_view_t::simple_render(const wf::framebuffer_t& fb, int x, int y,
 
     /* Normally we shouldn't copy framebuffers. But in this case we can assume
      * nothing will break, because the copy will be destroyed immediately */
-    wf::framebuffer_t copy;
-    std::memcpy((void*)&copy, (void*)&fb, sizeof(wf::framebuffer_t));
+    wf::render_target_t copy;
+    std::memcpy((void*)&copy, (void*)&fb, sizeof(wf::render_target_t));
 
     /* The base view is in another coordinate system, we need to calculate the
      * difference between the two, so that it appears at the correct place.
@@ -190,7 +190,7 @@ wf::dimensions_t wf::color_rect_view_t::get_size() const
     };
 }
 
-static void render_colored_rect(const wf::framebuffer_t& fb,
+static void render_colored_rect(const wf::render_target_t& fb,
     int x, int y, int w, int h, const wf::color_t& color)
 {
     wf::color_t premultiply{
@@ -203,7 +203,8 @@ static void render_colored_rect(const wf::framebuffer_t& fb,
         fb.get_orthographic_projection());
 }
 
-void wf::color_rect_view_t::simple_render(const wf::framebuffer_t& fb, int x, int y,
+void wf::color_rect_view_t::simple_render(const wf::render_target_t& fb, int x,
+    int y,
     const wf::region_t& damage)
 {
     OpenGL::render_begin(fb);

@@ -206,7 +206,7 @@ class scale_around_grab_t : public wf::view_transformer_t
     }
 
     void render_with_damage(wf::texture_t src_tex, wlr_box src_box,
-        const wf::region_t& damage, const wf::framebuffer_t& target_fb) override
+        const wf::region_t& damage, const wf::render_target_t& target_fb) override
     {
         // Get target size
         auto bbox = get_bounding_box(src_box, src_box);

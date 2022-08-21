@@ -179,7 +179,7 @@ class workspace_switch_t
         render_frame(static_cast<wall_frame_event_t*>(data)->target);
     };
 
-    virtual void render_overlay_view(const framebuffer_t& fb)
+    virtual void render_overlay_view(const render_target_t& fb)
     {
         if (!overlay_view)
         {
@@ -212,7 +212,7 @@ class workspace_switch_t
         }
     }
 
-    virtual void render_frame(const framebuffer_t& fb)
+    virtual void render_frame(const render_target_t& fb)
     {
         auto start = wall->get_workspace_rectangle(
             output->workspace->get_current_workspace());

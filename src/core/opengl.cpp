@@ -216,7 +216,7 @@ void render_transformed_texture(wf::texture_t texture,
 }
 
 void render_texture(wf::texture_t texture,
-    const wf::framebuffer_t& framebuffer,
+    const wf::render_target_t& framebuffer,
     const wf::geometry_t& geometry, glm::vec4 color, uint32_t bits)
 {
     render_transformed_texture(texture, geometry,
@@ -434,7 +434,7 @@ void wf::framebuffer_base_t::reset()
     viewport_width = viewport_height = 0;
 }
 
-wlr_box wf::framebuffer_t::framebuffer_box_from_geometry_box(wlr_box box) const
+wlr_box wf::render_target_t::framebuffer_box_from_geometry_box(wlr_box box) const
 {
     /* Step 1: Make relative to the framebuffer */
     box.x -= this->geometry.x;
@@ -468,7 +468,7 @@ wlr_box wf::framebuffer_t::framebuffer_box_from_geometry_box(wlr_box box) const
     return result;
 }
 
-glm::mat4 wf::framebuffer_t::get_orthographic_projection() const
+glm::mat4 wf::render_target_t::get_orthographic_projection() const
 {
     auto ortho = glm::ortho(1.0f * geometry.x,
         1.0f * geometry.x + 1.0f * geometry.width,
@@ -478,7 +478,7 @@ glm::mat4 wf::framebuffer_t::get_orthographic_projection() const
     return this->transform * ortho;
 }
 
-void wf::framebuffer_t::logic_scissor(wlr_box box) const
+void wf::render_target_t::logic_scissor(wlr_box box) const
 {
     scissor(framebuffer_box_from_geometry_box(box));
 }

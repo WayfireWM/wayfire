@@ -63,7 +63,7 @@ void button_t::set_pressed(bool is_pressed)
     add_idle_damage();
 }
 
-void button_t::render(const wf::framebuffer_t& fb, wf::geometry_t geometry,
+void button_t::render(const wf::render_target_t& fb, wf::geometry_t geometry,
     wf::geometry_t scissor)
 {
     OpenGL::render_begin(fb);

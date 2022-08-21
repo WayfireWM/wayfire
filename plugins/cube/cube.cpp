@@ -152,7 +152,7 @@ class wayfire_cube : public wf::plugin_interface_t
             deactivate();
         };
 
-        renderer = [=] (const wf::framebuffer_t& dest) {render(dest);};
+        renderer = [=] (const wf::render_target_t& dest) {render(dest);};
 
         OpenGL::render_begin(output->render->get_target_framebuffer());
         load_program();
@@ -438,7 +438,7 @@ class wayfire_cube : public wf::plugin_interface_t
         }
     }
 
-    glm::mat4 calculate_vp_matrix(const wf::framebuffer_t& dest)
+    glm::mat4 calculate_vp_matrix(const wf::render_target_t& dest)
     {
         float zoom_factor = animation.cube_animation.zoom;
         auto scale_matrix = glm::scale(glm::mat4(1.0),
@@ -499,7 +499,7 @@ class wayfire_cube : public wf::plugin_interface_t
         }
     }
 
-    void render(const wf::framebuffer_t& dest)
+    void render(const wf::render_target_t& dest)
     {
         update_workspace_streams();
         if (program.get_program_id(wf::TEXTURE_TYPE_RGBA) == 0)

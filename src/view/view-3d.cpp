@@ -35,7 +35,7 @@ wf::region_t wf::view_transformer_t::transform_opaque_region(
 
 void wf::view_transformer_t::render_with_damage(wf::texture_t src_tex,
     wlr_box src_box,
-    const wf::region_t& damage, const wf::framebuffer_t& target_fb)
+    const wf::region_t& damage, const wf::render_target_t& target_fb)
 {
     for (const auto& rect : damage)
     {
@@ -148,7 +148,7 @@ wf::pointf_t wf::view_2D::untransform_point(
 }
 
 void wf::view_2D::render_box(wf::texture_t src_tex, wlr_box src_box,
-    wlr_box scissor_box, const wf::framebuffer_t& fb)
+    wlr_box scissor_box, const wf::render_target_t& fb)
 {
     auto wm_geom = view->transform_region(view->get_wm_geometry(), this);
     auto quad    = center_geometry(fb.geometry, src_box, get_center(wm_geom));
@@ -266,7 +266,7 @@ wf::pointf_t wf::view_3D::untransform_point(wf::geometry_t geometry,
 }
 
 void wf::view_3D::render_box(wf::texture_t src_tex, wlr_box src_box,
-    wlr_box scissor_box, const wf::framebuffer_t& fb)
+    wlr_box scissor_box, const wf::render_target_t& fb)
 {
     auto wm_geom = view->transform_region(view->get_wm_geometry(), this);
     auto quad    = center_geometry(fb.geometry, src_box, get_center(wm_geom));

@@ -55,7 +55,7 @@ class wf_blur_transformer : public wf::view_transformer_t
 
     /* Render without blending */
     void direct_render(wf::texture_t src_tex, wlr_box src_box,
-        const wf::region_t& damage, const wf::framebuffer_t& target_fb)
+        const wf::region_t& damage, const wf::render_target_t& target_fb)
     {
         OpenGL::render_begin(target_fb);
         for (auto& rect : damage)
@@ -68,7 +68,7 @@ class wf_blur_transformer : public wf::view_transformer_t
     }
 
     void render_with_damage(wf::texture_t src_tex, wlr_box src_box,
-        const wf::region_t& damage, const wf::framebuffer_t& target_fb) override
+        const wf::region_t& damage, const wf::render_target_t& target_fb) override
     {
         wf::region_t clip_damage = damage & src_box;
 
@@ -114,7 +114,7 @@ class wf_blur_transformer : public wf::view_transformer_t
     }
 
     void render_box(wf::texture_t src_tex, wlr_box src_box, wlr_box scissor_box,
-        const wf::framebuffer_t& target_fb) override
+        const wf::render_target_t& target_fb) override
     {
         provider()->render(src_tex, src_box, scissor_box, target_fb);
     }
@@ -171,7 +171,7 @@ class wayfire_blur : public wf::plugin_interface_t
 
     /** Transform region into framebuffer coordinates */
     wf::region_t get_fb_region(const wf::region_t& region,
-        const wf::framebuffer_t& fb) const
+        const wf::render_target_t& fb) const
     {
         wf::region_t result;
         for (const auto& rect : region)

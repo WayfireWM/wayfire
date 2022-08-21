@@ -65,7 +65,7 @@ class mirror_view_t : public wf::view_interface_t, wf::compositor_surface_t
     /* surface_interface_t implementation */
     virtual bool is_mapped() const override;
     virtual wf::dimensions_t get_size() const override;
-    virtual void simple_render(const wf::framebuffer_t& fb, int x, int y,
+    virtual void simple_render(const wf::render_target_t& fb, int x, int y,
         const wf::region_t& damage) override;
 
     /* view_interface_t implementation */
@@ -113,7 +113,7 @@ class color_rect_view_t : public wf::view_interface_t, wf::compositor_surface_t
     /* required for surface_interface_t */
     virtual bool is_mapped() const override;
     virtual wf::dimensions_t get_size() const override;
-    virtual void simple_render(const wf::framebuffer_t& fb, int x, int y,
+    virtual void simple_render(const wf::render_target_t& fb, int x, int y,
         const wf::region_t& damage) override;
 
     /* required for view_interface_t */

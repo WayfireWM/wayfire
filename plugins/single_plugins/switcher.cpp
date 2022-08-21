@@ -559,7 +559,7 @@ class WayfireSwitcher : public wf::plugin_interface_t
         return sw;
     }
 
-    void render_view(const SwitcherView& sv, const wf::framebuffer_t& buffer)
+    void render_view(const SwitcherView& sv, const wf::render_target_t& buffer)
     {
         auto transform = dynamic_cast<wf::view_3D*>(
             sv.view->get_transformer(switcher_transformer).get());
@@ -579,7 +579,7 @@ class WayfireSwitcher : public wf::plugin_interface_t
         sv.view->render_transformed(buffer, buffer.geometry);
     }
 
-    wf::render_hook_t switcher_renderer = [=] (const wf::framebuffer_t& fb)
+    wf::render_hook_t switcher_renderer = [=] (const wf::render_target_t& fb)
     {
         OpenGL::render_begin(fb);
         OpenGL::clear({0, 0, 0, 1});

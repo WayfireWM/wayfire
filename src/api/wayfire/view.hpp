@@ -438,7 +438,7 @@ class view_interface_t : public surface_interface_t
      * @return true if the render operation was successful, and false if the
      *   view is both unmapped and has no snapshot.
      */
-    bool render_transformed(const framebuffer_t& framebuffer,
+    bool render_transformed(const render_target_t& framebuffer,
         const region_t& damage);
 
     /**
@@ -447,7 +447,7 @@ class view_interface_t : public surface_interface_t
      * and continue displaying it afterwards. Additionally, return the captured
      * framebuffter
      */
-    virtual const wf::framebuffer_t& take_snapshot();
+    virtual const wf::render_target_t& take_snapshot();
 
     /**
      * View lifetime is managed by reference counting. To take a reference,

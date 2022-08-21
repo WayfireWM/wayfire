@@ -72,7 +72,7 @@ class button_t
      * @param geometry The geometry of the button, in logical coordinates
      * @param scissor The scissor rectangle to render.
      */
-    void render(const wf::framebuffer_t& buffer, wf::geometry_t geometry,
+    void render(const wf::render_target_t& buffer, wf::geometry_t geometry,
         wf::geometry_t scissor);
 
   private:

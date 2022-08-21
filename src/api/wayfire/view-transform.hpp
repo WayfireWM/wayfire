@@ -100,11 +100,11 @@ class view_transformer_t
      * either of the functions.
      */
     virtual void render_with_damage(wf::texture_t src_tex, wlr_box src_box,
-        const wf::region_t& damage, const wf::framebuffer_t& target_fb);
+        const wf::region_t& damage, const wf::render_target_t& target_fb);
 
     /** Same as render_with_damage(), but for a single rectangle of damage */
     virtual void render_box(wf::texture_t src_tex, wlr_box src_box,
-        wlr_box scissor_box, const wf::framebuffer_t& target_fb)
+        wlr_box scissor_box, const wf::render_target_t& target_fb)
     {}
 
     view_transformer_t() = default;
@@ -142,7 +142,7 @@ class view_2D : public view_transformer_t
     wf::pointf_t untransform_point(
         wf::geometry_t view, wf::pointf_t point) override;
     void render_box(wf::texture_t src_tex, wlr_box src_box,
-        wlr_box scissor_box, const wf::framebuffer_t& target_fb) override;
+        wlr_box scissor_box, const wf::render_target_t& target_fb) override;
 };
 
 /* Those are centered relative to the view's bounding box */
@@ -171,7 +171,7 @@ class view_3D : public view_transformer_t
     wf::pointf_t untransform_point(
         wf::geometry_t view, wf::pointf_t point) override;
     void render_box(wf::texture_t src_tex, wlr_box src_box,
-        wlr_box scissor_box, const wf::framebuffer_t& target_fb) override;
+        wlr_box scissor_box, const wf::render_target_t& target_fb) override;
 
     static const float fov; // PI / 8
     static glm::mat4 default_view_matrix();

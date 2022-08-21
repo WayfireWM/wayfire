@@ -928,7 +928,7 @@ class wayfire_dnd_xwayland_view : public wayfire_unmanaged_xwayland_view
         return xwayland_view_type_t::DND;
     }
 
-    void simple_render(const wf::framebuffer_t& fb,
+    void simple_render(const wf::render_target_t& fb,
         int x, int y, const wf::region_t& damage) override
     {
         wayfire_unmanaged_xwayland_view::simple_render(fb, x, y, damage);

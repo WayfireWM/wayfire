@@ -53,7 +53,7 @@ class crossfade_t : public wf::view_2D
     }
 
     void render_box(wf::texture_t src_tex, wlr_box src_box,
-        wlr_box scissor_box, const wf::framebuffer_t& fb) override
+        wlr_box scissor_box, const wf::render_target_t& fb) override
     {
         // See the current target geometry
         auto bbox = view->get_wm_geometry();
@@ -91,7 +91,7 @@ class crossfade_t : public wf::view_2D
     }
 
     // The contents of the view before the change.
-    wf::framebuffer_t original_buffer;
+    wf::render_target_t original_buffer;
 };
 
 /**

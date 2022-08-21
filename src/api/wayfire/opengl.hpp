@@ -79,7 +79,7 @@ struct framebuffer_base_t
 /* A more feature-complete framebuffer.
  * It represents an area of the output, with the corresponding dimensions,
  * transforms, etc */
-struct framebuffer_t : public framebuffer_base_t
+struct render_target_t : public framebuffer_base_t
 {
     wf::geometry_t geometry = {0, 0, 0, 0};
 
@@ -262,7 +262,7 @@ void render_transformed_texture(wf::texture_t texture,
  *                    TEX_GEOMETRY flag is ignored.
  */
 void render_texture(wf::texture_t texture,
-    const wf::framebuffer_t& framebuffer,
+    const wf::render_target_t& framebuffer,
     const wf::geometry_t& geometry,
     glm::vec4 color = glm::vec4(1.f),
     uint32_t bits   = 0);

@@ -75,7 +75,7 @@ class wlr_surface_base_t
      */
     virtual bool _is_mapped() const;
     virtual wf::dimensions_t _get_size() const;
-    virtual void _simple_render(const wf::framebuffer_t& fb, int x, int y,
+    virtual void _simple_render(const wf::render_target_t& fb, int x, int y,
         const wf::region_t& damage);
 
   protected:
@@ -115,7 +115,7 @@ class wlr_child_surface_base_t :
         return _get_size();
     }
 
-    virtual void simple_render(const wf::framebuffer_t& fb, int x, int y,
+    virtual void simple_render(const wf::render_target_t& fb, int x, int y,
         const wf::region_t& damage) override
     {
         _simple_render(fb, x, y, damage);

@@ -81,7 +81,7 @@ class scale_transformer_t : public wf::view_2D
      * @param fb     The framebuffer to render to.
      * @param damage Damaged region to render.
      */
-    using render_hook_t = std::function<void (const wf::framebuffer_t& fb,
+    using render_hook_t = std::function<void (const wf::render_target_t& fb,
         const wf::region_t& damage)>;
 
     /**
@@ -109,7 +109,7 @@ class scale_transformer_t : public wf::view_2D
 
     /* render the transformed view and then add all overlays */
     void render_with_damage(wf::texture_t src_tex, wlr_box src_box,
-        const wf::region_t& damage, const wf::framebuffer_t& target_fb) override
+        const wf::region_t& damage, const wf::render_target_t& target_fb) override
     {
         /* render the transformed view first */
         view_transformer_t::render_with_damage(src_tex, src_box, damage, target_fb);

@@ -343,7 +343,7 @@ class view_title_overlay_t : public wf::scale_transformer_t::overlay_t
         return ret;
     }
 
-    void render(const wf::framebuffer_t& fb, const wf::region_t& damage)
+    void render(const wf::render_target_t& fb, const wf::region_t& damage)
     {
         if (!overlay_shown)
         {
@@ -405,7 +405,7 @@ class view_title_overlay_t : public wf::scale_transformer_t::overlay_t
             return pre_render();
         };
         render_hook = [this] (
-            const wf::framebuffer_t& fb,
+            const wf::render_target_t& fb,
             const wf::region_t& damage)
         {
             render(fb, damage);

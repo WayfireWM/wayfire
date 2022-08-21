@@ -118,7 +118,7 @@ class wf_blur_base
     /* copy the source pixels from region, storing into result
      * returns the result geometry, in framebuffer coords */
     wlr_box copy_region(wf::framebuffer_base_t& result,
-        const wf::framebuffer_t& source, const wf::region_t& region);
+        const wf::render_target_t& source, const wf::region_t& region);
 
     /* blur fb[0]
      * width and height are the scaled dimensions of the buffer
@@ -132,10 +132,10 @@ class wf_blur_base
     virtual int calculate_blur_radius();
 
     virtual void pre_render(wf::texture_t src_tex, wlr_box src_box,
-        const wf::region_t& damage, const wf::framebuffer_t& target_fb);
+        const wf::region_t& damage, const wf::render_target_t& target_fb);
 
     virtual void render(wf::texture_t src_tex, wlr_box src_box,
-        wlr_box scissor_box, const wf::framebuffer_t& target_fb);
+        wlr_box scissor_box, const wf::render_target_t& target_fb);
 };
 
 std::unique_ptr<wf_blur_base> create_box_blur(wf::output_t *output);

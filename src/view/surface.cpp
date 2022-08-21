@@ -441,7 +441,7 @@ void wf::wlr_surface_base_t::update_output(wf::output_t *old_output,
     }
 }
 
-void wf::wlr_surface_base_t::_simple_render(const wf::framebuffer_t& fb,
+void wf::wlr_surface_base_t::_simple_render(const wf::render_target_t& fb,
     int x, int y, const wf::region_t& damage)
 {
     if (!get_buffer())

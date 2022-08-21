@@ -78,7 +78,7 @@ void wf_cube_background_cubemap::reload_texture()
     OpenGL::render_end();
 }
 
-void wf_cube_background_cubemap::render_frame(const wf::framebuffer_t& fb,
+void wf_cube_background_cubemap::render_frame(const wf::render_target_t& fb,
     wf_cube_animation_attribs& attribs)
 {
     reload_texture();

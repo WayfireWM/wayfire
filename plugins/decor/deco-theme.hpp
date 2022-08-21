@@ -29,7 +29,7 @@ class decoration_theme_t
      * @param scissor The GL scissor rectangle to use.
      * @param active Whether to use active or inactive colors
      */
-    void render_background(const wf::framebuffer_t& fb, wf::geometry_t rectangle,
+    void render_background(const wf::render_target_t& fb, wf::geometry_t rectangle,
         const wf::geometry_t& scissor, bool active) const;
 
     /**

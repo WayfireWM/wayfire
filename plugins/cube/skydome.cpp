@@ -124,7 +124,7 @@ void wf_cube_background_skydome::fill_vertices()
     }
 }
 
-void wf_cube_background_skydome::render_frame(const wf::framebuffer_t& fb,
+void wf_cube_background_skydome::render_frame(const wf::render_target_t& fb,
     wf_cube_animation_attribs& attribs)
 {
     fill_vertices();

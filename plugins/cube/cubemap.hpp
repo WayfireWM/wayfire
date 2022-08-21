@@ -7,7 +7,7 @@ class wf_cube_background_cubemap : public wf_cube_background_base
 {
   public:
     wf_cube_background_cubemap();
-    virtual void render_frame(const wf::framebuffer_t& fb,
+    virtual void render_frame(const wf::render_target_t& fb,
         wf_cube_animation_attribs& attribs) override;
 
     ~wf_cube_background_cubemap();

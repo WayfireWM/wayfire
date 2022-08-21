@@ -138,7 +138,7 @@ static wf::geometry_t sanitize(wf::geometry_t box, int degrade,
 }
 
 wlr_box wf_blur_base::copy_region(wf::framebuffer_base_t& result,
-    const wf::framebuffer_t& source, const wf::region_t& region)
+    const wf::render_target_t& source, const wf::region_t& region)
 {
     auto subbox = source.framebuffer_box_from_geometry_box(
         wlr_box_from_pixman_box(region.get_extents()));
@@ -168,7 +168,7 @@ wlr_box wf_blur_base::copy_region(wf::framebuffer_base_t& result,
 }
 
 void wf_blur_base::pre_render(wf::texture_t src_tex, wlr_box src_box,
-    const wf::region_t& damage, const wf::framebuffer_t& target_fb)
+    const wf::region_t& damage, const wf::render_target_t& target_fb)
 {
     int degrade     = degrade_opt;
     auto damage_box = copy_region(fb[0], target_fb, damage);
@@ -222,7 +222,7 @@ void wf_blur_base::pre_render(wf::texture_t src_tex, wlr_box src_box,
 }
 
 void wf_blur_base::render(wf::texture_t src_tex, wlr_box src_box,
-    wlr_box scissor_box, const wf::framebuffer_t& target_fb)
+    wlr_box scissor_box, const wf::render_target_t& target_fb)
 {
     wlr_box fb_geom =
         target_fb.framebuffer_box_from_geometry_box(target_fb.geometry);

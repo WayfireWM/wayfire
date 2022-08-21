@@ -1056,7 +1056,7 @@ wf::region_t wf::view_interface_t::get_transformed_opaque_region()
     return opaque;
 }
 
-bool wf::view_interface_t::render_transformed(const wf::framebuffer_t& framebuffer,
+bool wf::view_interface_t::render_transformed(const wf::render_target_t& framebuffer,
     const wf::region_t& damage)
 {
     if (!is_mapped() && !view_impl->offscreen_buffer.valid())
@@ -1175,7 +1175,7 @@ wf::view_transform_block_t::~view_transform_block_t()
     OpenGL::render_end();
 }
 
-const wf::framebuffer_t& wf::view_interface_t::take_snapshot()
+const wf::render_target_t& wf::view_interface_t::take_snapshot()
 {
     if (!is_mapped())
     {
