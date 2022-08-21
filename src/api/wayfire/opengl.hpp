@@ -41,13 +41,6 @@ struct framebuffer_t
     GLuint tex = -1, fb = -1;
     int32_t viewport_width = 0, viewport_height = 0;
 
-    framebuffer_t() = default;
-    virtual ~framebuffer_t() = default;
-    framebuffer_t(framebuffer_t&& other);
-    framebuffer_t& operator =(framebuffer_t&& other);
-    framebuffer_t(const framebuffer_t&) = delete;
-    framebuffer_t& operator =(const framebuffer_t&) = delete;
-
     /* The functions below assume they are called between
      * OpenGL::render_begin() and OpenGL::render_end() */
 
@@ -71,9 +64,6 @@ struct framebuffer_t
     /* Reset the framebuffer, WITHOUT freeing resources.
      * There is no need to call reset() after release() */
     void reset();
-
-  private:
-    void copy_state(framebuffer_t&& other);
 };
 
 /* A more feature-complete framebuffer.

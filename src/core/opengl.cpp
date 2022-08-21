@@ -369,36 +369,6 @@ bool wf::framebuffer_t::allocate(int width, int height)
     return is_resize || first_allocate;
 }
 
-void wf::framebuffer_t::copy_state(wf::framebuffer_t&& other)
-{
-    this->viewport_width  = other.viewport_width;
-    this->viewport_height = other.viewport_height;
-
-    this->fb  = other.fb;
-    this->tex = other.tex;
-
-    other.reset();
-}
-
-wf::framebuffer_t::framebuffer_t(wf::framebuffer_t&& other)
-{
-    copy_state(std::move(other));
-}
-
-wf::framebuffer_t& wf::framebuffer_t::operator =(
-    wf::framebuffer_t&& other)
-{
-    if (this == &other)
-    {
-        return *this;
-    }
-
-    release();
-    copy_state(std::move(other));
-
-    return *this;
-}
-
 void wf::framebuffer_t::bind() const
 {
     GL_CALL(glBindFramebuffer(GL_DRAW_FRAMEBUFFER, fb));
