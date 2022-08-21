@@ -160,8 +160,8 @@ class wayfire_fisheye : public wf::plugin_interface_t
         return true;
     };
 
-    wf::post_hook_t render_hook = [=] (const wf::framebuffer_base_t& source,
-                                       const wf::framebuffer_base_t& dest)
+    wf::post_hook_t render_hook = [=] (const wf::framebuffer_t& source,
+                                       const wf::framebuffer_t& dest)
     {
         auto oc     = output->get_cursor_position();
         wlr_box box = {(int)oc.x, (int)oc.y, 1, 1};

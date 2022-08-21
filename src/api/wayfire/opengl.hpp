@@ -36,17 +36,17 @@ namespace wf
  * streams.
  *
  * Resources (tex/fb) are not automatically destroyed */
-struct framebuffer_base_t
+struct framebuffer_t
 {
     GLuint tex = -1, fb = -1;
     int32_t viewport_width = 0, viewport_height = 0;
 
-    framebuffer_base_t() = default;
-    virtual ~framebuffer_base_t() = default;
-    framebuffer_base_t(framebuffer_base_t&& other);
-    framebuffer_base_t& operator =(framebuffer_base_t&& other);
-    framebuffer_base_t(const framebuffer_base_t&) = delete;
-    framebuffer_base_t& operator =(const framebuffer_base_t&) = delete;
+    framebuffer_t() = default;
+    virtual ~framebuffer_t() = default;
+    framebuffer_t(framebuffer_t&& other);
+    framebuffer_t& operator =(framebuffer_t&& other);
+    framebuffer_t(const framebuffer_t&) = delete;
+    framebuffer_t& operator =(const framebuffer_t&) = delete;
 
     /* The functions below assume they are called between
      * OpenGL::render_begin() and OpenGL::render_end() */
@@ -73,13 +73,13 @@ struct framebuffer_base_t
     void reset();
 
   private:
-    void copy_state(framebuffer_base_t&& other);
+    void copy_state(framebuffer_t&& other);
 };
 
 /* A more feature-complete framebuffer.
  * It represents an area of the output, with the corresponding dimensions,
  * transforms, etc */
-struct render_target_t : public framebuffer_base_t
+struct render_target_t : public framebuffer_t
 {
     wf::geometry_t geometry = {0, 0, 0, 0};
 
@@ -179,7 +179,7 @@ namespace OpenGL
  * The other functions below assume they are called between render_begin()
  * and render_end() */
 void render_begin(); // use if you just want to bind GL context but won't draw
-void render_begin(const wf::framebuffer_base_t& fb);
+void render_begin(const wf::framebuffer_t& fb);
 void render_begin(int32_t viewport_width, int32_t viewport_height, uint32_t fb);
 
 /* Call this to indicate an end of the rendering.

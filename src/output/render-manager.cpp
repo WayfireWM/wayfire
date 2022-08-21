@@ -268,7 +268,7 @@ struct postprocessing_manager_t
 {
     using post_container_t = wf::safe_list_t<post_hook_t*>;
     post_container_t post_effects;
-    wf::framebuffer_base_t post_buffers[3];
+    wf::framebuffer_t post_buffers[3];
     /* Buffer to which other operations render to */
     static constexpr uint32_t default_out_buffer = 0;
 
@@ -335,7 +335,7 @@ struct postprocessing_manager_t
      * damage. So, we need to keep the whole buffer each frame. */
     void run_post_effects()
     {
-        wf::framebuffer_base_t default_framebuffer;
+        wf::framebuffer_t default_framebuffer;
         default_framebuffer.fb  = output_fb;
         default_framebuffer.tex = 0;
 
@@ -346,7 +346,7 @@ struct postprocessing_manager_t
         {
             /* The last postprocessing hook renders directly to the screen, others to
              * the currently free buffer */
-            wf::framebuffer_base_t& next_buffer =
+            wf::framebuffer_t& next_buffer =
                 (post == post_effects.back() ? default_framebuffer :
                     post_buffers[next_buffer_idx]);
 

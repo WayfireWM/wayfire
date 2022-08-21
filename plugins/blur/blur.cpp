@@ -137,7 +137,7 @@ class wayfire_blur : public wf::plugin_interface_t
     const std::string transformer_name = "blur";
 
     /* the pixels from padded_region */
-    wf::framebuffer_base_t saved_pixels;
+    wf::framebuffer_t saved_pixels;
     wf::region_t padded_region;
 
     void add_transformer(wayfire_view view)

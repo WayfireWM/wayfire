@@ -86,7 +86,7 @@ int wf_blur_base::calculate_blur_radius()
 }
 
 void wf_blur_base::render_iteration(wf::region_t blur_region,
-    wf::framebuffer_base_t& in, wf::framebuffer_base_t& out,
+    wf::framebuffer_t& in, wf::framebuffer_t& out,
     int width, int height)
 {
     /* Special case for small regions where we can't really blur, because we
@@ -137,7 +137,7 @@ static wf::geometry_t sanitize(wf::geometry_t box, int degrade,
     return wf::clamp(out_box, bounds);
 }
 
-wlr_box wf_blur_base::copy_region(wf::framebuffer_base_t& result,
+wlr_box wf_blur_base::copy_region(wf::framebuffer_t& result,
     const wf::render_target_t& source, const wf::region_t& region)
 {
     auto subbox = source.framebuffer_box_from_geometry_box(

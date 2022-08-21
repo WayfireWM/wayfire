@@ -66,8 +66,8 @@ class wayfire_zoom_screen : public wf::plugin_interface_t
         return true;
     };
 
-    wf::post_hook_t render_hook = [=] (const wf::framebuffer_base_t& source,
-                                       const wf::framebuffer_base_t& destination)
+    wf::post_hook_t render_hook = [=] (const wf::framebuffer_t& source,
+                                       const wf::framebuffer_t& destination)
     {
         auto w = destination.viewport_width;
         auto h = destination.viewport_height;

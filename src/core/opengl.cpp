@@ -259,7 +259,7 @@ void render_begin()
     GL_CALL(glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA));
 }
 
-void render_begin(const wf::framebuffer_base_t& fb)
+void render_begin(const wf::framebuffer_t& fb)
 {
     render_begin();
     fb.bind();
@@ -308,7 +308,7 @@ static std::string framebuffer_status_to_str(
     }
 }
 
-bool wf::framebuffer_base_t::allocate(int width, int height)
+bool wf::framebuffer_t::allocate(int width, int height)
 {
     bool first_allocate = false;
     if (fb == (uint32_t)-1)
@@ -369,7 +369,7 @@ bool wf::framebuffer_base_t::allocate(int width, int height)
     return is_resize || first_allocate;
 }
 
-void wf::framebuffer_base_t::copy_state(wf::framebuffer_base_t&& other)
+void wf::framebuffer_t::copy_state(wf::framebuffer_t&& other)
 {
     this->viewport_width  = other.viewport_width;
     this->viewport_height = other.viewport_height;
@@ -380,13 +380,13 @@ void wf::framebuffer_base_t::copy_state(wf::framebuffer_base_t&& other)
     other.reset();
 }
 
-wf::framebuffer_base_t::framebuffer_base_t(wf::framebuffer_base_t&& other)
+wf::framebuffer_t::framebuffer_t(wf::framebuffer_t&& other)
 {
     copy_state(std::move(other));
 }
 
-wf::framebuffer_base_t& wf::framebuffer_base_t::operator =(
-    wf::framebuffer_base_t&& other)
+wf::framebuffer_t& wf::framebuffer_t::operator =(
+    wf::framebuffer_t&& other)
 {
     if (this == &other)
     {
@@ -399,20 +399,20 @@ wf::framebuffer_base_t& wf::framebuffer_base_t::operator =(
     return *this;
 }
 
-void wf::framebuffer_base_t::bind() const
+void wf::framebuffer_t::bind() const
 {
     GL_CALL(glBindFramebuffer(GL_DRAW_FRAMEBUFFER, fb));
     GL_CALL(glViewport(0, 0, viewport_width, viewport_height));
 }
 
-void wf::framebuffer_base_t::scissor(wlr_box box) const
+void wf::framebuffer_t::scissor(wlr_box box) const
 {
     GL_CALL(glEnable(GL_SCISSOR_TEST));
     GL_CALL(glScissor(box.x, viewport_height - box.y - box.height,
         box.width, box.height));
 }
 
-void wf::framebuffer_base_t::release()
+void wf::framebuffer_t::release()
 {
     if ((fb != uint32_t(-1)) && (fb != 0))
     {
@@ -427,7 +427,7 @@ void wf::framebuffer_base_t::release()
     reset();
 }
 
-void wf::framebuffer_base_t::reset()
+void wf::framebuffer_t::reset()
 {
     fb  = -1;
     tex = -1;

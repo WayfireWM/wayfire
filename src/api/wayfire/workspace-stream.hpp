@@ -11,7 +11,7 @@ namespace wf
 struct workspace_stream_t
 {
     wf::point_t ws;
-    wf::framebuffer_base_t buffer;
+    wf::framebuffer_t buffer;
     bool running = false;
 
     float scale_x = 1.0;

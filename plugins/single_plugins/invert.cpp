@@ -59,8 +59,8 @@ class wayfire_invert_screen : public wf::plugin_interface_t
         grab_interface->name = "invert";
         grab_interface->capabilities = 0;
 
-        hook = [=] (const wf::framebuffer_base_t& source,
-                    const wf::framebuffer_base_t& destination)
+        hook = [=] (const wf::framebuffer_t& source,
+                    const wf::framebuffer_t& destination)
         {
             render(source, destination);
         };
@@ -93,8 +93,8 @@ class wayfire_invert_screen : public wf::plugin_interface_t
         output->add_activator(toggle_key, &toggle_cb);
     }
 
-    void render(const wf::framebuffer_base_t& source,
-        const wf::framebuffer_base_t& destination)
+    void render(const wf::framebuffer_t& source,
+        const wf::framebuffer_t& destination)
     {
         static const float vertexData[] = {
             -1.0f, -1.0f,
