@@ -1,6 +1,9 @@
 #include "wayfire/render-manager.hpp"
 #include "view/view-impl.hpp"
+#include "wayfire/scene-input.hpp"
+#include "wayfire/scene.hpp"
 #include "wayfire/signal-definitions.hpp"
+#include "wayfire/view.hpp"
 #include "wayfire/workspace-stream.hpp"
 #include "wayfire/output.hpp"
 #include "../core/core-impl.hpp"
@@ -1234,19 +1237,19 @@ class wf::render_manager::impl
         }
     }
 
-    /**
-     * Iterate all visible surfaces on the workspace, and check whether
-     * they need repaint.
-     */
-    void check_schedule_surfaces(workspace_stream_repaint_t& repaint,
+    void schedule_recursive(
+        wf::scene::node_ptr root,
+        workspace_stream_repaint_t& repaint,
         workspace_stream_t& stream)
     {
-        auto views = output->workspace->get_views_on_workspace(stream.ws,
-            wf::VISIBLE_LAYERS);
-
-        schedule_drag_icon(repaint);
-        for (auto& v : views)
+        if (root->is_disabled())
         {
+            return;
+        }
+
+        if (auto vnode = dynamic_cast<scene::view_node_t*>(root.get()))
+        {
+            auto v = vnode->get_view();
             for (auto& view : v->enumerate_views(false))
             {
                 wf::point_t view_delta{0, 0};
@@ -1283,6 +1286,30 @@ class wf::render_manager::impl
                     }
                 }
             }
+
+            return;
+        }
+
+        for (auto& ch : root->get_children())
+        {
+            schedule_recursive(ch, repaint, stream);
+        }
+    }
+
+    /**
+     * Iterate all visible surfaces on the workspace, and check whether
+     * they need repaint.
+     */
+    void check_schedule_surfaces(workspace_stream_repaint_t& repaint,
+        workspace_stream_t& stream)
+    {
+        schedule_drag_icon(repaint);
+
+        for (int layer = (int)wf::scene::layer::DWIDGET;
+             layer >= (int)wf::scene::layer::BACKGROUND; layer--)
+        {
+            schedule_recursive(output->node_for_layer((wf::scene::layer)layer),
+                repaint, stream);
         }
     }
 

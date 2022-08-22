@@ -4,6 +4,9 @@
 #include "wayfire/geometry.hpp"
 #include "wayfire/object.hpp"
 #include "wayfire/bindings.hpp"
+#include "wayfire/scene-input.hpp"
+#include "wayfire/scene.hpp"
+#include "wayfire/signal-provider.hpp"
 
 #include <wayfire/nonstd/wlroots.hpp>
 #include <wayfire/option-wrapper.hpp>
@@ -96,6 +99,9 @@ class output_t : public wf::object_base_t
      * Gets the cursor position relative to the output
      */
     wf::pointf_t get_cursor_position() const;
+
+    virtual std::shared_ptr<wf::scene::output_node_t> node_for_layer(
+        wf::scene::layer layer) const = 0;
 
     /**
      * Checks if a plugin can activate. This may not succeed if a plugin

@@ -14,6 +14,7 @@
 
 #include "../view/view-impl.hpp"
 #include "output-impl.hpp"
+#include "wayfire/scene.hpp"
 
 namespace wf
 {
@@ -123,17 +124,6 @@ struct layer_container_t
  */
 class output_layer_manager_t
 {
-    void setup_scene(wf::output_t *output)
-    {
-        auto& root = wf::get_core().scene();
-        for (size_t layer = 0; layer < (size_t)scene::layer::ALL_LAYERS; layer++)
-        {
-            nodes[layer] = std::make_shared<scene::output_node_t>();
-            nodes[layer]->limit_region = output->get_layout_geometry();
-            scene::add_back(root->layers[layer], nodes[layer]);
-        }
-    }
-
     // A flat representation of the view stack order
     std::vector<wayfire_view> view_list;
 
@@ -141,13 +131,8 @@ class output_layer_manager_t
     layer_container_t layers[TOTAL_LAYERS];
 
   public:
-    std::shared_ptr<scene::output_node_t> nodes[TOTAL_LAYERS];
-
-  public:
     output_layer_manager_t(wf::output_t *output)
     {
-        setup_scene(output);
-
         for (int i = 0; i < TOTAL_LAYERS; i++)
         {
             layers[i].layer = static_cast<layer_t>(1 << i);
@@ -161,7 +146,8 @@ class output_layer_manager_t
 
             if ((1 << i) != LAYER_MINIMIZED)
             {
-                nodes[i]->dynamic->set_children_list({
+                auto node = output->node_for_layer((wf::scene::layer)i);
+                node->dynamic->set_children_list({
                         layers[i].above.node,
                         layers[i].floating.node,
                         layers[i].below.node
@@ -940,14 +926,20 @@ class output_workarea_manager_t
 
 namespace scene
 {
-class copy_node_t final : public node_t
+class copy_node_t final : public view_node_t
 {
     node_ptr shadow;
 
   public:
-    copy_node_t(const node_ptr& copy) : node_t(false)
+    copy_node_t(wayfire_view view, const node_ptr& copy) : view_node_t()
     {
         this->shadow = copy;
+        this->view   = view;
+    }
+
+    keyboard_interaction_t& keyboard_interaction() override
+    {
+        return shadow->keyboard_interaction();
     }
 
     std::optional<input_node_t> find_node_at(const wf::pointf_t& at) override
@@ -964,13 +956,10 @@ class workspace_manager::impl
 
     signal_connection_t output_geometry_changed = [&] (void*)
     {
-        for (auto& node : layer_manager.nodes)
+        for (int i = 0; i < (int)wf::scene::layer::ALL_LAYERS; i++)
         {
-            if (node) // TODO: minimize dlayer does not have a layer right now,
-                      // we should change this in the future.
-            {
-                node->limit_region = output->get_layout_geometry();
-            }
+            output->node_for_layer((wf::scene::layer)i)->limit_region =
+                output->get_layout_geometry();
         }
 
         wf::get_core().scene()->update();
@@ -1118,8 +1107,8 @@ class workspace_manager::impl
         for (auto& view : already_promoted)
         {
             view->view_impl->is_promoted = false;
-            scene::remove_child(
-                layer_manager.nodes[(size_t)scene::layer::TOP]->dynamic,
+            auto top_node = output->node_for_layer(scene::layer::TOP);
+            scene::remove_child(top_node->dynamic,
                 view->view_impl->promoted_copy_node);
         }
 
@@ -1142,11 +1131,11 @@ class workspace_manager::impl
             if (!fr->view_impl->promoted_copy_node)
             {
                 fr->view_impl->promoted_copy_node =
-                    std::make_shared<scene::copy_node_t>(fr->get_scene_node());
+                    std::make_shared<scene::copy_node_t>(fr, fr->get_scene_node());
             }
 
-            scene::add_front(
-                layer_manager.nodes[(size_t)scene::layer::TOP]->dynamic,
+            auto top_node = output->node_for_layer(scene::layer::TOP);
+            scene::add_front(top_node->dynamic,
                 fr->view_impl->promoted_copy_node);
         }
 

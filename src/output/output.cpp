@@ -1,4 +1,5 @@
 #include "output-impl.hpp"
+#include "wayfire/scene-operations.hpp"
 #include "wayfire/view.hpp"
 #include "../core/core-impl.hpp"
 #include "wayfire/signal-definitions.hpp"
@@ -23,8 +24,17 @@ wf::output_impl_t::output_impl_t(wlr_output *handle,
     this->bindings = std::make_unique<bindings_repository_t>(this);
     this->set_effective_size(effective_size);
     this->handle = handle;
-    workspace    = std::make_unique<workspace_manager>(this);
-    render = std::make_unique<render_manager>(this);
+
+    auto& root = wf::get_core().scene();
+    for (size_t layer = 0; layer < (size_t)scene::layer::ALL_LAYERS; layer++)
+    {
+        nodes[layer] = std::make_shared<scene::output_node_t>();
+        nodes[layer]->limit_region = get_layout_geometry();
+        scene::add_back(root->layers[layer], nodes[layer]);
+    }
+
+    workspace = std::make_unique<workspace_manager>(this);
+    render    = std::make_unique<render_manager>(this);
 
     view_disappeared_cb.set_callback([=] (wf::signal_data_t *data)
     {
@@ -32,6 +42,12 @@ wf::output_impl_t::output_impl_t(wlr_output *handle,
     });
 
     connect_signal("view-disappeared", &view_disappeared_cb);
+}
+
+std::shared_ptr<wf::scene::output_node_t> wf::output_impl_t::node_for_layer(
+    wf::scene::layer layer) const
+{
+    return nodes[(int)layer];
 }
 
 void wf::output_impl_t::start_plugins()

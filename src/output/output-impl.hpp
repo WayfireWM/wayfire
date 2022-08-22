@@ -4,11 +4,15 @@
 
 #include <unordered_set>
 #include <wayfire/nonstd/safe-list.hpp>
+#include <wayfire/workspace-manager.hpp>
 
 namespace wf
 {
 class output_impl_t : public output_t
 {
+  private:
+    std::shared_ptr<scene::output_node_t> nodes[TOTAL_LAYERS];
+
   private:
     std::unordered_multiset<wf::plugin_grab_interface_t*> active_plugins;
     std::unique_ptr<plugin_manager> plugin;
@@ -58,6 +62,8 @@ class output_impl_t : public output_t
     /**
      * Implementations of the public APIs
      */
+    virtual std::shared_ptr<wf::scene::output_node_t> node_for_layer(
+        wf::scene::layer layer) const override;
     bool can_activate_plugin(const plugin_grab_interface_uptr& owner,
         uint32_t flags = 0) override;
     bool can_activate_plugin(uint32_t caps, uint32_t flags = 0) override;

@@ -585,11 +585,11 @@ namespace scene
  *
  * Each view_node_t also exposes its surfaces as children.
  */
-class view_node_t final : public scene::floating_inner_node_t
+class view_node_t : public scene::floating_inner_node_t
 {
   public:
     view_node_t(wayfire_view view);
-    std::optional<input_node_t> find_node_at(const wf::pointf_t& at) final;
+    std::optional<input_node_t> find_node_at(const wf::pointf_t& at) override;
     std::string stringify() const override;
 
     wayfire_view get_view() const
@@ -597,9 +597,10 @@ class view_node_t final : public scene::floating_inner_node_t
         return view;
     }
 
-    keyboard_interaction_t& keyboard_interaction() final;
+    keyboard_interaction_t& keyboard_interaction() override;
 
-  private:
+  protected:
+    view_node_t();
     wayfire_view view;
     std::unique_ptr<keyboard_interaction_t> kb_interaction;
 };
