@@ -1,5 +1,6 @@
 #include "wayfire/render-manager.hpp"
 #include "view/view-impl.hpp"
+#include "wayfire/geometry.hpp"
 #include "wayfire/scene-input.hpp"
 #include "wayfire/scene.hpp"
 #include "wayfire/signal-definitions.hpp"
@@ -1064,40 +1065,25 @@ class wf::render_manager::impl
         }
     }
 
-    /**
-     * Send frame_done to clients.
-     */
-    void send_frame_done()
+    void send_frame_done_recursive(wf::scene::node_ptr root,
+        std::optional<wf::geometry_t> limit,
+        const timespec& repaint_ended)
     {
-        /* TODO: do this only if the view isn't fully occluded by another */
-        std::vector<wayfire_view> visible_views;
-        if (renderer)
+        if (root->is_disabled())
         {
-            visible_views = output->workspace->get_views_in_layer(
-                wf::VISIBLE_LAYERS);
-        } else
-        {
-            visible_views = output->workspace->get_views_on_workspace(
-                output->workspace->get_current_workspace(),
-                wf::MIDDLE_LAYERS);
-
-            // send to all panels/backgrounds/etc
-            auto additional_views = output->workspace->get_views_in_layer(
-                wf::BELOW_LAYERS | wf::ABOVE_LAYERS);
-
-            visible_views.insert(visible_views.end(),
-                additional_views.begin(), additional_views.end());
+            return;
         }
 
-        timespec repaint_ended;
-        clockid_t presentation_clock =
-            wlr_backend_get_presentation_clock(wf::get_core_impl().backend);
-        clock_gettime(presentation_clock, &repaint_ended);
-        for (auto& v : visible_views)
+        if (auto vnode = dynamic_cast<scene::view_node_t*>(root.get()))
         {
-            for (auto& view : v->enumerate_views())
+            for (auto& view : vnode->get_view()->enumerate_views())
             {
                 if (!view->is_mapped())
+                {
+                    continue;
+                }
+
+                if (limit && !(view->get_bounding_box() & *limit))
                 {
                     continue;
                 }
@@ -1106,6 +1092,39 @@ class wf::render_manager::impl
                 {
                     child.surface->send_frame_done(repaint_ended);
                 }
+            }
+        }
+
+        for (auto& ch : root->get_children())
+        {
+            send_frame_done_recursive(ch, limit, repaint_ended);
+        }
+    }
+
+    /**
+     * Send frame_done to clients.
+     */
+    void send_frame_done()
+    {
+        timespec repaint_ended;
+        clockid_t presentation_clock =
+            wlr_backend_get_presentation_clock(wf::get_core_impl().backend);
+        clock_gettime(presentation_clock, &repaint_ended);
+
+        // TODO: during rendering, we should build a list of rendered surfaces and
+        // send them all frame done instead of recalculating here.
+        for (int i = 0; i < (int)wf::scene::layer::ALL_LAYERS; i++)
+        {
+            if (renderer)
+            {
+                auto limit = output->render->get_ws_box(
+                    output->workspace->get_current_workspace());
+                send_frame_done_recursive(output->node_for_layer(
+                    (wf::scene::layer)i), limit, repaint_ended);
+            } else
+            {
+                send_frame_done_recursive(output->node_for_layer(
+                    (wf::scene::layer)i), {}, repaint_ended);
             }
         }
     }
