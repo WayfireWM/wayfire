@@ -954,11 +954,6 @@ class copy_node_t final : public node_t
     {
         return shadow->find_node_at(at);
     }
-
-    iteration visit(visitor_t *visitor) override
-    {
-        return visitor->generic_node(this);
-    }
 };
 }
 

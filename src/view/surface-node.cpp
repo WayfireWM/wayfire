@@ -26,11 +26,6 @@ std::optional<input_node_t> surface_node_t::find_node_at(
     return {};
 }
 
-wf::scene::iteration wf::scene::surface_node_t::visit(visitor_t *visitor)
-{
-    return visitor->generic_node(this);
-}
-
 std::string wf::scene::surface_node_t::stringify() const
 {
     return "surface " + stringify_flags();

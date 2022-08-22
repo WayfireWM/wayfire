@@ -589,8 +589,6 @@ class view_node_t final : public scene::floating_inner_node_t
 {
   public:
     view_node_t(wayfire_view view);
-
-    iteration visit(visitor_t *visitor) final;
     std::optional<input_node_t> find_node_at(const wf::pointf_t& at) final;
     std::string stringify() const override;
 

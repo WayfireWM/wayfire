@@ -34,18 +34,7 @@ std::string node_t::stringify_flags() const
     return "(" + fl + ")";
 }
 
-std::string node_t::stringify() const
-{
-    return "generic-node " + stringify_flags();
-}
-
-// ------------------------------- inner_node_t --------------------------------
-
-// ------------------------------- inner_node_t --------------------------------
-inner_node_t::inner_node_t(bool _is_structure) : node_t(_is_structure)
-{}
-
-std::optional<input_node_t> inner_node_t::find_node_at(const wf::pointf_t& at)
+std::optional<input_node_t> node_t::find_node_at(const wf::pointf_t& at)
 {
     if (!test_point_in_limit(at))
     {
@@ -62,38 +51,6 @@ std::optional<input_node_t> inner_node_t::find_node_at(const wf::pointf_t& at)
     }
 
     return {};
-}
-
-iteration inner_node_t::visit(visitor_t *visitor)
-{
-    auto proceed = visitor->inner_node(this);
-    switch (proceed)
-    {
-      case iteration::STOP:
-        // Tell parent to stop
-        return iteration::STOP;
-
-      case iteration::ALL:
-        // Go through all children and see what they want
-        for (auto& ch : get_children())
-        {
-            if (ch->flags() & (int)node_flags::DISABLED)
-            {
-                continue;
-            }
-
-            if (ch->visit(visitor) == iteration::STOP)
-            {
-                return iteration::STOP;
-            }
-        }
-
-      // fallthrough
-      case iteration::SKIP_CHILDREN:
-        return iteration::ALL;
-    }
-
-    assert(false);
 }
 
 static std::vector<node_t*> extract_structure_nodes(
@@ -129,7 +86,7 @@ bool floating_inner_node_t::set_children_list(std::vector<node_ptr> new_list)
     return true;
 }
 
-void inner_node_t::set_children_unchecked(std::vector<node_ptr> new_list)
+void node_t::set_children_unchecked(std::vector<node_ptr> new_list)
 {
     for (auto& node : new_list)
     {
@@ -176,9 +133,9 @@ static bool is_static_output(const wf::scene::node_t *node)
     return false;
 }
 
-std::string inner_node_t::stringify() const
+std::string node_t::stringify() const
 {
-    std::string description = "inner";
+    std::string description = "node ";
     int layer_idx = get_layer_index(this);
 
     if (layer_idx >= 0)
@@ -212,7 +169,7 @@ std::string inner_node_t::stringify() const
 
 // FIXME: output nodes are actually structure nodes, but we need to add and
 // remove them dynamically ...
-output_node_t::output_node_t() : inner_node_t(false)
+output_node_t::output_node_t() : node_t(false)
 {
     this->_static = std::make_shared<floating_inner_node_t>(true);
     this->dynamic = std::make_shared<floating_inner_node_t>(true);
@@ -226,7 +183,7 @@ std::string output_node_t::stringify() const
 }
 
 // ------------------------------ root_node_t ----------------------------------
-root_node_t::root_node_t() : inner_node_t(true)
+root_node_t::root_node_t() : node_t(true)
 {
     std::vector<node_ptr> children;
 

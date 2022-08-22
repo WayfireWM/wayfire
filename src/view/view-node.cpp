@@ -10,12 +10,6 @@ wf::scene::view_node_t::view_node_t(wayfire_view _view) :
     this->kb_interaction = std::make_unique<view_keyboard_interaction_t>(view);
 }
 
-wf::scene::iteration wf::scene::view_node_t::visit(visitor_t *visitor)
-{
-    visitor->view_node(this);
-    return iteration::SKIP_CHILDREN;
-}
-
 std::string wf::scene::view_node_t::stringify() const
 {
     std::ostringstream out;

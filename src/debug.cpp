@@ -360,12 +360,9 @@ static void _dump_scene(wf::scene::node_ptr root, int depth = 0)
         color_debug_log(CLEAR_COLOR, node_line);
     }
 
-    if (auto inner = dynamic_cast<inner_node_t*>(root.get()))
+    for (auto& ch : root->get_children())
     {
-        for (auto& ch : inner->get_children())
-        {
-            _dump_scene(ch, depth + 1);
-        }
+        _dump_scene(ch, depth + 1);
     }
 }
 

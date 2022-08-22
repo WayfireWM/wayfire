@@ -76,24 +76,7 @@ class output_layout_t;
 namespace scene
 {
 class node_t;
-class inner_node_t;
 using node_ptr = std::shared_ptr<node_t>;
-using inner_node_ptr = std::shared_ptr<inner_node_t>;
-
-class visitor_t;
-
-/**
- * Describes which nodes to visit after the current node.
- */
-enum class iteration
-{
-    /** Do not visit any further nodes in the scenegraph. */
-    STOP,
-    /** Visit any further siblings, but not the children of the current node. */
-    SKIP_CHILDREN,
-    /** Visit children of the node first, then continue with siblings. */
-    ALL,
-};
 
 /**
  * Describes the current state of a node.
@@ -132,19 +115,19 @@ struct input_node_t
 class node_t : public std::enable_shared_from_this<node_t>
 {
   public:
+    /**
+     * Create a new no-op node.
+     * Plugins very rarely need this, instead, subclasses of node_t should be
+     * instantiated.
+     */
+    node_t(bool is_structure);
     virtual ~node_t();
 
     /**
      * Find the input node at the given position.
+     * By default, the node will try to pass input to its children.
      */
-    virtual std::optional<input_node_t> find_node_at(const wf::pointf_t& at) = 0;
-
-    /**
-     * First visit the node and then its children from front to back.
-     * For consistency, the parent node's visit implementation should not visit
-     * disabled nodes.
-     */
-    virtual iteration visit(visitor_t *visitor) = 0;
+    virtual std::optional<input_node_t> find_node_at(const wf::pointf_t& at);
 
     /**
      * Get a textual representation of the node, used for debugging purposes.
@@ -197,9 +180,9 @@ class node_t : public std::enable_shared_from_this<node_t>
     /**
      * Get the parent of the current node in the scene graph.
      */
-    inner_node_t *parent() const
+    node_t *parent() const
     {
-        return this->_parent;
+        return _parent;
     }
 
     /**
@@ -227,6 +210,16 @@ class node_t : public std::enable_shared_from_this<node_t>
      */
     std::optional<wf::geometry_t> limit_region;
 
+    /**
+     * Obtain an immutable list of the node's children.
+     * Use set_children_list() of floating_inner_node_t to modify the children,
+     * if the node supports that.
+     */
+    const std::vector<node_ptr>& get_children() const
+    {
+        return children;
+    }
+
   public:
     node_t(const node_t&) = delete;
     node_t(node_t&&) = delete;
@@ -234,10 +227,9 @@ class node_t : public std::enable_shared_from_this<node_t>
     node_t& operator =(node_t&&) = delete;
 
   protected:
-    node_t(bool is_structure);
     bool _is_structure;
-    int enabled_counter   = 1;
-    inner_node_t *_parent = nullptr;
+    int enabled_counter = 1;
+    node_t *_parent     = nullptr;
     friend class inner_node_t;
 
     // A helper function for implementations of find_node_at.
@@ -249,30 +241,7 @@ class node_t : public std::enable_shared_from_this<node_t>
     // A helper functions for stringify() implementations, serializes the flags()
     // to a string, e.g. node with KEYBOARD and USER_INPUT -> '(ku)'
     std::string stringify_flags() const;
-};
 
-/**
- * An inner node of the scenegraph tree with a list of children.
- */
-class inner_node_t : public node_t
-{
-  public:
-    inner_node_t(bool _is_structure);
-
-    iteration visit(visitor_t *visitor) override;
-    std::optional<input_node_t> find_node_at(const wf::pointf_t& at) override;
-    std::string stringify() const override;
-
-    /**
-     * Obtain an immutable list of the node's children.
-     * Use set_children_list() to modify the children.
-     */
-    const std::vector<node_ptr>& get_children() const
-    {
-        return children;
-    }
-
-  protected:
     /**
      * A list of children nodes sorted from top to bottom.
      *
@@ -290,10 +259,10 @@ class inner_node_t : public node_t
  * reordered freely. However, special care needs to be taken to avoid reordering
  * the special `structure` nodes.
  */
-class floating_inner_node_t : public inner_node_t
+class floating_inner_node_t : public node_t
 {
   public:
-    using inner_node_t::inner_node_t;
+    using node_t::node_t;
 
     /**
      * Exchange the list of children of this node.
@@ -315,7 +284,7 @@ using floating_inner_ptr = std::shared_ptr<floating_inner_node_t>;
 /**
  * A Level 3 node which represents each output in each layer.
  */
-class output_node_t final : public inner_node_t
+class output_node_t final : public node_t
 {
   public:
     output_node_t();
@@ -357,7 +326,7 @@ enum class layer : size_t
 /**
  * The root (Level 1) node of the whole scenegraph.
  */
-class root_node_t final : public inner_node_t
+class root_node_t final : public node_t
 {
   public:
     root_node_t();
@@ -382,36 +351,6 @@ class root_node_t final : public inner_node_t
 
     struct priv_t;
     std::unique_ptr<priv_t> priv;
-};
-
-class view_node_t;
-/**
- * An interface for iterating over the scenegraph.
- */
-class visitor_t
-{
-  public:
-    visitor_t(const visitor_t&) = delete;
-    visitor_t(visitor_t&&) = delete;
-    visitor_t& operator =(const visitor_t&) = delete;
-    visitor_t& operator =(visitor_t&&) = delete;
-    visitor_t() = default;
-    virtual ~visitor_t() = default;
-
-    /** Visit an inner node with children. */
-    virtual iteration inner_node(inner_node_t *node)
-    {
-        return iteration::ALL;
-    }
-
-    /** Visit a view node. */
-    virtual iteration view_node(view_node_t *node) = 0;
-
-    /** Visit a generic node whose type is neither inner nor view. */
-    virtual iteration generic_node(node_t *node)
-    {
-        return iteration::SKIP_CHILDREN;
-    }
 };
 }
 }

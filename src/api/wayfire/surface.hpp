@@ -237,7 +237,6 @@ class surface_node_t : public wf::scene::node_t
     surface_node_t(wf::surface_interface_t *si);
 
     std::optional<input_node_t> find_node_at(const wf::pointf_t& at) override;
-    iteration visit(visitor_t *visitor) override;
     std::string stringify() const override;
     pointer_interaction_t& pointer_interaction() override;
     touch_interaction_t& touch_interaction() override;
