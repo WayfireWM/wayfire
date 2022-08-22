@@ -815,6 +815,39 @@ class wf::render_manager::impl
         workspace_stream_update(default_stream);
     }
 
+    wayfire_view get_first_view_recursive(wf::scene::node_ptr node)
+    {
+        if (auto vnode = dynamic_cast<wf::scene::view_node_t*>(node.get()))
+        {
+            return vnode->get_view();
+        }
+
+        for (auto& ch : node->get_children())
+        {
+            auto view = get_first_view_recursive(ch);
+            if (view)
+            {
+                return view;
+            }
+        }
+
+        return nullptr;
+    }
+
+    wayfire_view find_scanout_view()
+    {
+        for (int layer = (int)wf::scene::layer::ALL_LAYERS - 1; layer >= 0; layer--)
+        {
+            if (auto view = get_first_view_recursive(
+                output->node_for_layer((wf::scene::layer)layer)))
+            {
+                return view;
+            }
+        }
+
+        return nullptr;
+    }
+
     wayfire_view last_scanout;
     /**
      * Try to directly scanout a view
@@ -833,15 +866,11 @@ class wf::render_manager::impl
             return false;
         }
 
-        auto views = output->workspace->get_views_on_workspace(
-            output->workspace->get_current_workspace(), wf::VISIBLE_LAYERS);
-
-        if (views.empty())
+        auto candidate = find_scanout_view();
+        if (!candidate)
         {
             return false;
         }
-
-        auto candidate = views.front();
 
         // The candidate must cover the whole output
         if (candidate->get_output_geometry() != output->get_relative_geometry())
