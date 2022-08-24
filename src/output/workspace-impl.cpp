@@ -14,6 +14,7 @@
 
 #include "../view/view-impl.hpp"
 #include "output-impl.hpp"
+#include "wayfire/scene-input.hpp"
 #include "wayfire/scene.hpp"
 
 namespace wf
@@ -62,6 +63,37 @@ void damage_views(wayfire_view view)
         view->damage();
     }
 }
+
+namespace scene
+{
+class copy_node_t final : public view_node_t
+{
+    node_ptr shadow;
+
+  public:
+    copy_node_t(wayfire_view view, const node_ptr& copy) : view_node_t()
+    {
+        this->shadow = copy;
+        this->view   = view;
+    }
+
+    keyboard_interaction_t& keyboard_interaction() override
+    {
+        return shadow->keyboard_interaction();
+    }
+
+    std::optional<input_node_t> find_node_at(const wf::pointf_t& at) override
+    {
+        return shadow->find_node_at(at);
+    }
+
+    std::string stringify() const override
+    {
+        return "copy of " + view_node_t::stringify();
+    }
+};
+}
+
 
 struct layer_container_t;
 /**
@@ -124,15 +156,14 @@ struct layer_container_t
  */
 class output_layer_manager_t
 {
-    // A flat representation of the view stack order
-    std::vector<wayfire_view> view_list;
-
     // A hierarchical representation of the view stack order
     layer_container_t layers[TOTAL_LAYERS];
+    wf::output_t *output;
 
   public:
     output_layer_manager_t(wf::output_t *output)
     {
+        this->output = output;
         for (int i = 0; i < TOTAL_LAYERS; i++)
         {
             layers[i].layer = static_cast<layer_t>(1 << i);
@@ -206,7 +237,6 @@ class output_layer_manager_t
 
         /* Reset the view's sublayer */
         sublayer = nullptr;
-        rebuild_stack_order();
     }
 
     void add_view_to_sublayer(wayfire_view view,
@@ -217,8 +247,6 @@ class output_layer_manager_t
 
         sublayer->views.push_front(view);
         scene::add_front(sublayer->node, view->get_scene_node());
-
-        rebuild_stack_order();
     }
 
     nonstd::observer_ptr<sublayer_t> create_sublayer(layer_t layer_mask,
@@ -271,7 +299,6 @@ class output_layer_manager_t
     {
         damage_views(view);
         add_view_to_sublayer(view, create_sublayer(layer, SUBLAYER_FLOATING));
-        rebuild_stack_order();
         damage_views(view);
     }
 
@@ -301,8 +328,6 @@ class output_layer_manager_t
 
         raise_to_front(sublayer->views, view);
         scene::raise_to_front(sublayer->node, view->get_scene_node());
-
-        rebuild_stack_order();
     }
 
     wayfire_view get_front_view(wf::layer_t layer)
@@ -349,23 +374,91 @@ class output_layer_manager_t
         }
     }
 
-    void rebuild_stack_order()
+    void push_views_from_scenegraph(wf::scene::node_ptr root,
+        std::vector<wayfire_view>& result, promoted_state_t desired_promoted)
     {
-        this->view_list = _get_views_in_layer(VISIBLE_LAYERS);
+        if (root->is_disabled())
+        {
+            return;
+        }
+
+        if (auto vnode = dynamic_cast<scene::view_node_t*>(root.get()))
+        {
+            if (desired_promoted == promoted_state_t::ANY)
+            {
+                result.push_back(vnode->get_view());
+                return;
+            }
+
+            const bool wants_promoted =
+                (desired_promoted == promoted_state_t::PROMOTED);
+            if (vnode->get_view()->view_impl->is_promoted == wants_promoted)
+            {
+                result.push_back(vnode->get_view());
+            }
+        } else
+        {
+            for (auto& ch : root->get_children())
+            {
+                push_views_from_scenegraph(ch, result, desired_promoted);
+            }
+        }
     }
 
     std::vector<wayfire_view> get_views_in_layer(uint32_t layers_mask)
     {
-        if (layers_mask == VISIBLE_LAYERS)
+        std::vector<wayfire_view> views;
+        auto try_push = [&] (layer_t layer,
+                             promoted_state_t state = promoted_state_t::ANY)
         {
-            return view_list;
-        } else
+            if (!(layer & layers_mask))
+            {
+                return;
+            }
+
+            auto target_layer = (wf::scene::layer)__builtin_ctz(layer);
+            if (state == promoted_state_t::PROMOTED)
+            {
+                target_layer = wf::scene::layer::TOP;
+            }
+
+            push_views_from_scenegraph(
+                output->node_for_layer(target_layer),
+                views, state);
+        };
+
+        /* Above fullscreen views */
+        for (auto layer : {LAYER_DESKTOP_WIDGET, LAYER_LOCK, LAYER_UNMANAGED})
         {
-            return _get_views_in_layer(layers_mask);
+            try_push(layer);
         }
+
+        /* Fullscreen */
+        try_push(LAYER_WORKSPACE, promoted_state_t::PROMOTED);
+
+        /* Top layer between fullscreen and workspace */
+        try_push(LAYER_TOP, promoted_state_t::NOT_PROMOTED);
+
+        /* Non-promoted views */
+        try_push(LAYER_WORKSPACE, promoted_state_t::NOT_PROMOTED);
+
+        /* Below fullscreen */
+        for (auto layer :
+             {LAYER_BOTTOM, LAYER_BACKGROUND})
+        {
+            try_push(layer);
+        }
+
+        if (layers_mask & LAYER_MINIMIZED)
+        {
+            auto minimized = _depr_get_views_in_layer(LAYER_MINIMIZED);
+            views.insert(views.end(), minimized.begin(), minimized.end());
+        }
+
+        return views;
     }
 
-    std::vector<wayfire_view> _get_views_in_layer(uint32_t layers_mask)
+    std::vector<wayfire_view> _depr_get_views_in_layer(uint32_t layers_mask)
     {
         std::vector<wayfire_view> views;
         auto try_push = [&] (layer_t layer,
@@ -629,7 +722,6 @@ class output_viewport_manager_t
         if (view->get_output() != output)
         {
             LOGE("Cannot ensure view visibility for a view from a different output!");
-
             return;
         }
 
@@ -924,31 +1016,6 @@ class output_workarea_manager_t
     }
 };
 
-namespace scene
-{
-class copy_node_t final : public view_node_t
-{
-    node_ptr shadow;
-
-  public:
-    copy_node_t(wayfire_view view, const node_ptr& copy) : view_node_t()
-    {
-        this->shadow = copy;
-        this->view   = view;
-    }
-
-    keyboard_interaction_t& keyboard_interaction() override
-    {
-        return shadow->keyboard_interaction();
-    }
-
-    std::optional<input_node_t> find_node_at(const wf::pointf_t& at) override
-    {
-        return shadow->find_node_at(at);
-    }
-};
-}
-
 class workspace_manager::impl
 {
     wf::output_t *output;
@@ -1100,16 +1167,47 @@ class workspace_manager::impl
         wf::get_core().emit_signal("output-stack-order-changed", &data);
     }
 
+    void set_promoted_view(wayfire_view view)
+    {
+        if (view->view_impl->is_promoted)
+        {
+            return;
+        }
+
+        view->view_impl->is_promoted = true;
+        if (!view->view_impl->promoted_copy_node)
+        {
+            view->view_impl->promoted_copy_node =
+                std::make_shared<scene::copy_node_t>(view, view->get_scene_node());
+        }
+
+        view->get_scene_node()->set_enabled(false);
+        auto top_node = output->node_for_layer(scene::layer::TOP);
+        scene::add_front(top_node->dynamic,
+            view->view_impl->promoted_copy_node);
+    }
+
+    void unset_promoted_view(wayfire_view view)
+    {
+        if (!view->view_impl->is_promoted)
+        {
+            return;
+        }
+
+        view->view_impl->is_promoted = false;
+        view->get_scene_node()->set_enabled(true);
+        auto top_node = output->node_for_layer(scene::layer::TOP);
+        scene::remove_child(top_node->dynamic,
+            view->view_impl->promoted_copy_node);
+    }
+
     void update_promoted_views()
     {
         auto vp = viewport_manager.get_current_workspace();
         auto already_promoted = viewport_manager.get_promoted_views(vp);
         for (auto& view : already_promoted)
         {
-            view->view_impl->is_promoted = false;
-            auto top_node = output->node_for_layer(scene::layer::TOP);
-            scene::remove_child(top_node->dynamic,
-                view->view_impl->promoted_copy_node);
+            unset_promoted_view(view);
         }
 
         auto views = viewport_manager.get_views_on_workspace(
@@ -1126,20 +1224,9 @@ class workspace_manager::impl
         if (!views.empty() && views.front()->fullscreen)
         {
             auto& fr = views.front();
-            fr->view_impl->is_promoted = true;
-
-            if (!fr->view_impl->promoted_copy_node)
-            {
-                fr->view_impl->promoted_copy_node =
-                    std::make_shared<scene::copy_node_t>(fr, fr->get_scene_node());
-            }
-
-            auto top_node = output->node_for_layer(scene::layer::TOP);
-            scene::add_front(top_node->dynamic,
-                fr->view_impl->promoted_copy_node);
+            set_promoted_view(fr);
         }
 
-        layer_manager.rebuild_stack_order();
         check_autohide_panels();
 
         /**
@@ -1197,6 +1284,8 @@ class workspace_manager::impl
 
     void remove_view(wayfire_view view)
     {
+        unset_promoted_view(view);
+
         uint32_t view_layer = layer_manager.get_view_layer(view);
         layer_manager.remove_view(view);
 
