@@ -4,6 +4,7 @@
 #include <wayfire/workspace-manager.hpp>
 #include <wayfire/output-layout.hpp>
 #include <getopt.h>
+#include <wayland-server-protocol.h>
 
 #define WAYFIRE_PLUGIN
 #include <wayfire/debug.hpp>
@@ -371,23 +372,22 @@ class ipc_plugin_t
 
     method_t feed_key = [=] (nlohmann::json data)
     {
-        auto result = parse_key(data);
-        auto key    = std::get_if<key_t>(&result);
-        if (!key)
+        EXPECT_FIELD(data, "key", string);
+        EXPECT_FIELD(data, "state", boolean);
+
+        std::string key = data["key"];
+        int keycode     = libevdev_event_code_from_name(EV_KEY, key.c_str());
+        if (keycode == -1)
         {
-            return get_error(std::get<std::string>(result));
+            return get_error("Failed to parse evdev key \"" + key + "\"");
         }
 
-        if (key->modifier)
+        if (data["state"])
         {
-            input->do_key(KEY_LEFTMETA, WL_KEYBOARD_KEY_STATE_PRESSED);
-        }
-
-        input->do_key(key->code, WL_KEYBOARD_KEY_STATE_PRESSED);
-        input->do_key(key->code, WL_KEYBOARD_KEY_STATE_RELEASED);
-        if (key->modifier)
+            input->do_key(keycode, WL_KEYBOARD_KEY_STATE_PRESSED);
+        } else
         {
-            input->do_key(KEY_LEFTMETA, WL_KEYBOARD_KEY_STATE_RELEASED);
+            input->do_key(keycode, WL_KEYBOARD_KEY_STATE_RELEASED);
         }
 
         return get_ok();
