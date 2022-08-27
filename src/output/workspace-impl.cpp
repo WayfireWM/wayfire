@@ -321,13 +321,12 @@ class output_layer_manager_t
             {
                 // floating.node might be null for minimized layer, which will
                 // be removed soon.
-                scene::raise_to_front(sublayer->layer->floating.node,
-                    sublayer->node);
+                scene::raise_to_front(sublayer->node);
             }
         }
 
         raise_to_front(sublayer->views, view);
-        scene::raise_to_front(sublayer->node, view->get_scene_node());
+        scene::raise_to_front(view->get_scene_node());
     }
 
     wayfire_view get_front_view(wf::layer_t layer)

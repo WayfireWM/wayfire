@@ -25,7 +25,25 @@ void print_trace(bool fast_mode);
  * Dump a scenegraph to the log.
  */
 void dump_scene(scene::node_ptr root);
+
+/**
+ * Assert that the condition is true.
+ * Optionally print a message.
+ * Print backtrace when the assertion fails and exit.
+ */
+inline void dassert(bool condition, std::string message = "")
+{
+    if (!condition)
+    {
+        LOGE(message);
+        print_trace(false);
+        std::exit(0);
+    }
 }
+}
+
+#define DASSERT(condition) \
+    wf::dassert(condition, "Assertion failed at " __FILE__ ":" __LINE__)
 
 /* ------------------------ Logging categories -------------------------------*/
 

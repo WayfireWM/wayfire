@@ -1,6 +1,7 @@
 #pragma once
 
 #include <wayfire/scene.hpp>
+#include <wayfire/debug.hpp>
 
 // This header contains implementations of simple scenegraph related functionality
 // used in many places throughout the codebase.
@@ -34,17 +35,16 @@ inline void add_back(floating_inner_ptr parent, node_ptr child)
     parent->set_children_list(children);
 }
 
-inline void raise_to_front(floating_inner_ptr parent, node_ptr child)
+inline void raise_to_front(node_ptr child)
 {
     auto dyn_parent = dynamic_cast<floating_inner_node_t*>(child->parent());
-    assert(dyn_parent);
-    assert(dyn_parent == parent.get());
+    wf::dassert(dyn_parent, "Raise to front in a non-floating container!");
 
-    auto children = parent->get_children();
+    auto children = dyn_parent->get_children();
     children.erase(std::remove(children.begin(), children.end(), child),
         children.end());
     children.insert(children.begin(), child);
-    parent->set_children_list(children);
+    dyn_parent->set_children_list(children);
 }
 }
 }
