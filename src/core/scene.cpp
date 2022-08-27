@@ -88,6 +88,11 @@ bool floating_inner_node_t::set_children_list(std::vector<node_ptr> new_list)
 
 void node_t::set_children_unchecked(std::vector<node_ptr> new_list)
 {
+    for (auto& node : this->children)
+    {
+        node->_parent = nullptr;
+    }
+
     for (auto& node : new_list)
     {
         node->_parent = this;
