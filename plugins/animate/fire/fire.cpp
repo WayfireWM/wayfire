@@ -1,7 +1,6 @@
 #include "fire.hpp"
 #include "particle.hpp"
 
-#include <thread>
 #include <wayfire/output.hpp>
 #include <wayfire/core.hpp>
 #include <glm/gtc/matrix_transform.hpp>
