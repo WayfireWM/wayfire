@@ -1,7 +1,6 @@
 #include "particle.hpp"
 #include "shaders.hpp"
 #include <wayfire/core.hpp>
-#include <thread>
 
 void Particle::update(float time)
 {
@@ -62,11 +61,12 @@ ParticleSystem::~ParticleSystem()
 
 int ParticleSystem::spawn(int num)
 {
-    // TODO: multithread this
-    int spawned = 0;
-    for (size_t i = 0; i < ps.size() && spawned < num; i++)
+    std::atomic<int> spawned(0);
+
+#   pragma omp parallel for
+    for (size_t i = 0; i < ps.size(); i++)
     {
-        if (ps[i].life <= 0)
+        if (ps[i].life <= 0 && spawned < num)
         {
             pinit_func(ps[i]);
             ++spawned;
@@ -84,8 +84,8 @@ void ParticleSystem::resize(int num)
         return;
     }
 
-    // TODO: multithread this
-    for (int i = num; i < (int)ps.size(); i++)
+#   pragma omp parallel for
+    for (size_t i = num; i < ps.size(); i++)
     {
         if (ps[i].life >= 0)
         {
@@ -106,60 +106,32 @@ int ParticleSystem::size()
     return ps.size();
 }
 
-void ParticleSystem::update_worker(float time, int start, int end)
+void ParticleSystem::update_worker(float time, int i)
 {
-    end = std::min(end, (int)ps.size());
-    for (int i = start; i < end; ++i)
+    if (ps[i].life <= 0)
     {
-        if (ps[i].life <= 0)
-        {
-            continue;
-        }
-
-        // printf("%d\n", i);
-        ps[i].update(time);
-
-        if (ps[i].life <= 0)
-        {
-            --particles_alive;
-        }
-
-        for (int j = 0; j < 4; j++) // maybe use memcpy?
-        {
-            color[4 * i + j] = ps[i].color[j];
-            dark_color[4 * i + j] = ps[i].color[j] * 0.5;
-        }
-
-        // printf("center %d gets %f", 2 * i, ps[i].pos[0]);
-        center[2 * i]     = ps[i].pos[0];
-        center[2 * i + 1] = ps[i].pos[1];
-
-        radius[i] = ps[i].radius;
+        return;
     }
+
+    ps[i].update(time);
+
+    if (ps[i].life <= 0)
+    {
+        --particles_alive;
+    }
+
+    for (int j = 0; j < 4; j++) // maybe use memcpy?
+    {
+        color[4 * i + j] = ps[i].color[j];
+        dark_color[4 * i + j] = ps[i].color[j] * 0.5;
+    }
+
+    center[2 * i]     = ps[i].pos[0];
+    center[2 * i + 1] = ps[i].pos[1];
+
+    radius[i] = ps[i].radius;
 }
 
-void ParticleSystem::exec_worker_threads(std::function<void(int, int)> spawn_worker)
-{
-// return spawn_worker(0, ps.size());
-
-    const int num_threads = std::thread::hardware_concurrency();
-    const int worker_load = (ps.size() + num_threads - 1) / num_threads;
-
-    std::thread workers[num_threads];
-    for (int i = 0; i < num_threads; i++)
-    {
-        int thread_start = i * worker_load;
-        int thread_end   = (i + 1) * worker_load;
-        thread_end = std::min(thread_end, (int)ps.size());
-
-        workers[i] = std::thread([=] () { spawn_worker(thread_start, thread_end); });
-    }
-
-    for (auto& w : workers)
-    {
-        w.join();
-    }
-}
 
 void ParticleSystem::update()
 {
@@ -167,10 +139,11 @@ void ParticleSystem::update()
     float time = (wf::get_current_time() - last_update_msec) / 16.0;
     last_update_msec = wf::get_current_time();
 
-    exec_worker_threads([=] (int start, int end)
+#   pragma omp parallel for
+    for (size_t i = 0; i < ps.size(); i++)
     {
-        update_worker(time, start, end);
-    });
+        update_worker(time, i);
+    }
 }
 
 int ParticleSystem::statistic()

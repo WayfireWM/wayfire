@@ -83,7 +83,7 @@ class ParticleSystem
 
     OpenGL::program_t program;
     void exec_worker_threads(std::function<void(int, int)> spawn_worker);
-    void update_worker(float time, int start, int end);
+    void update_worker(float time, int i);
     void create_program();
 };
 
