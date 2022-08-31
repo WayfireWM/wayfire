@@ -31,7 +31,6 @@ glesv2         = dependency('glesv2')
 glm            = dependency('glm')
 libinput       = dependency('libinput', version: '>=1.7.0')
 pixman         = dependency('pixman-1')
-threads        = dependency('threads')
 xkbcommon      = dependency('xkbcommon')
 libdl          = meson.get_compiler('cpp').find_library('dl')
 

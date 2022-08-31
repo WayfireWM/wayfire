@@ -8,7 +8,6 @@
 #include "wayfire/view-transform.hpp"
 
 #include <memory>
-#include <thread>
 #include <wayfire/output.hpp>
 #include <wayfire/core.hpp>
 #include <glm/gtc/matrix_transform.hpp>
