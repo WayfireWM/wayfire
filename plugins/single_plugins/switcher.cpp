@@ -1,7 +1,11 @@
+#include "wayfire/object.hpp"
+#include "wayfire/scene.hpp"
+#include <memory>
 #include <wayfire/plugin.hpp>
 #include <wayfire/opengl.hpp>
 #include <wayfire/view-transform.hpp>
 #include <wayfire/core.hpp>
+#include <wayfire/debug.hpp>
 
 #include <wayfire/view.hpp>
 #include <wayfire/output.hpp>
@@ -248,8 +252,15 @@ class WayfireSwitcher : public wf::plugin_interface_t
         output->render->set_renderer(nullptr);
         output->render->set_redraw_always(false);
 
-        for (auto& view : output->workspace->get_views_in_layer(wf::ALL_LAYERS))
+        for (auto& view :
+             output->workspace->get_views_in_layer(wf::ALL_LAYERS, true))
         {
+            if (view->has_data("switcher-minimized-showed"))
+            {
+                view->erase_data("switcher-minimized-showed");
+                wf::scene::set_node_enabled(view->get_scene_node(), true);
+            }
+
             view->pop_transformer(switcher_transformer);
             view->pop_transformer(switcher_transformer_background);
         }
@@ -394,9 +405,9 @@ class WayfireSwitcher : public wf::plugin_interface_t
     {
         auto all_views = output->workspace->get_views_on_workspace(
             output->workspace->get_current_workspace(),
-            wf::WM_LAYERS | wf::LAYER_MINIMIZED);
+            wf::WM_LAYERS, true);
 
-        decltype(all_views) mapped_views;
+        std::vector<wayfire_view> mapped_views;
         for (auto view : all_views)
         {
             if (view->is_mapped())
@@ -547,6 +558,13 @@ class WayfireSwitcher : public wf::plugin_interface_t
          * the whole output */
         if (!view->get_transformer(switcher_transformer))
         {
+            if (view->minimized)
+            {
+                wf::scene::set_node_enabled(view->get_scene_node(), true);
+                view->store_data(std::make_unique<wf::custom_data_t>(),
+                    "switcher-minimized-showed");
+            }
+
             view->add_transformer(std::make_unique<wf::view_3D>(view),
                 switcher_transformer);
         }

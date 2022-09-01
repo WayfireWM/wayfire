@@ -82,9 +82,6 @@ static std::string layer_to_string(uint32_t layer)
       case LAYER_DESKTOP_WIDGET:
         return "dew";
 
-      case LAYER_MINIMIZED:
-        return "minimized";
-
       default:
         break;
     }

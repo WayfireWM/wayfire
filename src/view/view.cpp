@@ -3,6 +3,7 @@
 #include "view-impl.hpp"
 #include "wayfire/opengl.hpp"
 #include "wayfire/output.hpp"
+#include "wayfire/scene.hpp"
 #include "wayfire/view.hpp"
 #include "wayfire/view-transform.hpp"
 #include "wayfire/workspace-manager.hpp"
@@ -386,16 +387,21 @@ bool wf::view_interface_t::is_focuseable() const
 
 void wf::view_interface_t::set_minimized(bool minim)
 {
+    if (minim == minimized)
+    {
+        return;
+    }
+
     minimized = minim;
     if (minimized)
     {
         view_disappeared_signal data;
         data.view = self();
         get_output()->emit_signal("view-disappeared", &data);
-        get_output()->workspace->add_view(self(), wf::LAYER_MINIMIZED);
+        wf::scene::set_node_enabled(get_scene_node(), false);
     } else
     {
-        get_output()->workspace->add_view(self(), wf::LAYER_WORKSPACE);
+        wf::scene::set_node_enabled(get_scene_node(), true);
         get_output()->focus_view(self(), true);
     }
 

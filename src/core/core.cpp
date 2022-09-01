@@ -855,8 +855,7 @@ void wf::compositor_core_impl_t::move_view_to_output(wayfire_view v,
 
     assert(new_output);
     v->set_output(new_output);
-    new_output->workspace->add_view(v,
-        v->minimized ? wf::LAYER_MINIMIZED : wf::LAYER_WORKSPACE);
+    new_output->workspace->add_view(v, wf::LAYER_WORKSPACE);
     new_output->focus_view(v);
 
     if (reconfigure)

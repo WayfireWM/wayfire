@@ -213,6 +213,16 @@ std::string root_node_t::stringify() const
 }
 
 // ---------------------- generic scenegraph functions -------------------------
+void set_node_enabled(wf::scene::node_ptr node, bool enabled)
+{
+    bool was_disabled = node->is_disabled();
+    node->set_enabled(enabled);
+    if (was_disabled != node->is_disabled())
+    {
+        update(node, update_flag::ENABLED);
+    }
+}
+
 void update(node_ptr changed_node, uint32_t flags)
 {
     if ((flags & update_flag::CHILDREN_LIST) ||

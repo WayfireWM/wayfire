@@ -40,11 +40,9 @@ enum layer_t
     /* The layer where "desktop widgets" are positioned, for example an OSK
      * or a sound control popup */
     LAYER_DESKTOP_WIDGET = (1 << 6),
-    /* The minimized layer. It has no z order since it is not visible at all */
-    LAYER_MINIMIZED      = (1 << 7),
 };
 
-constexpr int TOTAL_LAYERS = 8;
+constexpr int TOTAL_LAYERS = 7;
 
 /* The layers where regular views are placed */
 constexpr int WM_LAYERS = (wf::LAYER_WORKSPACE);
@@ -60,7 +58,7 @@ constexpr int BELOW_LAYERS = (wf::LAYER_BACKGROUND | wf::LAYER_BOTTOM);
 constexpr int VISIBLE_LAYERS = (wf::MIDDLE_LAYERS | wf::ABOVE_LAYERS |
     wf::BELOW_LAYERS);
 /* All layers */
-constexpr int ALL_LAYERS = (wf::VISIBLE_LAYERS | wf::LAYER_MINIMIZED);
+constexpr int ALL_LAYERS = wf::VISIBLE_LAYERS;
 
 /**
  * @return A bitmask consisting of all layers which are not below the given layer
@@ -144,7 +142,7 @@ class workspace_manager
      * @param layer_mask - The layers whose views should be included
      */
     std::vector<wayfire_view> get_views_on_workspace(wf::point_t ws,
-        uint32_t layer_mask);
+        uint32_t layer_mask, bool include_minimized = false);
 
     /**
      * Get a list of all views visible on the given workspace and in the given
@@ -201,7 +199,13 @@ class workspace_manager
      * Whenever the aforementioned reordering happens, the
      * fullscreen-layer-focused is emitted.
      */
-    std::vector<wayfire_view> get_views_in_layer(uint32_t layers_mask);
+    std::vector<wayfire_view> get_views_in_layer(uint32_t layers_mask,
+        bool include_minimized = false);
+
+    /**
+     * Get a list of minimized views, which are not shown in any other layer.
+     */
+    std::vector<wayfire_view> get_minimized_views();
 
     /**
      * Get a list of reordered fullscreen views as explained in

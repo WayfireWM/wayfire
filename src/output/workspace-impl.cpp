@@ -182,15 +182,12 @@ class output_layer_manager_t
             layers[i].floating.node = std::make_shared<scene::floating_inner_node_t>(
                 false);
 
-            if ((1 << i) != LAYER_MINIMIZED)
-            {
-                auto node = output->node_for_layer((wf::scene::layer)i);
-                node->dynamic->set_children_list({
-                        layers[i].above.node,
-                        layers[i].floating.node,
-                        layers[i].below.node
-                    });
-            }
+            auto node = output->node_for_layer((wf::scene::layer)i);
+            node->dynamic->set_children_list({
+                    layers[i].above.node,
+                    layers[i].floating.node,
+                    layers[i].below.node
+                });
         }
     }
 
@@ -271,29 +268,17 @@ class output_layer_manager_t
         switch (mode)
         {
           case SUBLAYER_DOCKED_BELOW:
-            if (layer_mask != LAYER_MINIMIZED)
-            {
-                scene::add_back(layer.below.node, sublayer->node);
-            }
-
+            scene::add_back(layer.below.node, sublayer->node);
             layer.below.list.emplace_back(std::move(sublayer));
             break;
 
           case SUBLAYER_DOCKED_ABOVE:
-            if (layer_mask != LAYER_MINIMIZED)
-            {
-                scene::add_front(layer.above.node, sublayer->node);
-            }
-
+            scene::add_front(layer.above.node, sublayer->node);
             layer.above.list.emplace_front(std::move(sublayer));
             break;
 
           case SUBLAYER_FLOATING:
-            if (layer_mask != LAYER_MINIMIZED)
-            {
-                scene::add_front(layer.floating.node, sublayer->node);
-            }
-
+            scene::add_front(layer.floating.node, sublayer->node);
             layer.floating.list.emplace_front(std::move(sublayer));
             break;
         }
@@ -324,8 +309,7 @@ class output_layer_manager_t
         {
             raise_to_front(sublayer->layer->floating.list, sublayer);
 
-            if (sublayer->layer->floating.node &&
-                (sublayer->layer->layer != LAYER_MINIMIZED))
+            if (sublayer->layer->floating.node)
             {
                 // floating.node might be null for minimized layer, which will
                 // be removed soon.
@@ -339,7 +323,7 @@ class output_layer_manager_t
 
     wayfire_view get_front_view(wf::layer_t layer)
     {
-        auto views = get_views_in_layer(layer);
+        auto views = get_views_in_layer(layer, false);
         if (views.size() == 0)
         {
             return nullptr;
@@ -354,32 +338,6 @@ class output_layer_manager_t
         NOT_PROMOTED,
         ANY,
     };
-
-    void push_views(std::vector<wayfire_view>& into, layer_t layer_e,
-        promoted_state_t desired_promoted)
-    {
-        auto& layer = this->layers[layer_index_from_mask(layer_e)];
-        for (const auto& sublayers :
-             {& layer.above, & layer.floating, & layer.below})
-        {
-            for (const auto& sublayer : sublayers->list)
-            {
-                auto& container = sublayer->views;
-                std::copy_if(container.begin(), container.end(),
-                    std::back_inserter(into), [=] (wayfire_view view)
-                {
-                    if (desired_promoted == promoted_state_t::ANY)
-                    {
-                        return true;
-                    }
-
-                    const bool wants_promoted =
-                        (desired_promoted == promoted_state_t::PROMOTED);
-                    return view->view_impl->is_promoted == wants_promoted;
-                });
-            }
-        }
-    }
 
     void push_views_from_scenegraph(wf::scene::node_ptr root,
         std::vector<wayfire_view>& result, promoted_state_t desired_promoted)
@@ -412,7 +370,37 @@ class output_layer_manager_t
         }
     }
 
-    std::vector<wayfire_view> get_views_in_layer(uint32_t layers_mask)
+    void push_minimized_views_from_scenegraph(wf::scene::node_ptr root,
+        std::vector<wayfire_view>& result, bool abort_if_not_view = false)
+    {
+        if (auto vnode = dynamic_cast<scene::view_node_t*>(root.get()))
+        {
+            if (vnode->get_view()->minimized)
+            {
+                result.push_back(vnode->get_view());
+            }
+
+            return;
+        }
+
+        if (abort_if_not_view)
+        {
+            return;
+        }
+
+        for (auto& ch : root->get_children())
+        {
+            // When a view is minimized, its scene node is disabled.
+            // To enumerate these views, we therefore need to descend into disabled
+            // nodes. However, we expect to immediately visit a view node.
+            // Otherwise, we stop the recursion to avoid finding any unwanted (e.g.
+            // really disabled) nodes.
+            push_minimized_views_from_scenegraph(ch, result, root->is_disabled());
+        }
+    }
+
+    std::vector<wayfire_view> get_views_in_layer(uint32_t layers_mask,
+        bool include_minimized)
     {
         std::vector<wayfire_view> views;
         auto try_push = [&] (layer_t layer,
@@ -456,49 +444,11 @@ class output_layer_manager_t
             try_push(layer);
         }
 
-        if (layers_mask & LAYER_MINIMIZED)
+        if (include_minimized)
         {
-            auto minimized = _depr_get_views_in_layer(LAYER_MINIMIZED);
-            views.insert(views.end(), minimized.begin(), minimized.end());
-        }
-
-        return views;
-    }
-
-    std::vector<wayfire_view> _depr_get_views_in_layer(uint32_t layers_mask)
-    {
-        std::vector<wayfire_view> views;
-        auto try_push = [&] (layer_t layer,
-                             promoted_state_t state = promoted_state_t::ANY)
-        {
-            if (!(layer & layers_mask))
-            {
-                return;
-            }
-
-            push_views(views, layer, state);
-        };
-
-        /* Above fullscreen views */
-        for (auto layer : {LAYER_DESKTOP_WIDGET, LAYER_LOCK, LAYER_UNMANAGED})
-        {
-            try_push(layer);
-        }
-
-        /* Fullscreen */
-        try_push(LAYER_WORKSPACE, promoted_state_t::PROMOTED);
-
-        /* Top layer between fullscreen and workspace */
-        try_push(LAYER_TOP);
-
-        /* Non-promoted views */
-        try_push(LAYER_WORKSPACE, promoted_state_t::NOT_PROMOTED);
-
-        /* Below fullscreen */
-        for (auto layer :
-             {LAYER_BOTTOM, LAYER_BACKGROUND, LAYER_MINIMIZED})
-        {
-            try_push(layer);
+            push_minimized_views_from_scenegraph(
+                output->node_for_layer(wf::scene::layer::WORKSPACE),
+                views);
         }
 
         return views;
@@ -507,8 +457,9 @@ class output_layer_manager_t
     std::vector<wayfire_view> get_promoted_views()
     {
         std::vector<wayfire_view> views;
-        push_views(views, LAYER_WORKSPACE, promoted_state_t::PROMOTED);
-
+        push_views_from_scenegraph(
+            output->node_for_layer(wf::scene::layer::TOP),
+            views, promoted_state_t::PROMOTED);
         return views;
     }
 
@@ -614,7 +565,7 @@ class output_viewport_manager_t
         }
 
         for (auto view : output->workspace->get_views_in_layer(
-            wf::WM_LAYERS | wf::LAYER_MINIMIZED))
+            wf::WM_LAYERS, true))
         {
             // XXX: we use the magic value 0.333, maybe something else would be
             // better?
@@ -764,11 +715,11 @@ class output_viewport_manager_t
     }
 
     std::vector<wayfire_view> get_views_on_workspace(wf::point_t vp,
-        uint32_t layers_mask)
+        uint32_t layers_mask, bool include_minimized)
     {
         /* get all views in the given layers */
         std::vector<wayfire_view> views =
-            output->workspace->get_views_in_layer(layers_mask);
+            output->workspace->get_views_in_layer(layers_mask, include_minimized);
 
         /* remove those which aren't visible on the workspace */
         auto it = std::remove_if(views.begin(), views.end(), [&] (wayfire_view view)
@@ -877,7 +828,7 @@ class output_viewport_manager_t
         old_fixed_view_workspaces.reserve(fixed_views.size());
 
         for (auto& view : output->workspace->get_views_in_layer(
-            MIDDLE_LAYERS | LAYER_MINIMIZED))
+            MIDDLE_LAYERS, true))
         {
             const auto is_fixed = std::find(fixed_views.cbegin(),
                 fixed_views.cend(), view) != fixed_views.end();
@@ -1048,7 +999,7 @@ class workspace_manager::impl
             return;
         }
 
-        for (auto& view : layer_manager.get_views_in_layer(MIDDLE_LAYERS))
+        for (auto& view : layer_manager.get_views_in_layer(MIDDLE_LAYERS, false))
         {
             if (!view->is_mapped())
             {
@@ -1213,7 +1164,7 @@ class workspace_manager::impl
         }
 
         auto views = viewport_manager.get_views_on_workspace(
-            vp, LAYER_WORKSPACE);
+            vp, LAYER_WORKSPACE, false);
 
         /* Do not consider unmapped views */
         auto it = std::remove_if(views.begin(), views.end(),
@@ -1320,9 +1271,10 @@ bool workspace_manager::view_visible_on(wayfire_view view, wf::point_t ws)
 }
 
 std::vector<wayfire_view> workspace_manager::get_views_on_workspace(wf::point_t ws,
-    uint32_t layer_mask)
+    uint32_t layer_mask, bool include_minimized)
 {
-    return pimpl->viewport_manager.get_views_on_workspace(ws, layer_mask);
+    return pimpl->viewport_manager.get_views_on_workspace(
+        ws, layer_mask, include_minimized);
 }
 
 std::vector<wayfire_view> workspace_manager::get_views_on_workspace_sublayer(
@@ -1356,18 +1308,15 @@ void workspace_manager::move_to_workspace(wayfire_view view, wf::point_t ws)
 
 void workspace_manager::add_view(wayfire_view view, layer_t layer)
 {
-    wf::scene::node_ptr update_parent;
-    if ((get_view_layer(view) == LAYER_MINIMIZED) || (layer == LAYER_MINIMIZED))
-    {
-        update_parent = view->get_scene_node()->parent()->shared_from_this();
-    }
+    auto update_parent = view->get_scene_node()->parent();
 
     pimpl->add_view_to_layer(view, layer);
     update_view_scene_node(view);
 
     if (update_parent)
     {
-        wf::scene::update(update_parent, wf::scene::update_flag::CHILDREN_LIST);
+        wf::scene::update(update_parent->shared_from_this(),
+            wf::scene::update_flag::CHILDREN_LIST);
     }
 }
 
@@ -1395,9 +1344,10 @@ uint32_t workspace_manager::get_view_layer(wayfire_view view)
     return pimpl->layer_manager.get_view_layer(view);
 }
 
-std::vector<wayfire_view> workspace_manager::get_views_in_layer(uint32_t layers_mask)
+std::vector<wayfire_view> workspace_manager::get_views_in_layer(
+    uint32_t layers_mask, bool include_minimized)
 {
-    return pimpl->layer_manager.get_views_in_layer(layers_mask);
+    return pimpl->layer_manager.get_views_in_layer(layers_mask, include_minimized);
 }
 
 std::vector<wayfire_view> workspace_manager::get_views_in_sublayer(

@@ -381,6 +381,12 @@ class root_node_t final : public node_t, public wf::signal::provider_t
 };
 
 /**
+ * Increase or decrease the node's enabled counter (node_t::set_enabled()) and
+ * also trigger a scenegraph update if necessary.
+ */
+void set_node_enabled(wf::scene::node_ptr node, bool enabled);
+
+/**
  * Trigger an update of the scenegraph's state.
  *
  * When any state of the node changes, this function should be called with a
