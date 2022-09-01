@@ -329,16 +329,6 @@ struct workarea_changed_signal : public wf::signal_data_t
  *   and not-null otherwise.
  */
 
-/**
- * name: stack-order-changed
- * on: output, core(output-)
- * when: Whenever the stacking order of views on the output changes. Note that
- *   the signal can be a false positive, i.e the stacking order did not really
- *   change. However, there will be no cases where the order changed but the
- *   signal was not fired.
- */
-using stack_order_changed_signal = _output_signal;
-
 /* ----------------------------------------------------------------------------/
  * Surface signals
  * -------------------------------------------------------------------------- */

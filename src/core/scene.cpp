@@ -4,6 +4,8 @@
 #include <algorithm>
 
 #include "scene-priv.hpp"
+#include "wayfire/util.hpp"
+#include <wayfire/core.hpp>
 
 namespace wf
 {
@@ -205,12 +207,32 @@ root_node_t::root_node_t() : node_t(true)
 root_node_t::~root_node_t()
 {}
 
-void root_node_t::update()
-{}
-
 std::string root_node_t::stringify() const
 {
     return "root " + stringify_flags();
+}
+
+// ---------------------- generic scenegraph functions -------------------------
+void update(node_ptr changed_node, uint32_t flags)
+{
+    if ((flags & update_flag::CHILDREN_LIST) ||
+        (flags & update_flag::ENABLED))
+    {
+        flags |= update_flag::INPUT_STATE;
+    }
+
+    if (changed_node == wf::get_core().scene())
+    {
+        root_node_update_signal data;
+        data.flags = flags;
+        wf::get_core().scene()->emit(&data);
+        return;
+    }
+
+    if (changed_node->parent())
+    {
+        update(changed_node->parent()->shared_from_this(), flags);
+    }
 }
 } // namespace scene
 }

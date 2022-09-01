@@ -9,6 +9,7 @@
 #include <wayfire/option-wrapper.hpp>
 #include "surface-map-state.hpp"
 #include "wayfire/signal-definitions.hpp"
+#include "wayfire/signal-provider.hpp"
 #include <wayfire/nonstd/wlroots-full.hpp>
 
 namespace wf
@@ -93,9 +94,8 @@ class pointer_t
     // client
     std::multiset<uint32_t> currently_sent_buttons;
 
-    SurfaceMapStateListener on_surface_map_state_change;
-
-    wf::signal_connection_t on_views_updated;
+    wf::signal::connection_t<wf::scene::root_node_update_signal>
+    on_root_node_updated;
 
     /** The surface which currently has cursor focus */
     wf::scene::node_ptr cursor_focus = nullptr;

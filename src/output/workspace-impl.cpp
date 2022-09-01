@@ -19,6 +19,13 @@
 
 namespace wf
 {
+static void update_view_scene_node(wayfire_view view)
+{
+    using wf::scene::update_flag::update_flag;
+    wf::scene::update(view->get_scene_node(),
+        update_flag::INPUT_STATE | update_flag::CHILDREN_LIST);
+}
+
 /** Find a smart pointer inside a list */
 template<class Haystack, class Needle>
 typename std::list<Haystack>::iterator find_in(std::list<Haystack>& hay,
@@ -317,7 +324,8 @@ class output_layer_manager_t
         {
             raise_to_front(sublayer->layer->floating.list, sublayer);
 
-            if (sublayer->layer->floating.node)
+            if (sublayer->layer->floating.node &&
+                (sublayer->layer->layer != LAYER_MINIMIZED))
             {
                 // floating.node might be null for minimized layer, which will
                 // be removed soon.
@@ -1022,13 +1030,15 @@ class workspace_manager::impl
 
     signal_connection_t output_geometry_changed = [&] (void*)
     {
+        using namespace wf::scene;
+
         for (int i = 0; i < (int)wf::scene::layer::ALL_LAYERS; i++)
         {
-            output->node_for_layer((wf::scene::layer)i)->limit_region =
+            output->node_for_layer((layer)i)->limit_region =
                 output->get_layout_geometry();
         }
 
-        wf::get_core().scene()->update();
+        wf::scene::update(wf::get_core().scene(), update_flag::INPUT_STATE);
 
         auto old_w = output_geometry.width, old_h = output_geometry.height;
         auto new_size = output->get_screen_size();
@@ -1158,14 +1168,6 @@ class workspace_manager::impl
         }
     }
 
-    void emit_stack_order_changed()
-    {
-        stack_order_changed_signal data;
-        data.output = output;
-        output->emit_signal("stack-order-changed", &data);
-        wf::get_core().emit_signal("output-stack-order-changed", &data);
-    }
-
     void set_promoted_view(wayfire_view view)
     {
         if (view->view_impl->is_promoted)
@@ -1184,6 +1186,7 @@ class workspace_manager::impl
         auto top_node = output->node_for_layer(scene::layer::TOP);
         scene::add_front(top_node->dynamic,
             view->view_impl->promoted_copy_node);
+        update_view_scene_node(view);
     }
 
     void unset_promoted_view(wayfire_view view)
@@ -1227,12 +1230,6 @@ class workspace_manager::impl
         }
 
         check_autohide_panels();
-
-        /**
-         * We update promoted views when the stack order of the middle layers
-         * changes
-         */
-        emit_stack_order_changed();
     }
 
     void handle_view_first_add(wayfire_view view)
@@ -1297,10 +1294,6 @@ class workspace_manager::impl
         if (view_layer & MIDDLE_LAYERS)
         {
             update_promoted_views();
-        } else
-        {
-            /* For panels, backgrounds, etc. */
-            emit_stack_order_changed();
         }
     }
 };
@@ -1352,7 +1345,8 @@ void workspace_manager::destroy_sublayer(nonstd::observer_ptr<sublayer_t> sublay
 void workspace_manager::add_view_to_sublayer(wayfire_view view,
     nonstd::observer_ptr<sublayer_t> sublayer)
 {
-    return pimpl->add_view_to_sublayer(view, sublayer);
+    pimpl->add_view_to_sublayer(view, sublayer);
+    update_view_scene_node(view);
 }
 
 void workspace_manager::move_to_workspace(wayfire_view view, wf::point_t ws)
@@ -1362,19 +1356,38 @@ void workspace_manager::move_to_workspace(wayfire_view view, wf::point_t ws)
 
 void workspace_manager::add_view(wayfire_view view, layer_t layer)
 {
-    return pimpl->add_view_to_layer(view, layer);
+    wf::scene::node_ptr update_parent;
+    if ((get_view_layer(view) == LAYER_MINIMIZED) || (layer == LAYER_MINIMIZED))
+    {
+        update_parent = view->get_scene_node()->parent()->shared_from_this();
+    }
+
+    pimpl->add_view_to_layer(view, layer);
+    update_view_scene_node(view);
+
+    if (update_parent)
+    {
+        wf::scene::update(update_parent, wf::scene::update_flag::CHILDREN_LIST);
+    }
 }
 
 void workspace_manager::bring_to_front(wayfire_view view)
 {
-    return pimpl->bring_to_front(view);
+    pimpl->bring_to_front(view);
+    update_view_scene_node(view);
 }
 
 void workspace_manager::remove_view(wayfire_view view)
 {
+    auto parent = view->get_scene_node()->parent();
     pimpl->remove_view(view);
-    // Trigger recomputation of the input state
-    wf::get_core().scene()->update();
+    update_view_scene_node(view);
+
+    if (parent)
+    {
+        wf::scene::update(parent->shared_from_this(),
+            wf::scene::update_flag::CHILDREN_LIST);
+    }
 }
 
 uint32_t workspace_manager::get_view_layer(wayfire_view view)

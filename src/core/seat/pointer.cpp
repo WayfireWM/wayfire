@@ -2,6 +2,7 @@
 #include "cursor.hpp"
 #include "pointing-device.hpp"
 #include "input-manager.hpp"
+#include "wayfire/scene.hpp"
 #include "wayfire/signal-definitions.hpp"
 
 #include "../scene-priv.hpp"
@@ -16,9 +17,16 @@ wf::pointer_t::pointer_t(nonstd::observer_ptr<wf::input_manager_t> input,
 {
     this->input = input;
     this->seat  = seat;
-    on_surface_map_state_change.set_callback([=] (auto surface)
+
+    on_root_node_updated = [=] (wf::scene::root_node_update_signal *data)
     {
-        if (auto vnode = dynamic_cast<wf::scene::surface_node_t*>(grabbed_node.get()))
+        if (!(data->flags & wf::scene::update_flag::INPUT_STATE))
+        {
+            return;
+        }
+
+        if (auto vnode =
+                dynamic_cast<wf::scene::surface_node_t*>(grabbed_node.get()))
         {
             if (!vnode->get_surface()->is_mapped())
             {
@@ -27,14 +35,9 @@ wf::pointer_t::pointer_t(nonstd::observer_ptr<wf::input_manager_t> input,
         }
 
         update_cursor_position(get_current_time(), false);
-    });
+    };
 
-    on_views_updated.set_callback([&] (wf::signal_data_t*)
-    {
-        update_cursor_position(get_current_time(), false);
-    });
-    wf::get_core().connect_signal("output-stack-order-changed", &on_views_updated);
-    wf::get_core().connect_signal("view-geometry-changed", &on_views_updated);
+    wf::get_core().scene()->connect(&on_root_node_updated);
 }
 
 wf::pointer_t::~pointer_t()

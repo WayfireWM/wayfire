@@ -256,9 +256,8 @@ class WayfireSwitcher : public wf::plugin_interface_t
 
         views.clear();
 
-        wf::stack_order_changed_signal data;
-        data.output = output;
-        wf::get_core().emit_signal("output-stack-order-changed", &data);
+        wf::scene::update(wf::get_core().scene(),
+            wf::scene::update_flag::INPUT_STATE);
     }
 
     /* offset from the left or from the right */

@@ -47,8 +47,9 @@ struct tablet_tool_t
   private:
     wf::wl_listener_wrapper on_destroy, on_set_cursor;
     wf::wl_listener_wrapper on_tool_v2_destroy;
-    wf::signal_connection_t on_surface_map_state_changed;
-    wf::signal_connection_t on_views_updated;
+
+    wf::signal::connection_t<wf::scene::root_node_update_signal>
+    on_root_node_updated;
 
     /** Tablet that this tool belongs to */
     wlr_tablet_v2_tablet *tablet_v2;

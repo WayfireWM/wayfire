@@ -33,29 +33,22 @@ wf::tablet_tool_t::tablet_tool_t(wlr_tablet_tool *tool,
     /* Ungrab surface, and update focused surface if a surface is unmapped,
      * we don't want to end up with a reference to unfocused or a destroyed
      * surface. */
-    on_surface_map_state_changed.set_callback([=] (signal_data_t *data)
+    on_root_node_updated = [=] (wf::scene::root_node_update_signal *data)
     {
-        auto ev = static_cast<surface_map_state_changed_signal*>(data);
-        if (!ev->surface->is_mapped() && (ev->surface == this->grabbed_surface))
+        if (!(data->flags & wf::scene::update_flag::INPUT_STATE))
+        {
+            return;
+        }
+
+        if (grabbed_surface && !grabbed_surface->is_mapped())
         {
             this->grabbed_surface = nullptr;
         }
 
         update_tool_position();
-    });
+    };
 
-    wf::get_core().connect_signal("surface-mapped",
-        &on_surface_map_state_changed);
-    wf::get_core().connect_signal("surface-unmapped",
-        &on_surface_map_state_changed);
-
-    on_views_updated.set_callback([&] (wf::signal_data_t *data)
-    {
-        update_tool_position();
-    });
-
-    wf::get_core().connect_signal("output-stack-order-changed", &on_views_updated);
-    wf::get_core().connect_signal("view-geometry-changed", &on_views_updated);
+    wf::get_core().scene()->connect(&on_root_node_updated);
 
     /* Just pass cursor set requests to core, but translate them to
      * regular pointer set requests */

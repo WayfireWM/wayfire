@@ -68,9 +68,13 @@ wf::touch_interface_t::touch_interface_t(wlr_cursor *cursor, wlr_seat *seat,
     on_down.connect(&cursor->events.touch_down);
     on_motion.connect(&cursor->events.touch_motion);
 
-    on_surface_map_state_change.set_callback(
-        [=] (wf::surface_interface_t *surface)
+    on_root_node_updated = [=] (wf::scene::root_node_update_signal *data)
     {
+        if (!(data->flags & wf::scene::update_flag::INPUT_STATE))
+        {
+            return;
+        }
+
         for (auto& [finger_id, node] : this->focus)
         {
             if (auto vnode = dynamic_cast<wf::scene::surface_node_t*>(node.get()))
@@ -81,8 +85,9 @@ wf::touch_interface_t::touch_interface_t(wlr_cursor *cursor, wlr_seat *seat,
                 }
             }
         }
-    });
+    };
 
+    wf::get_core().scene()->connect(&on_root_node_updated);
     add_default_gestures();
 }
 

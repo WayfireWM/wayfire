@@ -8,6 +8,7 @@
 #include <wayfire/region.hpp>
 #include <wayfire/nonstd/observer_ptr.h>
 #include <wayfire/scene-input.hpp>
+#include <wayfire/signal-provider.hpp>
 
 namespace wf
 {
@@ -324,9 +325,46 @@ enum class layer : size_t
 };
 
 /**
+ * A list of bitmask flags which indicate what parts of the node state have
+ * changed. The information is useful when updating the scenegraph's state
+ * with wf::scene::update().
+ */
+namespace update_flag
+{
+enum update_flag
+{
+    /**
+     * The list of the node's children changed.
+     */
+    CHILDREN_LIST = (1 << 0),
+    /**
+     * The node's enabled or disabled state changed.
+     */
+    ENABLED       = (1 << 1),
+    /**
+     * The node's input state changed, that is, the result of find_node_at()
+     * may have changed. Typically, this is triggered when a surface is mapped,
+     * unmapped or moved.
+     */
+    INPUT_STATE   = (1 << 2),
+};
+}
+
+/**
+ * A signal that the root node has been updated.
+ *
+ * on: scenegraph's root
+ * when: Emitted when an update sequence finishes at the scenegraph's root.
+ */
+struct root_node_update_signal
+{
+    uint32_t flags;
+};
+
+/**
  * The root (Level 1) node of the whole scenegraph.
  */
-class root_node_t final : public node_t
+class root_node_t final : public node_t, public wf::signal::provider_t
 {
   public:
     root_node_t();
@@ -338,19 +376,22 @@ class root_node_t final : public node_t
      */
     std::shared_ptr<floating_inner_node_t> layers[(size_t)layer::ALL_LAYERS];
 
-    /**
-     * Signal to the root node that some node's flags have changed.
-     * Doing this will trigger a recomputation of the input and output state
-     * and must be called every time such a change is made.
-     *
-     * FIXME: this API has the potential to become very slow as the scenegraph
-     * grows. In the future, we need to add specialized functions which receive
-     * a list of updated nodes and then applies partial updates.
-     */
-    void update();
-
     struct priv_t;
     std::unique_ptr<priv_t> priv;
 };
+
+/**
+ * Trigger an update of the scenegraph's state.
+ *
+ * When any state of the node changes, this function should be called with a
+ * bitmask list of flags that indicates which parts of the node's state changed.
+ *
+ * After updating the concrete node's state, the change is propagated to parent
+ * nodes all the way up to the scenegraph's root.
+ *
+ * @param changed_node The node whose state changed.
+ * @param flags A bit mask consisting of flags defined in the @update_flag enum.
+ */
+void update(node_ptr changed_node, uint32_t flags);
 }
 }

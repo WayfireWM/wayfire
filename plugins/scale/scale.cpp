@@ -1456,9 +1456,8 @@ class wayfire_scale : public wf::plugin_interface_t
         view_geometry_changed.disconnect();
         output->deactivate_plugin(grab_interface);
 
-        wf::stack_order_changed_signal data;
-        data.output = output;
-        wf::get_core().emit_signal("output-stack-order-changed", &data);
+        wf::scene::update(wf::get_core().scene(),
+            wf::scene::update_flag::INPUT_STATE);
     }
 
     /* Utility hook setter */

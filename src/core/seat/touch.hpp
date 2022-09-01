@@ -79,7 +79,9 @@ class touch_interface_t
 
     void update_gestures(const wf::touch::gesture_event_t& event);
     std::vector<nonstd::observer_ptr<touch::gesture_t>> gestures;
-    SurfaceMapStateListener on_surface_map_state_change;
+
+    wf::signal::connection_t<wf::scene::root_node_update_signal>
+    on_root_node_updated;
 
     std::unique_ptr<touch::gesture_t> multiswipe, edgeswipe, multipinch;
     void add_default_gestures();

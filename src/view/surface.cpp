@@ -8,6 +8,7 @@
 #include "wayfire/output.hpp"
 #include <wayfire/util/log.hpp>
 #include "wayfire/render-manager.hpp"
+#include "wayfire/scene.hpp"
 #include "wayfire/signal-definitions.hpp"
 
 #include <wayfire/scene-operations.hpp>
@@ -335,6 +336,8 @@ void wf::emit_map_state_change(wf::surface_interface_t *surface)
     surface_map_state_changed_signal data;
     data.surface = surface;
     wf::get_core().emit_signal(state, &data);
+    wf::scene::update(surface->get_content_node(),
+        wf::scene::update_flag::INPUT_STATE);
 }
 
 void wf::wlr_surface_base_t::map(wlr_surface *surface)
