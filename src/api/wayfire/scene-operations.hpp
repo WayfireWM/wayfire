@@ -1,5 +1,6 @@
 #pragma once
 
+#include "wayfire/scene-input.hpp"
 #include <wayfire/scene.hpp>
 #include <wayfire/debug.hpp>
 
@@ -13,12 +14,21 @@ namespace scene
 /**
  * Remove a child node from a parent node and update the parent.
  */
-inline void remove_child(floating_inner_ptr parent, node_ptr child)
+inline void remove_child(node_ptr child)
 {
+    if (!child->parent())
+    {
+        return;
+    }
+
+    auto parent = dynamic_cast<floating_inner_node_t*>(child->parent());
+    wf::dassert(parent, "Removing a child from a non-floating container!");
+
     auto children = parent->get_children();
     children.erase(std::remove(children.begin(), children.end(), child),
         children.end());
     parent->set_children_list(children);
+    update(parent->shared_from_this(), update_flag::CHILDREN_LIST);
 }
 
 inline void add_front(floating_inner_ptr parent, node_ptr child)
@@ -26,6 +36,7 @@ inline void add_front(floating_inner_ptr parent, node_ptr child)
     auto children = parent->get_children();
     children.insert(children.begin(), child);
     parent->set_children_list(children);
+    update(parent, update_flag::CHILDREN_LIST);
 }
 
 inline void add_back(floating_inner_ptr parent, node_ptr child)
@@ -33,6 +44,7 @@ inline void add_back(floating_inner_ptr parent, node_ptr child)
     auto children = parent->get_children();
     children.push_back(child);
     parent->set_children_list(children);
+    update(parent, update_flag::CHILDREN_LIST);
 }
 
 inline void raise_to_front(node_ptr child)
@@ -45,6 +57,7 @@ inline void raise_to_front(node_ptr child)
         children.end());
     children.insert(children.begin(), child);
     dyn_parent->set_children_list(children);
+    update(dyn_parent->shared_from_this(), update_flag::CHILDREN_LIST);
 }
 }
 }

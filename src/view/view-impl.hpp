@@ -6,6 +6,7 @@
 #include <wayfire/opengl.hpp>
 
 #include "surface-impl.hpp"
+#include "wayfire/scene.hpp"
 #include <wayfire/nonstd/wlroots-full.hpp>
 
 // for emit_map_*()
@@ -15,7 +16,6 @@
 struct wlr_seat;
 namespace wf
 {
-struct sublayer_t;
 struct view_transform_block_t
 {
     std::string plugin_name = "";
@@ -79,8 +79,6 @@ class view_interface_t::view_priv_impl
 
     wlr_box minimize_hint = {0, 0, 0, 0};
 
-    /** The sublayer of the view. For workspace-manager. */
-    nonstd::observer_ptr<sublayer_t> sublayer;
     /* Promoted to the fullscreen layer? For workspace-manager. */
     bool is_promoted = false;
 

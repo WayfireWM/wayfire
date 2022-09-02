@@ -176,7 +176,7 @@ std::string node_t::stringify() const
 
 // FIXME: output nodes are actually structure nodes, but we need to add and
 // remove them dynamically ...
-output_node_t::output_node_t() : node_t(false)
+output_node_t::output_node_t() : floating_inner_node_t(false)
 {
     this->_static = std::make_shared<floating_inner_node_t>(true);
     this->dynamic = std::make_shared<floating_inner_node_t>(true);

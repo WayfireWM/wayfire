@@ -3,11 +3,13 @@
 #include <wayfire/output.hpp>
 #include <wayfire/workspace-manager.hpp>
 #include <wayfire/util/log.hpp>
+#include "wayfire/scene-operations.hpp"
+#include "wayfire/scene.hpp"
 #include "wm-actions-signals.hpp"
 
 class wayfire_wm_actions_t : public wf::plugin_interface_t
 {
-    nonstd::observer_ptr<wf::sublayer_t> always_above;
+    wf::scene::floating_inner_ptr always_above;
     bool showdesktop_active = false;
 
     wf::option_wrapper_t<wf::activatorbinding_t> toggle_showdesktop{
@@ -32,14 +34,14 @@ class wayfire_wm_actions_t : public wf::plugin_interface_t
             return false;
         }
 
+        wf::scene::remove_child(view->get_scene_node());
         if (view->has_data("wm-actions-above"))
         {
-            output->workspace->add_view(view,
-                (wf::layer_t)output->workspace->get_view_layer(view));
+            output->workspace->add_view(view, wf::LAYER_WORKSPACE);
             view->erase_data("wm-actions-above");
         } else
         {
-            output->workspace->add_view_to_sublayer(view, always_above);
+            wf::scene::add_front(always_above, view->get_scene_node());
             view->store_data(std::make_unique<wf::custom_data_t>(),
                 "wm-actions-above");
         }
@@ -110,7 +112,8 @@ class wayfire_wm_actions_t : public wf::plugin_interface_t
 
             if (view->has_data("wm-actions-above"))
             {
-                output->workspace->add_view_to_sublayer(view, always_above);
+                wf::scene::remove_child(view->get_scene_node());
+                wf::scene::add_front(always_above, view->get_scene_node());
             }
         }
     };
@@ -137,7 +140,8 @@ class wayfire_wm_actions_t : public wf::plugin_interface_t
 
             if (view->has_data("wm-actions-above") && (signal->state == false))
             {
-                output->workspace->add_view_to_sublayer(view, always_above);
+                wf::scene::remove_child(view->get_scene_node());
+                wf::scene::add_front(always_above, view->get_scene_node());
             }
         }
     };
@@ -318,8 +322,11 @@ class wayfire_wm_actions_t : public wf::plugin_interface_t
   public:
     void init() override
     {
-        always_above = output->workspace->create_sublayer(
-            wf::LAYER_WORKSPACE, wf::SUBLAYER_DOCKED_ABOVE);
+        always_above = std::make_shared<wf::scene::floating_inner_node_t>(false);
+        wf::scene::add_front(
+            output->node_for_layer(wf::scene::layer::WORKSPACE),
+            always_above);
+
         output->add_activator(toggle_showdesktop, &on_toggle_showdesktop);
         output->add_activator(minimize, &on_minimize);
         output->add_activator(toggle_maximize, &on_toggle_maximize);
@@ -335,15 +342,15 @@ class wayfire_wm_actions_t : public wf::plugin_interface_t
 
     void fini() override
     {
-        auto always_on_top_views =
-            output->workspace->get_views_in_sublayer(always_above);
-
-        for (auto view : always_on_top_views)
+        for (auto view : output->workspace->get_views_in_layer(wf::ALL_LAYERS, true))
         {
-            view->erase_data("wm-actions-above");
+            if (view->has_data("wm-actions-above"))
+            {
+                toggle_keep_above(view);
+            }
         }
 
-        output->workspace->destroy_sublayer(always_above);
+        wf::scene::remove_child(always_above);
         output->rem_binding(&on_toggle_showdesktop);
         output->rem_binding(&on_minimize);
         output->rem_binding(&on_toggle_maximize);

@@ -1,5 +1,6 @@
 #include "wayfire/render-manager.hpp"
 #include "view/view-impl.hpp"
+#include "wayfire/debug.hpp"
 #include "wayfire/geometry.hpp"
 #include "wayfire/scene-input.hpp"
 #include "wayfire/scene.hpp"

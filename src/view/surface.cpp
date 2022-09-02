@@ -76,7 +76,7 @@ std::unique_ptr<wf::surface_interface_t> wf::surface_interface_t::remove_subsurf
     ev.subsurface   = subsurface;
     this->emit_signal("subsurface-removed", &ev);
 
-    wf::scene::remove_child(this->priv->root_node, subsurface->priv->root_node);
+    wf::scene::remove_child(subsurface->priv->root_node);
     if (auto surf = remove_from(priv->surface_children_above))
     {
         return surf;

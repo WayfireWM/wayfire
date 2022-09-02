@@ -1,3 +1,4 @@
+#include <memory>
 #include <wayfire/plugin.hpp>
 #include <wayfire/output.hpp>
 #include <wayfire/core.hpp>
@@ -6,6 +7,9 @@
 #include <wayfire/signal-definitions.hpp>
 
 #include "tree-controller.hpp"
+#include "wayfire/debug.hpp"
+#include "wayfire/scene-operations.hpp"
+#include "wayfire/scene.hpp"
 
 namespace wf
 {
@@ -58,7 +62,7 @@ class tile_plugin_t : public wf::plugin_interface_t
 
   private:
     std::vector<std::vector<std::unique_ptr<wf::tile::tree_node_t>>> roots;
-    std::vector<std::vector<nonstd::observer_ptr<wf::sublayer_t>>> tiled_sublayer;
+    std::vector<std::vector<wf::scene::floating_inner_ptr>> tiled_sublayer;
 
     const wf::tile::split_direction_t default_split = wf::tile::SPLIT_VERTICAL;
 
@@ -75,8 +79,7 @@ class tile_plugin_t : public wf::plugin_interface_t
             {
                 if (!output->workspace->is_workspace_valid({(int)i, (int)j}))
                 {
-                    output->workspace->destroy_sublayer(tiled_sublayer[i][j]);
-                    roots[i][j].reset();
+                    destroy_sublayer(tiled_sublayer[i][j]);
                 }
             }
         }
@@ -91,8 +94,13 @@ class tile_plugin_t : public wf::plugin_interface_t
             {
                 roots[i][j] =
                     std::make_unique<wf::tile::split_node_t>(default_split);
-                tiled_sublayer[i][j] = output->workspace->create_sublayer(
-                    wf::LAYER_WORKSPACE, wf::SUBLAYER_FLOATING);
+
+                tiled_sublayer[i][j] =
+                    std::make_shared<wf::scene::floating_inner_node_t>(false);
+
+                wf::scene::add_front(
+                    output->node_for_layer(wf::scene::layer::WORKSPACE)->dynamic,
+                    tiled_sublayer[i][j]);
             }
         }
 
@@ -268,7 +276,10 @@ class tile_plugin_t : public wf::plugin_interface_t
 
         auto view_node = std::make_unique<wf::tile::view_node_t>(view);
         roots[vp.x][vp.y]->as_split_node()->add_child(std::move(view_node));
-        output->workspace->add_view_to_sublayer(view, tiled_sublayer[vp.x][vp.y]);
+
+        auto node = view->get_scene_node();
+        wf::scene::remove_child(node);
+        wf::scene::add_front(tiled_sublayer[vp.x][vp.y], node);
         output->workspace->bring_to_front(view); // bring that layer to the front
     }
 
@@ -591,6 +602,24 @@ class tile_plugin_t : public wf::plugin_interface_t
         setup_callbacks();
     }
 
+    void destroy_sublayer(wf::scene::floating_inner_ptr sublayer)
+    {
+        // Transfer views to the top
+        auto root = output->node_for_layer(
+            wf::scene::layer::WORKSPACE)->dynamic;
+
+        auto children = root->get_children();
+        auto sublayer_children = sublayer->get_children();
+        sublayer->set_children_list({});
+        children.insert(children.end(),
+            sublayer_children.begin(), sublayer_children.end());
+        root->set_children_list(children);
+        wf::scene::update(root,
+            wf::scene::update_flag::CHILDREN_LIST);
+
+        wf::scene::remove_child(sublayer);
+    }
+
     void fini() override
     {
         output->workspace->set_workspace_implementation(nullptr, true);
@@ -599,7 +628,7 @@ class tile_plugin_t : public wf::plugin_interface_t
         {
             for (auto& sublayer : row)
             {
-                output->workspace->destroy_sublayer(sublayer);
+                destroy_sublayer(sublayer);
             }
         }
 

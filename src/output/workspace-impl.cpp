@@ -14,6 +14,7 @@
 
 #include "../view/view-impl.hpp"
 #include "output-impl.hpp"
+#include "wayfire/debug.hpp"
 #include "wayfire/scene-input.hpp"
 #include "wayfire/scene.hpp"
 
@@ -24,42 +25,6 @@ static void update_view_scene_node(wayfire_view view)
     using wf::scene::update_flag::update_flag;
     wf::scene::update(view->get_scene_node(),
         update_flag::INPUT_STATE | update_flag::CHILDREN_LIST);
-}
-
-/** Find a smart pointer inside a list */
-template<class Haystack, class Needle>
-typename std::list<Haystack>::iterator find_in(std::list<Haystack>& hay,
-    const Needle& needle)
-{
-    return std::find_if(std::begin(hay), std::end(hay), [=] (const auto& elem)
-    {
-        return elem.get() == needle.get();
-    });
-}
-
-/** Bring to front or lower to back inside a container of smart pointers */
-template<class Haystack, class Needle>
-void raise_to_front(std::list<Haystack>& hay, const Needle& needle,
-    bool reverse = false)
-{
-    auto it = find_in(hay, needle);
-    hay.splice(reverse ? hay.end() : hay.begin(), hay, it);
-}
-
-/**
- * Remove needle from haystack, where both needle and elements in haystack are
- * smart pointers.
- */
-template<class Haystack, class Needle>
-void remove_from(Haystack& haystack, Needle& n)
-{
-    auto it = std::remove_if(std::begin(haystack), std::end(haystack),
-        [=] (const auto& contained)
-    {
-        return contained.get() == n.get();
-    });
-
-    haystack.erase(it, std::end(haystack));
 }
 
 /** Damage the entire view tree including the view itself. */
@@ -101,62 +66,6 @@ class copy_node_t final : public view_node_t
 };
 }
 
-
-struct layer_container_t;
-/**
- * Implementation of the sublayer struct.
- */
-struct sublayer_t
-{
-    /** A list of the views in the sublayer */
-    std::list<wayfire_view> views;
-
-    /** The actual layer this sublayer belongs to */
-    nonstd::observer_ptr<layer_container_t> layer;
-
-    /** The sublayer mode */
-    sublayer_mode_t mode;
-
-    /**
-     * Whether the sublayer is created artificially to hold a single view.
-     * In those cases, the sublayer is destroyed as soon as the view is moved
-     * elsewhere.
-     */
-    bool is_single_view;
-
-    scene::floating_inner_ptr node;
-};
-
-struct sublayer_container_t
-{
-    std::list<std::unique_ptr<sublayer_t>> list;
-    scene::floating_inner_ptr node;
-};
-
-/**
- * A container for all the sublayers of a layer.
- */
-struct layer_container_t
-{
-    /** The layer of the container */
-    layer_t layer;
-
-    /** List of sublayers docked below */
-    sublayer_container_t below;
-    /** List of floating sublayers */
-    sublayer_container_t floating;
-    /** List of sublayers docked above */
-    sublayer_container_t above;
-
-    void remove_sublayer(nonstd::observer_ptr<sublayer_t> sublayer)
-    {
-        for (auto container : {& below.list, & floating.list, & above.list})
-        {
-            remove_from(*container, sublayer);
-        }
-    }
-};
-
 /**
  * output_layer_manager_t is a part of the workspace_manager module. It provides
  * the functionality related to layers and sublayers.
@@ -164,31 +73,12 @@ struct layer_container_t
 class output_layer_manager_t
 {
     // A hierarchical representation of the view stack order
-    layer_container_t layers[TOTAL_LAYERS];
     wf::output_t *output;
 
   public:
     output_layer_manager_t(wf::output_t *output)
     {
         this->output = output;
-        for (int i = 0; i < TOTAL_LAYERS; i++)
-        {
-            layers[i].layer = static_cast<layer_t>(1 << i);
-
-            layers[i].above.node = std::make_shared<scene::floating_inner_node_t>(
-                false);
-            layers[i].below.node = std::make_shared<scene::floating_inner_node_t>(
-                false);
-            layers[i].floating.node = std::make_shared<scene::floating_inner_node_t>(
-                false);
-
-            auto node = output->node_for_layer((wf::scene::layer)i);
-            node->dynamic->set_children_list({
-                    layers[i].above.node,
-                    layers[i].floating.node,
-                    layers[i].below.node
-                });
-        }
     }
 
     constexpr int layer_index_from_mask(uint32_t layer_mask) const
@@ -196,129 +86,72 @@ class output_layer_manager_t
         return __builtin_ctz(layer_mask);
     }
 
-    nonstd::observer_ptr<sublayer_t>& get_view_sublayer(wayfire_view view)
-    {
-        return view->view_impl->sublayer;
-    }
-
     uint32_t get_view_layer(wayfire_view view)
     {
-        /*
-         * A view might have layer data set from a previous output.
-         * That does not mean it has an assigned layer.
-         */
-        auto sublayer = get_view_sublayer(view);
-        if (!sublayer)
+        // Find layer node
+        wf::scene::node_t *node = view->get_scene_node().get();
+        auto root = wf::get_core().scene().get();
+
+        while (node->parent())
         {
-            return 0;
+            if (node->parent() == root)
+            {
+                for (int i = 0; i < (int)wf::scene::layer::ALL_LAYERS; i++)
+                {
+                    if (node == root->layers[i].get())
+                    {
+                        return (1 << i);
+                    }
+                }
+            }
+
+            node = node->parent();
         }
 
-        return sublayer->layer->layer;
+        return 0;
     }
 
     void remove_view(wayfire_view view)
     {
-        auto& sublayer = get_view_sublayer(view);
-        if (!sublayer)
-        {
-            return;
-        }
-
         damage_views(view);
-
-        remove_from(sublayer->views, view);
-        scene::remove_child(sublayer->node, view->get_scene_node());
-
-        if (sublayer->is_single_view)
-        {
-            sublayer->layer->remove_sublayer(sublayer);
-            for (auto cat : {& sublayer->layer->above,
-                 & sublayer->layer->floating, & sublayer->layer->below})
-            {
-                scene::remove_child(cat->node, sublayer->node);
-            }
-        }
-
-        /* Reset the view's sublayer */
-        sublayer = nullptr;
-    }
-
-    void add_view_to_sublayer(wayfire_view view,
-        nonstd::observer_ptr<sublayer_t> sublayer)
-    {
-        remove_view(view);
-        get_view_sublayer(view) = sublayer;
-
-        sublayer->views.push_front(view);
-        scene::add_front(sublayer->node, view->get_scene_node());
-    }
-
-    nonstd::observer_ptr<sublayer_t> create_sublayer(layer_t layer_mask,
-        sublayer_mode_t mode)
-    {
-        auto sublayer = std::make_unique<sublayer_t>();
-        nonstd::observer_ptr<sublayer_t> ptr{sublayer};
-
-        auto& layer = this->layers[layer_index_from_mask(layer_mask)];
-        sublayer->layer = &layer;
-        sublayer->mode  = mode;
-        sublayer->is_single_view = false;
-        sublayer->node = std::make_shared<scene::floating_inner_node_t>(false);
-
-        switch (mode)
-        {
-          case SUBLAYER_DOCKED_BELOW:
-            scene::add_back(layer.below.node, sublayer->node);
-            layer.below.list.emplace_back(std::move(sublayer));
-            break;
-
-          case SUBLAYER_DOCKED_ABOVE:
-            scene::add_front(layer.above.node, sublayer->node);
-            layer.above.list.emplace_front(std::move(sublayer));
-            break;
-
-          case SUBLAYER_FLOATING:
-            scene::add_front(layer.floating.node, sublayer->node);
-            layer.floating.list.emplace_front(std::move(sublayer));
-            break;
-        }
-
-        return ptr;
+        scene::remove_child(view->get_scene_node());
     }
 
     /** Add or move the view to the given layer */
     void add_view_to_layer(wayfire_view view, layer_t layer)
     {
         damage_views(view);
-        add_view_to_sublayer(view, create_sublayer(layer, SUBLAYER_FLOATING));
+        auto idx = (wf::scene::layer)layer_index_from_mask(layer);
+        scene::add_front(output->node_for_layer(idx)->dynamic,
+            view->get_scene_node());
         damage_views(view);
     }
 
     /** Precondition: view is in some sublayer */
     void bring_to_front(wayfire_view view)
     {
-        auto sublayer = get_view_sublayer(view);
-        assert(sublayer);
-
-        for (auto view : sublayer->views)
+        wf::scene::node_t *node = view->get_scene_node().get();
+        wf::scene::node_t *damage_from = nullptr;
+        while (node->parent())
         {
-            damage_views(view);
-        }
-
-        if (sublayer->mode == SUBLAYER_FLOATING)
-        {
-            raise_to_front(sublayer->layer->floating.list, sublayer);
-
-            if (sublayer->layer->floating.node)
+            if (!node->is_structure_node() &&
+                dynamic_cast<scene::floating_inner_node_t*>(node->parent()))
             {
-                // floating.node might be null for minimized layer, which will
-                // be removed soon.
-                scene::raise_to_front(sublayer->node);
+                damage_from = node->parent();
+                wf::scene::raise_to_front(node->shared_from_this());
             }
+
+            node = node->parent();
         }
 
-        raise_to_front(sublayer->views, view);
-        scene::raise_to_front(view->get_scene_node());
+        std::vector<wayfire_view> all_views;
+        push_views_from_scenegraph(damage_from->shared_from_this(),
+            all_views, promoted_state_t::ANY);
+
+        for (auto& view : all_views)
+        {
+            view->damage();
+        }
     }
 
     wayfire_view get_front_view(wf::layer_t layer)
@@ -461,29 +294,6 @@ class output_layer_manager_t
             output->node_for_layer(wf::scene::layer::TOP),
             views, promoted_state_t::PROMOTED);
         return views;
-    }
-
-    /**
-     * @return A list of all views in the given sublayer.
-     */
-    std::vector<wayfire_view> get_views_in_sublayer(
-        nonstd::observer_ptr<sublayer_t> sublayer)
-    {
-        std::vector<wayfire_view> result;
-        std::copy(sublayer->views.begin(), sublayer->views.end(),
-            std::back_inserter(result));
-
-        return result;
-    }
-
-    void destroy_sublayer(nonstd::observer_ptr<sublayer_t> sublayer)
-    {
-        for (auto& view : get_views_in_sublayer(sublayer))
-        {
-            add_view_to_layer(view, sublayer->layer->layer);
-        }
-
-        sublayer->layer->remove_sublayer(sublayer);
     }
 };
 
@@ -741,22 +551,6 @@ class output_viewport_manager_t
         auto it = std::remove_if(views.begin(), views.end(), [&] (wayfire_view view)
         {
             return !view_visible_on(view, workspace);
-        });
-
-        views.erase(it, views.end());
-
-        return views;
-    }
-
-    std::vector<wayfire_view> get_views_on_workspace_sublayer(wf::point_t vp,
-        nonstd::observer_ptr<sublayer_t> sublayer)
-    {
-        std::vector<wayfire_view> views =
-            output->workspace->get_views_in_sublayer(sublayer);
-
-        auto it = std::remove_if(views.begin(), views.end(), [&] (wayfire_view view)
-        {
-            return !view_visible_on(view, vp);
         });
 
         views.erase(it, views.end());
@@ -1149,9 +943,7 @@ class workspace_manager::impl
 
         view->view_impl->is_promoted = false;
         view->get_scene_node()->set_enabled(true);
-        auto top_node = output->node_for_layer(scene::layer::TOP);
-        scene::remove_child(top_node->dynamic,
-            view->view_impl->promoted_copy_node);
+        scene::remove_child(view->view_impl->promoted_copy_node);
     }
 
     void update_promoted_views()
@@ -1203,25 +995,11 @@ class workspace_manager::impl
         }
     }
 
-    void add_view_to_sublayer(wayfire_view view,
-        nonstd::observer_ptr<sublayer_t> sublayer)
-    {
-        assert(view->get_output() == output);
-        bool first_add = layer_manager.get_view_layer(view) == 0;
-        layer_manager.add_view_to_sublayer(view, sublayer);
-        update_promoted_views();
-        if (first_add)
-        {
-            handle_view_first_add(view);
-        }
-    }
-
     void bring_to_front(wayfire_view view)
     {
-        if (!layer_manager.get_view_sublayer(view))
+        if (layer_manager.get_view_layer(view) == 0)
         {
             LOGE("trying to bring_to_front a view without a layer!");
-
             return;
         }
 
@@ -1277,30 +1055,6 @@ std::vector<wayfire_view> workspace_manager::get_views_on_workspace(wf::point_t 
         ws, layer_mask, include_minimized);
 }
 
-std::vector<wayfire_view> workspace_manager::get_views_on_workspace_sublayer(
-    wf::point_t ws, nonstd::observer_ptr<sublayer_t> sublayer)
-{
-    return pimpl->viewport_manager.get_views_on_workspace_sublayer(ws, sublayer);
-}
-
-nonstd::observer_ptr<sublayer_t> workspace_manager::create_sublayer(layer_t layer,
-    sublayer_mode_t mode)
-{
-    return pimpl->layer_manager.create_sublayer(layer, mode);
-}
-
-void workspace_manager::destroy_sublayer(nonstd::observer_ptr<sublayer_t> sublayer)
-{
-    return pimpl->layer_manager.destroy_sublayer(sublayer);
-}
-
-void workspace_manager::add_view_to_sublayer(wayfire_view view,
-    nonstd::observer_ptr<sublayer_t> sublayer)
-{
-    pimpl->add_view_to_sublayer(view, sublayer);
-    update_view_scene_node(view);
-}
-
 void workspace_manager::move_to_workspace(wayfire_view view, wf::point_t ws)
 {
     return pimpl->viewport_manager.move_to_workspace(view, ws);
@@ -1308,16 +1062,7 @@ void workspace_manager::move_to_workspace(wayfire_view view, wf::point_t ws)
 
 void workspace_manager::add_view(wayfire_view view, layer_t layer)
 {
-    auto update_parent = view->get_scene_node()->parent();
-
     pimpl->add_view_to_layer(view, layer);
-    update_view_scene_node(view);
-
-    if (update_parent)
-    {
-        wf::scene::update(update_parent->shared_from_this(),
-            wf::scene::update_flag::CHILDREN_LIST);
-    }
 }
 
 void workspace_manager::bring_to_front(wayfire_view view)
@@ -1328,15 +1073,8 @@ void workspace_manager::bring_to_front(wayfire_view view)
 
 void workspace_manager::remove_view(wayfire_view view)
 {
-    auto parent = view->get_scene_node()->parent();
     pimpl->remove_view(view);
     update_view_scene_node(view);
-
-    if (parent)
-    {
-        wf::scene::update(parent->shared_from_this(),
-            wf::scene::update_flag::CHILDREN_LIST);
-    }
 }
 
 uint32_t workspace_manager::get_view_layer(wayfire_view view)
@@ -1348,12 +1086,6 @@ std::vector<wayfire_view> workspace_manager::get_views_in_layer(
     uint32_t layers_mask, bool include_minimized)
 {
     return pimpl->layer_manager.get_views_in_layer(layers_mask, include_minimized);
-}
-
-std::vector<wayfire_view> workspace_manager::get_views_in_sublayer(
-    nonstd::observer_ptr<sublayer_t> sublayer)
-{
-    return pimpl->layer_manager.get_views_in_sublayer(sublayer);
 }
 
 std::vector<wayfire_view> workspace_manager::get_promoted_views()

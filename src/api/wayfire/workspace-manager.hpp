@@ -66,37 +66,6 @@ constexpr int ALL_LAYERS = wf::VISIBLE_LAYERS;
 uint32_t all_layers_not_below(uint32_t layer);
 
 /**
- * Layers internally consist of ordered sublayers, which in turn consist of
- * views ordered by their stacking order.
- *
- * Note any sublayer is generally not visible to plugins, except to the plugin
- * which created the particular sublayer.
- */
-struct sublayer_t;
-
-/**
- * Different modes of how sublayers interact with each other.
- */
-enum sublayer_mode_t
-{
-    /**
-     * Sublayers docked below are statically positioned on the bottom of the
-     * layer they are part of.
-     */
-    SUBLAYER_DOCKED_BELOW = 0,
-    /**
-     * Sublayers docked above are statically positioned on the top of the
-     * layer they are part of.
-     */
-    SUBLAYER_DOCKED_ABOVE = 1,
-    /**
-     * Floating sublayers are positioned in the middle of the layer they are
-     * part of. Floating sublayers can be re-arranged with respect to each other.
-     */
-    SUBLAYER_FLOATING     = 2,
-};
-
-/**
  * Workspace manager is responsible for managing the layers, the workspaces and
  * the views in them. There is one workspace manager per output.
  *
@@ -143,15 +112,6 @@ class workspace_manager
      */
     std::vector<wayfire_view> get_views_on_workspace(wf::point_t ws,
         uint32_t layer_mask, bool include_minimized = false);
-
-    /**
-     * Get a list of all views visible on the given workspace and in the given
-     * sublayer.
-     *
-     * @param sublayer - The sublayer whose views are queried.
-     */
-    std::vector<wayfire_view> get_views_on_workspace_sublayer(wf::point_t ws,
-        nonstd::observer_ptr<sublayer_t> sublayer);
 
     /**
      * Ensure that the view's wm_geometry is visible on the workspace ws. This
@@ -220,41 +180,6 @@ class workspace_manager
      * This returns only the view on the given workspace.
      */
     std::vector<wayfire_view> get_promoted_views(wf::point_t workspace);
-
-    /**
-     * @return A list of all views in the given sublayer.
-     */
-    std::vector<wayfire_view> get_views_in_sublayer(
-        nonstd::observer_ptr<sublayer_t> sublayer);
-
-    /**
-     * Create a new sublayer.
-     *
-     * @param layer The layer this sublayer is part of.
-     * @param mode The mode of the new sublayer.
-     */
-    nonstd::observer_ptr<sublayer_t> create_sublayer(
-        layer_t layer, sublayer_mode_t mode);
-
-    /**
-     * Destroy a sublayer. Views that are inside will be moved to the floating
-     * part of the same layer the sublayer is part of.
-     *
-     * @param sublayer The sublayer to be destroyed.
-     */
-    void destroy_sublayer(nonstd::observer_ptr<sublayer_t> sublayer);
-
-    /**
-     * Move the view inside a sublayer. No-op if the view is already inside
-     * that sublayer. The view can then later be removed from the sublayer by
-     * calling remove_view()
-     *
-     * The view will need to fulfill the same preconditions as add_view().
-     *
-     * @param view The view to be put inside the sublayer.
-     */
-    void add_view_to_sublayer(wayfire_view view,
-        nonstd::observer_ptr<sublayer_t> sublayer);
 
     /**
      * @return The current workspace implementation

@@ -285,7 +285,7 @@ using floating_inner_ptr = std::shared_ptr<floating_inner_node_t>;
 /**
  * A Level 3 node which represents each output in each layer.
  */
-class output_node_t final : public node_t
+class output_node_t final : public floating_inner_node_t
 {
   public:
     output_node_t();

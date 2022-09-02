@@ -69,8 +69,7 @@ static void unset_toplevel_parent(wayfire_view view)
         auto& container = view->parent->children;
         auto it = std::remove(container.begin(), container.end(), view);
         container.erase(it, container.end());
-        wf::scene::remove_child(view->parent->get_scene_node(),
-            view->get_scene_node());
+        wf::scene::remove_child(view->get_scene_node());
     }
 }
 
