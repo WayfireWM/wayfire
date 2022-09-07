@@ -1,9 +1,11 @@
 #include <wayfire/scene.hpp>
 #include <wayfire/view.hpp>
+#include <wayfire/output.hpp>
 #include <set>
 #include <algorithm>
 
 #include "scene-priv.hpp"
+#include "wayfire/geometry.hpp"
 #include "wayfire/util.hpp"
 #include <wayfire/core.hpp>
 
@@ -45,7 +47,8 @@ std::optional<input_node_t> node_t::find_node_at(const wf::pointf_t& at)
 
     for (auto& node : get_children())
     {
-        auto child_node = node->find_node_at(at);
+        auto child_node = node->find_node_at(
+            node->to_local(at));
         if (child_node.has_value())
         {
             return child_node;
@@ -172,12 +175,23 @@ std::string node_t::stringify() const
     return description + " " + stringify_flags();
 }
 
+wf::pointf_t node_t::to_local(const wf::pointf_t& point)
+{
+    return point;
+}
+
+wf::pointf_t node_t::to_global(const wf::pointf_t& point)
+{
+    return point;
+}
+
 // ------------------------------ output_node_t --------------------------------
 
 // FIXME: output nodes are actually structure nodes, but we need to add and
 // remove them dynamically ...
-output_node_t::output_node_t() : floating_inner_node_t(false)
+output_node_t::output_node_t(wf::output_t *output) : floating_inner_node_t(false)
 {
+    this->output  = output;
     this->_static = std::make_shared<floating_inner_node_t>(true);
     this->dynamic = std::make_shared<floating_inner_node_t>(true);
     set_children_unchecked({dynamic, _static});
@@ -185,8 +199,19 @@ output_node_t::output_node_t() : floating_inner_node_t(false)
 
 std::string output_node_t::stringify() const
 {
-    // FIXME: would be better to dump the name of the output here...
-    return "output " + stringify_flags();
+    return "output " + this->output->to_string() + " " + stringify_flags();
+}
+
+wf::pointf_t output_node_t::to_local(const wf::pointf_t& point)
+{
+    auto offset = wf::origin(output->get_layout_geometry());
+    return {point.x - offset.x, point.y - offset.y};
+}
+
+wf::pointf_t output_node_t::to_global(const wf::pointf_t& point)
+{
+    auto offset = wf::origin(output->get_layout_geometry());
+    return {point.x + offset.x, point.y + offset.y};
 }
 
 // ------------------------------ root_node_t ----------------------------------

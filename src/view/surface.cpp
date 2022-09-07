@@ -191,7 +191,7 @@ void wf::surface_interface_t::send_frame_done(const timespec& time)
 
 bool wf::surface_interface_t::accepts_input(int32_t sx, int32_t sy)
 {
-    if (!priv->wsurface)
+    if (!priv->wsurface || !is_mapped())
     {
         return false;
     }

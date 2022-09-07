@@ -3,6 +3,7 @@
 #include <wayfire/output.hpp>
 #include "../core/core-impl.hpp"
 #include "../core/seat/input-manager.hpp"
+#include "wayfire/scene.hpp"
 
 wf::scene::view_node_t::view_node_t(wayfire_view _view) :
     floating_inner_node_t(false), view(_view)
@@ -25,6 +26,20 @@ wf::keyboard_interaction_t& wf::scene::view_node_t::keyboard_interaction()
     return *kb_interaction;
 }
 
+wf::pointf_t wf::scene::view_node_t::to_local(const wf::pointf_t& point)
+{
+    auto local = view->global_to_local_point(point, nullptr);
+    return local;
+}
+
+wf::pointf_t wf::scene::view_node_t::to_global(const wf::pointf_t& point)
+{
+    auto local = point;
+    local.x += view->get_output_geometry().x;
+    local.y += view->get_output_geometry().y;
+    return view->transform_point(local);
+}
+
 std::optional<wf::scene::input_node_t> wf::scene::view_node_t::find_node_at(
     const wf::pointf_t& at)
 {
@@ -39,26 +54,5 @@ std::optional<wf::scene::input_node_t> wf::scene::view_node_t::find_node_at(
         return {};
     }
 
-    wf::pointf_t local_coordinates = at;
-
-    // First, translate to the view's output
-    if (view->get_output())
-    {
-        auto offset = wf::origin(view->get_output()->get_layout_geometry());
-        local_coordinates.x -= offset.x;
-        local_coordinates.y -= offset.y;
-    }
-
-    input_node_t result;
-    result.surface =
-        view->map_input_coordinates(local_coordinates, result.local_coords);
-
-    if (result.surface)
-    {
-        result.node = result.surface->get_content_node().get();
-        return result;
-    }
-
-    // Empty std::optional => No intersection
-    return {};
+    return floating_inner_node_t::find_node_at(at);
 }

@@ -584,6 +584,9 @@ namespace scene
  * children.
  *
  * Each view_node_t also exposes its surfaces as children.
+ * The children's coordinate system is transformed to match the transformers
+ * currently applied on the view and then offsetted to start at the top-left
+ * corner of the view's main surface.
  */
 class view_node_t : public scene::floating_inner_node_t
 {
@@ -591,6 +594,9 @@ class view_node_t : public scene::floating_inner_node_t
     view_node_t(wayfire_view view);
     std::optional<input_node_t> find_node_at(const wf::pointf_t& at) override;
     std::string stringify() const override;
+
+    wf::pointf_t to_local(const wf::pointf_t& point) override;
+    wf::pointf_t to_global(const wf::pointf_t& point) override;
 
     wayfire_view get_view() const
     {

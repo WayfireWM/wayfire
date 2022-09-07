@@ -780,7 +780,7 @@ class workspace_manager::impl
         for (int i = 0; i < (int)wf::scene::layer::ALL_LAYERS; i++)
         {
             output->node_for_layer((layer)i)->limit_region =
-                output->get_layout_geometry();
+                output->get_relative_geometry();
         }
 
         wf::scene::update(wf::get_core().scene(), update_flag::INPUT_STATE);

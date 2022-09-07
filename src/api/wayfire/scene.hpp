@@ -63,16 +63,11 @@ class output_layout_t;
  * - Always-on-top views are simply nodes which are placed above the dynamic
  *   container of the workspace layer of each output.
  *
- * Implementation notes:
- *
- * - Every node has output-layout coordinates. That means that coordinates are
- *   relative to the global coordinate system where input events are handled
- *   and where outputs are put relative to each other. Each output node by
- *   default limits its surfaces to the area actually visible on that output.
- *   Therefore, even though nodes appear (by using a global scenegraph and
- *   global coordinates) to be on another output, they are actually only visible
- *   on the workspaces of their own output. Another consequence of this is that
- *   views change their coordinates when the workspace of an output changes.
+ * Regarding coordinate systems: each node possesses a coordinate system. Some
+ * nodes (for example, nodes which simply group other nodes together) share the
+ * coordinate system of their parent node. Other nodes (for example transformers)
+ * are responsible for converting between the coordinate system of their children
+ * and the coordinate system of their parent.
  */
 namespace scene
 {
@@ -127,8 +122,30 @@ class node_t : public std::enable_shared_from_this<node_t>
     /**
      * Find the input node at the given position.
      * By default, the node will try to pass input to its children.
+     *
+     * @param at The point at which the query is made. It is always in the node's
+     *   coordinate system (e.g. resulting from the parent's to_local() function).
      */
     virtual std::optional<input_node_t> find_node_at(const wf::pointf_t& at);
+
+    /**
+     * Convert a point from the coordinate system the node resides in, to the
+     * coordinate system of its children.
+     *
+     * By default, the node's children share the coordinate system of their parent,
+     * that is, `to_local(x) == x`.
+     */
+    virtual wf::pointf_t to_local(const wf::pointf_t& point);
+
+    /**
+     * Convert a point from the coordinate system of the node's children to
+     * the coordinate system the node resides in. Typically, this is the inverse
+     * operation of to_local, e.g. `to_global(to_local(x)) == x`.
+     *
+     * By default, the node's children share the coordinate system of their parent,
+     * that is, `to_global(x) == x`.
+     */
+    virtual wf::pointf_t to_global(const wf::pointf_t& point);
 
     /**
      * Get a textual representation of the node, used for debugging purposes.
@@ -204,7 +221,7 @@ class node_t : public std::enable_shared_from_this<node_t>
 
     /**
      * The limit region of a node.
-     * The limit region is described in the node's parent coordinate system and
+     * The limit region is described in the same coordinate system as the node
      * tells the node that it should not process input outside of it nor render
      * outside. By default, nodes do not have a limit region set, which means
      * they are not limited in any way.
@@ -284,12 +301,19 @@ using floating_inner_ptr = std::shared_ptr<floating_inner_node_t>;
 
 /**
  * A Level 3 node which represents each output in each layer.
+ *
+ * Each output's children reside in a coordinate system offsetted by the output's
+ * position in the output layout, e.g. each output has a position 0,0 in its
+ * coordinate system.
  */
 class output_node_t final : public floating_inner_node_t
 {
   public:
-    output_node_t();
+    output_node_t(wf::output_t *output);
     std::string stringify() const override;
+
+    wf::pointf_t to_local(const wf::pointf_t& point) override;
+    wf::pointf_t to_global(const wf::pointf_t& point) override;
 
     /**
      * A container for the static child nodes.
@@ -305,6 +329,17 @@ class output_node_t final : public floating_inner_node_t
      * These nodes are most commonly views.
      */
     std::shared_ptr<floating_inner_node_t> dynamic;
+
+    /**
+     * Get the output this node is responsible for.
+     */
+    wf::output_t *get_output()
+    {
+        return output;
+    }
+
+  private:
+    wf::output_t *output;
 };
 
 /**

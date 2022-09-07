@@ -1,6 +1,7 @@
 #include "subsurface.hpp"
 #include "view/view-impl.hpp"
 #include "wayfire/signal-definitions.hpp"
+#include <wayfire/debug.hpp>
 #include <cassert>
 
 wf::subsurface_implementation_t::subsurface_implementation_t(wlr_subsurface *_sub) :
@@ -41,7 +42,10 @@ wf::subsurface_implementation_t::subsurface_implementation_t(wlr_subsurface *_su
 
 wf::point_t wf::subsurface_implementation_t::get_offset()
 {
-    assert(is_mapped());
+    if (!is_mapped())
+    {
+        return {0, 0};
+    }
 
     return {
         sub->current.x,
