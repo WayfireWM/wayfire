@@ -3,7 +3,9 @@
 #include "../core/seat/input-manager.hpp"
 #include "../core/core-impl.hpp"
 #include <wayfire/compositor-surface.hpp>
+#include "core/seat/seat.hpp"
 #include "view-impl.hpp"
+#include "wayfire/core.hpp"
 
 namespace wf
 {
@@ -24,29 +26,14 @@ class surface_pointer_interaction_t final : public wf::pointer_interaction_t
     // From position relative to current focus to global scene coordinates
     wf::pointf_t get_absolute_position_from_relative(wf::pointf_t relative)
     {
-        auto view = get_view();
-        auto output_geometry = view->get_output_geometry();
-        wf::point_t origin   = {output_geometry.x, output_geometry.y};
-
-        for (auto& surf : view->enumerate_surfaces(origin))
+        auto node = surface->get_content_node().get();
+        while (node)
         {
-            if (surf.surface == surface)
-            {
-                relative.x += surf.position.x;
-                relative.y += surf.position.y;
-            }
+            relative = node->to_global(relative);
+            node     = node->parent();
         }
 
-        relative = view->transform_point(relative);
-        wf::pointf_t output_offset = {0, 0};
-        if (view->get_output())
-        {
-            auto output = view->get_output()->get_layout_geometry();
-            output_offset.x = output.x;
-            output_offset.y = output.y;
-        }
-
-        return {relative.x + output_offset.x, relative.y + output_offset.y};
+        return relative;
     }
 
     inline static double distance_between_points(const wf::pointf_t& a,
@@ -86,7 +73,8 @@ class surface_pointer_interaction_t final : public wf::pointer_interaction_t
 
     wf::pointf_t constrain_point(wf::pointf_t point)
     {
-        point = get_surface_relative_coords(this->surface, point);
+        point = get_node_local_coords(
+            this->surface->get_content_node().get(), point);
         auto closest = region_closest_point({&this->last_constraint->region}, point);
         closest = get_absolute_position_from_relative(closest);
 
@@ -207,10 +195,8 @@ class surface_pointer_interaction_t final : public wf::pointer_interaction_t
         return wf::input_action::CONSUME;
     }
 
-    void handle_pointer_enter(wf::pointf_t position) final
+    void handle_pointer_enter(wf::pointf_t local) final
     {
-        auto local = get_surface_relative_coords(surface, position);
-
         auto seat = wf::get_core_impl().get_current_seat();
         if (auto cs = compositor_surface_from_surface(surface))
         {
@@ -231,7 +217,7 @@ class surface_pointer_interaction_t final : public wf::pointer_interaction_t
         wf::get_core().connect_signal("pointer_motion", &on_pointer_motion);
     }
 
-    wf::input_action handle_pointer_motion(wf::pointf_t pointer_position,
+    wf::input_action handle_pointer_motion(wf::pointf_t local,
         uint32_t time_ms) final
     {
         auto& seat = wf::get_core_impl().seat;
@@ -241,12 +227,9 @@ class surface_pointer_interaction_t final : public wf::pointer_interaction_t
             // grab on the originating node. So, the original node receives all
             // possible events. It then needs to make sure that the correct node
             // receives the event.
-            handle_motion_dnd(pointer_position, time_ms);
+            handle_motion_dnd(time_ms);
             return wf::input_action::CONSUME;
         }
-
-        wf::pointf_t local = get_surface_relative_coords(
-            this->surface, pointer_position);
 
         if (auto cs = wf::compositor_surface_from_surface(surface))
         {
@@ -292,10 +275,11 @@ class surface_pointer_interaction_t final : public wf::pointer_interaction_t
     }
 
     // ---------------------------- DnD implementation ---------------------- */
-    void handle_motion_dnd(wf::pointf_t pointer_position, uint32_t time_ms)
+    void handle_motion_dnd(uint32_t time_ms)
     {
         _reset_constraint();
-        auto node = wf::get_core().scene()->find_node_at(pointer_position);
+        auto gc   = wf::get_core().get_cursor_position();
+        auto node = wf::get_core().scene()->find_node_at(gc);
         if (node && node->surface && node->surface->get_wlr_surface())
         {
             auto seat = wf::get_core().get_current_seat();

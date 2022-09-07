@@ -1,4 +1,5 @@
 #include "pointer.hpp"
+#include "core/seat/seat.hpp"
 #include "cursor.hpp"
 #include "pointing-device.hpp"
 #include "input-manager.hpp"
@@ -133,8 +134,9 @@ void wf::pointer_t::update_cursor_focus(wf::scene::node_ptr new_focus)
     cursor_focus = new_focus;
     if (focus_change && new_focus)
     {
-        auto gc = wf::get_core().get_cursor_position();
-        new_focus->pointer_interaction().handle_pointer_enter(gc);
+        auto gc    = wf::get_core().get_cursor_position();
+        auto local = get_node_local_coords(new_focus.get(), gc);
+        new_focus->pointer_interaction().handle_pointer_enter(local);
     } else if (focus_change)
     {
         // If there is focused surface, we should reset the cursor image to
@@ -268,10 +270,11 @@ void wf::pointer_t::send_motion(uint32_t time_msec)
         }
     }
 
-    auto gc = wf::get_core().get_cursor_position();
     if (cursor_focus)
     {
-        cursor_focus->pointer_interaction().handle_pointer_motion(gc, time_msec);
+        auto gc    = wf::get_core().get_cursor_position();
+        auto local = get_node_local_coords(cursor_focus.get(), gc);
+        cursor_focus->pointer_interaction().handle_pointer_motion(local, time_msec);
     }
 }
 

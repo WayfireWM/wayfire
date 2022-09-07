@@ -2,6 +2,7 @@
 
 #include <wayfire/util/log.hpp>
 
+#include "core/seat/seat.hpp"
 #include "touch.hpp"
 #include "cursor.hpp"
 #include "input-manager.hpp"
@@ -149,7 +150,8 @@ void wf::touch_interface_t::set_touch_focus(wf::scene::node_ptr node,
     focus[id] = node;
     if (node)
     {
-        node->touch_interaction().handle_touch_down(time, id, point);
+        auto local = get_node_local_coords(node.get(), point);
+        node->touch_interaction().handle_touch_down(time, id, local);
     }
 }
 
@@ -249,7 +251,8 @@ void wf::touch_interface_t::handle_touch_motion(int32_t id, uint32_t time,
 
     if (focus[id])
     {
-        focus[id]->touch_interaction().handle_touch_motion(time, id, point);
+        auto local = get_node_local_coords(focus[id].get(), point);
+        focus[id]->touch_interaction().handle_touch_motion(time, id, local);
     }
 
     auto& seat = wf::get_core_impl().seat;

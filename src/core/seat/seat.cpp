@@ -1,6 +1,7 @@
 #include "seat.hpp"
 #include "cursor.hpp"
 #include "wayfire/compositor-view.hpp"
+#include "wayfire/geometry.hpp"
 #include "wayfire/opengl.hpp"
 #include "../core-impl.hpp"
 #include "../view/view-impl.hpp"
@@ -402,16 +403,18 @@ wf::input_device_impl_t::input_device_impl_t(wlr_input_device *dev) :
     on_destroy.connect(&dev->events.destroy);
 }
 
-wf::pointf_t get_surface_relative_coords(wf::surface_interface_t *surface,
+static wf::pointf_t to_local_recursive(wf::scene::node_t *node, wf::pointf_t point)
+{
+    if (node->parent())
+    {
+        return node->to_local(to_local_recursive(node->parent(), point));
+    }
+
+    return node->to_local(point);
+}
+
+wf::pointf_t get_node_local_coords(wf::scene::node_t *node,
     const wf::pointf_t& point)
 {
-    auto og    = surface->get_output()->get_layout_geometry();
-    auto local = point;
-    local.x -= og.x;
-    local.y -= og.y;
-
-    auto view =
-        dynamic_cast<wf::view_interface_t*>(surface->get_main_surface());
-
-    return view->global_to_local_point(local, surface);
+    return to_local_recursive(node, point);
 }

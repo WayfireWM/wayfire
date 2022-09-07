@@ -1,6 +1,7 @@
 #include "tablet.hpp"
 #include "../core-impl.hpp"
 #include "../wm.hpp"
+#include "core/seat/seat.hpp"
 #include "pointer.hpp"
 #include "cursor.hpp"
 #include "input-manager.hpp"
@@ -114,7 +115,7 @@ void wf::tablet_tool_t::update_tool_position()
     if (this->grabbed_surface)
     {
         surface = this->grabbed_surface;
-        local   = get_surface_relative_coords(surface, gc);
+        local   = get_node_local_coords(surface->get_content_node().get(), gc);
     } else
     {
         surface = input->input_surface_at(gc, local);

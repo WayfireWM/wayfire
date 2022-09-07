@@ -24,11 +24,9 @@ class surface_touch_interaction_t final : public wf::touch_interaction_t
     }
 
     void handle_touch_down(uint32_t time_ms, int finger_id,
-        wf::pointf_t position) override
+        wf::pointf_t local) override
     {
         auto& seat = wf::get_core_impl().seat;
-        auto local = get_surface_relative_coords(surface, position);
-
         if (auto cs = compositor_surface_from_surface(surface))
         {
             if (finger_id == 0)
@@ -63,12 +61,13 @@ class surface_touch_interaction_t final : public wf::touch_interaction_t
     }
 
     void handle_touch_motion(uint32_t time_ms, int finger_id,
-        wf::pointf_t position) override
+        wf::pointf_t local) override
     {
         auto& seat = wf::get_core_impl().seat;
         if (seat->drag_active)
         {
-            auto node = wf::get_core().scene()->find_node_at(position);
+            auto gc   = wf::get_core().get_touch_position(finger_id);
+            auto node = wf::get_core().scene()->find_node_at(gc);
             if (node && node->surface && node->surface->get_wlr_surface())
             {
                 wlr_seat_touch_point_focus(seat->seat,
@@ -84,7 +83,6 @@ class surface_touch_interaction_t final : public wf::touch_interaction_t
             return;
         }
 
-        auto local = get_surface_relative_coords(surface, position);
         if (auto cs = compositor_surface_from_surface(surface))
         {
             if (finger_id == 0)

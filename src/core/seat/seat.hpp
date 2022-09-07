@@ -129,8 +129,8 @@ class seat_t
 };
 }
 
-/** Convert the given point to a surface-local point */
-wf::pointf_t get_surface_relative_coords(wf::surface_interface_t *surface,
+/** Convert the given point to a node-local point */
+wf::pointf_t get_node_local_coords(wf::scene::node_t *node,
     const wf::pointf_t& point);
 
 #endif /* end of include guard: SEAT_HPP */
