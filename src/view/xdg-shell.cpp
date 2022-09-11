@@ -1,5 +1,6 @@
 #include <wayfire/util/log.hpp>
 #include <wayfire/debug.hpp>
+#include "view/view-impl.hpp"
 #include "wayfire/core.hpp"
 #include "surface-impl.hpp"
 #include "wayfire/output.hpp"
@@ -22,6 +23,7 @@ wayfire_xdg_popup::wayfire_xdg_popup(wlr_xdg_popup *popup) :
 
 void wayfire_xdg_popup::initialize()
 {
+    wf::wlr_view_t::initialize();
     LOGI("New xdg popup");
     on_map.set_callback([&] (void*) { map(this->popup->base->surface); });
     on_unmap.set_callback([&] (void*)
