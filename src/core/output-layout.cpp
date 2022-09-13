@@ -1577,6 +1577,20 @@ class output_layout_t::impl
         }
     }
 
+    wf::output_t *get_previous_output(wf::output_t *output)
+    {
+        auto os = get_outputs();
+
+        auto it = std::find(os.rbegin(), os.rend(), output);
+        if ((it == os.rend()) || (std::next(it) == os.rend()))
+        {
+            return os[0];
+        } else
+        {
+            return *(++it);
+        }
+    }
+
     wf::output_t *get_output_coords_at(const wf::pointf_t& origin,
         wf::pointf_t& closest)
     {

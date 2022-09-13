@@ -106,6 +106,13 @@ class output_layout_t : public wf::signal_provider_t
     wf::output_t *get_next_output(wf::output_t *output);
 
     /**
+     * @return the "previous" output in the layout. It is guaranteed that starting
+     * with any output in the layout, and successively calling this function
+     * will iterate over all outputs
+     */
+    wf::output_t *get_previous_output(wf::output_t *output);
+
+    /**
      * @return the output_t associated with the wlr_output, or null if the
      * output isn't found
      */
