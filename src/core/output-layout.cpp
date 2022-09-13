@@ -11,6 +11,7 @@
 #include "seat/cursor.hpp"
 #include "core-impl.hpp"
 
+#include <algorithm>
 #include <xf86drmMode.h>
 #include <sstream>
 #include <cstring>
@@ -1580,15 +1581,17 @@ class output_layout_t::impl
     wf::output_t *get_previous_output(wf::output_t *output)
     {
         auto os = get_outputs();
+        std::reverse(os.begin(), os.end());
 
-        auto it = std::find(os.rbegin(), os.rend(), output);
-        if ((it == os.rend()) || (std::next(it) == os.rend()))
+        auto it = std::find(os.begin(), os.end(), output);
+        if ((it == os.end()) || (std::next(it) == os.end()))
         {
             return os[0];
         } else
         {
             return *(++it);
         }
+
     }
 
     wf::output_t *get_output_coords_at(const wf::pointf_t& origin,
