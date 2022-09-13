@@ -1670,6 +1670,11 @@ wf::output_t*output_layout_t::get_next_output(wf::output_t *output)
     return pimpl->get_next_output(output);
 }
 
+wf::output_t*output_layout_t::get_previous_output(wf::output_t *output)
+{
+    return pimpl->get_previous_output(output);
+}
+
 wf::output_t*output_layout_t::find_output(wlr_output *output)
 {
     return pimpl->find_output(output);
