@@ -1,5 +1,6 @@
 #include "output-impl.hpp"
 #include "wayfire/scene-operations.hpp"
+#include "wayfire/scene.hpp"
 #include "wayfire/view.hpp"
 #include "../core/core-impl.hpp"
 #include "wayfire/signal-definitions.hpp"

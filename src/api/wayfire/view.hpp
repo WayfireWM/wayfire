@@ -4,6 +4,7 @@
 #include <vector>
 #include <wayfire/nonstd/observer_ptr.h>
 
+#include "wayfire/scene-render.hpp"
 #include "wayfire/surface.hpp"
 #include "wayfire/geometry.hpp"
 #include "wayfire/decorator.hpp"
@@ -604,6 +605,13 @@ class view_node_t : public scene::floating_inner_node_t
     }
 
     keyboard_interaction_t& keyboard_interaction() override;
+
+    /**
+     * Views currently gather damage, etc. manually from the surfaces,
+     * and sometimes render them, sometimes not ...
+     */
+    render_instance_uptr get_render_instance(damage_callback damage) override;
+    wf::geometry_t get_bounding_box() override;
 
   protected:
     view_node_t();

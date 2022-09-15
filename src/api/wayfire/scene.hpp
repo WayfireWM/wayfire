@@ -8,6 +8,7 @@
 #include <wayfire/region.hpp>
 #include <wayfire/nonstd/observer_ptr.h>
 #include <wayfire/scene-input.hpp>
+#include <wayfire/scene-render.hpp>
 #include <wayfire/signal-provider.hpp>
 
 namespace wf
@@ -105,10 +106,13 @@ struct input_node_t
     wf::pointf_t local_coords;
 };
 
+using damage_callback = std::function<void (const wf::region_t&)>;
+
 /**
  * The base class for all nodes in the scenegraph.
  */
-class node_t : public std::enable_shared_from_this<node_t>
+class node_t : public std::enable_shared_from_this<node_t>,
+    public wf::signal::provider_t
 {
   public:
     /**
@@ -184,6 +188,30 @@ class node_t : public std::enable_shared_from_this<node_t>
         static touch_interaction_t noop;
         return noop;
     }
+
+    /**
+     * Get a render instance for this node.
+     * See the @render_instance_t interface for more details.
+     *
+     * The default implementation simply instantiates the children and applies
+     * no transform at all.
+     *
+     * @param push_damage A callback used to report damage on the new render
+     *   instance.
+     */
+    virtual std::unique_ptr<render_instance_t> get_render_instance(
+        damage_callback push_damage);
+
+    /**
+     * Get a bounding box of the node in the node's parent coordinate system.
+     *
+     * The bounding box is a rectangular region in which the node and its
+     * children are fully contained.
+     *
+     * The default implementation simply computes the bounding box of its
+     * children.
+     */
+    virtual wf::geometry_t get_bounding_box();
 
     /**
      * Structure nodes are special nodes which core usually creates when Wayfire
@@ -316,6 +344,13 @@ class output_node_t final : public floating_inner_node_t
     wf::pointf_t to_global(const wf::pointf_t& point) override;
 
     /**
+     * The output's render instance simply adjusts damage, rendering, etc. to
+     * account for the output's position in the output layout.
+     */
+    render_instance_uptr get_render_instance(damage_callback damage) override;
+    wf::geometry_t get_bounding_box() override;
+
+    /**
      * A container for the static child nodes.
      * Static child nodes are always below the dynamic nodes of an output and
      * are usually not modified when the workspace on the output changes, so
@@ -399,7 +434,7 @@ struct root_node_update_signal
 /**
  * The root (Level 1) node of the whole scenegraph.
  */
-class root_node_t final : public node_t, public wf::signal::provider_t
+class root_node_t final : public node_t
 {
   public:
     root_node_t();

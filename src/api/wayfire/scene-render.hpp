@@ -1,5 +1,7 @@
 #pragma once
 
+#include "wayfire/nonstd/observer_ptr.h"
+#include <memory>
 #include <vector>
 #include <wayfire/region.hpp>
 #include <wayfire/geometry.hpp>
@@ -22,8 +24,7 @@ namespace scene
  * Actually painting a render tree (called render pass) is a process involving
  * three steps:
  *
- * 1. A back-to-front iteration through the render tree to calculate the overall
- *   damaged region of the render tree.
+ * 1. Calculate the damage accumulated from the render tree.
  * 2. A front-to-back iteration through the render tree, so that every node
  *   calculates the parts of the destination buffer it should actually repaint.
  * 3. A final back-to-front iteration where the actual rendering happens.
@@ -32,18 +33,28 @@ class render_instance_t
 {
   public:
     virtual ~render_instance_t() = default;
+};
 
+using render_instance_uptr = std::unique_ptr<render_instance_t>;
+
+/**
+ * A signal emitted when a part of the node is damaged.
+ * on: the node itself.
+ */
+struct node_damage_signal
+{
+    wf::region_t region;
+};
+
+/**
+ * Signal that a render pass starts.
+ */
+struct render_pass_begin_signal
+{
     /**
-     * Handle the first back-to-front iteration in a render pass.
-     * Each render instance should add the region of damage for it and its
-     * children to @accumulated_damage. It may also subtract from the damaged
-     * region, if for example an opaque part of it covers already damaged areas.
-     *
-     * After collecting the damaged region, the render instance should 'reset'
-     * the damage it has internally accumulated so far (but the damage should
-     * remain in other render instances of the same node!).
+     * The root instance of the render pass, can be used to identify the render pass.
      */
-    virtual void collect_damage(wf::region_t& accumulated_damage) = 0;
+    nonstd::observer_ptr<render_instance_t> root_instance;
 };
 }
 }

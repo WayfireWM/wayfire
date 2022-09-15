@@ -3,6 +3,7 @@
 #include "view-impl.hpp"
 #include "wayfire/opengl.hpp"
 #include "wayfire/output.hpp"
+#include "wayfire/scene-render.hpp"
 #include "wayfire/scene.hpp"
 #include "wayfire/view.hpp"
 #include "wayfire/view-transform.hpp"
@@ -1246,16 +1247,6 @@ wf::view_interface_t::view_interface_t()
 {
     this->view_impl = std::make_unique<wf::view_interface_t::view_priv_impl>();
     take_ref();
-
-    view_impl->scene_node = std::make_shared<scene::floating_inner_node_t>(false);
-    view_impl->main_node  = std::make_shared<scene::view_node_t>(this);
-
-    // Set up the surface content relationship
-    view_impl->main_node->set_children_list({priv->content_node});
-    priv->root_node = view_impl->main_node;
-
-    // Set up view content to scene.
-    view_impl->scene_node->set_children_list({view_impl->main_node});
 }
 
 void wf::view_interface_t::take_ref()
@@ -1273,7 +1264,17 @@ void wf::view_interface_t::unref()
 }
 
 void wf::view_interface_t::initialize()
-{}
+{
+    view_impl->scene_node = std::make_shared<scene::floating_inner_node_t>(false);
+    view_impl->main_node  = std::make_shared<scene::view_node_t>(this);
+
+    // Set up the surface content relationship
+    view_impl->main_node->set_children_list({priv->content_node});
+    priv->root_node = view_impl->main_node;
+
+    // Set up view content to scene.
+    view_impl->scene_node->set_children_list({view_impl->main_node});
+}
 
 void wf::view_interface_t::deinitialize()
 {
@@ -1319,6 +1320,8 @@ void wf::view_damage_raw(wayfire_view view, const wlr_box& box)
         return;
     }
 
+    wf::scene::node_damage_signal data;
+
     /* Sticky views are visible on all workspaces. */
     if (view->sticky)
     {
@@ -1335,14 +1338,15 @@ void wf::view_damage_raw(wayfire_view view, const wlr_box& box)
             {
                 const int dx = (i - cws.x) * ws_box.width;
                 const int dy = (j - cws.y) * ws_box.height;
-                output->render->damage(visible_damage + wf::point_t{dx, dy});
+                data.region |= visible_damage + wf::point_t{dx, dy};
             }
         }
     } else
     {
-        output->render->damage(box);
+        data.region |= box;
     }
 
+    view->get_main_node()->emit(&data);
     view->emit_signal("region-damaged", nullptr);
 }
 

@@ -2,6 +2,7 @@
 #include "view/view-impl.hpp"
 #include "wayfire/debug.hpp"
 #include "wayfire/geometry.hpp"
+#include "wayfire/region.hpp"
 #include "wayfire/scene-input.hpp"
 #include "wayfire/scene.hpp"
 #include "wayfire/signal-definitions.hpp"
@@ -27,12 +28,27 @@ namespace wf
  */
 struct output_damage_t
 {
+    signal::connection_t<scene::root_node_update_signal> root_update;
+    std::unique_ptr<scene::render_instance_t> render_instance;
+
     wf::wl_listener_wrapper on_damage_destroy;
 
     wf::region_t frame_damage;
     wlr_output *output;
     wlr_output_damage *damage_manager;
     output_t *wo;
+
+    void update_scenegraph()
+    {
+        auto root = wf::get_core().scene();
+        render_instance = root->get_render_instance([=] (wf::region_t region)
+        {
+            // Damage is pushed up to the root in root coordinate system,
+            // we need it in layout-local coordinate system.
+            region += -wf::origin(wo->get_layout_geometry());
+            this->damage(region);
+        });
+    }
 
     output_damage_t(output_t *output)
     {
@@ -43,6 +59,21 @@ struct output_damage_t
 
         on_damage_destroy.set_callback([=] (void*) { damage_manager = nullptr; });
         on_damage_destroy.connect(&damage_manager->events.destroy);
+
+        auto root = wf::get_core().scene();
+        root_update = [=] (scene::root_node_update_signal *data)
+        {
+            if (!(data->flags & scene::update_flag::CHILDREN_LIST) &&
+                !(data->flags & scene::update_flag::ENABLED))
+            {
+                return;
+            }
+
+            update_scenegraph();
+        };
+
+        root->connect<scene::root_node_update_signal>(&root_update);
+        update_scenegraph();
     }
 
     /**

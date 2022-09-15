@@ -1,9 +1,14 @@
 #include "view-keyboard-interaction.cpp"
+#include <memory>
 #include <wayfire/debug.hpp>
 #include <wayfire/output.hpp>
 #include "../core/core-impl.hpp"
 #include "../core/seat/input-manager.hpp"
+#include "wayfire/region.hpp"
+#include "wayfire/scene-render.hpp"
 #include "wayfire/scene.hpp"
+#include "wayfire/signal-provider.hpp"
+#include "wayfire/view.hpp"
 
 wf::scene::view_node_t::view_node_t(wayfire_view _view) :
     floating_inner_node_t(false), view(_view)
@@ -55,4 +60,44 @@ std::optional<wf::scene::input_node_t> wf::scene::view_node_t::find_node_at(
     }
 
     return floating_inner_node_t::find_node_at(at);
+}
+
+namespace wf
+{
+namespace scene
+{
+class view_render_instance_t : public render_instance_t
+{
+    wayfire_view view;
+    damage_callback push_damage;
+
+  public:
+    view_render_instance_t(wayfire_view view, damage_callback push_damage)
+    {
+        this->view = view;
+        this->push_damage = push_damage;
+        view->get_main_node()->connect(&on_view_damage);
+    }
+
+    // FIXME: once transformers are proper nodes, this should be
+    // done in the surfaces and then bubbled up.
+    wf::signal::connection_t<node_damage_signal> on_view_damage =
+        [=] (node_damage_signal *data)
+    {
+        push_damage(data->region);
+    };
+};
+}
+}
+
+std::unique_ptr<wf::scene::render_instance_t> wf::scene::view_node_t::
+get_render_instance(wf::scene::damage_callback push_damage)
+{
+    return std::make_unique<wf::scene::view_render_instance_t>(
+        this->view, push_damage);
+}
+
+wf::geometry_t wf::scene::view_node_t::get_bounding_box()
+{
+    return view->get_bounding_box();
 }

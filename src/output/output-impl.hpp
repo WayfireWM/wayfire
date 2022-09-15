@@ -1,7 +1,11 @@
 #include "wayfire/output.hpp"
 #include "plugin-loader.hpp"
 #include "../core/seat/bindings-repository.hpp"
+#include "wayfire/scene-render.hpp"
+#include "wayfire/scene.hpp"
+#include "wayfire/signal-provider.hpp"
 
+#include <memory>
 #include <unordered_set>
 #include <wayfire/nonstd/safe-list.hpp>
 #include <wayfire/workspace-manager.hpp>
