@@ -8,6 +8,7 @@
 #define nonull(x) ((x) ? (x) : ("nil"))
 #include <wayfire/util/log.hpp>
 #include <wayfire/scene.hpp>
+#include <wayfire/core.hpp>
 #include <bitset>
 
 namespace wf
@@ -24,7 +25,7 @@ void print_trace(bool fast_mode);
 /**
  * Dump a scenegraph to the log.
  */
-void dump_scene(scene::node_ptr root);
+void dump_scene(scene::node_ptr root = wf::get_core().scene());
 
 /**
  * Assert that the condition is true.
