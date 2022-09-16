@@ -1,3 +1,4 @@
+#include <string>
 #include <wayfire/util/log.hpp>
 #include <wayfire/debug.hpp>
 #include <sstream>
@@ -329,6 +330,13 @@ static void color_debug_log(const char *color, Args... args)
     LOGD(color, args..., CLEAR_COLOR);
 }
 
+static std::string fmt_pointer(void *ptr)
+{
+    std::ostringstream ss;
+    ss << ptr;
+    return ss.str();
+}
+
 static void _dump_scene(wf::scene::node_ptr root, int depth = 0)
 {
     using namespace wf::scene;
@@ -350,6 +358,7 @@ static void _dump_scene(wf::scene::node_ptr root, int depth = 0)
     }
 
     node_line += root->stringify();
+    node_line += " [" + fmt_pointer(root.get()) + "]";
 
     const int greyed_flags = (int)node_flags::DISABLED;
     if (root->flags() & greyed_flags)
