@@ -4,6 +4,8 @@
 #include <wayfire/output.hpp>
 #include "../core/core-impl.hpp"
 #include "../core/seat/input-manager.hpp"
+#include "wayfire/geometry.hpp"
+#include "wayfire/opengl.hpp"
 #include "wayfire/region.hpp"
 #include "wayfire/scene-render.hpp"
 #include "wayfire/scene.hpp"
@@ -86,6 +88,59 @@ class view_render_instance_t : public render_instance_t
     {
         push_damage(data->region);
     };
+
+    void schedule_instructions(std::vector<render_instruction_t>& instructions,
+        const wf::render_target_t& target, wf::region_t& damage) override
+    {
+        wf::render_target_t our_target = target;
+        wf::point_t offset = {0, 0};
+
+        if (view->sticky && view->get_output())
+        {
+            // Adjust geometry of damage/target so that view is always visible if
+            // sticky
+            auto output_size = view->get_output()->get_screen_size();
+            our_target.geometry.x = target.geometry.x % output_size.width;
+            our_target.geometry.y = target.geometry.y % output_size.height;
+            offset = wf::origin(target.geometry) - wf::origin(our_target.geometry);
+        }
+
+        damage += -offset;
+
+        wf::region_t our_damage = damage & view->get_bounding_box();
+        if (our_damage.empty())
+        {
+            damage += offset;
+            return;
+        }
+
+        instructions.push_back(render_instruction_t{
+                    .instance = this,
+                    .target   = our_target,
+                    .damage   = std::move(our_damage),
+                });
+
+        damage ^= view->get_transformed_opaque_region();
+        damage += offset;
+    }
+
+    void render(const wf::render_target_t& target,
+        const wf::region_t& region, wf::output_t *output) override
+    {
+        view->render_transformed(target, region);
+        if (output && view->is_mapped())
+        {
+            for (auto& surface : view->enumerate_surfaces())
+            {
+                if (surface.surface->get_wlr_surface() != nullptr)
+                {
+                    wlr_presentation_surface_sampled_on_output(
+                        wf::get_core_impl().protocols.presentation,
+                        surface.surface->get_wlr_surface(), output->handle);
+                }
+            }
+        }
+    }
 };
 }
 }

@@ -1,5 +1,6 @@
 #include "wayfire/render-manager.hpp"
 #include "view/view-impl.hpp"
+#include "wayfire/core.hpp"
 #include "wayfire/debug.hpp"
 #include "wayfire/geometry.hpp"
 #include "wayfire/region.hpp"
@@ -1179,11 +1180,6 @@ class wf::render_manager::impl
     struct damaged_surface_t
     {
         wf::surface_interface_t *surface = nullptr;
-        wf::view_interface_t *view = nullptr;
-
-        /* For views, this is the delta in framebuffer coordinates.
-         * For surfaces, this is the coordinates of the surface inside the
-         * framebuffer */
         wf::point_t pos;
         wf::region_t damage;
     };
@@ -1199,33 +1195,7 @@ class wf::render_manager::impl
         std::vector<damaged_surface> to_render;
         wf::region_t ws_damage;
         wf::render_target_t fb;
-
-        int ws_dx;
-        int ws_dy;
     };
-
-    /**
-     * Calculate the damaged region of a view which renders with its snapshot
-     * and add it to the render list
-     *
-     * @param view_delta The offset of the view so that it is on the workspace.
-     */
-    void schedule_snapshotted_view(workspace_stream_repaint_t& repaint,
-        wayfire_view view, wf::point_t view_delta)
-    {
-        auto ds = damaged_surface(new damaged_surface_t);
-
-        auto bbox = view->get_bounding_box() + view_delta;
-        ds->damage = (repaint.ws_damage & bbox) + -view_delta;
-        if (!ds->damage.empty())
-        {
-            ds->pos  = -view_delta;
-            ds->view = view.get();
-            repaint.ws_damage ^=
-                view->get_transformed_opaque_region() + view_delta;
-            repaint.to_render.push_back(std::move(ds));
-        }
-    }
 
     /**
      * Calculate the damaged region of a simple wayfire_surface_t and
@@ -1317,82 +1287,6 @@ class wf::render_manager::impl
         }
     }
 
-    void schedule_recursive(
-        wf::scene::node_ptr root,
-        workspace_stream_repaint_t& repaint,
-        workspace_stream_t& stream)
-    {
-        if (root->is_disabled())
-        {
-            return;
-        }
-
-        if (auto vnode = dynamic_cast<scene::view_node_t*>(root.get()))
-        {
-            auto v = vnode->get_view();
-            for (auto& view : v->enumerate_views(false))
-            {
-                wf::point_t view_delta{0, 0};
-                if (!view->is_visible() || repaint.ws_damage.empty())
-                {
-                    continue;
-                }
-
-                if (view->sticky)
-                {
-                    view_delta = {repaint.ws_dx, repaint.ws_dy};
-                }
-
-                /* We use the snapshot of a view on either of the following
-                 * conditions:
-                 *
-                 * 1. The view has a transform
-                 * 2. The view is visible, but not mapped
-                 *    => it is snapshotted and kept alive by some plugin
-                 */
-                if (view->has_transformer() || !view->is_mapped())
-                {
-                    /* Snapshotted views include all of their subsurfaces, so we
-                     * don't recursively go into subsurfaces. */
-                    schedule_snapshotted_view(repaint, view, view_delta);
-                } else
-                {
-                    /* Make sure view position is relative to the workspace
-                     * being rendered */
-                    auto obox = view->get_output_geometry() + view_delta;
-                    for (auto& child : view->enumerate_surfaces({obox.x, obox.y}))
-                    {
-                        schedule_surface(repaint, child.surface, child.position);
-                    }
-                }
-            }
-
-            return;
-        }
-
-        for (auto& ch : root->get_children())
-        {
-            schedule_recursive(ch, repaint, stream);
-        }
-    }
-
-    /**
-     * Iterate all visible surfaces on the workspace, and check whether
-     * they need repaint.
-     */
-    void check_schedule_surfaces(workspace_stream_repaint_t& repaint,
-        workspace_stream_t& stream)
-    {
-        schedule_drag_icon(repaint);
-
-        for (int layer = (int)wf::scene::layer::DWIDGET;
-             layer >= (int)wf::scene::layer::BACKGROUND; layer--)
-        {
-            schedule_recursive(output->node_for_layer((wf::scene::layer)layer),
-                repaint, stream);
-        }
-    }
-
     /**
      * Setup the stream, calculate damaged region, etc.
      */
@@ -1411,10 +1305,6 @@ class wf::render_manager::impl
         if ((scale_x != stream.scale_x) || (scale_y != stream.scale_y))
         {
             /* FIXME: enable scaled rendering */
-            // stream->scale_x = scale_x;
-            // stream->scale_y = scale_y;
-
-            // ws_damage |= get_damage_box();
         }
 
         OpenGL::render_begin();
@@ -1431,11 +1321,8 @@ class wf::render_manager::impl
 
         auto g   = output->get_relative_geometry();
         auto cws = output->workspace->get_current_workspace();
-        repaint.ws_dx = (stream.ws.x - cws.x) * g.width,
-        repaint.ws_dy = (stream.ws.y - cws.y) * g.height;
-
-        repaint.fb.geometry.x = repaint.ws_dx;
-        repaint.fb.geometry.y = repaint.ws_dy;
+        repaint.fb.geometry.x = (stream.ws.x - cws.x) * g.width,
+        repaint.fb.geometry.y = (stream.ws.y - cws.y) * g.height;
 
         return repaint;
     }
@@ -1452,41 +1339,20 @@ class wf::render_manager::impl
         OpenGL::render_end();
     }
 
-    void send_sampled_on_output(wf::surface_interface_t *surface)
-    {
-        if (surface->get_wlr_surface() != nullptr)
-        {
-            wlr_presentation_surface_sampled_on_output(
-                wf::get_core_impl().protocols.presentation,
-                surface->get_wlr_surface(), output->handle);
-        }
-    }
-
     void render_views(workspace_stream_repaint_t& repaint)
     {
-        wf::geometry_t fb_geometry = repaint.fb.geometry;
-
         for (auto& ds : wf::reverse(repaint.to_render))
         {
-            if (ds->view)
+            ds->surface->simple_render(repaint.fb,
+                ds->pos.x, ds->pos.y, ds->damage);
+
+            if (ds->surface->get_wlr_surface() != nullptr)
             {
-                repaint.fb.geometry = fb_geometry + ds->pos;
-                ds->view->render_transformed(repaint.fb, ds->damage);
-                for (auto& child : ds->view->enumerate_surfaces({0, 0}))
-                {
-                    send_sampled_on_output(child.surface);
-                }
-            } else
-            {
-                repaint.fb.geometry = fb_geometry;
-                ds->surface->simple_render(repaint.fb,
-                    ds->pos.x, ds->pos.y, ds->damage);
-                send_sampled_on_output(ds->surface);
+                wlr_presentation_surface_sampled_on_output(
+                    wf::get_core_impl().protocols.presentation,
+                    ds->surface->get_wlr_surface(), output->handle);
             }
         }
-
-        /* Restore proper geometry */
-        repaint.fb.geometry = fb_geometry;
     }
 
     void workspace_stream_update(workspace_stream_t& stream,
@@ -1503,9 +1369,20 @@ class wf::render_manager::impl
         {
             stream_signal_t data(stream.ws, repaint.ws_damage, repaint.fb);
             output->render->emit_signal("workspace-stream-pre", &data);
+
+            scene::render_pass_begin_signal ev;
+            ev.root_instance = output_damage->render_instance.get();
+            ev.damage = repaint.ws_damage;
+            ev.target = repaint.fb;
+            wf::get_core().emit(&ev);
+            repaint.ws_damage = ev.damage;
         }
 
-        check_schedule_surfaces(repaint, stream);
+        schedule_drag_icon(repaint);
+
+        std::vector<wf::scene::render_instruction_t> instructions;
+        this->output_damage->render_instance->schedule_instructions(instructions,
+            repaint.fb, repaint.ws_damage);
 
         if (stream.background.a < 0)
         {
@@ -1513,6 +1390,11 @@ class wf::render_manager::impl
         } else
         {
             clear_empty_areas(repaint, stream.background);
+        }
+
+        for (auto& instr : wf::reverse(instructions))
+        {
+            instr.instance->render(instr.target, instr.damage, output);
         }
 
         render_views(repaint);

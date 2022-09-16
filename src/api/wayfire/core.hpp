@@ -7,6 +7,7 @@
 #include <wayfire/idle.hpp>
 #include <wayfire/config-backend.hpp>
 #include <wayfire/scene.hpp>
+#include <wayfire/signal-provider.hpp>
 
 #include <sys/types.h>
 #include <limits>
@@ -65,7 +66,7 @@ enum class compositor_state_t
     SHUTDOWN,
 };
 
-class compositor_core_t : public wf::object_base_t
+class compositor_core_t : public wf::object_base_t, public signal::provider_t
 {
   public:
     /**

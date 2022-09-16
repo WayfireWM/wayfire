@@ -7,7 +7,9 @@
 #include <algorithm>
 
 #include "scene-priv.hpp"
+#include "wayfire/debug.hpp"
 #include "wayfire/geometry.hpp"
+#include "wayfire/opengl.hpp"
 #include "wayfire/region.hpp"
 #include "wayfire/scene-render.hpp"
 #include "wayfire/signal-provider.hpp"
@@ -198,6 +200,7 @@ wf::pointf_t node_t::to_global(const wf::pointf_t& point)
 
 class default_render_instance_t : public render_instance_t
 {
+  protected:
     std::vector<render_instance_uptr> children;
     wf::region_t cached_damage;
     damage_callback push_damage;
@@ -222,6 +225,21 @@ class default_render_instance_t : public render_instance_t
 
         self->connect(&on_main_node_damaged);
         this->push_damage = callback;
+    }
+
+    void schedule_instructions(std::vector<render_instruction_t>& instructions,
+        const wf::render_target_t& target, wf::region_t& damage) override
+    {
+        for (auto& ch : children)
+        {
+            ch->schedule_instructions(instructions, target, damage);
+        }
+    }
+
+    void render(const wf::render_target_t& target,
+        const wf::region_t& region, wf::output_t *output) override
+    {
+        wf::dassert(false, "Rendering an inner node?");
     }
 };
 
@@ -287,7 +305,6 @@ wf::pointf_t output_node_t::to_global(const wf::pointf_t& point)
 
 class output_render_instance_t : public default_render_instance_t
 {
-    std::vector<render_instance_uptr> children;
     wf::output_t *output;
 
   public:
@@ -304,6 +321,26 @@ class output_render_instance_t : public default_render_instance_t
         {
             child_damage(damage + wf::origin(output->get_layout_geometry()));
         };
+    }
+
+    void schedule_instructions(std::vector<render_instruction_t>& instructions,
+        const wf::render_target_t& target, wf::region_t& damage) override
+    {
+        // In principle, we just have to schedule the children.
+        // However, we need to adjust the target's geometry and the damage to
+        // fit with the coordinate system of the output.
+        wf::render_target_t new_target = target;
+        auto offset = wf::origin(output->get_layout_geometry());
+        new_target.geometry.x -= offset.x;
+        new_target.geometry.y -= offset.y;
+
+        damage += -offset;
+        for (auto& ch : children)
+        {
+            ch->schedule_instructions(instructions, new_target, damage);
+        }
+
+        damage += offset;
     }
 };
 
