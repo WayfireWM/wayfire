@@ -15,14 +15,24 @@
 			<default>&lt;super&gt; &lt;shift&gt; KEY_O</default>
 		</option>
 		<option name="previous_output" type="activator">
-			<_short>previous output</_short>
+			<_short>Previous output</_short>
 			<_long>Moves focus to the previous output with the specified activator.</_long>
 			<default>&lt;super&gt; KEY_P</default>
 		</option>
 		<option name="previous_output_with_win" type="activator">
-			<_short>previous output with window</_short>
+			<_short>Previous output with window</_short>
 			<_long>Moves focus to the previous output with the focused window with the specified activator.</_long>
 			<default>&lt;super&gt; &lt;shift&gt; KEY_P</default>
+		</option>
+		<option name="swap_output" type="activator">
+			<_short>Swap Output</_short>
+			<_long>Swap active window with the window on the next output. Focuses original output window.</_long>
+			<default>&lt;super&gt; KEY_Z</default>
+		</option>
+		<option name="swap_output_previous" type="activator">
+			<_short>Swap Output Previous</_short>
+			<_long>Swap active window with the window on the previous output. Focuses original output window.</_long>
+			<default>&lt;super&gt; &lt;shift&gt; KEY_Z</default>
 		</option>
 	</plugin>
 </wayfire>

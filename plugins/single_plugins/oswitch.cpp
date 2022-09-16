@@ -46,6 +46,7 @@ class wayfire_output_manager : public wf::plugin_interface_t
         return true;
     };
 
+
     wf::wl_idle_call idle_previous_output;
 
     wf::activator_callback switch_output_previous = [=] (auto)
@@ -86,6 +87,61 @@ class wayfire_output_manager : public wf::plugin_interface_t
         return true;
     };
 
+    wf::activator_callback swap_output = [=] (auto)
+    {
+        auto next_output =
+            wf::get_core().output_layout->get_next_output(output);
+
+        auto current_output =
+            wf::get_core().output_layout->get_previous_output(next_output);
+
+        auto current_view = current_output->get_active_view();
+        auto next_view = next_output->get_top_view();
+    
+        if (!current_view)
+        {
+            return true;
+        }
+
+        if (!next_view)
+        {
+            return true;
+        }
+
+        wf::get_core().move_view_to_output(current_view, next_output, true);
+        wf::get_core().move_view_to_output(next_view, current_output, true);
+
+        return true;
+    };
+
+
+    wf::activator_callback swap_output_previous = [=] (auto)
+    {
+        auto previous_output =
+            wf::get_core().output_layout->get_previous_output(output);
+
+        auto current_output =
+            wf::get_core().output_layout->get_next_output(previous_output);
+
+        auto current_view = current_output->get_active_view();
+        auto previous_view = previous_output->get_top_view();
+    
+        if (!current_view)
+        {
+            return true;
+        }
+
+        if (!previous_view)
+        {
+            return true;
+        }
+
+        wf::get_core().move_view_to_output(current_view, previous_output, true);
+        wf::get_core().move_view_to_output(previous_view, current_output, true);
+
+        return true;
+    };
+
   public:
     void init()
     {
@@ -104,6 +160,12 @@ class wayfire_output_manager : public wf::plugin_interface_t
         output->add_activator(
             wf::option_wrapper_t<wf::activatorbinding_t>{"oswitch/previous_output_with_win"},
             &switch_output_with_window_previous);
+        output->add_activator(
+            wf::option_wrapper_t<wf::activatorbinding_t>{"oswitch/swap_output"},
+            &swap_output);
+        output->add_activator(
+            wf::option_wrapper_t<wf::activatorbinding_t>{"oswitch/swap_output_previous"},
+            &swap_output_previous);
     }
 
     void fini()
@@ -112,6 +174,8 @@ class wayfire_output_manager : public wf::plugin_interface_t
         output->rem_binding(&switch_output_with_window);
         output->rem_binding(&switch_output_previous);
         output->rem_binding(&switch_output_with_window_previous);
+        output->rem_binding(&swap_output);
+        output->rem_binding(&swap_output_previous);
         idle_next_output.disconnect();
         idle_previous_output.disconnect();
     }
