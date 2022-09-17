@@ -105,11 +105,6 @@ struct node_damage_signal
 struct render_pass_begin_signal
 {
     /**
-     * The root instance of the render pass, can be used to identify the render pass.
-     */
-    nonstd::observer_ptr<render_instance_t> root_instance;
-
-    /**
      * The initial damage for this render pass.
      * Plugins may expand it further.
      */

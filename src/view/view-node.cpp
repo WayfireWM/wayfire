@@ -97,7 +97,7 @@ class view_render_instance_t : public render_instance_t
         {
             if (!ch->is_disabled())
             {
-                children.push_back(ch->get_render_instance(push_damage_child));
+                ch->gen_render_instances(children, push_damage_child);
             }
         }
     }
@@ -184,14 +184,14 @@ class view_render_instance_t : public render_instance_t
         }
     }
 };
-}
-}
 
-std::unique_ptr<wf::scene::render_instance_t> wf::scene::view_node_t::
-get_render_instance(wf::scene::damage_callback push_damage)
+void view_node_t::gen_render_instances(std::vector<render_instance_uptr> & instances,
+    damage_callback push_damage)
 {
-    return std::make_unique<wf::scene::view_render_instance_t>(
-        this->view, push_damage);
+    instances.push_back(std::make_unique<wf::scene::view_render_instance_t>(
+        this->view, push_damage));
+}
+}
 }
 
 wf::geometry_t wf::scene::view_node_t::get_bounding_box()

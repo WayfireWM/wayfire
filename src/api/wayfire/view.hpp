@@ -610,7 +610,8 @@ class view_node_t : public scene::floating_inner_node_t
      * Views currently gather damage, etc. manually from the surfaces,
      * and sometimes render them, sometimes not ...
      */
-    render_instance_uptr get_render_instance(damage_callback damage) override;
+    void gen_render_instances(std::vector<render_instance_uptr>& instances,
+        damage_callback push_damage) override;
     wf::geometry_t get_bounding_box() override;
 
   protected:

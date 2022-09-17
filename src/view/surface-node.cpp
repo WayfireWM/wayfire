@@ -112,10 +112,10 @@ class surface_render_instance_t : public render_instance_t
     }
 };
 
-render_instance_uptr wf::scene::surface_node_t::get_render_instance(
-    damage_callback damage)
+void surface_node_t::gen_render_instances(
+    std::vector<render_instance_uptr> & instances, damage_callback damage)
 {
-    return std::make_unique<surface_render_instance_t>(this->si);
+    instances.push_back(std::make_unique<surface_render_instance_t>(this->si));
 }
 
 wf::geometry_t wf::scene::surface_node_t::get_bounding_box()

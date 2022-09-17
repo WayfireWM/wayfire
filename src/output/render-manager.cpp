@@ -5,6 +5,7 @@
 #include "wayfire/geometry.hpp"
 #include "wayfire/region.hpp"
 #include "wayfire/scene-input.hpp"
+#include "wayfire/scene-render.hpp"
 #include "wayfire/scene.hpp"
 #include "wayfire/signal-definitions.hpp"
 #include "wayfire/view.hpp"
@@ -30,7 +31,7 @@ namespace wf
 struct output_damage_t
 {
     signal::connection_t<scene::root_node_update_signal> root_update;
-    std::unique_ptr<scene::render_instance_t> render_instance;
+    std::vector<scene::render_instance_uptr> render_instances;
 
     wf::wl_listener_wrapper on_damage_destroy;
 
@@ -42,13 +43,17 @@ struct output_damage_t
     void update_scenegraph()
     {
         auto root = wf::get_core().scene();
-        render_instance = root->get_render_instance([=] (wf::region_t region)
+
+        scene::damage_callback push_damage = [=] (wf::region_t region)
         {
             // Damage is pushed up to the root in root coordinate system,
             // we need it in layout-local coordinate system.
             region += -wf::origin(wo->get_layout_geometry());
             this->damage(region);
-        });
+        };
+
+        render_instances.clear();
+        root->gen_render_instances(render_instances, push_damage);
     }
 
     output_damage_t(output_t *output)
@@ -1371,7 +1376,6 @@ class wf::render_manager::impl
             output->render->emit_signal("workspace-stream-pre", &data);
 
             scene::render_pass_begin_signal ev;
-            ev.root_instance = output_damage->render_instance.get();
             ev.damage = repaint.ws_damage;
             ev.target = repaint.fb;
             wf::get_core().emit(&ev);
@@ -1381,8 +1385,10 @@ class wf::render_manager::impl
         schedule_drag_icon(repaint);
 
         std::vector<wf::scene::render_instruction_t> instructions;
-        this->output_damage->render_instance->schedule_instructions(instructions,
-            repaint.fb, repaint.ws_damage);
+        for (auto& inst : output_damage->render_instances)
+        {
+            inst->schedule_instructions(instructions, repaint.fb, repaint.ws_damage);
+        }
 
         if (stream.background.a < 0)
         {

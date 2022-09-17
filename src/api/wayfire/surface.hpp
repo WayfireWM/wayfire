@@ -249,7 +249,8 @@ class surface_node_t : public wf::scene::node_t
         return si;
     }
 
-    render_instance_uptr get_render_instance(damage_callback damage) override;
+    void gen_render_instances(std::vector<render_instance_uptr>& instances,
+        damage_callback damage) override;
     wf::geometry_t get_bounding_box() override;
 
   private:

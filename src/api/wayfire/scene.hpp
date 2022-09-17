@@ -190,16 +190,17 @@ class node_t : public std::enable_shared_from_this<node_t>,
     }
 
     /**
-     * Get a render instance for this node.
+     * Generate render instances for this node and its children.
      * See the @render_instance_t interface for more details.
      *
-     * The default implementation simply instantiates the children and applies
-     * no transform at all.
+     * The default implementation just generates render instances from its
+     * children.
      *
+     * @param instances A vector of render instances to add to.
      * @param push_damage A callback used to report damage on the new render
      *   instance.
      */
-    virtual std::unique_ptr<render_instance_t> get_render_instance(
+    virtual void gen_render_instances(std::vector<render_instance_uptr>& instances,
         damage_callback push_damage);
 
     /**
@@ -347,7 +348,8 @@ class output_node_t final : public floating_inner_node_t
      * The output's render instance simply adjusts damage, rendering, etc. to
      * account for the output's position in the output layout.
      */
-    render_instance_uptr get_render_instance(damage_callback damage) override;
+    void gen_render_instances(std::vector<render_instance_uptr>& instances,
+        damage_callback push_damage) override;
     wf::geometry_t get_bounding_box() override;
 
     /**

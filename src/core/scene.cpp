@@ -198,11 +198,10 @@ wf::pointf_t node_t::to_global(const wf::pointf_t& point)
     return point;
 }
 
+// Just listen for damage from the node and push it upwards
 class default_render_instance_t : public render_instance_t
 {
   protected:
-    std::vector<render_instance_uptr> children;
-    wf::region_t cached_damage;
     damage_callback push_damage;
 
     wf::signal::connection_t<node_damage_signal> on_main_node_damaged =
@@ -214,26 +213,14 @@ class default_render_instance_t : public render_instance_t
   public:
     default_render_instance_t(node_t *self, damage_callback callback)
     {
-        children.reserve(self->get_children().size());
-        for (auto& child : self->get_children())
-        {
-            if (!child->is_disabled())
-            {
-                children.push_back(child->get_render_instance(callback));
-            }
-        }
-
-        self->connect(&on_main_node_damaged);
         this->push_damage = callback;
+        self->connect(&on_main_node_damaged);
     }
 
     void schedule_instructions(std::vector<render_instruction_t>& instructions,
         const wf::render_target_t& target, wf::region_t& damage) override
     {
-        for (auto& ch : children)
-        {
-            ch->schedule_instructions(instructions, target, damage);
-        }
+        // nothing to render here
     }
 
     void render(const wf::render_target_t& target,
@@ -243,10 +230,21 @@ class default_render_instance_t : public render_instance_t
     }
 };
 
-std::unique_ptr<render_instance_t> node_t::get_render_instance(
-    damage_callback damage)
+void node_t::gen_render_instances(std::vector<render_instance_uptr> & instances,
+    damage_callback push_damage)
 {
-    return std::make_unique<default_render_instance_t>(this, damage);
+    // Add self for damage tracking
+    instances.push_back(
+        std::make_unique<default_render_instance_t>(this, push_damage));
+
+    // Add children as a flat list to avoid multiple indirections
+    for (auto& ch : this->children)
+    {
+        if (!ch->is_disabled())
+        {
+            ch->gen_render_instances(instances, push_damage);
+        }
+    }
 }
 
 wf::geometry_t node_t::get_bounding_box()
@@ -306,6 +304,7 @@ wf::pointf_t output_node_t::to_global(const wf::pointf_t& point)
 class output_render_instance_t : public default_render_instance_t
 {
     wf::output_t *output;
+    std::vector<render_instance_uptr> children;
 
   public:
     output_render_instance_t(node_t *self, damage_callback callback,
@@ -313,6 +312,17 @@ class output_render_instance_t : public default_render_instance_t
         default_render_instance_t(self, transform_damage(callback))
     {
         this->output = output;
+
+        // Children are stored as a sublist, because we need to translate every
+        // time between global and output-local geometry.
+        for (auto& child : self->get_children())
+        {
+            if (!child->is_disabled())
+            {
+                child->gen_render_instances(children,
+                    transform_damage(callback));
+            }
+        }
     }
 
     damage_callback transform_damage(damage_callback child_damage)
@@ -344,10 +354,11 @@ class output_render_instance_t : public default_render_instance_t
     }
 };
 
-std::unique_ptr<render_instance_t> output_node_t::get_render_instance(
-    damage_callback push_damage)
+void output_node_t::gen_render_instances(
+    std::vector<render_instance_uptr> & instances, damage_callback push_damage)
 {
-    return std::make_unique<output_render_instance_t>(this, push_damage, output);
+    instances.push_back(
+        std::make_unique<output_render_instance_t>(this, push_damage, output));
 }
 
 wf::geometry_t output_node_t::get_bounding_box()
