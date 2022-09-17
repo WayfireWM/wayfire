@@ -249,6 +249,9 @@ class surface_node_t : public wf::scene::node_t
         return si;
     }
 
+    render_instance_uptr get_render_instance(damage_callback damage) override;
+    wf::geometry_t get_bounding_box() override;
+
   private:
     std::unique_ptr<pointer_interaction_t> ptr_interaction;
     std::unique_ptr<touch_interaction_t> tch_interaction;

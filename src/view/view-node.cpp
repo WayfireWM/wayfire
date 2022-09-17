@@ -70,6 +70,7 @@ namespace scene
 {
 class view_render_instance_t : public render_instance_t
 {
+    std::vector<render_instance_uptr> children;
     wayfire_view view;
     damage_callback push_damage;
 
@@ -79,6 +80,26 @@ class view_render_instance_t : public render_instance_t
         this->view = view;
         this->push_damage = push_damage;
         view->get_main_node()->connect(&on_view_damage);
+
+        auto push_damage_child = [=] (wf::region_t child_damage)
+        {
+            child_damage += wf::origin(view->get_output_geometry());
+            if (view->has_transformer())
+            {
+                child_damage = view->transform_region(
+                    wlr_box_from_pixman_box(child_damage.get_extents()));
+            }
+
+            push_damage(child_damage);
+        };
+
+        for (auto& ch : view->get_main_node()->get_children())
+        {
+            if (!ch->is_disabled())
+            {
+                children.push_back(ch->get_render_instance(push_damage_child));
+            }
+        }
     }
 
     // FIXME: once transformers are proper nodes, this should be
@@ -108,26 +129,47 @@ class view_render_instance_t : public render_instance_t
         damage += -offset;
 
         wf::region_t our_damage = damage & view->get_bounding_box();
-        if (our_damage.empty())
+        if (!our_damage.empty())
         {
-            damage += offset;
-            return;
+            if (view->has_transformer())
+            {
+                // We render the view in one pass
+                instructions.push_back(render_instruction_t{
+                            .instance = this,
+                            .target   = our_target,
+                            .damage   = std::move(our_damage),
+                        });
+
+                damage ^= view->get_transformed_opaque_region();
+            } else
+            {
+                auto surface_offset = wf::origin(view->get_output_geometry());
+                damage += -surface_offset;
+                our_target.geometry = our_target.geometry + -surface_offset;
+                for (auto& ch : this->children)
+                {
+                    ch->schedule_instructions(instructions, our_target, damage);
+                }
+
+                damage += surface_offset;
+            }
         }
 
-        instructions.push_back(render_instruction_t{
-                    .instance = this,
-                    .target   = our_target,
-                    .damage   = std::move(our_damage),
-                });
-
-        damage ^= view->get_transformed_opaque_region();
         damage += offset;
     }
 
     void render(const wf::render_target_t& target,
         const wf::region_t& region, wf::output_t *output) override
     {
-        view->render_transformed(target, region);
+        // If the view has a transformer, we have to render it in one pass here.
+        // Otherwise, we schedule the individual surfaces to be rendered directly
+        // onto the output buffer. In those cases, we just need to send the
+        // feedback below.
+        if (view->has_transformer())
+        {
+            view->render_transformed(target, region);
+        }
+
         if (output && view->is_mapped())
         {
             for (auto& surface : view->enumerate_surfaces())
