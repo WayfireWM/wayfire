@@ -138,7 +138,7 @@ bool view_action_interface_t::execute(const std::string & name,
 
         LOGI("View action interface: Snap to ", location, ".");
 
-        output->emit_signal("view-snap", &data);
+        output->emit_signal("grid-snap-view", &data);
 
         return false;
     } else if (name == "move")
