@@ -1371,9 +1371,15 @@ class wf::render_manager::impl
             return;
         }
 
+        schedule_drag_icon(repaint);
+
         {
             stream_signal_t data(stream.ws, repaint.ws_damage, repaint.fb);
             output->render->emit_signal("workspace-stream-pre", &data);
+
+            repaint.ws_damage  += wf::origin(output->get_layout_geometry());
+            repaint.fb.geometry = repaint.fb.geometry + wf::origin(
+                output->get_layout_geometry());
 
             scene::render_pass_begin_signal ev;
             ev.damage = repaint.ws_damage;
@@ -1381,9 +1387,6 @@ class wf::render_manager::impl
             wf::get_core().emit(&ev);
             repaint.ws_damage = ev.damage;
         }
-
-        schedule_drag_icon(repaint);
-
         std::vector<wf::scene::render_instruction_t> instructions;
         for (auto& inst : output_damage->render_instances)
         {

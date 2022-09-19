@@ -30,7 +30,7 @@ wf::output_impl_t::output_impl_t(wlr_output *handle,
     for (size_t layer = 0; layer < (size_t)scene::layer::ALL_LAYERS; layer++)
     {
         nodes[layer] = std::make_shared<scene::output_node_t>(this);
-        nodes[layer]->limit_region = get_relative_geometry();
+        nodes[layer]->limit_region = get_layout_geometry();
         scene::add_back(root->layers[layer], nodes[layer]);
     }
 

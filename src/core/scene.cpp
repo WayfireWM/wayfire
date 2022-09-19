@@ -304,6 +304,7 @@ wf::pointf_t output_node_t::to_global(const wf::pointf_t& point)
 class output_render_instance_t : public default_render_instance_t
 {
     wf::output_t *output;
+    node_t *self;
     std::vector<render_instance_uptr> children;
 
   public:
@@ -311,6 +312,7 @@ class output_render_instance_t : public default_render_instance_t
         wf::output_t *output) :
         default_render_instance_t(self, transform_damage(callback))
     {
+        this->self   = self;
         this->output = output;
 
         // Children are stored as a sublist, because we need to translate every
@@ -335,6 +337,26 @@ class output_render_instance_t : public default_render_instance_t
 
     void schedule_instructions(std::vector<render_instruction_t>& instructions,
         const wf::render_target_t& target, wf::region_t& damage) override
+    {
+        if (self->limit_region)
+        {
+            wf::region_t our_damage = damage & *self->limit_region;
+            wf::region_t original_damage = our_damage;
+
+            if (!our_damage.empty())
+            {
+                _schedule_instructions(instructions, target, our_damage);
+                // Subtract damage that was subtracted by our nodes
+                damage ^= (original_damage ^ our_damage);
+            }
+        } else
+        {
+            _schedule_instructions(instructions, target, damage);
+        }
+    }
+
+    void _schedule_instructions(std::vector<render_instruction_t>& instructions,
+        const wf::render_target_t& target, wf::region_t& damage)
     {
         // In principle, we just have to schedule the children.
         // However, we need to adjust the target's geometry and the damage to
