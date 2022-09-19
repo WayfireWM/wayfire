@@ -23,6 +23,14 @@ bool view_action_interface_t::execute(const std::string & name,
 {
     if (name == "set")
     {
+        auto id = wf::get_string(args.at(0));
+
+        if (id == "sticky")
+        {
+            _make_sticky();
+            return false;
+        }
+
         if ((args.size() < 2) || (wf::is_string(args.at(0)) == false))
         {
             LOGE(
@@ -30,8 +38,6 @@ bool view_action_interface_t::execute(const std::string & name,
 
             return true;
         }
-
-        auto id = wf::get_string(args.at(0));
 
         if (id == "alpha")
         {
@@ -204,6 +210,11 @@ void view_action_interface_t::_minimize()
 void view_action_interface_t::_unminimize()
 {
     _view->set_minimized(false);
+}
+
+void view_action_interface_t::_make_sticky()
+{
+    _view->set_sticky(1);
 }
 
 std::tuple<bool, float> view_action_interface_t::_expect_float(
