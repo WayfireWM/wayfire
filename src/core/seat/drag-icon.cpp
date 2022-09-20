@@ -96,6 +96,12 @@ class dnd_root_icon_root_node_t : public floating_inner_node_t
             this, icon, push_damage));
     }
 
+    std::optional<input_node_t> find_node_at(const wf::pointf_t& at) override
+    {
+        // Don't allow focus going to the DnD surface itself
+        return {};
+    }
+
     wf::geometry_t get_bounding_box() override
     {
         return icon->last_box;
