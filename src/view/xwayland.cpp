@@ -12,6 +12,7 @@
 #include "../core/seat/cursor.hpp"
 #include "../core/seat/input-manager.hpp"
 #include "view-impl.hpp"
+#include <wayfire/scene-operations.hpp>
 
 #if WF_HAS_XWAYLAND
 
@@ -912,9 +913,6 @@ void wayfire_unmanaged_xwayland_view::destroy()
     wayfire_xwayland_view_base::destroy();
 }
 
-// Xwayland DnD view
-static wayfire_view dnd_view;
-
 class wayfire_dnd_xwayland_view : public wayfire_unmanaged_xwayland_view
 {
   protected:
@@ -943,11 +941,6 @@ class wayfire_dnd_xwayland_view : public wayfire_unmanaged_xwayland_view
     void destruct() override
     {
         LOGD("Destroying a Xwayland drag icon");
-        if (dnd_view.get() == this)
-        {
-            dnd_view = nullptr;
-        }
-
         wayfire_unmanaged_xwayland_view::destruct();
     }
 
@@ -991,6 +984,13 @@ class wayfire_dnd_xwayland_view : public wayfire_unmanaged_xwayland_view
         this->set_output(wf::get_core().get_active_output());
         wayfire_xwayland_view_base::map(surface);
         this->damage();
+
+        wf::scene::add_front(wf::get_core().scene(), this->get_scene_node());
+    }
+
+    void unmap() override
+    {
+        wf::scene::remove_child(this->get_scene_node());
     }
 };
 
@@ -1033,7 +1033,6 @@ void wayfire_xwayland_view_base::recreate_view()
     {
       case xwayland_view_type_t::DND:
         new_view = new wayfire_dnd_xwayland_view(xw_surf);
-        ::dnd_view = new_view;
         break;
 
       case xwayland_view_type_t::UNMANAGED:
@@ -1152,17 +1151,4 @@ std::string wf::xwayland_get_display()
 
     return "";
 #endif
-}
-
-wayfire_view wf::get_xwayland_drag_icon()
-{
-#if WF_HAS_XWAYLAND
-    if (dnd_view && dnd_view->is_mapped() && dnd_view->get_output())
-    {
-        return dnd_view.get();
-    }
-
-#endif
-
-    return nullptr;
 }

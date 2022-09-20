@@ -255,9 +255,6 @@ void xwayland_update_default_cursor();
 /* Ensure that the given surface is on top of the Xwayland stack order. */
 void xwayland_bring_to_front(wlr_surface *surface);
 
-/* Get the current Xwayland drag icon, if it exists. */
-wayfire_view get_xwayland_drag_icon();
-
 void init_desktop_apis();
 }
 

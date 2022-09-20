@@ -1241,28 +1241,6 @@ class wf::render_manager::impl
     }
 
     /**
-     * Calculate the damaged region for drag icons, and add them to the repaint
-     * list if necessary
-     */
-    void schedule_drag_icon(workspace_stream_repaint_t& repaint)
-    {
-        // Special case: Xwayland drag iconds
-        auto xw_dnd_icon = wf::get_xwayland_drag_icon();
-        if (xw_dnd_icon)
-        {
-            wf::point_t dnd_output = wf::origin(
-                xw_dnd_icon->get_output()->get_layout_geometry());
-            wf::point_t current_output = wf::origin(output->get_layout_geometry());
-            auto origin = wf::origin(xw_dnd_icon->get_output_geometry()) +
-                dnd_output + -current_output;
-            for (auto& child : xw_dnd_icon->enumerate_surfaces(origin))
-            {
-                schedule_surface(repaint, child.surface, child.position);
-            }
-        }
-    }
-
-    /**
      * Setup the stream, calculate damaged region, etc.
      */
     workspace_stream_repaint_t calculate_repaint_for_stream(
@@ -1340,8 +1318,6 @@ class wf::render_manager::impl
         {
             return;
         }
-
-        schedule_drag_icon(repaint);
 
         {
             stream_signal_t data(stream.ws, repaint.ws_damage, repaint.fb);
