@@ -50,11 +50,6 @@ wf::pointf_t wf::scene::view_node_t::to_global(const wf::pointf_t& point)
 std::optional<wf::scene::input_node_t> wf::scene::view_node_t::find_node_at(
     const wf::pointf_t& at)
 {
-    if (!test_point_in_limit(at))
-    {
-        return {};
-    }
-
     if (view->minimized || !view->is_visible() ||
         !wf::get_core_impl().input->can_focus_surface(view.get()))
     {

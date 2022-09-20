@@ -47,13 +47,14 @@ std::string node_t::stringify_flags() const
 
 std::optional<input_node_t> node_t::find_node_at(const wf::pointf_t& at)
 {
-    if (!test_point_in_limit(at))
-    {
-        return {};
-    }
-
     for (auto& node : get_children())
     {
+        if (node->is_disabled() ||
+            !node->test_point_in_limit(at))
+        {
+            continue;
+        }
+
         auto child_node = node->find_node_at(
             node->to_local(at));
         if (child_node.has_value())
