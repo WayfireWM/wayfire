@@ -390,7 +390,7 @@ wf::geometry_t output_node_t::get_bounding_box()
 }
 
 // ------------------------------ root_node_t ----------------------------------
-root_node_t::root_node_t() : node_t(true)
+root_node_t::root_node_t() : floating_inner_node_t(true)
 {
     std::vector<node_ptr> children;
 

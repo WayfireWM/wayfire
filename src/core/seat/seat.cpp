@@ -16,74 +16,7 @@
 #include "wayfire/signal-definitions.hpp"
 #include <wayfire/nonstd/wlroots.hpp>
 
-/* ------------------------ Drag icon impl ---------------------------------- */
-wf::drag_icon_t::drag_icon_t(wlr_drag_icon *ic) :
-    wf::wlr_child_surface_base_t(this), icon(ic)
-{
-    on_map.set_callback([&] (void*) { this->map(icon->surface); });
-    on_unmap.set_callback([&] (void*) { this->unmap(); });
-    on_destroy.set_callback([&] (void*)
-    {
-        /* we don't dec_keep_count() because the surface memory is
-         * managed by the unique_ptr */
-        wf::get_core_impl().seat->drag_icon = nullptr;
-    });
-
-    on_map.connect(&icon->events.map);
-    on_unmap.connect(&icon->events.unmap);
-    on_destroy.connect(&icon->events.destroy);
-}
-
-wf::point_t wf::drag_icon_t::get_offset()
-{
-    auto pos = icon->drag->grab_type == WLR_DRAG_GRAB_KEYBOARD_TOUCH ?
-        wf::get_core().get_touch_position(icon->drag->touch_id) :
-        wf::get_core().get_cursor_position();
-
-    if (is_mapped())
-    {
-        pos.x += icon->surface->sx;
-        pos.y += icon->surface->sy;
-    }
-
-    return {(int)pos.x, (int)pos.y};
-}
-
-void wf::drag_icon_t::damage()
-{
-    // damage previous position
-    damage_surface_box_global(last_box);
-
-    // damage new position
-    last_box = {0, 0, get_size().width, get_size().height};
-    last_box = last_box + get_offset();
-    damage_surface_box_global(last_box);
-}
-
-void wf::drag_icon_t::damage_surface_box(const wlr_box& box)
-{
-    if (!is_mapped())
-    {
-        return;
-    }
-
-    damage_surface_box_global(box + this->get_offset());
-}
-
-void wf::drag_icon_t::damage_surface_box_global(const wlr_box& rect)
-{
-    for (auto& output : wf::get_core().output_layout->get_outputs())
-    {
-        auto output_geometry = output->get_layout_geometry();
-        if (output_geometry & rect)
-        {
-            auto local = rect;
-            local.x -= output_geometry.x;
-            local.y -= output_geometry.y;
-            output->render->damage(local);
-        }
-    }
-}
+#include "drag-icon.hpp"
 
 /* ----------------------- wf::seat_t implementation ------------------------ */
 wf::seat_t::seat_t()
@@ -122,15 +55,8 @@ wf::seat_t::seat_t()
         }
 
         this->drag_active = true;
-
-        wf::dnd_signal evdata;
-        evdata.icon = this->drag_icon.get();
-        wf::get_core().emit_signal("drag-started", &evdata);
-
         end_drag.set_callback([&] (void*)
         {
-            wf::dnd_signal data;
-            wf::get_core().emit_signal("drag-stopped", &data);
             this->drag_active = false;
             end_drag.disconnect();
         });
@@ -272,7 +198,7 @@ void wf::seat_t::update_drag_icon()
 {
     if (drag_icon && drag_icon->is_mapped())
     {
-        drag_icon->damage();
+        drag_icon->update_position();
     }
 }
 

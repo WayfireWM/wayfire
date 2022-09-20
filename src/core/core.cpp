@@ -29,6 +29,7 @@
 #include "../output/output-impl.hpp"
 #include "../output/gtk-shell.hpp"
 #include "main.hpp"
+#include "seat/drag-icon.hpp"
 
 #include "core-impl.hpp"
 

@@ -121,17 +121,6 @@ struct input_event_signal : public wf::signal_data_t
 };
 
 /**
- * name: drag-started, drag-stopped
- * on: core
- * when: When a DnD action is started/stopped
- */
-struct dnd_signal : public wf::signal_data_t
-{
-    /** The DnD icon */
-    wf::surface_interface_t *icon;
-};
-
-/**
  * name: surface-mapped, surface-unmapped
  * on: core
  * when: Whenever a surface map state changes. This must be emitted for all

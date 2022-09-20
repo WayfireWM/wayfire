@@ -13,32 +13,6 @@ namespace wf
 struct cursor_t;
 class keyboard_t;
 
-struct drag_icon_t : public wlr_child_surface_base_t
-{
-    wlr_drag_icon *icon;
-    wl_listener_wrapper on_map, on_unmap, on_destroy;
-
-    drag_icon_t(wlr_drag_icon *icon);
-    point_t get_offset() override;
-
-    /** Called each time the DnD icon position changes. */
-    void damage();
-    void damage_surface_box(const wlr_box& rect) override;
-
-    /* Force map without receiving a wlroots event */
-    void force_map()
-    {
-        this->map(icon->surface);
-    }
-
-  private:
-    /** Last icon box. */
-    wf::geometry_t last_box = {0, 0, 0, 0};
-
-    /** Damage surface box in global coordinates. */
-    void damage_surface_box_global(const wlr_box& rect);
-};
-
 class input_device_impl_t : public wf::input_device_t
 {
   public:
@@ -52,6 +26,7 @@ class input_device_impl_t : public wf::input_device_t
 
 class pointer_t;
 class touch_interface_t;
+class drag_icon_t;
 
 /**
  * A seat is a collection of input devices which work together, and have a
