@@ -249,15 +249,6 @@ class node_t : public std::enable_shared_from_this<node_t>,
     void set_enabled(bool is_enabled);
 
     /**
-     * The limit region of a node.
-     * The limit region is described in the same coordinate system as the node
-     * tells the node that it should not process input outside of it nor render
-     * outside. By default, nodes do not have a limit region set, which means
-     * they are not limited in any way.
-     */
-    std::optional<wf::geometry_t> limit_region;
-
-    /**
      * Obtain an immutable list of the node's children.
      * Use set_children_list() of floating_inner_node_t to modify the children,
      * if the node supports that.
@@ -278,12 +269,6 @@ class node_t : public std::enable_shared_from_this<node_t>,
     int enabled_counter = 1;
     node_t *_parent     = nullptr;
     friend class inner_node_t;
-
-    // A helper function for implementations of find_node_at.
-    inline bool test_point_in_limit(const wf::pointf_t& point)
-    {
-        return !limit_region || (*limit_region & point);
-    }
 
     // A helper functions for stringify() implementations, serializes the flags()
     // to a string, e.g. node with KEYBOARD and USER_INPUT -> '(ku)'
@@ -352,6 +337,8 @@ class output_node_t final : public floating_inner_node_t
         damage_callback push_damage) override;
     wf::geometry_t get_bounding_box() override;
 
+    std::optional<input_node_t> find_node_at(const wf::pointf_t& at) override;
+
     /**
      * A container for the static child nodes.
      * Static child nodes are always below the dynamic nodes of an output and
@@ -374,6 +361,14 @@ class output_node_t final : public floating_inner_node_t
     {
         return output;
     }
+
+    /**
+     * The limit region of an output.
+     * It defines the region of the output layout that this output occupies.
+     * The output will not render anything outside of its limit region, and will
+     * not find any intersections via find_node_at.
+     */
+    std::optional<wf::geometry_t> limit_region;
 
   private:
     wf::output_t *output;

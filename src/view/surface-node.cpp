@@ -41,7 +41,8 @@ wf::pointf_t wf::scene::surface_node_t::to_global(const wf::pointf_t& point)
 std::optional<input_node_t> surface_node_t::find_node_at(
     const wf::pointf_t& at)
 {
-    if (si->accepts_input(std::round(at.x), std::round(at.y)))
+    auto local = to_local(at);
+    if (si->accepts_input(std::round(local.x), std::round(local.y)))
     {
         wf::scene::input_node_t result;
         result.node    = this;

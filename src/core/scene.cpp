@@ -47,16 +47,15 @@ std::string node_t::stringify_flags() const
 
 std::optional<input_node_t> node_t::find_node_at(const wf::pointf_t& at)
 {
+    auto local = this->to_local(at);
     for (auto& node : get_children())
     {
-        if (node->is_disabled() ||
-            !node->test_point_in_limit(at))
+        if (node->is_disabled())
         {
             continue;
         }
 
-        auto child_node = node->find_node_at(
-            node->to_local(at));
+        auto child_node = node->find_node_at(local);
         if (child_node.has_value())
         {
             return child_node;
@@ -274,7 +273,6 @@ wf::geometry_t node_t::get_bounding_box()
 }
 
 // ------------------------------ output_node_t --------------------------------
-
 // FIXME: output nodes are actually structure nodes, but we need to add and
 // remove them dynamically ...
 output_node_t::output_node_t(wf::output_t *output) : floating_inner_node_t(false)
@@ -302,14 +300,24 @@ wf::pointf_t output_node_t::to_global(const wf::pointf_t& point)
     return {point.x + offset.x, point.y + offset.y};
 }
 
+std::optional<input_node_t> output_node_t::find_node_at(const wf::pointf_t& at)
+{
+    if (limit_region && !(*limit_region & at))
+    {
+        return {};
+    }
+
+    return node_t::find_node_at(at);
+}
+
 class output_render_instance_t : public default_render_instance_t
 {
     wf::output_t *output;
-    node_t *self;
+    output_node_t *self;
     std::vector<render_instance_uptr> children;
 
   public:
-    output_render_instance_t(node_t *self, damage_callback callback,
+    output_render_instance_t(output_node_t *self, damage_callback callback,
         wf::output_t *output) :
         default_render_instance_t(self, transform_damage(callback))
     {
