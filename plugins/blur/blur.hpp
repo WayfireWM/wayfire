@@ -131,7 +131,7 @@ class wf_blur_base
 
     virtual int calculate_blur_radius();
 
-    virtual void pre_render(wf::texture_t src_tex, wlr_box src_box,
+    virtual void pre_render(wlr_box src_box,
         const wf::region_t& damage, const wf::render_target_t& target_fb);
 
     virtual void render(wf::texture_t src_tex, wlr_box src_box,

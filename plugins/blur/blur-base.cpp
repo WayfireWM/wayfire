@@ -167,7 +167,7 @@ wlr_box wf_blur_base::copy_region(wf::framebuffer_t& result,
     return subbox;
 }
 
-void wf_blur_base::pre_render(wf::texture_t src_tex, wlr_box src_box,
+void wf_blur_base::pre_render(wlr_box src_box,
     const wf::region_t& damage, const wf::render_target_t& target_fb)
 {
     int degrade     = degrade_opt;

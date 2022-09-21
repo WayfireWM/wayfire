@@ -1,3 +1,6 @@
+#include <cstdlib>
+#include <memory>
+#include <wayfire/config/types.hpp>
 #include <wayfire/plugin.hpp>
 #include <wayfire/view.hpp>
 #include <wayfire/matcher.hpp>
@@ -8,116 +11,211 @@
 #include <wayfire/signal-definitions.hpp>
 
 #include "blur.hpp"
+#include "wayfire/debug.hpp"
+#include "wayfire/object.hpp"
+#include "wayfire/opengl.hpp"
+#include "wayfire/region.hpp"
+#include "wayfire/scene-operations.hpp"
+#include "wayfire/scene-render.hpp"
+#include "wayfire/scene.hpp"
 
-using blur_algorithm_provider = std::function<nonstd::observer_ptr<wf_blur_base>()>;
-class wf_blur_transformer : public wf::view_transformer_t
+using blur_algorithm_provider =
+    std::function<nonstd::observer_ptr<wf_blur_base>()>;
+
+namespace wf
+{
+namespace scene
+{
+class blur_render_instance_t : public render_instance_t
 {
     blur_algorithm_provider provider;
-    wf::output_t *output;
-    wayfire_view view;
+    node_t *self;
+
+    wf::framebuffer_t saved_pixels;
+    wf::region_t saved_pixels_region;
+
+    std::vector<render_instance_uptr> view_instance;
+    wf::render_target_t inner_content;
+    wf::region_t cached_damage;
+
+    wf::texture_t get_texture(float scale)
+    {
+        auto bbox = self->get_bounding_box();
+        int target_width  = scale * self->get_bounding_box().width;
+        int target_height = scale * self->get_bounding_box().height;
+
+        OpenGL::render_begin();
+        inner_content.allocate(target_width, target_height);
+        inner_content.geometry = bbox;
+        OpenGL::render_end();
+
+        scene::run_render_pass(view_instance, inner_content, cached_damage,
+            {0.0f, 0.0f, 0.0f, 0.0f}, nullptr);
+
+        cached_damage.clear();
+        return wf::texture_t{inner_content.tex};
+    }
 
   public:
-    wf_blur_transformer(blur_algorithm_provider blur_algorithm_provider,
-        wf::output_t *output, wayfire_view view)
+    blur_render_instance_t(node_t *self, blur_algorithm_provider provider,
+        damage_callback push_damage)
     {
-        provider     = blur_algorithm_provider;
-        this->output = output;
-        this->view   = view;
-    }
+        this->self     = self;
+        this->provider = provider;
 
-    wf::pointf_t transform_point(wf::geometry_t view,
-        wf::pointf_t point) override
-    {
-        return point;
-    }
-
-    wf::pointf_t untransform_point(wf::geometry_t view,
-        wf::pointf_t point) override
-    {
-        return point;
-    }
-
-    wlr_box get_bounding_box(wf::geometry_t view, wlr_box region) override
-    {
-        return region;
-    }
-
-    wf::region_t transform_opaque_region(
-        wf::geometry_t bbox, wf::region_t region) override
-    {
-        return region;
-    }
-
-    uint32_t get_z_order() override
-    {
-        return wf::TRANSFORMER_BLUR;
-    }
-
-    /* Render without blending */
-    void direct_render(wf::texture_t src_tex, wlr_box src_box,
-        const wf::region_t& damage, const wf::render_target_t& target_fb)
-    {
-        OpenGL::render_begin(target_fb);
-        for (auto& rect : damage)
+        auto push_damage_child = [=] (const wf::region_t& region)
         {
-            target_fb.logic_scissor(wlr_box_from_pixman_box(rect));
-            OpenGL::render_texture(src_tex, target_fb, src_box);
-        }
+            this->cached_damage |= region;
+            push_damage(region);
+        };
 
+        this->cached_damage |= self->get_bounding_box();
+        for (auto& ch : self->get_children())
+        {
+            ch->gen_render_instances(view_instance, push_damage_child);
+        }
+    }
+
+    ~blur_render_instance_t()
+    {
+        OpenGL::render_begin();
+        saved_pixels.release();
+        inner_content.release();
         OpenGL::render_end();
     }
 
-    void render_with_damage(wf::texture_t src_tex, wlr_box src_box,
-        const wf::region_t& damage, const wf::render_target_t& target_fb) override
+    void schedule_instructions(
+        std::vector<render_instruction_t>& instructions,
+        const wf::render_target_t& target, wf::region_t& damage) override
     {
-        wf::region_t clip_damage = damage & src_box;
+        const int padding = std::ceil(
+            provider()->calculate_blur_radius() / target.scale);
 
-        /* We want to check if the opaque region completely occludes
-         * the bounding box. If this is the case, we can skip blurring
-         * altogether and just render the surface. First we disable
-         * shrinking and get the opaque region without padding */
-        wf::surface_interface_t::set_opaque_shrink_constraint("blur", 0);
-        wf::region_t full_opaque = view->get_transformed_opaque_region();
+        auto bbox = self->get_bounding_box();
 
-        /* Shrink the opaque region by the padding amount since the render
-         * chain expects this, as we have applied padding to damage in
-         * frame_pre_paint for this frame already */
-        int padding = std::ceil(provider()->calculate_blur_radius() /
-            output->render->get_target_framebuffer().scale);
-        wf::surface_interface_t::set_opaque_shrink_constraint("blur", padding);
+        // In order to render a part of the blurred background, we need to sample
+        // from area which is larger than the damaged area. However, the edges
+        // of the expanded area suffer from the same problem (e.g. the blurred
+        // background has artifacts). The solution to this is to expand the
+        // damage and keep a copy of the pixels where we redraw, but wouldn't
+        // have redrawn if not for blur. After that, we copy those old areas
+        // back to the destination framebuffer, giving the illusion that they
+        // were never damaged.
+        auto padded_region = damage & bbox;
+        padded_region.expand_edges(padding);
+        padded_region &= bbox;
 
-        wf::region_t bbox_region{src_box};
-        if ((bbox_region ^ full_opaque).empty())
+        // Don't forget to keep expanded damage within the bounds of the render
+        // target, otherwise we may be sampling from outside of it (undefined
+        // contents).
+        padded_region &= target.geometry;
+
+        // Actual region which will be repainted by this render instance.
+        wf::region_t we_repaint = padded_region;
+
+        // Subtract original damage, so that we have only the padded region
+        padded_region ^= damage;
+
+        for (auto& rect : padded_region)
         {
-            /* In case the whole surface is opaque, we can simply skip blurring */
-            direct_render(src_tex, src_box, damage, target_fb);
-
-            return;
+            saved_pixels_region |= target.framebuffer_box_from_geometry_box(
+                wlr_box_from_pixman_box(rect));
         }
 
-        wf::region_t opaque_region  = view->get_transformed_opaque_region();
-        wf::region_t blurred_region = clip_damage ^ opaque_region;
+        OpenGL::render_begin();
+        saved_pixels.allocate(target.viewport_width, target.viewport_height);
+        saved_pixels.bind();
+        GL_CALL(glBindFramebuffer(GL_READ_FRAMEBUFFER, target.fb));
 
-        if (!blurred_region.empty())
+        /* Copy pixels in padded_region from target_fb to saved_pixels. */
+        for (const auto& box : saved_pixels_region)
         {
-            provider()->pre_render(src_tex, src_box, blurred_region, target_fb);
-            wf::view_transformer_t::render_with_damage(src_tex, src_box,
-                blurred_region, target_fb);
+            GL_CALL(glBlitFramebuffer(
+                box.x1, target.viewport_height - box.y2,
+                box.x2, target.viewport_height - box.y1,
+                box.x1, box.y1, box.x2, box.y2,
+                GL_COLOR_BUFFER_BIT, GL_LINEAR));
         }
 
-        /* Opaque non-blurred regions can be rendered directly without blending */
-        wf::region_t unblurred{opaque_region & clip_damage};
-        if (!unblurred.empty())
-        {
-            direct_render(src_tex, src_box, unblurred, target_fb);
-        }
+        OpenGL::render_end();
+
+        // Nodes below should re-render the padded areas so that we can sample
+        // from them
+        damage |= padded_region;
+        instructions.push_back(render_instruction_t{
+                    .instance = this,
+                    .target   = target,
+                    .damage   = we_repaint,
+                });
     }
 
-    void render_box(wf::texture_t src_tex, wlr_box src_box, wlr_box scissor_box,
-        const wf::render_target_t& target_fb) override
+    void render(const wf::render_target_t& target,
+        const wf::region_t& damage, wf::output_t *output) override
     {
-        provider()->render(src_tex, src_box, scissor_box, target_fb);
+        auto tex = get_texture(target.scale);
+        auto bounding_box = self->get_bounding_box();
+        if (!damage.empty())
+        {
+            provider()->pre_render(bounding_box, damage, target);
+            for (const auto& rect : damage)
+            {
+                auto damage_box = wlr_box_from_pixman_box(rect);
+                provider()->render(tex, bounding_box, damage_box, target);
+            }
+        }
+
+        OpenGL::render_begin(target);
+        // Setup framebuffer I/O. target_fb contains the frame
+        // rendered with expanded damage and artifacts on the edges.
+        // saved_pixels has the the padded region of pixels to overwrite the
+        // artifacts that blurring has left behind.
+        GL_CALL(glBindFramebuffer(GL_READ_FRAMEBUFFER, saved_pixels.fb));
+
+        /* Copy pixels back from saved_pixels to target_fb. */
+        for (const auto& box : saved_pixels_region)
+        {
+            GL_CALL(glBlitFramebuffer(
+                box.x1, box.y1, box.x2, box.y2,
+                box.x1, target.viewport_height - box.y2,
+                box.x2, target.viewport_height - box.y1,
+                GL_COLOR_BUFFER_BIT, GL_LINEAR));
+        }
+
+        /* Reset stuff */
+        saved_pixels_region.clear();
+        OpenGL::render_end();
     }
+};
+
+class blur_node_t : public floating_inner_node_t
+{
+    blur_algorithm_provider provider;
+
+  public:
+    blur_node_t(blur_algorithm_provider provider) : floating_inner_node_t(false)
+    {
+        this->provider = provider;
+    }
+
+    std::string stringify() const override
+    {
+        return "blur";
+    }
+
+    void gen_render_instances(std::vector<render_instance_uptr>& instances,
+        damage_callback push_damage) override
+    {
+        instances.push_back(std::make_unique<blur_render_instance_t>(
+            this, provider, push_damage));
+    }
+};
+}
+}
+
+class blur_transform_node_data : public wf::custom_data_t
+{
+  public:
+    wf::scene::floating_inner_node_t *node = nullptr;
 };
 
 class wayfire_blur : public wf::plugin_interface_t
@@ -125,8 +223,7 @@ class wayfire_blur : public wf::plugin_interface_t
     wf::button_callback button_toggle;
 
     wf::effect_hook_t frame_pre_paint;
-    wf::signal_connection_t workspace_stream_pre, workspace_stream_post,
-        view_attached, view_detached;
+    wf::signal_connection_t view_attached, view_detached;
 
     wf::view_matcher_t blur_by_default{"blur/blur_by_default"};
     wf::option_wrapper_t<std::string> method_opt{"blur/method"};
@@ -134,31 +231,65 @@ class wayfire_blur : public wf::plugin_interface_t
     wf::config::option_base_t::updated_callback_t blur_method_changed;
     std::unique_ptr<wf_blur_base> blur_algorithm;
 
-    const std::string transformer_name = "blur";
-
-    /* the pixels from padded_region */
-    wf::framebuffer_t saved_pixels;
-    wf::region_t padded_region;
-
     void add_transformer(wayfire_view view)
     {
-        if (view->get_transformer(transformer_name))
+        if (view->has_data<blur_transform_node_data>())
         {
             return;
         }
 
-        view->add_transformer(std::make_unique<wf_blur_transformer>(
-            [=] () {return nonstd::make_observer(blur_algorithm.get()); },
-            output, view),
-            transformer_name);
+        auto provider = [=] ()
+        {
+            return blur_algorithm.get();
+        };
+
+        auto node = std::make_shared<wf::scene::blur_node_t>(provider);
+        view->get_data_safe<blur_transform_node_data>()->node = node.get();
+
+        auto children = view->get_scene_node()->get_children();
+        wf::scene::remove_child(view->get_main_node());
+        wf::scene::add_front(node, view->get_main_node());
+
+        // Replace content node with blur
+        for (auto& x : children)
+        {
+            if (x == view->get_main_node())
+            {
+                x = node;
+            }
+        }
+
+        view->get_scene_node()->set_children_list(children);
+        wf::scene::update(view->get_scene_node(),
+            wf::scene::update_flag::CHILDREN_LIST);
     }
 
     void pop_transformer(wayfire_view view)
     {
-        if (view->get_transformer(transformer_name))
+        if (!view->has_data<blur_transform_node_data>())
         {
-            view->pop_transformer(transformer_name);
+            return;
         }
+
+        auto node = view->get_data_safe<blur_transform_node_data>()->node;
+
+        auto children = view->get_scene_node()->get_children();
+        wf::scene::remove_child(node->shared_from_this());
+
+        node->set_children_list({});
+
+        // Replace content node with blur
+        for (auto& x : children)
+        {
+            if (x.get() == node)
+            {
+                x = view->get_main_node();
+            }
+        }
+
+        view->get_scene_node()->set_children_list(children);
+        wf::scene::update(view->get_scene_node(),
+            wf::scene::update_flag::CHILDREN_LIST);
     }
 
     void remove_transformers()
@@ -183,28 +314,6 @@ class wayfire_blur : public wf::plugin_interface_t
         return result;
     }
 
-    wf::region_t expand_region(const wf::region_t& region, double scale) const
-    {
-        // As long as the padding is big enough to cover the
-        // furthest sampled pixel by the shader, there should
-        // be no visual artifacts.
-        int padding = std::ceil(
-            blur_algorithm->calculate_blur_radius() / scale);
-
-        wf::region_t padded;
-        for (const auto& rect : region)
-        {
-            padded |= wlr_box{
-                (rect.x1 - padding),
-                (rect.y1 - padding),
-                (rect.x2 - rect.x1) + 2 * padding,
-                (rect.y2 - rect.y1) + 2 * padding
-            };
-        }
-
-        return padded;
-    }
-
     // Blur region for current frame
     wf::region_t blur_region;
 
@@ -215,7 +324,7 @@ class wayfire_blur : public wf::plugin_interface_t
 
         for (auto& view : views)
         {
-            if (!view->get_transformer("blur"))
+            if (!view->has_data<blur_transform_node_data>())
             {
                 continue;
             }
@@ -274,9 +383,9 @@ class wayfire_blur : public wf::plugin_interface_t
                 return false;
             }
 
-            if (view->get_transformer(transformer_name))
+            if (view->has_data<blur_transform_node_data>())
             {
-                view->pop_transformer(transformer_name);
+                pop_transformer(view);
             } else
             {
                 add_transformer(view);
@@ -325,102 +434,14 @@ class wayfire_blur : public wf::plugin_interface_t
             auto damage    = output->render->get_scheduled_damage();
             const auto& fb = output->render->get_target_framebuffer();
 
+            damage &= this->blur_region;
             int padding = std::ceil(
                 blur_algorithm->calculate_blur_radius() / fb.scale);
-            wf::surface_interface_t::set_opaque_shrink_constraint("blur",
-                padding);
 
-            output->render->damage(expand_region(
-                damage & this->blur_region, fb.scale));
+            damage.expand_edges(padding);
+            output->render->damage(damage);
         };
         output->render->add_effect(&frame_pre_paint, wf::OUTPUT_EFFECT_DAMAGE);
-
-        /* workspace_stream_pre is called before rendering each frame
-         * when rendering a workspace. It gives us a chance to pad
-         * damage and take a snapshot of the padded area. The padded
-         * damage will be used to render the scene as normal. Then
-         * workspace_stream_post is called so we can copy the padded
-         * pixels back. */
-        workspace_stream_pre.set_callback([=] (wf::signal_data_t *data)
-        {
-            auto& damage   = static_cast<wf::stream_signal_t*>(data)->raw_damage;
-            const auto& ws = static_cast<wf::stream_signal_t*>(data)->ws;
-            const auto& target_fb = static_cast<wf::stream_signal_t*>(data)->fb;
-
-            wf::region_t expanded_damage =
-                expand_region(damage & get_blur_region(ws), target_fb.scale);
-
-            /* Keep rects on screen */
-            expanded_damage &= output->render->get_ws_box(ws);
-
-            /* Compute padded region and store result in padded_region.
-             * We need to be careful, because core needs to scale the damage
-             * back and forth for wlroots. */
-            padded_region = get_fb_region(expanded_damage, target_fb) ^
-                get_fb_region(damage, target_fb);
-
-            OpenGL::render_begin(target_fb);
-            /* Initialize a place to store padded region pixels. */
-            saved_pixels.allocate(target_fb.viewport_width,
-                target_fb.viewport_height);
-
-            /* Setup framebuffer I/O. target_fb contains the pixels
-             * from last frame at this point. We are writing them
-             * to saved_pixels, bound as GL_DRAW_FRAMEBUFFER */
-            saved_pixels.bind();
-            GL_CALL(glBindFramebuffer(GL_READ_FRAMEBUFFER, target_fb.fb));
-
-            /* Copy pixels in padded_region from target_fb to saved_pixels. */
-            for (const auto& box : padded_region)
-            {
-                GL_CALL(glBlitFramebuffer(
-                    box.x1, target_fb.viewport_height - box.y2,
-                    box.x2, target_fb.viewport_height - box.y1,
-                    box.x1, box.y1, box.x2, box.y2,
-                    GL_COLOR_BUFFER_BIT, GL_LINEAR));
-            }
-
-            /* This effectively makes damage the same as expanded_damage. */
-            damage |= expanded_damage;
-            GL_CALL(glBindTexture(GL_TEXTURE_2D, 0));
-            OpenGL::render_end();
-        });
-
-        output->render->connect_signal("workspace-stream-pre",
-            &workspace_stream_pre);
-
-        /* workspace_stream_post is called after rendering each frame
-         * when rendering a workspace. It gives us a chance to copy
-         * the pixels back to the framebuffer that we saved in
-         * workspace_stream_pre. */
-        workspace_stream_post.set_callback([=] (wf::signal_data_t *data)
-        {
-            const auto& target_fb = static_cast<wf::stream_signal_t*>(data)->fb;
-            OpenGL::render_begin(target_fb);
-            /* Setup framebuffer I/O. target_fb contains the frame
-             * rendered with expanded damage and artifacts on the edges.
-             * saved_pixels has the the padded region of pixels to overwrite the
-             * artifacts that blurring has left behind. */
-            GL_CALL(glBindFramebuffer(GL_READ_FRAMEBUFFER, saved_pixels.fb));
-
-            /* Copy pixels back from saved_pixels to target_fb. */
-            for (const auto& box : padded_region)
-            {
-                GL_CALL(glBlitFramebuffer(box.x1, box.y1, box.x2, box.y2,
-                    box.x1, target_fb.viewport_height - box.y2,
-                    box.x2, target_fb.viewport_height - box.y1,
-                    GL_COLOR_BUFFER_BIT, GL_LINEAR));
-            }
-
-            /* Reset stuff */
-            padded_region.clear();
-            GL_CALL(glBindTexture(GL_TEXTURE_2D, 0));
-            OpenGL::render_end();
-        });
-
-        output->render->connect_signal("workspace-stream-post",
-            &workspace_stream_post);
-
         for (auto& view :
              output->workspace->get_views_in_layer(wf::ALL_LAYERS))
         {
@@ -440,10 +461,6 @@ class wayfire_blur : public wf::plugin_interface_t
 
         /* Call blur algorithm destructor */
         blur_algorithm = nullptr;
-
-        OpenGL::render_begin();
-        saved_pixels.release();
-        OpenGL::render_end();
     }
 };
 
