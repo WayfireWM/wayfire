@@ -150,18 +150,6 @@ class surface_interface_t : public wf::object_base_t
     virtual wf::region_t get_opaque_region(wf::point_t origin);
 
     /**
-     * Request that the opaque region is shrunk by a certain amount of pixels
-     * from the edge. Surface implementations that implement subtract_opaque
-     * typically also need to implement this function.
-     *
-     * @param constraint_name The unique name of the component that makes this
-     *        request. The request with the biggest shrink_by will be used.
-     * @param shrink_by The amount of pixels to shrink by.
-     */
-    static void set_opaque_shrink_constraint(
-        std::string constraint_name, int value);
-
-    /**
      * @return the wl_client associated with this surface, or null if the
      *   surface doesn't have a backing wlr_surface.
      */
@@ -201,9 +189,6 @@ class surface_interface_t : public wf::object_base_t
   protected:
     /** Construct a new surface. */
     surface_interface_t();
-
-    /** @return the active shrink constraint */
-    static int get_active_shrink_constraint();
 
     /** Damage the given box, in surface-local coordinates */
     virtual void damage_surface_box(const wlr_box& box);

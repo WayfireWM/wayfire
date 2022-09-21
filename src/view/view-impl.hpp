@@ -130,7 +130,6 @@ class wlr_view_t :
 
     virtual std::string get_app_id() override final;
     virtual std::string get_title() override final;
-    virtual wf::region_t get_transformed_opaque_region() override;
 
     /* Functions which are further specialized for the different shells */
     virtual void move(int x, int y) override;

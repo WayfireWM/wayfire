@@ -154,29 +154,6 @@ void wf::surface_interface_t::set_output(wf::output_t *output)
     }
 }
 
-/* Static method */
-int wf::surface_interface_t::impl::active_shrink_constraint = 0;
-
-void wf::surface_interface_t::set_opaque_shrink_constraint(
-    std::string constraint_name, int value)
-{
-    static std::map<std::string, int> shrink_constraints;
-
-    shrink_constraints[constraint_name] = value;
-
-    impl::active_shrink_constraint = 0;
-    for (auto& constr : shrink_constraints)
-    {
-        impl::active_shrink_constraint =
-            std::max(impl::active_shrink_constraint, constr.second);
-    }
-}
-
-int wf::surface_interface_t::get_active_shrink_constraint()
-{
-    return impl::active_shrink_constraint;
-}
-
 /****************************
 * surface_interface_t functions for surfaces which are
 * backed by a wlr_surface
@@ -208,7 +185,6 @@ wf::region_t wf::surface_interface_t::get_opaque_region(wf::point_t origin)
 
     wf::region_t opaque{&priv->wsurface->opaque_region};
     opaque += origin;
-    opaque.expand_edges(-get_active_shrink_constraint());
 
     return opaque;
 }

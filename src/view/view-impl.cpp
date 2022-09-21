@@ -81,28 +81,6 @@ void wf::wlr_view_t::handle_minimize_hint(wf::surface_interface_t *relative_to,
     set_minimize_hint(box);
 }
 
-wf::region_t wf::wlr_view_t::get_transformed_opaque_region()
-{
-    auto& maximal_shrink_constraint =
-        wf::surface_interface_t::impl::active_shrink_constraint;
-    int saved_shrink_constraint = maximal_shrink_constraint;
-
-    /* Fullscreen views take up the whole screen, so plugins can't request
-     * padding for them (nothing below is visible).
-     *
-     * In this case, we hijack the maximal_shrink_constraint, but we must
-     * restore it immediately after subtracting the opaque region */
-    if (this->fullscreen)
-    {
-        maximal_shrink_constraint = 0;
-    }
-
-    auto region = wf::view_interface_t::get_transformed_opaque_region();
-    maximal_shrink_constraint = saved_shrink_constraint;
-
-    return region;
-}
-
 void wf::wlr_view_t::set_position(int x, int y,
     wf::geometry_t old_geometry, bool send_signal)
 {

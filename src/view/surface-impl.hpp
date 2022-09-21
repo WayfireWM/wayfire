@@ -24,7 +24,6 @@ class surface_interface_t::impl
     void clear_subsurfaces(surface_interface_t *self);
 
     wf::output_t *output = nullptr;
-    static int active_shrink_constraint;
 
     /**
      * Most surfaces don't have a wlr_surface. However, internal surface
