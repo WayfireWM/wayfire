@@ -1465,6 +1465,34 @@ void render_manager::workspace_stream_stop(workspace_stream_t& stream)
 {
     pimpl->workspace_stream_stop(stream);
 }
+
+void scene::run_render_pass(const std::vector<render_instance_uptr>& instances,
+    const wf::render_target_t& target, wf::region_t accumulated_damage,
+    const wf::color_t background_color, wf::output_t *output)
+{
+    // Gather instructions
+    std::vector<wf::scene::render_instruction_t> instructions;
+    for (auto& inst : instances)
+    {
+        inst->schedule_instructions(instructions, target, accumulated_damage);
+    }
+
+    // Clear visible background areas
+    OpenGL::render_begin(target);
+    for (const auto& rect : accumulated_damage)
+    {
+        target.logic_scissor(wlr_box_from_pixman_box(rect));
+        OpenGL::clear(background_color, GL_COLOR_BUFFER_BIT);
+    }
+
+    OpenGL::render_end();
+
+    // Render instances
+    for (auto& instr : wf::reverse(instructions))
+    {
+        instr.instance->render(instr.target, instr.damage, output);
+    }
+}
 } // namespace wf
 
 /* End render_manager */

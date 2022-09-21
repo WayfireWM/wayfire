@@ -115,5 +115,18 @@ struct render_pass_begin_signal
      */
     wf::render_target_t target;
 };
+
+/**
+ * A helper function to execute a render pass.
+ *
+ * The render pass goes as described below:
+ *
+ * 1. Render instructions are generated from the given instances.
+ * 2. Any remaining background areas are painted in @background_color.
+ * 3. Render instructions are executed back-to-forth.
+ */
+void run_render_pass(const std::vector<render_instance_uptr>& instances,
+    const render_target_t& target, region_t accumulated_damage,
+    const color_t background_color, output_t *output);
 }
 }
