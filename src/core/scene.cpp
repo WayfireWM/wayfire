@@ -355,8 +355,10 @@ class output_render_instance_t : public default_render_instance_t
             if (!our_damage.empty())
             {
                 _schedule_instructions(instructions, target, our_damage);
-                // Subtract damage that was subtracted by our nodes
-                damage ^= (original_damage ^ our_damage);
+                // Inside limit region, damage is defined as the children
+                // decided.
+                damage ^= *self->limit_region;
+                damage |= our_damage & *self->limit_region;
             }
         } else
         {
