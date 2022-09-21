@@ -1,3 +1,4 @@
+#include <GLES2/gl2.h>
 #include <wayfire/util/log.hpp>
 #include "wayfire/img.hpp"
 #include "wayfire/opengl.hpp"
@@ -23,7 +24,7 @@ namespace image_io
 {
 using Loader = std::function<bool (const char*, GLuint)>;
 using Writer = std::function<void (const char*name, uint8_t*pixels, unsigned long,
-    unsigned long)>;
+    unsigned long, bool)>;
 namespace
 {
 std::unordered_map<std::string, Loader> loaders;
@@ -230,7 +231,7 @@ bool texture_from_png(const char *filename, GLuint target)
     return true;
 }
 
-void texture_to_png(const char *name, uint8_t *pixels, int w, int h)
+void texture_to_png(const char *name, uint8_t *pixels, int w, int h, bool invert)
 {
     png_structp png = png_create_write_struct(PNG_LIBPNG_VER_STRING, nullptr,
         nullptr, nullptr);
@@ -276,7 +277,13 @@ void texture_to_png(const char *name, uint8_t *pixels, int w, int h)
     png_bytepp rows = (png_bytepp)png_malloc(png, h * sizeof(png_bytep));
     for (int i = 0; i < h; ++i)
     {
-        rows[i] = (png_bytep)(pixels + (h - i) * w * 4);
+        if (invert)
+        {
+            rows[i] = (png_bytep)(pixels + (h - i - 1) * w * 4);
+        } else
+        {
+            rows[i] = (png_bytep)(pixels + i * w * 4);
+        }
     }
 
     png_write_image(png, rows);
@@ -285,7 +292,7 @@ void texture_to_png(const char *name, uint8_t *pixels, int w, int h)
     png_destroy_write_struct(&png, &infot);
 
     fclose(fp);
-    delete[] rows;
+    png_free(png, rows);
 }
 
 bool texture_from_jpeg(const char *FileName, GLuint target)
@@ -387,7 +394,8 @@ bool load_from_file(std::string name, GLuint target)
     }
 }
 
-void write_to_file(std::string name, uint8_t *pixels, int w, int h, std::string type)
+void write_to_file(std::string name, uint8_t *pixels, int w, int h, std::string type,
+    bool invert)
 {
     auto it = writers.find(type);
 
@@ -396,8 +404,20 @@ void write_to_file(std::string name, uint8_t *pixels, int w, int h, std::string 
         LOGE("unsupported image_writer backend");
     } else
     {
-        it->second(name.c_str(), pixels, w, h);
+        it->second(name.c_str(), pixels, w, h, false);
     }
+}
+
+void write_to_file(std::string name, wf::framebuffer_t fb)
+{
+    std::vector<char> buffer(fb.viewport_width * fb.viewport_height * 4);
+    OpenGL::render_begin();
+    GL_CALL(glBindFramebuffer(GL_READ_FRAMEBUFFER, fb.fb));
+    GL_CALL(glReadPixels(0, 0, fb.viewport_width, fb.viewport_height,
+        GL_RGBA, GL_UNSIGNED_BYTE, buffer.data()));
+    OpenGL::render_end();
+    write_to_file(name, (uint8_t*)buffer.data(),
+        fb.viewport_width, fb.viewport_height, "png", false);
 }
 
 void init()
