@@ -11,6 +11,8 @@
 #include <wayfire/signal-definitions.hpp>
 
 #include "blur.hpp"
+#include "plugins/common/wayfire/plugins/common/shared-core-data.hpp"
+#include "wayfire/core.hpp"
 #include "wayfire/debug.hpp"
 #include "wayfire/object.hpp"
 #include "wayfire/opengl.hpp"
@@ -18,6 +20,7 @@
 #include "wayfire/scene-operations.hpp"
 #include "wayfire/scene-render.hpp"
 #include "wayfire/scene.hpp"
+#include "wayfire/signal-provider.hpp"
 
 using blur_algorithm_provider =
     std::function<nonstd::observer_ptr<wf_blur_base>()>;
@@ -218,6 +221,34 @@ class blur_transform_node_data : public wf::custom_data_t
     wf::scene::floating_inner_node_t *node = nullptr;
 };
 
+class blur_global_data_t
+{
+    // Before doing a render pass, expand the damage by the blur radius.
+    // This is needed, because when blurring, the pixels that changed
+    // affect a larger area than the really damaged region, e.g. the region
+    // that comes from client damage.
+    wf::signal::connection_t<wf::scene::render_pass_begin_signal>
+    on_render_pass_begin = [=] (wf::scene::render_pass_begin_signal *ev)
+    {
+        if (!provider)
+        {
+            return;
+        }
+
+        int padding = std::ceil(
+            provider()->calculate_blur_radius() / ev->target.scale);
+
+        ev->damage.expand_edges(padding);
+    };
+
+  public:
+    blur_algorithm_provider provider;
+    blur_global_data_t()
+    {
+        wf::get_core().connect(&on_render_pass_begin);
+    }
+};
+
 class wayfire_blur : public wf::plugin_interface_t
 {
     wf::button_callback button_toggle;
@@ -300,59 +331,7 @@ class wayfire_blur : public wf::plugin_interface_t
         }
     }
 
-    /** Transform region into framebuffer coordinates */
-    wf::region_t get_fb_region(const wf::region_t& region,
-        const wf::render_target_t& fb) const
-    {
-        wf::region_t result;
-        for (const auto& rect : region)
-        {
-            result |= fb.framebuffer_box_from_geometry_box(
-                wlr_box_from_pixman_box(rect));
-        }
-
-        return result;
-    }
-
-    // Blur region for current frame
-    wf::region_t blur_region;
-
-    void update_blur_region()
-    {
-        blur_region.clear();
-        auto views = output->workspace->get_views_in_layer(wf::ALL_LAYERS);
-
-        for (auto& view : views)
-        {
-            if (!view->has_data<blur_transform_node_data>())
-            {
-                continue;
-            }
-
-            auto bbox = view->get_bounding_box();
-            if (!view->sticky)
-            {
-                blur_region |= bbox;
-            } else
-            {
-                auto wsize = output->workspace->get_workspace_grid_size();
-                for (int i = 0; i < wsize.width; i++)
-                {
-                    for (int j = 0; j < wsize.height; j++)
-                    {
-                        blur_region |=
-                            bbox + wf::origin(output->render->get_ws_box({i, j}));
-                    }
-                }
-            }
-        }
-    }
-
-    /** Find the region of blurred views on the given workspace */
-    wf::region_t get_blur_region(wf::point_t ws) const
-    {
-        return blur_region & output->render->get_ws_box(ws);
-    }
+    wf::shared_data::ref_ptr_t<blur_global_data_t> global_data;
 
   public:
     void init() override
@@ -394,6 +373,7 @@ class wayfire_blur : public wf::plugin_interface_t
             return true;
         };
         output->add_button(toggle_button, &button_toggle);
+        global_data->provider = [=] () { return this->blur_algorithm.get(); };
 
         // Add blur transformers to views which have blur enabled
         view_attached.set_callback([=] (wf::signal_data_t *data)
@@ -423,25 +403,6 @@ class wayfire_blur : public wf::plugin_interface_t
         output->connect_signal("view-mapped", &view_attached);
         output->connect_signal("view-detached", &view_detached);
 
-        /* frame_pre_paint is called before each frame has started.
-         * It expands the damage by the blur radius.
-         * This is needed, because when blurring, the pixels that changed
-         * affect a larger area than the really damaged region, e.g the region
-         * that comes from client damage */
-        frame_pre_paint = [=] ()
-        {
-            update_blur_region();
-            auto damage    = output->render->get_scheduled_damage();
-            const auto& fb = output->render->get_target_framebuffer();
-
-            damage &= this->blur_region;
-            int padding = std::ceil(
-                blur_algorithm->calculate_blur_radius() / fb.scale);
-
-            damage.expand_edges(padding);
-            output->render->damage(damage);
-        };
-        output->render->add_effect(&frame_pre_paint, wf::OUTPUT_EFFECT_DAMAGE);
         for (auto& view :
              output->workspace->get_views_in_layer(wf::ALL_LAYERS))
         {

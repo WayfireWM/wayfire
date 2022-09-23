@@ -763,9 +763,6 @@ class wf::render_manager::impl
         });
         on_frame.connect(&output_damage->damage_manager->events.frame);
 
-        default_stream.scale_x    = default_stream.scale_y = 1;
-        default_stream.buffer.tex = 0;
-
         background_color_opt.load_option("core/background_color");
         background_color_opt.set_callback([=] ()
         {
@@ -774,9 +771,6 @@ class wf::render_manager::impl
 
         output_damage->schedule_repaint();
     }
-
-    // Workspace stream for the current workspace, drawn on the output's buffer
-    workspace_stream_t default_stream;
 
     render_hook_t renderer;
     void set_renderer(render_hook_t rh)
@@ -850,8 +844,15 @@ class wf::render_manager::impl
             OpenGL::render_end();
         }
 
-        default_stream.ws = output->workspace->get_current_workspace();
-        workspace_stream_update(default_stream);
+        wf::region_t damage = output_damage->get_ws_damage(
+            output->workspace->get_current_workspace());
+        damage += wf::origin(output->get_layout_geometry());
+        auto target = postprocessing->get_target_framebuffer();
+        target.geometry = target.geometry +
+            wf::origin(output->get_layout_geometry());
+        const wf::color_t clear_color = background_color_opt;
+        scene::run_render_pass(output_damage->render_instances, target,
+            damage, clear_color, this->output);
     }
 
     wayfire_view get_first_view_recursive(wf::scene::node_ptr node)
@@ -1002,8 +1003,6 @@ class wf::render_manager::impl
         const auto& default_fb = postprocessing->get_target_framebuffer();
         depth_buffer_manager->ensure_depth_buffer(
             default_fb.fb, default_fb.viewport_width, default_fb.viewport_height);
-
-        default_stream.buffer.fb = current_fb;
     }
 
     /**
@@ -1166,205 +1165,52 @@ class wf::render_manager::impl
             }
         }
     }
-
-    /* Workspace stream implementation */
-    void workspace_stream_start(workspace_stream_t& stream)
-    {
-        stream.running = true;
-        stream.scale_x = stream.scale_y = 1;
-
-        /* damage the whole workspace region, so that we get a full repaint
-         * when updating the workspace */
-        output_damage->damage(output_damage->get_ws_box(stream.ws));
-        workspace_stream_update(stream, 1, 1);
-    }
-
-    /**
-     * Represents a surface together with its damage for the current frame
-     */
-    struct damaged_surface_t
-    {
-        wf::surface_interface_t *surface = nullptr;
-        wf::point_t pos;
-        wf::region_t damage;
-    };
-
-    using damaged_surface = std::unique_ptr<damaged_surface_t>;
-
-    /**
-     * Represents the state while calculating what parts of the output
-     * to repaint
-     */
-    struct workspace_stream_repaint_t
-    {
-        std::vector<damaged_surface> to_render;
-        wf::region_t ws_damage;
-        wf::render_target_t fb;
-    };
-
-    /**
-     * Calculate the damaged region of a simple wayfire_surface_t and
-     * push it in the repaint list if needed.
-     */
-    void schedule_surface(workspace_stream_repaint_t& repaint,
-        wf::surface_interface_t *surface, wf::point_t pos)
-    {
-        if (!surface->is_mapped())
-        {
-            return;
-        }
-
-        if (repaint.ws_damage.empty())
-        {
-            return;
-        }
-
-        auto ds = damaged_surface(new damaged_surface_t);
-        wlr_box obox = {
-            .x     = pos.x,
-            .y     = pos.y,
-            .width = surface->get_size().width,
-            .height = surface->get_size().height
-        };
-
-        ds->damage = repaint.ws_damage & obox;
-        if (!ds->damage.empty())
-        {
-            ds->pos     = pos;
-            ds->surface = surface;
-
-            /* Subtract opaque region from workspace damage. The views below
-             * won't be visible, so no need to damage them */
-            repaint.ws_damage ^= ds->surface->get_opaque_region(pos);
-            repaint.to_render.push_back(std::move(ds));
-        }
-    }
-
-    /**
-     * Setup the stream, calculate damaged region, etc.
-     */
-    workspace_stream_repaint_t calculate_repaint_for_stream(
-        workspace_stream_t& stream, float scale_x, float scale_y)
-    {
-        workspace_stream_repaint_t repaint;
-        repaint.ws_damage = output_damage->get_ws_damage(stream.ws);
-
-        /* we don't have to update anything */
-        if (repaint.ws_damage.empty())
-        {
-            return repaint;
-        }
-
-        if ((scale_x != stream.scale_x) || (scale_y != stream.scale_y))
-        {
-            /* FIXME: enable scaled rendering */
-        }
-
-        OpenGL::render_begin();
-        stream.buffer.allocate(output->handle->width, output->handle->height);
-        OpenGL::render_end();
-
-        repaint.fb = postprocessing->get_target_framebuffer();
-        if ((stream.buffer.tex != 0))
-        {
-            /* Use the workspace buffers */
-            repaint.fb.fb  = stream.buffer.fb;
-            repaint.fb.tex = stream.buffer.tex;
-        }
-
-        auto g   = output->get_relative_geometry();
-        auto cws = output->workspace->get_current_workspace();
-        repaint.fb.geometry.x = (stream.ws.x - cws.x) * g.width,
-        repaint.fb.geometry.y = (stream.ws.y - cws.y) * g.height;
-
-        return repaint;
-    }
-
-    void clear_empty_areas(workspace_stream_repaint_t& repaint, wf::color_t color)
-    {
-        OpenGL::render_begin(repaint.fb);
-        for (const auto& rect : repaint.ws_damage)
-        {
-            repaint.fb.logic_scissor(wlr_box_from_pixman_box(rect));
-            OpenGL::clear(color, GL_COLOR_BUFFER_BIT);
-        }
-
-        OpenGL::render_end();
-    }
-
-    void render_views(workspace_stream_repaint_t& repaint)
-    {
-        for (auto& ds : wf::reverse(repaint.to_render))
-        {
-            ds->surface->simple_render(repaint.fb,
-                ds->pos.x, ds->pos.y, ds->damage);
-
-            if (ds->surface->get_wlr_surface() != nullptr)
-            {
-                wlr_presentation_surface_sampled_on_output(
-                    wf::get_core_impl().protocols.presentation,
-                    ds->surface->get_wlr_surface(), output->handle);
-            }
-        }
-    }
-
-    void workspace_stream_update(workspace_stream_t& stream,
-        float scale_x = 1, float scale_y = 1)
-    {
-        workspace_stream_repaint_t repaint =
-            calculate_repaint_for_stream(stream, scale_x, scale_y);
-
-        if (repaint.ws_damage.empty())
-        {
-            return;
-        }
-
-        {
-            stream_signal_t data(stream.ws, repaint.ws_damage, repaint.fb);
-            output->render->emit_signal("workspace-stream-pre", &data);
-
-            repaint.ws_damage  += wf::origin(output->get_layout_geometry());
-            repaint.fb.geometry = repaint.fb.geometry + wf::origin(
-                output->get_layout_geometry());
-
-            scene::render_pass_begin_signal ev;
-            ev.damage = repaint.ws_damage;
-            ev.target = repaint.fb;
-            wf::get_core().emit(&ev);
-            repaint.ws_damage = ev.damage;
-        }
-        std::vector<wf::scene::render_instruction_t> instructions;
-        for (auto& inst : output_damage->render_instances)
-        {
-            inst->schedule_instructions(instructions, repaint.fb, repaint.ws_damage);
-        }
-
-        if (stream.background.a < 0)
-        {
-            clear_empty_areas(repaint, background_color_opt);
-        } else
-        {
-            clear_empty_areas(repaint, stream.background);
-        }
-
-        for (auto& instr : wf::reverse(instructions))
-        {
-            instr.instance->render(instr.target, instr.damage, output);
-        }
-
-        render_views(repaint);
-
-        {
-            stream_signal_t data(stream.ws, repaint.ws_damage, repaint.fb);
-            output->render->emit_signal("workspace-stream-post", &data);
-        }
-    }
-
-    void workspace_stream_stop(workspace_stream_t& stream)
-    {
-        stream.running = false;
-    }
 };
+
+void scene::run_render_pass(const std::vector<render_instance_uptr>& instances,
+    const wf::render_target_t& target, wf::region_t accumulated_damage,
+    const wf::color_t background_color, wf::output_t *output)
+{
+    // Gather instructions
+    std::vector<wf::scene::render_instruction_t> instructions;
+    for (auto& inst : instances)
+    {
+        inst->schedule_instructions(instructions, target, accumulated_damage);
+    }
+
+    // Clear visible background areas
+    OpenGL::render_begin(target);
+    for (const auto& rect : accumulated_damage)
+    {
+        target.logic_scissor(wlr_box_from_pixman_box(rect));
+        OpenGL::clear(background_color, GL_COLOR_BUFFER_BIT);
+    }
+
+    OpenGL::render_end();
+
+    // Render instances
+    for (auto& instr : wf::reverse(instructions))
+    {
+        instr.instance->render(instr.target, instr.damage, output);
+    }
+}
+
+void scene::run_render_pass_full(
+    const std::vector<render_instance_uptr>& instances,
+    const wf::render_target_t& target, wf::region_t accumulated_damage,
+    const wf::color_t background_color, wf::output_t *output)
+{
+    // Emit render_pass_begin
+    scene::render_pass_begin_signal ev{accumulated_damage, target};
+    wf::get_core().emit(&ev);
+
+    run_render_pass(instances, target, accumulated_damage,
+        background_color, output);
+
+    render_pass_end_signal end_ev;
+    end_ev.target = target;
+    wf::get_core().emit(&end_ev);
+}
 
 render_manager::render_manager(output_t *o) :
     pimpl(new impl(o))
@@ -1448,50 +1294,6 @@ wlr_box render_manager::get_ws_box(wf::point_t ws) const
 wf::render_target_t render_manager::get_target_framebuffer() const
 {
     return pimpl->postprocessing->get_target_framebuffer();
-}
-
-void render_manager::workspace_stream_start(workspace_stream_t& stream)
-{
-    pimpl->workspace_stream_start(stream);
-}
-
-void render_manager::workspace_stream_update(workspace_stream_t& stream,
-    float scale_x, float scale_y)
-{
-    pimpl->workspace_stream_update(stream);
-}
-
-void render_manager::workspace_stream_stop(workspace_stream_t& stream)
-{
-    pimpl->workspace_stream_stop(stream);
-}
-
-void scene::run_render_pass(const std::vector<render_instance_uptr>& instances,
-    const wf::render_target_t& target, wf::region_t accumulated_damage,
-    const wf::color_t background_color, wf::output_t *output)
-{
-    // Gather instructions
-    std::vector<wf::scene::render_instruction_t> instructions;
-    for (auto& inst : instances)
-    {
-        inst->schedule_instructions(instructions, target, accumulated_damage);
-    }
-
-    // Clear visible background areas
-    OpenGL::render_begin(target);
-    for (const auto& rect : accumulated_damage)
-    {
-        target.logic_scissor(wlr_box_from_pixman_box(rect));
-        OpenGL::clear(background_color, GL_COLOR_BUFFER_BIT);
-    }
-
-    OpenGL::render_end();
-
-    // Render instances
-    for (auto& instr : wf::reverse(instructions))
-    {
-        instr.instance->render(instr.target, instr.damage, output);
-    }
 }
 } // namespace wf
 

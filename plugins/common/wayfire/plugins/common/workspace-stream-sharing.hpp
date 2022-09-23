@@ -1,5 +1,6 @@
 #pragma once
 
+#include <memory>
 #include <wayfire/object.hpp>
 #include <wayfire/output.hpp>
 #include <wayfire/geometry.hpp>
@@ -65,7 +66,7 @@ class workspace_stream_pool_t : public wf::custom_data_t
      */
     wf::workspace_stream_t& get(wf::point_t workspace)
     {
-        return streams[workspace.x][workspace.y];
+        return *streams[workspace.x][workspace.y];
     }
 
     /**
@@ -76,13 +77,12 @@ class workspace_stream_pool_t : public wf::custom_data_t
     void update(wf::point_t workspace)
     {
         auto& stream = get(workspace);
-        if (stream.running)
+        if (!stream.current_output)
         {
-            output->render->workspace_stream_update(stream);
-        } else
-        {
-            output->render->workspace_stream_start(stream);
+            stream.start_for_workspace(output, stream.ws);
         }
+
+        stream.render_frame();
     }
 
     /**
@@ -91,10 +91,7 @@ class workspace_stream_pool_t : public wf::custom_data_t
     void stop(wf::point_t workspace)
     {
         auto& stream = get(workspace);
-        if (stream.running)
-        {
-            output->render->workspace_stream_stop(stream);
-        }
+        stream.stop();
     }
 
   private:
@@ -111,13 +108,9 @@ class workspace_stream_pool_t : public wf::custom_data_t
         {
             for (auto& stream : column)
             {
-                if (stream.running)
-                {
-                    output->render->workspace_stream_stop(stream);
-                }
-
+                stream->stop();
                 OpenGL::render_begin();
-                stream.buffer.release();
+                stream->buffer.release();
                 OpenGL::render_end();
             }
         }
@@ -130,7 +123,8 @@ class workspace_stream_pool_t : public wf::custom_data_t
             this->streams[i].resize(size.height);
             for (int j = 0; j < size.height; j++)
             {
-                this->streams[i][j].ws = {i, j};
+                this->streams[i][j]     = std::make_unique<workspace_stream_t>();
+                this->streams[i][j]->ws = {i, j};
             }
         }
     }
@@ -139,7 +133,7 @@ class workspace_stream_pool_t : public wf::custom_data_t
     uint32_t ref_count = 0;
 
     wf::output_t *output;
-    std::vector<std::vector<wf::workspace_stream_t>> streams;
+    std::vector<std::vector<std::unique_ptr<wf::workspace_stream_t>>> streams;
 
     wf::signal_connection_t on_workspace_grid_changed = [=] (auto)
     {

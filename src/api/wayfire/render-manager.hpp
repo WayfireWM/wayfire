@@ -8,7 +8,6 @@ namespace wf
 {
 struct framebuffer_t;
 struct render_target_t;
-struct workspace_stream_t;
 /** Render hooks can be used to override Wayfire's built-in rendering. The
  * plugin which sets the hook gains full control over what and how is drawn
  * to the screen. Workspace streams however are not affected.
@@ -179,33 +178,6 @@ class render_manager : public wf::signal_provider_t
      * effects happen.
      */
     wf::render_target_t get_target_framebuffer() const;
-
-    /**
-     * Initialize a workspace stream. If you need to change the stream's
-     * attributes, you should stop the stream, and start it again
-     *
-     * @param stream The stream to be initialized
-     */
-    void workspace_stream_start(workspace_stream_t& stream);
-
-    /**
-     * Update the workspace stream with the latest contents on the workspace.
-     * This function should be called inside the rendering cycle, i.e in a
-     * render or an overlay hook.
-     *
-     * @param stream The workspace stream to update
-     * @param scale_x Unused for now
-     * @param scale_y Unused for now
-     */
-    void workspace_stream_update(workspace_stream_t& stream,
-        float scale_x = 1, float scale_y = 1);
-    /**
-     * Stop the workspace stream. You can change the stream's workspace
-     * after this call (but before the next stream start).
-     *
-     * @param stream The stream to be stopped
-     */
-    void workspace_stream_stop(workspace_stream_t& stream);
 
   private:
     class impl;

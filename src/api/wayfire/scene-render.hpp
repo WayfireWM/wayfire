@@ -3,6 +3,7 @@
 #include "wayfire/nonstd/observer_ptr.h"
 #include <memory>
 #include <vector>
+#include <wayfire/config/types.hpp>
 #include <wayfire/region.hpp>
 #include <wayfire/geometry.hpp>
 #include <wayfire/opengl.hpp>
@@ -104,15 +105,28 @@ struct node_damage_signal
  */
 struct render_pass_begin_signal
 {
+    render_pass_begin_signal(wf::region_t& damage, wf::render_target_t target) :
+        damage(damage), target(target)
+    {}
+
     /**
      * The initial damage for this render pass.
      * Plugins may expand it further.
      */
-    wf::region_t damage;
+    wf::region_t& damage;
 
     /**
      * The target buffer for rendering.
      */
+    wf::render_target_t target;
+};
+
+/**
+ * Signal that is emitted once a render pass ends.
+ * emitted on: core.
+ */
+struct render_pass_end_signal
+{
     wf::render_target_t target;
 };
 
@@ -128,5 +142,15 @@ struct render_pass_begin_signal
 void run_render_pass(const std::vector<render_instance_uptr>& instances,
     const render_target_t& target, region_t accumulated_damage,
     const color_t background_color, output_t *output);
+
+/**
+ * A helper function to execute a render pass.
+ *
+ * It executes the same steps as run_render_pass, but also emits the
+ * render-pass-begin/render-pass-end signals.
+ */
+void run_render_pass_full(const std::vector<render_instance_uptr>& instances,
+    const wf::render_target_t& target, wf::region_t accumulated_damage,
+    const wf::color_t background_color, wf::output_t *output);
 }
 }
