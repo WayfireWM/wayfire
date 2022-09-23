@@ -724,47 +724,6 @@ void wf::view_interface_t::fullscreen_request(wf::output_t *out, bool state,
     }
 }
 
-bool wf::view_interface_t::is_visible()
-{
-    if (view_impl->visibility_counter <= 0)
-    {
-        return false;
-    }
-
-    if (is_mapped())
-    {
-        return true;
-    }
-
-    /* If we have an unmapped view, then there are two cases:
-     *
-     * 1. View has been "destroyed". In this case, the view is visible as long
-     * as it has at least one reference (for ex. a plugin which shows unmap
-     * animation)
-     *
-     * 2. View hasn't been "destroyed", just unmapped. Here we need to have at
-     * least 2 references, which would mean that the view is in unmap animation.
-     */
-    if (view_impl->is_alive)
-    {
-        return view_impl->ref_cnt >= 2;
-    } else
-    {
-        return view_impl->ref_cnt >= 1;
-    }
-}
-
-void wf::view_interface_t::set_visible(bool visible)
-{
-    this->view_impl->visibility_counter += (visible ? 1 : -1);
-    if (this->view_impl->visibility_counter > 1)
-    {
-        LOGE("set_visible(true) called more often than set_visible(false)!");
-    }
-
-    this->damage();
-}
-
 void wf::view_interface_t::damage()
 {
     auto bbox = get_untransformed_bounding_box();

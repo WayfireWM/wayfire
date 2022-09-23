@@ -1,5 +1,6 @@
 #pragma once
 
+#include "wayfire/scene.hpp"
 #include <wayfire/signal-definitions.hpp>
 #include <wayfire/plugins/common/geometry-animation.hpp>
 #include <wayfire/plugins/common/workspace-wall.hpp>
@@ -114,7 +115,7 @@ class workspace_switch_t
         /* Reset old view */
         if (this->overlay_view)
         {
-            overlay_view->set_visible(true);
+            wf::scene::set_node_enabled(overlay_view->get_main_node(), true);
             overlay_view->pop_transformer(vswitch_view_transformer_name);
         }
 
@@ -124,7 +125,7 @@ class workspace_switch_t
         {
             view->add_transformer(std::make_unique<wf::view_2D>(view),
                 vswitch_view_transformer_name);
-            view->set_visible(false); // view is rendered as overlay
+            wf::scene::set_node_enabled(view->get_main_node(), false);
         }
     }
 

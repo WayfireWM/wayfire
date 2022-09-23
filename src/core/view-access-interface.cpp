@@ -69,9 +69,6 @@ variant_t view_access_interface_t::get(const std::string & identifier, bool & er
     } else if (identifier == "minimized")
     {
         out = _view->minimized;
-    } else if (identifier == "visible")
-    {
-        out = _view->is_visible();
     } else if (identifier == "focusable")
     {
         out = _view->is_focuseable();

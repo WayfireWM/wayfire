@@ -1,5 +1,6 @@
 #pragma once
 
+#include "wayfire/scene.hpp"
 #include <wayfire/nonstd/reverse.hpp>
 #include <wayfire/plugins/wobbly/wobbly-signal.hpp>
 #include <wayfire/object.hpp>
@@ -427,7 +428,7 @@ class core_drag_t : public signal_provider_t
             v->add_transformer(std::move(tr), move_drag_transformer);
 
             // Hide the view, we will render it as an overlay
-            v->set_visible(false);
+            wf::scene::set_node_enabled(v->get_main_node(), false);
             v->damage();
 
             // Make sure that wobbly has the correct geometry from the start!
@@ -544,7 +545,7 @@ class core_drag_t : public signal_provider_t
             auto rel_pos = v.transformer->relative_grab;
 
             // Restore view to where it was before
-            v.view->set_visible(true);
+            wf::scene::set_node_enabled(v.view->get_main_node(), true);
             v.view->pop_transformer(move_drag_transformer);
 
             // Reset wobbly and leave it in output-LOCAL coordinates

@@ -643,7 +643,7 @@ class wayfire_expo : public wf::plugin_interface_t
         /* TODO: adjust to delimiter offset */
         for (auto& view : output->workspace->get_views_in_layer(wf::WM_LAYERS))
         {
-            if (!view->is_mapped() || !view->is_visible())
+            if (!view->is_mapped())
             {
                 continue;
             }

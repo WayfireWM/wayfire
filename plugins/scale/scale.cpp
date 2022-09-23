@@ -21,6 +21,7 @@
 #include <linux/input-event-codes.h>
 
 #include "scale-title-overlay.hpp"
+#include "wayfire/scene.hpp"
 
 using namespace wf::animation;
 
@@ -237,7 +238,7 @@ class wayfire_scale : public wf::plugin_interface_t
 
             if (e.second.visibility == view_scale_data::view_visibility_t::HIDDEN)
             {
-                e.first->set_visible(true);
+                wf::scene::set_node_enabled(e.first->get_main_node(), true);
             }
 
             e.second.visibility = view_scale_data::view_visibility_t::VISIBLE;
@@ -748,7 +749,7 @@ class wayfire_scale : public wf::plugin_interface_t
                 {
                     view_data.visibility =
                         view_scale_data::view_visibility_t::HIDDEN;
-                    view->set_visible(false);
+                    wf::scene::set_node_enabled(view->get_main_node(), false);
                 }
             }
 
@@ -1024,7 +1025,7 @@ class wayfire_scale : public wf::plugin_interface_t
                     if (child_data.visibility ==
                         view_scale_data::view_visibility_t::HIDDEN)
                     {
-                        child->set_visible(true);
+                        wf::scene::set_node_enabled(child->get_main_node(), true);
                     }
 
                     child_data.visibility =
@@ -1416,7 +1417,7 @@ class wayfire_scale : public wf::plugin_interface_t
             setup_view_transform(e.second, 1, 1, 0, 0, 1);
             if (e.second.visibility == view_scale_data::view_visibility_t::HIDDEN)
             {
-                e.first->set_visible(true);
+                wf::scene::set_node_enabled(e.first->get_main_node(), true);
             }
 
             e.second.visibility = view_scale_data::view_visibility_t::VISIBLE;
