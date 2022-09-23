@@ -170,12 +170,6 @@ class workspace_manager
     /**
      * Get a list of reordered fullscreen views as explained in
      * get_views_in_layer().
-     */
-    std::vector<wayfire_view> get_promoted_views();
-
-    /**
-     * Get a list of reordered fullscreen views as explained in
-     * get_views_in_layer().
      *
      * This returns only the view on the given workspace.
      */

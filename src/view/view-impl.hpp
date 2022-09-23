@@ -78,12 +78,7 @@ class view_interface_t::view_priv_impl
     } offscreen_buffer;
 
     wlr_box minimize_hint = {0, 0, 0, 0};
-
-    /* Promoted to the fullscreen layer? For workspace-manager. */
-    bool is_promoted = false;
-
     scene::floating_inner_ptr scene_node;
-    scene::node_ptr promoted_copy_node;
     std::shared_ptr<scene::view_node_t> main_node;
 
   private:
