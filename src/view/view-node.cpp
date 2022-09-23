@@ -126,15 +126,14 @@ class view_render_instance_t : public render_instance_t
         wf::region_t our_damage = damage & view->get_bounding_box();
         if (!our_damage.empty())
         {
+            instructions.push_back(render_instruction_t{
+                        .instance = this,
+                        .target   = our_target,
+                        .damage   = std::move(our_damage),
+                    });
+
             if (view->has_transformer())
             {
-                // We render the view in one pass
-                instructions.push_back(render_instruction_t{
-                            .instance = this,
-                            .target   = our_target,
-                            .damage   = std::move(our_damage),
-                        });
-
                 damage ^= view->get_transformed_opaque_region();
             } else
             {
