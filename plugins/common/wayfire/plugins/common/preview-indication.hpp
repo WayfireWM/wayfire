@@ -4,6 +4,7 @@
 #include <wayfire/compositor-view.hpp>
 
 #include "geometry-animation.hpp"
+#include "wayfire/view.hpp"
 #include <wayfire/option-wrapper.hpp>
 #include <wayfire/util/duration.hpp>
 
@@ -54,15 +55,17 @@ class preview_indication_view_t : public wf::color_rect_view_t
         pre_paint = [=] () { update_animation(); };
         get_output()->render->add_effect(&pre_paint, wf::OUTPUT_EFFECT_PRE);
 
-        set_color(base_color);
-        set_border_color(base_border);
-        set_border(base_border_w);
-
         this->role = VIEW_ROLE_DESKTOP_ENVIRONMENT;
     }
 
     void initialize() override
     {
+        view_interface_t::initialize();
+
+        set_color(base_color);
+        set_border_color(base_border);
+        set_border(base_border_w);
+
         get_output()->workspace->add_view(self(), wf::LAYER_TOP);
     }
 
