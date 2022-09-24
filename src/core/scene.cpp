@@ -50,7 +50,7 @@ std::optional<input_node_t> node_t::find_node_at(const wf::pointf_t& at)
     auto local = this->to_local(at);
     for (auto& node : get_children())
     {
-        if (node->is_disabled())
+        if (!node->is_enabled())
         {
             continue;
         }
@@ -240,7 +240,7 @@ void node_t::gen_render_instances(std::vector<render_instance_uptr> & instances,
     // Add children as a flat list to avoid multiple indirections
     for (auto& ch : this->children)
     {
-        if (!ch->is_disabled())
+        if (ch->is_enabled())
         {
             ch->gen_render_instances(instances, push_damage);
         }
@@ -328,7 +328,7 @@ class output_render_instance_t : public default_render_instance_t
         // time between global and output-local geometry.
         for (auto& child : self->get_children())
         {
-            if (!child->is_disabled())
+            if (child->is_enabled())
             {
                 child->gen_render_instances(children,
                     transform_damage(callback));
@@ -426,9 +426,9 @@ std::string root_node_t::stringify() const
 // ---------------------- generic scenegraph functions -------------------------
 void set_node_enabled(wf::scene::node_ptr node, bool enabled)
 {
-    bool was_disabled = node->is_disabled();
+    bool was_enabled = node->is_enabled();
     node->set_enabled(enabled);
-    if (was_disabled != node->is_disabled())
+    if (was_enabled != node->is_enabled())
     {
         update(node, update_flag::ENABLED);
     }

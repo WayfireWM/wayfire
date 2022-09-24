@@ -235,9 +235,9 @@ class node_t : public std::enable_shared_from_this<node_t>,
     /**
      * A helper function to get the status of the DISABLED flag.
      */
-    inline bool is_disabled() const
+    inline bool is_enabled() const
     {
-        return flags() & (int)node_flags::DISABLED;
+        return !(flags() & (int)node_flags::DISABLED);
     }
 
     /**

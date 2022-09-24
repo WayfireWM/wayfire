@@ -137,7 +137,7 @@ class output_layer_manager_t
     void push_views_from_scenegraph(wf::scene::node_ptr root,
         std::vector<wayfire_view>& result)
     {
-        if (root->is_disabled())
+        if (!root->is_enabled())
         {
             return;
         }
@@ -179,7 +179,7 @@ class output_layer_manager_t
             // nodes. However, we expect to immediately visit a view node.
             // Otherwise, we stop the recursion to avoid finding any unwanted (e.g.
             // really disabled) nodes.
-            push_minimized_views_from_scenegraph(ch, result, root->is_disabled());
+            push_minimized_views_from_scenegraph(ch, result, !root->is_enabled());
         }
     }
 

@@ -1106,7 +1106,7 @@ class wf::render_manager::impl
         std::optional<wf::geometry_t> limit,
         const timespec& repaint_ended)
     {
-        if (root->is_disabled())
+        if (!root->is_enabled())
         {
             return;
         }

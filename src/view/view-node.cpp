@@ -90,7 +90,7 @@ class view_render_instance_t : public render_instance_t
 
         for (auto& ch : view->get_main_node()->get_children())
         {
-            if (!ch->is_disabled())
+            if (ch->is_enabled())
             {
                 ch->gen_render_instances(children, push_damage_child);
             }

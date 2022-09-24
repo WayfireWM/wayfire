@@ -27,7 +27,7 @@ void workspace_stream_t::update_instances()
         auto layer_root = current_output->node_for_layer((scene::layer)layer);
         for (auto& ch : layer_root->get_children())
         {
-            if (!ch->is_disabled())
+            if (ch->is_enabled())
             {
                 ch->gen_render_instances(this->instances, acc_damage);
             }

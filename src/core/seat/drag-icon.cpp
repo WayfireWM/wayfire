@@ -45,7 +45,7 @@ class dnd_icon_root_render_instance_t : public render_instance_t
 
         for (auto& ch : self->get_children())
         {
-            if (!ch->is_disabled())
+            if (ch->is_enabled())
             {
                 ch->gen_render_instances(children, transformed_push_damage);
             }
