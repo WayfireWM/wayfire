@@ -50,10 +50,14 @@ void workspace_stream_t::start_for_workspace(wf::output_t *output,
 
     this->regen_instances = [=] (scene::root_node_update_signal *data)
     {
-        update_instances();
+        if ((data->flags & scene::update_flag::ENABLED) ||
+            (data->flags & scene::update_flag::CHILDREN_LIST))
+        {
+            update_instances();
+        }
     };
 
-    wf::get_core().connect(&regen_instances);
+    wf::get_core().scene()->connect(&regen_instances);
     this->update_instances();
 }
 
