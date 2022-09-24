@@ -384,6 +384,36 @@ class wayfire_expo : public wf::plugin_interface_t
         }
     }
 
+    void start_moving(wayfire_view view, wf::point_t grab)
+    {
+        auto workspace_impl =
+            output->workspace->get_workspace_implementation();
+        if (!workspace_impl->view_movable(view))
+        {
+            return;
+        }
+
+        auto ws_coords = input_coordinates_to_output_local_coordinates(grab);
+        auto bbox = view->get_bounding_box("wobbly");
+
+        view->damage();
+        // Make sure that the view is in output-local coordinates!
+        translate_wobbly(view, grab - ws_coords);
+
+        auto [vw, vh] = output->workspace->get_workspace_grid_size();
+        wf::move_drag::drag_options_t opts;
+        opts.initial_scale   = std::max(vw, vh);
+        opts.enable_snap_off = move_enable_snap_off &&
+            (view->fullscreen || view->tiled_edges);
+        opts.snap_off_threshold = move_snap_off_threshold;
+        opts.join_views = move_join_views;
+
+        auto output_offset = wf::origin(output->get_layout_geometry());
+        drag_helper->start_drag(view, grab + output_offset,
+            wf::move_drag::find_relative_grab(bbox, ws_coords), opts);
+        move_started_ws = target_ws;
+    }
+
     const wf::point_t offscreen_point = {-10, -10};
     void handle_input_move(wf::point_t to)
     {
@@ -405,43 +435,20 @@ class wayfire_expo : public wf::plugin_interface_t
         }
 
         bool first_click = (input_grab_origin != offscreen_point);
-        /* As input coordinates are always positive, this will ensure that any
-         * subsequent motion events while grabbed are allowed */
-        input_grab_origin = offscreen_point;
-
         if (!zoom_animation.running() && first_click)
         {
-            auto view = find_view_at_coordinates(to.x, to.y);
+            auto view = find_view_at_coordinates(input_grab_origin.x,
+                input_grab_origin.y);
             if (view)
             {
-                auto workspace_impl =
-                    output->workspace->get_workspace_implementation();
-                if (!workspace_impl->view_movable(view))
-                {
-                    return;
-                }
-
-                auto ws_coords = input_coordinates_to_output_local_coordinates(to);
-                auto bbox = view->get_bounding_box("wobbly");
-
-                view->damage();
-                // Make sure that the view is in output-local coordinates!
-                translate_wobbly(view, to - ws_coords);
-
-                auto [vw, vh] = output->workspace->get_workspace_grid_size();
-                wf::move_drag::drag_options_t opts;
-                opts.initial_scale   = std::max(vw, vh);
-                opts.enable_snap_off = move_enable_snap_off &&
-                    (view->fullscreen || view->tiled_edges);
-                opts.snap_off_threshold = move_snap_off_threshold;
-                opts.join_views = move_join_views;
-
-                drag_helper->start_drag(view, to + output_offset,
-                    wf::move_drag::find_relative_grab(bbox, ws_coords), opts);
-                move_started_ws = target_ws;
+                start_moving(view, input_grab_origin);
+                drag_helper->handle_motion(to + output_offset);
             }
         }
 
+        /* As input coordinates are always positive, this will ensure that any
+         * subsequent motion events while grabbed are allowed */
+        input_grab_origin = offscreen_point;
         update_target_workspace(to.x, to.y);
     }
 
@@ -634,7 +641,6 @@ class wayfire_expo : public wf::plugin_interface_t
     {
         auto local = input_coordinates_to_output_local_coordinates({gx, gy});
         /* TODO: adjust to delimiter offset */
-
         for (auto& view : output->workspace->get_views_in_layer(wf::WM_LAYERS))
         {
             if (!view->is_mapped() || !view->is_visible())
