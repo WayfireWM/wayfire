@@ -1228,6 +1228,8 @@ void wf::view_interface_t::initialize()
     view_impl->main_node  = std::make_shared<scene::view_node_t>(this);
 
     // Set up the surface content relationship
+
+    wf::scene::remove_child(priv->content_node);
     view_impl->main_node->set_children_list({priv->content_node});
     priv->root_node = view_impl->main_node;
 
