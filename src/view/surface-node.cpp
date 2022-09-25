@@ -107,9 +107,19 @@ class surface_render_instance_t : public render_instance_t
     }
 
     void render(const wf::render_target_t& target,
-        const wf::region_t& region, wf::output_t *output) override
+        const wf::region_t& region) override
     {
         surface->simple_render(target, 0, 0, region);
+    }
+
+    void presentation_feedback(wf::output_t *output) override
+    {
+        if (surface->get_wlr_surface() != nullptr)
+        {
+            wlr_presentation_surface_sampled_on_output(
+                wf::get_core_impl().protocols.presentation,
+                surface->get_wlr_surface(), output->handle);
+        }
     }
 };
 

@@ -81,11 +81,17 @@ class render_instance_t
      *   @schedule_instructions.
      * @param region The region to repaint, as calculated in
      *   @schedule_instructions.
-     * @param output The output the node is being rendered on. This is just a
-     *   hint and may be NULL.
      */
     virtual void render(const wf::render_target_t& target,
-        const wf::region_t& region, wf::output_t *output) = 0;
+        const wf::region_t& region) = 0;
+
+    /**
+     * Notify the render instance that it has been presented on an output.
+     * Note that a render instance may get multiple presentation_feedback calls
+     * for the same rendered frame.
+     */
+    virtual void presentation_feedback(wf::output_t *output)
+    {}
 };
 
 using render_instance_uptr = std::unique_ptr<render_instance_t>;

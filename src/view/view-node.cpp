@@ -126,14 +126,14 @@ class view_render_instance_t : public render_instance_t
         wf::region_t our_damage = damage & view->get_bounding_box();
         if (!our_damage.empty())
         {
-            instructions.push_back(render_instruction_t{
-                        .instance = this,
-                        .target   = our_target,
-                        .damage   = std::move(our_damage),
-                    });
-
             if (view->has_transformer())
             {
+                instructions.push_back(render_instruction_t{
+                            .instance = this,
+                            .target   = our_target,
+                            .damage   = std::move(our_damage),
+                        });
+
                 damage ^= view->get_transformed_opaque_region();
             } else
             {
@@ -153,28 +153,16 @@ class view_render_instance_t : public render_instance_t
     }
 
     void render(const wf::render_target_t& target,
-        const wf::region_t& region, wf::output_t *output) override
+        const wf::region_t& region) override
     {
-        // If the view has a transformer, we have to render it in one pass here.
-        // Otherwise, we schedule the individual surfaces to be rendered directly
-        // onto the output buffer. In those cases, we just need to send the
-        // feedback below.
-        if (view->has_transformer())
-        {
-            view->render_transformed(target, region);
-        }
+        view->render_transformed(target, region);
+    }
 
-        if (output && view->is_mapped())
+    void presentation_feedback(wf::output_t *output) override
+    {
+        for (auto& ch : this->children)
         {
-            for (auto& surface : view->enumerate_surfaces())
-            {
-                if (surface.surface->get_wlr_surface() != nullptr)
-                {
-                    wlr_presentation_surface_sampled_on_output(
-                        wf::get_core_impl().protocols.presentation,
-                        surface.surface->get_wlr_surface(), output->handle);
-                }
-            }
+            ch->presentation_feedback(output);
         }
     }
 };

@@ -59,6 +59,14 @@ class blur_render_instance_t : public render_instance_t
         return wf::texture_t{inner_content.tex};
     }
 
+    void presentation_feedback(wf::output_t *output) override
+    {
+        for (auto& ch : view_instance)
+        {
+            ch->presentation_feedback(output);
+        }
+    }
+
   public:
     blur_render_instance_t(node_t *self, blur_algorithm_provider provider,
         damage_callback push_damage)
@@ -153,7 +161,7 @@ class blur_render_instance_t : public render_instance_t
     }
 
     void render(const wf::render_target_t& target,
-        const wf::region_t& damage, wf::output_t *output) override
+        const wf::region_t& damage) override
     {
         auto tex = get_texture(target.scale);
         auto bounding_box = self->get_bounding_box();

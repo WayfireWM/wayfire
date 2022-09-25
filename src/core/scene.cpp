@@ -225,7 +225,7 @@ class default_render_instance_t : public render_instance_t
     }
 
     void render(const wf::render_target_t& target,
-        const wf::region_t& region, wf::output_t *output) override
+        const wf::region_t& region) override
     {
         wf::dassert(false, "Rendering an inner node?");
     }
