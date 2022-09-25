@@ -1154,14 +1154,14 @@ class wf::render_manager::impl
         {
             if (renderer)
             {
+                send_frame_done_recursive(output->node_for_layer(
+                    (wf::scene::layer)i), {}, repaint_ended);
+            } else
+            {
                 auto limit = output->render->get_ws_box(
                     output->workspace->get_current_workspace());
                 send_frame_done_recursive(output->node_for_layer(
                     (wf::scene::layer)i), limit, repaint_ended);
-            } else
-            {
-                send_frame_done_recursive(output->node_for_layer(
-                    (wf::scene::layer)i), {}, repaint_ended);
             }
         }
     }
