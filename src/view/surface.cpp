@@ -237,6 +237,8 @@ void wf::surface_interface_t::clear_subsurfaces()
             this->emit_signal("subsurface-removed", &ev);
         }
 
+        this->priv->root_node->set_children_list({this->get_content_node()});
+        scene::update(priv->root_node, scene::update_flag::CHILDREN_LIST);
         container.clear();
     };
 
