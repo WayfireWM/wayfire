@@ -2,8 +2,12 @@
 #include <wayfire/debug.hpp>
 #include <sstream>
 #include <iomanip>
-#include <execinfo.h>
-#include <cxxabi.h>
+
+#if __has_include(<execinfo.h>)
+    #include <execinfo.h>
+    #include <cxxabi.h>
+#endif
+
 #include <cstdio>
 #include <dlfcn.h>
 #include <sys/stat.h>
@@ -11,6 +15,7 @@
 #define MAX_FRAMES 256
 #define MAX_FUNCTION_NAME 1024
 
+#if __has_include(<execinfo.h>)
 struct demangling_result
 {
     std::string executable;
@@ -253,6 +258,15 @@ void wf::print_trace(bool fast_mode)
 
     free(symbollist);
 }
+
+#else // has <execinfo.h>
+void wf::print_trace(bool)
+{
+    LOGE("Compiled without execinfo.h, cannot provide a backtrace!",
+        " Try using address sanitizer.");
+}
+
+#endif
 
 /* ------------------- Impl of debugging functions ---------------------------*/
 #include <iomanip>
