@@ -272,9 +272,28 @@ class wayfire_wm_actions_t : public wf::plugin_interface_t
         return true;
     };
 
+    void do_send_to_back(wayfire_view view)
+    {
+        auto view_root = view->get_scene_node();
+
+        if (auto parent =
+                dynamic_cast<wf::scene::floating_inner_node_t*>(view_root->parent()))
+        {
+            auto parent_children = parent->get_children();
+            parent_children.erase(
+                std::remove(parent_children.begin(), parent_children.end(),
+                    view_root),
+                parent_children.end());
+            parent_children.push_back(view_root);
+            parent->set_children_list(parent_children);
+            wf::scene::update(parent->shared_from_this(),
+                wf::scene::update_flag::CHILDREN_LIST);
+        }
+    }
+
     wf::activator_callback on_send_to_back = [=] (auto ev) -> bool
     {
-        return execute_for_selected_view(ev.source, [] (wayfire_view view)
+        return execute_for_selected_view(ev.source, [this] (wayfire_view view)
         {
             auto ws    = view->get_output()->workspace->get_current_workspace();
             auto views =
@@ -283,13 +302,7 @@ class wayfire_wm_actions_t : public wf::plugin_interface_t
             wayfire_view bottom_view = views[views.size() - 1];
             if (view != bottom_view)
             {
-                // Move view to bottom by stacking it below the bottom-most view
-                // FIXME: restack_below was removed in favor of a scenegraph which
-                // manages this.
-                // Once the scenegraph contains the required functionality,
-                // we need to adapt send_to_back.
-                // view->get_output()->workspace->restack_below(view, bottom_view);
-
+                do_send_to_back(view);
                 // Change focus to the last focused view on this workspace
                 views =
                     view->get_output()->workspace->get_views_on_workspace(ws,
