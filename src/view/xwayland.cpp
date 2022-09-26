@@ -1037,7 +1037,6 @@ void wayfire_xwayland_view_base::recreate_view()
 
       case xwayland_view_type_t::UNMANAGED:
         new_view = new wayfire_unmanaged_xwayland_view(xw_surf);
-        wf::get_core().add_view(std::unique_ptr<view_interface_t>(new_view));
         break;
 
       case xwayland_view_type_t::NORMAL:
