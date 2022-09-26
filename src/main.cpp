@@ -4,6 +4,7 @@
 #include <getopt.h>
 #include <signal.h>
 #include <map>
+#include <fcntl.h>
 
 #include <unistd.h>
 #include <wayfire/debug.hpp>
@@ -302,10 +303,20 @@ int main(int argc, char *argv[])
     int drm_fd = wlr_backend_get_drm_fd(core.backend);
     if (drm_fd < 0)
     {
-        LOGE("Failed to get DRM file descriptor!");
-        wl_display_destroy_clients(core.display);
-        wl_display_destroy(core.display);
-        return EXIT_FAILURE;
+        char *drm_device = getenv("WLR_RENDER_DRM_DEVICE");
+        if (drm_device)
+        {
+            drm_fd = open(drm_device, O_RDWR | O_CLOEXEC);
+        }
+
+        if (drm_fd < 0)
+        {
+            LOGE("Failed to get DRM file descriptor,",
+                " try specifying a valid WLR_RENDER_DRM_DEVICE!");
+            wl_display_destroy_clients(core.display);
+            wl_display_destroy(core.display);
+            return EXIT_FAILURE;
+        }
     }
 
     core.renderer  = wlr_gles2_renderer_create_with_drm_fd(drm_fd);
