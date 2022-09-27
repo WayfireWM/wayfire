@@ -12,6 +12,7 @@
 #include <wayfire/util/duration.hpp>
 #include <wayfire/util/log.hpp>
 #include <cmath>
+#include <wayfire/nonstd/wlroots-full.hpp>
 
 
 namespace wf
@@ -331,6 +332,14 @@ class output_data_t : public custom_data_t
         auto fb = output->render->get_target_framebuffer();
         fb.geometry = output->get_layout_geometry();
 
+        // FIXME: this is not accurate, but it kinda works ..
+        // It should be fixed once the dragged view is an actual node, then the
+        // output will be responsible for sending it frame events.
+        timespec repaint_ended;
+        clockid_t presentation_clock =
+            wlr_backend_get_presentation_clock(wf::get_core().backend);
+        clock_gettime(presentation_clock, &repaint_ended);
+
         for (auto& view : wf::reverse(views))
         {
             // Convert damage from output-local coordinates (last_bbox) to
@@ -341,6 +350,10 @@ class output_data_t : public custom_data_t
             // Render the full view, always
             // Not very efficient
             view.view->render_transformed(fb, std::move(damage));
+            for (auto& surf : view.view->enumerate_surfaces())
+            {
+                surf.surface->send_frame_done(repaint_ended);
+            }
         }
     };
 };
