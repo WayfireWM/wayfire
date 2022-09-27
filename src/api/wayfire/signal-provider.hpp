@@ -45,14 +45,6 @@ class connection_base_t
     std::unordered_set<provider_t*> connected_to;
 };
 
-namespace detail
-{
-template<class Type, class U = void>
-struct has_c_name : public std::false_type {};
-template<class Type>
-struct has_c_name<Type, decltype(Type::c_name)> : public std::true_type {};
-}
-
 /**
  * A connection to a signal on an object.
  * Uses RAII to automatically disconnect the signal when it goes out of scope.
@@ -143,11 +135,6 @@ class provider_t
         callback->connected_to.insert(this);
     }
 
-    void connect(c_api_callback *cb)
-    {
-        untyped_connections.push_back(cb);
-    }
-
     /** Unregister a connection. */
     void disconnect(connection_base_t *callback)
     {
@@ -156,11 +143,6 @@ class provider_t
         {
             connected.remove_all(callback);
         }
-    }
-
-    void disconnect(c_api_callback *cb)
-    {
-        untyped_connections.remove_all(cb);
     }
 
     /** Emit the given signal. */
@@ -174,16 +156,6 @@ class provider_t
             assert(real_type);
             real_type->emit(data);
         });
-
-        // If the signal provides C-style signal name, then emit it to C-API
-        // users as well.
-        if constexpr (detail::has_c_name<SignalType>::value)
-        {
-            untyped_connections.for_each([&] (c_api_callback *cb)
-            {
-                (*cb)(this, SignalType::c_name, data);
-            });
-        }
     }
 
     provider_t()
@@ -215,7 +187,6 @@ class provider_t
         return std::type_index(typeid(SignalType));
     }
 
-    wf::safe_list_t<c_api_callback*> untyped_connections;
     std::unordered_map<std::type_index, wf::safe_list_t<connection_base_t*>>
     typed_connections;
 };
