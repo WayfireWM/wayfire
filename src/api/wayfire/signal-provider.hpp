@@ -81,6 +81,14 @@ class connection_t final : public connection_base_t
         set_callback(callback);
     }
 
+    /** Initialize a signal connection with the given callback */
+    template<class T, class U = convertible_to_callback_t<T>>
+    connection_t& operator =(const T& callback)
+    {
+        set_callback(callback);
+        return *this;
+    }
+
     template<class T>
     connection_t(std::function<void(T*)>& callback) : connection_t()
     {
