@@ -154,8 +154,13 @@ void run_render_pass(const std::vector<render_instance_uptr>& instances,
  *
  * It executes the same steps as run_render_pass, but also emits the
  * render-pass-begin/render-pass-end signals.
+ *
+ * @return The full damage which was rendered on the screen. It may be more (or
+ *  less) than @accumulated_damage because plugins are allowed to modify the
+ *  damage in render-pass-begin.
  */
-void run_render_pass_full(const std::vector<render_instance_uptr>& instances,
+wf::region_t run_render_pass_full(
+    const std::vector<render_instance_uptr>& instances,
     const wf::render_target_t& target, wf::region_t accumulated_damage,
     const wf::color_t background_color, wf::output_t *output);
 }

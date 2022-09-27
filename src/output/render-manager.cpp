@@ -851,8 +851,12 @@ class wf::render_manager::impl
         target.geometry = target.geometry +
             wf::origin(output->get_layout_geometry());
         const wf::color_t clear_color = background_color_opt;
-        scene::run_render_pass(output_damage->render_instances, target,
-            damage, clear_color, this->output);
+
+        this->swap_damage =
+            scene::run_render_pass_full(output_damage->render_instances, target,
+                damage, clear_color, this->output);
+        swap_damage  = swap_damage * output->handle->scale;
+        swap_damage &= output_damage->get_wlr_damage_box();
     }
 
     wayfire_view get_first_view_recursive(wf::scene::node_ptr node)
@@ -986,9 +990,6 @@ class wf::render_manager::impl
             swap_damage |= output_damage->get_wlr_damage_box();
         } else
         {
-            swap_damage =
-                output_damage->get_scheduled_damage() * output->handle->scale;
-            swap_damage &= output_damage->get_wlr_damage_box();
             default_renderer();
         }
     }
@@ -1199,7 +1200,7 @@ void scene::run_render_pass(const std::vector<render_instance_uptr>& instances,
     }
 }
 
-void scene::run_render_pass_full(
+wf::region_t scene::run_render_pass_full(
     const std::vector<render_instance_uptr>& instances,
     const wf::render_target_t& target, wf::region_t accumulated_damage,
     const wf::color_t background_color, wf::output_t *output)
@@ -1208,12 +1209,15 @@ void scene::run_render_pass_full(
     scene::render_pass_begin_signal ev{accumulated_damage, target};
     wf::get_core().emit(&ev);
 
+    wf::region_t swap_damage = accumulated_damage;
     run_render_pass(instances, target, accumulated_damage,
         background_color, output);
 
     render_pass_end_signal end_ev;
     end_ev.target = target;
     wf::get_core().emit(&end_ev);
+
+    return swap_damage;
 }
 
 render_manager::render_manager(output_t *o) :
