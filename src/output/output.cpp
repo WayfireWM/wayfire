@@ -157,6 +157,12 @@ wf::output_impl_t::~output_impl_t()
     // Release plugins before bindings
     this->plugin.reset();
     this->bindings.reset();
+
+    for (auto& layer_root : nodes)
+    {
+        layer_root->set_children_list({});
+        scene::remove_child(layer_root);
+    }
 }
 
 void wf::output_impl_t::set_effective_size(const wf::dimensions_t& size)
@@ -187,9 +193,8 @@ wf::geometry_t wf::output_t::get_layout_geometry() const
         return *box;
     } else
     {
-        LOGE("Get layout geometry for an invalid output!");
-
-        return {0, 0, 1, 1};
+        // Can happen when initializing the output
+        return {0, 0, handle->width, handle->height};
     }
 }
 
