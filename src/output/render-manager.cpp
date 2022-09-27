@@ -1192,7 +1192,10 @@ void scene::run_render_pass(const std::vector<render_instance_uptr>& instances,
     for (auto& instr : wf::reverse(instructions))
     {
         instr.instance->render(instr.target, instr.damage);
-        instr.instance->presentation_feedback(output);
+        if (output)
+        {
+            instr.instance->presentation_feedback(output);
+        }
     }
 }
 
