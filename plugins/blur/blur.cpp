@@ -260,8 +260,6 @@ class blur_global_data_t
 class wayfire_blur : public wf::plugin_interface_t
 {
     wf::button_callback button_toggle;
-
-    wf::effect_hook_t frame_pre_paint;
     wf::signal_connection_t view_attached, view_detached;
 
     wf::view_matcher_t blur_by_default{"blur/blur_by_default"};
@@ -424,9 +422,7 @@ class wayfire_blur : public wf::plugin_interface_t
     void fini() override
     {
         remove_transformers();
-
         output->rem_binding(&button_toggle);
-        output->render->rem_effect(&frame_pre_paint);
 
         /* Call blur algorithm destructor */
         blur_algorithm = nullptr;
