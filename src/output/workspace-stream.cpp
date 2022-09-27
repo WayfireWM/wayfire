@@ -66,6 +66,12 @@ void workspace_stream_t::render_frame()
     wf::dassert(current_output != nullptr,
         "Inactive workspace stream being rendered?");
 
+    this->accumulated_damage &= current_output->render->get_ws_box(ws);
+    if (this->accumulated_damage.empty())
+    {
+        return;
+    }
+
     OpenGL::render_begin();
     buffer.allocate(current_output->handle->width, current_output->handle->height);
     OpenGL::render_end();
@@ -82,7 +88,6 @@ void workspace_stream_t::render_frame()
     fb.geometry.y = (ws.y - cws.y) * g.height;
 
     wf::option_wrapper_t<wf::color_t> background_color_opt{"core/background_color"};
-
     wf::color_t clear_color =
         (this->background.a < 0 ? background_color_opt : this->background);
     scene::run_render_pass_full(this->instances, fb, this->accumulated_damage,
