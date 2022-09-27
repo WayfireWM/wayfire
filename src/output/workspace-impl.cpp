@@ -116,7 +116,8 @@ class output_layer_manager_t
         }
 
         std::vector<wayfire_view> all_views;
-        push_views_from_scenegraph(damage_from->shared_from_this(), all_views);
+        push_views_from_scenegraph(damage_from->shared_from_this(), all_views,
+            false);
 
         for (auto& view : all_views)
         {
@@ -136,51 +137,20 @@ class output_layer_manager_t
     }
 
     void push_views_from_scenegraph(wf::scene::node_ptr root,
-        std::vector<wayfire_view>& result)
+        std::vector<wayfire_view>& result, bool target_minimized)
     {
-        if (!root->is_enabled())
-        {
-            return;
-        }
-
         if (auto vnode = dynamic_cast<scene::view_node_t*>(root.get()))
         {
-            result.push_back(vnode->get_view());
+            if (vnode->get_view()->minimized == target_minimized)
+            {
+                result.push_back(vnode->get_view());
+            }
         } else
         {
             for (auto& ch : root->get_children())
             {
-                push_views_from_scenegraph(ch, result);
+                push_views_from_scenegraph(ch, result, target_minimized);
             }
-        }
-    }
-
-    void push_minimized_views_from_scenegraph(wf::scene::node_ptr root,
-        std::vector<wayfire_view>& result, bool abort_if_not_view = false)
-    {
-        if (auto vnode = dynamic_cast<scene::view_node_t*>(root.get()))
-        {
-            if (vnode->get_view()->minimized)
-            {
-                result.push_back(vnode->get_view());
-            }
-
-            return;
-        }
-
-        if (abort_if_not_view)
-        {
-            return;
-        }
-
-        for (auto& ch : root->get_children())
-        {
-            // When a view is minimized, its scene node is disabled.
-            // To enumerate these views, we therefore need to descend into disabled
-            // nodes. However, we expect to immediately visit a view node.
-            // Otherwise, we stop the recursion to avoid finding any unwanted (e.g.
-            // really disabled) nodes.
-            push_minimized_views_from_scenegraph(ch, result, !root->is_enabled());
         }
     }
 
@@ -195,7 +165,7 @@ class output_layer_manager_t
                 return;
             }
 
-            push_views_from_scenegraph(output->node_for_layer(layer), views);
+            push_views_from_scenegraph(output->node_for_layer(layer), views, false);
         };
 
         /* Above fullscreen views */
@@ -206,9 +176,9 @@ class output_layer_manager_t
 
         if (include_minimized)
         {
-            push_minimized_views_from_scenegraph(
+            push_views_from_scenegraph(
                 output->node_for_layer(wf::scene::layer::WORKSPACE),
-                views);
+                views, true);
         }
 
         return views;
