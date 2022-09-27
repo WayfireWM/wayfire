@@ -230,6 +230,8 @@ class ipc_plugin_t
         server = std::make_unique<ipc::server_t>(socket);
         server->register_method("core/list_views", list_views);
         server->register_method("core/create_wayland_output", create_wayland_output);
+        server->register_method("core/destroy_wayland_output",
+            destroy_wayland_output);
         server->register_method("core/feed_key", feed_key);
         server->register_method("core/feed_button", feed_button);
         server->register_method("core/move_cursor", move_cursor);
@@ -331,6 +333,20 @@ class ipc_plugin_t
         }
 
         wlr_wl_output_create(wayland_backend);
+        return get_ok();
+    };
+
+    method_t destroy_wayland_output = [] (nlohmann::json data)
+    {
+        EXPECT_FIELD(data, "output", string);
+        auto output = wf::get_core().output_layout->find_output(data["output"]);
+        if (!output)
+        {
+            return get_error("Could not find output: \"" +
+                (std::string)data["output"] + "\"");
+        }
+
+        wlr_output_destroy(output->handle);
         return get_ok();
     };
 
