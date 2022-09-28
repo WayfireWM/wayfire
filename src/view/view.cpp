@@ -1312,6 +1312,9 @@ void wf::view_damage_raw(wayfire_view view, const wlr_box& box)
     }
 
     view->get_view_node()->emit(&data);
+    // FIXME: node should be pushed from surfaces up, but we can't do that yet,
+    // because transformers are not in the scenegraph yet
+    view->get_surface_root_node()->emit(&data);
     view->emit_signal("region-damaged", nullptr);
 }
 
