@@ -70,7 +70,7 @@ static void unset_toplevel_parent(wayfire_view view)
         auto& container = view->parent->children;
         auto it = std::remove(container.begin(), container.end(), view);
         container.erase(it, container.end());
-        wf::scene::remove_child(view->get_scene_node());
+        wf::scene::remove_child(view->get_tree_root_node());
     }
 }
 
@@ -133,7 +133,8 @@ void wf::view_interface_t::set_toplevel_parent(wayfire_view new_parent)
             reposition_relative_to_parent(self());
         }
 
-        wf::scene::add_front(parent->get_scene_node(), this->get_scene_node());
+        wf::scene::add_front(parent->get_tree_root_node(),
+            this->get_tree_root_node());
         check_refocus_parent(parent);
     } else if (old_parent)
     {
@@ -398,10 +399,10 @@ void wf::view_interface_t::set_minimized(bool minim)
         view_disappeared_signal data;
         data.view = self();
         get_output()->emit_signal("view-disappeared", &data);
-        wf::scene::set_node_enabled(get_scene_node(), false);
+        wf::scene::set_node_enabled(get_tree_root_node(), false);
     } else
     {
-        wf::scene::set_node_enabled(get_scene_node(), true);
+        wf::scene::set_node_enabled(get_tree_root_node(), true);
         get_output()->focus_view(self(), true);
     }
 
@@ -1317,7 +1318,7 @@ void wf::view_interface_t::destruct()
     wf::get_core_impl().erase_view(self());
 }
 
-const wf::scene::floating_inner_ptr& wf::view_interface_t::get_scene_node() const
+const wf::scene::floating_inner_ptr& wf::view_interface_t::get_tree_root_node() const
 {
     return view_impl->scene_node;
 }

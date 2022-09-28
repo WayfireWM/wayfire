@@ -59,7 +59,11 @@ constexpr uint32_t TILED_EDGES_ALL =
 class view_interface_t : public surface_interface_t
 {
   public:
-    const scene::floating_inner_ptr& get_scene_node() const;
+    /**
+     * Get the root of the view tree. This is the node which contains the view
+     * and all of its child views.
+     */
+    const scene::floating_inner_ptr& get_tree_root_node() const;
     const std::shared_ptr<scene::view_node_t>& get_main_node() const;
 
     /**

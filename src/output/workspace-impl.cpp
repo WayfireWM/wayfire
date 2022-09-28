@@ -23,7 +23,7 @@ namespace wf
 static void update_view_scene_node(wayfire_view view)
 {
     using wf::scene::update_flag::update_flag;
-    wf::scene::update(view->get_scene_node(),
+    wf::scene::update(view->get_tree_root_node(),
         update_flag::INPUT_STATE | update_flag::CHILDREN_LIST);
 }
 
@@ -59,7 +59,7 @@ class output_layer_manager_t
     uint32_t get_view_layer(wayfire_view view)
     {
         // Find layer node
-        wf::scene::node_t *node = view->get_scene_node().get();
+        wf::scene::node_t *node = view->get_tree_root_node().get();
         auto root = wf::get_core().scene().get();
 
         while (node->parent())
@@ -84,7 +84,7 @@ class output_layer_manager_t
     void remove_view(wayfire_view view)
     {
         damage_views(view);
-        scene::remove_child(view->get_scene_node());
+        scene::remove_child(view->get_tree_root_node());
     }
 
     /** Add or move the view to the given layer */
@@ -92,16 +92,16 @@ class output_layer_manager_t
     {
         damage_views(view);
         auto idx = (wf::scene::layer)layer_index_from_mask(layer);
-        scene::remove_child(view->get_scene_node());
+        scene::remove_child(view->get_tree_root_node());
         scene::add_front(output->node_for_layer(idx)->dynamic,
-            view->get_scene_node());
+            view->get_tree_root_node());
         damage_views(view);
     }
 
     /** Precondition: view is in some sublayer */
     void bring_to_front(wayfire_view view)
     {
-        wf::scene::node_t *node = view->get_scene_node().get();
+        wf::scene::node_t *node = view->get_tree_root_node().get();
         wf::scene::node_t *damage_from = nullptr;
         while (node->parent())
         {

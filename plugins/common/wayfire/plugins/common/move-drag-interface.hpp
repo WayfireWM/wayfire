@@ -270,7 +270,7 @@ inline std::vector<wayfire_view> get_target_views(wayfire_view grabbed,
 // Find the highest node which is below root but contains content.
 inline scene::node_ptr find_content_root_node(wayfire_view view)
 {
-    auto root = view->get_scene_node().get();
+    auto root = view->get_tree_root_node().get();
     scene::node_t *cur = view->get_main_node().get();
 
     while (cur && cur->parent() != root)
