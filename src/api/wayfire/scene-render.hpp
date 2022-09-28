@@ -136,32 +136,63 @@ struct render_pass_end_signal
     wf::render_target_t target;
 };
 
+enum render_pass_flags
+{
+    /**
+     * Do not emit render-pass-{begin, end} signals.
+     */
+    RPASS_EMIT_SIGNALS     = (1 << 0),
+    /**
+     * Do not clear the background areas.
+     */
+    RPASS_CLEAR_BACKGROUND = (1 << 1),
+};
+
+/**
+ * A struct containing the information necessary to execute a render pass.
+ */
+struct render_pass_params_t
+{
+    /** The instances which are to be rendered in this render pass. */
+    std::vector<render_instance_uptr> *instances;
+
+    /** The rendering target. */
+    render_target_t target;
+
+    /** The total damage accumulated from the instances since the last repaint. */
+    region_t damage;
+
+    /**
+     * The background color visible below all instances, if
+     * RPASS_CLEAR_BACKGROUND is specified.
+     */
+    color_t background_color;
+
+    /**
+     * The output the instances were rendered, used for sending presentation
+     * feedback.
+     */
+    output_t *reference_output = nullptr;
+};
+
 /**
  * A helper function to execute a render pass.
  *
  * The render pass goes as described below:
  *
- * 1. Render instructions are generated from the given instances.
- * 2. Any remaining background areas are painted in @background_color.
- * 3. Render instructions are executed back-to-forth.
- */
-void run_render_pass(const std::vector<render_instance_uptr>& instances,
-    const render_target_t& target, region_t accumulated_damage,
-    const color_t background_color, output_t *output);
-
-/**
- * A helper function to execute a render pass.
+ * 1. Emit render-pass-begin.
+ * 2. Render instructions are generated from the given instances.
+ * 3. Any remaining background areas are painted in @background_color.
+ * 4. Render instructions are executed back-to-forth.
+ * 5. Emit render-pass-end.
  *
- * It executes the same steps as run_render_pass, but also emits the
- * render-pass-begin/render-pass-end signals.
+ * By specifying @flags, steps 1, 3, and 5 can be disabled.
  *
  * @return The full damage which was rendered on the screen. It may be more (or
  *  less) than @accumulated_damage because plugins are allowed to modify the
  *  damage in render-pass-begin.
  */
-wf::region_t run_render_pass_full(
-    const std::vector<render_instance_uptr>& instances,
-    const wf::render_target_t& target, wf::region_t accumulated_damage,
-    const wf::color_t background_color, wf::output_t *output);
+wf::region_t run_render_pass(
+    const render_pass_params_t& params, uint32_t flags);
 }
 }

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "wayfire/scene-render.hpp"
 #include "wayfire/scene.hpp"
 #include <wayfire/nonstd/reverse.hpp>
 #include <wayfire/plugins/wobbly/wobbly-signal.hpp>
@@ -266,6 +267,20 @@ inline std::vector<wayfire_view> get_target_views(wayfire_view grabbed,
     return r;
 }
 
+// Find the highest node which is below root but contains content.
+inline scene::node_ptr find_content_root_node(wayfire_view view)
+{
+    auto root = view->get_scene_node().get();
+    scene::node_t *cur = view->get_main_node().get();
+
+    while (cur && cur->parent() != root)
+    {
+        cur = cur->parent();
+    }
+
+    return cur->shared_from_this();
+}
+
 /**
  * An object for storing per-output data.
  */
@@ -349,7 +364,17 @@ class output_data_t : public custom_data_t
 
             // Render the full view, always
             // Not very efficient
-            view.view->render_transformed(fb, std::move(damage));
+            std::vector<scene::render_instance_uptr> instances;
+            auto node = find_content_root_node(view.view);
+            node->gen_render_instances(
+                instances, [] (auto) {});
+
+            scene::render_pass_params_t params;
+            params.instances = &instances;
+            params.target    = fb;
+            params.damage    = damage;
+            scene::run_render_pass(params, 0);
+
             for (auto& surf : view.view->enumerate_surfaces())
             {
                 surf.surface->send_frame_done(repaint_ended);

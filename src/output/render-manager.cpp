@@ -844,17 +844,20 @@ class wf::render_manager::impl
             OpenGL::render_end();
         }
 
-        wf::region_t damage = output_damage->get_ws_damage(
+        scene::render_pass_params_t params;
+        params.instances = &output_damage->render_instances;
+        params.damage    = output_damage->get_ws_damage(
             output->workspace->get_current_workspace());
-        damage += wf::origin(output->get_layout_geometry());
-        auto target = postprocessing->get_target_framebuffer();
-        target.geometry = target.geometry +
-            wf::origin(output->get_layout_geometry());
-        const wf::color_t clear_color = background_color_opt;
+        params.damage += wf::origin(output->get_layout_geometry());
 
-        this->swap_damage =
-            scene::run_render_pass_full(output_damage->render_instances, target,
-                damage, clear_color, this->output);
+        params.target = postprocessing->get_target_framebuffer();
+        params.target.geometry = params.target.geometry +
+            wf::origin(output->get_layout_geometry());
+        params.background_color = background_color_opt;
+        params.reference_output = this->output;
+
+        this->swap_damage = scene::run_render_pass(params,
+            scene::RPASS_CLEAR_BACKGROUND | scene::RPASS_EMIT_SIGNALS);
         swap_damage  = swap_damage * output->handle->scale;
         swap_damage &= output_damage->get_wlr_damage_box();
     }
@@ -1168,54 +1171,57 @@ class wf::render_manager::impl
     }
 };
 
-void scene::run_render_pass(const std::vector<render_instance_uptr>& instances,
-    const wf::render_target_t& target, wf::region_t accumulated_damage,
-    const wf::color_t background_color, wf::output_t *output)
+wf::region_t scene::run_render_pass(
+    const render_pass_params_t& params, uint32_t flags)
 {
+    auto accumulated_damage = params.damage;
+
+    if (flags & RPASS_EMIT_SIGNALS)
+    {
+        // Emit render_pass_begin
+        scene::render_pass_begin_signal ev{accumulated_damage, params.target};
+        wf::get_core().emit(&ev);
+    }
+
+    wf::region_t swap_damage = accumulated_damage;
+
     // Gather instructions
     std::vector<wf::scene::render_instruction_t> instructions;
-    for (auto& inst : instances)
+    for (auto& inst : *params.instances)
     {
-        inst->schedule_instructions(instructions, target, accumulated_damage);
+        inst->schedule_instructions(instructions,
+            params.target, accumulated_damage);
     }
 
     // Clear visible background areas
-    OpenGL::render_begin(target);
-    for (const auto& rect : accumulated_damage)
+    if (flags & RPASS_CLEAR_BACKGROUND)
     {
-        target.logic_scissor(wlr_box_from_pixman_box(rect));
-        OpenGL::clear(background_color, GL_COLOR_BUFFER_BIT);
-    }
+        OpenGL::render_begin(params.target);
+        for (const auto& rect : accumulated_damage)
+        {
+            params.target.logic_scissor(wlr_box_from_pixman_box(rect));
+            OpenGL::clear(params.background_color, GL_COLOR_BUFFER_BIT);
+        }
 
-    OpenGL::render_end();
+        OpenGL::render_end();
+    }
 
     // Render instances
     for (auto& instr : wf::reverse(instructions))
     {
         instr.instance->render(instr.target, instr.damage);
-        if (output)
+        if (params.reference_output)
         {
-            instr.instance->presentation_feedback(output);
+            instr.instance->presentation_feedback(params.reference_output);
         }
     }
-}
 
-wf::region_t scene::run_render_pass_full(
-    const std::vector<render_instance_uptr>& instances,
-    const wf::render_target_t& target, wf::region_t accumulated_damage,
-    const wf::color_t background_color, wf::output_t *output)
-{
-    // Emit render_pass_begin
-    scene::render_pass_begin_signal ev{accumulated_damage, target};
-    wf::get_core().emit(&ev);
-
-    wf::region_t swap_damage = accumulated_damage;
-    run_render_pass(instances, target, accumulated_damage,
-        background_color, output);
-
-    render_pass_end_signal end_ev;
-    end_ev.target = target;
-    wf::get_core().emit(&end_ev);
+    if (flags & RPASS_EMIT_SIGNALS)
+    {
+        render_pass_end_signal end_ev;
+        end_ev.target = params.target;
+        wf::get_core().emit(&end_ev);
+    }
 
     return swap_damage;
 }

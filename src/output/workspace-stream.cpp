@@ -1,5 +1,6 @@
 #include "wayfire/core.hpp"
 #include "wayfire/debug.hpp"
+#include "wayfire/scene-render.hpp"
 #include "wayfire/scene.hpp"
 #include <wayfire/config/types.hpp>
 #include <wayfire/workspace-stream.hpp>
@@ -76,22 +77,29 @@ void workspace_stream_t::render_frame()
     buffer.allocate(current_output->handle->width, current_output->handle->height);
     OpenGL::render_end();
 
-    auto fb = current_output->render->get_target_framebuffer();
+    scene::render_pass_params_t params;
+
+    params.target = current_output->render->get_target_framebuffer();
 
     /* Use the workspace buffers */
-    fb.fb  = this->buffer.fb;
-    fb.tex = this->buffer.tex;
+    params.target.fb  = this->buffer.fb;
+    params.target.tex = this->buffer.tex;
 
     auto g   = current_output->get_relative_geometry();
     auto cws = current_output->workspace->get_current_workspace();
-    fb.geometry.x = (ws.x - cws.x) * g.width,
-    fb.geometry.y = (ws.y - cws.y) * g.height;
+    params.target.geometry.x = (ws.x - cws.x) * g.width,
+    params.target.geometry.y = (ws.y - cws.y) * g.height;
 
     wf::option_wrapper_t<wf::color_t> background_color_opt{"core/background_color"};
-    wf::color_t clear_color =
+    params.background_color =
         (this->background.a < 0 ? background_color_opt : this->background);
-    scene::run_render_pass_full(this->instances, fb, this->accumulated_damage,
-        clear_color, current_output);
+
+    params.instances = &this->instances;
+    params.damage    = accumulated_damage;
+    params.reference_output = current_output;
+
+    scene::run_render_pass(params,
+        scene::RPASS_EMIT_SIGNALS | scene::RPASS_CLEAR_BACKGROUND);
 }
 
 void workspace_stream_t::stop()

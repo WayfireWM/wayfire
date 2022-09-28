@@ -52,8 +52,12 @@ class blur_render_instance_t : public render_instance_t
         inner_content.geometry = bbox;
         OpenGL::render_end();
 
-        scene::run_render_pass(view_instance, inner_content, cached_damage,
-            {0.0f, 0.0f, 0.0f, 0.0f}, nullptr);
+        render_pass_params_t params;
+        params.instances = &view_instance;
+        params.target    = inner_content;
+        params.damage    = cached_damage;
+        params.background_color = {0.0f, 0.0f, 0.0f, 0.0f};
+        scene::run_render_pass(params, RPASS_CLEAR_BACKGROUND);
 
         cached_damage.clear();
         return wf::texture_t{inner_content.tex};
