@@ -1,6 +1,7 @@
 #ifndef VIEW_HPP
 #define VIEW_HPP
 
+#include <memory>
 #include <vector>
 #include <wayfire/nonstd/observer_ptr.h>
 
@@ -62,9 +63,24 @@ class view_interface_t : public surface_interface_t
     /**
      * Get the root of the view tree. This is the node which contains the view
      * and all of its child views.
+     *
+     * Usually, the tree root node has at least the full_node as its child,
+     * and the tree root nodes of child views.
      */
-    const scene::floating_inner_ptr& get_tree_root_node() const;
-    const std::shared_ptr<scene::view_node_t>& get_main_node() const;
+    const scene::floating_inner_ptr& get_root_node() const;
+
+    /**
+     *
+     * Get the root node of the view (not the whole view tree).
+     * It usually has a single child, which is either the view_node itself, or
+     * a transformer of the view.
+     */
+    const scene::floating_inner_ptr& get_view_node() const;
+
+    /**
+     * Get the node which contains the main view (+subsurfaces) only.
+     */
+    const std::shared_ptr<scene::view_node_t>& get_surface_root_node() const;
 
     /**
      * The toplevel parent of the view, for ex. the main view of a file chooser

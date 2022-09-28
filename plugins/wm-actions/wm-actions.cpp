@@ -34,14 +34,14 @@ class wayfire_wm_actions_t : public wf::plugin_interface_t
             return false;
         }
 
-        wf::scene::remove_child(view->get_tree_root_node());
+        wf::scene::remove_child(view->get_root_node());
         if (view->has_data("wm-actions-above"))
         {
             output->workspace->add_view(view, wf::LAYER_WORKSPACE);
             view->erase_data("wm-actions-above");
         } else
         {
-            wf::scene::add_front(always_above, view->get_tree_root_node());
+            wf::scene::add_front(always_above, view->get_root_node());
             view->store_data(std::make_unique<wf::custom_data_t>(),
                 "wm-actions-above");
         }
@@ -112,8 +112,8 @@ class wayfire_wm_actions_t : public wf::plugin_interface_t
 
             if (view->has_data("wm-actions-above"))
             {
-                wf::scene::remove_child(view->get_tree_root_node());
-                wf::scene::add_front(always_above, view->get_tree_root_node());
+                wf::scene::remove_child(view->get_root_node());
+                wf::scene::add_front(always_above, view->get_root_node());
             }
         }
     };
@@ -140,8 +140,8 @@ class wayfire_wm_actions_t : public wf::plugin_interface_t
 
             if (view->has_data("wm-actions-above") && (signal->state == false))
             {
-                wf::scene::remove_child(view->get_tree_root_node());
-                wf::scene::add_front(always_above, view->get_tree_root_node());
+                wf::scene::remove_child(view->get_root_node());
+                wf::scene::add_front(always_above, view->get_root_node());
             }
         }
     };
@@ -274,7 +274,7 @@ class wayfire_wm_actions_t : public wf::plugin_interface_t
 
     void do_send_to_back(wayfire_view view)
     {
-        auto view_root = view->get_tree_root_node();
+        auto view_root = view->get_root_node();
 
         if (auto parent =
                 dynamic_cast<wf::scene::floating_inner_node_t*>(view_root->parent()))

@@ -258,7 +258,7 @@ class WayfireSwitcher : public wf::plugin_interface_t
             if (view->has_data("switcher-minimized-showed"))
             {
                 view->erase_data("switcher-minimized-showed");
-                wf::scene::set_node_enabled(view->get_tree_root_node(), true);
+                wf::scene::set_node_enabled(view->get_root_node(), true);
             }
 
             view->pop_transformer(switcher_transformer);
@@ -560,7 +560,7 @@ class WayfireSwitcher : public wf::plugin_interface_t
         {
             if (view->minimized)
             {
-                wf::scene::set_node_enabled(view->get_tree_root_node(), true);
+                wf::scene::set_node_enabled(view->get_root_node(), true);
                 view->store_data(std::make_unique<wf::custom_data_t>(),
                     "switcher-minimized-showed");
             }

@@ -178,7 +178,7 @@ class surface_pointer_interaction_t final : public wf::pointer_interaction_t
     {
         // FIXME: a better implementation which does not rely on find_node_at.
         // find_node_at should be simplified and this should get the full cases.
-        return get_view()->get_main_node()->find_node_at(point).has_value();
+        return get_view()->get_view_node()->find_node_at(point).has_value();
     }
 
     wf::input_action handle_pointer_button(const wlr_event_pointer_button& event)

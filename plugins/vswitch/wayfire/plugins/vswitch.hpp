@@ -115,7 +115,7 @@ class workspace_switch_t
         /* Reset old view */
         if (this->overlay_view)
         {
-            wf::scene::set_node_enabled(overlay_view->get_main_node(), true);
+            wf::scene::set_node_enabled(overlay_view->get_view_node(), true);
             overlay_view->pop_transformer(vswitch_view_transformer_name);
         }
 
@@ -125,7 +125,7 @@ class workspace_switch_t
         {
             view->add_transformer(std::make_unique<wf::view_2D>(view),
                 vswitch_view_transformer_name);
-            wf::scene::set_node_enabled(view->get_main_node(), false);
+            wf::scene::set_node_enabled(view->get_view_node(), false);
         }
     }
 

@@ -985,12 +985,12 @@ class wayfire_dnd_xwayland_view : public wayfire_unmanaged_xwayland_view
         wayfire_xwayland_view_base::map(surface);
         this->damage();
 
-        wf::scene::add_front(wf::get_core().scene(), this->get_tree_root_node());
+        wf::scene::add_front(wf::get_core().scene(), this->get_root_node());
     }
 
     void unmap() override
     {
-        wf::scene::remove_child(this->get_tree_root_node());
+        wf::scene::remove_child(this->get_root_node());
     }
 };
 

@@ -78,8 +78,10 @@ class view_interface_t::view_priv_impl
     } offscreen_buffer;
 
     wlr_box minimize_hint = {0, 0, 0, 0};
-    scene::floating_inner_ptr scene_node;
-    std::shared_ptr<scene::view_node_t> main_node;
+
+    scene::floating_inner_ptr root_node;
+    scene::floating_inner_ptr view_node;
+    std::shared_ptr<scene::view_node_t> surface_root_node;
 
   private:
     /** Last geometry the view has had in non-tiled and non-fullscreen state.

@@ -277,7 +277,7 @@ class tile_plugin_t : public wf::plugin_interface_t
         auto view_node = std::make_unique<wf::tile::view_node_t>(view);
         roots[vp.x][vp.y]->as_split_node()->add_child(std::move(view_node));
 
-        auto node = view->get_tree_root_node();
+        auto node = view->get_root_node();
         wf::scene::remove_child(node);
         wf::scene::add_front(tiled_sublayer[vp.x][vp.y], node);
         output->workspace->bring_to_front(view); // bring that layer to the front

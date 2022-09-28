@@ -74,7 +74,7 @@ class view_render_instance_t : public render_instance_t
     {
         this->view = view;
         this->push_damage = push_damage;
-        view->get_main_node()->connect(&on_view_damage);
+        view->get_surface_root_node()->connect(&on_view_damage);
 
         auto push_damage_child = [=] (wf::region_t child_damage)
         {
@@ -88,7 +88,7 @@ class view_render_instance_t : public render_instance_t
             push_damage(child_damage);
         };
 
-        for (auto& ch : view->get_main_node()->get_children())
+        for (auto& ch : view->get_surface_root_node()->get_children())
         {
             if (ch->is_enabled())
             {
