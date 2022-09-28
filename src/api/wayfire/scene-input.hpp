@@ -94,19 +94,6 @@ class pointer_interaction_t
     virtual ~pointer_interaction_t() = default;
 
     /**
-     * Check whether the node wants to receive input events when the cursor is
-     * at the given @pointer_position and how it processes them.
-     *
-     * Note that the view may receive events even if the pointer is outside of
-     * the set of points where the node accepts input. This can happen for ex.
-     * when an implicit grab is started.
-     */
-    virtual bool accepts_input(wf::pointf_t pointer_position)
-    {
-        return false;
-    }
-
-    /**
      * The pointer entered the node and thus the node gains pointer focus.
      */
     virtual void handle_pointer_enter(wf::pointf_t position)
