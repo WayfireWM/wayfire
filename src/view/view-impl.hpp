@@ -80,7 +80,7 @@ class view_interface_t::view_priv_impl
     wlr_box minimize_hint = {0, 0, 0, 0};
 
     scene::floating_inner_ptr root_node;
-    scene::floating_inner_ptr view_node;
+    scene::floating_inner_ptr transformed_node;
     std::shared_ptr<scene::view_node_t> surface_root_node;
 
   private:

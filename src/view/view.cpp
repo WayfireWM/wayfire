@@ -1227,7 +1227,8 @@ void wf::view_interface_t::unref()
 void wf::view_interface_t::initialize()
 {
     view_impl->root_node = std::make_shared<scene::floating_inner_node_t>(false);
-    view_impl->view_node = std::make_shared<scene::floating_inner_node_t>(false);
+    view_impl->transformed_node = std::make_shared<scene::floating_inner_node_t>(
+        false);
     view_impl->surface_root_node = std::make_shared<scene::view_node_t>(this);
 
     // Set up the surface content relationship
@@ -1237,8 +1238,8 @@ void wf::view_interface_t::initialize()
     priv->root_node = view_impl->surface_root_node;
 
     // Set up view content to scene.
-    view_impl->view_node->set_children_list({view_impl->surface_root_node});
-    view_impl->root_node->set_children_list({view_impl->view_node});
+    view_impl->transformed_node->set_children_list({view_impl->surface_root_node});
+    view_impl->root_node->set_children_list({view_impl->transformed_node});
 }
 
 void wf::view_interface_t::deinitialize()
@@ -1311,7 +1312,7 @@ void wf::view_damage_raw(wayfire_view view, const wlr_box& box)
         data.region |= box;
     }
 
-    view->get_view_node()->emit(&data);
+    view->get_transformed_node()->emit(&data);
     // FIXME: node should be pushed from surfaces up, but we can't do that yet,
     // because transformers are not in the scenegraph yet
     view->get_surface_root_node()->emit(&data);
@@ -1329,9 +1330,10 @@ const wf::scene::floating_inner_ptr& wf::view_interface_t::get_root_node() const
     return view_impl->root_node;
 }
 
-const wf::scene::floating_inner_ptr& wf::view_interface_t::get_view_node() const
+const wf::scene::floating_inner_ptr& wf::view_interface_t::get_transformed_node()
+const
 {
-    return view_impl->view_node;
+    return view_impl->transformed_node;
 }
 
 const std::shared_ptr<wf::scene::view_node_t>& wf::view_interface_t::

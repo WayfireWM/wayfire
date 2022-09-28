@@ -216,7 +216,8 @@ class view_title_overlay_t : public wf::scale_transformer_t::overlay_t
             title.dialog = view;
             for (auto dialog : view->enumerate_views(false))
             {
-                if ((dialog == view) || !dialog->get_view_node()->is_enabled())
+                if ((dialog == view) ||
+                    !dialog->get_transformed_node()->is_enabled())
                 {
                     continue;
                 }

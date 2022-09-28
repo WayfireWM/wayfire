@@ -287,7 +287,7 @@ class wayfire_blur : public wf::plugin_interface_t
         auto node = std::make_shared<wf::scene::blur_node_t>(provider);
         view->get_data_safe<blur_transform_node_data>()->node = node.get();
 
-        auto children = view->get_view_node()->get_children();
+        auto children = view->get_transformed_node()->get_children();
         wf::scene::remove_child(view->get_surface_root_node());
         wf::scene::add_front(node, view->get_surface_root_node());
 
@@ -300,8 +300,8 @@ class wayfire_blur : public wf::plugin_interface_t
             }
         }
 
-        view->get_view_node()->set_children_list(children);
-        wf::scene::update(view->get_view_node(),
+        view->get_transformed_node()->set_children_list(children);
+        wf::scene::update(view->get_transformed_node(),
             wf::scene::update_flag::CHILDREN_LIST);
     }
 
@@ -314,7 +314,7 @@ class wayfire_blur : public wf::plugin_interface_t
 
         auto node = view->get_data_safe<blur_transform_node_data>()->node;
 
-        auto children = view->get_view_node()->get_children();
+        auto children = view->get_transformed_node()->get_children();
         wf::scene::remove_child(node->shared_from_this());
 
         node->set_children_list({});
@@ -328,8 +328,8 @@ class wayfire_blur : public wf::plugin_interface_t
             }
         }
 
-        view->get_view_node()->set_children_list(children);
-        wf::scene::update(view->get_view_node(),
+        view->get_transformed_node()->set_children_list(children);
+        wf::scene::update(view->get_transformed_node(),
             wf::scene::update_flag::CHILDREN_LIST);
     }
 

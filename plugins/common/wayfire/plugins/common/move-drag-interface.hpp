@@ -351,7 +351,7 @@ class output_data_t : public custom_data_t
             // Render the full view, always
             // Not very efficient
             std::vector<scene::render_instance_uptr> instances;
-            auto node = view.view->get_view_node();
+            auto node = view.view->get_transformed_node();
             node->gen_render_instances(
                 instances, [] (auto) {});
 
@@ -452,7 +452,7 @@ class core_drag_t : public signal_provider_t
             v->add_transformer(std::move(tr), move_drag_transformer);
 
             // Hide the view, we will render it as an overlay
-            wf::scene::set_node_enabled(v->get_view_node(), false);
+            wf::scene::set_node_enabled(v->get_transformed_node(), false);
             v->damage();
 
             // Make sure that wobbly has the correct geometry from the start!
@@ -569,7 +569,7 @@ class core_drag_t : public signal_provider_t
             auto rel_pos = v.transformer->relative_grab;
 
             // Restore view to where it was before
-            wf::scene::set_node_enabled(v.view->get_view_node(), true);
+            wf::scene::set_node_enabled(v.view->get_transformed_node(), true);
             v.view->pop_transformer(move_drag_transformer);
 
             // Reset wobbly and leave it in output-LOCAL coordinates

@@ -238,7 +238,7 @@ class wayfire_scale : public wf::plugin_interface_t
 
             if (e.second.visibility == view_scale_data::view_visibility_t::HIDDEN)
             {
-                wf::scene::set_node_enabled(e.first->get_view_node(), true);
+                wf::scene::set_node_enabled(e.first->get_transformed_node(), true);
             }
 
             e.second.visibility = view_scale_data::view_visibility_t::VISIBLE;
@@ -749,7 +749,7 @@ class wayfire_scale : public wf::plugin_interface_t
                 {
                     view_data.visibility =
                         view_scale_data::view_visibility_t::HIDDEN;
-                    wf::scene::set_node_enabled(view->get_view_node(), false);
+                    wf::scene::set_node_enabled(view->get_transformed_node(), false);
                 }
             }
 
@@ -1025,7 +1025,8 @@ class wayfire_scale : public wf::plugin_interface_t
                     if (child_data.visibility ==
                         view_scale_data::view_visibility_t::HIDDEN)
                     {
-                        wf::scene::set_node_enabled(child->get_view_node(), true);
+                        wf::scene::set_node_enabled(
+                            child->get_transformed_node(), true);
                     }
 
                     child_data.visibility =
@@ -1417,7 +1418,7 @@ class wayfire_scale : public wf::plugin_interface_t
             setup_view_transform(e.second, 1, 1, 0, 0, 1);
             if (e.second.visibility == view_scale_data::view_visibility_t::HIDDEN)
             {
-                wf::scene::set_node_enabled(e.first->get_view_node(), true);
+                wf::scene::set_node_enabled(e.first->get_transformed_node(), true);
             }
 
             e.second.visibility = view_scale_data::view_visibility_t::VISIBLE;
