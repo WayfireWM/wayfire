@@ -351,8 +351,7 @@ class output_render_instance_t : public default_render_instance_t
         if (self->limit_region)
         {
             wf::region_t our_damage = damage & *self->limit_region;
-            wf::region_t original_damage = our_damage;
-
+            our_damage &= target.geometry;
             if (!our_damage.empty())
             {
                 _schedule_instructions(instructions, target, our_damage);

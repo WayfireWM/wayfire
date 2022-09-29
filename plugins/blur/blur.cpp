@@ -251,6 +251,7 @@ class blur_global_data_t
             provider()->calculate_blur_radius() / ev->target.scale);
 
         ev->damage.expand_edges(padding);
+        ev->damage &= ev->target.geometry;
     };
 
   public:
