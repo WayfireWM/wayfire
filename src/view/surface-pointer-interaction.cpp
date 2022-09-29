@@ -177,14 +177,31 @@ class surface_pointer_interaction_t final : public wf::pointer_interaction_t
     wf::input_action handle_pointer_button(const wlr_event_pointer_button& event)
     final
     {
+        auto& seat = wf::get_core_impl().seat;
+        bool drag_was_active = seat->drag_active;
         if (auto cs = wf::compositor_surface_from_surface(surface))
         {
             cs->on_pointer_button(event.button, event.state);
         }
 
-        auto seat = wf::get_core_impl().get_current_seat();
-        wlr_seat_pointer_notify_button(seat,
+        wlr_seat_pointer_notify_button(seat->seat,
             event.time_msec, event.button, event.state);
+
+        if (drag_was_active != seat->drag_active)
+        {
+            // Drag and drop ended. We should refocus the current surface, if we
+            // still have focus, because we have set the wlroots focus in a
+            // different place during DnD.
+            auto& core = wf::get_core();
+            auto node  = core.scene()->find_node_at(core.get_cursor_position());
+            if (surface->get_wlr_surface() && node &&
+                (node->node.get() == this->surface->get_content_node().get()))
+            {
+                wlr_seat_pointer_notify_enter(seat->seat, surface->get_wlr_surface(),
+                    node->local_coords.x, node->local_coords.y);
+            }
+        }
+
         return wf::input_action::CONSUME;
     }
 
