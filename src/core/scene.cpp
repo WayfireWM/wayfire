@@ -248,6 +248,11 @@ void node_t::gen_render_instances(std::vector<render_instance_uptr> & instances,
     }
 }
 
+std::optional<wf::texture_t> node_t::to_texture() const
+{
+    return {};
+}
+
 wf::geometry_t node_t::get_bounding_box()
 {
     if (children.empty())

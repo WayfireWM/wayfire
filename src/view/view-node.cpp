@@ -173,6 +173,19 @@ void view_node_t::gen_render_instances(std::vector<render_instance_uptr> & insta
     instances.push_back(std::make_unique<wf::scene::view_render_instance_t>(
         this->view, push_damage));
 }
+
+std::optional<wf::texture_t> view_node_t::to_texture() const
+{
+    if (view->is_mapped() &&
+        !view->has_transformer() &&
+        view->get_wlr_surface() &&
+        (this->get_children().size() == 1))
+    {
+        return wf::texture_t{view->get_wlr_surface()};
+    }
+
+    return {};
+}
 }
 }
 

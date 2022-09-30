@@ -5,6 +5,7 @@
 #include <vector>
 #include <wayfire/nonstd/observer_ptr.h>
 
+#include "wayfire/opengl.hpp"
 #include "wayfire/scene-render.hpp"
 #include "wayfire/surface.hpp"
 #include "wayfire/geometry.hpp"
@@ -623,6 +624,8 @@ class view_node_t : public scene::floating_inner_node_t
      */
     void gen_render_instances(std::vector<render_instance_uptr>& instances,
         damage_callback push_damage) override;
+
+    std::optional<wf::texture_t> to_texture() const override;
     wf::geometry_t get_bounding_box() override;
 
   protected:

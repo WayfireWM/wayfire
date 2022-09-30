@@ -1,5 +1,6 @@
 #pragma once
 
+#include "wayfire/opengl.hpp"
 #include <optional>
 #include <memory>
 #include <vector>
@@ -202,6 +203,20 @@ class node_t : public std::enable_shared_from_this<node_t>,
      */
     virtual void gen_render_instances(std::vector<render_instance_uptr>& instances,
         damage_callback push_damage);
+
+    /**
+     * Generate a texture from the node.
+     *
+     * In principle, it is always possible to generate a texture from a node by
+     * generating render instances for it and then rendering it in a render
+     * pass. Some nodes, however, support a more efficient way of generating
+     * a texture with their contents. Such nodes are expected to implement this
+     * method to facilitate various optimizations, mainly direct scanout and
+     * avoiding unnecessary copies for view transformers.
+     *
+     * @return A texture for the node. By default, no texture is returned.
+     */
+    virtual std::optional<wf::texture_t> to_texture() const;
 
     /**
      * Get a bounding box of the node in the node's parent coordinate system.

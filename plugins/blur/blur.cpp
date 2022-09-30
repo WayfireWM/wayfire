@@ -43,12 +43,37 @@ class blur_render_instance_t : public render_instance_t
 
     wf::texture_t get_texture(float scale)
     {
+        // Optimization: if we have a single child (usually the surface root node)
+        // and we can directly convert it to texture, we don't need a full render
+        // pass.
+        if (self->get_children().size() == 1)
+        {
+            if (auto tex = self->get_children().front()->to_texture())
+            {
+                if (inner_content.fb != (uint) - 1)
+                {
+                    // If we are optimized, make sure to release the buffer to
+                    // avoid holding GL memory unnecessary. This way we'll also
+                    // get full damage if the view gets other transformers attached.
+                    OpenGL::render_begin();
+                    inner_content.release();
+                    OpenGL::render_end();
+                }
+
+                return *tex;
+            }
+        }
+
         auto bbox = self->get_bounding_box();
         int target_width  = scale * self->get_bounding_box().width;
         int target_height = scale * self->get_bounding_box().height;
 
         OpenGL::render_begin();
-        inner_content.allocate(target_width, target_height);
+        if (inner_content.allocate(target_width, target_height))
+        {
+            cached_damage |= bbox;
+        }
+
         inner_content.geometry = bbox;
         OpenGL::render_end();
 
