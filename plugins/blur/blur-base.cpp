@@ -170,6 +170,11 @@ wlr_box wf_blur_base::copy_region(wf::framebuffer_t& result,
 void wf_blur_base::pre_render(wlr_box src_box,
     const wf::region_t& damage, const wf::render_target_t& target_fb)
 {
+    if (damage.empty())
+    {
+        return;
+    }
+
     int degrade     = degrade_opt;
     auto damage_box = copy_region(fb[0], target_fb, damage);
 
