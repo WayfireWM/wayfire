@@ -124,6 +124,46 @@ class blur_render_instance_t : public render_instance_t
         OpenGL::render_end();
     }
 
+    bool is_fully_opaque(wf::region_t damage)
+    {
+        if (self->get_children().size() == 1)
+        {
+            if (auto vnode = dynamic_cast<view_node_t*>(
+                self->get_children().front().get()))
+            {
+                auto opaque_region =
+                    vnode->get_view()->get_transformed_opaque_region();
+
+                return (damage ^ opaque_region).empty();
+            }
+        }
+
+        return false;
+    }
+
+    wf::region_t calculate_translucent_damage(float target_scale,
+        wf::region_t damage)
+    {
+        if (self->get_children().size() == 1)
+        {
+            if (auto vnode = dynamic_cast<view_node_t*>(
+                self->get_children().front().get()))
+            {
+                const int padding = std::ceil(
+                    provider()->calculate_blur_radius() / target_scale);
+
+                auto opaque_region =
+                    vnode->get_view()->get_transformed_opaque_region();
+                opaque_region.expand_edges(-padding);
+
+                wf::region_t translucent_region = damage ^ opaque_region;
+                return translucent_region;
+            }
+        }
+
+        return damage;
+    }
+
     void schedule_instructions(
         std::vector<render_instruction_t>& instructions,
         const wf::render_target_t& target, wf::region_t& damage) override
@@ -142,6 +182,18 @@ class blur_render_instance_t : public render_instance_t
         // back to the destination framebuffer, giving the illusion that they
         // were never damaged.
         auto padded_region = damage & bbox;
+
+        if (is_fully_opaque(padded_region & target.geometry))
+        {
+            // If there are no regions to blur, we can directly render them.
+            for (auto& ch : view_instance)
+            {
+                ch->schedule_instructions(instructions, target, damage);
+            }
+
+            return;
+        }
+
         padded_region.expand_edges(padding);
         padded_region &= bbox;
 
@@ -196,7 +248,9 @@ class blur_render_instance_t : public render_instance_t
         auto bounding_box = self->get_bounding_box();
         if (!damage.empty())
         {
-            provider()->pre_render(bounding_box, damage, target);
+            auto translucent_damage = calculate_translucent_damage(target.scale,
+                damage);
+            provider()->pre_render(bounding_box, translucent_damage, target);
             for (const auto& rect : damage)
             {
                 auto damage_box = wlr_box_from_pixman_box(rect);
