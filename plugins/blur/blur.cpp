@@ -393,6 +393,7 @@ class wayfire_blur : public wf::plugin_interface_t
         }
 
         auto node = view->get_data_safe<blur_transform_node_data>()->node;
+        view->erase_data<blur_transform_node_data>();
 
         auto children = view->get_transformed_node()->get_children();
         wf::scene::remove_child(node->shared_from_this());
