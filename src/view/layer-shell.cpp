@@ -351,19 +351,17 @@ wayfire_layer_shell_view::wayfire_layer_shell_view(wlr_layer_surface_v1 *lsurf) 
     {
         auto wo = wf::get_core().output_layout->find_output(lsurf->output);
         set_output(wo);
+    } else
+    {
+        set_output(wf::get_core().get_active_output());
     }
 }
 
 void wayfire_layer_shell_view::initialize()
 {
     wlr_view_t::initialize();
-    if (!get_output())
-    {
-        LOGE("Couldn't find output for the layer surface");
-        close();
-
-        return;
-    }
+    wf::dassert(get_output() != nullptr,
+        "layer-shell views are always assigned an output!");
 
     lsurface->output = get_output()->handle;
     lsurface->data   = dynamic_cast<wf::view_interface_t*>(this);
