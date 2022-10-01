@@ -435,6 +435,13 @@ void set_node_enabled(wf::scene::node_ptr node, bool enabled)
     node->set_enabled(enabled);
     if (was_enabled != node->is_enabled())
     {
+        if (node->parent())
+        {
+            node_damage_signal ev;
+            ev.region = node->get_bounding_box();
+            node->parent()->emit(&ev);
+        }
+
         update(node, update_flag::ENABLED);
     }
 }
