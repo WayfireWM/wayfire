@@ -43,19 +43,32 @@ class preview_indication_view_t : public wf::color_rect_view_t
      * @param start_geometry The geometry the preview should have, relative to
      *                       the output
      */
-    preview_indication_view_t(wf::output_t *output, wf::geometry_t start_geometry) :
+    preview_indication_view_t(wf::geometry_t start_geometry) :
         wf::color_rect_view_t(), animation(wf::create_option<int>(200))
     {
-        this->output = output;
-        set_output(output);
         animation.set_start(start_geometry);
         animation.set_end(start_geometry);
         animation.alpha.set(0, 1);
 
-        pre_paint = [=] () { update_animation(); };
-        get_output()->render->add_effect(&pre_paint, wf::OUTPUT_EFFECT_PRE);
-
         this->role = VIEW_ROLE_DESKTOP_ENVIRONMENT;
+    }
+
+    void set_output(wf::output_t *output) override
+    {
+        if (get_output())
+        {
+            get_output()->render->rem_effect(&pre_paint);
+        }
+
+        this->output = output;
+        wf::color_rect_view_t::set_output(output);
+
+        if (output)
+        {
+            pre_paint = [=] () { update_animation(); };
+            output->render->add_effect(&pre_paint, wf::OUTPUT_EFFECT_PRE);
+            output->workspace->add_view(self(), wf::LAYER_TOP);
+        }
     }
 
     void initialize() override
@@ -65,13 +78,11 @@ class preview_indication_view_t : public wf::color_rect_view_t
         set_color(base_color);
         set_border_color(base_border);
         set_border(base_border_w);
-
-        get_output()->workspace->add_view(self(), wf::LAYER_TOP);
     }
 
     /** A convenience wrapper around the full version */
-    preview_indication_view_t(wf::output_t *output, wf::point_t start) :
-        preview_indication_view_t(output, wf::geometry_t{start.x, start.y, 1, 1})
+    preview_indication_view_t(wf::point_t start) :
+        preview_indication_view_t(wf::geometry_t{start.x, start.y, 1, 1})
     {}
 
     /**
@@ -103,7 +114,10 @@ class preview_indication_view_t : public wf::color_rect_view_t
 
     virtual ~preview_indication_view_t()
     {
-        this->output->render->rem_effect(&pre_paint);
+        if (this->output)
+        {
+            this->output->render->rem_effect(&pre_paint);
+        }
     }
 
   protected:

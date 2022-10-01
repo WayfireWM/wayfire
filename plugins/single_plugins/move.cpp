@@ -464,13 +464,12 @@ class wayfire_move : public wf::plugin_interface_t
             }
 
             auto input   = get_input_coords();
-            auto preview = new wf::preview_indication_view_t(output,
-                {input.x, input.y, 1, 1});
-
+            auto preview =
+                new wf::preview_indication_view_t({input.x, input.y, 1, 1});
             wf::get_core().add_view(
                 std::unique_ptr<wf::view_interface_t>(preview));
-
             preview->set_output(output);
+
             preview->set_target_geometry(query.out_geometry, 1);
             slot.preview = nonstd::make_observer(preview);
         }
