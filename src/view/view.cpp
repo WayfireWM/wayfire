@@ -389,11 +389,14 @@ bool wf::view_interface_t::is_focuseable() const
 
 void wf::view_interface_t::set_minimized(bool minim)
 {
-    if (minim == minimized)
+    this->minimized = minim;
+
+    if (this->view_impl->actually_minimized == minim)
     {
         return;
     }
 
+    this->view_impl->actually_minimized = minim;
     minimized = minim;
     if (minimized)
     {

@@ -82,6 +82,7 @@ class view_interface_t::view_priv_impl
     scene::floating_inner_ptr root_node;
     scene::floating_inner_ptr transformed_node;
     std::shared_ptr<scene::view_node_t> surface_root_node;
+    bool actually_minimized = false;
 
   private:
     /** Last geometry the view has had in non-tiled and non-fullscreen state.
