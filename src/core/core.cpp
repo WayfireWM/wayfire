@@ -624,12 +624,12 @@ void wf::compositor_core_impl_t::add_view(
     id_to_view[std::to_string(v->get_id())] = v;
 
     assert(active_output);
+
+    v->initialize();
     if (!v->get_output())
     {
         v->set_output(active_output);
     }
-
-    v->initialize();
 
     view_created_signal data;
     data.view = v;
