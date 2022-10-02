@@ -1,4 +1,5 @@
 #include "wayfire/object.hpp"
+#include "wayfire/scene-render.hpp"
 #include "wayfire/scene.hpp"
 #include <memory>
 #include <wayfire/plugin.hpp>
@@ -576,6 +577,20 @@ class WayfireSwitcher : public wf::plugin_interface_t
         return sw;
     }
 
+    void render_view_scene(wayfire_view view, const wf::render_target_t& buffer)
+    {
+        std::vector<wf::scene::render_instance_uptr> instances;
+        view->get_transformed_node()->gen_render_instances(
+            instances, [] (auto) {});
+
+        wf::scene::render_pass_params_t params;
+        params.instances = &instances;
+        params.damage    = view->get_transformed_node()->get_bounding_box();
+        params.reference_output = this->output;
+        params.target = buffer;
+        wf::scene::run_render_pass(params, 0);
+    }
+
     void render_view(const SwitcherView& sv, const wf::render_target_t& buffer)
     {
         auto transform = dynamic_cast<wf::view_3D*>(
@@ -593,7 +608,7 @@ class WayfireSwitcher : public wf::plugin_interface_t
             (float)sv.attribs.rotation, {0.0, 1.0, 0.0});
 
         transform->color[3] = sv.attribs.alpha;
-        sv.view->render_transformed(buffer, buffer.geometry);
+        render_view_scene(sv.view, buffer);
     }
 
     wf::render_hook_t switcher_renderer = [=] (const wf::render_target_t& fb)
@@ -605,7 +620,7 @@ class WayfireSwitcher : public wf::plugin_interface_t
         dim_background(background_dim);
         for (auto view : get_background_views())
         {
-            view->render_transformed(fb, fb.geometry);
+            render_view_scene(view, fb);
         }
 
         /* Render in the reverse order because we don't use depth testing */
@@ -616,7 +631,7 @@ class WayfireSwitcher : public wf::plugin_interface_t
 
         for (auto view : get_overlay_views())
         {
-            view->render_transformed(fb, fb.geometry);
+            render_view_scene(view, fb);
         }
 
         if (!duration.running())
