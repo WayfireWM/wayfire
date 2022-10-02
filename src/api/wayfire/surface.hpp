@@ -205,25 +205,40 @@ class surface_interface_t : public wf::object_base_t
 namespace scene
 {
 /**
- * Each surface is represented by two nodes. One of them is a floating_node_t,
- * which contains the surface node itself and its children's floating_node_t's,
- * for example like this:
+ * Each surface is represented by two nodes. One of them is a view_node_t,
+ * which contains the surface node itself and its children's
+ * surface_root_node_t's, for example like this:
  *
- * - floating_node_t(main surface):
- *   - floating_node_t(subsurface above)
+ * - view_node_t(main surface):
+ *   - surface_root_node_t(subsurface above)
  *     - surface_node_t(subsurface above)
  *   - surface_node_t(main surface)
- *   - floating_node_t(subsurface below)
+ *   - surface_root_node_t(subsurface below)
  *     - surface_node_t(subsurface below)
  */
+class surface_root_node_t : public wf::scene::floating_inner_node_t
+{
+  public:
+    surface_root_node_t(wf::surface_interface_t *si);
+
+    wf::pointf_t to_local(const wf::pointf_t& point) override;
+    wf::pointf_t to_global(const wf::pointf_t& point) override;
+
+    std::string stringify() const override;
+    void gen_render_instances(std::vector<render_instance_uptr>& instances,
+        damage_callback damage) override;
+    wf::geometry_t get_bounding_box() override;
+
+  private:
+    wf::surface_interface_t *si;
+};
+
 class surface_node_t : public wf::scene::node_t
 {
   public:
     surface_node_t(wf::surface_interface_t *si);
 
     std::optional<input_node_t> find_node_at(const wf::pointf_t& at) override;
-    wf::pointf_t to_local(const wf::pointf_t& point) override;
-    wf::pointf_t to_global(const wf::pointf_t& point) override;
 
     std::string stringify() const override;
     pointer_interaction_t& pointer_interaction() override;

@@ -12,6 +12,8 @@
 #include "wayfire/signal-definitions.hpp"
 
 #include <wayfire/scene-operations.hpp>
+
+#include "surface-root-node.cpp"
 #include "surface-node.cpp"
 
 /****************************
@@ -23,9 +25,8 @@ wf::surface_interface_t::surface_interface_t()
     this->priv->parent_surface = nullptr;
 
     this->priv->content_node = std::make_shared<wf::scene::surface_node_t>(this);
-    this->priv->root_node    = std::make_shared<wf::scene::floating_inner_node_t>(
-        false);
-    this->priv->root_node->set_children_list({priv->content_node});
+    this->priv->root_node    = std::make_shared<wf::scene::surface_root_node_t>(
+        this);
 }
 
 void wf::surface_interface_t::add_subsurface(

@@ -20,24 +20,6 @@ surface_node_t::surface_node_t(wf::surface_interface_t *si) : node_t(false)
     this->tch_interaction = std::make_unique<surface_touch_interaction_t>(si);
 }
 
-wf::pointf_t wf::scene::surface_node_t::to_local(const wf::pointf_t& point)
-{
-    auto offset = this->si->get_offset();
-    wf::pointf_t local = point;
-    local.x -= offset.x;
-    local.y -= offset.y;
-    return local;
-}
-
-wf::pointf_t wf::scene::surface_node_t::to_global(const wf::pointf_t& point)
-{
-    auto offset = this->si->get_offset();
-    wf::pointf_t local = point;
-    local.x += offset.x;
-    local.y += offset.y;
-    return local;
-}
-
 std::optional<input_node_t> surface_node_t::find_node_at(
     const wf::pointf_t& at)
 {
@@ -82,12 +64,6 @@ class surface_render_instance_t : public render_instance_t
     void schedule_instructions(std::vector<render_instruction_t>& instructions,
         const wf::render_target_t& target, wf::region_t& damage) override
     {
-        auto offset = surface->get_offset();
-
-        // Make it all surface-local
-        damage += -offset;
-        wf::render_target_t our_target = target;
-        our_target.geometry = our_target.geometry + -offset;
         auto our_box = wf::construct_box({0, 0}, surface->get_size());
 
         wf::region_t our_damage = damage & our_box;
@@ -95,15 +71,12 @@ class surface_render_instance_t : public render_instance_t
         {
             instructions.push_back(render_instruction_t{
                         .instance = this,
-                        .target   = our_target,
+                        .target   = target,
                         .damage   = std::move(our_damage),
                     });
 
             damage ^= surface->get_opaque_region({0, 0});
         }
-
-        // Push damage back to parent coordinates
-        damage += offset;
     }
 
     void render(const wf::render_target_t& target,
@@ -131,12 +104,6 @@ void surface_node_t::gen_render_instances(
 
 wf::geometry_t wf::scene::surface_node_t::get_bounding_box()
 {
-    // FIXME: currently, the view node 'stops' bounding box calls.
-    // We can't implement them properly, because get_bounding_box() may be called
-    // while the node itself is being constructed (because of damage to parent
-    // when the content node is added). This should be fixed at some point,
-    // preferably after view and surface are split.
-    return {0, 0, 0, 0};
     return wf::construct_box({0, 0}, si->get_size());
 }
 }
