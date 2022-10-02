@@ -192,13 +192,15 @@ class wayfire_idle_singleton : public wf::singleton_plugin_t<wayfire_idle>
             &fullscreen_state_changed);
         disable_on_fullscreen.set_callback(disable_on_fullscreen_changed);
 
-        auto fs_views = output->workspace->get_promoted_views(
-            output->workspace->get_current_workspace());
+        if (output->get_active_view() && output->get_active_view()->fullscreen)
+        {
+            /* Currently, the fullscreen count would always be 0 or 1,
+             * since fullscreen-layer-focused is only emitted on changes between 0
+             * and 1
+             **/
+            has_fullscreen = true;
+        }
 
-        /* Currently, the fullscreen count would always be 0 or 1,
-         * since fullscreen-layer-focused is only emitted on changes between 0 and 1
-         **/
-        has_fullscreen = fs_views.size() > 0;
         update_fullscreen();
 
         screensaver_timeout.set_callback([=] ()

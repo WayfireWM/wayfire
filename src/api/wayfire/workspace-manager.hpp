@@ -168,14 +168,6 @@ class workspace_manager
     std::vector<wayfire_view> get_minimized_views();
 
     /**
-     * Get a list of reordered fullscreen views as explained in
-     * get_views_in_layer().
-     *
-     * This returns only the view on the given workspace.
-     */
-    std::vector<wayfire_view> get_promoted_views(wf::point_t workspace);
-
-    /**
      * @return The current workspace implementation
      */
     workspace_implementation_t *get_workspace_implementation();
