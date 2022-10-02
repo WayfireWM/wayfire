@@ -200,6 +200,13 @@ wayfire_xdg_view::wayfire_xdg_view(wlr_xdg_toplevel *top) :
 void wayfire_xdg_view::initialize()
 {
     wlr_view_t::initialize();
+
+    // Set the output early, so that we can emit the signals on the output
+    if (!get_output())
+    {
+        set_output(wf::get_core().get_active_output());
+    }
+
     LOGI("new xdg_shell_stable surface: ", xdg_toplevel->title,
         " app-id: ", xdg_toplevel->app_id);
 

@@ -157,6 +157,13 @@ class wayfire_xwayland_view_base : public wf::wlr_view_t
     virtual void initialize() override
     {
         wf::wlr_view_t::initialize();
+
+        // Set the output early, so that we can emit the signals on the output
+        if (!get_output())
+        {
+            set_output(wf::get_core().get_active_output());
+        }
+
         on_map.set_callback([&] (void*) { map(xw->surface); });
         on_unmap.set_callback([&] (void*) { unmap(); });
         on_destroy.set_callback([&] (void*) { destroy(); });
