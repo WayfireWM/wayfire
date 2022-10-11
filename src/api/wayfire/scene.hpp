@@ -283,7 +283,7 @@ class node_t : public std::enable_shared_from_this<node_t>,
     bool _is_structure;
     int enabled_counter = 1;
     node_t *_parent     = nullptr;
-    friend class inner_node_t;
+    friend class surface_root_node_t;
 
     // A helper functions for stringify() implementations, serializes the flags()
     // to a string, e.g. node with KEYBOARD and USER_INPUT -> '(ku)'

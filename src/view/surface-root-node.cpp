@@ -15,6 +15,7 @@ surface_root_node_t::surface_root_node_t(surface_interface_t *si) :
     // in the constructor of surface_interface_t. We should add proper
     // initialization mechanisms, though that will happen later.
     this->children = {si->priv->content_node};
+    si->priv->content_node->_parent = this;
     this->si = si;
 }
 

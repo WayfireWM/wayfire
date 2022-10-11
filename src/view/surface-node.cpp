@@ -30,7 +30,7 @@ std::optional<input_node_t> surface_node_t::find_node_at(
         wf::scene::input_node_t result;
         result.node    = this;
         result.surface = si;
-        result.local_coords = at;
+        result.local_coords = local;
         return result;
     }
 
