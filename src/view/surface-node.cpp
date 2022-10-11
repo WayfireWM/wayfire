@@ -16,7 +16,8 @@ namespace scene
 surface_node_t::surface_node_t(wf::surface_interface_t *si) : node_t(false)
 {
     this->si = si;
-    this->ptr_interaction = std::make_unique<surface_pointer_interaction_t>(si);
+    this->ptr_interaction =
+        std::make_unique<surface_pointer_interaction_t>(si, this);
     this->tch_interaction = std::make_unique<surface_touch_interaction_t>(si);
 }
 

@@ -7,6 +7,9 @@
 
 namespace wf
 {
+struct node_recheck_constraints_signal
+{};
+
 class surface_interface_t::impl
 {
   public:

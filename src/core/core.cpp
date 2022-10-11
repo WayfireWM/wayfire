@@ -1,7 +1,6 @@
 /* Needed for pipe2 */
 #ifndef _GNU_SOURCE
     #define _GNU_SOURCE
-    #include "wayfire/scene-input.hpp"
 #endif
 
 #include <sys/wait.h>
@@ -17,6 +16,9 @@
 #include <wayfire/signal-definitions.hpp>
 #include <wayfire/nonstd/wlroots-full.hpp>
 
+#include "view/surface-impl.hpp"
+#include "wayfire/scene-input.hpp"
+#include "wayfire/surface.hpp"
 #include "seat/keyboard.hpp"
 #include "opengl-priv.hpp"
 #include "seat/input-manager.hpp"
@@ -139,7 +141,8 @@ struct wf_pointer_constraint
         auto focus     = lpointer->get_focus();
         if (focus)
         {
-            lpointer->update_cursor_position(wf::get_current_time(), false);
+            wf::node_recheck_constraints_signal data;
+            focus->emit(&data);
         }
     }
 };

@@ -5,7 +5,9 @@
 #include <wayfire/compositor-surface.hpp>
 #include "core/seat/seat.hpp"
 #include "view-impl.hpp"
+#include "view/surface-impl.hpp"
 #include "wayfire/core.hpp"
+#include "wayfire/signal-provider.hpp"
 
 namespace wf
 {
@@ -156,6 +158,12 @@ class surface_pointer_interaction_t final : public wf::pointer_interaction_t
         last_constraint = constraint;
     }
 
+    wf::signal::connection_t<node_recheck_constraints_signal>
+    on_recheck_constraints = [=] (node_recheck_constraints_signal *ev)
+    {
+        _check_activate_constraint();
+    };
+
     void _reset_constraint()
     {
         if (!this->last_constraint)
@@ -169,8 +177,10 @@ class surface_pointer_interaction_t final : public wf::pointer_interaction_t
     }
 
   public:
-    surface_pointer_interaction_t(wf::surface_interface_t *si)
+    surface_pointer_interaction_t(wf::surface_interface_t *si,
+        wf::scene::node_t *self)
     {
+        self->connect(&on_recheck_constraints);
         this->surface = si;
     }
 
