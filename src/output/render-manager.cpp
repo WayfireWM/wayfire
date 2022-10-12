@@ -858,6 +858,7 @@ class wf::render_manager::impl
 
         this->swap_damage = scene::run_render_pass(params,
             scene::RPASS_CLEAR_BACKGROUND | scene::RPASS_EMIT_SIGNALS);
+        swap_damage += -wf::origin(output->get_layout_geometry());
         swap_damage  = swap_damage * output->handle->scale;
         swap_damage &= output_damage->get_wlr_damage_box();
     }
