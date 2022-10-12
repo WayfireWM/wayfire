@@ -7,6 +7,7 @@
 #include "cursor.hpp"
 #include "input-manager.hpp"
 #include "../core-impl.hpp"
+#include "wayfire/core.hpp"
 #include "wayfire/output.hpp"
 #include "wayfire/workspace-manager.hpp"
 #include "wayfire/compositor-surface.hpp"
@@ -65,9 +66,28 @@ wf::touch_interface_t::touch_interface_t(wlr_cursor *cursor, wlr_seat *seat,
         emit_device_event_signal("touch_motion_post", ev);
     });
 
+    on_cancel.set_callback([=] (void *data)
+    {
+        wlr_event_touch_cancel *ev = (wlr_event_touch_cancel*)data;
+        wlr_event_touch_up sim;
+        sim.time_msec = ev->time_msec;
+        sim.touch_id  = ev->touch_id;
+        sim.device    = ev->device;
+        this->on_up.emit(&sim);
+    });
+
+    on_frame.set_callback([&] (void*)
+    {
+        wlr_seat_touch_notify_frame(wf::get_core().get_current_seat());
+        wlr_idle_notify_activity(wf::get_core().protocols.idle,
+            wf::get_core().get_current_seat());
+    });
+
     on_up.connect(&cursor->events.touch_up);
     on_down.connect(&cursor->events.touch_down);
+    on_frame.connect(&cursor->events.touch_frame);
     on_motion.connect(&cursor->events.touch_motion);
+    on_cancel.connect(&cursor->events.touch_cancel);
 
     on_root_node_updated = [=] (wf::scene::root_node_update_signal *data)
     {

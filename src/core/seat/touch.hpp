@@ -61,7 +61,7 @@ class touch_interface_t
     input_surface_selector_t surface_at;
     wf::plugin_grab_interface_t *grab = nullptr;
 
-    wf::wl_listener_wrapper on_down, on_up, on_motion;
+    wf::wl_listener_wrapper on_down, on_up, on_motion, on_cancel, on_frame;
     void handle_touch_down(int32_t id, uint32_t time, wf::pointf_t current,
         input_event_processing_mode_t mode);
     void handle_touch_motion(int32_t id, uint32_t time, wf::pointf_t current,

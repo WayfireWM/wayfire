@@ -4,6 +4,7 @@
 #include "../core-impl.hpp"
 #include "../../view/view-impl.hpp"
 #include "input-manager.hpp"
+#include "wayfire/util.hpp"
 #include "wayfire/workspace-manager.hpp"
 #include "wayfire/compositor-surface.hpp"
 #include "wayfire/output-layout.hpp"
