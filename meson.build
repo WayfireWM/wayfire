@@ -73,7 +73,6 @@ endif
 add_project_arguments('-DWAYFIRE_VERSION=@0@'.format(version), language: 'cpp')
 conf_data.set('WAYFIRE_VERSION', '-DWAYFIRE_VERSION=@0@'.format(version))
 
-conf_data.set('WF_SRC_DIR', meson.source_root())
 conf_data.set('INSTALL_PREFIX', get_option('prefix'))
 conf_data.set('PLUGIN_PATH', join_paths(get_option('prefix'), get_option('libdir'), 'wayfire'))
 metadata_dir_suffix = 'share/wayfire/metadata'
