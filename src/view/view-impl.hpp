@@ -202,6 +202,7 @@ class wlr_view_t :
         toplevel_handle_v1_activate_request,
         toplevel_handle_v1_minimize_request,
         toplevel_handle_v1_set_rectangle_request,
+        toplevel_handle_v1_fullscreen_request,
         toplevel_handle_v1_close_request;
 
     /* Create/destroy the toplevel_handle */

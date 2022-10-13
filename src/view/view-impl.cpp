@@ -5,6 +5,7 @@
 #include "wayfire/decorator.hpp"
 #include "wayfire/signal-definitions.hpp"
 #include "wayfire/workspace-manager.hpp"
+#include "wayfire/output-layout.hpp"
 #include <wayfire/util/log.hpp>
 
 #include "xdg-shell.hpp"
@@ -417,6 +418,13 @@ void wf::wlr_view_t::create_toplevel()
         auto surface = wf_view_from_void(ev->surface->data);
         handle_minimize_hint(surface, {ev->x, ev->y, ev->width, ev->height});
     });
+    toplevel_handle_v1_fullscreen_request.set_callback([&] (
+        void *data)
+    {
+        auto ev = static_cast<wlr_foreign_toplevel_handle_v1_fullscreen_event*>(data);
+        auto wo = wf::get_core().output_layout->find_output(ev->output);
+        fullscreen_request(wo, ev->fullscreen);
+    });
 
     toplevel_handle_v1_maximize_request.connect(
         &toplevel_handle->events.request_maximize);
@@ -426,6 +434,8 @@ void wf::wlr_view_t::create_toplevel()
         &toplevel_handle->events.request_activate);
     toplevel_handle_v1_set_rectangle_request.connect(
         &toplevel_handle->events.set_rectangle);
+    toplevel_handle_v1_fullscreen_request.connect(
+        &toplevel_handle->events.request_fullscreen);
     toplevel_handle_v1_close_request.connect(
         &toplevel_handle->events.request_close);
 
@@ -446,6 +456,7 @@ void wf::wlr_view_t::destroy_toplevel()
     toplevel_handle_v1_activate_request.disconnect();
     toplevel_handle_v1_minimize_request.disconnect();
     toplevel_handle_v1_set_rectangle_request.disconnect();
+    toplevel_handle_v1_fullscreen_request.disconnect();
     toplevel_handle_v1_close_request.disconnect();
 
     wlr_foreign_toplevel_handle_v1_destroy(toplevel_handle);
@@ -504,6 +515,7 @@ void wf::wlr_view_t::toplevel_send_state()
         tiled_edges == TILED_EDGES_ALL);
     wlr_foreign_toplevel_handle_v1_set_activated(toplevel_handle, activated);
     wlr_foreign_toplevel_handle_v1_set_minimized(toplevel_handle, minimized);
+    wlr_foreign_toplevel_handle_v1_set_fullscreen(toplevel_handle, fullscreen);
 
     /* update parent as well */
     wf::wlr_view_t *parent_ptr = dynamic_cast<wf::wlr_view_t*>(parent.get());
