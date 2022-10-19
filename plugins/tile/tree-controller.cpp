@@ -244,7 +244,7 @@ void move_view_controller_t::ensure_preview(wf::point_t start)
     auto view = std::make_unique<wf::preview_indication_view_t>(start);
     this->preview = {view};
     wf::get_core().add_view(std::move(view));
-    view->set_output(output);
+    this->preview->set_output(output);
 }
 
 void move_view_controller_t::input_motion(wf::point_t input)
