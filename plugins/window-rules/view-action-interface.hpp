@@ -46,6 +46,7 @@ class view_action_interface_t : public action_interface_t
     void _set_alpha(float alpha);
     void _set_geometry(int x, int y, int w, int h);
     void _set_geometry_ppt(int x, int y, int w, int h);
+    void _start_on_output(std::string output);
     void _move(int x, int y);
     void _resize(int w, int h);
 

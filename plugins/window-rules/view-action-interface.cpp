@@ -6,6 +6,7 @@
 #include "wayfire/plugins/grid.hpp"
 #include "wayfire/util/log.hpp"
 #include "wayfire/view-transform.hpp"
+#include "wayfire/output-layout.hpp"
 #include "../wm-actions/wm-actions-signals.hpp"
 
 #include <algorithm>
@@ -158,6 +159,20 @@ bool view_action_interface_t::execute(const std::string & name,
         LOGI("View action interface: Snap to ", location, ".");
 
         output->emit_signal("grid-snap-view", &data);
+
+        return false;
+    } else if (name == "start_on_output")
+    {
+        if ((args.size() < 1) || (wf::is_string(args.at(0)) == false))
+        {
+            LOGE(
+                "View action interface: Start on output execution requires 1 string as argument.");
+
+            return true;
+        }
+
+        auto name = wf::get_string(args.at(0));
+        _start_on_output(name);
 
         return false;
     } else if (name == "move")
@@ -403,6 +418,22 @@ void view_action_interface_t::_set_geometry_ppt(int x, int y, int w, int h)
 
     _resize(w, h);
     _move(x, y);
+}
+
+void view_action_interface_t::_start_on_output(std::string name)
+{
+    auto output = wf::get_core().output_layout->find_output(name);
+    if (!output)
+    {
+        return;
+    }
+
+    if (_view->get_output() == output)
+    {
+        return;
+    }
+
+    wf::get_core().move_view_to_output(_view, output, true);
 }
 
 std::tuple<bool, wf::point_t> view_action_interface_t::_validate_ws(
