@@ -6,6 +6,7 @@
 #include "wayfire/plugins/grid.hpp"
 #include "wayfire/util/log.hpp"
 #include "wayfire/view-transform.hpp"
+#include "../wm-actions/wm-actions-signals.hpp"
 
 #include <algorithm>
 #include <cfloat>
@@ -28,6 +29,10 @@ bool view_action_interface_t::execute(const std::string & name,
         if (id == "sticky")
         {
             _make_sticky();
+            return false;
+        } else if (id == "always_on_top")
+        {
+            _always_on_top();
             return false;
         }
 
@@ -215,6 +220,21 @@ void view_action_interface_t::_unminimize()
 void view_action_interface_t::_make_sticky()
 {
     _view->set_sticky(1);
+}
+
+void view_action_interface_t::_always_on_top()
+{
+    wf::wm_actions_set_above_state data;
+
+    auto output = _view->get_output();
+    if (!output)
+    {
+        return;
+    }
+
+    data.view  = _view;
+    data.above = true;
+    output->emit_signal("wm-actions-set-above-state", &data);
 }
 
 std::tuple<bool, float> view_action_interface_t::_expect_float(
