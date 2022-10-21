@@ -1,1 +1,0 @@
-**Notice: Wayfire's development is temporarily happening in the `stabilize-api` branch. If you open a pull request for the master branch, it will likely not be merged before the stabilize-api branch is itself merged into master.**
