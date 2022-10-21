@@ -370,13 +370,13 @@ pid_t wf::compositor_core_impl_t::run(std::string command)
 
     if (socketpair(AF_UNIX, SOCK_STREAM, PF_UNSPEC, sp) == -1)
     {
-      return 0;
+      return -1;
     }
 
     pid = fork();
     if (pid < 0)
     {
-        return 0;
+        return -1;
     }
     if (!pid)
     {
@@ -414,7 +414,7 @@ pid_t wf::compositor_core_impl_t::run(std::string command)
         read(sp[0], (void *)&pid, sizeof(pid));
     } else
     {
-        pid = 0;
+        pid = -1;
     }
     close(sp[0]);
     return pid;

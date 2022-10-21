@@ -274,7 +274,7 @@ class compositor_core_t : public wf::object_base_t, public signal::provider_t
      * This also sets some environment variables for the new process, including
      * correct WAYLAND_DISPLAY and DISPLAY.
      *
-     * @return The PID of the started client, or 0 on failure.
+     * @return The PID of the started client, or -1 on failure.
      */
     virtual pid_t run(std::string command) = 0;
 
