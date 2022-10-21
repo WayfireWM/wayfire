@@ -59,6 +59,14 @@ bool view_action_interface_t::execute(const std::string & name,
                 _set_geometry(std::get<1>(geometry), std::get<2>(geometry),
                     std::get<3>(geometry), std::get<4>(geometry));
             }
+        } else if (id == "geometry_ppt")
+        {
+            auto geometry = _validate_geometry(args);
+            if (std::get<0>(geometry))
+            {
+                _set_geometry_ppt(std::get<1>(geometry), std::get<2>(geometry),
+                    std::get<3>(geometry), std::get<4>(geometry));
+            }
         } else
         {
             LOGE("View action interface: Unsupported set operation to identifier ",
@@ -369,6 +377,30 @@ void view_action_interface_t::_set_alpha(float alpha)
 
 void view_action_interface_t::_set_geometry(int x, int y, int w, int h)
 {
+    _resize(w, h);
+    _move(x, y);
+}
+
+void view_action_interface_t::_set_geometry_ppt(int x, int y, int w, int h)
+{
+    auto output = _view->get_output();
+    if (!output)
+    {
+        return;
+    }
+
+    auto og = output->get_relative_geometry();
+
+    x = std::clamp(x, 0, 100);
+    y = std::clamp(y, 0, 100);
+    w = std::clamp(w, 0, 100);
+    h = std::clamp(h, 0, 100);
+
+    x = og.width * x / 100;
+    y = og.height * y / 100;
+    w = og.width * w / 100;
+    h = og.height * h / 100;
+
     _resize(w, h);
     _move(x, y);
 }
