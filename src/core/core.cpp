@@ -19,6 +19,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <float.h>
+#include <poll.h>
 
 #include <wayfire/img.hpp>
 #include <wayfire/output.hpp>
@@ -364,6 +365,8 @@ pid_t wf::compositor_core_impl_t::run(std::string command)
 {
     pid_t pid;
     int daemonized, status, sp[2];
+    struct pollfd pfd;
+    int TIMEOUT = 500;
 
     if (socketpair(AF_UNIX, SOCK_STREAM, PF_UNSPEC, sp) == -1)
     {
@@ -380,7 +383,7 @@ pid_t wf::compositor_core_impl_t::run(std::string command)
         daemonized = daemon(1, 0);
         if (daemonized != 0)
         {
-            exit(daemonized);
+            _exit(daemonized);
         }
         /* return daemon pid back to wayfire */
         pid = getpid();
@@ -401,7 +404,18 @@ pid_t wf::compositor_core_impl_t::run(std::string command)
     waitpid(pid, &status, 0);
 
     close(sp[1]);
-    read(sp[0], (void *)&pid, sizeof(pid));
+
+    pfd.fd = sp[0];
+    pfd.events = POLLIN;
+    pfd.revents = 0;
+    status = poll(&pfd, 1, TIMEOUT);
+    if (status == 1)
+    {
+        read(sp[0], (void *)&pid, sizeof(pid));
+    } else
+    {
+        pid = 0;
+    }
     close(sp[0]);
     return pid;
 }
