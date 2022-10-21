@@ -1,9 +1,3 @@
-/* Needed for pipe2 */
-#ifndef _GNU_SOURCE
-    #define _GNU_SOURCE
-    #include "wayfire/core.hpp"
-#endif
-
 #include <wayfire/nonstd/tracking-allocator.hpp>
 #include "wayfire/scene.hpp"
 #include <wayfire/workarea.hpp>
@@ -19,7 +13,9 @@
 #include "seat/tablet.hpp"
 #include "wayfire/touch/touch.hpp"
 #include "wayfire/view.hpp"
+#include <sys/socket.h>
 #include <sys/wait.h>
+#include <stdlib.h>
 #include <unistd.h>
 #include <fcntl.h>
 #include <float.h>
@@ -366,62 +362,48 @@ std::vector<wayfire_view> wf::compositor_core_t::get_all_views()
 
 pid_t wf::compositor_core_impl_t::run(std::string command)
 {
-    static constexpr size_t READ_END  = 0;
-    static constexpr size_t WRITE_END = 1;
     pid_t pid;
-    int pipe_fd[2];
-    pipe2(pipe_fd, O_CLOEXEC);
+    int daemonized, status, sp[2];
 
-    /* The following is a "hack" for disowning the child processes,
-     * otherwise they will simply stay as zombie processes */
+    if (socketpair(AF_UNIX, SOCK_STREAM, PF_UNSPEC, sp) == -1)
+    {
+      return 0;
+    }
+
     pid = fork();
+    if (pid < 0)
+    {
+        return 0;
+    }
     if (!pid)
     {
-        pid = fork();
-        if (!pid)
+        daemonized = daemon(1, 0);
+        if (daemonized != 0)
         {
-            close(pipe_fd[READ_END]);
-            close(pipe_fd[WRITE_END]);
-
-            setenv("_JAVA_AWT_WM_NONREPARENTING", "1", 1);
-            setenv("WAYLAND_DISPLAY", wayland_display.c_str(), 1);
-#if WF_HAS_XWAYLAND
-            if (!xwayland_get_display().empty())
-            {
-                setenv("DISPLAY", xwayland_get_display().c_str(), 1);
-            }
-
-#endif
-            if (discard_command_output)
-            {
-                int dev_null = open("/dev/null", O_WRONLY);
-                dup2(dev_null, 1);
-                dup2(dev_null, 2);
-                close(dev_null);
-            }
-
-            _exit(execl("/bin/sh", "/bin/sh", "-c", command.c_str(), NULL));
-        } else
-        {
-            close(pipe_fd[READ_END]);
-            write(pipe_fd[WRITE_END], (void*)(&pid), sizeof(pid));
-            close(pipe_fd[WRITE_END]);
-            _exit(0);
+            exit(daemonized);
         }
-    } else
-    {
-        close(pipe_fd[WRITE_END]);
+        /* return daemon pid back to wayfire */
+        pid = getpid();
+        close(sp[0]);
+        write(sp[1], (void *)&pid, sizeof(pid));
+        close(sp[1]);
 
-        int status;
-        waitpid(pid, &status, 0);
-
-        pid_t child_pid;
-        read(pipe_fd[READ_END], &child_pid, sizeof(child_pid));
-
-        close(pipe_fd[READ_END]);
-
-        return child_pid;
+        setenv("_JAVA_AWT_WM_NONREPARENTING", "1", 1);
+        setenv("WAYLAND_DISPLAY", wayland_display.c_str(), 1);
+#if WF_HAS_XWAYLAND
+        if (!xwayland_get_display().empty())
+        {
+            setenv("DISPLAY", xwayland_get_display().c_str(), 1);
+        }
+#endif
+        execl("/bin/sh", "/bin/sh", "-c", command.c_str(), NULL);
     }
+    waitpid(pid, &status, 0);
+
+    close(sp[1]);
+    read(sp[0], (void *)&pid, sizeof(pid));
+    close(sp[0]);
+    return pid;
 }
 
 std::string wf::compositor_core_impl_t::get_xwayland_display()
