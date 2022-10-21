@@ -34,6 +34,11 @@ class connection_base_t
         disconnect();
     }
 
+    bool is_connected() const
+    {
+        return !connected_to.empty();
+    }
+
     /** Disconnect from all connected signal providers */
     void disconnect();
 
