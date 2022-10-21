@@ -507,7 +507,10 @@ class control_bindings_t
         // and not just move a view around.
         if (!window_only)
         {
-            this->last_dir = target_ws - ws;
+            if (target_ws != ws)
+            {
+                this->last_dir = target_ws - ws;
+            }
         }
 
         return callback(target_ws - ws, view, window_only);
