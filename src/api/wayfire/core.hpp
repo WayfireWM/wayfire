@@ -248,10 +248,10 @@ class compositor_core_t : public wf::object_base_t, public signal::provider_t
     virtual std::vector<wayfire_view> get_all_views() = 0;
 
     /**
-     * Set the keyboard focus view. The stacking order on the view's output
-     * won't be changed.
+     * Set the keyboard focus node. Note that this changes only the focus state
+     * and does not reorder nodes or anything like this.
      */
-    virtual void set_active_view(wayfire_view v) = 0;
+    virtual void set_active_node(wf::scene::node_ptr node) = 0;
 
     /**
      * Focus the given view and its output (if necessary).

@@ -182,7 +182,17 @@ class output_t : public wf::object_base_t
     /**
      * @return The most recently focused view on this output.
      */
-    virtual wayfire_view get_active_view() const = 0;
+    wayfire_view get_active_view() const;
+
+    /**
+     * The most recently focused node on this output. Focus here means keyboard
+     * focus, as pointer/touch/etc. focus is a global state which can be queried
+     * from core_interface_t.
+     *
+     * Note that the focused node does not have to be a view node, it could be a
+     * plugin grab or something similar.
+     */
+    virtual wf::scene::node_ptr get_focused_node() const = 0;
 
     /**
      * Attempt to give keyboard focus to the given view and set it as the

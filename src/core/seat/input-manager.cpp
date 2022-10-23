@@ -207,8 +207,8 @@ void wf::input_manager_t::ungrab_input()
     active_grab = nullptr;
     if (wf::get_core().get_active_output())
     {
-        wf::get_core().set_active_view(
-            wf::get_core().get_active_output()->get_active_view());
+        wf::get_core().set_active_node(
+            wf::get_core().get_active_output()->get_focused_node());
     }
 
     // We must update cursor focus, however, if we update "too soon", the current

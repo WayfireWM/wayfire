@@ -1,4 +1,5 @@
 #include "output-impl.hpp"
+#include "wayfire/core.hpp"
 #include "wayfire/scene-operations.hpp"
 #include "wayfire/scene.hpp"
 #include "wayfire/view.hpp"
@@ -273,7 +274,7 @@ void wf::output_impl_t::close_popups()
     for (auto& v : workspace->get_views_in_layer(wf::ALL_LAYERS))
     {
         auto popup = dynamic_cast<wayfire_xdg_popup*>(v.get());
-        if (!popup || (popup->popup_parent == active_view.get()))
+        if (!popup || (popup->popup_parent == get_active_view().get()))
         {
             continue;
         }
@@ -291,13 +292,42 @@ void wf::output_impl_t::close_popups()
     }
 }
 
+static wayfire_view pick_topmost_focusable(wayfire_view view)
+{
+    auto all_views = view->enumerate_views();
+    auto it = std::find_if(all_views.begin(), all_views.end(),
+        [] (wayfire_view v) { return v->get_keyboard_focus_surface() != NULL; });
+
+    if (it != all_views.end())
+    {
+        return *it;
+    }
+
+    return nullptr;
+}
+
 #include <wayfire/debug.hpp>
 void wf::output_impl_t::update_active_view(wayfire_view v, uint32_t flags)
 {
-    this->active_view = v;
+    static wf::option_wrapper_t<bool>
+    all_dialogs_modal{"workarounds/all_dialogs_modal"};
+
+    if (v && v->is_mapped())
+    {
+        if (all_dialogs_modal)
+        {
+            v = pick_topmost_focusable(v);
+        }
+    } else
+    {
+        // do not focus unmapped, nullptr, etc.
+        v = nullptr;
+    }
+
+    this->focused_node = v ? v->get_surface_root_node() : nullptr;
     if (this == wf::get_core().get_active_output())
     {
-        wf::get_core().set_active_view(v);
+        wf::get_core().set_active_node(focused_node);
     }
 
     if (flags & FOCUS_VIEW_CLOSE_POPUPS)
@@ -389,7 +419,7 @@ void wf::output_impl_t::focus_view(wayfire_view v, uint32_t flags)
         }
 
         update_active_view(v, flags);
-        data.view = v;
+        data.view = this->get_active_view();
         emit_signal("view-focused", &data);
     }
 }
@@ -414,9 +444,19 @@ wayfire_view wf::output_t::get_top_view() const
     return views.empty() ? nullptr : views[0];
 }
 
-wayfire_view wf::output_impl_t::get_active_view() const
+wayfire_view wf::output_t::get_active_view() const
 {
-    return active_view;
+    if (auto vnode = dynamic_cast<scene::view_node_t*>(get_focused_node().get()))
+    {
+        return vnode->get_view();
+    }
+
+    return nullptr;
+}
+
+wf::scene::node_ptr wf::output_impl_t::get_focused_node() const
+{
+    return focused_node;
 }
 
 bool wf::output_impl_t::can_activate_plugin(uint32_t caps,

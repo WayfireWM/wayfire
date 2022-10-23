@@ -300,33 +300,7 @@ void wf::compositor_core_impl_t::init()
 
     image_io::init();
     OpenGL::init();
-
-    init_last_view_tracking();
     this->state = compositor_state_t::START_BACKEND;
-}
-
-void wf::compositor_core_impl_t::init_last_view_tracking()
-{
-    on_new_output.set_callback([&] (wf::signal_data_t *data)
-    {
-        auto wo = get_signaled_output(data);
-        wo->connect_signal("view-unmapped", &on_view_unmap);
-    });
-    output_layout->connect_signal("output-added", &on_new_output);
-
-    on_view_unmap.set_callback([&] (wf::signal_data_t *data)
-    {
-        auto view = get_signaled_view(data);
-        if (view == last_active_toplevel)
-        {
-            last_active_toplevel = nullptr;
-        }
-
-        if (view == last_active_view)
-        {
-            last_active_view = nullptr;
-        }
-    });
 }
 
 void wf::compositor_core_impl_t::post_init()
@@ -652,71 +626,9 @@ std::vector<wayfire_view> wf::compositor_core_impl_t::get_all_views()
     return result;
 }
 
-/* sets the "active" view and gives it keyboard focus
- *
- * It maintains two different classes of "active views"
- * 1. active_view -> the view which has the current keyboard focus
- * 2. last_active_toplevel -> the toplevel view which last held the keyboard focus
- *
- * Because we don't want to deactivate views when for ex. a panel gets focus,
- * we don't deactivate the current view when this is the case. However, when
- * the focus goes back to the toplevel layer, we need to ensure the proper view
- * is activated.
- */
-void wf::compositor_core_impl_t::set_active_view(wayfire_view new_focus)
+void wf::compositor_core_impl_t::set_active_node(wf::scene::node_ptr node)
 {
-    static wf::option_wrapper_t<bool>
-    all_dialogs_modal{"workarounds/all_dialogs_modal"};
-
-    if (new_focus && !new_focus->is_mapped())
-    {
-        new_focus = nullptr;
-    }
-
-    if (all_dialogs_modal && new_focus)
-    {
-        // Choose the frontmost view which has focus enabled.
-        auto all_views = new_focus->enumerate_views();
-        for (auto& view : all_views)
-        {
-            if (view->get_keyboard_focus_surface())
-            {
-                new_focus = view;
-                break;
-            }
-        }
-    }
-
-    bool refocus = (last_active_view == new_focus);
-    /* don't deactivate view if the next focus is not a toplevel */
-    if ((new_focus == nullptr) || (new_focus->role == VIEW_ROLE_TOPLEVEL))
-    {
-        if (last_active_view && last_active_view->is_mapped() && !refocus)
-        {
-            last_active_view->set_activated(false);
-        }
-
-        /* make sure to deactivate the last activated toplevel */
-        if (last_active_toplevel && (new_focus != last_active_toplevel))
-        {
-            last_active_toplevel->set_activated(false);
-        }
-    }
-
-    if (new_focus)
-    {
-        seat->set_keyboard_focus(new_focus->get_surface_root_node());
-        new_focus->set_activated(true);
-    } else
-    {
-        seat->set_keyboard_focus(nullptr);
-    }
-
-    last_active_view = new_focus;
-    if (!new_focus || (new_focus->role == VIEW_ROLE_TOPLEVEL))
-    {
-        last_active_toplevel = new_focus;
-    }
+    seat->set_keyboard_focus(node);
 }
 
 void wf::compositor_core_impl_t::focus_view(wayfire_view v)

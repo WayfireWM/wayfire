@@ -40,7 +40,7 @@ class mock_core_t : public wf::compositor_core_impl_t
 
     void add_view(std::unique_ptr<wf::view_interface_t> view) override;
     std::vector<wayfire_view> get_all_views() override;
-    void set_active_view(wayfire_view v) override;
+    void set_active_node(wf::scene::node_ptr node) override;
     void focus_view(wayfire_view win) override;
     void move_view_to_output(wayfire_view v, wf::output_t *new_output,
         bool reconfigure) override;

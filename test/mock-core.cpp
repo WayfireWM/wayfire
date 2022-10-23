@@ -129,7 +129,7 @@ std::vector<wayfire_view> mock_core_t::get_all_views()
     return {};
 }
 
-void mock_core_t::set_active_view(wayfire_view new_focus)
+void mock_core_t::set_active_node(wf::scene::node_ptr)
 {}
 
 void mock_core_t::focus_view(wayfire_view v)

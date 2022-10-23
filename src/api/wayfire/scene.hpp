@@ -70,6 +70,7 @@ namespace scene
 {
 class node_t;
 using node_ptr = std::shared_ptr<node_t>;
+using node_weak_ptr = std::weak_ptr<node_t>;
 
 /**
  * Describes the current state of a node.

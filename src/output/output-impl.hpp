@@ -62,7 +62,8 @@ class output_impl_t : public output_t
     void start_plugins();
 
     virtual ~output_impl_t();
-    wayfire_view active_view;
+
+    wf::scene::node_ptr focused_node;
 
     /**
      * Implementations of the public APIs
@@ -80,7 +81,7 @@ class output_impl_t : public output_t
     bool is_plugin_active(std::string owner_name) const override;
     bool call_plugin(const std::string& activator,
         const wf::activator_data_t& data) const override;
-    wayfire_view get_active_view() const override;
+    wf::scene::node_ptr get_focused_node() const override;
     void focus_view(wayfire_view v, bool raise) override;
     void refocus(wayfire_view skip_view, uint32_t layers) override;
     wf::dimensions_t get_screen_size() const override;

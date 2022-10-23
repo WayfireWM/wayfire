@@ -388,7 +388,7 @@ class tile_plugin_t : public wf::plugin_interface_t
     signal_connection_t on_focus_changed = [=] (signal_data_t *data)
     {
         auto view = get_signaled_view(data);
-        if (tile::view_node_t::get_node(view) && !view->fullscreen)
+        if (view && tile::view_node_t::get_node(view) && !view->fullscreen)
         {
             auto vp = output->workspace->get_current_workspace();
             for_each_view(roots[vp.x][vp.y], [&] (wayfire_view view)

@@ -357,6 +357,7 @@ void wf::view_interface_t::emit_view_unmap()
     }
 
     emit_signal("unmapped", &data);
+    this->emit(&data);
 }
 
 void wf::view_interface_t::emit_view_pre_unmap()
