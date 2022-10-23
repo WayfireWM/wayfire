@@ -393,6 +393,7 @@ void wf::view_interface_t::set_minimized(bool minim)
 
     if (this->view_impl->actually_minimized == minim)
     {
+        desktop_state_updated();
         return;
     }
 
