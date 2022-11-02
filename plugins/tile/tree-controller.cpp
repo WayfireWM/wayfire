@@ -242,7 +242,7 @@ void move_view_controller_t::ensure_preview(wf::point_t start)
         return;
     }
 
-    auto view = std::make_unique<wf::preview_indication_view_t>(start);
+    auto view = std::make_unique<wf::preview_indication_view_t>(start, "simple-tile");
     this->preview = {view};
     wf::get_core().add_view(std::move(view));
     this->preview->set_output(output);

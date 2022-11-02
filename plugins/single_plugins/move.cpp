@@ -486,7 +486,7 @@ class wayfire_move : public wf::per_output_plugin_instance_t,
 
             auto input   = get_input_coords();
             auto preview =
-                new wf::preview_indication_view_t({input.x, input.y, 1, 1});
+                new wf::preview_indication_view_t({input.x, input.y, 1, 1}, "move");
             wf::get_core().add_view(
                 std::unique_ptr<wf::view_interface_t>(preview));
             preview->set_output(output);
