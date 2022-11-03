@@ -32,7 +32,7 @@
 		</option>
 		<option name="snap_off_threshold" type="int">
 			<_short>Snap off threshold</_short>
-			<_long>When attempting to move a snapped window, this option requires the user to move at least the specified amount of pixels before the window actually moves.  This only takes effect with `move.enable_snap_off`.</_long>
+			<_long>When attempting to move a snapped window, this option requires the user to move at least the specified amount of pixels before the window actually moves.	This only takes effect with `move.enable_snap_off`.</_long>
 			<default>10</default>
 		</option>
 		<option name="join_views" type="bool">
@@ -53,12 +53,12 @@
 		<default>3</default>
 		<min>0</min>
 	</option>
-    <option name="workspace_switch_after" type="int">
-      <_short>Switch workspace after</_short>
-      <_long>Switch workspace when the mouse stays on the output edge for the
-        given duration in milliseconds (-1 to disable).</_long>
-      <default>-1</default>
-      <min>-1</min>
-    </option>
+	<option name="workspace_switch_after" type="int">
+		<_short>Switch workspace after</_short>
+		<_long>Switch workspace when the mouse stays on the output edge for the
+		given duration in milliseconds (-1 to disable).</_long>
+		<default>-1</default>
+		<min>-1</min>
+	</option>
 	</plugin>
 </wayfire>
