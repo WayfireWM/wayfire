@@ -4,5 +4,13 @@
 		<_short>Window Rules</_short>
 		<_long>A plugin to apply specific commands to windows by using various criteria.</_long>
 		<category>Window Management</category>
+		<option name="rules" type="dynamic-list">
+			<_short>Window rules</_short>
+			<_long>Apply specific commands to windows by using various criteria</_long>
+			<entry prefix="rule_" type="string">
+				<_short>Rule</_short>
+				<_long>Defines the rule to be applied</_long>
+			</entry>
+		</option>
 	</plugin>
 </wayfire>
