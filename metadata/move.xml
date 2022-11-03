@@ -40,25 +40,25 @@
 			<_long>Disallows independently moving dialogues.</_long>
 			<default>false</default>
 		</option>
-	<option name="preview_base_color" type="color">
-		<_short>Preview fill color</_short>
-		<default>0.5 0.5 1 0.5</default>
-	</option>
-	<option name="preview_base_border" type="color">
-		<_short>Preview border color</_short>
-		<default>0.25 0.25 0.5 0.8</default>
-	</option>
-	<option name="preview_border_width" type="int">
-		<_short>Preview border width</_short>
-		<default>3</default>
-		<min>0</min>
-	</option>
-	<option name="workspace_switch_after" type="int">
-		<_short>Switch workspace after</_short>
-		<_long>Switch workspace when the mouse stays on the output edge for the
-		given duration in milliseconds (-1 to disable).</_long>
-		<default>-1</default>
-		<min>-1</min>
-	</option>
+		<option name="preview_base_color" type="color">
+			<_short>Preview fill color</_short>
+			<default>0.5 0.5 1 0.5</default>
+		</option>
+		<option name="preview_base_border" type="color">
+			<_short>Preview border color</_short>
+			<default>0.25 0.25 0.5 0.8</default>
+		</option>
+		<option name="preview_border_width" type="int">
+			<_short>Preview border width</_short>
+			<default>3</default>
+			<min>0</min>
+		</option>
+		<option name="workspace_switch_after" type="int">
+			<_short>Switch workspace after</_short>
+			<_long>Switch workspace when the mouse stays on the output edge for the
+			given duration in milliseconds (-1 to disable).</_long>
+			<default>-1</default>
+			<min>-1</min>
+		</option>
 	</plugin>
 </wayfire>
