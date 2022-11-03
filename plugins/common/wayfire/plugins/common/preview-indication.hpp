@@ -44,7 +44,8 @@ class preview_indication_view_t : public wf::color_rect_view_t
      * @param start_geometry The geometry the preview should have, relative to
      *                       the output
      */
-    preview_indication_view_t(wf::geometry_t start_geometry, const std::string& prefix) :
+    preview_indication_view_t(wf::geometry_t start_geometry,
+        const std::string& prefix) :
         wf::color_rect_view_t(), animation(wf::create_option<int>(200)),
         base_color(prefix + "/preview_base_color"),
         base_border(prefix + "/preview_base_border"),
