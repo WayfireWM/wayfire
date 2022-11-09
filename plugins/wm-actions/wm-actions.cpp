@@ -27,7 +27,7 @@ class wayfire_wm_actions_t : public wf::plugin_interface_t
     wf::option_wrapper_t<wf::activatorbinding_t> send_to_back{
         "wm-actions/send_to_back"};
 
-    bool toggle_keep_above(wayfire_view view)
+    bool set_keep_above_state(wayfire_view view, bool above)
     {
         if (!view || !output->can_activate_plugin(this->grab_interface))
         {
@@ -35,15 +35,18 @@ class wayfire_wm_actions_t : public wf::plugin_interface_t
         }
 
         wf::scene::remove_child(view->get_root_node());
-        if (view->has_data("wm-actions-above"))
-        {
-            output->workspace->add_view(view, wf::LAYER_WORKSPACE);
-            view->erase_data("wm-actions-above");
-        } else
+        if (above)
         {
             wf::scene::add_front(always_above, view->get_root_node());
             view->store_data(std::make_unique<wf::custom_data_t>(),
                 "wm-actions-above");
+        } else
+        {
+            if (view->has_data("wm-actions-above"))
+            {
+                output->workspace->add_view(view, wf::LAYER_WORKSPACE);
+                view->erase_data("wm-actions-above");
+            }
         }
 
         wf::wm_actions_above_changed data;
@@ -78,12 +81,12 @@ class wayfire_wm_actions_t : public wf::plugin_interface_t
     /**
      * Calling a specific view / specific keep_above action via signal
      */
-    wf::signal_connection_t on_toggle_above_signal =
+    wf::signal_connection_t on_set_above_state_signal =
     {[=] (wf::signal_data_t *data)
         {
-            auto signal = static_cast<wf::wm_actions_toggle_above*>(data);
+            auto signal = static_cast<wf::wm_actions_set_above_state*>(data);
 
-            if (!toggle_keep_above(signal->view))
+            if (!set_keep_above_state(signal->view, signal->above))
             {
                 LOG(wf::log::LOG_LEVEL_DEBUG,
                     "view above action failed via signal.");
@@ -203,7 +206,7 @@ class wayfire_wm_actions_t : public wf::plugin_interface_t
     {
         auto view = choose_view(ev.source);
 
-        return toggle_keep_above(view);
+        return set_keep_above_state(view, !view->has_data("wm-actions-above"));
     };
 
     wf::activator_callback on_minimize = [=] (auto ev) -> bool
@@ -347,7 +350,8 @@ class wayfire_wm_actions_t : public wf::plugin_interface_t
         output->add_activator(toggle_fullscreen, &on_toggle_fullscreen);
         output->add_activator(toggle_sticky, &on_toggle_sticky);
         output->add_activator(send_to_back, &on_send_to_back);
-        output->connect_signal("wm-actions-toggle-above", &on_toggle_above_signal);
+        output->connect_signal("wm-actions-set-above-state",
+            &on_set_above_state_signal);
         output->connect_signal("view-minimized", &on_view_minimized);
         wf::get_core().connect_signal("view-moved-to-output",
             &on_view_output_changed);
@@ -359,7 +363,7 @@ class wayfire_wm_actions_t : public wf::plugin_interface_t
         {
             if (view->has_data("wm-actions-above"))
             {
-                toggle_keep_above(view);
+                set_keep_above_state(view, false);
             }
         }
 
