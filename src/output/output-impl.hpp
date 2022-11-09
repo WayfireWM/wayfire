@@ -1,6 +1,7 @@
 #include "wayfire/output.hpp"
 #include "plugin-loader.hpp"
 #include "../core/seat/bindings-repository.hpp"
+#include "wayfire/scene-input.hpp"
 #include "wayfire/scene-render.hpp"
 #include "wayfire/scene.hpp"
 #include "wayfire/signal-provider.hpp"
@@ -17,6 +18,7 @@ class output_impl_t : public output_t
   private:
     std::shared_ptr<scene::output_node_t> nodes[TOTAL_LAYERS];
     scene::floating_inner_ptr wset;
+    uint64_t last_timestamp = 0;
 
   private:
     std::unordered_multiset<wf::plugin_grab_interface_t*> active_plugins;
@@ -32,17 +34,12 @@ class output_impl_t : public output_t
         FOCUS_VIEW_RAISE        = (1 << 0),
         /* Close popups of non-focused views */
         FOCUS_VIEW_CLOSE_POPUPS = (1 << 1),
-        /* Inhibit updating the focus timestamp of the view */
-        FOCUS_VIEW_NOBUMP       = (1 << 2),
     };
 
     /**
      * Set the given view as the active view.
-     * If the output has focus, try to focus the view as well.
-     *
-     * @param flags bitmask of @focus_view_flags_t
      */
-    void update_active_view(wayfire_view view, uint32_t flags);
+    void update_active_view(wayfire_view view);
 
     /**
      * Close all popups on the output which do not belong to the active view.
@@ -54,6 +51,8 @@ class output_impl_t : public output_t
 
     wf::dimensions_t effective_size;
 
+    void do_update_focus(wf::scene::node_t *node);
+
   public:
     output_impl_t(wlr_output *output, const wf::dimensions_t& effective_size);
     /**
@@ -62,8 +61,8 @@ class output_impl_t : public output_t
     void start_plugins();
 
     virtual ~output_impl_t();
-
-    wf::scene::node_ptr focused_node;
+    wayfire_view active_view = nullptr;
+    wayfire_view last_active_toplevel = nullptr;
 
     /**
      * Implementations of the public APIs
@@ -81,9 +80,7 @@ class output_impl_t : public output_t
     bool is_plugin_active(std::string owner_name) const override;
     bool call_plugin(const std::string& activator,
         const wf::activator_data_t& data) const override;
-    wf::scene::node_ptr get_focused_node() const override;
     void focus_view(wayfire_view v, bool raise) override;
-    void refocus(wayfire_view skip_view, uint32_t layers) override;
     wf::dimensions_t get_screen_size() const override;
 
     wf::binding_t *add_key(option_sptr_t<keybinding_t> key,
@@ -96,6 +93,11 @@ class output_impl_t : public output_t
         wf::activator_callback*) override;
     void rem_binding(wf::binding_t *binding) override;
     void rem_binding(void *callback) override;
+
+    wayfire_view get_active_view() const override;
+    void focus_node(wf::scene::node_ptr new_focus) override;
+    void refocus() override;
+    uint64_t get_last_focus_timestamp() const override;
 
     /**
      * Set the output as inhibited, so that no plugins can be activated

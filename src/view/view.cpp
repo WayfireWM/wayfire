@@ -665,7 +665,7 @@ void wf::view_interface_t::minimize_request(bool state)
         {
             minimized = state;
             desktop_state_updated();
-            get_output()->refocus(self());
+            get_output()->refocus();
         } else
         {
             /* Do the default minimization */

@@ -278,27 +278,6 @@ class compositor_core_t : public wf::object_base_t, public signal::provider_t
     virtual void move_view_to_output(wayfire_view v,
         wf::output_t *new_output, bool reconfigure) = 0;
 
-    /**
-     * Add a request to focus the given layer, or update an existing request.
-     * Returns the UID of the request which was added/modified.
-     *
-     * Calling this with request >= 0 will have no effect if the given
-     * request doesn't exist, in which case -1 is returned
-     */
-    virtual int focus_layer(uint32_t layer, int request) = 0;
-
-    /**
-     * Removes a request from the list. No-op for requests that do not exist
-     * currently or for request < 0
-     */
-    virtual void unfocus_layer(int request) = 0;
-
-    /**
-     * @return The highest layer for which there exists a focus request, or 0, if
-     * no focus requests.
-     */
-    virtual uint32_t get_focused_layer() = 0;
-
     /** The wayland socket name of Wayfire */
     std::string wayland_display;
 

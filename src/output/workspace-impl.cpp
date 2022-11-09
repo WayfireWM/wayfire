@@ -532,7 +532,7 @@ class output_viewport_manager_t
         }
 
         // Finally, do a refocus to update the keyboard focus
-        output->refocus(nullptr, wf::MIDDLE_LAYERS);
+        output->refocus();
         output->emit_signal("workspace-changed", &data);
     }
 };

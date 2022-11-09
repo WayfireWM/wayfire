@@ -2,6 +2,7 @@
 #include <algorithm>
 #include "pointer.hpp"
 #include "surface-map-state.hpp"
+#include "wayfire/core.hpp"
 #include "wayfire/signal-definitions.hpp"
 #include "../core-impl.hpp"
 #include "../../output/output-impl.hpp"
@@ -207,8 +208,7 @@ void wf::input_manager_t::ungrab_input()
     active_grab = nullptr;
     if (wf::get_core().get_active_output())
     {
-        wf::get_core().set_active_node(
-            wf::get_core().get_active_output()->get_focused_node());
+        wf::get_core().get_active_output()->refocus();
     }
 
     // We must update cursor focus, however, if we update "too soon", the current
@@ -293,7 +293,7 @@ void wf::input_manager_t::set_exclusive_focus(wl_client *client)
      * focus to the topmost view */
     if (!client)
     {
-        wf::get_core().get_active_output()->refocus(nullptr);
+        wf::get_core().get_active_output()->refocus();
     }
 }
 

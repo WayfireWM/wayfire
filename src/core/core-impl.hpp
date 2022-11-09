@@ -97,9 +97,6 @@ class compositor_core_impl_t : public compositor_core_t
 
     void focus_output(wf::output_t *o) override;
     wf::output_t *get_active_output() override;
-    int focus_layer(uint32_t layer, int request) override;
-    void unfocus_layer(int request) override;
-    uint32_t get_focused_layer() override;
     std::string get_xwayland_display() override;
     pid_t run(std::string command) override;
     void shutdown() override;
@@ -121,9 +118,6 @@ class compositor_core_impl_t : public compositor_core_t
     std::unordered_map<std::string, wayfire_view> id_to_view;
 
     std::shared_ptr<scene::root_node_t> scene_root;
-
-    /* pairs (layer, request_id) */
-    std::set<std::pair<uint32_t, int>> layer_focus_requests;
 
     compositor_state_t state = compositor_state_t::UNKNOWN;
     compositor_core_impl_t();

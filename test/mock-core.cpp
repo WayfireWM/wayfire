@@ -107,19 +107,6 @@ wf::output_t*mock_core_t::get_active_output()
     return nullptr;
 }
 
-int mock_core_t::focus_layer(uint32_t layer, int32_t request_uid_hint)
-{
-    return 0;
-}
-
-uint32_t mock_core_t::get_focused_layer()
-{
-    return 0;
-}
-
-void mock_core_t::unfocus_layer(int request)
-{}
-
 void mock_core_t::add_view(
     std::unique_ptr<wf::view_interface_t> view)
 {}

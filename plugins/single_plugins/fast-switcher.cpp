@@ -1,3 +1,4 @@
+#include "wayfire/plugins/common/util.hpp"
 #include <wayfire/plugin.hpp>
 #include <wayfire/signal-definitions.hpp>
 #include <wayfire/view-transform.hpp>
@@ -118,7 +119,7 @@ class wayfire_fast_switcher : public wf::plugin_interface_t
 
         std::sort(views.begin(), views.end(), [] (wayfire_view& a, wayfire_view& b)
         {
-            return a->last_focus_timestamp > b->last_focus_timestamp;
+            return wf::get_focus_timestamp(a) > wf::get_focus_timestamp(b);
         });
     }
 

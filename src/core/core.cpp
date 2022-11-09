@@ -532,69 +532,6 @@ wf::output_t*wf::compositor_core_impl_t::get_active_output()
     return active_output;
 }
 
-int wf::compositor_core_impl_t::focus_layer(uint32_t layer, int32_t request_uid_hint)
-{
-    static int32_t last_request_uid = -1;
-    if (request_uid_hint >= 0)
-    {
-        /* Remove the old request, and insert the new one */
-        uint32_t old_layer = -1;
-        for (auto& req : layer_focus_requests)
-        {
-            if (req.second == request_uid_hint)
-            {
-                old_layer = req.first;
-            }
-        }
-
-        /* Request UID isn't valid */
-        if (old_layer == (uint32_t)-1)
-        {
-            return -1;
-        }
-
-        layer_focus_requests.erase({old_layer, request_uid_hint});
-    }
-
-    auto request_uid = request_uid_hint < 0 ?
-        ++last_request_uid : request_uid_hint;
-    layer_focus_requests.insert({layer, request_uid});
-    LOGD("focusing layer ", get_focused_layer());
-
-    if (active_output)
-    {
-        active_output->refocus();
-    }
-
-    return request_uid;
-}
-
-uint32_t wf::compositor_core_impl_t::get_focused_layer()
-{
-    if (layer_focus_requests.empty())
-    {
-        return 0;
-    }
-
-    return (--layer_focus_requests.end())->first;
-}
-
-void wf::compositor_core_impl_t::unfocus_layer(int request)
-{
-    for (auto& freq : layer_focus_requests)
-    {
-        if (freq.second == request)
-        {
-            layer_focus_requests.erase(freq);
-            LOGD("focusing layer ", get_focused_layer());
-
-            active_output->refocus(nullptr);
-
-            return;
-        }
-    }
-}
-
 void wf::compositor_core_impl_t::add_view(
     std::unique_ptr<wf::view_interface_t> view)
 {

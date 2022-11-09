@@ -130,6 +130,20 @@ class node_t : public std::enable_shared_from_this<node_t>,
     virtual std::optional<input_node_t> find_node_at(const wf::pointf_t& at);
 
     /**
+     * Figure out which node should receive keyboard focus on the given output.
+     *
+     * Typically, the focus is set directly via core::set_active_node(). However,
+     * in some cases we need to re-elect a node to focus (for example if the
+     * focused node is destroyed). In these cases, the keyboard_refocus() method
+     * on a node is called. It should return the desired focus node.
+     *
+     * By default, a node tries to focus one of its focusable children with the
+     * highest focus_importance. In case of a tie, the node with the highest
+     * last_focus_timestamp is selected.
+     */
+    virtual wf::keyboard_focus_node_t keyboard_refocus(wf::output_t *output);
+
+    /**
      * Convert a point from the coordinate system the node resides in, to the
      * coordinate system of its children.
      *
@@ -473,4 +487,4 @@ void set_node_enabled(wf::scene::node_ptr node, bool enabled);
  */
 void update(node_ptr changed_node, uint32_t flags);
 }
-}
+} // namespace wf

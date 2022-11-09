@@ -1,5 +1,8 @@
 #include "output-impl.hpp"
 #include "wayfire/core.hpp"
+#include "wayfire/debug.hpp"
+#include "wayfire/output.hpp"
+#include "wayfire/scene-input.hpp"
 #include "wayfire/scene-operations.hpp"
 #include "wayfire/scene.hpp"
 #include "wayfire/view.hpp"
@@ -51,10 +54,21 @@ wf::output_impl_t::output_impl_t(wlr_output *handle,
 
     view_disappeared_cb.set_callback([=] (wf::signal_data_t *data)
     {
-        output_t::refocus(get_signaled_view(data));
+        if (this->active_view == wf::get_signaled_view(data))
+        {
+            this->active_view = nullptr;
+        }
+
+        if (this->last_active_toplevel == wf::get_signaled_view(data))
+        {
+            this->last_active_toplevel = nullptr;
+        }
+
+        refocus();
     });
 
     connect_signal("view-disappeared", &view_disappeared_cb);
+    connect_signal("view-detached", &view_disappeared_cb);
 }
 
 std::shared_ptr<wf::scene::output_node_t> wf::output_impl_t::node_for_layer(
@@ -78,92 +92,25 @@ std::string wf::output_t::to_string() const
     return handle->name;
 }
 
-/**
- * Minimal percentage of the view which needs to be visible on a workspace
- * for it to count to be on that workspace.
- */
-static constexpr double MIN_VISIBILITY_PC = 0.1;
-
-void wf::output_impl_t::refocus(wayfire_view skip_view, uint32_t layers)
+void wf::output_impl_t::do_update_focus(wf::scene::node_t *new_focus)
 {
-    wf::point_t cur_ws = workspace->get_current_workspace();
-    const auto& view_on_current_ws = [&] (wayfire_view view)
+    auto focus =
+        new_focus ? new_focus->shared_from_this() : nullptr;
+    if (this == wf::get_core().get_active_output())
     {
-        // Make sure the view is at least 10% visible on the
-        // current workspace, to focus it
-        auto ws_geometry = render->get_ws_box(cur_ws);
-        auto bbox = view->transform_region(view->get_wm_geometry());
-        auto intersection = wf::geometry_intersection(bbox, ws_geometry);
-        double area = 1.0 * intersection.width * intersection.height;
-        area /= 1.0 * bbox.width * bbox.height;
-
-        return area >= MIN_VISIBILITY_PC;
-    };
-
-    const auto& suitable_for_focus = [&] (wayfire_view view)
-    {
-        return (view != skip_view) && view->is_mapped() &&
-               view->get_keyboard_focus_surface() && !view->minimized;
-    };
-
-    auto views = workspace->get_views_on_workspace(cur_ws, layers);
-
-    // All views which might be focused
-    std::vector<wayfire_view> candidates;
-    for (auto toplevel : views)
-    {
-        auto vs = toplevel->enumerate_views();
-        std::copy_if(vs.begin(), vs.end(), std::back_inserter(candidates),
-            suitable_for_focus);
-    }
-
-    // Choose the best view.
-    // All views which are mostly visible on the current workspace are preferred.
-    // In case of ties, views with the latest focus timestamp are preferred.
-    auto it = std::max_element(candidates.begin(), candidates.end(),
-        [&] (wayfire_view view1, wayfire_view view2)
-    {
-        bool visible_1 = view_on_current_ws(view1);
-        bool visible_2 = view_on_current_ws(view2);
-
-        return std::make_tuple(visible_1, view1->last_focus_timestamp) <
-        std::make_tuple(visible_2, view2->last_focus_timestamp);
-    });
-
-    if (it == candidates.end())
-    {
-        focus_view(nullptr, 0u);
-    } else
-    {
-        focus_view(*it, (uint32_t)FOCUS_VIEW_NOBUMP);
+        wf::get_core().set_active_node(focus);
     }
 }
 
-void wf::output_t::refocus(wayfire_view skip_view)
+void wf::output_impl_t::refocus()
 {
-    uint32_t focused_layer = wf::get_core().get_focused_layer();
-    uint32_t layers = focused_layer <=
-        LAYER_WORKSPACE ? MIDDLE_LAYERS : focused_layer;
-
-    auto views = workspace->get_views_on_workspace(
-        workspace->get_current_workspace(), layers);
-
-    if (views.empty())
+    auto new_focus = wf::get_core().scene()->keyboard_refocus(this);
+    if (auto vnode = dynamic_cast<scene::view_node_t*>(new_focus.node))
     {
-        if (wf::get_core().get_active_output() == this)
-        {
-            LOGD("warning: no focused views in the focused layer, probably a bug");
-        }
-
-        /* Usually, we focus a layer so that a particular view has focus, i.e
-         * we expect that there is a view in the focused layer. However we
-         * should try to find reasonable focus in any focusable layers if
-         * that is not the case, for ex. if there is a focused layer by a
-         * layer surface on another output */
-        layers = all_layers_not_below(focused_layer);
+        update_active_view(vnode->get_view());
     }
 
-    refocus(skip_view, layers);
+    do_update_focus(new_focus.node);
 }
 
 wf::output_t::~output_t()
@@ -307,43 +254,53 @@ static wayfire_view pick_topmost_focusable(wayfire_view view)
 }
 
 #include <wayfire/debug.hpp>
-void wf::output_impl_t::update_active_view(wayfire_view v, uint32_t flags)
+
+uint64_t wf::output_impl_t::get_last_focus_timestamp() const
 {
-    static wf::option_wrapper_t<bool>
-    all_dialogs_modal{"workarounds/all_dialogs_modal"};
-
-    if (v && v->is_mapped())
-    {
-        if (all_dialogs_modal)
-        {
-            v = pick_topmost_focusable(v);
-        }
-    } else
-    {
-        // do not focus unmapped, nullptr, etc.
-        v = nullptr;
-    }
-
-    this->focused_node = v ? v->get_surface_root_node() : nullptr;
-    if (this == wf::get_core().get_active_output())
-    {
-        wf::get_core().set_active_node(focused_node);
-    }
-
-    if (flags & FOCUS_VIEW_CLOSE_POPUPS)
-    {
-        close_popups();
-    }
+    return this->last_timestamp;
 }
 
-void wf::update_focus_timestamp(wayfire_view view)
+void wf::output_impl_t::focus_node(wf::scene::node_ptr new_focus)
 {
-    if (view)
+    // When we get a focus request, we have to consider whether there is
+    // any node requesting a keyboard grab or something like that.
+    if (new_focus)
     {
         timespec ts;
         clock_gettime(CLOCK_MONOTONIC, &ts);
-        view->last_focus_timestamp = ts.tv_sec * 1'000'000'000ll + ts.tv_nsec;
+        this->last_timestamp = ts.tv_sec * 1'000'000'000ll + ts.tv_nsec;
+        new_focus->keyboard_interaction().last_focus_timestamp =
+            this->last_timestamp;
+
+        auto focus = wf::get_core().scene()->keyboard_refocus(this);
+        do_update_focus(focus.node);
+    } else
+    {
+        do_update_focus(nullptr);
     }
+}
+
+void wf::output_impl_t::update_active_view(wayfire_view v)
+{
+    if ((v == nullptr) || (v->role == wf::VIEW_ROLE_TOPLEVEL))
+    {
+        if (last_active_toplevel != v)
+        {
+            if (last_active_toplevel)
+            {
+                last_active_toplevel->set_activated(false);
+            }
+
+            if (v)
+            {
+                v->set_activated(true);
+            }
+
+            last_active_toplevel = v;
+        }
+    }
+
+    this->active_view = v;
 }
 
 void wf::output_impl_t::focus_view(wayfire_view v, uint32_t flags)
@@ -369,36 +326,37 @@ void wf::output_impl_t::focus_view(wayfire_view v, uint32_t flags)
         }
     };
 
-    if (v && (workspace->get_view_layer(v) < wf::get_core().get_focused_layer()))
+    const auto& select_focus_view = [] (wayfire_view v) -> wayfire_view
     {
-        auto active_view = get_active_view();
-        if (active_view && (active_view->get_app_id().find("$unfocus") == 0))
+        if (v && v->is_mapped())
         {
-            /* This is the case where for ex. a panel has grabbed input focus,
-             * but user has clicked on another view so we want to dismiss the
-             * grab. We can't do that straight away because the client still
-             * holds the focus layer request.
-             *
-             * Instead, we want to deactivate the $unfocus view, so that it can
-             * release the grab. At the same time, we bring the to-be-focused
-             * view on top, so that it gets the focus next. */
-            update_active_view(nullptr, flags);
-            make_view_visible(v);
-            update_focus_timestamp(v);
+            if (all_dialogs_modal)
+            {
+                return pick_topmost_focusable(v);
+            }
+
+            return v;
         } else
         {
-            LOGD("Denying focus request for a view from a lower layer than the"
-                 " focused layer");
+            return nullptr;
         }
+    };
 
-        return;
-    }
+    const auto& give_input_focus = [this, flags] (wayfire_view view)
+    {
+        focus_node(view ? view->get_surface_root_node() : nullptr);
+        if (flags & FOCUS_VIEW_CLOSE_POPUPS)
+        {
+            close_popups();
+        }
+    };
 
     focus_view_signal data;
-
     if (!v || !v->is_mapped())
     {
-        update_active_view(nullptr, flags);
+        give_input_focus(nullptr);
+        update_active_view(nullptr);
+
         data.view = nullptr;
         emit_signal("focus-view", &data);
         return;
@@ -413,13 +371,9 @@ void wf::output_impl_t::focus_view(wayfire_view v, uint32_t flags)
     if (v->get_keyboard_focus_surface() || interactive_view_from_view(v.get()))
     {
         make_view_visible(v);
-        if (!(flags & FOCUS_VIEW_NOBUMP))
-        {
-            update_focus_timestamp(v);
-        }
-
-        update_active_view(v, flags);
-        data.view = this->get_active_view();
+        give_input_focus(select_focus_view(v));
+        update_active_view(v);
+        data.view = v;
         emit_signal("view-focused", &data);
     }
 }
@@ -444,19 +398,9 @@ wayfire_view wf::output_t::get_top_view() const
     return views.empty() ? nullptr : views[0];
 }
 
-wayfire_view wf::output_t::get_active_view() const
+wayfire_view wf::output_impl_t::get_active_view() const
 {
-    if (auto vnode = dynamic_cast<scene::view_node_t*>(get_focused_node().get()))
-    {
-        return vnode->get_view();
-    }
-
-    return nullptr;
-}
-
-wf::scene::node_ptr wf::output_impl_t::get_focused_node() const
-{
-    return focused_node;
+    return this->active_view;
 }
 
 bool wf::output_impl_t::can_activate_plugin(uint32_t caps,

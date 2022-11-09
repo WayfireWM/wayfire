@@ -47,9 +47,6 @@ class mock_core_t : public wf::compositor_core_impl_t
 
     void focus_output(wf::output_t *o) override;
     wf::output_t *get_active_output() override;
-    int focus_layer(uint32_t layer, int request) override;
-    void unfocus_layer(int request) override;
-    uint32_t get_focused_layer() override;
     std::string get_xwayland_display() override;
     pid_t run(std::string command) override;
     void shutdown() override;

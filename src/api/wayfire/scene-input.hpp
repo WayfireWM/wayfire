@@ -15,6 +15,45 @@ using node_ptr = std::shared_ptr<node_t>;
 }
 
 /**
+ * When refocusing on a particular output, there may be multiple nodes
+ * which can receive keyboard focus. While usually the most recently focused
+ * node is chosen, there are cases where this is not the desired behavior, for ex.
+ * nodes which have keyboard grabs. In order to accomodate for these cases,
+ * the focus_importance enum provides a way for nodes to indicate in what cases
+ * they should receive keyboard focus.
+ */
+enum class focus_importance
+{
+    // No focus at all.
+    NONE    = 0,
+    // Node may accept focus, but further nodes should override it if sensible.
+    LOW     = 1,
+    // Regularly focused node (typically regular views).
+    REGULAR = 2,
+    // Highest priority. Nodes which request focus like this usually do not
+    // get their requests overridden.
+    HIGH    = 3,
+};
+
+struct keyboard_focus_node_t
+{
+    scene::node_t *node = nullptr;
+    focus_importance importance = focus_importance::NONE;
+
+    // Whether nodes below this node are allowed to get focus, no matter their
+    // focus importance.
+    bool allow_focus_below = true;
+
+    /**
+     * True iff:
+     * 1. The other node has a higher focus importance
+     * 2. Or, the other node has the same importance but a newer
+     *   last_focus_timestamp.
+     */
+    bool operator <(const keyboard_focus_node_t& other) const;
+};
+
+/**
  * An interface for scene nodes which interact with the keyboard.
  *
  * Note that by default, nodes do not receive keyboard input. Nodes which wish
@@ -56,6 +95,12 @@ class keyboard_interaction_t
     keyboard_interaction_t() = default;
     virtual ~keyboard_interaction_t()
     {}
+
+    /**
+     * The last time(nanoseconds since epoch) when the node was focused.
+     * Updated automatically by core.
+     */
+    uint64_t last_focus_timestamp = 0;
 };
 
 /**

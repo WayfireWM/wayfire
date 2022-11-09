@@ -11,6 +11,7 @@
 #include "wayfire/geometry.hpp"
 #include "wayfire/opengl.hpp"
 #include "wayfire/region.hpp"
+#include "wayfire/scene-input.hpp"
 #include "wayfire/scene-render.hpp"
 #include "wayfire/signal-provider.hpp"
 #include "wayfire/util.hpp"
@@ -18,6 +19,29 @@
 
 namespace wf
 {
+bool keyboard_focus_node_t::operator <(const keyboard_focus_node_t& other) const
+{
+    if (this->importance == other.importance)
+    {
+        if (this->node && other.node)
+        {
+            auto ts_self  = node->keyboard_interaction().last_focus_timestamp;
+            auto ts_other = other.node->keyboard_interaction().last_focus_timestamp;
+            return ts_self < ts_other;
+        }
+
+        if (!this->node && !other.node)
+        {
+            return false;
+        }
+
+        // Prefer to focus with node
+        return !this->node;
+    }
+
+    return this->importance < other.importance;
+}
+
 namespace scene
 {
 // ---------------------------------- node_t -----------------------------------
@@ -63,6 +87,25 @@ std::optional<input_node_t> node_t::find_node_at(const wf::pointf_t& at)
     }
 
     return {};
+}
+
+wf::keyboard_focus_node_t node_t::keyboard_refocus(wf::output_t *output)
+{
+    wf::keyboard_focus_node_t result;
+
+    for (auto& ch : this->get_children())
+    {
+        auto ch_focus = ch->keyboard_refocus(output);
+        result = std::max(result, ch_focus);
+
+        if (!ch_focus.allow_focus_below)
+        {
+            result.allow_focus_below = false;
+            break;
+        }
+    }
+
+    return result;
 }
 
 static std::vector<node_t*> extract_structure_nodes(

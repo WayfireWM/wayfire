@@ -300,25 +300,6 @@ struct wf_layer_shell_manager
         view->get_output()->workspace->reflow_reserved_areas();
     }
 
-    uint32_t determine_focused_layer()
-    {
-        uint32_t focus_mask = 0;
-        for (auto& layer : this->layers)
-        {
-            for (auto& v : layer)
-            {
-                if (v->is_mapped() &&
-                    (v->lsurface->pending.keyboard_interactive == 1))
-                {
-                    focus_mask = std::max(focus_mask, (uint32_t)v->get_layer());
-                }
-            }
-        }
-
-        return focus_mask;
-    }
-
-    uint32_t focused_layer_request_uid = -1;
     void arrange_layers(wf::output_t *output)
     {
         auto views = filter_views(output);
@@ -327,10 +308,6 @@ struct wf_layer_shell_manager
         arrange_layer(output, ZWLR_LAYER_SHELL_V1_LAYER_TOP);
         arrange_layer(output, ZWLR_LAYER_SHELL_V1_LAYER_BOTTOM);
         arrange_layer(output, ZWLR_LAYER_SHELL_V1_LAYER_BACKGROUND);
-
-        auto focus_mask = determine_focused_layer();
-        focused_layer_request_uid = wf::get_core().focus_layer(focus_mask,
-            focused_layer_request_uid);
         output->workspace->reflow_reserved_areas();
     }
 };
@@ -457,6 +434,11 @@ void wayfire_layer_shell_view::map(wlr_surface *surface)
     get_output()->workspace->add_view(self(), get_layer());
     wf::wlr_view_t::map(surface);
     wf_layer_shell_manager::get_instance().handle_map(this);
+
+    if (lsurface->current.keyboard_interactive == 1)
+    {
+        get_output()->refocus();
+    }
 }
 
 void wayfire_layer_shell_view::unmap()
@@ -486,6 +468,14 @@ void wayfire_layer_shell_view::commit()
         {
             /* Reflow reserved areas and positions */
             wf_layer_shell_manager::get_instance().arrange_layers(get_output());
+        }
+
+        if (prev_state.keyboard_interactive != state->keyboard_interactive)
+        {
+            if (state->keyboard_interactive == 1)
+            {
+                get_output()->refocus();
+            }
         }
 
         prev_state = *state;

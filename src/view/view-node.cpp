@@ -6,11 +6,15 @@
 #include "../core/seat/input-manager.hpp"
 #include "wayfire/geometry.hpp"
 #include "wayfire/opengl.hpp"
+#include "wayfire/option-wrapper.hpp"
 #include "wayfire/region.hpp"
+#include "wayfire/scene-input.hpp"
 #include "wayfire/scene-render.hpp"
 #include "wayfire/scene.hpp"
 #include "wayfire/signal-provider.hpp"
 #include "wayfire/view.hpp"
+#include "wayfire/workspace-manager.hpp"
+#include "wlr-layer-shell-unstable-v1-protocol.h"
 
 wf::scene::view_node_t::view_node_t(wayfire_view _view) :
     floating_inner_node_t(false), view(_view)
@@ -57,6 +61,101 @@ std::optional<wf::scene::input_node_t> wf::scene::view_node_t::find_node_at(
     }
 
     return floating_inner_node_t::find_node_at(at);
+}
+
+/**
+ * Minimal percentage of the view which needs to be visible on a workspace
+ * for it to count to be on that workspace.
+ */
+static constexpr double MIN_VISIBILITY_PC = 0.1;
+
+wf::keyboard_focus_node_t wf::scene::view_node_t::keyboard_refocus(
+    wf::output_t *output)
+{
+    if (!this->view->is_mapped() ||
+        !this->view->get_keyboard_focus_surface() ||
+        this->view->minimized ||
+        !this->view->get_output())
+    {
+        return wf::keyboard_focus_node_t{};
+    }
+
+    static wf::option_wrapper_t<bool> remove_output_limits{
+        "workarounds/remove_output_limits"};
+    bool foreign_output = !remove_output_limits && (output != view->get_output());
+
+    const uint64_t output_last_ts = view->get_output()->get_last_focus_timestamp();
+    const uint64_t our_ts = keyboard_interaction().last_focus_timestamp;
+
+    auto cur_focus = wf::get_core_impl().seat->keyboard_focus.get();
+    bool has_focus = (cur_focus == this) || (our_ts == output_last_ts);
+
+    const auto cur_layer = view->get_output()->workspace->get_view_layer(view);
+    if (cur_layer != LAYER_WORKSPACE)
+    {
+        // Non-workspace views are treated differently.
+        // Usually, they should not be focused at all. The only case we want to
+        // focus them is when they were already focused, and should continue to
+        // have focus, or when they have an active grab.
+        if (auto surf = view->get_wlr_surface())
+        {
+            if (wlr_surface_is_layer_surface(surf))
+            {
+                auto lsurf = wlr_layer_surface_v1_from_wlr_surface(surf);
+                if (lsurf->current.keyboard_interactive ==
+                    ZWLR_LAYER_SURFACE_V1_KEYBOARD_INTERACTIVITY_EXCLUSIVE)
+                {
+                    // Active grab
+                    return wf::keyboard_focus_node_t{
+                        .node = this,
+                        .importance = focus_importance::HIGH,
+                        .allow_focus_below = false
+                    };
+                }
+            }
+        }
+
+        if (has_focus && !foreign_output)
+        {
+            return wf::keyboard_focus_node_t{this, focus_importance::REGULAR};
+        }
+
+        return wf::keyboard_focus_node_t{};
+    }
+
+    if (foreign_output)
+    {
+        return wf::keyboard_focus_node_t{};
+    }
+
+    // When refocusing, we consider each view visible on the output.
+    // However, we want to filter out views which are 'barely visible', that is,
+    // views where only a small area is visible, because the user typically does
+    // not want to focus these views (they might be visible by mistake, or have
+    // just a single pixel visible, etc).
+    //
+    // These views request a LOW focus_importance.
+    auto output_box = output->get_layout_geometry();
+    auto view_box   = view->transform_region(view->get_wm_geometry()) +
+        wf::origin(view->get_output()->get_layout_geometry());
+
+    auto intersection = wf::geometry_intersection(output_box, view_box);
+    double area = 1.0 * intersection.width * intersection.height;
+    area /= 1.0 * view_box.width * view_box.height;
+    bool visible_at_all = view->get_bounding_box() & output_box;
+
+    wf::keyboard_focus_node_t result;
+    result.node = this;
+
+    if ((has_focus && visible_at_all) || (area >= MIN_VISIBILITY_PC))
+    {
+        return wf::keyboard_focus_node_t{this, focus_importance::REGULAR};
+    } else
+    {
+        return wf::keyboard_focus_node_t{this, focus_importance::LOW};
+    }
+
+    return result;
 }
 
 namespace wf

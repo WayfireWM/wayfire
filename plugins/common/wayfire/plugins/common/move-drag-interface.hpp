@@ -3,6 +3,7 @@
 #include "wayfire/scene-render.hpp"
 #include "wayfire/scene.hpp"
 #include <wayfire/nonstd/reverse.hpp>
+#include <wayfire/plugins/common/util.hpp>
 #include <wayfire/plugins/wobbly/wobbly-signal.hpp>
 #include <wayfire/object.hpp>
 #include <wayfire/output-layout.hpp>
@@ -720,7 +721,7 @@ inline void adjust_view_on_output(drag_done_signal *ev)
         }
 
         // check focus timestamp and select the last focused view to (re)focus
-        if (v.view->last_focus_timestamp > focus_view->last_focus_timestamp)
+        if (get_focus_timestamp(v.view) > get_focus_timestamp(focus_view))
         {
             focus_view = v.view;
         }

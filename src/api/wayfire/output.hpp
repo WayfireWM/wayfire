@@ -180,28 +180,43 @@ class output_t : public wf::object_base_t
     wayfire_view get_top_view() const;
 
     /**
-     * @return The most recently focused view on this output.
-     */
-    wayfire_view get_active_view() const;
-
-    /**
-     * The most recently focused node on this output. Focus here means keyboard
-     * focus, as pointer/touch/etc. focus is a global state which can be queried
-     * from core_interface_t.
+     * Get the most recently focused view on this output.
      *
-     * Note that the focused node does not have to be a view node, it could be a
-     * plugin grab or something similar.
+     * Note that the view might not be actually focused, as focus can be overridden
+     * by core, layer-shell views or plugins.
      */
-    virtual wf::scene::node_ptr get_focused_node() const = 0;
+    virtual wayfire_view get_active_view() const = 0;
 
     /**
-     * Attempt to give keyboard focus to the given view and set it as the
-     * output's active view.
+     * Set the view as the output's active view.
+     *
+     * This operation will change the view's last_focus_timestamp and its activated
+     * status. In addition, an attempt to focus the view on the current seat will
+     * be made. Note, however, that the last operation may fail if layer-shell
+     * views, plugin grabs or something similar overrides the focus request.
      *
      * @param raise If set to true, the view will additionally be raised to the
-     * top of its layer.
+     *   top of its layer.
      */
     virtual void focus_view(wayfire_view v, bool raise = false) = 0;
+
+    /**
+     * Try to focus the given scenegraph node. This may not work if another node
+     * requests a higher focus_importance.
+     *
+     * Note that the focus_view function should be used for view nodes, as
+     * focusing views typically involves more operations. Calling this function
+     * does not change the active view on the output, even if the newly focused
+     * node is a view node!
+     *
+     * The new_focus' last focus timestamp will be updated.
+     */
+    virtual void focus_node(wf::scene::node_ptr new_focus) = 0;
+
+    /**
+     * Get the last focus timestamp which was given out by this output.
+     */
+    virtual uint64_t get_last_focus_timestamp() const = 0;
 
     /**
      * Switch the workspace so that view becomes visible.
@@ -210,18 +225,10 @@ class output_t : public wf::object_base_t
     bool ensure_visible(wayfire_view view);
 
     /**
-     * Force refocus the most recently focused view in one of the layers marked
-     * in layers and which isn't skip_view.
-     *
-     * The stacking order is not changed.
+     * Trigger a refocus operation on the output.
+     * See scene::node_t::keyboard_refocus() for details.
      */
-    virtual void refocus(wayfire_view skip_view, uint32_t layers) = 0;
-
-    /**
-     * Refocus the most recently focused view != skip_view, preferring regular
-     * views. The stacking order is not changed.
-     */
-    void refocus(wayfire_view skip_view = nullptr);
+    virtual void refocus() = 0;
 
     /**
      * the add_* functions are used by plugins to register bindings. They pass

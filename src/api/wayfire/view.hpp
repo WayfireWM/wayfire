@@ -485,12 +485,6 @@ class view_interface_t : public surface_interface_t, public wf::signal::provider
     class view_priv_impl;
     std::unique_ptr<view_priv_impl> view_impl;
 
-    /**
-     * The last time(nanoseconds since epoch) when the view was focused.
-     * Updated automatically by core.
-     */
-    uint64_t last_focus_timestamp = 0;
-
   protected:
     view_interface_t();
 
@@ -606,6 +600,7 @@ class view_node_t : public scene::floating_inner_node_t
   public:
     view_node_t(wayfire_view view);
     std::optional<input_node_t> find_node_at(const wf::pointf_t& at) override;
+    wf::keyboard_focus_node_t keyboard_refocus(wf::output_t *output) override;
     std::string stringify() const override;
 
     wf::pointf_t to_local(const wf::pointf_t& point) override;
