@@ -81,7 +81,8 @@ class mirror_view_t : public wf::view_interface_t, wf::compositor_surface_t
  * color_rect_view_t represents another common type of compositor view - a
  * view which is simply a colored rectangle with a border.
  */
-class color_rect_view_t : public wf::view_interface_t, wf::compositor_surface_t
+class color_rect_view_t : public wf::view_interface_t,
+    public wf::compositor_surface_t
 {
   protected:
     wf::color_t _color;
