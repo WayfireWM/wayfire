@@ -177,9 +177,9 @@ void plugin_manager::reload_dynamic_plugins()
         {
             auto plugin_path =
                 wf::get_plugin_path_for_name(plugin_paths, plugin_name);
-            if (plugin_path.size())
+            if (plugin_path)
             {
-                next_plugins.push_back(plugin_path);
+                next_plugins.push_back(plugin_path.value());
             } else
             {
                 LOGE("Failed to load plugin \"", plugin_name, "\". ",
@@ -265,7 +265,8 @@ std::vector<std::string> wf::get_plugin_paths()
     return plugin_prefixes;
 }
 
-std::string wf::get_plugin_path_for_name(std::vector<std::string> plugin_paths,
+std::optional<std::string> wf::get_plugin_path_for_name(
+    std::vector<std::string> plugin_paths,
     std::string plugin_name)
 {
     if (plugin_name.at(0) == '/')

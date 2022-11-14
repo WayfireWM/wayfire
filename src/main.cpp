@@ -158,9 +158,9 @@ static wf::config_backend_t *load_backend(const std::string& backend)
 
     if (backend.size())
     {
-        // Not a full path so try to get the full path.
         std::vector<std::string> plugin_prefixes = wf::get_plugin_paths();
-        config_plugin = wf::get_plugin_path_for_name(plugin_prefixes, backend);
+        config_plugin =
+            wf::get_plugin_path_for_name(plugin_prefixes, backend).value_or("");
     }
 
     auto [_, init_ptr] = wf::get_new_instance_handle(config_plugin);
