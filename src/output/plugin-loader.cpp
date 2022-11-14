@@ -175,12 +175,6 @@ void plugin_manager::reload_dynamic_plugins()
     {
         if (plugin_name.size())
         {
-            if (plugin_name.at(0) == '/')
-            {
-                next_plugins.push_back(plugin_name);
-                continue;
-            }
-
             auto plugin_path =
                 wf::get_plugin_path_for_name(plugin_paths, plugin_name);
             if (plugin_path.size())
@@ -274,6 +268,11 @@ std::vector<std::string> wf::get_plugin_paths()
 std::string wf::get_plugin_path_for_name(std::vector<std::string> plugin_paths,
     std::string plugin_name)
 {
+    if (plugin_name.at(0) == '/')
+    {
+        return plugin_name;
+    }
+
     for (std::filesystem::path plugin_prefix : plugin_paths)
     {
         auto plugin_path = plugin_prefix / ("lib" + plugin_name + ".so");
