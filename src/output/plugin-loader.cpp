@@ -283,5 +283,5 @@ std::optional<std::string> wf::get_plugin_path_for_name(
         }
     }
 
-    return std::string("");
+    return {};
 }
