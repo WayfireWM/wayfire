@@ -168,19 +168,7 @@ void plugin_manager::reload_dynamic_plugins()
     std::stringstream stream(plugin_list);
     std::vector<std::string> next_plugins;
 
-    auto plugin_prefix = std::string(PLUGIN_PATH "/");
-    std::vector<std::string> plugin_prefixes;
-    if (char *plugin_path = getenv("WAYFIRE_PLUGIN_PATH"))
-    {
-        std::stringstream ss(plugin_path);
-        std::string entry;
-        while (std::getline(ss, entry, ':'))
-        {
-            plugin_prefixes.push_back(entry);
-        }
-    }
-
-    plugin_prefixes.push_back(PLUGIN_PATH);
+    std::vector<std::string> plugin_paths = wf::get_plugin_paths();
 
     std::string plugin_name;
     while (stream >> plugin_name)
@@ -193,19 +181,12 @@ void plugin_manager::reload_dynamic_plugins()
                 continue;
             }
 
-            bool plugin_found = false;
-            for (std::filesystem::path plugin_prefix : plugin_prefixes)
+            auto plugin_path =
+                wf::get_plugin_path_for_name(plugin_paths, plugin_name);
+            if (plugin_path.size())
             {
-                auto plugin_path = plugin_prefix / ("lib" + plugin_name + ".so");
-                if (std::filesystem::exists(plugin_path))
-                {
-                    plugin_found = true;
-                    next_plugins.push_back(plugin_path);
-                    break;
-                }
-            }
-
-            if (!plugin_found)
+                next_plugins.push_back(plugin_path);
+            } else
             {
                 LOGE("Failed to load plugin \"", plugin_name, "\". ",
                     "Make sure it is installed in ", PLUGIN_PATH,
@@ -270,4 +251,37 @@ void plugin_manager::load_static_plugins()
     init_plugin(loaded_plugins["_exit"]);
     init_plugin(loaded_plugins["_focus"]);
     init_plugin(loaded_plugins["_close"]);
+}
+
+std::vector<std::string> wf::get_plugin_paths()
+{
+    std::vector<std::string> plugin_prefixes;
+    if (char *plugin_path = getenv("WAYFIRE_PLUGIN_PATH"))
+    {
+        std::stringstream ss(plugin_path);
+        std::string entry;
+        while (std::getline(ss, entry, ':'))
+        {
+            plugin_prefixes.push_back(entry);
+        }
+    }
+
+    plugin_prefixes.push_back(PLUGIN_PATH);
+
+    return plugin_prefixes;
+}
+
+std::string wf::get_plugin_path_for_name(std::vector<std::string> plugin_paths,
+    std::string plugin_name)
+{
+    for (std::filesystem::path plugin_prefix : plugin_paths)
+    {
+        auto plugin_path = plugin_prefix / ("lib" + plugin_name + ".so");
+        if (std::filesystem::exists(plugin_path))
+        {
+            return plugin_path;
+        }
+    }
+
+    return std::string("");
 }

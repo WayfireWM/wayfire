@@ -62,6 +62,22 @@ B union_cast(A object)
  * @return (dlopen() handle, newInstance pointer)
  */
 std::pair<void*, void*> get_new_instance_handle(const std::string& path);
+
+/**
+ * List the locations where wayfire's plugins are installed.
+ * This function takes care of env variable WAYFIRE_PLUGIN_PATH,
+ * as well as the default location.
+ */
+std::vector<std::string> get_plugin_paths();
+
+/**
+ * Search each path specified in @param plugin_paths for a plugin named @param
+ * plugin_name
+ * @param plugin_paths A list of locations where wayfire plugins are installed
+ * @param plugin_name The plugin to be searched.
+ */
+std::string get_plugin_path_for_name(std::vector<std::string> plugin_paths,
+    std::string plugin_name);
 }
 
 #endif /* end of include guard: PLUGIN_LOADER_HPP */

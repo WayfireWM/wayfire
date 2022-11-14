@@ -162,28 +162,8 @@ static wf::config_backend_t *load_backend(const std::string& backend)
         if (backend.compare(0, 1, "/") != 0)
         {
             // Not a full path so try to get the full path.
-            std::vector<std::string> plugin_prefixes;
-            if (char *plugin_path = getenv("WAYFIRE_PLUGIN_PATH"))
-            {
-                std::stringstream ss(plugin_path);
-                std::string entry;
-                while (std::getline(ss, entry, ':'))
-                {
-                    plugin_prefixes.push_back(entry);
-                }
-            }
-
-            plugin_prefixes.push_back(PLUGIN_PATH);
-
-            for (std::filesystem::path plugin_prefix : plugin_prefixes)
-            {
-                auto plugin_path = plugin_prefix / ("lib" + backend + ".so");
-                if (std::filesystem::exists(plugin_path))
-                {
-                    config_plugin = plugin_path;
-                    break;
-                }
-            }
+            std::vector<std::string> plugin_prefixes = wf::get_plugin_paths();
+            config_plugin = wf::get_plugin_path_for_name(plugin_prefixes, backend);
         }
     }
 
