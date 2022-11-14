@@ -74,7 +74,7 @@ std::vector<std::string> get_plugin_paths();
  * Search each path specified in @param plugin_paths for a plugin named @param
  * plugin_name
  * @param plugin_paths A list of locations where wayfire plugins are installed
- * @param plugin_name The plugin to be searched. If @param plugin_name is an 
+ * @param plugin_name The plugin to be searched. If @param plugin_name is an
  *   absolute path, then it is retuned without modifiction.
  */
 std::string get_plugin_path_for_name(std::vector<std::string> plugin_paths,
