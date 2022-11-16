@@ -382,7 +382,7 @@ wf::surface_interface_t*wf::view_interface_t::map_input_coordinates(
     return nullptr;
 }
 
-bool wf::view_interface_t::is_focuseable() const
+bool wf::view_interface_t::is_focusable() const
 {
     return view_impl->keyboard_focus_enabled;
 }

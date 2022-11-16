@@ -71,7 +71,7 @@ variant_t view_access_interface_t::get(const std::string & identifier, bool & er
         out = _view->minimized;
     } else if (identifier == "focusable")
     {
-        out = _view->is_focuseable();
+        out = _view->is_focusable();
     } else if (identifier == "mapped")
     {
         out = _view->is_mapped();

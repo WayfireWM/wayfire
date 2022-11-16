@@ -236,14 +236,14 @@ class view_interface_t : public surface_interface_t
     virtual wlr_surface *get_keyboard_focus_surface() = 0;
 
     /**
-     * Check whether the surface is focuseable. Note the actual ability to give
+     * Check whether the surface is focusable. Note the actual ability to give
      * keyboard focus while the surface is mapped is determined by the keyboard
      * focus surface or the compositor_view implementation.
      *
      * This is meant for plugins like matcher, which need to check whether the
-     * view is focuseable at any point of the view life-cycle.
+     * view is focusable at any point of the view life-cycle.
      */
-    virtual bool is_focuseable() const;
+    virtual bool is_focusable() const;
 
     /** Whether the view is in fullscreen state, usually you want to use either
      * set_fullscreen() or fullscreen_request() */

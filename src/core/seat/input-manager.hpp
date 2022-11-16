@@ -71,7 +71,7 @@ class input_manager_t
     std::vector<std::unique_ptr<wf::input_device_impl_t>> input_devices;
 
     /**
-     * Check if the given surface is focuseable at the moment.
+     * Check if the given surface is focusable at the moment.
      * This depends on things like exclusive clients, etc.
      */
     bool can_focus_surface(wf::surface_interface_t *surface);

@@ -129,7 +129,7 @@ wlr_surface*wf::mirror_view_t::get_keyboard_focus_surface()
     return nullptr;
 }
 
-bool wf::mirror_view_t::is_focuseable() const
+bool wf::mirror_view_t::is_focusable() const
 {
     return false;
 }
@@ -272,7 +272,7 @@ wlr_surface*wf::color_rect_view_t::get_keyboard_focus_surface()
     return nullptr;
 }
 
-bool wf::color_rect_view_t::is_focuseable() const
+bool wf::color_rect_view_t::is_focusable() const
 {
     return false;
 }

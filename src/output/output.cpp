@@ -156,7 +156,7 @@ void wf::output_t::refocus(wayfire_view skip_view)
 
         /* Usually, we focus a layer so that a particular view has focus, i.e
          * we expect that there is a view in the focused layer. However we
-         * should try to find reasonable focus in any focuseable layers if
+         * should try to find reasonable focus in any focusable layers if
          * that is not the case, for ex. if there is a focused layer by a
          * layer surface on another output */
         layers = all_layers_not_below(focused_layer);

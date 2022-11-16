@@ -73,7 +73,7 @@ class mirror_view_t : public wf::view_interface_t, wf::compositor_surface_t
     virtual wf::geometry_t get_output_geometry() override;
 
     virtual wlr_surface *get_keyboard_focus_surface() override;
-    virtual bool is_focuseable() const override;
+    virtual bool is_focusable() const override;
     virtual bool should_be_decorated() override;
 };
 
@@ -123,7 +123,7 @@ class color_rect_view_t : public wf::view_interface_t,
     virtual wf::geometry_t get_output_geometry() override;
 
     virtual wlr_surface *get_keyboard_focus_surface() override;
-    virtual bool is_focuseable() const override;
+    virtual bool is_focusable() const override;
     virtual bool should_be_decorated() override;
 };
 }
