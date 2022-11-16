@@ -560,6 +560,25 @@ class output_workarea_manager_t
         return current_workarea;
     }
 
+    wf::geometry_t get_maximize_region(wf::geometry_t view_geometry)
+    {
+       int new_area = 0;
+       int last_area = 0;
+       wf::geometry_t best_region = current_workarea;
+       wf::geometry_t intersection;
+       for (auto r : *output->get_maximize_regions())
+       {
+           intersection = geometry_intersection(view_geometry, r);
+           new_area = intersection.width * intersection.height;
+           if (new_area > last_area)
+           {
+               best_region = geometry_intersection(current_workarea, r);
+               last_area = new_area;
+           }
+       }
+       return best_region;
+    }
+
     wf::geometry_t calculate_anchored_geometry(
         const workspace_manager::anchored_area& area)
     {
@@ -1006,5 +1025,10 @@ void workspace_manager::reflow_reserved_areas()
 wf::geometry_t workspace_manager::get_workarea()
 {
     return pimpl->workarea_manager.get_workarea();
+}
+
+wf::geometry_t workspace_manager::get_maximize_region(wf::geometry_t view_region)
+{
+    return pimpl->workarea_manager.get_maximize_region(view_region);
 }
 } // namespace wf

@@ -621,7 +621,8 @@ void wf::view_interface_t::tile_request(uint32_t edges, wf::point_t workspace)
     data.view  = self();
     data.edges = edges;
     data.workspace    = workspace;
-    data.desired_size = edges ? get_output()->workspace->get_workarea() :
+    data.desired_size = edges ?
+        get_output()->workspace->get_maximize_region(get_wm_geometry()) :
         view_impl->calculate_windowed_geometry(get_output());
 
     set_tiled(edges);
@@ -705,7 +706,8 @@ void wf::view_interface_t::fullscreen_request(wf::output_t *out, bool state,
     if (!state)
     {
         data.desired_size = this->tiled_edges ?
-            this->get_output()->workspace->get_workarea() :
+            this->get_output()->workspace->get_maximize_region(
+                get_wm_geometry()) :
             this->view_impl->calculate_windowed_geometry(get_output());
     }
 
@@ -811,7 +813,8 @@ void wf::view_interface_t::set_decoration(
         target_wm_geometry = get_output()->get_relative_geometry();
     } else if (this->tiled_edges)
     {
-        target_wm_geometry = get_output()->workspace->get_workarea();
+        target_wm_geometry = get_output()->workspace->get_maximize_region(
+                get_wm_geometry());
     }
 
     // notify the frame of the current size

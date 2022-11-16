@@ -87,6 +87,8 @@ class output_t : public wf::object_base_t
      */
     wf::geometry_t get_layout_geometry() const;
 
+    virtual const std::vector<wf::geometry_t> *get_maximize_regions() const = 0;
+
     /**
      * Moves the pointer so that it is inside the output
      *

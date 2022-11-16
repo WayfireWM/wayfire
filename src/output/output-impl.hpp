@@ -53,6 +53,7 @@ class output_impl_t : public output_t
     void focus_view(wayfire_view view, uint32_t flags);
 
     wf::dimensions_t effective_size;
+    const std::vector<wf::geometry_t> *maximize_regions;
 
   public:
     output_impl_t(wlr_output *output, const wf::dimensions_t& effective_size);
@@ -84,6 +85,7 @@ class output_impl_t : public output_t
     void focus_view(wayfire_view v, bool raise) override;
     void refocus(wayfire_view skip_view, uint32_t layers) override;
     wf::dimensions_t get_screen_size() const override;
+    const std::vector<wf::geometry_t> *get_maximize_regions() const override;
 
     wf::binding_t *add_key(option_sptr_t<keybinding_t> key,
         wf::key_callback*) override;
@@ -120,6 +122,10 @@ class output_impl_t : public output_t
 
     /** Set the effective resolution of the output */
     void set_effective_size(const wf::dimensions_t& size);
+
+    /** set the maximize regions of the output */
+    void set_maximize_regions(
+        const std::vector<wf::geometry_t> *maximize_regions);
 };
 
 /**

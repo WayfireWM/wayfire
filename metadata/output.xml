@@ -14,5 +14,8 @@
     <option name="transform" type="string">
       <default>normal</default>
     </option>
+    <option name="maximize_regions" type="string">
+      <default></default>
+    </option>
   </object>
 </wayfire>

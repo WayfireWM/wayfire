@@ -287,6 +287,11 @@ class workspace_manager
      */
     wf::geometry_t get_workarea();
 
+    /**
+     * @return the area a view can be maximized to on an output
+     */
+    wf::geometry_t get_maximize_region(wf::geometry_t view_geometry);
+
     workspace_manager(output_t *output);
     ~workspace_manager();
 

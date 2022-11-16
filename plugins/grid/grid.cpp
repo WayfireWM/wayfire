@@ -179,7 +179,7 @@ class wayfire_grid : public wf::plugin_interface_t
 
         view->get_data_safe<wf_grid_slot_data>()->slot = slot;
         ensure_grid_view(view)->adjust_target_geometry(
-            get_slot_dimensions(slot) + delta,
+            get_slot_dimensions(slot, view->get_wm_geometry()) + delta,
             get_tiled_edges_for_slot(slot));
     }
 
@@ -188,9 +188,9 @@ class wayfire_grid : public wf::plugin_interface_t
      * 4 5 6
      * 1 2 3
      * */
-    wf::geometry_t get_slot_dimensions(int n)
+    wf::geometry_t get_slot_dimensions(int n, wf::geometry_t g)
     {
-        auto area = output->workspace->get_workarea();
+        auto area = output->workspace->get_maximize_region(g);
         int w2    = area.width / 2;
         int h2    = area.height / 2;
 
@@ -257,7 +257,9 @@ class wayfire_grid : public wf::plugin_interface_t
     {
         auto query = dynamic_cast<wf::grid::grid_query_geometry_signal*>(data);
         assert(query);
-        query->out_geometry = get_slot_dimensions(query->slot);
+        auto p = query->input_coords;
+        wf::geometry_t g = { p.x, p.y, 1, 1 };
+        query->out_geometry = get_slot_dimensions(query->slot, g);
     };
 
     wf::signal_connection_t on_snap_signal = [=] (wf::signal_data_t *ddata)
@@ -290,7 +292,7 @@ class wayfire_grid : public wf::plugin_interface_t
         uint32_t slot = get_slot_from_tiled_edges(data->edges);
         if (slot > 0)
         {
-            data->desired_size = get_slot_dimensions(slot);
+            data->desired_size = get_slot_dimensions(slot, data->view->get_wm_geometry());
         }
 
         data->view->get_data_safe<wf_grid_slot_data>()->slot = slot;

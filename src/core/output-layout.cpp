@@ -55,6 +55,37 @@ static wl_output_transform get_transform_from_string(std::string transform)
     return WL_OUTPUT_TRANSFORM_NORMAL;
 }
 
+static std::vector<wf::geometry_t>* get_maximize_regions_from_string(
+    std::string maximize_regions)
+{
+    size_t last = 0;
+    size_t next = 0;
+    const char *current_region;
+    std::vector<wf::geometry_t>* region_list = new std::vector<wf::geometry_t>;
+    std::string curr;
+    wf::geometry_t region;
+    while (last < maximize_regions.length())
+    {
+        next = maximize_regions.find(",", last);
+        if (next == std::string::npos)
+        {
+            next = maximize_regions.length();
+        }
+        curr = maximize_regions.substr(last, next - last);
+        current_region = curr.c_str();
+        if (sscanf(current_region, "%dx%d+%d+%d", &region.width,
+            &region.height, &region.x, &region.y) < 4)
+        {
+            LOGE("Bad maximize region in config: ", curr);
+            return region_list;
+        }
+        region_list->push_back(region);
+        last = next + 1;
+    }
+
+    return region_list;
+}
+
 wlr_output_mode *find_matching_mode(wlr_output *output,
     const wlr_output_mode& reference)
 {
@@ -264,6 +295,7 @@ struct output_layout_output_t
     wf::option_wrapper_t<wf::output_config::position_t> position_opt;
     wf::option_wrapper_t<double> scale_opt;
     wf::option_wrapper_t<std::string> transform_opt;
+    wf::option_wrapper_t<std::string> maximize_regions_opt;
 
     wf::option_wrapper_t<bool> use_ext_config{
         "workarounds/use_external_output_configuration"};
@@ -276,6 +308,7 @@ struct output_layout_output_t
         position_opt.load_option(name + "/position");
         scale_opt.load_option(name + "/scale");
         transform_opt.load_option(name + "/transform");
+        maximize_regions_opt.load_option(name + "/maximize_regions");
     }
 
     output_layout_output_t(wlr_output *handle)
@@ -459,14 +492,18 @@ struct output_layout_output_t
 
         state.scale     = scale_opt;
         state.transform = get_transform_from_string(transform_opt);
+        state.maximize_regions =
+            get_maximize_regions_from_string(maximize_regions_opt);
         return state;
     }
 
-    void ensure_wayfire_output(const wf::dimensions_t& effective_size)
+    void ensure_wayfire_output(const wf::dimensions_t& effective_size,
+        std::vector<wf::geometry_t> *maximize_regions)
     {
         if (this->output)
         {
             this->output->set_effective_size(effective_size);
+            this->output->set_maximize_regions(maximize_regions);
 
             return;
         }
@@ -474,6 +511,7 @@ struct output_layout_output_t
         this->output =
             std::make_unique<wf::output_impl_t>(handle, effective_size);
         auto wo = output.get();
+        this->output->set_maximize_regions(maximize_regions);
 
         /* Focus the first output, but do not change the focus on subsequently
          * added outputs. We also change the focus if the noop output was
@@ -871,7 +909,7 @@ struct output_layout_output_t
 
             wlr_output_commit(handle);
 
-            ensure_wayfire_output(get_effective_size());
+            ensure_wayfire_output(get_effective_size(), state.maximize_regions);
             output->render->damage_whole();
             emit_configuration_changed(changed_fields);
         } else /* state.source == OUTPUT_IMAGE_SOURCE_MIRROR */

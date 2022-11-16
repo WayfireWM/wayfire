@@ -191,6 +191,17 @@ wf::dimensions_t wf::output_impl_t::get_screen_size() const
     return this->effective_size;
 }
 
+void wf::output_impl_t::set_maximize_regions(
+    const std::vector<wf::geometry_t> *maximize_regions)
+{
+    this->maximize_regions = maximize_regions;
+}
+
+const std::vector<wf::geometry_t> *wf::output_impl_t::get_maximize_regions() const
+{
+    return this->maximize_regions;
+}
+
 wf::geometry_t wf::output_t::get_relative_geometry() const
 {
     auto size = get_screen_size();

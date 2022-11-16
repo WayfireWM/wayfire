@@ -341,7 +341,8 @@ class wayfire_move : public wf::plugin_interface_t
      * is released at output-local coordinates (x, y) */
     wf::grid::slot_t calc_slot(wf::point_t point)
     {
-        auto g = output->workspace->get_workarea();
+        wf::geometry_t vg = { point.x, point.y, 1, 1 };
+        auto g = output->workspace->get_maximize_region(vg);
         if (!(output->get_relative_geometry() & point))
         {
             return wf::grid::SLOT_NONE;
@@ -471,9 +472,11 @@ class wayfire_move : public wf::plugin_interface_t
         /* Show a preview overlay */
         if (new_slot_id)
         {
+            auto input = get_input_coords();
             wf::grid::grid_query_geometry_signal query;
             query.slot = new_slot_id;
             query.out_geometry = {0, 0, -1, -1};
+            query.input_coords = input;
             output->emit_signal("grid-query-geometry", &query);
 
             /* Unknown slot geometry, can't show a preview */
@@ -482,7 +485,6 @@ class wayfire_move : public wf::plugin_interface_t
                 return;
             }
 
-            auto input   = get_input_coords();
             auto preview =
                 new wf::preview_indication_view_t({input.x, input.y, 1, 1});
             wf::get_core().add_view(

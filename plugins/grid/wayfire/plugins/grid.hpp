@@ -35,6 +35,9 @@ struct grid_query_geometry_signal : public wf::signal_data_t
     // The slot to calculate geometry for
     slot_t slot;
 
+    // The point of this request
+    wf::point_t input_coords;
+
     // Will be filled in by grid
     wf::geometry_t out_geometry;
 };
