@@ -65,27 +65,27 @@ class pointer_t
     wlr_pointer_constraint_v1 *get_active_pointer_constraint();
 
     /** Handle events coming from the input devices */
-    void handle_pointer_axis(wlr_event_pointer_axis *ev,
+    void handle_pointer_axis(wlr_pointer_axis_event *ev,
         input_event_processing_mode_t mode);
-    void handle_pointer_motion(wlr_event_pointer_motion *ev,
+    void handle_pointer_motion(wlr_pointer_motion_event *ev,
         input_event_processing_mode_t mode);
-    void handle_pointer_motion_absolute(wlr_event_pointer_motion_absolute *ev,
+    void handle_pointer_motion_absolute(wlr_pointer_motion_absolute_event *ev,
         input_event_processing_mode_t mode);
-    void handle_pointer_button(wlr_event_pointer_button *ev,
+    void handle_pointer_button(wlr_pointer_button_event *ev,
         input_event_processing_mode_t mode);
 
     /** Handle touchpad gestures detected by libinput */
-    void handle_pointer_swipe_begin(wlr_event_pointer_swipe_begin *ev,
+    void handle_pointer_swipe_begin(wlr_pointer_swipe_begin_event *ev,
         input_event_processing_mode_t mode);
-    void handle_pointer_swipe_update(wlr_event_pointer_swipe_update *ev,
+    void handle_pointer_swipe_update(wlr_pointer_swipe_update_event *ev,
         input_event_processing_mode_t mode);
-    void handle_pointer_swipe_end(wlr_event_pointer_swipe_end *ev,
+    void handle_pointer_swipe_end(wlr_pointer_swipe_end_event *ev,
         input_event_processing_mode_t mode);
-    void handle_pointer_pinch_begin(wlr_event_pointer_pinch_begin *ev,
+    void handle_pointer_pinch_begin(wlr_pointer_pinch_begin_event *ev,
         input_event_processing_mode_t mode);
-    void handle_pointer_pinch_update(wlr_event_pointer_pinch_update *ev,
+    void handle_pointer_pinch_update(wlr_pointer_pinch_update_event *ev,
         input_event_processing_mode_t mode);
-    void handle_pointer_pinch_end(wlr_event_pointer_pinch_end *ev,
+    void handle_pointer_pinch_end(wlr_pointer_pinch_end_event *ev,
         input_event_processing_mode_t mode);
     void handle_pointer_frame();
 
@@ -151,7 +151,7 @@ class pointer_t
 
     /** Send a button event to the currently active receiver, i.e to the
      * active input grab(if any), or to the focused surface */
-    void send_button(wlr_event_pointer_button *ev, bool has_binding);
+    void send_button(wlr_pointer_button_event *ev, bool has_binding);
 
     /**
      * Send a motion event to the currently active receiver, i.e to the

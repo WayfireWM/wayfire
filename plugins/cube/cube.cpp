@@ -139,7 +139,7 @@ class wayfire_cube : public wf::plugin_interface_t
         };
 
         grab_interface->callbacks.pointer.axis = [=] (
-            wlr_event_pointer_axis *ev)
+            wlr_pointer_axis_event *ev)
         {
             if (ev->orientation == WLR_AXIS_ORIENTATION_VERTICAL)
             {
@@ -573,7 +573,7 @@ class wayfire_cube : public wf::plugin_interface_t
     wf::signal_callback_t on_motion_event = [=] (wf::signal_data_t *data)
     {
         auto ev = static_cast<
-            wf::input_event_signal<wlr_event_pointer_motion>*>(data);
+            wf::input_event_signal<wlr_pointer_motion_event>*>(data);
 
         pointer_moved(ev->event);
 
@@ -583,7 +583,7 @@ class wayfire_cube : public wf::plugin_interface_t
         ev->event->unaccel_dy = 0;
     };
 
-    void pointer_moved(wlr_event_pointer_motion *ev)
+    void pointer_moved(wlr_pointer_motion_event *ev)
     {
         if (animation.in_exit)
         {

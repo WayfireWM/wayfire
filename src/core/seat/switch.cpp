@@ -7,12 +7,12 @@ wf::switch_device_t::switch_device_t(wlr_input_device *dev) :
 {
     on_switch.set_callback([&] (void *data)
     {
-        this->handle_switched((wlr_event_switch_toggle*)data);
+        this->handle_switched((wlr_switch_toggle_event*)data);
     });
-    on_switch.connect(&dev->switch_device->events.toggle);
+    on_switch.connect(&wlr_switch_from_input_device(dev)->events.toggle);
 }
 
-void wf::switch_device_t::handle_switched(wlr_event_switch_toggle *ev)
+void wf::switch_device_t::handle_switched(wlr_switch_toggle_event *ev)
 {
     wf::switch_signal data;
     data.device = nonstd::make_observer(this);

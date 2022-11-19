@@ -154,7 +154,7 @@ class vswipe : public wf::plugin_interface_t
         }
 
         auto ev = static_cast<
-            event<wlr_event_pointer_swipe_begin>*>(data)->event;
+            event<wlr_pointer_swipe_begin_event>*>(data)->event;
         if (static_cast<int>(ev->fingers) != fingers)
         {
             return;
@@ -257,7 +257,7 @@ class vswipe : public wf::plugin_interface_t
         }
 
         auto ev = static_cast<
-            event<wlr_event_pointer_swipe_update>*>(data)->event;
+            event<wlr_pointer_swipe_update_event>*>(data)->event;
 
         state.delta_sum.x += ev->dx / speed_factor;
         state.delta_sum.y += ev->dy / speed_factor;

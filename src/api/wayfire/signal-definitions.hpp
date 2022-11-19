@@ -101,7 +101,7 @@ enum class input_event_processing_mode_t
  *   by core has finished.
  *
  * example: The pointer_motion event is emitted with data of type
- *   input_event_signal<wlr_event_pointer_motion>
+ *   input_event_signal<wlr_pointer_motion_event>
  */
 template<class wlr_event_t>
 struct input_event_signal : public wf::signal_data_t

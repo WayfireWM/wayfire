@@ -86,7 +86,7 @@ void wayfire_focus::init()
     on_button.set_callback([=] (wf::signal_data_t *data)
     {
         auto ev = static_cast<
-            wf::input_event_signal<wlr_event_pointer_button>*>(data);
+            wf::input_event_signal<wlr_pointer_button_event>*>(data);
 
         if (ev->event->state != WLR_BUTTON_PRESSED)
         {

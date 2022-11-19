@@ -23,7 +23,7 @@ void wf::keyboard_t::setup_listeners()
 
     on_key.set_callback([&] (void *data)
     {
-        auto ev   = static_cast<wlr_event_keyboard_key*>(data);
+        auto ev   = static_cast<wlr_keyboard_key_event*>(data);
         auto mode = emit_device_event_signal("keyboard_key", ev);
 
         auto& seat = wf::get_core_impl().seat;
@@ -45,7 +45,7 @@ void wf::keyboard_t::setup_listeners()
         auto kbd  = static_cast<wlr_keyboard*>(data);
         auto seat = wf::get_core().get_current_seat();
 
-        wlr_seat_set_keyboard(seat, this->device);
+        wlr_seat_set_keyboard(seat, kbd);
         wlr_seat_keyboard_send_modifiers(seat, &kbd->modifiers);
         wlr_idle_notify_activity(wf::get_core().protocols.idle, seat);
     });
@@ -55,7 +55,7 @@ void wf::keyboard_t::setup_listeners()
 }
 
 wf::keyboard_t::keyboard_t(wlr_input_device *dev) :
-    handle(dev->keyboard), device(dev)
+    handle(wlr_keyboard_from_input_device(dev)), device(dev)
 {
     model.load_option("input/xkb_model");
     variant.load_option("input/xkb_variant");
@@ -78,7 +78,8 @@ wf::keyboard_t::keyboard_t(wlr_input_device *dev) :
 
     setup_listeners();
     reload_input_options();
-    wlr_seat_set_keyboard(wf::get_core().get_current_seat(), dev);
+    wlr_seat_set_keyboard(
+        wf::get_core().get_current_seat(), wlr_keyboard_from_input_device(dev));
 }
 
 uint32_t wf::keyboard_t::get_modifiers()

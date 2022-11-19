@@ -245,11 +245,28 @@ void render_rectangle(wf::geometry_t geometry, wf::color_t color,
     color_program.deactivate();
 }
 
+static bool egl_make_current(struct wlr_egl *egl)
+{
+    if (!eglMakeCurrent(wlr_egl_get_display(egl), EGL_NO_SURFACE, EGL_NO_SURFACE,
+        wlr_egl_get_context(egl)))
+    {
+        LOGE("eglMakeCurrent failed");
+        return false;
+    }
+
+    return true;
+}
+
+static bool egl_is_current(struct wlr_egl *egl)
+{
+    return eglGetCurrentContext() == wlr_egl_get_context(egl);
+}
+
 void render_begin()
 {
-    if (!wlr_egl_is_current(wf::get_core_impl().egl))
+    if (!egl_is_current(wf::get_core_impl().egl))
     {
-        wlr_egl_make_current(wf::get_core_impl().egl);
+        egl_make_current(wf::get_core_impl().egl);
     }
 
     GL_CALL(glEnable(GL_BLEND));

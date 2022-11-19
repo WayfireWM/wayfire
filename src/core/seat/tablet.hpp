@@ -31,18 +31,18 @@ struct tablet_tool_t
      * Send the axis updates directly.
      * Only the position is handled separately.
      */
-    void passthrough_axis(wlr_event_tablet_tool_axis *ev);
+    void passthrough_axis(wlr_tablet_tool_axis_event *ev);
 
     /**
      * Called whenever a tip occurs for this tool
      */
-    void handle_tip(wlr_event_tablet_tool_tip *ev);
+    void handle_tip(wlr_tablet_tool_tip_event *ev);
 
     /** Handle a button event */
-    void handle_button(wlr_event_tablet_tool_button *ev);
+    void handle_button(wlr_tablet_tool_button_event *ev);
 
     /** Set proximity state */
-    void handle_proximity(wlr_event_tablet_tool_proximity *ev);
+    void handle_proximity(wlr_tablet_tool_proximity_event *ev);
 
   private:
     wf::wl_listener_wrapper on_destroy, on_set_cursor;
@@ -75,16 +75,16 @@ struct tablet_t : public input_device_impl_t
     virtual ~tablet_t();
 
     /** Handle a tool tip event */
-    void handle_tip(wlr_event_tablet_tool_tip *ev,
+    void handle_tip(wlr_tablet_tool_tip_event *ev,
         input_event_processing_mode_t mode);
     /** Handle an axis event */
-    void handle_axis(wlr_event_tablet_tool_axis *ev,
+    void handle_axis(wlr_tablet_tool_axis_event *ev,
         input_event_processing_mode_t mode);
     /** Handle a button event */
-    void handle_button(wlr_event_tablet_tool_button *ev,
+    void handle_button(wlr_tablet_tool_button_event *ev,
         input_event_processing_mode_t mode);
     /** Handle a proximity event */
-    void handle_proximity(wlr_event_tablet_tool_proximity *ev,
+    void handle_proximity(wlr_tablet_tool_proximity_event *ev,
         input_event_processing_mode_t mode);
 
     wlr_tablet_v2_tablet *tablet_v2;

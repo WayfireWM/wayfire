@@ -182,6 +182,8 @@ void wf::compositor_core_impl_t::init()
      * init_desktop_apis() should come before input.
      * 4. GTK expects primary selection early. */
     compositor = wlr_compositor_create(display, renderer);
+    /* Needed for subsurfaces */
+    wlr_subcompositor_create(display);
 
     protocols.data_device = wlr_data_device_manager_create(display);
     protocols.primary_selection_v1 =
@@ -250,7 +252,7 @@ void wf::compositor_core_impl_t::init()
     vkbd_created.set_callback([&] (void *data)
     {
         auto kbd = (wlr_virtual_keyboard_v1*)data;
-        input->handle_new_input(&kbd->input_device);
+        input->handle_new_input(&kbd->keyboard.base);
     });
     vkbd_created.connect(&protocols.vkbd_manager->events.new_virtual_keyboard);
 
@@ -259,7 +261,7 @@ void wf::compositor_core_impl_t::init()
     {
         auto event = (wlr_virtual_pointer_v1_new_pointer_event*)data;
         auto ptr   = event->new_pointer;
-        input->handle_new_input(&ptr->input_device);
+        input->handle_new_input(&ptr->pointer.base);
     });
     vptr_created.connect(&protocols.vptr_manager->events.new_virtual_pointer);
 

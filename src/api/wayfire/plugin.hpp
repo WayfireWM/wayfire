@@ -76,10 +76,10 @@ struct plugin_grab_interface_t
     {
         struct
         {
-            std::function<void(wlr_event_pointer_axis*)> axis;
+            std::function<void(wlr_pointer_axis_event*)> axis;
             std::function<void(uint32_t, uint32_t)> button; // button, state
             std::function<void(int32_t, int32_t)> motion; // x, y
-            std::function<void(wlr_event_pointer_motion*)> relative_motion;
+            std::function<void(wlr_pointer_motion_event*)> relative_motion;
         } pointer;
 
         struct

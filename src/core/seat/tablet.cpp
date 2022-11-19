@@ -162,7 +162,7 @@ void wf::tablet_tool_t::set_focus(wf::surface_interface_t *surface)
     }
 }
 
-void wf::tablet_tool_t::passthrough_axis(wlr_event_tablet_tool_axis *ev)
+void wf::tablet_tool_t::passthrough_axis(wlr_tablet_tool_axis_event *ev)
 {
     if (ev->updated_axes & WLR_TABLET_TOOL_AXIS_PRESSURE)
     {
@@ -207,7 +207,7 @@ void wf::tablet_tool_t::passthrough_axis(wlr_event_tablet_tool_axis *ev)
     }
 }
 
-void wf::tablet_tool_t::handle_tip(wlr_event_tablet_tool_tip *ev)
+void wf::tablet_tool_t::handle_tip(wlr_tablet_tool_tip_event *ev)
 {
     /* Nothing to do without a proximity surface */
     if (!this->proximity_surface)
@@ -236,14 +236,14 @@ void wf::tablet_tool_t::handle_tip(wlr_event_tablet_tool_tip *ev)
     }
 }
 
-void wf::tablet_tool_t::handle_button(wlr_event_tablet_tool_button *ev)
+void wf::tablet_tool_t::handle_button(wlr_tablet_tool_button_event *ev)
 {
     wlr_tablet_v2_tablet_tool_notify_button(tool_v2,
         (zwp_tablet_pad_v2_button_state)ev->button,
         (zwp_tablet_pad_v2_button_state)ev->state);
 }
 
-void wf::tablet_tool_t::handle_proximity(wlr_event_tablet_tool_proximity *ev)
+void wf::tablet_tool_t::handle_proximity(wlr_tablet_tool_proximity_event *ev)
 {
     if (ev->state == WLR_TABLET_TOOL_PROXIMITY_OUT)
     {
@@ -260,7 +260,7 @@ void wf::tablet_tool_t::handle_proximity(wlr_event_tablet_tool_proximity *ev)
 wf::tablet_t::tablet_t(wlr_cursor *cursor, wlr_input_device *dev) :
     input_device_impl_t(dev)
 {
-    this->handle = dev->tablet;
+    this->handle = wlr_tablet_from_input_device(dev);
     this->handle->data = this;
     this->cursor = cursor;
 
@@ -284,7 +284,7 @@ wf::tablet_tool_t*wf::tablet_t::ensure_tool(wlr_tablet_tool *tool)
     return (wf::tablet_tool_t*)tool->data;
 }
 
-void wf::tablet_t::handle_tip(wlr_event_tablet_tool_tip *ev,
+void wf::tablet_t::handle_tip(wlr_tablet_tool_tip_event *ev,
     input_event_processing_mode_t mode)
 {
     auto& input = wf::get_core_impl().input;
@@ -323,7 +323,7 @@ void wf::tablet_t::handle_tip(wlr_event_tablet_tool_tip *ev,
     }
 }
 
-void wf::tablet_t::handle_axis(wlr_event_tablet_tool_axis *ev,
+void wf::tablet_t::handle_axis(wlr_tablet_tool_axis_event *ev,
     input_event_processing_mode_t mode)
 {
     auto& input = wf::get_core_impl().input;
@@ -332,13 +332,13 @@ void wf::tablet_t::handle_axis(wlr_event_tablet_tool_axis *ev,
     switch (ev->tool->type)
     {
       case WLR_TABLET_TOOL_TYPE_MOUSE:
-        wlr_cursor_move(cursor, ev->device, ev->dx, ev->dy);
+        wlr_cursor_move(cursor, &ev->tablet->base, ev->dx, ev->dy);
         break;
 
       default:
         double x = (ev->updated_axes & WLR_TABLET_TOOL_AXIS_X) ? ev->x : NAN;
         double y = (ev->updated_axes & WLR_TABLET_TOOL_AXIS_Y) ? ev->y : NAN;
-        wlr_cursor_warp_absolute(cursor, ev->device, x, y);
+        wlr_cursor_warp_absolute(cursor, &ev->tablet->base, x, y);
     }
 
     if (input->input_grabbed())
@@ -359,14 +359,14 @@ void wf::tablet_t::handle_axis(wlr_event_tablet_tool_axis *ev,
     tool->passthrough_axis(ev);
 }
 
-void wf::tablet_t::handle_button(wlr_event_tablet_tool_button *ev,
+void wf::tablet_t::handle_button(wlr_tablet_tool_button_event *ev,
     input_event_processing_mode_t mode)
 {
     /* Pass to the tool */
     ensure_tool(ev->tool)->handle_button(ev);
 }
 
-void wf::tablet_t::handle_proximity(wlr_event_tablet_tool_proximity *ev,
+void wf::tablet_t::handle_proximity(wlr_tablet_tool_proximity_event *ev,
     input_event_processing_mode_t mode)
 {
     ensure_tool(ev->tool)->handle_proximity(ev);
@@ -421,7 +421,7 @@ wf::tablet_pad_t::tablet_pad_t(wlr_input_device *pad) :
 
     on_button.set_callback([=] (void *data)
     {
-        auto ev = static_cast<wlr_event_tablet_pad_button*>(data);
+        auto ev = static_cast<wlr_tablet_pad_button_event*>(data);
         wlr_tablet_v2_tablet_pad_notify_mode(pad_v2,
             ev->group, ev->mode, ev->time_msec);
         wlr_tablet_v2_tablet_pad_notify_button(pad_v2,
@@ -431,22 +431,22 @@ wf::tablet_pad_t::tablet_pad_t(wlr_input_device *pad) :
 
     on_strip.set_callback([=] (void *data)
     {
-        auto ev = static_cast<wlr_event_tablet_pad_strip*>(data);
+        auto ev = static_cast<wlr_tablet_pad_strip_event*>(data);
         wlr_tablet_v2_tablet_pad_notify_strip(pad_v2, ev->strip, ev->position,
             ev->source == WLR_TABLET_PAD_STRIP_SOURCE_FINGER, ev->time_msec);
     });
 
     on_ring.set_callback([=] (void *data)
     {
-        auto ev = static_cast<wlr_event_tablet_pad_ring*>(data);
+        auto ev = static_cast<wlr_tablet_pad_ring_event*>(data);
         wlr_tablet_v2_tablet_pad_notify_ring(pad_v2, ev->ring, ev->position,
             ev->source == WLR_TABLET_PAD_RING_SOURCE_FINGER, ev->time_msec);
     });
 
-    on_attach.connect(&pad->tablet_pad->events.attach_tablet);
-    on_button.connect(&pad->tablet_pad->events.button);
-    on_strip.connect(&pad->tablet_pad->events.strip);
-    on_ring.connect(&pad->tablet_pad->events.ring);
+    on_attach.connect(&wlr_tablet_pad_from_input_device(pad)->events.attach_tablet);
+    on_button.connect(&wlr_tablet_pad_from_input_device(pad)->events.button);
+    on_strip.connect(&wlr_tablet_pad_from_input_device(pad)->events.strip);
+    on_ring.connect(&wlr_tablet_pad_from_input_device(pad)->events.ring);
 }
 
 wf::tablet_pad_t::~tablet_pad_t()

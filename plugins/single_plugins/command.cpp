@@ -152,7 +152,7 @@ class wayfire_command : public wf::plugin_interface_t
     wf::signal_callback_t on_button_event = [=] (wf::signal_data_t *data)
     {
         auto ev = static_cast<
-            wf::input_event_signal<wlr_event_pointer_button>*>(data);
+            wf::input_event_signal<wlr_pointer_button_event>*>(data);
         if ((ev->event->button == repeat.pressed_button) &&
             (ev->event->state == WLR_BUTTON_RELEASED))
         {
@@ -163,7 +163,7 @@ class wayfire_command : public wf::plugin_interface_t
     wf::signal_callback_t on_key_event = [=] (wf::signal_data_t *data)
     {
         auto ev = static_cast<
-            wf::input_event_signal<wlr_event_keyboard_key>*>(data);
+            wf::input_event_signal<wlr_keyboard_key_event>*>(data);
         if ((ev->event->keycode == repeat.pressed_key) &&
             (ev->event->state == WLR_KEY_RELEASED))
         {

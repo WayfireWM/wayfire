@@ -38,8 +38,8 @@ extern "C"
     struct wlr_xdg_foreign_v2;
     struct wlr_xdg_foreign_registry;
 
-    struct wlr_event_pointer_axis;
-    struct wlr_event_pointer_motion;
+    struct wlr_pointer_axis_event;
+    struct wlr_pointer_motion_event;
     struct wlr_output_layout;
     struct wlr_surface;
     struct wlr_texture;

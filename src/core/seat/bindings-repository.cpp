@@ -55,7 +55,7 @@ bool wf::bindings_repository_t::handle_key(const wf::keybinding_t& pressed,
 }
 
 bool wf::bindings_repository_t::handle_axis(uint32_t modifiers,
-    wlr_event_pointer_axis *ev)
+    wlr_pointer_axis_event *ev)
 {
     std::vector<wf::axis_callback*> callbacks;
 

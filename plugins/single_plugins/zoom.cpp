@@ -42,7 +42,7 @@ class wayfire_zoom_screen : public wf::plugin_interface_t
         }
     }
 
-    wf::axis_callback axis = [=] (wlr_event_pointer_axis *ev)
+    wf::axis_callback axis = [=] (wlr_pointer_axis_event *ev)
     {
         if (!output->can_activate_plugin(grab_interface))
         {

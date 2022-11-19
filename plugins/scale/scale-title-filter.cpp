@@ -232,7 +232,7 @@ class scale_title_filter : public wf::singleton_plugin_t<scale_title_filter_text
     wf::signal_connection_t scale_key = [this] (wf::signal_data_t *data)
     {
         auto k =
-            static_cast<wf::input_event_signal<wlr_event_keyboard_key>*>(data);
+            static_cast<wf::input_event_signal<wlr_keyboard_key_event>*>(data);
         if (k->event->state == WL_KEYBOARD_KEY_STATE_RELEASED)
         {
             keys.erase(k->event->keycode);

@@ -326,7 +326,7 @@ class wayfire_scale : public wf::plugin_interface_t
     wf::signal_connection_t on_button_event = [=] (wf::signal_data_t *data)
     {
         auto ev = static_cast<
-            wf::input_event_signal<wlr_event_pointer_button>*>(data);
+            wf::input_event_signal<wlr_pointer_button_event>*>(data);
 
         process_input(ev->event->button, ev->event->state,
             wf::get_core().get_cursor_position());
@@ -335,7 +335,7 @@ class wayfire_scale : public wf::plugin_interface_t
     wf::signal_connection_t on_touch_down_event = [=] (wf::signal_data_t *data)
     {
         auto ev = static_cast<
-            wf::input_event_signal<wlr_event_touch_down>*>(data);
+            wf::input_event_signal<wlr_touch_down_event>*>(data);
         if (ev->event->touch_id == 0)
         {
             process_input(BTN_LEFT, WLR_BUTTON_PRESSED,
@@ -346,7 +346,7 @@ class wayfire_scale : public wf::plugin_interface_t
     wf::signal_connection_t on_touch_up_event = [=] (wf::signal_data_t *data)
     {
         auto ev = static_cast<
-            wf::input_event_signal<wlr_event_touch_up>*>(data);
+            wf::input_event_signal<wlr_touch_up_event>*>(data);
         if (ev->event->touch_id == 0)
         {
             process_input(BTN_LEFT, WLR_BUTTON_RELEASED,

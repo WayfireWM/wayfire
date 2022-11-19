@@ -38,7 +38,7 @@ using button_callback = std::function<bool (const wf::buttonbinding_t&)>;
  * case it will not be sent to clients (but may still be received by other
  * plugins).
  */
-using axis_callback = std::function<bool (wlr_event_pointer_axis*)>;
+using axis_callback = std::function<bool (wlr_pointer_axis_event*)>;
 
 /**
  * Describes the possible event sources that can activate an activator binding.
