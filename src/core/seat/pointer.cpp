@@ -87,9 +87,6 @@ void wf::pointer_t::update_cursor_position(int64_t time_msec, bool real_update)
         const auto& scene = wf::get_core().scene();
         auto isec = scene->find_node_at(gc);
         update_cursor_focus(isec ? isec->node->shared_from_this() : nullptr);
-        /* We switched focus, so send motion event in any case, so that the
-         * new focus knows where the pointer is */
-        real_update = true;
     }
 
     if (real_update)
