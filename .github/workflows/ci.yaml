@@ -7,7 +7,7 @@ jobs:
     runs-on: ubuntu-latest
     container: alpine:edge
     steps:
-    - run: apk --no-cache add git gcc g++ binutils pkgconf meson ninja musl-dev wayland-dev wayland-protocols libinput-dev libevdev-dev libxkbcommon-dev pixman-dev glm-dev libdrm-dev mesa-dev cairo-dev pango-dev eudev-dev libxml2-dev libseat-dev libxcb-dev xcb-util-wm-dev xwayland doctest doctest-dev cmake
+    - run: apk --no-cache add git gcc g++ binutils pkgconf meson ninja musl-dev wayland-dev wayland-protocols libinput-dev libevdev-dev libxkbcommon-dev pixman-dev glm-dev libdrm-dev mesa-dev cairo-dev pango-dev eudev-dev libxml2-dev libseat-dev libxcb-dev xcb-util-wm-dev xwayland doctest doctest-dev cmake hwdata
     - uses: actions/checkout@v1
     - run: git config --global --add safe.directory /__w/wayfire/wayfire
     - run: git submodule sync --recursive && git submodule update --init --force --recursive
