@@ -31,7 +31,7 @@ pixman         = dependency('pixman-1')
 threads        = dependency('threads')
 xkbcommon      = dependency('xkbcommon')
 libdl          = meson.get_compiler('cpp').find_library('dl')
-wlroots        = dependency('wlroots', version: ['>=0.15.0', '<0.16.0'], required: get_option('use_system_wlroots'))
+wlroots        = dependency('wlroots', version: ['>=0.16.0', '<0.17.0'], required: get_option('use_system_wlroots'))
 wfconfig       = dependency('wf-config', version: ['>=0.8.0', '<0.9.0'], required: get_option('use_system_wfconfig'))
 
 use_system_wlroots = not get_option('use_system_wlroots').disabled() and wlroots.found()

@@ -30,7 +30,7 @@ class bindings_repository_t
     bool handle_key(const wf::keybinding_t& pressed, uint32_t mod_binding_key);
 
     /** Handle an axis event. */
-    bool handle_axis(uint32_t modifiers, wlr_event_pointer_axis *ev);
+    bool handle_axis(uint32_t modifiers, wlr_pointer_axis_event *ev);
 
     /**
      * Handle a buttonbinding pressed by the user.

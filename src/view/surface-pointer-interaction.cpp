@@ -88,7 +88,7 @@ class surface_pointer_interaction_t final : public wf::pointer_interaction_t
     wf::signal_connection_t on_pointer_motion = [=] (wf::signal_data_t *data)
     {
         auto evv = static_cast<
-            wf::input_event_signal<wlr_event_pointer_motion>*>(data);
+            wf::input_event_signal<wlr_pointer_motion_event>*>(data);
         auto ev    = evv->event;
         auto& seat = wf::get_core_impl().seat;
 
@@ -184,7 +184,7 @@ class surface_pointer_interaction_t final : public wf::pointer_interaction_t
         this->surface = si;
     }
 
-    void handle_pointer_button(const wlr_event_pointer_button& event) final
+    void handle_pointer_button(const wlr_pointer_button_event& event) final
     {
         auto& seat = wf::get_core_impl().seat;
         bool drag_was_active = seat->drag_active;
@@ -256,7 +256,7 @@ class surface_pointer_interaction_t final : public wf::pointer_interaction_t
         }
     }
 
-    void handle_pointer_axis(const wlr_event_pointer_axis& ev) final
+    void handle_pointer_axis(const wlr_pointer_axis_event& ev) final
     {
         if (auto cs = wf::compositor_surface_from_surface(surface))
         {

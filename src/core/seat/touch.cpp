@@ -23,11 +23,11 @@ wf::touch_interface_t::touch_interface_t(wlr_cursor *cursor, wlr_seat *seat,
     // connect handlers
     on_down.set_callback([=] (void *data)
     {
-        auto ev   = static_cast<wlr_event_touch_down*>(data);
+        auto ev   = static_cast<wlr_touch_down_event*>(data);
         auto mode = emit_device_event_signal("touch_down", ev);
 
         double lx, ly;
-        wlr_cursor_absolute_to_layout_coords(cursor, ev->device,
+        wlr_cursor_absolute_to_layout_coords(cursor, &ev->touch->base,
             ev->x, ev->y, &lx, &ly);
 
         wf::pointf_t point;
@@ -40,7 +40,7 @@ wf::touch_interface_t::touch_interface_t(wlr_cursor *cursor, wlr_seat *seat,
 
     on_up.set_callback([=] (void *data)
     {
-        auto ev   = static_cast<wlr_event_touch_up*>(data);
+        auto ev   = static_cast<wlr_touch_up_event*>(data);
         auto mode = emit_device_event_signal("touch_up", ev);
         handle_touch_up(ev->touch_id, ev->time_msec, mode);
         wlr_idle_notify_activity(wf::get_core().protocols.idle,
@@ -50,12 +50,12 @@ wf::touch_interface_t::touch_interface_t(wlr_cursor *cursor, wlr_seat *seat,
 
     on_motion.set_callback([=] (void *data)
     {
-        auto ev   = static_cast<wlr_event_touch_motion*>(data);
+        auto ev   = static_cast<wlr_touch_motion_event*>(data);
         auto mode = emit_device_event_signal("touch_motion", ev);
 
         double lx, ly;
         wlr_cursor_absolute_to_layout_coords(
-            wf::get_core_impl().seat->cursor->cursor, ev->device,
+            wf::get_core_impl().seat->cursor->cursor, &ev->touch->base,
             ev->x, ev->y, &lx, &ly);
 
         wf::pointf_t point;
@@ -68,11 +68,11 @@ wf::touch_interface_t::touch_interface_t(wlr_cursor *cursor, wlr_seat *seat,
 
     on_cancel.set_callback([=] (void *data)
     {
-        wlr_event_touch_cancel *ev = (wlr_event_touch_cancel*)data;
-        wlr_event_touch_up sim;
+        wlr_touch_cancel_event *ev = (wlr_touch_cancel_event*)data;
+        wlr_touch_up_event sim;
         sim.time_msec = ev->time_msec;
         sim.touch_id  = ev->touch_id;
-        sim.device    = ev->device;
+        sim.touch     = ev->touch;
         this->on_up.emit(&sim);
     });
 

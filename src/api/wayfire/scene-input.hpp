@@ -50,7 +50,7 @@ class keyboard_interaction_t
      *
      * @return What should happen with the further processing of the event.
      */
-    virtual void handle_keyboard_key(wlr_event_keyboard_key event)
+    virtual void handle_keyboard_key(wlr_keyboard_key_event event)
     {}
 
     keyboard_interaction_t() = default;
@@ -103,7 +103,7 @@ class pointer_interaction_t
      * @param button The wlr event describing the event.
      */
     virtual void handle_pointer_button(
-        const wlr_event_pointer_button& event)
+        const wlr_pointer_button_event& event)
     {}
 
     /**
@@ -122,7 +122,7 @@ class pointer_interaction_t
      * @param pointer_position The position where the pointer is currently at.
      * @param event A structure describing the event.
      */
-    virtual void handle_pointer_axis(const wlr_event_pointer_axis& event)
+    virtual void handle_pointer_axis(const wlr_pointer_axis_event& event)
     {}
 };
 

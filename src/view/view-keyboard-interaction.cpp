@@ -48,7 +48,7 @@ class view_keyboard_interaction_t : public wf::keyboard_interaction_t
         }
     }
 
-    void handle_keyboard_key(wlr_event_keyboard_key event) override
+    void handle_keyboard_key(wlr_keyboard_key_event event) override
     {
         auto iv = interactive_view_from_view(view.get());
         if (iv)

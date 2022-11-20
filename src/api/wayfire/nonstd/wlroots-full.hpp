@@ -43,7 +43,8 @@ extern "C"
     #include <wlr/types/wlr_xdg_shell.h>
     #include <wlr/types/wlr_xdg_decoration_v1.h>
 #endif
-#include <wlr/types/wlr_surface.h>
+#include <wlr/types/wlr_compositor.h>
+#include <wlr/types/wlr_subcompositor.h>
 
 #include <wlr/types/wlr_foreign_toplevel_management_v1.h>
 #include <wlr/types/wlr_server_decoration.h>

@@ -202,15 +202,16 @@ wf::geometry_t wf::output_t::get_relative_geometry() const
 
 wf::geometry_t wf::output_t::get_layout_geometry() const
 {
-    auto box = wlr_output_layout_get_box(
-        wf::get_core().output_layout->get_handle(), handle);
-    if (box)
-    {
-        return *box;
-    } else
+    wlr_box box;
+    wlr_output_layout_get_box(
+        wf::get_core().output_layout->get_handle(), handle, &box);
+    if (wlr_box_empty(&box))
     {
         // Can happen when initializing the output
         return {0, 0, handle->width, handle->height};
+    } else
+    {
+        return box;
     }
 }
 

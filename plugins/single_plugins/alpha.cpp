@@ -78,7 +78,7 @@ class wayfire_alpha : public wf::plugin_interface_t
         }
     }
 
-    wf::axis_callback axis_cb = [=] (wlr_event_pointer_axis *ev)
+    wf::axis_callback axis_cb = [=] (wlr_pointer_axis_event *ev)
     {
         if (!output->activate_plugin(grab_interface))
         {

@@ -18,7 +18,11 @@ extern "C" {
 #include <wlr/backend/headless.h>
 #include <wlr/types/wlr_pointer.h>
 #include <wlr/types/wlr_keyboard.h>
+#include <wlr/interfaces/wlr_pointer.h>
 #include <wlr/interfaces/wlr_keyboard.h>
+#include <wlr/interfaces/wlr_touch.h>
+#include <wlr/types/wlr_virtual_pointer_v1.h>
+#include <wlr/types/wlr_virtual_keyboard_v1.h>
 #include <wlr/types/wlr_output_layout.h>
 #include <libevdev/libevdev.h>
 }
@@ -89,13 +93,29 @@ static std::string layer_to_string(uint32_t layer)
     return "none";
 }
 
+static const struct wlr_pointer_impl pointer_impl = {
+    .name = "stipc-pointer",
+};
+
+static void led_update(wlr_keyboard *keyboard, uint32_t leds)
+{}
+
+static const struct wlr_keyboard_impl keyboard_impl = {
+    .name = "stipc-keyboard",
+    .led_update = led_update,
+};
+
+static const struct wlr_touch_impl touch_impl = {
+    .name = "stipc-touch-device",
+};
+
 class headless_input_backend_t
 {
   public:
     wlr_backend *backend;
-    wlr_input_device *pointer;
-    wlr_input_device *keyboard;
-    wlr_input_device *touch;
+    wlr_pointer pointer;
+    wlr_keyboard keyboard;
+    wlr_touch touch;
 
     headless_input_backend_t()
     {
@@ -103,9 +123,13 @@ class headless_input_backend_t
         backend = wlr_headless_backend_create(core.display);
         wlr_multi_backend_add(core.backend, backend);
 
-        pointer  = wlr_headless_add_input_device(backend, WLR_INPUT_DEVICE_POINTER);
-        keyboard = wlr_headless_add_input_device(backend, WLR_INPUT_DEVICE_KEYBOARD);
-        touch    = wlr_headless_add_input_device(backend, WLR_INPUT_DEVICE_TOUCH);
+        wlr_pointer_init(&pointer, &pointer_impl, "stipc_pointer");
+        wlr_keyboard_init(&keyboard, &keyboard_impl, "stipc_keyboard");
+        wlr_touch_init(&touch, &touch_impl, "stipc_touch");
+
+        wl_signal_emit_mutable(&backend->events.new_input, &pointer.base);
+        wl_signal_emit_mutable(&backend->events.new_input, &keyboard.base);
+        wl_signal_emit_mutable(&backend->events.new_input, &touch.base);
 
         if (core.get_current_state() == compositor_state_t::RUNNING)
         {
@@ -116,80 +140,84 @@ class headless_input_backend_t
     ~headless_input_backend_t()
     {
         auto& core = wf::get_core();
+        wlr_pointer_finish(&pointer);
+        wlr_keyboard_finish(&keyboard);
+        wlr_touch_finish(&touch);
         wlr_multi_backend_remove(core.backend, backend);
         wlr_backend_destroy(backend);
     }
 
     void do_key(uint32_t key, wl_keyboard_key_state state)
     {
-        wlr_event_keyboard_key ev;
+        wlr_keyboard_key_event ev;
         ev.keycode = key;
         ev.state   = state;
         ev.update_state = true;
         ev.time_msec    = get_current_time();
-        wlr_keyboard_notify_key(keyboard->keyboard, &ev);
+        wlr_keyboard_notify_key(&keyboard, &ev);
     }
 
     void do_button(uint32_t button, wlr_button_state state)
     {
-        wlr_event_pointer_button ev;
-        ev.device    = pointer;
+        wlr_pointer_button_event ev;
+        ev.pointer   = &pointer;
         ev.button    = button;
         ev.state     = state;
         ev.time_msec = get_current_time();
-        wl_signal_emit(&pointer->pointer->events.button, &ev);
-        wl_signal_emit(&pointer->pointer->events.frame, NULL);
+        wl_signal_emit(&pointer.events.button, &ev);
+        wl_signal_emit(&pointer.events.frame, NULL);
     }
 
     void do_motion(double x, double y)
     {
         auto cursor = wf::get_core().get_cursor_position();
 
-        wlr_event_pointer_motion ev;
-        ev.device    = pointer;
+        wlr_pointer_motion_event ev;
+        ev.pointer   = &pointer;
         ev.time_msec = get_current_time();
         ev.delta_x   = ev.unaccel_dx = x - cursor.x;
         ev.delta_y   = ev.unaccel_dy = y - cursor.y;
-        wl_signal_emit(&pointer->pointer->events.motion, &ev);
-        wl_signal_emit(&pointer->pointer->events.frame, NULL);
+        wl_signal_emit(&pointer.events.motion, &ev);
+        wl_signal_emit(&pointer.events.frame, NULL);
     }
 
     void do_touch(int finger, double x, double y)
     {
         auto layout = wf::get_core().output_layout->get_handle();
-        auto box    = wlr_output_layout_get_box(layout, NULL);
+        wlr_box box;
+        wlr_output_layout_get_box(layout, NULL, &box);
 
         if (!wf::get_core().get_touch_state().fingers.count(finger))
         {
-            wlr_event_touch_down ev;
-            ev.device    = touch;
+            wlr_touch_down_event ev;
+            ev.touch     = &touch;
             ev.time_msec = get_current_time();
-            ev.x = 1.0 * (x - box->x) / box->width;
-            ev.y = 1.0 * (y - box->y) / box->height;
+            ev.x = 1.0 * (x - box.x) / box.width;
+            ev.y = 1.0 * (y - box.y) / box.height;
             ev.touch_id = finger;
-            wl_signal_emit(&touch->touch->events.down, &ev);
+            wl_signal_emit(&touch.events.down, &ev);
         } else
         {
-            wlr_event_touch_motion ev;
-            ev.device    = touch;
+            wlr_touch_motion_event ev;
+            ev.touch     = &touch;
             ev.time_msec = get_current_time();
-            ev.x = 1.0 * (x - box->x) / box->width;
-            ev.y = 1.0 * (y - box->y) / box->height;
+            ev.x = 1.0 * (x - box.x) / box.width;
+            ev.y = 1.0 * (y - box.y) / box.height;
             ev.touch_id = finger;
-            wl_signal_emit(&touch->touch->events.motion, &ev);
+            wl_signal_emit(&touch.events.motion, &ev);
         }
 
-        wl_signal_emit(&touch->touch->events.frame, NULL);
+        wl_signal_emit(&touch.events.frame, NULL);
     }
 
     void do_touch_release(int finger)
     {
-        wlr_event_touch_up ev;
-        ev.device    = touch;
+        wlr_touch_up_event ev;
+        ev.touch     = &touch;
         ev.time_msec = get_current_time();
         ev.touch_id  = finger;
-        wl_signal_emit(&touch->touch->events.up, &ev);
-        wl_signal_emit(&touch->touch->events.frame, NULL);
+        wl_signal_emit(&touch.events.up, &ev);
+        wl_signal_emit(&touch.events.frame, NULL);
     }
 
     headless_input_backend_t(const headless_input_backend_t&) = delete;
