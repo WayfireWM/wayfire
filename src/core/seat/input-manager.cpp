@@ -72,7 +72,18 @@ void wf::input_manager_t::refresh_device_mappings()
         auto mapped_output = section->get_option("output")->get_value_str();
         if (mapped_output.empty())
         {
-            mapped_output = nonull(dev->name);
+            if (dev->type == WLR_INPUT_DEVICE_POINTER)
+            {
+                mapped_output = nonull(wlr_pointer_from_input_device(
+                    dev)->output_name);
+            } else if (dev->type == WLR_INPUT_DEVICE_TOUCH)
+            {
+                mapped_output =
+                    nonull(wlr_touch_from_input_device(dev)->output_name);
+            } else
+            {
+                mapped_output = nonull(dev->name);
+            }
         }
 
         auto wo = wf::get_core().output_layout->find_output(mapped_output);
