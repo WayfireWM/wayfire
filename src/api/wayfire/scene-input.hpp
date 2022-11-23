@@ -199,8 +199,11 @@ class touch_interaction_t
      *
      * @param finger_id The id of the finger being lifted. It is guaranteed that
      *   the finger will have been pressed on the node before.
+     * @param lift_off_position The last position the finger had before the
+     *   lift off.
      */
-    virtual void handle_touch_up(uint32_t time_ms, int finger_id)
+    virtual void handle_touch_up(uint32_t time_ms, int finger_id,
+        wf::pointf_t lift_off_position)
     {}
 
     /**

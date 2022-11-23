@@ -164,7 +164,7 @@ void wf::touch_interface_t::set_touch_focus(wf::scene::node_ptr node,
 
     if (focus[id])
     {
-        focus[id]->touch_interaction().handle_touch_up(time, id);
+        focus[id]->touch_interaction().handle_touch_up(time, id, point);
     }
 
     focus[id] = node;
@@ -282,12 +282,15 @@ void wf::touch_interface_t::handle_touch_motion(int32_t id, uint32_t time,
 void wf::touch_interface_t::handle_touch_up(int32_t id, uint32_t time,
     input_event_processing_mode_t mode)
 {
+    const auto lift_off_position = finger_state.fingers[id].current;
+
     const wf::touch::gesture_event_t gesture_event = {
         .type   = wf::touch::EVENT_TYPE_TOUCH_UP,
         .time   = time,
         .finger = id,
-        .pos    = finger_state.fingers[id].current
+        .pos    = lift_off_position,
     };
+
     update_gestures(gesture_event);
     finger_state.update(gesture_event);
 
@@ -303,7 +306,8 @@ void wf::touch_interface_t::handle_touch_up(int32_t id, uint32_t time,
         return;
     }
 
-    set_touch_focus(nullptr, id, time, {0, 0});
+    set_touch_focus(nullptr, id, time,
+        {lift_off_position.x, lift_off_position.y});
 }
 
 void wf::touch_interface_t::update_cursor_state()

@@ -2,6 +2,7 @@
  * Original code by: Scott Moreau, Daniel Kondor
  */
 #include <map>
+#include <memory>
 #include <wayfire/plugin.hpp>
 #include <wayfire/output.hpp>
 #include <wayfire/util/duration.hpp>
@@ -17,11 +18,16 @@
 
 #include <wayfire/plugins/common/move-drag-interface.hpp>
 #include <wayfire/plugins/common/shared-core-data.hpp>
+#include <wayfire/plugins/common/input-grab.hpp>
 
 #include <linux/input-event-codes.h>
 
 #include "scale-title-overlay.hpp"
+#include "wayfire/core.hpp"
+#include "wayfire/debug.hpp"
+#include "wayfire/scene-input.hpp"
 #include "wayfire/scene.hpp"
+#include "wayfire/view.hpp"
 
 using namespace wf::animation;
 
@@ -57,7 +63,28 @@ struct view_scale_data
     view_visibility_t visibility = view_visibility_t::VISIBLE;
 };
 
-class wayfire_scale : public wf::plugin_interface_t
+/**
+ * Scale has the following hard coded bindings are as follows:
+ * KEY_ENTER:
+ * - Ends scale, switching to the workspace of the focused view
+ * KEY_ESC:
+ * - Ends scale, switching to the workspace where scale was started,
+ *   and focuses the initially active view
+ * KEY_UP:
+ * KEY_DOWN:
+ * KEY_LEFT:
+ * KEY_RIGHT:
+ * - When scale is active, change focus of the views
+ *
+ * BTN_LEFT:
+ * - Ends scale, switching to the workspace of the surface clicked
+ * BTN_MIDDLE:
+ * - If middle_click_close is true, closes the view clicked
+ */
+class wayfire_scale : public wf::plugin_interface_t,
+    public wf::keyboard_interaction_t,
+    public wf::pointer_interaction_t,
+    public wf::touch_interaction_t
 {
     /* helper class for optionally showing title overlays */
     scale_show_title_t show_title;
@@ -72,26 +99,6 @@ class wayfire_scale : public wf::plugin_interface_t
     wayfire_view last_selected_view;
     std::map<wayfire_view, view_scale_data> scale_data;
     wf::option_wrapper_t<int> spacing{"scale/spacing"};
-    /* If interact is true, no grab is acquired and input events are sent
-     * to the scaled surfaces. If it is false, the hard coded bindings
-     * are as follows:
-     * KEY_ENTER:
-     * - Ends scale, switching to the workspace of the focused view
-     * KEY_ESC:
-     * - Ends scale, switching to the workspace where scale was started,
-     *   and focuses the initially active view
-     * KEY_UP:
-     * KEY_DOWN:
-     * KEY_LEFT:
-     * KEY_RIGHT:
-     * - When scale is active, change focus of the views
-     *
-     * BTN_LEFT:
-     * - Ends scale, switching to the workspace of the surface clicked
-     * BTN_MIDDLE:
-     * - If middle_click_close is true, closes the view clicked
-     */
-    wf::option_wrapper_t<bool> interact{"scale/interact"};
     wf::option_wrapper_t<bool> middle_click_close{"scale/middle_click_close"};
     wf::option_wrapper_t<double> inactive_alpha{"scale/inactive_alpha"};
     wf::option_wrapper_t<bool> allow_scale_zoom{"scale/allow_zoom"};
@@ -107,8 +114,9 @@ class wayfire_scale : public wf::plugin_interface_t
      * all workspaces */
     bool all_workspaces;
     std::unique_ptr<wf::vswitch::control_bindings_t> workspace_bindings;
-
     wf::shared_data::ref_ptr_t<wf::move_drag::core_drag_t> drag_helper;
+
+    std::unique_ptr<wf::input_grab_t> grab;
 
   public:
     void init() override
@@ -125,24 +133,14 @@ class wayfire_scale : public wf::plugin_interface_t
             wf::option_wrapper_t<wf::activatorbinding_t>{"scale/toggle_all"},
             &toggle_all_cb);
         output->connect_signal("scale-update", &update_cb);
-
-        grab_interface->callbacks.keyboard.key = [=] (uint32_t key, uint32_t state)
-        {
-            process_key(key, state);
-        };
+        grab = std::make_unique<wf::input_grab_t>(
+            "scale", output, this, this, nullptr);
 
         grab_interface->callbacks.cancel = [=] ()
         {
             finalize();
         };
 
-        grab_interface->callbacks.pointer.motion = [=] (int32_t x, int32_t y)
-        {
-            auto offset = wf::origin(output->get_layout_geometry());
-            process_motion(offset + wf::point_t{x, y});
-        };
-
-        interact.set_callback(interact_option_changed);
         allow_scale_zoom.set_callback(allow_scale_zoom_option_changed);
 
         setup_workspace_switching();
@@ -311,56 +309,38 @@ class wayfire_scale : public wf::plugin_interface_t
         }
     };
 
-    /* Connect button signal */
-    void connect_button_signal()
+    void handle_pointer_button(
+        const wlr_pointer_button_event& event) override
     {
-        disconnect_button_signal();
-        wf::get_core().connect_signal("pointer_button_post", &on_button_event);
-        wf::get_core().connect_signal("touch_down_post", &on_touch_down_event);
-        // connect to the signal before touching up, so that the touch point
-        // is still active.
-        wf::get_core().connect_signal("touch_up", &on_touch_up_event);
-    }
-
-    /* Disconnect button signal */
-    void disconnect_button_signal()
-    {
-        on_button_event.disconnect();
-        on_touch_down_event.disconnect();
-        on_touch_up_event.disconnect();
-    }
-
-    /* For button processing without grabbing */
-    wf::signal_connection_t on_button_event = [=] (wf::signal_data_t *data)
-    {
-        auto ev = static_cast<
-            wf::input_event_signal<wlr_pointer_button_event>*>(data);
-
-        process_input(ev->event->button, ev->event->state,
+        process_input(event.button, event.state,
             wf::get_core().get_cursor_position());
-    };
+    }
 
-    wf::signal_connection_t on_touch_down_event = [=] (wf::signal_data_t *data)
+    void handle_touch_down(uint32_t, int finger_id, wf::pointf_t pos) override
     {
-        auto ev = static_cast<
-            wf::input_event_signal<wlr_touch_down_event>*>(data);
-        if (ev->event->touch_id == 0)
+        if (finger_id == 0)
         {
-            process_input(BTN_LEFT, WLR_BUTTON_PRESSED,
-                wf::get_core().get_touch_position(0));
+            process_input(BTN_LEFT, WLR_BUTTON_PRESSED, pos);
         }
-    };
+    }
 
-    wf::signal_connection_t on_touch_up_event = [=] (wf::signal_data_t *data)
+    void handle_touch_up(uint32_t, int finger_id,
+        wf::pointf_t lift_off_position) override
     {
-        auto ev = static_cast<
-            wf::input_event_signal<wlr_touch_up_event>*>(data);
-        if (ev->event->touch_id == 0)
+        if (finger_id == 0)
         {
-            process_input(BTN_LEFT, WLR_BUTTON_RELEASED,
-                wf::get_core().get_touch_position(0));
+            process_input(BTN_LEFT, WLR_BUTTON_RELEASED, lift_off_position);
         }
-    };
+    }
+
+    void handle_touch_motion(uint32_t time, int finger_id,
+        wf::pointf_t position) override
+    {
+        if (finger_id == 0)
+        {
+            handle_pointer_motion(position, time);
+        }
+    }
 
     /** Return the topmost parent */
     wayfire_view get_top_parent(wayfire_view view)
@@ -475,6 +455,23 @@ class wayfire_scale : public wf::plugin_interface_t
         }
     }
 
+    wayfire_view find_view_at(wf::pointf_t at)
+    {
+        auto offset = wf::origin(output->get_layout_geometry());
+        at.x -= offset.x;
+        at.y -= offset.y;
+
+        auto node = output->get_wset()->find_node_at(at);
+        if (node && node->surface)
+        {
+            auto view = dynamic_cast<wf::view_interface_t*>(
+                node->surface->get_main_surface());
+            return {view};
+        }
+
+        return nullptr;
+    }
+
     /* Process button event */
     void process_input(uint32_t button, uint32_t state,
         wf::pointf_t input_position)
@@ -486,7 +483,7 @@ class wayfire_scale : public wf::plugin_interface_t
 
         if (state == WLR_BUTTON_PRESSED)
         {
-            auto view = wf::get_core().get_view_at(input_position);
+            auto view = find_view_at(input_position);
             if (view && should_scale_view(view))
             {
                 // Mark the view as the target of the next input release operation
@@ -504,7 +501,7 @@ class wayfire_scale : public wf::plugin_interface_t
             drag_helper->handle_input_released();
         }
 
-        auto view = wf::get_core().get_view_at(input_position);
+        auto view = find_view_at(input_position);
         if (!view || (last_selected_view != view))
         {
             last_selected_view = nullptr;
@@ -521,16 +518,13 @@ class wayfire_scale : public wf::plugin_interface_t
             current_focus_view = view;
             fade_out_all_except(view);
             fade_in(get_top_parent(view));
-            if (!interact)
-            {
-                // End scale
-                initial_focus_view = nullptr;
-                deactivate();
-                select_view(view);
-            }
+
+            // End scale
+            initial_focus_view = nullptr;
+            deactivate();
+            select_view(view);
 
             output->focus_view(view, false);
-
             break;
 
           case BTN_MIDDLE:
@@ -547,8 +541,9 @@ class wayfire_scale : public wf::plugin_interface_t
         }
     }
 
-    void process_motion(wf::point_t to)
+    void handle_pointer_motion(wf::pointf_t to_f, uint32_t time) override
     {
+        wf::point_t to{(int)std::round(to_f.x), (int)std::round(to_f.y)};
         if (!drag_helper->view && last_selected_view)
         {
             wf::move_drag::drag_options_t opts;
@@ -611,7 +606,9 @@ class wayfire_scale : public wf::plugin_interface_t
     }
 
     /* Process key event */
-    void process_key(uint32_t key, uint32_t state)
+
+
+    void handle_keyboard_key(wlr_keyboard_key_event ev) override
     {
         auto view = output->get_active_view();
         if (!view)
@@ -622,7 +619,6 @@ class wayfire_scale : public wf::plugin_interface_t
                 fade_out_all_except(view);
                 fade_in(view);
                 output->focus_view(view, true);
-
                 return;
             }
         } else if (!scale_data.count(view))
@@ -635,13 +631,13 @@ class wayfire_scale : public wf::plugin_interface_t
         int next_row = cur_row;
         int next_col = cur_col;
 
-        if ((state != WLR_KEY_PRESSED) ||
+        if ((ev.state != WLR_KEY_PRESSED) ||
             wf::get_core().get_keyboard_modifiers())
         {
             return;
         }
 
-        switch (key)
+        switch (ev.keycode)
         {
           case KEY_UP:
             next_row--;
@@ -1071,23 +1067,6 @@ class wayfire_scale : public wf::plugin_interface_t
         transform_views();
     }
 
-    /* Handle interact option changed */
-    wf::config::option_base_t::updated_callback_t interact_option_changed = [=] ()
-    {
-        if (!output->is_plugin_active(grab_interface->name))
-        {
-            return;
-        }
-
-        if (interact)
-        {
-            grab_interface->ungrab();
-        } else
-        {
-            grab_interface->grab();
-        }
-    };
-
     /* Called when adding or removing a group of views to be scaled,
      * in this case between views on all workspaces and views on the
      * current workspace */
@@ -1362,16 +1341,7 @@ class wayfire_scale : public wf::plugin_interface_t
         // trigger an action in scale
         last_selected_view = nullptr;
 
-        if (!interact)
-        {
-            if (!grab_interface->grab())
-            {
-                deactivate();
-
-                return false;
-            }
-        }
-
+        grab->grab_input(wf::scene::layer::OVERLAY);
         if (current_focus_view != output->get_active_view())
         {
             output->focus_view(current_focus_view, true);
@@ -1381,7 +1351,6 @@ class wayfire_scale : public wf::plugin_interface_t
 
         layout_slots(get_views());
 
-        connect_button_signal();
         output->connect_signal("view-layer-attached", &view_attached);
         output->connect_signal("view-mapped", &view_attached);
         output->connect_signal("workspace-changed", &workspace_changed);
@@ -1409,7 +1378,7 @@ class wayfire_scale : public wf::plugin_interface_t
         workspace_changed.disconnect();
         view_geometry_changed.disconnect();
 
-        grab_interface->ungrab();
+        grab->ungrab_input();
         output->deactivate_plugin(grab_interface);
 
         for (auto& e : scale_data)
@@ -1447,8 +1416,7 @@ class wayfire_scale : public wf::plugin_interface_t
         unset_hook();
         remove_transformers();
         scale_data.clear();
-        grab_interface->ungrab();
-        disconnect_button_signal();
+        grab->ungrab_input();
         view_focused.disconnect();
         view_unmapped.disconnect();
         view_attached.disconnect();

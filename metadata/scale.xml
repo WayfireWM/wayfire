@@ -22,11 +22,6 @@
 				<default>750</default>
 				<min>0</min>
 			</option>
-			<option name="interact" type="bool">
-				<_short>Interact With Views</_short>
-				<_long>If this option is set, views will accept input in scale state. Otherwise, all events will be ignored except left click, which will activate the clicked view and terminate scale.</_long>
-				<default>false</default>
-			</option>
 			<option name="allow_zoom" type="bool">
 				<_short>Allow Zoomed Views</_short>
 				<_long>Whether scaled views can have a size larger than their original size.</_long>

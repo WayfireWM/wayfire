@@ -4,6 +4,7 @@
 #include "../core/core-impl.hpp"
 #include <wayfire/compositor-surface.hpp>
 #include "view-impl.hpp"
+#include "wayfire/geometry.hpp"
 
 namespace wf
 {
@@ -45,7 +46,7 @@ class surface_touch_interaction_t final : public wf::touch_interaction_t
         }
     }
 
-    void handle_touch_up(uint32_t time_ms, int finger_id) override
+    void handle_touch_up(uint32_t time_ms, int finger_id, wf::pointf_t) override
     {
         auto seat = wf::get_core().get_current_seat();
         if (auto cs = compositor_surface_from_surface(surface))
