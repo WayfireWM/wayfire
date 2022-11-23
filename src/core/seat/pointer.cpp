@@ -74,7 +74,7 @@ bool wf::pointer_t::focus_enabled() const
     return this->focus_enabled_count > 0;
 }
 
-void wf::pointer_t::update_cursor_position(uint32_t time_msec, bool real_update)
+void wf::pointer_t::update_cursor_position(int64_t time_msec, bool real_update)
 {
     wf::pointf_t gc = seat->cursor->get_cursor_position();
 

@@ -10,7 +10,7 @@ int64_t timespec_to_msec(const timespec& ts)
     return ts.tv_sec * 1000ll + ts.tv_nsec / 1000000ll;
 }
 
-uint32_t get_current_time()
+int64_t get_current_time()
 {
     return mock_loop::get().ctime();
 }

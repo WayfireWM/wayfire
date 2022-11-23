@@ -83,7 +83,7 @@ class pointer_t
      * @param real_update Whether the update is caused by a hardware event or
      *                    was artificially generated.
      */
-    void update_cursor_position(uint32_t time_msec, bool real_update = true);
+    void update_cursor_position(int64_t time_msec, bool real_update = true);
 
   private:
     nonstd::observer_ptr<wf::input_manager_t> input;

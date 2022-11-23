@@ -155,7 +155,7 @@ void wf::touch_interface_t::rem_touch_gesture(
 }
 
 void wf::touch_interface_t::set_touch_focus(wf::scene::node_ptr node,
-    int id, uint32_t time, wf::pointf_t point)
+    int id, int64_t time, wf::pointf_t point)
 {
     if (focus[id] == node)
     {

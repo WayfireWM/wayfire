@@ -11,7 +11,7 @@ namespace wf
 int64_t timespec_to_msec(const timespec& ts);
 
 /** Returns current time in msec, using CLOCK_MONOTONIC as a base */
-uint32_t get_current_time();
+int64_t get_current_time();
 
 /**
  * A wrapper around wl_listener compatible with C++11 std::functions

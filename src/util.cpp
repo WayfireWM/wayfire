@@ -13,7 +13,7 @@ int64_t wf::timespec_to_msec(const timespec& ts)
     return ts.tv_sec * 1000ll + ts.tv_nsec / 1000000ll;
 }
 
-uint32_t wf::get_current_time()
+int64_t wf::get_current_time()
 {
     timespec ts;
     clock_gettime(CLOCK_MONOTONIC, &ts);

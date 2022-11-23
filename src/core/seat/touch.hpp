@@ -70,7 +70,7 @@ class touch_interface_t
         input_event_processing_mode_t mode);
 
     void set_touch_focus(wf::scene::node_ptr node,
-        int32_t id, uint32_t time, wf::pointf_t current);
+        int32_t id, int64_t time, wf::pointf_t current);
 
     touch::gesture_state_t finger_state;
 
