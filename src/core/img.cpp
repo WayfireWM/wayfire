@@ -404,7 +404,7 @@ void write_to_file(std::string name, uint8_t *pixels, int w, int h, std::string 
         LOGE("unsupported image_writer backend");
     } else
     {
-        it->second(name.c_str(), pixels, w, h, false);
+        it->second(name.c_str(), pixels, w, h, invert);
     }
 }
 
