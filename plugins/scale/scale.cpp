@@ -22,6 +22,7 @@
 
 #include <linux/input-event-codes.h>
 
+#include "scale.hpp"
 #include "scale-title-overlay.hpp"
 #include "wayfire/core.hpp"
 #include "wayfire/debug.hpp"
@@ -455,23 +456,6 @@ class wayfire_scale : public wf::plugin_interface_t,
         }
     }
 
-    wayfire_view find_view_at(wf::pointf_t at)
-    {
-        auto offset = wf::origin(output->get_layout_geometry());
-        at.x -= offset.x;
-        at.y -= offset.y;
-
-        auto node = output->get_wset()->find_node_at(at);
-        if (node && node->surface)
-        {
-            auto view = dynamic_cast<wf::view_interface_t*>(
-                node->surface->get_main_surface());
-            return {view};
-        }
-
-        return nullptr;
-    }
-
     /* Process button event */
     void process_input(uint32_t button, uint32_t state,
         wf::pointf_t input_position)
@@ -483,7 +467,7 @@ class wayfire_scale : public wf::plugin_interface_t,
 
         if (state == WLR_BUTTON_PRESSED)
         {
-            auto view = find_view_at(input_position);
+            auto view = scale_find_view_at(input_position, output);
             if (view && should_scale_view(view))
             {
                 // Mark the view as the target of the next input release operation
@@ -501,7 +485,7 @@ class wayfire_scale : public wf::plugin_interface_t,
             drag_helper->handle_input_released();
         }
 
-        auto view = find_view_at(input_position);
+        auto view = scale_find_view_at(input_position, output);
         if (!view || (last_selected_view != view))
         {
             last_selected_view = nullptr;

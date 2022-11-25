@@ -1,3 +1,4 @@
+#include "scale.hpp"
 #include "scale-title-overlay.hpp"
 
 #include <wayfire/opengl.hpp>
@@ -523,8 +524,8 @@ void scale_show_title_t::update_title_overlay_opt()
 
 void scale_show_title_t::update_title_overlay_mouse()
 {
-    auto& core     = wf::get_core();
-    wayfire_view v = core.get_view_at(core.get_cursor_position());
+    wayfire_view v =
+        scale_find_view_at(wf::get_core().get_cursor_position(), output);
 
     if (v)
     {
