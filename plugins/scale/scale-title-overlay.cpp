@@ -523,19 +523,8 @@ void scale_show_title_t::update_title_overlay_opt()
 
 void scale_show_title_t::update_title_overlay_mouse()
 {
-    wayfire_view v;
-
-    wf::option_wrapper_t<bool> interact{"scale/interact"};
-
-    if (interact)
-    {
-        /* we can use normal focus tracking */
-        v = wf::get_core().get_cursor_focus_view();
-    } else
-    {
-        auto& core = wf::get_core();
-        v = core.get_view_at(core.get_cursor_position());
-    }
+    auto& core     = wf::get_core();
+    wayfire_view v = core.get_view_at(core.get_cursor_position());
 
     if (v)
     {
