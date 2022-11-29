@@ -323,7 +323,8 @@ class wayfire_wm_actions_t : public wf::plugin_interface_t
         workspace_changed.disconnect();
         view_minimized.disconnect();
 
-        for (auto& view : output->workspace->get_views_in_layer(wf::ALL_LAYERS))
+        for (auto& view : output->workspace->get_views_in_layer(
+            wf::ALL_LAYERS, true))
         {
             if (view->has_data("wm-actions-showdesktop"))
             {
