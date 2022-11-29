@@ -142,20 +142,17 @@ wf::keyboard_focus_node_t wf::scene::view_node_t::keyboard_refocus(
     auto intersection = wf::geometry_intersection(output_box, view_box);
     double area = 1.0 * intersection.width * intersection.height;
     area /= 1.0 * view_box.width * view_box.height;
-    bool visible_at_all = view->get_bounding_box() & output_box;
 
-    wf::keyboard_focus_node_t result;
-    result.node = this;
-
-    if ((has_focus && visible_at_all) || (area >= MIN_VISIBILITY_PC))
+    if (area >= MIN_VISIBILITY_PC)
     {
         return wf::keyboard_focus_node_t{this, focus_importance::REGULAR};
-    } else
+    } else if (area > 0)
     {
         return wf::keyboard_focus_node_t{this, focus_importance::LOW};
+    } else
+    {
+        return wf::keyboard_focus_node_t{};
     }
-
-    return result;
 }
 
 namespace wf

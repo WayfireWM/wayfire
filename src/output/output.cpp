@@ -108,6 +108,9 @@ void wf::output_impl_t::refocus()
     if (auto vnode = dynamic_cast<scene::view_node_t*>(new_focus.node))
     {
         update_active_view(vnode->get_view());
+    } else if (new_focus.node == nullptr)
+    {
+        update_active_view(nullptr);
     }
 
     do_update_focus(new_focus.node);
