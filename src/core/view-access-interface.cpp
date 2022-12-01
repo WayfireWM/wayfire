@@ -3,6 +3,7 @@
 #include "wayfire/view.hpp"
 #include "wayfire/view-access-interface.hpp"
 #include "wayfire/workspace-manager.hpp"
+#include <wayfire/nonstd/wlroots-full.hpp>
 #include <algorithm>
 #include <iostream>
 #include <string>

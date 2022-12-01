@@ -1,12 +1,14 @@
 #ifndef VIEW_IMPL_HPP
 #define VIEW_IMPL_HPP
 
+#include <memory>
 #include <wayfire/nonstd/safe-list.hpp>
 #include <wayfire/view.hpp>
 #include <wayfire/opengl.hpp>
 
 #include "surface-impl.hpp"
 #include "wayfire/scene.hpp"
+#include "wayfire/view-transform.hpp"
 #include <wayfire/nonstd/wlroots-full.hpp>
 
 // for emit_map_*()
@@ -80,7 +82,7 @@ class view_interface_t::view_priv_impl
     wlr_box minimize_hint = {0, 0, 0, 0};
 
     scene::floating_inner_ptr root_node;
-    scene::floating_inner_ptr transformed_node;
+    std::shared_ptr<scene::transform_manager_node_t> transformed_node;
     std::shared_ptr<scene::view_node_t> surface_root_node;
     bool actually_minimized = false;
 

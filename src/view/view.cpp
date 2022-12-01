@@ -1231,8 +1231,8 @@ void wf::view_interface_t::unref()
 void wf::view_interface_t::initialize()
 {
     view_impl->root_node = std::make_shared<scene::floating_inner_node_t>(false);
-    view_impl->transformed_node = std::make_shared<scene::floating_inner_node_t>(
-        false);
+    view_impl->transformed_node =
+        std::make_shared<scene::transform_manager_node_t>();
     view_impl->surface_root_node = std::make_shared<scene::view_node_t>(this);
 
     // Set up the surface content relationship
@@ -1334,8 +1334,8 @@ const wf::scene::floating_inner_ptr& wf::view_interface_t::get_root_node() const
     return view_impl->root_node;
 }
 
-const wf::scene::floating_inner_ptr& wf::view_interface_t::get_transformed_node()
-const
+std::shared_ptr<wf::scene::transform_manager_node_t> wf::view_interface_t::
+get_transformed_node() const
 {
     return view_impl->transformed_node;
 }

@@ -1,13 +1,71 @@
+#include "wayfire/debug.hpp"
+#include "wayfire/scene.hpp"
 #include "wayfire/view-transform.hpp"
 #include "wayfire/opengl.hpp"
 #include "wayfire/core.hpp"
 #include "wayfire/output.hpp"
+#include <wayfire/view.hpp>
 #include <algorithm>
 #include <cmath>
 
 #include <glm/gtc/matrix_transform.hpp>
 
-#define PI 3.14159265359
+namespace wf
+{
+namespace scene
+{
+void transform_manager_node_t::_add_transformer(
+    wf::scene::floating_inner_ptr transformer, int z_order, std::string name)
+{
+    size_t pos = 0;
+    while (pos < transformers.size() && transformers[pos].z_order < z_order)
+    {
+        ++pos;
+    }
+
+    transformers.insert(transformers.begin() + pos, added_transformer_t{
+                .node    = transformer,
+                .z_order = z_order,
+                .name    = name,
+            });
+
+    auto _parent = (pos == 0 ?
+        this->shared_from_this() : transformers[pos - 1].node);
+    auto parent = std::dynamic_pointer_cast<floating_inner_node_t>(_parent);
+
+    auto children = parent->get_children();
+    parent->set_children_list({transformer});
+    transformer->set_children_list(children);
+    wf::scene::update(transformer, update_flag::CHILDREN_LIST);
+}
+
+void transform_manager_node_t::_rem_transformer(
+    wf::scene::floating_inner_ptr node)
+{
+    if (!node)
+    {
+        return;
+    }
+
+    auto children = node->get_children();
+    auto parent   = dynamic_cast<floating_inner_node_t*>(node->parent());
+
+    wf::dassert(parent != nullptr, "transformer is missing a parent?");
+    node->set_children_list({});
+    parent->set_children_list(children);
+
+    const auto& find_node = [&] (auto transformer)
+    {
+        return transformer.node == node;
+    };
+    auto it = std::remove_if(transformers.begin(), transformers.end(), find_node);
+    this->transformers.erase(it, transformers.end());
+    wf::scene::update(parent->shared_from_this(), update_flag::CHILDREN_LIST);
+}
+}
+}
+
+static const double PI = std::acos(-1);
 
 wlr_box wf::view_transformer_t::get_bounding_box(wf::geometry_t view, wlr_box region)
 {

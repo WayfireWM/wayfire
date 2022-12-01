@@ -30,98 +30,35 @@ namespace wf
 {
 namespace scene
 {
-class blur_render_instance_t : public render_instance_t
+class blur_node_t : public floating_inner_node_t
 {
+  public:
     blur_algorithm_provider provider;
-    node_t *self;
+    blur_node_t(blur_algorithm_provider provider) : floating_inner_node_t(false)
+    {
+        this->provider = provider;
+    }
 
+    std::string stringify() const override
+    {
+        return "blur";
+    }
+
+    void gen_render_instances(std::vector<render_instance_uptr>& instances,
+        damage_callback push_damage, wf::output_t *shown_on) override;
+};
+
+class blur_render_instance_t : public transformer_render_instance_t<blur_node_t>
+{
     wf::framebuffer_t saved_pixels;
     wf::region_t saved_pixels_region;
 
-    std::vector<render_instance_uptr> view_instance;
-    wf::render_target_t inner_content;
-    wf::region_t cached_damage;
-
-    wf::texture_t get_texture(float scale)
-    {
-        // Optimization: if we have a single child (usually the surface root node)
-        // and we can directly convert it to texture, we don't need a full render
-        // pass.
-        if (self->get_children().size() == 1)
-        {
-            if (auto tex = self->get_children().front()->to_texture())
-            {
-                if (inner_content.fb != (uint) - 1)
-                {
-                    // If we are optimized, make sure to release the buffer to
-                    // avoid holding GL memory unnecessary. This way we'll also
-                    // get full damage if the view gets other transformers attached.
-                    OpenGL::render_begin();
-                    inner_content.release();
-                    OpenGL::render_end();
-                }
-
-                return *tex;
-            }
-        }
-
-        auto bbox = self->get_bounding_box();
-        int target_width  = scale * self->get_bounding_box().width;
-        int target_height = scale * self->get_bounding_box().height;
-
-        OpenGL::render_begin();
-        if (inner_content.allocate(target_width, target_height))
-        {
-            cached_damage |= bbox;
-        }
-
-        inner_content.geometry = bbox;
-        OpenGL::render_end();
-
-        render_pass_params_t params;
-        params.instances = &view_instance;
-        params.target    = inner_content;
-        params.damage    = cached_damage;
-        params.background_color = {0.0f, 0.0f, 0.0f, 0.0f};
-        scene::run_render_pass(params, RPASS_CLEAR_BACKGROUND);
-
-        cached_damage.clear();
-        return wf::texture_t{inner_content.tex};
-    }
-
-    void presentation_feedback(wf::output_t *output) override
-    {
-        for (auto& ch : view_instance)
-        {
-            ch->presentation_feedback(output);
-        }
-    }
-
   public:
-    blur_render_instance_t(node_t *self, blur_algorithm_provider provider,
-        damage_callback push_damage, wf::output_t *shown_on)
-    {
-        this->self     = self;
-        this->provider = provider;
-
-        auto push_damage_child = [=] (const wf::region_t& region)
-        {
-            this->cached_damage |= region;
-            push_damage(region);
-        };
-
-        this->cached_damage |= self->get_bounding_box();
-        for (auto& ch : self->get_children())
-        {
-            ch->gen_render_instances(view_instance, push_damage_child, shown_on);
-        }
-    }
-
+    using transformer_render_instance_t::transformer_render_instance_t;
     ~blur_render_instance_t()
     {
         OpenGL::render_begin();
         saved_pixels.release();
-        inner_content.release();
         OpenGL::render_end();
     }
 
@@ -151,7 +88,7 @@ class blur_render_instance_t : public render_instance_t
                 self->get_children().front().get()))
             {
                 const int padding = std::ceil(
-                    provider()->calculate_blur_radius() / target_scale);
+                    self->provider()->calculate_blur_radius() / target_scale);
 
                 auto opaque_region =
                     vnode->get_view()->get_transformed_opaque_region();
@@ -170,7 +107,7 @@ class blur_render_instance_t : public render_instance_t
         const wf::render_target_t& target, wf::region_t& damage) override
     {
         const int padding = std::ceil(
-            provider()->calculate_blur_radius() / target.scale);
+            self->provider()->calculate_blur_radius() / target.scale);
 
         auto bbox = self->get_bounding_box();
 
@@ -187,7 +124,7 @@ class blur_render_instance_t : public render_instance_t
         if (is_fully_opaque(padded_region & target.geometry))
         {
             // If there are no regions to blur, we can directly render them.
-            for (auto& ch : view_instance)
+            for (auto& ch : this->children)
             {
                 ch->schedule_instructions(instructions, target, damage);
             }
@@ -251,11 +188,11 @@ class blur_render_instance_t : public render_instance_t
         {
             auto translucent_damage = calculate_translucent_damage(target.scale,
                 damage);
-            provider()->pre_render(bounding_box, translucent_damage, target);
+            self->provider()->pre_render(bounding_box, translucent_damage, target);
             for (const auto& rect : damage)
             {
                 auto damage_box = wlr_box_from_pixman_box(rect);
-                provider()->render(tex, bounding_box, damage_box, target);
+                self->provider()->render(tex, bounding_box, damage_box, target);
             }
         }
 
@@ -284,50 +221,22 @@ class blur_render_instance_t : public render_instance_t
     direct_scanout try_scanout(wf::output_t *output) override
     {
         // Enable direct scanout if it is possible
-        return scene::try_scanout_from_list(view_instance, output);
-    }
-
-    bool has_instances()
-    {
-        return !view_instance.empty();
+        return scene::try_scanout_from_list(children, output);
     }
 };
 
-class blur_node_t : public floating_inner_node_t
+void blur_node_t::gen_render_instances(std::vector<render_instance_uptr>& instances,
+    damage_callback push_damage, wf::output_t *shown_on)
 {
-    blur_algorithm_provider provider;
-
-  public:
-    blur_node_t(blur_algorithm_provider provider) : floating_inner_node_t(false)
+    auto uptr =
+        std::make_unique<blur_render_instance_t>(this, push_damage, shown_on);
+    if (uptr->has_instances())
     {
-        this->provider = provider;
+        instances.push_back(std::move(uptr));
     }
-
-    std::string stringify() const override
-    {
-        return "blur";
-    }
-
-    void gen_render_instances(std::vector<render_instance_uptr>& instances,
-        damage_callback push_damage, wf::output_t *shown_on) override
-    {
-        auto uptr = std::make_unique<blur_render_instance_t>(
-            this, provider, push_damage, shown_on);
-
-        if (uptr->has_instances())
-        {
-            instances.push_back(std::move(uptr));
-        }
-    }
-};
 }
 }
-
-class blur_transform_node_data : public wf::custom_data_t
-{
-  public:
-    wf::scene::floating_inner_node_t *node = nullptr;
-};
+}
 
 class blur_global_data_t
 {
@@ -371,7 +280,8 @@ class wayfire_blur : public wf::plugin_interface_t
 
     void add_transformer(wayfire_view view)
     {
-        if (view->has_data<blur_transform_node_data>())
+        auto tmanager = view->get_transformed_node();
+        if (tmanager->get_transformer<wf::scene::blur_node_t>())
         {
             return;
         }
@@ -382,53 +292,13 @@ class wayfire_blur : public wf::plugin_interface_t
         };
 
         auto node = std::make_shared<wf::scene::blur_node_t>(provider);
-        view->get_data_safe<blur_transform_node_data>()->node = node.get();
-
-        auto children = view->get_transformed_node()->get_children();
-        wf::scene::remove_child(view->get_surface_root_node());
-        wf::scene::add_front(node, view->get_surface_root_node());
-
-        // Replace content node with blur
-        for (auto& x : children)
-        {
-            if (x == view->get_surface_root_node())
-            {
-                x = node;
-            }
-        }
-
-        view->get_transformed_node()->set_children_list(children);
-        wf::scene::update(view->get_transformed_node(),
-            wf::scene::update_flag::CHILDREN_LIST);
+        tmanager->add_transformer(node, wf::TRANSFORMER_BLUR);
     }
 
     void pop_transformer(wayfire_view view)
     {
-        if (!view->has_data<blur_transform_node_data>())
-        {
-            return;
-        }
-
-        auto node = view->get_data_safe<blur_transform_node_data>()->node;
-        view->erase_data<blur_transform_node_data>();
-
-        auto children = view->get_transformed_node()->get_children();
-        wf::scene::remove_child(node->shared_from_this());
-
-        node->set_children_list({});
-
-        // Replace content node with blur
-        for (auto& x : children)
-        {
-            if (x.get() == node)
-            {
-                x = view->get_surface_root_node();
-            }
-        }
-
-        view->get_transformed_node()->set_children_list(children);
-        wf::scene::update(view->get_transformed_node(),
-            wf::scene::update_flag::CHILDREN_LIST);
+        auto tmanager = view->get_transformed_node();
+        tmanager->rem_transformer<wf::scene::blur_node_t>();
     }
 
     void remove_transformers()
@@ -470,7 +340,7 @@ class wayfire_blur : public wf::plugin_interface_t
                 return false;
             }
 
-            if (view->has_data<blur_transform_node_data>())
+            if (view->get_transformed_node()->get_transformer<wf::scene::blur_node_t>())
             {
                 pop_transformer(view);
             } else

@@ -1,6 +1,7 @@
 #include <string>
 #include <wayfire/util/log.hpp>
 #include <wayfire/debug.hpp>
+#include <wayfire/view.hpp>
 #include <sstream>
 #include <iomanip>
 

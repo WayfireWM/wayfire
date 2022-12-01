@@ -10,6 +10,7 @@
 #include "wayfire/surface.hpp"
 #include "wayfire/geometry.hpp"
 #include "wayfire/decorator.hpp"
+#include "wayfire/view-transform.hpp"
 #include <wayfire/nonstd/wlroots.hpp>
 #include <wayfire/region.hpp>
 #include <wayfire/signal-provider.hpp>
@@ -71,13 +72,10 @@ class view_interface_t : public surface_interface_t, public wf::signal::provider
     const scene::floating_inner_ptr& get_root_node() const;
 
     /**
-     * Get the root node of the view (not the whole view tree).
-     * It includes the view (+subsurfaces) and its transformers.
-     *
-     * Usually, there is a single child, which is either the surface_root_node
-     * itself, or a transformer of the view.
+     * Get the root of the view itself, including its main surface, subsurfaces
+     * and transformers, but not dialogs.
      */
-    const scene::floating_inner_ptr& get_transformed_node() const;
+    std::shared_ptr<scene::transform_manager_node_t> get_transformed_node() const;
 
     /**
      * Get the node which contains the main view (+subsurfaces) only.
@@ -595,7 +593,7 @@ namespace scene
  * currently applied on the view and then offsetted to start at the top-left
  * corner of the view's main surface.
  */
-class view_node_t : public scene::floating_inner_node_t
+class view_node_t : public scene::floating_inner_node_t, zero_copy_texturable_node_t
 {
   public:
     view_node_t(wayfire_view view);
