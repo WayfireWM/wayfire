@@ -14,6 +14,42 @@ struct point_t
 struct pointf_t
 {
     double x, y;
+
+    pointf_t() : x(0), y(0)
+    {}
+    pointf_t(double _x, double _y) : x(_x), y(_y)
+    {}
+    explicit pointf_t(const point_t& pt) : x(pt.x), y(pt.y)
+    {}
+
+    pointf_t operator +(const pointf_t& other) const
+    {
+        return pointf_t{x + other.x, y + other.y};
+    }
+
+    pointf_t operator -(const pointf_t& other) const
+    {
+        return pointf_t{x - other.x, y - other.y};
+    }
+
+    pointf_t& operator +=(const pointf_t& other)
+    {
+        x += other.x;
+        y += other.y;
+        return *this;
+    }
+
+    pointf_t& operator -=(const pointf_t& other)
+    {
+        x -= other.x;
+        y -= other.y;
+        return *this;
+    }
+
+    pointf_t operator -() const
+    {
+        return pointf_t{-x, -y};
+    }
 };
 
 struct dimensions_t
