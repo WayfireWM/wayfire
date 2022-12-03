@@ -13,7 +13,6 @@
 #include <wayfire/plugins/vswitch.hpp>
 #include <wayfire/touch/touch.hpp>
 #include <wayfire/plugins/scale-signal.hpp>
-#include <wayfire/plugins/scale-transform.hpp>
 #include <wayfire/plugins/wobbly/wobbly-signal.hpp>
 
 #include <wayfire/plugins/common/move-drag-interface.hpp>
@@ -51,7 +50,7 @@ struct wf_scale_animation_attribs
 struct view_scale_data
 {
     int row, col;
-    wf::scale_transformer_t *transformer = nullptr;
+    wf::view_2D *transformer = nullptr;
     wf::animation::simple_animation_t fade_animation;
     wf_scale_animation_attribs animation;
     enum class view_visibility_t
@@ -195,15 +194,14 @@ class wayfire_scale : public wf::plugin_interface_t,
     /* Add a transformer that will be used to scale the view */
     bool add_transformer(wayfire_view view)
     {
-        if (view->get_transformer(wf::scale_transformer_t::transformer_name()))
+        if (view->get_transformer("scale"))
         {
             return false;
         }
 
-        wf::scale_transformer_t *tr = new wf::scale_transformer_t(view);
+        wf::view_2D *tr = new wf::view_2D(view);
         scale_data[view].transformer = tr;
-        view->add_transformer(std::unique_ptr<wf::scale_transformer_t>(tr),
-            wf::scale_transformer_t::transformer_name());
+        view->add_transformer(std::unique_ptr<wf::view_2D>(tr), "scale");
         /* Transformers are added only once when scale is activated so
          * this is a good place to connect the geometry-changed handler */
         view->connect_signal("geometry-changed", &view_geometry_changed);
@@ -212,7 +210,7 @@ class wayfire_scale : public wf::plugin_interface_t,
 
         /* signal that a transformer was added to this view */
         scale_transformer_added_signal data;
-        data.transformer = tr;
+        data.view = view;
         output->emit_signal("scale-transformer-added", &data);
 
         return true;
@@ -221,7 +219,11 @@ class wayfire_scale : public wf::plugin_interface_t,
     /* Remove the scale transformer from the view */
     void pop_transformer(wayfire_view view)
     {
-        view->pop_transformer(wf::scale_transformer_t::transformer_name());
+        /* signal that a transformer was added to this view */
+        scale_transformer_removed_signal data;
+        data.view = view;
+        output->emit_signal("scale-transformer-removed", &data);
+        view->pop_transformer("scale");
         set_tiled_wobbly(view, false);
     }
 
@@ -706,8 +708,6 @@ class wayfire_scale : public wf::plugin_interface_t,
                 continue;
             }
 
-            bool needs_damage = false;
-
             if (view_data.fade_animation.running() ||
                 view_data.animation.scale_animation.running())
             {
@@ -721,7 +721,6 @@ class wayfire_scale : public wf::plugin_interface_t,
                 view_data.transformer->translation_y =
                     view_data.animation.scale_animation.translation_y;
                 view_data.transformer->alpha = view_data.fade_animation;
-                needs_damage = true;
 
                 if ((view_data.visibility ==
                      view_scale_data::view_visibility_t::HIDING) &&
@@ -732,8 +731,6 @@ class wayfire_scale : public wf::plugin_interface_t,
                     wf::scene::set_node_enabled(view->get_transformed_node(), false);
                 }
             }
-
-            view_data.transformer->call_pre_hooks(needs_damage);
         }
     }
 
@@ -966,12 +963,10 @@ class wayfire_scale : public wf::plugin_interface_t,
                     (view == current_focus_view) ? 1 : (double)inactive_alpha;
 
                 // Helper function to calculate the desired scale for a view
-                const auto& calculate_scale = [=] (wf::dimensions_t vg,
-                                                   const wf::scale_transformer_t::
-                                                   padding_t& pad)
+                const auto& calculate_scale = [=] (wf::dimensions_t vg)
                 {
-                    double w = std::max(1.0, scaled_width - pad.left - pad.right);
-                    double h = std::max(1.0, scaled_height - pad.top - pad.bottom);
+                    double w = std::max(1.0, scaled_width);
+                    double h = std::max(1.0, scaled_height);
 
                     const double scale = std::min(w / vg.width, h / vg.height);
                     if (!allow_scale_zoom)
@@ -985,8 +980,7 @@ class wayfire_scale : public wf::plugin_interface_t,
                 add_transformer(view);
                 auto geom = view->transform_region(view->get_wm_geometry(),
                     scale_data[view].transformer);
-                double view_scale = calculate_scale({geom.width, geom.height},
-                    scale_data[view].transformer->get_scale_padding());
+                double view_scale = calculate_scale({geom.width, geom.height});
                 for (auto& child : view->enumerate_views(false))
                 {
                     // Ensure a transformer for the view, and make sure that
@@ -1028,8 +1022,7 @@ class wayfire_scale : public wf::plugin_interface_t,
                         vg.y + vg.height / 2.0};
 
                     // Take padding into account
-                    auto pad     = child_data.transformer->get_scale_padding();
-                    double scale = calculate_scale({vg.width, vg.height}, pad);
+                    double scale = calculate_scale({vg.width, vg.height});
                     // Ensure child is not scaled more than parent
                     if (!allow_scale_zoom &&
                         (child != view) &&
@@ -1039,8 +1032,8 @@ class wayfire_scale : public wf::plugin_interface_t,
                     }
 
                     // Target geometry is centered around the center slot
-                    const double dx = x + pad.left - center.x + scaled_width / 2.0;
-                    const double dy = y + pad.top - center.y + scaled_height / 2.0;
+                    const double dx = x - center.x + scaled_width / 2.0;
+                    const double dy = y - center.y + scaled_height / 2.0;
                     setup_view_transform(child_data, scale, scale,
                         dx, dy, target_alpha);
                 }

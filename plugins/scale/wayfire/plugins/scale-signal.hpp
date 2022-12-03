@@ -5,7 +5,6 @@
 
 #include <wayfire/object.hpp>
 #include <wayfire/view.hpp>
-#include <wayfire/plugins/scale-transform.hpp>
 #include <vector>
 #include <algorithm>
 
@@ -83,7 +82,12 @@ void scale_filter_views(scale_filter_signal *signal, pred&& p)
  */
 struct scale_transformer_added_signal : public wf::signal_data_t
 {
-    wf::scale_transformer_t *transformer;
+    wayfire_view view;
+};
+
+struct scale_transformer_removed_signal : public wf::signal_data_t
+{
+    wayfire_view view;
 };
 
 #endif

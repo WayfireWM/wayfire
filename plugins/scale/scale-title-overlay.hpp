@@ -4,9 +4,15 @@
 
 #include <wayfire/plugin.hpp>
 #include <wayfire/output.hpp>
-
 #include <wayfire/plugins/scale-signal.hpp>
-#include <wayfire/plugins/scale-transform.hpp>
+
+namespace wf
+{
+namespace scene
+{
+class title_overlay_node_t;
+}
+}
 
 
 class scale_show_title_t
@@ -33,6 +39,7 @@ class scale_show_title_t
     wf::signal_connection_t view_filter;
     wf::signal_connection_t scale_end;
     wf::signal_connection_t add_title_overlay;
+    wf::signal_connection_t rem_title_overlay;
     wf::signal_connection_t mouse_update;
 
     enum class title_overlay_t
@@ -42,7 +49,7 @@ class scale_show_title_t
         ALL,
     };
 
-    friend class view_title_overlay_t;
+    friend class wf::scene::title_overlay_node_t;
 
     title_overlay_t show_view_title_overlay;
     /* only used if title overlay is set to follow the mouse */
