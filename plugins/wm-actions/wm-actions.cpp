@@ -10,7 +10,7 @@
 class wayfire_wm_actions_t : public wf::plugin_interface_t
 {
     wf::scene::floating_inner_ptr always_above;
-    bool showdesktop_active = false;
+    std::vector<std::vector<bool>> showdesktop_active;
 
     wf::option_wrapper_t<wf::activatorbinding_t> toggle_showdesktop{
         "wm-actions/toggle_showdesktop"};
@@ -164,11 +164,6 @@ class wayfire_wm_actions_t : public wf::plugin_interface_t
         disable_showdesktop();
     };
 
-    wf::signal_connection_t workspace_changed = [this] (wf::signal_data_t *data)
-    {
-        disable_showdesktop();
-    };
-
     wf::signal_connection_t view_minimized = [this] (wf::signal_data_t *data)
     {
         auto ev = static_cast<wf::view_minimized_signal*>(data);
@@ -248,11 +243,13 @@ class wayfire_wm_actions_t : public wf::plugin_interface_t
 
     wf::activator_callback on_toggle_showdesktop = [=] (auto ev) -> bool
     {
-        showdesktop_active = !showdesktop_active;
+        auto ws = output->workspace->get_current_workspace();
+        showdesktop_active[ws.x][ws.y] = !showdesktop_active[ws.x][ws.y];
 
-        if (showdesktop_active)
+        if (showdesktop_active[ws.x][ws.y])
         {
-            for (auto& view : output->workspace->get_views_in_layer(wf::WM_LAYERS))
+            for (auto& view : output->workspace->get_views_on_workspace(
+                ws, wf::WM_LAYERS, false))
             {
                 if (!view->minimized)
                 {
@@ -265,7 +262,6 @@ class wayfire_wm_actions_t : public wf::plugin_interface_t
 
             output->connect_signal("view-layer-attached", &view_attached);
             output->connect_signal("view-mapped", &view_attached);
-            output->connect_signal("workspace-changed", &workspace_changed);
             output->connect_signal("view-minimized", &view_minimized);
             return true;
         }
@@ -319,12 +315,12 @@ class wayfire_wm_actions_t : public wf::plugin_interface_t
 
     void disable_showdesktop()
     {
+        auto ws = output->workspace->get_current_workspace();
         view_attached.disconnect();
-        workspace_changed.disconnect();
         view_minimized.disconnect();
 
-        for (auto& view : output->workspace->get_views_in_layer(
-            wf::ALL_LAYERS, true))
+        for (auto& view : output->workspace->get_views_on_workspace(
+            ws, wf::ALL_LAYERS, true))
         {
             if (view->has_data("wm-actions-showdesktop"))
             {
@@ -333,7 +329,7 @@ class wayfire_wm_actions_t : public wf::plugin_interface_t
             }
         }
 
-        showdesktop_active = false;
+        showdesktop_active[ws.x][ws.y] = false;
     }
 
   public:
@@ -343,6 +339,21 @@ class wayfire_wm_actions_t : public wf::plugin_interface_t
         wf::scene::add_front(
             output->node_for_layer(wf::scene::layer::WORKSPACE),
             always_above);
+
+        auto wsize = output->workspace->get_workspace_grid_size();
+        showdesktop_active.resize(wsize.width);
+        for (int x = 0; x < wsize.width; x++)
+        {
+            showdesktop_active[x].resize(wsize.height);
+        }
+
+        for (int x = 0; x < wsize.width; x++)
+        {
+            for (int y = 0; y < wsize.height; y++)
+            {
+                showdesktop_active[x][y] = false;
+            }
+        }
 
         output->add_activator(toggle_showdesktop, &on_toggle_showdesktop);
         output->add_activator(minimize, &on_minimize);
@@ -366,7 +377,16 @@ class wayfire_wm_actions_t : public wf::plugin_interface_t
             {
                 set_keep_above_state(view, false);
             }
+
+            if (view->has_data("wm-actions-showdesktop"))
+            {
+                view->erase_data("wm-actions-showdesktop");
+                view->minimize_request(false);
+            }
         }
+
+        view_attached.disconnect();
+        view_minimized.disconnect();
 
         wf::scene::remove_child(always_above);
         output->rem_binding(&on_toggle_showdesktop);

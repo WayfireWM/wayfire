@@ -435,6 +435,8 @@ class output_viewport_manager_t
 
         views.erase(it, views.end());
 
+        std::reverse(views.begin(), views.end());
+
         return views;
     }
 
