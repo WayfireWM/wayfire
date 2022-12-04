@@ -50,7 +50,7 @@ struct wf_scale_animation_attribs
 struct view_scale_data
 {
     int row, col;
-    wf::view_2D *transformer = nullptr;
+    std::shared_ptr<wf::scene::view_2d_transformer_t> transformer;
     wf::animation::simple_animation_t fade_animation;
     wf_scale_animation_attribs animation;
     enum class view_visibility_t
@@ -194,14 +194,15 @@ class wayfire_scale : public wf::plugin_interface_t,
     /* Add a transformer that will be used to scale the view */
     bool add_transformer(wayfire_view view)
     {
-        if (view->get_transformer("scale"))
+        if (view->get_transformed_node()->get_transformer("scale"))
         {
             return false;
         }
 
-        wf::view_2D *tr = new wf::view_2D(view);
+        auto tr = std::make_shared<wf::scene::view_2d_transformer_t>(view);
         scale_data[view].transformer = tr;
-        view->add_transformer(std::unique_ptr<wf::view_2D>(tr), "scale");
+        view->get_transformed_node()->add_transformer(tr, wf::TRANSFORMER_2D,
+            "scale");
         /* Transformers are added only once when scale is activated so
          * this is a good place to connect the geometry-changed handler */
         view->connect_signal("geometry-changed", &view_geometry_changed);
@@ -223,7 +224,7 @@ class wayfire_scale : public wf::plugin_interface_t,
         scale_transformer_removed_signal data;
         data.view = view;
         output->emit_signal("scale-transformer-removed", &data);
-        view->pop_transformer("scale");
+        view->get_transformed_node()->rem_transformer("scale");
         set_tiled_wobbly(view, false);
     }
 
@@ -560,11 +561,9 @@ class wayfire_scale : public wf::plugin_interface_t,
             view = view->parent;
         }
 
-        auto ws = output->workspace->get_current_workspace();
-        auto og = output->get_layout_geometry();
-        auto vg = scale_data.count(view) > 0 ?
-            view->get_bounding_box(scale_data[view].transformer) :
-            view->get_bounding_box();
+        auto ws     = output->workspace->get_current_workspace();
+        auto og     = output->get_layout_geometry();
+        auto vg     = view->get_wm_geometry();
         auto center = wf::point_t{vg.x + vg.width / 2, vg.y + vg.height / 2};
 
         return wf::point_t{
@@ -978,8 +977,7 @@ class wayfire_scale : public wf::plugin_interface_t,
                 };
 
                 add_transformer(view);
-                auto geom = view->transform_region(view->get_wm_geometry(),
-                    scale_data[view].transformer);
+                auto geom = view->get_wm_geometry();
                 double view_scale = calculate_scale({geom.width, geom.height});
                 for (auto& child : view->enumerate_views(false))
                 {
@@ -1016,8 +1014,7 @@ class wayfire_scale : public wf::plugin_interface_t,
                         continue;
                     }
 
-                    auto vg = child->transform_region(child->get_wm_geometry(),
-                        child_data.transformer);
+                    auto vg = child->get_wm_geometry();
                     wf::pointf_t center = {vg.x + vg.width / 2.0,
                         vg.y + vg.height / 2.0};
 

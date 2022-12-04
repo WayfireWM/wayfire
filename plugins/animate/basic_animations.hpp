@@ -1,4 +1,5 @@
 #include "animate.hpp"
+#include <memory>
 #include <wayfire/plugin.hpp>
 #include <wayfire/opengl.hpp>
 #include <wayfire/view-transform.hpp>
@@ -28,14 +29,16 @@ class fade_animation : public animation_base
         }
 
         name = "animation-fade-" + std::to_string(type);
-        view->add_transformer(
-            std::make_unique<wf::view_2D>(view, wf::TRANSFORMER_HIGHLEVEL), name);
+
+        auto tr = std::make_shared<wf::scene::view_2d_transformer_t>(view);
+        view->get_transformed_node()->add_transformer(
+            tr, wf::TRANSFORMER_HIGHLEVEL, name);
     }
 
     bool step() override
     {
-        auto transform =
-            dynamic_cast<wf::view_2D*>(view->get_transformer(name).get());
+        auto transform = view->get_transformed_node()
+            ->get_transformer<wf::scene::view_2d_transformer_t>(name);
         transform->alpha = this->progression;
 
         return progression.running();
@@ -53,7 +56,7 @@ class fade_animation : public animation_base
 
     ~fade_animation()
     {
-        view->pop_transformer(name);
+        view->get_transformed_node()->rem_transformer(name);
     }
 };
 
@@ -72,7 +75,6 @@ class zoom_animation_t : public duration_t
 class zoom_animation : public animation_base
 {
     wayfire_view view;
-    wf::view_2D *our_transform = nullptr;
     zoom_animation_t progression;
     std::string name;
 
@@ -125,12 +127,15 @@ class zoom_animation : public animation_base
         }
 
         name = "animation-zoom-" + std::to_string(type);
-        our_transform = new wf::view_2D(view, wf::TRANSFORMER_HIGHLEVEL);
-        view->add_transformer(std::unique_ptr<wf::view_2D>(our_transform), name);
+        auto tr = std::make_shared<wf::scene::view_2d_transformer_t>(view);
+        view->get_transformed_node()->add_transformer(
+            tr, wf::TRANSFORMER_HIGHLEVEL, name);
     }
 
     bool step() override
     {
+        auto our_transform = view->get_transformed_node()
+            ->get_transformer<wf::scene::view_2d_transformer_t>(name);
         float c = this->progression.zoom;
 
         our_transform->alpha   = this->progression.alpha;
@@ -150,6 +155,6 @@ class zoom_animation : public animation_base
 
     ~zoom_animation()
     {
-        view->pop_transformer(name);
+        view->get_transformed_node()->rem_transformer(name);
     }
 };

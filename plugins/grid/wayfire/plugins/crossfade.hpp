@@ -1,5 +1,13 @@
 #pragma once
 
+#include <wayfire/plugins/common/util.hpp>
+#include "wayfire/geometry.hpp"
+#include "wayfire/opengl.hpp"
+#include "wayfire/region.hpp"
+#include "wayfire/scene-render.hpp"
+#include "wayfire/scene.hpp"
+#include "wayfire/signal-provider.hpp"
+#include <memory>
 #include <wayfire/view-transform.hpp>
 #include <wayfire/output.hpp>
 #include <wayfire/nonstd/wlroots.hpp>
@@ -17,13 +25,22 @@ namespace grid
  * It fades out the scaled contents from original_buffer, and fades in the
  * current contents of the view, based on the alpha value in the transformer.
  */
-class crossfade_t : public wf::view_2D
+class crossfade_node_t : public scene::view_2d_transformer_t
 {
   public:
-    crossfade_t(wayfire_view view) :
-        wf::view_2D(view)
+    wayfire_view view;
+    // The contents of the view before the change.
+    wf::render_target_t original_buffer;
+
+  public:
+    wf::geometry_t displayed_geometry;
+    double overlay_alpha;
+
+    crossfade_node_t(wayfire_view view) : view_2d_transformer_t(view)
     {
-        // Create a copy of the view contents
+        displayed_geometry = view->get_wm_geometry();
+        this->view = view;
+
         original_buffer.geometry = view->get_wm_geometry();
         original_buffer.scale    = view->get_output()->handle->scale;
 
@@ -52,47 +69,94 @@ class crossfade_t : public wf::view_2D
         }
     }
 
-    void render_box(wf::texture_t src_tex, wlr_box src_box,
-        wlr_box scissor_box, const wf::render_target_t& fb) override
-    {
-        // See the current target geometry
-        auto bbox = view->get_wm_geometry();
-        bbox = this->get_bounding_box(bbox, bbox);
-
-        double saved = this->alpha;
-        this->alpha = 1.0;
-        // Now render the real view
-        view_2D::render_box(src_tex, src_box, scissor_box, fb);
-        this->alpha = saved;
-
-        double ra;
-        const double N = 2;
-        if (alpha < 0.5)
-        {
-            ra = std::pow(alpha * 2, 1.0 / N) / 2.0;
-        } else
-        {
-            ra = std::pow((alpha - 0.5) * 2, N) / 2.0 + 0.5;
-        }
-
-        // First render the original buffer with corresponding alpha
-        OpenGL::render_begin(fb);
-        fb.logic_scissor(scissor_box);
-        OpenGL::render_texture({original_buffer.tex}, fb, bbox,
-            glm::vec4{1.0f, 1.0f, 1.0f, 1.0 - ra});
-        OpenGL::render_end();
-    }
-
-    ~crossfade_t()
+    ~crossfade_node_t()
     {
         OpenGL::render_begin();
         original_buffer.release();
         OpenGL::render_end();
     }
 
-    // The contents of the view before the change.
-    wf::render_target_t original_buffer;
+    std::string stringify() const override
+    {
+        return "crossfade";
+    }
+
+    void gen_render_instances(std::vector<scene::render_instance_uptr>& instances,
+        scene::damage_callback push_damage, wf::output_t *shown_on) override;
 };
+
+class crossfade_render_instance_t : public scene::render_instance_t
+{
+    crossfade_node_t *self;
+    wf::signal::connection_t<scene::node_damage_signal> on_damage;
+
+  public:
+    crossfade_render_instance_t(crossfade_node_t *self,
+        scene::damage_callback push_damage)
+    {
+        this->self = self;
+        scene::damage_callback push_damage_child = [=] (const wf::region_t&)
+        {
+            // XXX: we could attempt to calculate a meaningful damage, but
+            // we update on each frame anyway so ..
+            push_damage(self->get_bounding_box());
+        };
+
+        on_damage = [=] (auto)
+        {
+            push_damage(self->get_bounding_box());
+        };
+        self->connect(&on_damage);
+    }
+
+    void schedule_instructions(
+        std::vector<scene::render_instruction_t>& instructions,
+        const wf::render_target_t& target, wf::region_t& damage) override
+    {
+        instructions.push_back(wf::scene::render_instruction_t{
+                    .instance = this,
+                    .target   = target,
+                    .damage   = damage & self->get_bounding_box(),
+                });
+    }
+
+    void render(const wf::render_target_t& target,
+        const wf::region_t& region) override
+    {
+        double ra;
+        const double N = 2;
+        if (self->overlay_alpha < 0.5)
+        {
+            ra = std::pow(self->overlay_alpha * 2, 1.0 / N) / 2.0;
+        } else
+        {
+            ra = std::pow((self->overlay_alpha - 0.5) * 2, N) / 2.0 + 0.5;
+        }
+
+        OpenGL::render_begin(target);
+        for (auto& box : region)
+        {
+            target.logic_scissor(wlr_box_from_pixman_box(box));
+            OpenGL::render_texture({self->original_buffer.tex}, target,
+                self->displayed_geometry, glm::vec4{1.0f, 1.0f, 1.0f, 1.0 - ra});
+        }
+
+        OpenGL::render_end();
+    }
+};
+
+void crossfade_node_t::gen_render_instances(
+    std::vector<scene::render_instance_uptr>& instances,
+    scene::damage_callback push_damage, wf::output_t *shown_on)
+{
+    // Step 2: render overlay (instances are sorted front-to-back)
+    instances.push_back(
+        std::make_unique<crossfade_render_instance_t>(this, push_damage));
+
+    // Step 1: render the scaled view
+    scene::view_2d_transformer_t::gen_render_instances(
+        instances, push_damage, shown_on);
+}
 
 /**
  * A class used for crossfade/wobbly animation of a change in a view's geometry.
@@ -169,12 +233,8 @@ class grid_animation_t : public wf::custom_data_t
         animation.start();
 
         // Add crossfade transformer
-        if (!view->get_transformer("grid-crossfade"))
-        {
-            view->add_transformer(
-                std::make_unique<wf::grid::crossfade_t>(view),
-                "grid-crossfade");
-        }
+        ensure_view_transformer<crossfade_node_t>(
+            view, wf::TRANSFORMER_2D, view);
 
         // Start the transition
         set_state();
@@ -182,7 +242,7 @@ class grid_animation_t : public wf::custom_data_t
 
     ~grid_animation_t()
     {
-        view->pop_transformer("grid-crossfade");
+        view->get_transformed_node()->rem_transformer<crossfade_node_t>();
         output->render->rem_effect(&pre_hook);
     }
 
@@ -205,13 +265,11 @@ class grid_animation_t : public wf::custom_data_t
             animation.set_end(original);
         }
 
+        auto tr = view->get_transformed_node()->get_transformer<crossfade_node_t>();
         view->damage();
-
-        auto tr_untyped = view->get_transformer("grid-crossfade").get();
-        auto tr = dynamic_cast<wf::grid::crossfade_t*>(tr_untyped);
+        tr->displayed_geometry = animation;
 
         auto geometry = view->get_wm_geometry();
-
         tr->scale_x = animation.width / geometry.width;
         tr->scale_y = animation.height / geometry.height;
 
@@ -220,7 +278,7 @@ class grid_animation_t : public wf::custom_data_t
         tr->translation_y = (animation.y + animation.height / 2) -
             (geometry.y + geometry.height / 2.0);
 
-        tr->alpha = animation.progress();
+        tr->overlay_alpha = animation.progress();
         view->damage();
     };
 

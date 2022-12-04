@@ -8,6 +8,7 @@
 #include "wayfire/view-transform.hpp"
 #include "wayfire/output-layout.hpp"
 #include "../wm-actions/wm-actions-signals.hpp"
+#include <wayfire/plugins/common/util.hpp>
 
 #include <algorithm>
 #include <cfloat>
@@ -373,17 +374,11 @@ void view_action_interface_t::_set_alpha(float alpha)
     alpha = std::clamp(alpha, 0.1f, 1.0f);
 
     // Apply view transformer if needed and set alpha.
-    wf::view_2D *transformer;
-
-    if (!_view->get_transformer("alpha"))
+    auto tr = wf::ensure_named_transformer<wf::scene::view_2d_transformer_t>(
+        _view, wf::TRANSFORMER_2D, "alpha", _view);
+    if (fabs(tr->alpha - alpha) > FLT_EPSILON)
     {
-        _view->add_transformer(std::make_unique<wf::view_2D>(_view), "alpha");
-    }
-
-    transformer = dynamic_cast<wf::view_2D*>(_view->get_transformer("alpha").get());
-    if (fabs(transformer->alpha - alpha) > FLT_EPSILON)
-    {
-        transformer->alpha = alpha;
+        tr->alpha = alpha;
         _view->damage();
 
         LOGI("View action interface: Alpha set to ", alpha, ".");

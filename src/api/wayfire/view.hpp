@@ -593,7 +593,8 @@ namespace scene
  * currently applied on the view and then offsetted to start at the top-left
  * corner of the view's main surface.
  */
-class view_node_t : public scene::floating_inner_node_t, zero_copy_texturable_node_t
+class view_node_t : public scene::floating_inner_node_t,
+    public zero_copy_texturable_node_t
 {
   public:
     view_node_t(wayfire_view view);

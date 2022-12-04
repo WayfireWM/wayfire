@@ -100,14 +100,8 @@ class wayfire_fast_switcher : public wf::plugin_interface_t
 
     void set_view_alpha(wayfire_view view, float alpha)
     {
-        if (!view->get_transformer(transformer_name))
-        {
-            view->add_transformer(
-                std::make_unique<wf::view_2D>(view), transformer_name);
-        }
-
-        auto tr = dynamic_cast<wf::view_2D*>(
-            view->get_transformer(transformer_name).get());
+        auto tr = wf::ensure_named_transformer<wf::scene::view_2d_transformer_t>(
+            view, wf::TRANSFORMER_2D, transformer_name, view);
         tr->alpha = alpha;
         view->damage();
     }
@@ -185,7 +179,7 @@ class wayfire_fast_switcher : public wf::plugin_interface_t
         // Remove transformers after modifying alpha
         for (auto view : views)
         {
-            view->pop_transformer(transformer_name);
+            view->get_transformed_node()->rem_transformer(transformer_name);
         }
 
         active = false;

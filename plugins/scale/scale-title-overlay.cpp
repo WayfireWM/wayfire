@@ -5,6 +5,7 @@
 #include "wayfire/output.hpp"
 #include "wayfire/render-manager.hpp"
 #include "wayfire/scene-operations.hpp"
+#include "wayfire/view-transform.hpp"
 
 #include <memory>
 #include <wayfire/opengl.hpp>
@@ -202,7 +203,7 @@ class title_overlay_node_t : public node_t
         geometry.width  = tex.overlay.tex.width / output_scale;
         geometry.height = tex.overlay.tex.height / output_scale;
 
-        auto bbox = view->get_bounding_box();
+        auto bbox = view->get_transformed_node()->get_bounding_box();
         geometry.x = bbox.x + bbox.width / 2 - geometry.width / 2;
         switch (pos)
         {
@@ -315,8 +316,8 @@ class title_overlay_render_instance_t : public render_instance_t
         const wf::region_t& region)
     {
         auto& title = *self->view->get_data<view_title_texture_t>();
-        auto tr     =
-            dynamic_cast<view_2D*>(self->view->get_transformer("scale").get());
+        auto tr     = self->view->get_transformed_node()
+            ->get_transformer<wf::scene::view_2d_transformer_t>("scale");
 
         GLuint tex = title.overlay.tex.tex;
 

@@ -1,6 +1,8 @@
 #pragma once
 
+#include "wayfire/scene-render.hpp"
 #include "wayfire/scene.hpp"
+#include <memory>
 #include <wayfire/signal-definitions.hpp>
 #include <wayfire/plugins/common/geometry-animation.hpp>
 #include <wayfire/plugins/common/workspace-wall.hpp>
@@ -116,15 +118,17 @@ class workspace_switch_t
         if (this->overlay_view)
         {
             wf::scene::set_node_enabled(overlay_view->get_transformed_node(), true);
-            overlay_view->pop_transformer(vswitch_view_transformer_name);
+            overlay_view->get_transformed_node()->rem_transformer(
+                vswitch_view_transformer_name);
         }
 
         /* Set new view */
         this->overlay_view = view;
         if (view)
         {
-            view->add_transformer(std::make_unique<wf::view_2D>(view),
-                vswitch_view_transformer_name);
+            view->get_transformed_node()->add_transformer(
+                std::make_shared<wf::scene::view_2d_transformer_t>(view),
+                wf::TRANSFORMER_2D, vswitch_view_transformer_name);
             wf::scene::set_node_enabled(view->get_transformed_node(), false);
         }
     }
@@ -188,8 +192,10 @@ class workspace_switch_t
         }
 
         double progress = animation.progress();
-        auto tr = dynamic_cast<wf::view_2D*>(overlay_view->get_transformer(
-            vswitch_view_transformer_name).get());
+
+        auto tmanager = overlay_view->get_transformed_node();
+        auto tr = tmanager->get_transformer<wf::scene::view_2d_transformer_t>(
+            vswitch_view_transformer_name);
 
         static constexpr double smoothing_in     = 0.4;
         static constexpr double smoothing_out    = 0.2;
@@ -209,7 +215,18 @@ class workspace_switch_t
         auto all_views = overlay_view->enumerate_views();
         for (auto v : wf::reverse(all_views))
         {
-            v->render_transformed(fb, fb.geometry);
+            tmanager = v->get_transformed_node();
+
+            std::vector<wf::scene::render_instance_uptr> instances;
+            tmanager->gen_render_instances(instances, [] (auto) {});
+            auto bbox = tmanager->get_bounding_box();
+
+            wf::scene::render_pass_params_t params;
+            params.damage = bbox;
+            params.reference_output = output;
+            params.instances = &instances;
+            params.target    = fb;
+            wf::scene::run_render_pass(params, scene::RPASS_EMIT_SIGNALS);
         }
     }
 

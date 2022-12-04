@@ -7,6 +7,7 @@
 #include <wayfire/view-transform.hpp>
 #include <algorithm>
 #include <wayfire/plugins/crossfade.hpp>
+#include <wayfire/plugins/common/util.hpp>
 
 namespace wf
 {
@@ -264,12 +265,12 @@ struct view_node_custom_data_t : public custom_data_t
  */
 static const std::string scale_transformer_name =
     "simple-tile-scale-transformer";
-struct view_node_t::scale_transformer_t : public wf::view_2D
+struct view_node_t::scale_transformer_t : public wf::scene::view_2d_transformer_t
 {
     wf::geometry_t box;
 
     scale_transformer_t(wayfire_view view, wf::geometry_t box) :
-        wf::view_2D(view)
+        wf::scene::view_2d_transformer_t(view)
     {
         set_box(box);
     }
@@ -314,7 +315,7 @@ class tile_view_animation_t : public wf::grid::grid_animation_t
         // The grid animation does this too, however, we want to remove the
         // transformer so that we can enforce the correct geometry from the
         // start.
-        view->pop_transformer("grid-crossfade");
+        view->get_transformed_node()->rem_transformer<grid::crossfade_node_t>();
         view->emit_signal("simple-tile-adjust-transformer", nullptr);
     }
 
@@ -344,7 +345,7 @@ view_node_t::view_node_t(wayfire_view view)
 
 view_node_t::~view_node_t()
 {
-    view->pop_transformer(scale_transformer_name);
+    view->get_transformed_node()->rem_transformer(scale_transformer_name);
     view->erase_data<view_node_custom_data_t>();
 }
 
@@ -448,17 +449,9 @@ void view_node_t::set_geometry(wf::geometry_t geometry)
     auto target = calculate_target_geometry();
     if (this->needs_crossfade() && (target != view->get_wm_geometry()))
     {
-        if (view->get_transformer(scale_transformer_name))
-        {
-            view->pop_transformer(scale_transformer_name);
-        }
-
+        view->get_transformed_node()->rem_transformer(scale_transformer_name);
         ensure_animation(view, animation_duration)
         ->adjust_target_geometry(target, -1);
-        if (view->get_transformer(scale_transformer_name))
-        {
-            view->pop_transformer(scale_transformer_name);
-        }
     } else
     {
         view->set_geometry(target);
@@ -480,26 +473,14 @@ void view_node_t::update_transformer()
     }
 
     auto wm = view->get_wm_geometry();
-    auto transformer = static_cast<scale_transformer_t*>(
-        view->get_transformer(scale_transformer_name).get());
-
     if (wm != target_geometry)
     {
-        if (!transformer)
-        {
-            auto tr = std::make_unique<scale_transformer_t>(view, target_geometry);
-            transformer = tr.get();
-            view->add_transformer(std::move(tr), scale_transformer_name);
-        } else
-        {
-            transformer->set_box(target_geometry);
-        }
+        auto tr = ensure_named_transformer<scale_transformer_t>(view,
+            wf::TRANSFORMER_2D, scale_transformer_name, view, target_geometry);
+        tr->set_box(target_geometry);
     } else
     {
-        if (transformer)
-        {
-            view->pop_transformer(scale_transformer_name);
-        }
+        view->get_transformed_node()->rem_transformer(scale_transformer_name);
     }
 }
 

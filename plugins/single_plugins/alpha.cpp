@@ -22,6 +22,7 @@
  * SOFTWARE.
  */
 
+#include <memory>
 #include <wayfire/core.hpp>
 #include <wayfire/view.hpp>
 #include <wayfire/plugin.hpp>
@@ -46,34 +47,25 @@ class wayfire_alpha : public wf::plugin_interface_t
 
     void update_alpha(wayfire_view view, float delta)
     {
-        wf::view_2D *transformer;
-        float alpha;
-
-        if (!view->get_transformer("alpha"))
+        auto tmgr = view->get_transformed_node();
+        if (!tmgr->get_transformer<wf::scene::node_t>("alpha"))
         {
-            view->add_transformer(std::make_unique<wf::view_2D>(view), "alpha");
+            auto node = std::make_shared<wf::scene::view_2d_transformer_t>(view);
+            tmgr->add_transformer(node, wf::TRANSFORMER_2D, "alpha");
         }
 
-        transformer =
-            dynamic_cast<wf::view_2D*>(view->get_transformer("alpha").get());
-        alpha = transformer->alpha;
+        auto transformer =
+            tmgr->get_transformer<wf::scene::view_2d_transformer_t>("alpha");
 
-        alpha -= delta * 0.003;
+        auto old_value = transformer->alpha;
+        transformer->alpha = std::clamp(
+            transformer->alpha - delta * 0.003, (double)min_value, 1.0);
 
-        if (alpha > 1.0)
+        if (transformer->alpha == 1.0)
         {
-            alpha = 1.0;
-        }
-
-        if (alpha == 1.0)
+            return view->get_transformed_node()->rem_transformer("alpha");
+        } else if (old_value != transformer->alpha)
         {
-            return view->pop_transformer("alpha");
-        }
-
-        alpha = std::max(alpha, (float)min_value);
-        if (transformer->alpha != alpha)
-        {
-            transformer->alpha = alpha;
             view->damage();
         }
     }
@@ -114,15 +106,10 @@ class wayfire_alpha : public wf::plugin_interface_t
     {
         for (auto& view : output->workspace->get_views_in_layer(wf::ALL_LAYERS))
         {
-            if (!view->get_transformer("alpha"))
-            {
-                continue;
-            }
-
-            wf::view_2D *transformer =
-                dynamic_cast<wf::view_2D*>(view->get_transformer("alpha").get());
-
-            if (transformer->alpha < min_value)
+            auto tmgr = view->get_transformed_node();
+            auto transformer =
+                tmgr->get_transformer<wf::scene::view_2d_transformer_t>("alpha");
+            if (transformer && (transformer->alpha < min_value))
             {
                 transformer->alpha = min_value;
                 view->damage();
@@ -136,10 +123,7 @@ class wayfire_alpha : public wf::plugin_interface_t
         {
             if (!view->get_output() || (view->get_output() == output))
             {
-                if (view->get_transformer("alpha"))
-                {
-                    view->pop_transformer("alpha");
-                }
+                view->get_transformed_node()->rem_transformer("alpha");
             }
         }
 

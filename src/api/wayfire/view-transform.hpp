@@ -97,9 +97,9 @@ class transformer_render_instance_t : public render_instance_t
             }
         }
 
-        auto bbox = self->get_bounding_box();
-        int target_width  = scale * self->get_bounding_box().width;
-        int target_height = scale * self->get_bounding_box().height;
+        auto bbox = self->floating_inner_node_t::get_bounding_box();
+        int target_width  = scale * bbox.width;
+        int target_height = scale * bbox.height;
 
         OpenGL::render_begin();
         if (inner_content.allocate(target_width, target_height))
@@ -148,7 +148,7 @@ class transformer_render_instance_t : public render_instance_t
             push_damage(region);
         };
 
-        this->cached_damage |= self->get_bounding_box();
+        this->cached_damage |= self->floating_inner_node_t::get_bounding_box();
         for (auto& ch : self->get_children())
         {
             ch->gen_render_instances(children, push_damage_child, shown_on);
@@ -166,12 +166,15 @@ class transformer_render_instance_t : public render_instance_t
         std::vector<render_instruction_t>& instructions,
         const wf::render_target_t& target, wf::region_t& damage) override
     {
-        auto our_damage = damage & self->get_bounding_box();
-        instructions.push_back(wf::scene::render_instruction_t{
-                    .instance = this,
-                    .target   = target,
-                    .damage   = damage & self->get_bounding_box(),
-                });
+        if (!damage.empty())
+        {
+            auto our_damage = damage & self->get_bounding_box();
+            instructions.push_back(wf::scene::render_instruction_t{
+                        .instance = this,
+                        .target   = target,
+                        .damage   = std::move(our_damage),
+                    });
+        }
     }
 
     void render(const wf::render_target_t& target,
@@ -262,6 +265,35 @@ class transform_manager_node_t : public wf::scene::floating_inner_node_t
     void _add_transformer(wf::scene::floating_inner_ptr transformer,
         int z_order, std::string name);
     void _rem_transformer(wf::scene::floating_inner_ptr transformer);
+};
+
+/**
+ * A simple transformer which supports 2D transformations on a view.
+ */
+class view_2d_transformer_t : public scene::floating_inner_node_t
+{
+  public:
+    float scale_x = 1.0f;
+    float scale_y = 1.0f;
+    float translation_x = 0.0f;
+    float translation_y = 0.0f;
+    // An angle in radians indicating how much the view should be rotated
+    // around its center counter-clockwise.
+    float angle = 0.0f;
+    // A multiplier for the view's opacity.
+    // Note that if the view was not opaque to begin with, setting alpha=1.0
+    // does not make it opaque.
+    float alpha = 1.0f;
+
+    view_2d_transformer_t(wayfire_view view);
+    wf::pointf_t to_local(const wf::pointf_t& point) override;
+    wf::pointf_t to_global(const wf::pointf_t& point) override;
+    std::string stringify() const override;
+    wf::geometry_t get_bounding_box() override;
+    void gen_render_instances(std::vector<render_instance_uptr>& instances,
+        damage_callback push_damage, wf::output_t *shown_on) override;
+
+    wayfire_view view;
 };
 }
 }
@@ -381,36 +413,6 @@ enum transformer_z_order_t
     TRANSFORMER_HIGHLEVEL = 500,
     // The highest level of view transforms, used by blur.
     TRANSFORMER_BLUR      = 1000,
-};
-
-/* 2D transforms operate with a coordinate system centered at the
- * center of the main surface(the wayfire_view_t) */
-class view_2D : public view_transformer_t
-{
-  protected:
-    wayfire_view view;
-    const uint32_t z_order;
-
-  public:
-    float angle = 0.0f;
-    float scale_x = 1.0f, scale_y = 1.0f;
-    float translation_x = 0.0f, translation_y = 0.0f;
-    float alpha = 1.0f;
-
-  public:
-    view_2D(wayfire_view view, uint32_t z_order_ = TRANSFORMER_2D);
-
-    virtual uint32_t get_z_order() override
-    {
-        return z_order;
-    }
-
-    wf::pointf_t transform_point(
-        wf::geometry_t view, wf::pointf_t point) override;
-    wf::pointf_t untransform_point(
-        wf::geometry_t view, wf::pointf_t point) override;
-    void render_box(wf::texture_t src_tex, wlr_box src_box,
-        wlr_box scissor_box, const wf::render_target_t& target_fb) override;
 };
 
 /* Those are centered relative to the view's bounding box */

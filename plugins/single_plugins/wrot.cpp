@@ -1,10 +1,12 @@
 #include <wayfire/plugin.hpp>
+#include "wayfire/debug.hpp"
 #include "wayfire/view.hpp"
 #include "wayfire/view-transform.hpp"
 #include "wayfire/output.hpp"
 #include "wayfire/core.hpp"
 #include <wayfire/workspace-manager.hpp>
 #include <wayfire/signal-definitions.hpp>
+#include <wayfire/plugins/common/util.hpp>
 #include <linux/input.h>
 
 #include <glm/gtc/matrix_transform.hpp>
@@ -46,7 +48,7 @@ class wf_wrot : public wf::plugin_interface_t
         for (auto v : output->workspace->get_views_in_layer(wf::LAYER_WORKSPACE))
         {
             v->pop_transformer(transformer_3d);
-            v->pop_transformer(transformer_2d);
+            v->get_transformed_node()->rem_transformer(transformer_2d);
         }
     }
 
@@ -109,16 +111,8 @@ class wf_wrot : public wf::plugin_interface_t
 
     void motion_2d(int x, int y)
     {
-        if (!current_view->get_transformer(transformer_2d))
-        {
-            current_view->add_transformer(std::make_unique<wf::view_2D>(
-                current_view), transformer_2d);
-        }
-
-        auto tr = dynamic_cast<wf::view_2D*>(current_view->get_transformer(
-            transformer_2d).get());
-        assert(tr);
-
+        auto tr = wf::ensure_named_transformer<wf::scene::view_2d_transformer_t>(
+            current_view, wf::TRANSFORMER_2D, transformer_2d, current_view);
         current_view->damage();
 
         auto g = current_view->get_wm_geometry();
@@ -131,7 +125,8 @@ class wf_wrot : public wf::plugin_interface_t
 
         if (vlen(x2, y2) <= reset_radius)
         {
-            return current_view->pop_transformer(transformer_2d);
+            current_view->get_transformed_node()->rem_transformer(transformer_2d);
+            return;
         }
 
         /* cross(a, b) = |a| * |b| * sin(a, b) */
