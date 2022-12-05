@@ -405,7 +405,7 @@ class core_drag_t : public signal_provider_t
      */
     void rebuild_wobbly(wayfire_view view, wf::point_t grab, wf::pointf_t relative)
     {
-        auto dim = wf::dimensions(view->get_bounding_box("wobbly"));
+        auto dim = wf::dimensions(wf::view_bounding_box_up_to(view, "wobbly"));
         modify_wobbly(view, find_geometry_around(dim, grab, relative));
     }
 
@@ -421,7 +421,7 @@ class core_drag_t : public signal_provider_t
         wf::pointf_t relative,
         const drag_options_t& options)
     {
-        auto bbox = grab_view->get_bounding_box("wobbly");
+        auto bbox = wf::view_bounding_box_up_to(grab_view, "wobbly");
         wf::point_t rel_grab_pos = {
             int(bbox.x + relative.x * bbox.width),
             int(bbox.y + relative.y * bbox.height),
@@ -446,7 +446,7 @@ class core_drag_t : public signal_provider_t
             dragged.transformer = {tr};
 
             tr->relative_grab = find_relative_grab(
-                v->get_bounding_box("wobbly"), rel_grab_pos);
+                wf::view_bounding_box_up_to(v, "wobbly"), rel_grab_pos);
             tr->grab_position = grab_position;
             tr->scale_factor.animate(options.initial_scale, options.initial_scale);
 
@@ -703,7 +703,7 @@ inline void adjust_view_on_output(drag_done_signal *ev)
             continue;
         }
 
-        auto bbox = v.view->get_bounding_box("wobbly");
+        auto bbox = wf::view_bounding_box_up_to(v.view, "wobbly");
         auto wm   = v.view->get_wm_geometry();
 
         wf::point_t wm_offset = wf::origin(wm) + -wf::origin(bbox);

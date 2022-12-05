@@ -1,3 +1,4 @@
+#include "wayfire/plugins/common/util.hpp"
 #include <wayfire/plugin.hpp>
 #include <wayfire/output.hpp>
 #include <wayfire/core.hpp>
@@ -394,7 +395,7 @@ class wayfire_expo : public wf::plugin_interface_t
         }
 
         auto ws_coords = input_coordinates_to_output_local_coordinates(grab);
-        auto bbox = view->get_bounding_box("wobbly");
+        auto bbox = wf::view_bounding_box_up_to(view, "wobbly");
 
         view->damage();
         // Make sure that the view is in output-local coordinates!

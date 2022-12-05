@@ -1,9 +1,14 @@
+#include "wayfire/debug.hpp"
+#include "wayfire/opengl.hpp"
+#include "wayfire/region.hpp"
+#include <memory>
 #include <wayfire/plugin.hpp>
 #include <wayfire/signal-definitions.hpp>
 #include <wayfire/core.hpp>
 #include <wayfire/view-transform.hpp>
 #include <wayfire/workspace-manager.hpp>
 #include <wayfire/render-manager.hpp>
+#include <wayfire/plugins/common/util.hpp>
 
 extern "C"
 {
@@ -224,7 +229,7 @@ class iwobbly_state_t
     /** Called when the next frame is being prepared */
     virtual void handle_frame()
     {
-        this->bounding_box = view->get_bounding_box("wobbly");
+        this->bounding_box = wf::view_bounding_box_up_to(view, "wobbly");
     }
 
     /** Called when the view wm geometry changes */
@@ -474,7 +479,8 @@ class wobbly_state_floating_t : public iwobbly_state_t
         }
 
         /* Synchronize view position with the model */
-        auto new_bbox = view->get_bounding_box(wobbly_transformer_name);
+        auto new_bbox = view->get_transformed_node()->get_transformer("wobbly")
+            ->get_children_bounding_box();
         auto wm = view->get_wm_geometry();
 
         int target_x = model->x + wm.x - new_bbox.x;
@@ -489,13 +495,14 @@ class wobbly_state_floating_t : public iwobbly_state_t
 
     void handle_frame() override
     {
-        auto new_bbox = view->get_bounding_box(wobbly_transformer_name);
+        auto new_bbox = view->get_transformed_node()->get_transformer("wobbly")
+            ->get_children_bounding_box();
         update_base_geometry(new_bbox);
     }
 
     void handle_wm_geometry(const wf::geometry_t& old_wm) override
     {
-        update_base_geometry(view->get_bounding_box("wobbly"));
+        update_base_geometry(wf::view_bounding_box_up_to(view, "wobbly"));
     }
 
     void handle_workspace_change(wf::point_t old, wf::point_t cur) override
@@ -548,8 +555,71 @@ class wobbly_state_free_t : public iwobbly_state_t
 };
 }
 
-class wf_wobbly : public wf::view_transformer_t
+class wobbly_transformer_node_t : public wf::scene::floating_inner_node_t
 {
+  public:
+    wobbly_transformer_node_t(wayfire_view view) : floating_inner_node_t(false)
+    {
+        this->view = view;
+        init_model();
+        last_frame = wf::get_current_time();
+
+        pre_hook = [=] () { update_model(); };
+        view->get_output()->render->add_effect(&pre_hook, wf::OUTPUT_EFFECT_PRE);
+        view->get_output()->connect_signal("workspace-changed",
+            &on_workspace_changed);
+
+        view->connect_signal("unmapped", &view_removed);
+        view->connect_signal("tiled", &view_state_changed);
+        view->connect_signal("fullscreen", &view_state_changed);
+        view->connect_signal("set-output", &view_output_changed);
+        view->connect_signal("geometry-changed", &view_geometry_changed);
+
+        /* Set to free state initially but then look for the correct state */
+        this->state = std::make_unique<wf::wobbly_state_free_t>(model, view);
+        update_wobbly_state(false, {0, 0}, false);
+    }
+
+    ~wobbly_transformer_node_t()
+    {
+        state = nullptr;
+        wobbly_fini(model.get());
+
+        if (view->get_output())
+        {
+            view->get_output()->render->rem_effect(&pre_hook);
+        }
+    }
+
+    std::string stringify() const override
+    {
+        return "wobbly";
+    }
+
+    wf::geometry_t get_bounding_box() override
+    {
+        auto box = wobbly_boundingbox(model.get());
+
+        wlr_box result;
+        result.x     = box.tlx;
+        result.y     = box.tly;
+        result.width = std::ceil(box.brx - box.tlx);
+        result.height = std::ceil(box.bry - box.tly);
+        return result;
+    }
+
+    void gen_render_instances(
+        std::vector<wf::scene::render_instance_uptr>& instances,
+        wf::scene::damage_callback push_damage, wf::output_t *shown_on) override;
+
+    std::unique_ptr<wobbly_surface> model;
+
+    void destroy_self()
+    {
+        view->get_transformed_node()->rem_transformer("wobbly");
+    }
+
+  private:
     wayfire_view view;
     wf::effect_hook_t pre_hook;
 
@@ -605,9 +675,9 @@ class wf_wobbly : public wf::view_transformer_t
             &on_workspace_changed);
     };
 
-    std::unique_ptr<wobbly_surface> model;
     std::unique_ptr<wf::iwobbly_state_t> state;
     uint32_t last_frame;
+    bool force_tile = false;
 
     void init_model()
     {
@@ -628,59 +698,6 @@ class wf_wobbly : public wf::view_transformer_t
         model->v  = NULL;
         model->uv = NULL;
         wobbly_init(model.get());
-    }
-
-  public:
-    wf_wobbly(wayfire_view view)
-    {
-        this->view = view;
-        init_model();
-        last_frame = wf::get_current_time();
-
-        pre_hook = [=] () { update_model(); };
-        view->get_output()->render->add_effect(&pre_hook, wf::OUTPUT_EFFECT_PRE);
-        view->get_output()->connect_signal("workspace-changed",
-            &on_workspace_changed);
-
-        view->connect_signal("unmapped", &view_removed);
-        view->connect_signal("tiled", &view_state_changed);
-        view->connect_signal("fullscreen", &view_state_changed);
-        view->connect_signal("set-output", &view_output_changed);
-        view->connect_signal("geometry-changed", &view_geometry_changed);
-
-        /* Set to free state initially but then look for the correct state */
-        this->state = std::make_unique<wf::wobbly_state_free_t>(model, view);
-        update_wobbly_state(false, {0, 0}, false);
-    }
-
-    uint32_t get_z_order() override
-    {
-        return wf::TRANSFORMER_HIGHLEVEL;
-    }
-
-    wlr_box get_bounding_box(wf::geometry_t, wf::geometry_t) override
-    {
-        auto box = wobbly_boundingbox(model.get());
-
-        wlr_box result;
-        result.x     = box.tlx;
-        result.y     = box.tly;
-        result.width = std::ceil(box.brx - box.tlx);
-        result.height = std::ceil(box.bry - box.tly);
-
-        return result;
-    }
-
-    wf::pointf_t transform_point(
-        wf::geometry_t view, wf::pointf_t point) override
-    {
-        return point;
-    }
-
-    wf::pointf_t untransform_point(
-        wf::geometry_t view, wf::pointf_t point) override
-    {
-        return point;
     }
 
     void update_model()
@@ -707,29 +724,6 @@ class wf_wobbly : public wf::view_transformer_t
         {
             destroy_self();
         }
-    }
-
-    void render_box(wf::texture_t src_tex, wlr_box src_box,
-        wlr_box scissor_box, const wf::render_target_t& target_fb) override
-    {
-        OpenGL::render_begin(target_fb);
-        target_fb.logic_scissor(scissor_box);
-
-        std::vector<float> vert, uv;
-        wobbly_graphics::prepare_geometry(model.get(), src_box, vert, uv);
-        wobbly_graphics::render_triangles(src_tex,
-            target_fb.get_orthographic_projection(),
-            vert.data(), uv.data(),
-            model->x_cells * model->y_cells * 2);
-
-        OpenGL::render_end();
-    }
-
-    bool force_tile = false;
-    void set_force_tile(bool force_tile)
-    {
-        this->force_tile = force_tile;
-        update_wobbly_state(false, {0, 0}, false);
     }
 
     /**
@@ -839,6 +833,7 @@ class wf_wobbly : public wf::view_transformer_t
         this->state->handle_state_update_done();
     }
 
+  public:
     void start_grab(wf::point_t grab)
     {
         update_wobbly_state(true, grab, false);
@@ -870,27 +865,53 @@ class wf_wobbly : public wf::view_transformer_t
         state->update_base_geometry(g);
     }
 
-    void destroy_self()
+    void set_force_tile(bool force_tile)
     {
-        view->pop_transformer("wobbly");
+        this->force_tile = force_tile;
+        update_wobbly_state(false, {0, 0}, false);
     }
-
-    virtual ~wf_wobbly()
-    {
-        state = nullptr;
-        wobbly_fini(model.get());
-
-        if (view->get_output())
-        {
-            view->get_output()->render->rem_effect(&pre_hook);
-        }
-    }
-
-    wf_wobbly(const wf_wobbly &) = delete;
-    wf_wobbly(wf_wobbly &&) = delete;
-    wf_wobbly& operator =(const wf_wobbly&) = delete;
-    wf_wobbly& operator =(wf_wobbly&&) = delete;
 };
+
+class wobbly_render_instance_t :
+    public wf::scene::transformer_render_instance_t<wobbly_transformer_node_t>
+{
+  public:
+    using transformer_render_instance_t::transformer_render_instance_t;
+
+    void transform_damage_region(wf::region_t& damage) override
+    {
+        damage |= self->get_bounding_box();
+    }
+
+    void render(const wf::render_target_t& target_fb,
+        const wf::region_t& damage) override
+    {
+        std::vector<float> vert, uv;
+        auto subbox = self->get_children_bounding_box();
+
+        wobbly_graphics::prepare_geometry(self->model.get(), subbox, vert, uv);
+        auto tex = get_texture(target_fb.scale);
+        OpenGL::render_begin(target_fb);
+        for (auto& box : damage)
+        {
+            target_fb.logic_scissor(wlr_box_from_pixman_box(box));
+            wobbly_graphics::render_triangles(tex,
+                target_fb.get_orthographic_projection(),
+                vert.data(), uv.data(),
+                self->model->x_cells * self->model->y_cells * 2);
+        }
+
+        OpenGL::render_end();
+    }
+};
+
+void wobbly_transformer_node_t::gen_render_instances(
+    std::vector<wf::scene::render_instance_uptr>& instances,
+    wf::scene::damage_callback push_damage, wf::output_t *shown_on)
+{
+    instances.push_back(std::make_unique<wobbly_render_instance_t>(
+        this, push_damage, shown_on));
+}
 
 class wayfire_wobbly : public wf::plugin_interface_t
 {
@@ -919,16 +940,17 @@ class wayfire_wobbly : public wf::plugin_interface_t
             return;
         }
 
+        auto tr_manager = data->view->get_transformed_node();
         if ((data->events & (WOBBLY_EVENT_GRAB | WOBBLY_EVENT_ACTIVATE)) &&
-            (data->view->get_transformer("wobbly") == nullptr))
+            !tr_manager->get_transformer<wobbly_transformer_node_t>())
         {
-            data->view->add_transformer(
-                std::make_unique<wf_wobbly>(data->view),
-                "wobbly");
+            tr_manager->add_transformer(
+                std::make_shared<wobbly_transformer_node_t>(data->view),
+                wf::TRANSFORMER_HIGHLEVEL, "wobbly");
         }
 
-        auto wobbly = dynamic_cast<wf_wobbly*>(
-            data->view->get_transformer("wobbly").get());
+        auto wobbly =
+            tr_manager->get_transformer<wobbly_transformer_node_t>("wobbly");
         if (!wobbly)
         {
             return;
@@ -979,8 +1001,8 @@ class wayfire_wobbly : public wf::plugin_interface_t
     {
         for (auto& view : output->workspace->get_views_in_layer(wf::ALL_LAYERS))
         {
-            auto wobbly =
-                dynamic_cast<wf_wobbly*>(view->get_transformer("wobbly").get());
+            auto wobbly = view->get_transformed_node()
+                ->get_transformer<wobbly_transformer_node_t>();
             if (wobbly)
             {
                 wobbly->destroy_self();

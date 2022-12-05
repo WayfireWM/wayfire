@@ -95,7 +95,7 @@ inline void move_wobbly(wayfire_view view, int grab_x, int grab_y)
  */
 inline void activate_wobbly(wayfire_view view)
 {
-    if (!view->get_transformer("wobbly"))
+    if (!view->get_transformed_node()->get_transformer("wobbly"))
     {
         wobbly_signal sig;
         sig.view   = view;
