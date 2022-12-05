@@ -301,6 +301,34 @@ class view_2d_transformer_t : public scene::floating_inner_node_t
 
     wayfire_view view;
 };
+
+/**
+ * A simple transformer which supports 3D transformations on a view.
+ */
+class view_3d_transformer_t : public scene::floating_inner_node_t
+{
+  protected:
+    wayfire_view view;
+
+  public:
+    glm::mat4 view_proj{1.0}, translation{1.0}, rotation{1.0}, scaling{1.0};
+    glm::vec4 color{1, 1, 1, 1};
+
+    glm::mat4 calculate_total_transform();
+
+  public:
+    view_3d_transformer_t(wayfire_view view);
+    wf::pointf_t to_local(const wf::pointf_t& point) override;
+    wf::pointf_t to_global(const wf::pointf_t& point) override;
+    std::string stringify() const override;
+    wf::geometry_t get_bounding_box() override;
+    void gen_render_instances(std::vector<render_instance_uptr>& instances,
+        damage_callback push_damage, wf::output_t *shown_on) override;
+
+    static const float fov; // PI / 8
+    static glm::mat4 default_view_matrix();
+    static glm::mat4 default_proj_matrix();
+};
 }
 }
 
@@ -419,39 +447,6 @@ enum transformer_z_order_t
     TRANSFORMER_HIGHLEVEL = 500,
     // The highest level of view transforms, used by blur.
     TRANSFORMER_BLUR      = 1000,
-};
-
-/* Those are centered relative to the view's bounding box */
-class view_3D : public view_transformer_t
-{
-  protected:
-    wayfire_view view;
-    const uint32_t z_order;
-
-  public:
-    glm::mat4 view_proj{1.0}, translation{1.0}, rotation{1.0}, scaling{1.0};
-    glm::vec4 color{1, 1, 1, 1};
-
-    glm::mat4 calculate_total_transform();
-
-  public:
-    view_3D(wayfire_view view, uint32_t z_order_ = TRANSFORMER_3D);
-
-    virtual uint32_t get_z_order() override
-    {
-        return z_order;
-    }
-
-    wf::pointf_t transform_point(
-        wf::geometry_t view, wf::pointf_t point) override;
-    wf::pointf_t untransform_point(
-        wf::geometry_t view, wf::pointf_t point) override;
-    void render_box(wf::texture_t src_tex, wlr_box src_box,
-        wlr_box scissor_box, const wf::render_target_t& target_fb) override;
-
-    static const float fov; // PI / 8
-    static glm::mat4 default_view_matrix();
-    static glm::mat4 default_proj_matrix();
 };
 }
 

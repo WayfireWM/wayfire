@@ -142,6 +142,17 @@ wf::geometry_t view_2d_transformer_t::get_bounding_box()
     return get_bbox_for_node(this, get_children_bounding_box());
 }
 
+static void transform_linear_damage(node_t *self, wf::region_t& damage)
+{
+    auto copy = damage;
+    damage.clear();
+    for (auto& box : copy)
+    {
+        damage |=
+            get_bbox_for_node(self, wlr_box_from_pixman_box(box));
+    }
+}
+
 class view_2d_render_instance_t :
     public transformer_render_instance_t<view_2d_transformer_t>
 {
@@ -150,13 +161,7 @@ class view_2d_render_instance_t :
 
     void transform_damage_region(wf::region_t& damage) override
     {
-        auto copy = damage;
-        damage.clear();
-        for (auto& box : copy)
-        {
-            damage |=
-                get_bbox_for_node(self, wlr_box_from_pixman_box(box));
-        }
+        transform_linear_damage(self, damage);
     }
 
     void render(const wf::render_target_t& target,
@@ -203,6 +208,207 @@ void view_2d_transformer_t::gen_render_instances(
         instances.push_back(std::move(uptr));
     }
 }
+
+/* -------------------------------- 3d view --------------------------------- */
+const float view_3d_transformer_t::fov = PI / 4;
+glm::mat4 view_3d_transformer_t::default_view_matrix()
+{
+    return glm::lookAt(
+        glm::vec3(0., 0., 1.0 / std::tan(fov / 2)),
+        glm::vec3(0., 0., 0.),
+        glm::vec3(0., 1., 0.));
+}
+
+glm::mat4 view_3d_transformer_t::default_proj_matrix()
+{
+    return glm::perspective(fov, 1.0f, .1f, 100.f);
+}
+
+view_3d_transformer_t::view_3d_transformer_t(wayfire_view view) :
+    scene::floating_inner_node_t(false)
+{
+    this->view = view;
+    view_proj  = default_proj_matrix() * default_view_matrix();
+}
+
+static wf::pointf_t get_center_relative_coords(wf::geometry_t view,
+    wf::pointf_t point)
+{
+    return {
+        (point.x - view.x) - view.width / 2.0,
+        view.height / 2.0 - (point.y - view.y)
+    };
+}
+
+static wf::pointf_t get_absolute_coords_from_relative(wf::geometry_t view,
+    wf::pointf_t point)
+{
+    return {
+        point.x + view.x + view.width / 2.0,
+        (view.height / 2.0 - point.y) + view.y
+    };
+}
+
+/* TODO: cache total_transform, because it is often unnecessarily recomputed */
+glm::mat4 view_3d_transformer_t::calculate_total_transform()
+{
+    auto og = view->get_output()->get_relative_geometry();
+    glm::mat4 depth_scale =
+        glm::scale(glm::mat4(1.0), {1, 1, 2.0 / std::min(og.width, og.height)});
+
+    return translation * view_proj * depth_scale * rotation * scaling;
+}
+
+wf::pointf_t view_3d_transformer_t::to_local(const wf::pointf_t& point)
+{
+    auto wm_geom = get_children_bounding_box();
+    auto p  = get_center_relative_coords(wm_geom, point);
+    auto tr = calculate_total_transform();
+
+    /* Since we know that our original z coordinates were zero, we can write a
+     * system of linear equations for the original (x,y) coordinates by writing
+     * out the (x,y,w) components of the transformed coordinate.
+     *
+     * This results in the following matrix equation:
+     * A x = b, where A and b are defined below and x is the vector
+     * of untransformed coordinates that we want to compute. */
+    glm::dmat2 A{p.x * tr[0][3] - tr[0][0], p.y * tr[0][3] - tr[0][1],
+        p.x * tr[1][3] - tr[1][0], p.y * tr[1][3] - tr[1][1]};
+
+    if (std::abs(glm::determinant(A)) < 1e-6)
+    {
+        /* This will happen if the transformed view is in rotated in a plane
+         * perpendicular to the screen (i.e. it is displayed as a thin line).
+         * We might want to add special casing for this so that the view can
+         * still be "selected" in this case. */
+        return {wf::compositor_core_t::invalid_coordinate,
+            wf::compositor_core_t::invalid_coordinate};
+    }
+
+    glm::dvec2 b{tr[3][0] - p.x * tr[3][3], tr[3][1] - p.y * tr[3][3]};
+    /* TODO: use a better solution formula instead of explicitly calculating the
+     * inverse to have better numerical stability. For a 2x2 matrix, the
+     * difference will be small though. */
+    glm::dvec2 res = glm::inverse(A) * b;
+
+    return get_absolute_coords_from_relative(wm_geom, {res.x, res.y});
+}
+
+wf::pointf_t view_3d_transformer_t::to_global(const wf::pointf_t& point)
+{
+    auto wm_geom = get_children_bounding_box();
+    auto p = get_center_relative_coords(wm_geom, point);
+    glm::vec4 v(1.0f * p.x, 1.0f * p.y, 0, 1);
+    v = calculate_total_transform() * v;
+
+    if (std::abs(v.w) < 1e-6)
+    {
+        /* This should never happen as long as we use well-behaving matrices.
+         * However if we set transform to the zero matrix we might get
+         * this case where v.w is zero. In this case we assume the view is
+         * just a single point at 0,0 */
+        v.x = v.y = 0;
+    } else
+    {
+        v.x /= v.w;
+        v.y /= v.w;
+    }
+
+    return get_absolute_coords_from_relative(wm_geom, {v.x, v.y});
+}
+
+std::string view_3d_transformer_t::stringify() const
+{
+    return "view-2d for " + view->to_string();
+}
+
+wf::geometry_t view_3d_transformer_t::get_bounding_box()
+{
+    return get_bbox_for_node(this, get_children_bounding_box());
+}
+
+struct transformable_quad
+{
+    gl_geometry geometry;
+    float off_x, off_y;
+};
+
+static transformable_quad center_geometry(wf::geometry_t output_geometry,
+    wf::geometry_t geometry,
+    wf::pointf_t target_center)
+{
+    transformable_quad quad;
+
+    geometry.x -= output_geometry.x;
+    geometry.y -= output_geometry.y;
+
+    target_center.x -= output_geometry.x;
+    target_center.y -= output_geometry.y;
+
+    quad.geometry.x1 = -(target_center.x - geometry.x);
+    quad.geometry.y1 = (target_center.y - geometry.y);
+
+    quad.geometry.x2 = quad.geometry.x1 + geometry.width;
+    quad.geometry.y2 = quad.geometry.y1 - geometry.height;
+
+    quad.off_x = (geometry.x - output_geometry.width / 2.0) - quad.geometry.x1;
+    quad.off_y = (output_geometry.height / 2.0 - geometry.y) - quad.geometry.y1;
+
+    return quad;
+}
+
+class view_3d_render_instance_t :
+    public transformer_render_instance_t<view_3d_transformer_t>
+{
+  public:
+    using transformer_render_instance_t::transformer_render_instance_t;
+
+
+    void transform_damage_region(wf::region_t& damage) override
+    {
+        transform_linear_damage(self, damage);
+    }
+
+    void render(const wf::render_target_t& target,
+        const wf::region_t& damage) override
+    {
+        auto bbox = self->get_children_bounding_box();
+        auto quad = center_geometry(target.geometry, bbox, scene::get_center(bbox));
+
+        auto transform = self->calculate_total_transform();
+        auto translate = glm::translate(glm::mat4(1.0), {quad.off_x, quad.off_y, 0});
+        auto scale     = glm::scale(glm::mat4(1.0), {
+                    2.0 / target.geometry.width,
+                    2.0 / target.geometry.height,
+                    1.0
+                });
+
+        transform = target.transform * scale * translate * transform;
+        auto tex = get_texture(target.scale);
+
+        OpenGL::render_begin(target);
+        for (auto& box : damage)
+        {
+            target.logic_scissor(wlr_box_from_pixman_box(box));
+            OpenGL::render_transformed_texture(tex, quad.geometry, {},
+                transform, self->color);
+        }
+
+        OpenGL::render_end();
+    }
+};
+
+void view_3d_transformer_t::gen_render_instances(
+    std::vector<render_instance_uptr>& instances, damage_callback push_damage,
+    wf::output_t *shown_on)
+{
+    auto uptr =
+        std::make_unique<view_3d_render_instance_t>(this, push_damage, shown_on);
+    if (uptr->has_instances())
+    {
+        instances.push_back(std::move(uptr));
+    }
+}
 } // namespace scene
 }
 
@@ -237,165 +443,4 @@ void wf::view_transformer_t::render_with_damage(wf::texture_t src_tex,
     {
         render_box(src_tex, src_box, wlr_box_from_pixman_box(rect), target_fb);
     }
-}
-
-struct transformable_quad
-{
-    gl_geometry geometry;
-    float off_x, off_y;
-};
-
-static wf::pointf_t get_center_relative_coords(wf::geometry_t view,
-    wf::pointf_t point)
-{
-    return {
-        (point.x - view.x) - view.width / 2.0,
-        view.height / 2.0 - (point.y - view.y)
-    };
-}
-
-static wf::pointf_t get_absolute_coords_from_relative(wf::geometry_t view,
-    wf::pointf_t point)
-{
-    return {
-        point.x + view.x + view.width / 2.0,
-        (view.height / 2.0 - point.y) + view.y
-    };
-}
-
-static transformable_quad center_geometry(wf::geometry_t output_geometry,
-    wf::geometry_t geometry,
-    wf::pointf_t target_center)
-{
-    transformable_quad quad;
-
-    geometry.x -= output_geometry.x;
-    geometry.y -= output_geometry.y;
-
-    target_center.x -= output_geometry.x;
-    target_center.y -= output_geometry.y;
-
-    quad.geometry.x1 = -(target_center.x - geometry.x);
-    quad.geometry.y1 = (target_center.y - geometry.y);
-
-    quad.geometry.x2 = quad.geometry.x1 + geometry.width;
-    quad.geometry.y2 = quad.geometry.y1 - geometry.height;
-
-    quad.off_x = (geometry.x - output_geometry.width / 2.0) - quad.geometry.x1;
-    quad.off_y = (output_geometry.height / 2.0 - geometry.y) - quad.geometry.y1;
-
-    return quad;
-}
-
-const float wf::view_3D::fov = PI / 4;
-glm::mat4 wf::view_3D::default_view_matrix()
-{
-    return glm::lookAt(
-        glm::vec3(0., 0., 1.0 / std::tan(fov / 2)),
-        glm::vec3(0., 0., 0.),
-        glm::vec3(0., 1., 0.));
-}
-
-glm::mat4 wf::view_3D::default_proj_matrix()
-{
-    return glm::perspective(fov, 1.0f, .1f, 100.f);
-}
-
-wf::view_3D::view_3D(wayfire_view view, uint32_t z_order_) : z_order(z_order_)
-{
-    this->view = view;
-    view_proj  = default_proj_matrix() * default_view_matrix();
-}
-
-/* TODO: cache total_transform, because it is often unnecessarily recomputed */
-glm::mat4 wf::view_3D::calculate_total_transform()
-{
-    auto og = view->get_output()->get_relative_geometry();
-    glm::mat4 depth_scale =
-        glm::scale(glm::mat4(1.0), {1, 1, 2.0 / std::min(og.width, og.height)});
-
-    return translation * view_proj * depth_scale * rotation * scaling;
-}
-
-wf::pointf_t wf::view_3D::transform_point(
-    wf::geometry_t geometry, wf::pointf_t point)
-{
-    auto wm_geom = view->transform_region(view->get_wm_geometry(), this);
-    auto p = get_center_relative_coords(wm_geom, point);
-    glm::vec4 v(1.0f * p.x, 1.0f * p.y, 0, 1);
-    v = calculate_total_transform() * v;
-
-    if (std::abs(v.w) < 1e-6)
-    {
-        /* This should never happen as long as we use well-behaving matrices.
-         * However if we set transform to the zero matrix we might get
-         * this case where v.w is zero. In this case we assume the view is
-         * just a single point at 0,0 */
-        v.x = v.y = 0;
-    } else
-    {
-        v.x /= v.w;
-        v.y /= v.w;
-    }
-
-    return get_absolute_coords_from_relative(wm_geom, {v.x, v.y});
-}
-
-wf::pointf_t wf::view_3D::untransform_point(wf::geometry_t geometry,
-    wf::pointf_t point)
-{
-    auto wm_geom = view->transform_region(view->get_wm_geometry(), this);
-    auto p  = get_center_relative_coords(wm_geom, point);
-    auto tr = calculate_total_transform();
-
-    /* Since we know that our original z coordinates were zero, we can write a
-     * system of linear equations for the original (x,y) coordinates by writing
-     * out the (x,y,w) components of the transformed coordinate.
-     *
-     * This results in the following matrix equation:
-     * A x = b, where A and b are defined below and x is the vector
-     * of untransformed coordinates that we want to compute. */
-    glm::dmat2 A{p.x * tr[0][3] - tr[0][0], p.y * tr[0][3] - tr[0][1],
-        p.x * tr[1][3] - tr[1][0], p.y * tr[1][3] - tr[1][1]};
-
-    if (std::abs(glm::determinant(A)) < 1e-6)
-    {
-        /* This will happen if the transformed view is in rotated in a plane
-         * perpendicular to the screen (i.e. it is displayed as a thin line).
-         * We might want to add special casing for this so that the view can
-         * still be "selected" in this case. */
-        return {wf::compositor_core_t::invalid_coordinate,
-            wf::compositor_core_t::invalid_coordinate};
-    }
-
-    glm::dvec2 b{tr[3][0] - p.x * tr[3][3], tr[3][1] - p.y * tr[3][3]};
-    /* TODO: use a better solution formula instead of explicitly calculating the
-     * inverse to have better numerical stability. For a 2x2 matrix, the
-     * difference will be small though. */
-    glm::dvec2 res = glm::inverse(A) * b;
-
-    return get_absolute_coords_from_relative(wm_geom, {res.x, res.y});
-}
-
-void wf::view_3D::render_box(wf::texture_t src_tex, wlr_box src_box,
-    wlr_box scissor_box, const wf::render_target_t& fb)
-{
-    auto wm_geom = view->transform_region(view->get_wm_geometry(), this);
-    auto quad    = center_geometry(fb.geometry, src_box, scene::get_center(wm_geom));
-
-    auto transform = calculate_total_transform();
-    auto translate = glm::translate(glm::mat4(1.0), {quad.off_x, quad.off_y, 0});
-    auto scale     = glm::scale(glm::mat4(1.0), {
-        2.0 / fb.geometry.width,
-        2.0 / fb.geometry.height,
-        1.0
-    });
-
-    transform = fb.transform * scale * translate * transform;
-
-    OpenGL::render_begin(fb);
-    fb.logic_scissor(scissor_box);
-    OpenGL::render_transformed_texture(src_tex, quad.geometry, {},
-        transform, color);
-    OpenGL::render_end();
 }

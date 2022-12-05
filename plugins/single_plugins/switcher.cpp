@@ -7,6 +7,7 @@
 #include <wayfire/view-transform.hpp>
 #include <wayfire/core.hpp>
 #include <wayfire/debug.hpp>
+#include <wayfire/plugins/common/util.hpp>
 
 #include <wayfire/view.hpp>
 #include <wayfire/output.hpp>
@@ -262,8 +263,9 @@ class WayfireSwitcher : public wf::plugin_interface_t
                 wf::scene::set_node_enabled(view->get_root_node(), false);
             }
 
-            view->pop_transformer(switcher_transformer);
-            view->pop_transformer(switcher_transformer_background);
+            view->get_transformed_node()->rem_transformer(switcher_transformer);
+            view->get_transformed_node()->rem_transformer(
+                switcher_transformer_background);
         }
 
         views.clear();
@@ -534,17 +536,14 @@ class WayfireSwitcher : public wf::plugin_interface_t
         {
             if (dim == 1.0)
             {
-                view->pop_transformer(switcher_transformer_background);
+                view->get_transformed_node()->rem_transformer(
+                    switcher_transformer_background);
             } else
             {
-                if (!view->get_transformer(switcher_transformer_background))
-                {
-                    view->add_transformer(std::make_unique<wf::view_3D>(view),
-                        switcher_transformer_background);
-                }
-
-                auto tr = dynamic_cast<wf::view_3D*>(
-                    view->get_transformer(switcher_transformer_background).get());
+                auto tr =
+                    wf::ensure_named_transformer<wf::scene::view_3d_transformer_t>(
+                        view, wf::TRANSFORMER_3D, switcher_transformer_background,
+                        view);
                 tr->color[0] = tr->color[1] = tr->color[2] = dim;
             }
         }
@@ -557,7 +556,7 @@ class WayfireSwitcher : public wf::plugin_interface_t
          * Note that a view might be visible on more than 1 place, so damage
          * tracking doesn't work reliably. To circumvent this, we simply damage
          * the whole output */
-        if (!view->get_transformer(switcher_transformer))
+        if (!view->get_transformed_node()->get_transformer(switcher_transformer))
         {
             if (view->minimized)
             {
@@ -566,8 +565,9 @@ class WayfireSwitcher : public wf::plugin_interface_t
                     "switcher-minimized-showed");
             }
 
-            view->add_transformer(std::make_unique<wf::view_3D>(view),
-                switcher_transformer);
+            view->get_transformed_node()->add_transformer(
+                std::make_shared<wf::scene::view_3d_transformer_t>(view),
+                wf::TRANSFORMER_3D, switcher_transformer);
         }
 
         SwitcherView sw{duration};
@@ -593,8 +593,8 @@ class WayfireSwitcher : public wf::plugin_interface_t
 
     void render_view(const SwitcherView& sv, const wf::render_target_t& buffer)
     {
-        auto transform = dynamic_cast<wf::view_3D*>(
-            sv.view->get_transformer(switcher_transformer).get());
+        auto transform = sv.view->get_transformed_node()
+            ->get_transformer<wf::scene::view_3d_transformer_t>(switcher_transformer);
         assert(transform);
 
         transform->translation = glm::translate(glm::mat4(1.0),

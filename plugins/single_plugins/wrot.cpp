@@ -47,8 +47,8 @@ class wf_wrot : public wf::plugin_interface_t
     {
         for (auto v : output->workspace->get_views_in_layer(wf::LAYER_WORKSPACE))
         {
-            v->pop_transformer(transformer_3d);
             v->get_transformed_node()->rem_transformer(transformer_2d);
+            v->get_transformed_node()->rem_transformer(transformer_3d);
         }
     }
 
@@ -92,8 +92,8 @@ class wf_wrot : public wf::plugin_interface_t
         auto view = output->get_active_view();
         if (view)
         {
-            view->pop_transformer(transformer_3d);
-            view->pop_transformer(transformer_2d);
+            view->get_transformed_node()->rem_transformer(transformer_2d);
+            view->get_transformed_node()->rem_transformer(transformer_3d);
         }
 
         return true;
@@ -145,15 +145,8 @@ class wf_wrot : public wf::plugin_interface_t
             return;
         }
 
-        if (!current_view->get_transformer(transformer_3d))
-        {
-            current_view->add_transformer(std::make_unique<wf::view_3D>(
-                current_view), transformer_3d);
-        }
-
-        auto tr = dynamic_cast<wf::view_3D*>(current_view->get_transformer(
-            transformer_3d).get());
-        assert(tr);
+        auto tr = wf::ensure_named_transformer<wf::scene::view_3d_transformer_t>(
+            current_view, wf::TRANSFORMER_3D, transformer_3d, current_view);
 
         current_view->damage();
         float dx     = x - last_position.x;
@@ -246,8 +239,8 @@ class wf_wrot : public wf::plugin_interface_t
         current_view_unmapped.disconnect();
         if ((current_mode == mode::ROT_3D) && current_view)
         {
-            auto tr = dynamic_cast<wf::view_3D*>(current_view->get_transformer(
-                transformer_3d).get());
+            auto tr = current_view->get_transformed_node()
+                ->get_transformer<wf::scene::view_3d_transformer_t>(transformer_3d);
             if (tr)
             {
                 /* check if the view was rotated to perpendicular to the screen
