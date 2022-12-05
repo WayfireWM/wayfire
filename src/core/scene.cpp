@@ -272,7 +272,7 @@ void node_t::gen_render_instances(std::vector<render_instance_uptr> & instances,
     }
 }
 
-wf::geometry_t node_t::get_bounding_box()
+wf::geometry_t node_t::get_children_bounding_box()
 {
     if (children.empty())
     {
@@ -295,6 +295,11 @@ wf::geometry_t node_t::get_bounding_box()
     }
 
     return {min_x, min_y, max_x - min_x, max_y - min_y};
+}
+
+wf::geometry_t node_t::get_bounding_box()
+{
+    return get_children_bounding_box();
 }
 
 // ------------------------------ output_node_t --------------------------------

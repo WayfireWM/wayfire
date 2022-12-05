@@ -139,8 +139,7 @@ static wf::geometry_t get_bbox_for_node(node_t *node, wf::geometry_t bbox)
 
 wf::geometry_t view_2d_transformer_t::get_bounding_box()
 {
-    auto bbox = floating_inner_node_t::get_bounding_box();
-    return get_bbox_for_node(this, bbox);
+    return get_bbox_for_node(this, get_children_bounding_box());
 }
 
 class view_2d_render_instance_t :
@@ -164,7 +163,7 @@ class view_2d_render_instance_t :
         const wf::region_t& region) override
     {
         // Untransformed bounding box
-        auto bbox = self->floating_inner_node_t::get_bounding_box();
+        auto bbox = self->get_children_bounding_box();
         auto tex  = this->get_texture(target.scale);
 
         auto midpoint  = get_center(self->view->get_wm_geometry());

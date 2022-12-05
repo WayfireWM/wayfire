@@ -97,7 +97,7 @@ class transformer_render_instance_t : public render_instance_t
             }
         }
 
-        auto bbox = self->floating_inner_node_t::get_bounding_box();
+        auto bbox = self->get_children_bounding_box();
         int target_width  = scale * bbox.width;
         int target_height = scale * bbox.height;
 
@@ -148,7 +148,7 @@ class transformer_render_instance_t : public render_instance_t
             push_damage(region);
         };
 
-        this->cached_damage |= self->floating_inner_node_t::get_bounding_box();
+        this->cached_damage |= self->get_children_bounding_box();
         for (auto& ch : self->get_children())
         {
             ch->gen_render_instances(children, push_damage_child, shown_on);

@@ -121,8 +121,7 @@ void surface_root_node_t::gen_render_instances(
 
 wf::geometry_t surface_root_node_t::get_bounding_box()
 {
-    auto bbox = floating_inner_node_t::get_bounding_box();
-    return bbox + si->get_offset();
+    return get_children_bounding_box() + si->get_offset();
 }
 }
 }

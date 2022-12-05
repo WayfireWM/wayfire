@@ -228,10 +228,24 @@ class node_t : public std::enable_shared_from_this<node_t>,
      * The bounding box is a rectangular region in which the node and its
      * children are fully contained.
      *
-     * The default implementation simply computes the bounding box of its
-     * children.
+     * The default implementation ignores the node itself and simply returns
+     * the same result as @get_children_bounding_box. Nodes may override this
+     * function if they want to apply a transform to their children, or if the
+     * nodes themselves have visible elements that should be included in the
+     * bounding box.
      */
     virtual wf::geometry_t get_bounding_box();
+
+    /**
+     * Get the bounding box of the node's children, in the coordinate system of
+     * the node.
+     *
+     * In contrast to @get_bounding_box, this does not include the node itself,
+     * and does not apply any transformations which may be implemented by the
+     * node. It is simply the bounding box of the bounding boxes of the children
+     * as reported by their get_bounding_box() method.
+     */
+    wf::geometry_t get_children_bounding_box();
 
     /**
      * Structure nodes are special nodes which core usually creates when Wayfire
