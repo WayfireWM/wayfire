@@ -3,6 +3,7 @@
 
 #include "wayfire/debug.hpp"
 #include "wayfire/geometry.hpp"
+#include "wayfire/region.hpp"
 #include "wayfire/scene-render.hpp"
 #include "wayfire/scene.hpp"
 #include <memory>
@@ -251,6 +252,11 @@ class transform_manager_node_t : public wf::scene::floating_inner_node_t
         }
 
         return nullptr;
+    }
+
+    std::string stringify() const override
+    {
+        return "view-transform-root";
     }
 
   private:
