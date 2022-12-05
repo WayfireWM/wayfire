@@ -893,7 +893,13 @@ void wf::view_interface_t::pop_transformer(std::string name)
 
 bool wf::view_interface_t::has_transformer()
 {
-    return view_impl->transforms.size();
+    if (view_impl->transforms.size())
+    {
+        return true;
+    }
+
+    auto ch = get_transformed_node()->get_children();
+    return !ch.empty() && ch.front() != get_surface_root_node();
 }
 
 wf::geometry_t wf::view_interface_t::get_untransformed_bounding_box()
