@@ -39,15 +39,18 @@ void Particle::update(float time)
     }
 }
 
-ParticleSystem::ParticleSystem(int particles, ParticleIniter init_func)
+ParticleSystem::ParticleSystem(int particles)
 {
-    this->pinit_func = init_func;
-
     resize(particles);
     last_update_msec = wf::get_current_time();
     create_program();
 
     particles_alive.store(0);
+}
+
+void ParticleSystem::set_initer(ParticleIniter init)
+{
+    this->pinit_func = init;
 }
 
 ParticleSystem::~ParticleSystem()

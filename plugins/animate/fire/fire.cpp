@@ -1,6 +1,13 @@
 #include "fire.hpp"
 #include "particle.hpp"
+#include "wayfire/debug.hpp"
+#include "wayfire/geometry.hpp"
+#include "wayfire/opengl.hpp"
+#include "wayfire/scene-render.hpp"
+#include "wayfire/scene.hpp"
+#include "wayfire/view-transform.hpp"
 
+#include <memory>
 #include <thread>
 #include <wayfire/output.hpp>
 #include <wayfire/core.hpp>
@@ -26,71 +33,22 @@ static int particle_count_for_width(int width)
     return particles * std::min(width / 400.0, 3.5);
 }
 
-class FireTransformer : public wf::view_transformer_t
+class fire_node_t : public wf::scene::floating_inner_node_t
 {
-    wf::geometry_t last_boundingbox;
-
   public:
-    ParticleSystem ps;
-
-    FireTransformer(wayfire_view view) :
-        ps(fire_particles,
-            [=] (Particle& p) {init_particle(p); })
+    std::unique_ptr<ParticleSystem> ps;
+    fire_node_t() : floating_inner_node_t(false)
     {
-        last_boundingbox = view->get_bounding_box();
-        ps.resize(particle_count_for_width(last_boundingbox.width));
+        ps = std::make_unique<ParticleSystem>(1);
+        ps->set_initer(
+            [=] (Particle& p)
+        {
+            init_particle_with_node(p, get_children_bounding_box(), progress_line);
+        });
     }
 
-    ~FireTransformer()
-    {}
-
-    FireTransformer(const FireTransformer &) = delete;
-    FireTransformer(FireTransformer &&) = delete;
-    FireTransformer& operator =(const FireTransformer&) = delete;
-    FireTransformer& operator =(FireTransformer&&) = delete;
-
-    wf::pointf_t transform_point(wf::geometry_t view, wf::pointf_t point) override
-    {
-        return point;
-    }
-
-    wf::pointf_t untransform_point(wf::geometry_t view, wf::pointf_t point) override
-    {
-        return point;
-    }
-
-    static constexpr int left_border   = 50;
-    static constexpr int right_border  = 50;
-    static constexpr int top_border    = 100;
-    static constexpr int bottom_border = 50;
-
-    uint32_t get_z_order() override
-    {
-        return wf::TRANSFORMER_HIGHLEVEL + 1;
-    }
-
-    wlr_box get_bounding_box(wf::geometry_t view, wlr_box region) override
-    {
-        last_boundingbox = view;
-        ps.resize(particle_count_for_width(last_boundingbox.width));
-
-        // TODO
-        //
-        view.x     -= left_border;
-        view.y     -= top_border;
-        view.width += left_border + right_border;
-        view.height += top_border + bottom_border;
-
-        return view;
-    }
-
-    float progress_line;
-    void set_progress_line(float line)
-    {
-        progress_line = line;
-    }
-
-    void init_particle(Particle& p)
+    static void init_particle_with_node(Particle& p,
+        wf::geometry_t bounding_box, double progress)
     {
         p.life = 1;
         p.fade = random(0.1, 0.6);
@@ -130,44 +88,135 @@ class FireTransformer : public wf::view_transformer_t
 
         p.color = {r, g, b, 1};
 
-        p.pos = {random(0, last_boundingbox.width),
-            random(last_boundingbox.height * progress_line - 10,
-                last_boundingbox.height * progress_line + 10)};
+        const double cur_pos = bounding_box.height * progress;
+        p.pos = {random(0, bounding_box.width), random(cur_pos - 10, cur_pos + 10)};
         p.start_pos = p.pos;
-
-        p.speed = {random(-10, 10), random(-25, 5)};
-        p.g     = {-1, -3};
+        p.speed     = {random(-10, 10), random(-25, 5)};
+        p.g = {-1, -3};
 
         double size = fire_particle_size;
         p.base_radius = p.radius = random(size * 0.8, size * 1.2);
     }
 
-    void render_box(wf::texture_t src_tex, wlr_box src_box,
-        wlr_box scissor_box, const wf::render_target_t& target_fb) override
+    std::string stringify() const override
     {
-        OpenGL::render_begin(target_fb);
-        target_fb.logic_scissor(scissor_box);
+        return "fire";
+    }
 
-        // render view
-        float x = src_box.x, y = src_box.y, w = src_box.width, h = src_box.height;
-        gl_geometry src_geometry = {x, y, x + w, y + h * progress_line};
+    void gen_render_instances(
+        std::vector<wf::scene::render_instance_uptr>& instances,
+        wf::scene::damage_callback push_damage,
+        wf::output_t *output = nullptr) override;
 
-        gl_geometry tex_geometry = {
-            0, 1 - progress_line,
-            1, 1,
-        };
+    wf::geometry_t get_bounding_box() override
+    {
+        static constexpr int left_border   = 200;
+        static constexpr int right_border  = 200;
+        static constexpr int top_border    = 200;
+        static constexpr int bottom_border = 200;
 
-        OpenGL::render_transformed_texture(src_tex, src_geometry, tex_geometry,
-            target_fb.get_orthographic_projection(), glm::vec4(1.0),
-            OpenGL::TEXTURE_USE_TEX_GEOMETRY);
+        auto view = get_children_bounding_box();
+        view.x     -= left_border;
+        view.y     -= top_border;
+        view.width += left_border + right_border;
+        view.height += top_border + bottom_border;
+        return view;
+    }
 
-        auto translate =
-            glm::translate(glm::mat4(1.0), {src_box.x, src_box.y, 0});
-
-        ps.render(target_fb.get_orthographic_projection() * translate);
-        OpenGL::render_end();
+    float progress_line;
+    void set_progress_line(float line)
+    {
+        progress_line = line;
     }
 };
+
+class fire_render_instance_t : public wf::scene::render_instance_t
+{
+    fire_node_t *self;
+
+  public:
+    fire_render_instance_t(fire_node_t *self,
+        wf::scene::damage_callback push_damage,
+        wf::output_t *output)
+    {
+        this->self = self;
+
+        auto child_damage = [=] (const wf::region_t& damage)
+        {
+            push_damage(damage | self->get_bounding_box());
+        };
+
+        for (auto& ch : self->get_children())
+        {
+            ch->gen_render_instances(children, child_damage, output);
+        }
+    }
+
+    void schedule_instructions(
+        std::vector<wf::scene::render_instruction_t>& instructions,
+        const wf::render_target_t& target, wf::region_t& damage) override
+    {
+        if (children.empty())
+        {
+            return;
+        }
+
+        // Step 2: we render ourselves
+        auto bbox = self->get_bounding_box();
+        instructions.push_back(wf::scene::render_instruction_t{
+            .instance = this,
+            .target   = target,
+            .damage   = damage & bbox,
+        });
+
+        // Step 1: render the view below normally, however, make sure it doesn't
+        // render above the progress line
+        bbox = self->get_children_bounding_box();
+        bbox.height *= self->progress_line;
+        auto child_damage = damage & bbox;
+        for (auto& ch : children)
+        {
+            ch->schedule_instructions(instructions, target, child_damage);
+        }
+    }
+
+    void render(const wf::render_target_t& target_fb,
+        const wf::region_t& region) override
+    {
+        OpenGL::render_begin(target_fb);
+        auto bbox = self->get_children_bounding_box();
+        auto translate =
+            glm::translate(glm::mat4(1.0), {bbox.x, bbox.y, 0});
+
+        for (auto& box : region)
+        {
+            target_fb.logic_scissor(wlr_box_from_pixman_box(box));
+            self->ps->render(target_fb.get_orthographic_projection() * translate);
+        }
+
+        OpenGL::render_end();
+    }
+
+    void presentation_feedback(wf::output_t *output) override
+    {
+        for (auto& ch : children)
+        {
+            ch->presentation_feedback(output);
+        }
+    }
+
+  private:
+    std::vector<wf::scene::render_instance_uptr> children;
+};
+
+void fire_node_t::gen_render_instances(
+    std::vector<wf::scene::render_instance_uptr>& instances,
+    wf::scene::damage_callback push_damage,
+    wf::output_t *output)
+{
+    instances.push_back(std::make_unique<fire_render_instance_t>(
+        this, push_damage, output));
+}
 
 static float fire_duration_mod_for_height(int height)
 {
@@ -178,8 +227,8 @@ void FireAnimation::init(wayfire_view view, int dur, wf_animation_type type)
 {
     this->view = view;
 
-    int msec = dur * fire_duration_mod_for_height(
-        view->get_bounding_box().height);
+    auto bbox = view->get_transformed_node()->get_bounding_box();
+    int msec  = dur * fire_duration_mod_for_height(bbox.height);
     this->progression = wf::animation::simple_animation_t(wf::create_option<int>(
         msec), wf::animation::smoothing::linear);
     this->progression.animate(0, 1);
@@ -190,23 +239,27 @@ void FireAnimation::init(wayfire_view view, int dur, wf_animation_type type)
     }
 
     name = "animation-fire-" + std::to_string(type);
-    auto tr = std::make_unique<FireTransformer>(view);
-    transformer = decltype(transformer)(tr.get());
 
-    view->add_transformer(std::move(tr), name);
+    auto tr = std::make_shared<fire_node_t>();
+    view->get_transformed_node()->add_transformer(
+        tr, wf::TRANSFORMER_HIGHLEVEL + 1, name);
 }
 
 bool FireAnimation::step()
 {
+    auto transformer = view->get_transformed_node()
+        ->get_transformer<fire_node_t>(name);
+
     transformer->set_progress_line(this->progression);
     if (this->progression.running())
     {
-        transformer->ps.spawn(transformer->ps.size() / 10);
+        transformer->ps->spawn(transformer->ps->size() / 10);
     }
 
-    transformer->ps.update();
-
-    return this->progression.running() || transformer->ps.statistic();
+    transformer->ps->update();
+    transformer->ps->resize(particle_count_for_width(
+        transformer->get_children_bounding_box().width));
+    return this->progression.running() || transformer->ps->statistic();
 }
 
 void FireAnimation::reverse()
@@ -216,5 +269,5 @@ void FireAnimation::reverse()
 
 FireAnimation::~FireAnimation()
 {
-    view->pop_transformer(name);
+    view->get_transformed_node()->rem_transformer(name);
 }

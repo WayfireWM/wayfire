@@ -32,9 +32,9 @@ class ParticleSystem
   public:
     /* the user of this class has to set up a proper GL context
      * before creating the ParticleSystem */
-    ParticleSystem(int num_part,
-        ParticleIniter part_init_func);
+    ParticleSystem(int num_part);
     ~ParticleSystem();
+    void set_initer(ParticleIniter init);
 
     ParticleSystem(const ParticleSystem &) = delete;
     ParticleSystem(ParticleSystem &&) = delete;
@@ -66,7 +66,7 @@ class ParticleSystem
   private:
     ParticleSystem() = delete;
 
-    ParticleIniter pinit_func;
+    ParticleIniter pinit_func = [] (auto) {};
     uint32_t last_update_msec;
 
     std::atomic<int> particles_alive;

@@ -8,11 +8,12 @@
 #include "../animate.hpp"
 
 class FireTransformer;
+struct ParticleSystem;
+
 class FireAnimation : public animation_base
 {
     std::string name; // the name of the transformer in the view's table
     wayfire_view view;
-    nonstd::observer_ptr<FireTransformer> transformer;
     wf::animation::simple_animation_t progression;
 
   public:
