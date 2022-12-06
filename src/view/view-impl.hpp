@@ -18,21 +18,6 @@
 struct wlr_seat;
 namespace wf
 {
-struct view_transform_block_t
-{
-    std::string plugin_name = "";
-    std::unique_ptr<wf::view_transformer_t> transform;
-    wf::render_target_t fb;
-
-    view_transform_block_t();
-    ~view_transform_block_t();
-
-    view_transform_block_t(const view_transform_block_t &) = delete;
-    view_transform_block_t(view_transform_block_t &&) = delete;
-    view_transform_block_t& operator =(const view_transform_block_t&) = delete;
-    view_transform_block_t& operator =(view_transform_block_t&&) = delete;
-};
-
 /** Private data used by the default view_interface_t implementation */
 class view_interface_t::view_priv_impl
 {
@@ -67,8 +52,6 @@ class view_interface_t::view_priv_impl
     int in_continuous_move   = 0;
     int in_continuous_resize = 0;
     int visibility_counter   = 1;
-
-    wf::safe_list_t<std::shared_ptr<view_transform_block_t>> transforms;
 
     struct offscreen_buffer_t : public wf::render_target_t
     {

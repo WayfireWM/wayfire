@@ -3,6 +3,7 @@
 #include "wayfire/debug.hpp"
 #include "wayfire/geometry.hpp"
 #include "wayfire/output.hpp"
+#include "wayfire/plugins/common/util.hpp"
 #include "wayfire/render-manager.hpp"
 #include "wayfire/scene-operations.hpp"
 #include "wayfire/view-transform.hpp"
@@ -132,7 +133,7 @@ class title_overlay_node_t : public node_t
                 continue;
             }
 
-            auto bbox = v->transform_region(v->get_wm_geometry(), "scale");
+            auto bbox = wf::view_bounding_box_up_to(v, "scale");
             max_size.width  = std::max(max_size.width, bbox.width);
             max_size.height = std::max(max_size.height, bbox.height);
         }

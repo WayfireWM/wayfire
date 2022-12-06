@@ -15,6 +15,7 @@
 #include "wayfire/view.hpp"
 #include "wayfire/workspace-manager.hpp"
 #include "wlr-layer-shell-unstable-v1-protocol.h"
+#include "view-impl.hpp"
 
 wf::scene::view_node_t::view_node_t(wayfire_view _view) :
     floating_inner_node_t(false), view(_view)
@@ -39,16 +40,12 @@ wf::keyboard_interaction_t& wf::scene::view_node_t::keyboard_interaction()
 
 wf::pointf_t wf::scene::view_node_t::to_local(const wf::pointf_t& point)
 {
-    auto local = view->global_to_local_point(point, nullptr);
-    return local;
+    return point - wf::pointf_t(wf::origin(view->get_output_geometry()));
 }
 
 wf::pointf_t wf::scene::view_node_t::to_global(const wf::pointf_t& point)
 {
-    auto local = point;
-    local.x += view->get_output_geometry().x;
-    local.y += view->get_output_geometry().y;
-    return view->transform_point(local);
+    return point + wf::pointf_t(wf::origin(view->get_output_geometry()));
 }
 
 std::optional<wf::scene::input_node_t> wf::scene::view_node_t::find_node_at(
@@ -136,7 +133,7 @@ wf::keyboard_focus_node_t wf::scene::view_node_t::keyboard_refocus(
     //
     // These views request a LOW focus_importance.
     auto output_box = output->get_layout_geometry();
-    auto view_box   = view->transform_region(view->get_wm_geometry()) +
+    auto view_box   = view->get_wm_geometry() +
         wf::origin(view->get_output()->get_layout_geometry());
 
     auto intersection = wf::geometry_intersection(output_box, view_box);
@@ -175,12 +172,6 @@ class view_render_instance_t : public render_instance_t
         auto push_damage_child = [=] (wf::region_t child_damage)
         {
             child_damage += wf::origin(view->get_output_geometry());
-            if (view->has_transformer())
-            {
-                child_damage = view->transform_region(
-                    wlr_box_from_pixman_box(child_damage.get_extents()));
-            }
-
             push_damage(child_damage);
         };
 
@@ -219,18 +210,17 @@ class view_render_instance_t : public render_instance_t
 
         damage += -offset;
 
-        wf::region_t our_damage = damage & view->get_bounding_box();
+        auto bbox = view->get_surface_root_node()->get_bounding_box();
+        wf::region_t our_damage = damage & bbox;
         if (!our_damage.empty())
         {
-            if (view->has_transformer())
+            if (!view->is_mapped())
             {
                 instructions.push_back(render_instruction_t{
                             .instance = this,
                             .target   = our_target,
                             .damage   = std::move(our_damage),
                         });
-
-                damage ^= view->get_transformed_opaque_region();
             } else
             {
                 auto surface_offset = wf::origin(view->get_output_geometry());
@@ -251,7 +241,17 @@ class view_render_instance_t : public render_instance_t
     void render(const wf::render_target_t& target,
         const wf::region_t& region) override
     {
-        view->render_transformed(target, region);
+        OpenGL::render_begin(target);
+        for (auto& box : region)
+        {
+            target.logic_scissor(wlr_box_from_pixman_box(box));
+            OpenGL::render_transformed_texture(
+                view->view_impl->offscreen_buffer.tex,
+                view->view_impl->offscreen_buffer.geometry,
+                target.get_orthographic_projection());
+        }
+
+        OpenGL::render_end();
     }
 
     void presentation_feedback(wf::output_t *output) override
@@ -361,5 +361,10 @@ std::optional<wf::texture_t> view_node_t::to_texture() const
 
 wf::geometry_t wf::scene::view_node_t::get_bounding_box()
 {
-    return view->get_bounding_box();
+    if (!view->is_mapped())
+    {
+        return view->view_impl->offscreen_buffer.geometry;
+    }
+
+    return get_children_bounding_box() + wf::origin(view->get_output_geometry());
 }

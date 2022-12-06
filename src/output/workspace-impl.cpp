@@ -345,7 +345,7 @@ class output_viewport_manager_t
     {
         auto og = output->get_screen_size();
 
-        auto wm = view->transform_region(view->get_wm_geometry());
+        auto wm = view->get_wm_geometry();
         wf::point_t workspace = {
             current_vx + (int)std::floor((wm.x + wm.width / 2.0) / og.width),
             current_vy + (int)std::floor((wm.y + wm.height / 2.0) / og.height)
@@ -369,13 +369,7 @@ class output_viewport_manager_t
             g.y += (vp.y - current_vy) * g.height;
         }
 
-        if (view->has_transformer())
-        {
-            return view->intersects_region(g);
-        } else
-        {
-            return g & view->get_wm_geometry();
-        }
+        return g & view->get_wm_geometry();
     }
 
     /**

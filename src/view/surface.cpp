@@ -179,7 +179,7 @@ bool wf::surface_interface_t::accepts_input(int32_t sx, int32_t sy)
 
 wf::region_t wf::surface_interface_t::get_opaque_region(wf::point_t origin)
 {
-    if (!priv->wsurface)
+    if (!priv->wsurface || is_mapped())
     {
         return {};
     }

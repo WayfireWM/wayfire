@@ -110,7 +110,14 @@ void wayfire_xdg_popup::update_position()
     popup_offset.x += parent_geometry.x - get_window_offset().x;
     popup_offset.y += parent_geometry.y - get_window_offset().y;
 
-    popup_offset = popup_parent->transform_point(popup_offset);
+    // Apply transformers to the popup position
+    auto node = popup_parent->get_surface_root_node()->parent();
+    while (node != popup_parent->get_transformed_node().get())
+    {
+        popup_offset = node->to_global(popup_offset);
+        node = node->parent();
+    }
+
     this->move(popup_offset.x, popup_offset.y);
 }
 

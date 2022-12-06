@@ -285,101 +285,7 @@ wf::geometry_t wf::view_interface_t::get_wm_geometry()
 
 wlr_box wf::view_interface_t::get_bounding_box()
 {
-    return transform_region(get_untransformed_bounding_box());
-}
-
-#define INVALID_COORDS(p) (std::isnan(p.x) || std::isnan(p.y))
-
-wf::pointf_t wf::view_interface_t::global_to_local_point(const wf::pointf_t& arg,
-    wf::surface_interface_t *surface)
-{
-    if (!is_mapped())
-    {
-        return arg;
-    }
-
-    /* First, untransform the coordinates to make them relative to the view's
-     * internal coordinate system */
-    wf::pointf_t result = arg;
-    if (view_impl->transforms.size())
-    {
-        std::vector<wf::geometry_t> bb;
-        bb.reserve(view_impl->transforms.size());
-        auto box = get_untransformed_bounding_box();
-        bb.push_back(box);
-        view_impl->transforms.for_each([&] (auto& tr)
-        {
-            if (tr == view_impl->transforms.back())
-            {
-                return;
-            }
-
-            auto& transform = tr->transform;
-            box = transform->get_bounding_box(box, box);
-            bb.push_back(box);
-        });
-
-        view_impl->transforms.for_each_reverse([&] (auto& tr)
-        {
-            if (INVALID_COORDS(result))
-            {
-                return;
-            }
-
-            auto& transform = tr->transform;
-            box = bb.back();
-            bb.pop_back();
-            result = transform->untransform_point(box, result);
-        });
-
-        if (INVALID_COORDS(result))
-        {
-            return result;
-        }
-    }
-
-    /* Make cooordinates relative to the view */
-    auto og = get_output_geometry();
-    result.x -= og.x;
-    result.y -= og.y;
-
-    /* Go up from the surface, finding offsets */
-    while (surface && surface != this)
-    {
-        auto offset = surface->get_offset();
-        result.x -= offset.x;
-        result.y -= offset.y;
-
-        surface = surface->priv->parent_surface;
-    }
-
-    return result;
-}
-
-wf::surface_interface_t*wf::view_interface_t::map_input_coordinates(
-    wf::pointf_t cursor, wf::pointf_t& local)
-{
-    if (!is_mapped())
-    {
-        return nullptr;
-    }
-
-    auto view_relative_coordinates =
-        global_to_local_point(cursor, nullptr);
-
-    for (auto& child : enumerate_surfaces({0, 0}))
-    {
-        local.x = view_relative_coordinates.x - child.position.x;
-        local.y = view_relative_coordinates.y - child.position.y;
-
-        if (child.surface->accepts_input(
-            std::floor(local.x), std::floor(local.y)))
-        {
-            return child.surface;
-        }
-    }
-
-    return nullptr;
+    return get_transformed_node()->get_bounding_box();
 }
 
 bool wf::view_interface_t::is_focusable() const
@@ -734,7 +640,7 @@ void wf::view_interface_t::damage()
 {
     auto bbox = get_untransformed_bounding_box();
     view_impl->offscreen_buffer.cached_damage |= bbox;
-    view_damage_raw(self(), transform_region(bbox));
+    view_damage_raw(self(), bbox);
 }
 
 wlr_box wf::view_interface_t::get_minimize_hint()
@@ -825,79 +731,8 @@ void wf::view_interface_t::set_decoration(
     emit_signal("decoration-changed", nullptr);
 }
 
-void wf::view_interface_t::add_transformer(
-    std::unique_ptr<wf::view_transformer_t> transformer)
-{
-    add_transformer(std::move(transformer), "");
-}
-
-void wf::view_interface_t::add_transformer(
-    std::unique_ptr<wf::view_transformer_t> transformer, std::string name)
-{
-    damage();
-
-    auto tr = std::make_shared<wf::view_transform_block_t>();
-    tr->transform   = std::move(transformer);
-    tr->plugin_name = name;
-
-    view_impl->transforms.emplace_at(std::move(tr), [&] (auto& other)
-    {
-        if (other->transform->get_z_order() >= tr->transform->get_z_order())
-        {
-            return view_impl->transforms.INSERT_BEFORE;
-        }
-
-        return view_impl->transforms.INSERT_NONE;
-    });
-
-    damage();
-}
-
-nonstd::observer_ptr<wf::view_transformer_t> wf::view_interface_t::get_transformer(
-    std::string name)
-{
-    nonstd::observer_ptr<wf::view_transformer_t> result{nullptr};
-    view_impl->transforms.for_each([&] (auto& tr)
-    {
-        if (tr->plugin_name == name)
-        {
-            result = nonstd::make_observer(tr->transform.get());
-        }
-    });
-
-    return result;
-}
-
-void wf::view_interface_t::pop_transformer(
-    nonstd::observer_ptr<wf::view_transformer_t> transformer)
-{
-    view_impl->transforms.remove_if([&] (auto& tr)
-    {
-        return tr->transform.get() == transformer.get();
-    });
-
-    /* Since we can remove transformers while rendering the output, damaging it
-     * won't help at this stage (damage is already calculated).
-     *
-     * Instead, we directly damage the whole output for the next frame */
-    if (get_output())
-    {
-        get_output()->render->damage_whole_idle();
-    }
-}
-
-void wf::view_interface_t::pop_transformer(std::string name)
-{
-    pop_transformer(get_transformer(name));
-}
-
 bool wf::view_interface_t::has_transformer()
 {
-    if (view_impl->transforms.size())
-    {
-        return true;
-    }
-
     auto ch = get_transformed_node()->get_children();
     return !ch.empty() && ch.front() != get_surface_root_node();
 }
@@ -922,66 +757,6 @@ wf::geometry_t wf::view_interface_t::get_untransformed_bounding_box()
     return wlr_box_from_pixman_box(bounding_region.get_extents());
 }
 
-wlr_box wf::view_interface_t::get_bounding_box(std::string transformer)
-{
-    return get_bounding_box(get_transformer(transformer));
-}
-
-wlr_box wf::view_interface_t::get_bounding_box(
-    nonstd::observer_ptr<wf::view_transformer_t> transformer)
-{
-    return transform_region(get_untransformed_bounding_box(), transformer);
-}
-
-wlr_box wf::view_interface_t::transform_region(const wlr_box& region,
-    nonstd::observer_ptr<wf::view_transformer_t> upto)
-{
-    auto box  = region;
-    auto view = get_untransformed_bounding_box();
-
-    bool computed_region = false;
-    view_impl->transforms.for_each([&] (auto& tr)
-    {
-        if (computed_region || (tr->transform.get() == upto.get()))
-        {
-            computed_region = true;
-
-            return;
-        }
-
-        box  = tr->transform->get_bounding_box(view, box);
-        view = tr->transform->get_bounding_box(view, view);
-    });
-
-    return box;
-}
-
-wlr_box wf::view_interface_t::transform_region(const wlr_box& region,
-    std::string transformer)
-{
-    return transform_region(region, get_transformer(transformer));
-}
-
-wlr_box wf::view_interface_t::transform_region(const wlr_box& region)
-{
-    return transform_region(region,
-        nonstd::observer_ptr<wf::view_transformer_t>(nullptr));
-}
-
-wf::pointf_t wf::view_interface_t::transform_point(const wf::pointf_t& point)
-{
-    auto result = point;
-    auto view   = get_untransformed_bounding_box();
-
-    view_impl->transforms.for_each([&] (auto& tr)
-    {
-        result = tr->transform->transform_point(view, result);
-        view   = tr->transform->get_bounding_box(view, view);
-    });
-
-    return result;
-}
-
 bool wf::view_interface_t::intersects_region(const wlr_box& region)
 {
     /* fallback to the whole transformed boundingbox, if it exists */
@@ -995,7 +770,6 @@ bool wf::view_interface_t::intersects_region(const wlr_box& region)
     {
         wlr_box box = {child.position.x, child.position.y,
             child.surface->get_size().width, child.surface->get_size().height};
-        box = transform_region(box);
 
         if (region & box)
         {
@@ -1004,152 +778,6 @@ bool wf::view_interface_t::intersects_region(const wlr_box& region)
     }
 
     return false;
-}
-
-wf::region_t wf::view_interface_t::get_transformed_opaque_region()
-{
-    if (!is_mapped())
-    {
-        return {};
-    }
-
-    auto obox = get_untransformed_bounding_box();
-    auto og   = get_output_geometry();
-
-    wf::region_t opaque;
-    for (auto& surf : enumerate_surfaces({og.x, og.y}))
-    {
-        opaque |= surf.surface->get_opaque_region(surf.position);
-    }
-
-    auto bbox = obox;
-    this->view_impl->transforms.for_each(
-        [&] (const std::shared_ptr<view_transform_block_t> tr)
-    {
-        opaque = tr->transform->transform_opaque_region(bbox, opaque);
-        bbox   = tr->transform->get_bounding_box(bbox, bbox);
-    });
-
-    return opaque;
-}
-
-bool wf::view_interface_t::render_transformed(const wf::render_target_t& framebuffer,
-    const wf::region_t& damage)
-{
-    if (!is_mapped() && !view_impl->offscreen_buffer.valid())
-    {
-        return false;
-    }
-
-    wf::geometry_t obox = get_untransformed_bounding_box();
-    wf::texture_t previous_texture;
-    float texture_scale;
-
-    if (is_mapped() && (enumerate_surfaces().size() == 1) && get_wlr_surface())
-    {
-        /* Optimized case: there is a single mapped surface.
-         * We can directly start with its texture */
-        previous_texture = wf::texture_t{this->get_wlr_surface()};
-        texture_scale    = this->get_wlr_surface()->current.scale;
-    } else
-    {
-        take_snapshot();
-        previous_texture = wf::texture_t{view_impl->offscreen_buffer.tex};
-        texture_scale    = view_impl->offscreen_buffer.scale;
-    }
-
-    /* We keep a shared_ptr to the previous transform which we executed, so that
-     * even if it gets removed, its texture remains valid.
-     *
-     * NB: we do not call previous_transform's transformer functions after the
-     * cycle is complete, because the memory might have already been freed.
-     * We only know that the texture is still alive. */
-    std::shared_ptr<view_transform_block_t> previous_transform = nullptr;
-
-    /* final_transform is the one that should render to the screen */
-    std::shared_ptr<view_transform_block_t> final_transform = nullptr;
-
-    /* Render the view passing its snapshot through the transformers.
-     * For each transformer except the last we render on offscreen buffers,
-     * and the last one is rendered to the real fb. */
-    auto& transforms = view_impl->transforms;
-    transforms.for_each([&] (auto& transform) -> void
-    {
-        /* Last transform is handled separately */
-        if (transform == transforms.back())
-        {
-            final_transform = transform;
-
-            return;
-        }
-
-        /* Calculate size after this transform */
-        auto transformed_box =
-            transform->transform->get_bounding_box(obox, obox);
-        int scaled_width  = transformed_box.width * texture_scale;
-        int scaled_height = transformed_box.height * texture_scale;
-
-        /* Prepare buffer to store result after the transform */
-        OpenGL::render_begin();
-        transform->fb.allocate(scaled_width, scaled_height);
-        transform->fb.scale    = texture_scale;
-        transform->fb.geometry = transformed_box;
-        transform->fb.bind(); // bind buffer to clear it
-        OpenGL::clear({0, 0, 0, 0});
-        OpenGL::render_end();
-
-        /* Actually render the transform to the next framebuffer */
-        transform->transform->render_with_damage(previous_texture, obox,
-            wf::region_t{transformed_box}, transform->fb);
-
-        previous_transform = transform;
-        previous_texture   = previous_transform->fb.tex;
-        obox = transformed_box;
-    });
-
-    /* This can happen in two ways:
-     * 1. The view is unmapped, and no snapshot
-     * 2. The last transform was deleted while iterating, so now the last
-     *    transform is invalid in the list
-     *
-     * In both cases, we simply render whatever contents we have to the
-     * framebuffer. */
-    if (final_transform == nullptr)
-    {
-        OpenGL::render_begin(framebuffer);
-        auto matrix = framebuffer.get_orthographic_projection();
-        gl_geometry src_geometry = {
-            1.0f * obox.x, 1.0f * obox.y,
-            1.0f * obox.x + 1.0f * obox.width,
-            1.0f * obox.y + 1.0f * obox.height,
-        };
-
-        for (const auto& rect : damage)
-        {
-            framebuffer.logic_scissor(wlr_box_from_pixman_box(rect));
-            OpenGL::render_transformed_texture(previous_texture, src_geometry,
-                {}, matrix);
-        }
-
-        OpenGL::render_end();
-    } else
-    {
-        /* Regular case, just call the last transformer, but render directly
-         * to the target framebuffer */
-        final_transform->transform->render_with_damage(previous_texture, obox,
-            damage & framebuffer.geometry, framebuffer);
-    }
-
-    return true;
-}
-
-wf::view_transform_block_t::view_transform_block_t()
-{}
-wf::view_transform_block_t::~view_transform_block_t()
-{
-    OpenGL::render_begin();
-    this->fb.release();
-    OpenGL::render_end();
 }
 
 const wf::render_target_t& wf::view_interface_t::take_snapshot()
@@ -1263,7 +891,6 @@ void wf::view_interface_t::deinitialize()
     set_decoration(nullptr);
 
     this->clear_subsurfaces();
-    this->view_impl->transforms.clear();
     this->_clear_data();
 
     OpenGL::render_begin();
@@ -1285,7 +912,7 @@ void wf::view_interface_t::damage_surface_box(const wlr_box& box)
     damaged.x += obox.x;
     damaged.y += obox.y;
     view_impl->offscreen_buffer.cached_damage |= damaged;
-    view_damage_raw(self(), transform_region(damaged));
+    view_damage_raw(self(), damaged);
 }
 
 void wf::view_damage_raw(wayfire_view view, const wlr_box& box)

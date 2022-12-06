@@ -411,36 +411,3 @@ void view_3d_transformer_t::gen_render_instances(
 }
 } // namespace scene
 }
-
-wf::region_t wf::view_transformer_t::transform_opaque_region(
-    wf::geometry_t box, wf::region_t region)
-{
-    return {};
-}
-
-wlr_box wf::view_transformer_t::get_bounding_box(wf::geometry_t view, wlr_box region)
-{
-    const auto p1 = transform_point(view, {1.0 * region.x, 1.0 * region.y});
-    const auto p2 = transform_point(view, {1.0 * region.x + region.width,
-        1.0 * region.y});
-    const auto p3 = transform_point(view, {1.0 * region.x,
-        1.0 * region.y + region.height});
-    const auto p4 = transform_point(view, {1.0 * region.x + region.width,
-        1.0 * region.y + region.height});
-
-    const int x1 = std::min({p1.x, p2.x, p3.x, p4.x});
-    const int x2 = std::max({p1.x, p2.x, p3.x, p4.x});
-    const int y1 = std::min({p1.y, p2.y, p3.y, p4.y});
-    const int y2 = std::max({p1.y, p2.y, p3.y, p4.y});
-    return wlr_box{x1, y1, x2 - x1, y2 - y1};
-}
-
-void wf::view_transformer_t::render_with_damage(wf::texture_t src_tex,
-    wlr_box src_box,
-    const wf::region_t& damage, const wf::render_target_t& target_fb)
-{
-    for (const auto& rect : damage)
-    {
-        render_box(src_tex, src_box, wlr_box_from_pixman_box(rect), target_fb);
-    }
-}

@@ -375,7 +375,7 @@ class WayfireSwitcher : public wf::plugin_interface_t
     void arrange_center_view(SwitcherView& sv)
     {
         auto og   = output->get_relative_geometry();
-        auto bbox = sv.view->get_bounding_box(switcher_transformer);
+        auto bbox = wf::view_bounding_box_up_to(sv.view, switcher_transformer);
 
         float dx = (og.width / 2 - bbox.width / 2) - bbox.x;
         float dy = bbox.y - (og.height / 2 - bbox.height / 2);

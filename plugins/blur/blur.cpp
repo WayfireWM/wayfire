@@ -69,8 +69,9 @@ class blur_render_instance_t : public transformer_render_instance_t<blur_node_t>
             if (auto vnode = dynamic_cast<view_node_t*>(
                 self->get_children().front().get()))
             {
+                auto origin = vnode->get_view()->get_output_geometry();
                 auto opaque_region =
-                    vnode->get_view()->get_transformed_opaque_region();
+                    vnode->get_view()->get_opaque_region({origin.x, origin.y});
 
                 return (damage ^ opaque_region).empty();
             }
@@ -90,8 +91,9 @@ class blur_render_instance_t : public transformer_render_instance_t<blur_node_t>
                 const int padding = std::ceil(
                     self->provider()->calculate_blur_radius() / target_scale);
 
+                auto origin = vnode->get_view()->get_output_geometry();
                 auto opaque_region =
-                    vnode->get_view()->get_transformed_opaque_region();
+                    vnode->get_view()->get_opaque_region({origin.x, origin.y});
                 opaque_region.expand_edges(-padding);
 
                 wf::region_t translucent_region = damage ^ opaque_region;

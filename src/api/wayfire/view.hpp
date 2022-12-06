@@ -20,7 +20,6 @@ namespace wf
 {
 class view_interface_t;
 class decorator_frame_t_t;
-class view_transformer_t;
 }
 
 using wayfire_view = nonstd::observer_ptr<wf::view_interface_t>;
@@ -200,30 +199,6 @@ class view_interface_t : public surface_interface_t, public wf::signal::provider
     virtual wlr_box get_bounding_box();
 
     /**
-     * Find the surface in the view's tree which contains the given point.
-     *
-     * @param cursor The coordinate of the point to search at
-     * @param local The coordinate of the point relative to the returned surface
-     *
-     * @return The surface which is at the given point, or nullptr if no such
-     *         surface was found (in which case local has no meaning)
-     */
-    virtual surface_interface_t *map_input_coordinates(
-        wf::pointf_t cursor, wf::pointf_t& local);
-
-    /**
-     * Transform the given point's coordinates into the local coordinate system
-     * of the given surface in the view's surface tree, after applying all
-     * transforms of the view.
-     *
-     * @param arg The point in global (output-local) coordinates
-     * @param surface The reference surface, or null for view-local coordinates
-     * @return The point in surface-local coordinates
-     */
-    virtual wf::pointf_t global_to_local_point(const wf::pointf_t& arg,
-        surface_interface_t *surface);
-
-    /**
      * @return the wlr_surface which should receive focus when focusing this
      * view. Views which aren't backed by a wlr_surface should implement the
      * compositor_view interface.
@@ -352,105 +327,14 @@ class view_interface_t : public surface_interface_t, public wf::signal::provider
      */
     virtual nonstd::observer_ptr<decorator_frame_t_t> get_decoration();
 
-    /*
-     *                        View transforms
-     * A view transform can be any kind of transformation, for example 3D
-     * rotation, wobbly effect or similar. When we speak of transforms, a
-     * "view" is defined as a toplevel window (including decoration) and also
-     * all of its subsurfaces/popups. The transformation then is applied to
-     * this group of surfaces together.
-     *
-     * When a view has a custom transform, then internally all these surfaces
-     * are rendered to a FBO, and then the custom transformation renders the
-     * resulting texture as it sees fit. In case of multiple transforms, we do
-     * multiple render passes where each transform is fed the result of the
-     * previous transforms.
-     *
-     * Damage tracking for transformed views is done on the boundingbox of the
-     * damaged region after applying the transformation, but all damaged parts
-     * of the internal FBO are updated.
-     * */
-
-    void add_transformer(std::unique_ptr<wf::view_transformer_t> transformer);
-
-    /**
-     * Add a transformer with the given name. Note that you can add multiple
-     * transforms with the same name.
-     */
-    void add_transformer(std::unique_ptr<wf::view_transformer_t> transformer,
-        std::string name);
-
-    /** @return a transformer with the give name, or null */
-    nonstd::observer_ptr<wf::view_transformer_t> get_transformer(
-        std::string name);
-
-    /** remove a transformer */
-    void pop_transformer(
-        nonstd::observer_ptr<wf::view_transformer_t> transformer);
-    /** remove all transformers with the given name */
-    void pop_transformer(std::string name);
     /** @return true if the view has active transformers */
     bool has_transformer();
-
-    /** @return the bounding box of the view up to the given transformer */
-    wlr_box get_bounding_box(std::string transformer);
-    /** @return the bounding box of the view up to the given transformer */
-    wlr_box get_bounding_box(
-        nonstd::observer_ptr<wf::view_transformer_t> transformer);
-
-    /**
-     * Transform a point with the view's transformers.
-     *
-     * @param point The point in output-local coordinates, before applying the
-     *              view transformers.
-     * @return The point in output-local coordinates after applying the
-     *         view transformers.
-     */
-    wf::pointf_t transform_point(const wf::pointf_t& point);
-
-    /** @return a bounding box of the given box after applying the
-     * transformers of the view */
-    wlr_box transform_region(const wlr_box & box);
-
-    /** @return a bounding box of the given box after applying the transformers
-     * of the view up to the given transformer */
-    wlr_box transform_region(const wlr_box& box, std::string transformer);
-    /** @return a bounding box of the given box after applying the transformers
-     * of the view up to the given transformer */
-    wlr_box transform_region(const wlr_box& box,
-        nonstd::observer_ptr<wf::view_transformer_t> transformer);
 
     /**
      * @return true if the region intersects any of the surfaces in the view's
      * surface tree.
      */
     bool intersects_region(const wlr_box& region);
-
-    /**
-     * Get the transformed opaque region of the view and its subsurfaces.
-     * The returned region is in output-local coordinates.
-     */
-    virtual wf::region_t get_transformed_opaque_region();
-
-    /**
-     * Render all the surfaces of the view using the view's transforms.
-     * If the view is unmapped, this operation will try to read from any
-     * snapshot created by take_snapshot() or when transformers were applied,
-     * and use that buffer.
-     *
-     * Child views like dialogues are considered a part of the view's surface
-     * tree, however they are not transformed by the view's transformers.
-     *
-     * @param framebuffer The framebuffer to render to. Geometry needs to be
-     *   in output-local coordinate system.
-     * @param damage The damaged region of the view, in output-local coordinate
-     *   system.
-     *
-     * @return true if the render operation was successful, and false if the
-     *   view is both unmapped and has no snapshot.
-     */
-    bool render_transformed(const render_target_t& framebuffer,
-        const region_t& damage);
 
     /**
      * A snapshot of the view is a copy of the view's contents into a
