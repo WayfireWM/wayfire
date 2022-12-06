@@ -345,6 +345,10 @@ class wayfire_wm_actions_t : public wf::plugin_interface_t
         for (int x = 0; x < wsize.width; x++)
         {
             showdesktop_active[x].resize(wsize.height);
+            for (int y = 0; y < wsize.height; y++)
+            {
+                showdesktop_active[x][y] = false;
+            }
         }
 
         for (int x = 0; x < wsize.width; x++)
