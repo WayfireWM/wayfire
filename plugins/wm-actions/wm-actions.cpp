@@ -351,14 +351,6 @@ class wayfire_wm_actions_t : public wf::plugin_interface_t
             }
         }
 
-        for (int x = 0; x < wsize.width; x++)
-        {
-            for (int y = 0; y < wsize.height; y++)
-            {
-                showdesktop_active[x][y] = false;
-            }
-        }
-
         output->add_activator(toggle_showdesktop, &on_toggle_showdesktop);
         output->add_activator(minimize, &on_minimize);
         output->add_activator(toggle_maximize, &on_toggle_maximize);
