@@ -25,59 +25,6 @@ compositor_interactive_view_t *interactive_view_from_view(
     wf::view_interface_t *view);
 
 /**
- * mirror_view_t is a specialized type of views.
- *
- * They have the same contents as another view. A mirror view's size is
- * determined by the bounding box of the mirrored view. However, the mirror view
- * itself can be on another position, output, etc. and can have additional
- * transforms.
- *
- * A mirror view is mapped as long as its base view is mapped. Afterwards, the
- * view becomes unmapped, until it is destroyed.
- */
-class mirror_view_t : public wf::view_interface_t, wf::compositor_surface_t
-{
-  protected:
-    signal_connection_t base_view_unmapped, base_view_damaged;
-    wayfire_view base_view;
-    int x;
-    int y;
-
-  public:
-    /**
-     * Create a new mirror view for the given base view. When using mirror
-     * views, the view should be manually added to the appropriate layer in
-     * workspace-manager.
-     *
-     * Note: a map event is not emitted for mirror views by default.
-     */
-    mirror_view_t(wayfire_view base_view);
-    virtual ~mirror_view_t();
-
-    /**
-     * Close the view. This means unsetting the base view and setting the state
-     * of the view to unmapped.
-     *
-     * This will also fire the unmap event on the mirror view.
-     */
-    virtual void close() override;
-
-    /* surface_interface_t implementation */
-    virtual bool is_mapped() const override;
-    virtual wf::dimensions_t get_size() const override;
-    virtual void simple_render(const wf::render_target_t& fb, int x, int y,
-        const wf::region_t& damage) override;
-
-    /* view_interface_t implementation */
-    virtual void move(int x, int y) override;
-    virtual wf::geometry_t get_output_geometry() override;
-
-    virtual wlr_surface *get_keyboard_focus_surface() override;
-    virtual bool is_focusable() const override;
-    virtual bool should_be_decorated() override;
-};
-
-/**
  * color_rect_view_t represents another common type of compositor view - a
  * view which is simply a colored rectangle with a border.
  */
