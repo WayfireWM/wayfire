@@ -1,7 +1,12 @@
 #pragma once
 
+#include "wayfire/debug.hpp"
+#include "wayfire/geometry.hpp"
+#include "wayfire/opengl.hpp"
+#include "wayfire/region.hpp"
 #include "wayfire/scene-render.hpp"
 #include "wayfire/scene.hpp"
+#include <memory>
 #include <wayfire/nonstd/reverse.hpp>
 #include <wayfire/plugins/common/util.hpp>
 #include <wayfire/plugins/wobbly/wobbly-signal.hpp>
@@ -140,7 +145,7 @@ inline static wf::pointf_t find_relative_grab(
  * It is primarily used to scale the view is a plugin needs it, and also to keep it
  * centered around the `grab_position`.
  */
-class scale_around_grab_t : public wf::view_transformer_t
+class scale_around_grab_t : public wf::scene::floating_inner_node_t
 {
   public:
     /**
@@ -163,23 +168,19 @@ class scale_around_grab_t : public wf::view_transformer_t
      */
     wf::point_t grab_position;
 
-    uint32_t get_z_order() override
+    scale_around_grab_t() : floating_inner_node_t(false)
+    {}
+
+    std::string stringify() const override
     {
-        return wf::TRANSFORMER_HIGHLEVEL - 1;
+        return "move-drag";
     }
 
-    wf::region_t transform_opaque_region(
-        wf::geometry_t box, wf::region_t region) override
+    wf::pointf_t scale_around_grab(wf::pointf_t point, double factor)
     {
-        // TODO: figure out a way to take opaque region into account
-        return {};
-    }
-
-    wf::pointf_t scale_around_grab(wf::geometry_t view, wf::pointf_t point,
-        double factor)
-    {
-        auto gx = view.x + view.width * relative_grab.x;
-        auto gy = view.y + view.height * relative_grab.y;
+        auto bbox = get_children_bounding_box();
+        auto gx   = bbox.x + bbox.width * relative_grab.x;
+        auto gy   = bbox.y + bbox.height * relative_grab.y;
 
         return {
             (point.x - gx) * factor + gx,
@@ -187,42 +188,57 @@ class scale_around_grab_t : public wf::view_transformer_t
         };
     }
 
-    wf::pointf_t transform_point(wf::geometry_t view, wf::pointf_t point) override
+    wf::pointf_t to_local(const wf::pointf_t& point) override
     {
-        LOGE("Unexpected transform_point() call for dragged overlay view!");
-        return scale_around_grab(view, point, 1.0 / scale_factor);
+        return scale_around_grab(point, scale_factor);
     }
 
-    wf::pointf_t untransform_point(wf::geometry_t view, wf::pointf_t point) override
+    wf::pointf_t to_global(const wf::pointf_t& point) override
     {
-        LOGE("Unexpected untransform_point() call for dragged overlay view!");
-        return scale_around_grab(view, point, scale_factor);
+        return scale_around_grab(point, 1.0 / scale_factor);
     }
 
-    wf::geometry_t get_bounding_box(wf::geometry_t view,
-        wf::geometry_t region) override
+    wf::geometry_t get_bounding_box() override
     {
-        int w = std::floor(view.width / scale_factor);
-        int h = std::floor(view.height / scale_factor);
-
-        auto bb = find_geometry_around({w, h}, grab_position, relative_grab);
-        return bb;
+        auto bbox = get_children_bounding_box();
+        int w     = std::floor(bbox.width / scale_factor);
+        int h     = std::floor(bbox.height / scale_factor);
+        return find_geometry_around({w, h}, grab_position, relative_grab);
     }
 
-    void render_with_damage(wf::texture_t src_tex, wlr_box src_box,
-        const wf::region_t& damage, const wf::render_target_t& target_fb) override
+    class render_instance_t :
+        public scene::transformer_render_instance_t<scale_around_grab_t>
     {
-        // Get target size
-        auto bbox = get_bounding_box(src_box, src_box);
+      public:
+        using transformer_render_instance_t::transformer_render_instance_t;
 
-        OpenGL::render_begin(target_fb);
-        for (auto& rect : damage)
+        void transform_damage_region(wf::region_t& region) override
         {
-            target_fb.logic_scissor(wlr_box_from_pixman_box(rect));
-            OpenGL::render_texture(src_tex, target_fb, bbox);
+            region |= self->get_bounding_box();
         }
 
-        OpenGL::render_end();
+        void render(const wf::render_target_t& target,
+            const wf::region_t& region) override
+        {
+            auto bbox = self->get_bounding_box();
+            auto tex  = this->get_texture(target.scale);
+
+            OpenGL::render_begin(target);
+            for (auto& rect : region)
+            {
+                target.logic_scissor(wlr_box_from_pixman_box(rect));
+                OpenGL::render_texture(tex, target, bbox);
+            }
+
+            OpenGL::render_end();
+        }
+    };
+
+    void gen_render_instances(std::vector<scene::render_instance_uptr>& instances,
+        scene::damage_callback push_damage, wf::output_t *shown_on) override
+    {
+        instances.push_back(std::make_unique<render_instance_t>(this,
+            push_damage, shown_on));
     }
 };
 
@@ -238,7 +254,7 @@ struct dragged_view_t
     wayfire_view view;
 
     // Its transformer
-    nonstd::observer_ptr<scale_around_grab_t> transformer;
+    std::shared_ptr<scale_around_grab_t> transformer;
 
     // The last bounding box used for damage.
     // This is needed in case the view resizes or something like that, in which
@@ -300,7 +316,7 @@ class output_data_t : public custom_data_t
         {
             // Note: bbox will be in output layout coordinates now, since this is
             // how the transformer works
-            auto bbox = view.view->get_bounding_box();
+            auto bbox = view.view->get_transformed_node()->get_bounding_box();
             bbox = bbox + -wf::origin(output->get_layout_geometry());
 
             output->render->damage(bbox);
@@ -442,15 +458,16 @@ class core_drag_t : public signal_provider_t
             dragged.view = v;
 
             // Setup view transform
-            auto tr = std::make_unique<scale_around_grab_t>();
+
+            auto tr = std::make_shared<scale_around_grab_t>();
             dragged.transformer = {tr};
 
             tr->relative_grab = find_relative_grab(
                 wf::view_bounding_box_up_to(v, "wobbly"), rel_grab_pos);
             tr->grab_position = grab_position;
             tr->scale_factor.animate(options.initial_scale, options.initial_scale);
-
-            v->add_transformer(std::move(tr), move_drag_transformer);
+            v->get_transformed_node()->add_transformer(
+                tr, wf::TRANSFORMER_HIGHLEVEL - 1);
 
             // Hide the view, we will render it as an overlay
             wf::scene::set_node_enabled(v->get_transformed_node(), false);
@@ -496,7 +513,7 @@ class core_drag_t : public signal_provider_t
             view = get_toplevel(view);
         }
 
-        auto bbox = view->get_bounding_box() +
+        auto bbox = view->get_transformed_node()->get_bounding_box() +
             wf::origin(view->get_output()->get_layout_geometry());
         start_drag(view, grab_position,
             find_relative_grab(bbox, grab_position), options);
@@ -528,7 +545,9 @@ class core_drag_t : public signal_provider_t
             move_wobbly(v.view, to.x, to.y);
             if (!view_held_in_place)
             {
+                v.view->damage();
                 v.transformer->grab_position = to;
+                v.view->damage();
             }
         }
 
@@ -571,7 +590,7 @@ class core_drag_t : public signal_provider_t
 
             // Restore view to where it was before
             wf::scene::set_node_enabled(v.view->get_transformed_node(), true);
-            v.view->pop_transformer(move_drag_transformer);
+            v.view->get_transformed_node()->rem_transformer<scale_around_grab_t>();
 
             // Reset wobbly and leave it in output-LOCAL coordinates
             end_wobbly(v.view);
