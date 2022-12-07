@@ -121,6 +121,20 @@ class title_overlay_node_t : public node_t
         return *data.get();
     }
 
+    wf::geometry_t get_scaled_bbox(wayfire_view v)
+    {
+        auto tr = v->get_transformed_node()->
+            get_transformer<wf::scene::view_2d_transformer_t>("scale");
+
+        if (tr)
+        {
+            auto wm_geometry = v->get_wm_geometry();
+            return get_bbox_for_node(tr, wm_geometry);
+        }
+
+        return v->get_bounding_box();
+    }
+
     wf::dimensions_t find_maximal_title_size()
     {
         wf::dimensions_t max_size = {0, 0};
@@ -133,7 +147,7 @@ class title_overlay_node_t : public node_t
                 continue;
             }
 
-            auto bbox = wf::view_bounding_box_up_to(v, "scale");
+            auto bbox = get_scaled_bbox(v);
             max_size.width  = std::max(max_size.width, bbox.width);
             max_size.height = std::max(max_size.height, bbox.height);
         }
@@ -144,7 +158,7 @@ class title_overlay_node_t : public node_t
     /**
      * Check if this view should display an overlay.
      */
-    bool should_have_overlay(view_title_texture_t& title)
+    bool should_have_overlay()
     {
         if (this->parent.show_view_title_overlay ==
             scale_show_title_t::title_overlay_t::NEVER)
@@ -171,8 +185,7 @@ class title_overlay_node_t : public node_t
 
     wf::effect_hook_t pre_render = [=] () -> void
     {
-        auto& tex = get_overlay_texture(find_toplevel_parent(view));
-        if (!should_have_overlay(tex))
+        if (!should_have_overlay())
         {
             overlay_shown = false;
             return;
@@ -190,6 +203,7 @@ class title_overlay_node_t : public node_t
          * TODO: check if this wastes too high CPU power when views are being
          * animated and maybe redraw less frequently
          */
+        auto& tex = get_overlay_texture(find_toplevel_parent(view));
         if ((tex.overlay.tex.tex == (GLuint) - 1) ||
             (output_scale != tex.par.output_scale) ||
             (tex.overlay.tex.width > box.width * output_scale) ||
@@ -204,7 +218,7 @@ class title_overlay_node_t : public node_t
         geometry.width  = tex.overlay.tex.width / output_scale;
         geometry.height = tex.overlay.tex.height / output_scale;
 
-        auto bbox = view->get_transformed_node()->get_bounding_box();
+        auto bbox = get_scaled_bbox(view);
         geometry.x = bbox.x + bbox.width / 2 - geometry.width / 2;
         switch (pos)
         {
@@ -387,9 +401,12 @@ add_title_overlay{[this] (wf::signal_data_t *data)
         }
 
         auto signal = static_cast<scale_transformer_added_signal*>(data);
+        auto tr     = signal->view->get_transformed_node()->get_transformer("scale");
+        auto parent = std::dynamic_pointer_cast<wf::scene::floating_inner_node_t>(
+            tr->parent()->shared_from_this());
 
         auto node = std::make_shared<title_overlay_node_t>(signal->view, pos, *this);
-        wf::scene::add_front(signal->view->get_transformed_node(), node);
+        wf::scene::add_front(parent, node);
     }
 },
 
@@ -398,13 +415,21 @@ rem_title_overlay{[] (wf::signal_data_t *data)
         using namespace wf::scene;
         auto signal = static_cast<scale_transformer_removed_signal*>(data);
 
-        for (auto& ch : signal->view->get_transformed_node()->get_children())
+        node_t *tr =
+            signal->view->get_transformed_node()->get_transformer("scale").get();
+
+        while (tr)
         {
-            if (dynamic_cast<title_overlay_node_t*>(ch.get()))
+            for (auto& ch : tr->get_children())
             {
-                remove_child(ch);
-                break;
+                if (dynamic_cast<title_overlay_node_t*>(ch.get()))
+                {
+                    remove_child(ch);
+                    break;
+                }
             }
+
+            tr = tr->parent();
         }
     }
 },
