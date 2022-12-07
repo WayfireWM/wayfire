@@ -41,32 +41,28 @@ class crossfade_node_t : public scene::view_2d_transformer_t
         displayed_geometry = view->get_wm_geometry();
         this->view = view;
 
+        std::shared_ptr<scene::view_node_t> root_node =
+            view->get_surface_root_node();
+        const wf::geometry_t bbox = root_node->get_bounding_box();
+
         original_buffer.geometry = view->get_wm_geometry();
         original_buffer.scale    = view->get_output()->handle->scale;
 
+        OpenGL::render_begin();
         auto w = original_buffer.scale * original_buffer.geometry.width;
         auto h = original_buffer.scale * original_buffer.geometry.height;
-
-        OpenGL::render_begin();
         original_buffer.allocate(w, h);
-        original_buffer.bind();
-        OpenGL::clear({0, 0, 0, 0});
         OpenGL::render_end();
 
-        auto og = view->get_output_geometry();
-        for (auto& surface : view->enumerate_surfaces(wf::origin(og)))
-        {
-            wf::region_t damage = wf::geometry_t{
-                surface.position.x,
-                surface.position.y,
-                surface.surface->get_size().width,
-                surface.surface->get_size().height
-            };
+        std::vector<scene::render_instance_uptr> instances;
+        root_node->gen_render_instances(instances, [] (auto) {}, view->get_output());
 
-            damage &= original_buffer.geometry;
-            surface.surface->simple_render(original_buffer,
-                surface.position.x, surface.position.y, damage);
-        }
+        scene::render_pass_params_t params;
+        params.background_color = {0, 0, 0, 0};
+        params.damage    = bbox;
+        params.target    = original_buffer;
+        params.instances = &instances;
+        scene::run_render_pass(params, scene::RPASS_CLEAR_BACKGROUND);
     }
 
     ~crossfade_node_t()
