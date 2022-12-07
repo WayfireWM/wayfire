@@ -729,6 +729,8 @@ class wayfire_scale : public wf::plugin_interface_t,
                         view_scale_data::view_visibility_t::HIDDEN;
                     wf::scene::set_node_enabled(view->get_transformed_node(), false);
                 }
+
+                view->damage();
             }
         }
     }
