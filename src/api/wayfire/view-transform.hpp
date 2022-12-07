@@ -349,6 +349,10 @@ enum transformer_z_order_t
     // The highest level of view transforms, used by blur.
     TRANSFORMER_BLUR      = 1000,
 };
+
+// Calculate a bounding box after applying the node transformation to @box,
+// assuming an affine transformation applied by the node.
+wf::geometry_t get_bbox_for_node(scene::node_ptr node, wf::geometry_t box);
 }
 
 #endif /* end of include guard: VIEW_TRANSFORM_HPP */

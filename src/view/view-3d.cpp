@@ -1,6 +1,7 @@
 #include "wayfire/debug.hpp"
 #include "wayfire/geometry.hpp"
 #include "wayfire/region.hpp"
+#include "wayfire/scene-input.hpp"
 #include "wayfire/scene.hpp"
 #include "wayfire/view-transform.hpp"
 #include "wayfire/opengl.hpp"
@@ -19,6 +20,26 @@ static const double PI = std::acos(-1);
 
 namespace wf
 {
+wf::geometry_t get_bbox_for_node(scene::node_t *node, wf::geometry_t box)
+{
+    const auto p1 = node->to_global(wf::pointf_t(box.x, box.y));
+    const auto p2 = node->to_global(wf::pointf_t(box.x + box.width, box.y));
+    const auto p3 = node->to_global(wf::pointf_t(box.x, box.y + box.height));
+    const auto p4 = node->to_global(
+        wf::pointf_t(box.x + box.width, box.y + box.height));
+
+    const int x1 = std::floor(std::min({p1.x, p2.x, p3.x, p4.x}));
+    const int x2 = std::ceil(std::max({p1.x, p2.x, p3.x, p4.x}));
+    const int y1 = std::floor(std::min({p1.y, p2.y, p3.y, p4.y}));
+    const int y2 = std::ceil(std::max({p1.y, p2.y, p3.y, p4.y}));
+    return wlr_box{x1, y1, x2 - x1, y2 - y1};
+}
+
+wf::geometry_t get_bbox_for_node(scene::node_ptr node, wf::geometry_t box)
+{
+    return get_bbox_for_node(node.get(), box);
+}
+
 namespace scene
 {
 void transform_manager_node_t::_add_transformer(
@@ -120,21 +141,6 @@ wf::pointf_t view_2d_transformer_t::to_global(const wf::pointf_t& point)
 std::string view_2d_transformer_t::stringify() const
 {
     return "view-2d for " + view->to_string();
-}
-
-static wf::geometry_t get_bbox_for_node(node_t *node, wf::geometry_t bbox)
-{
-    const auto p1 = node->to_global(wf::pointf_t(bbox.x, bbox.y));
-    const auto p2 = node->to_global(wf::pointf_t(bbox.x + bbox.width, bbox.y));
-    const auto p3 = node->to_global(wf::pointf_t(bbox.x, bbox.y + bbox.height));
-    const auto p4 = node->to_global(
-        wf::pointf_t(bbox.x + bbox.width, bbox.y + bbox.height));
-
-    const int x1 = std::floor(std::min({p1.x, p2.x, p3.x, p4.x}));
-    const int x2 = std::ceil(std::max({p1.x, p2.x, p3.x, p4.x}));
-    const int y1 = std::floor(std::min({p1.y, p2.y, p3.y, p4.y}));
-    const int y2 = std::ceil(std::max({p1.y, p2.y, p3.y, p4.y}));
-    return wlr_box{x1, y1, x2 - x1, y2 - y1};
 }
 
 wf::geometry_t view_2d_transformer_t::get_bounding_box()
