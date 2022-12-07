@@ -18,13 +18,6 @@ class surface_pointer_interaction_t final : public wf::pointer_interaction_t
     wlr_pointer_constraint_v1 *last_constraint = NULL;
     wf::wl_listener_wrapper constraint_destroyed;
 
-    wayfire_view get_view() const
-    {
-        auto view = dynamic_cast<view_interface_t*>(surface->get_main_surface());
-        assert(view);
-        return view->self();
-    }
-
     // From position relative to current focus to global scene coordinates
     wf::pointf_t get_absolute_position_from_relative(wf::pointf_t relative)
     {
