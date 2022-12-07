@@ -53,15 +53,7 @@ class view_interface_t::view_priv_impl
     int in_continuous_resize = 0;
     int visibility_counter   = 1;
 
-    struct offscreen_buffer_t : public wf::render_target_t
-    {
-        wf::region_t cached_damage;
-        bool valid()
-        {
-            return this->fb != (uint32_t)-1;
-        }
-    } offscreen_buffer;
-
+    wf::render_target_t offscreen_buffer;
     wlr_box minimize_hint = {0, 0, 0, 0};
 
     scene::floating_inner_ptr root_node;

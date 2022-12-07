@@ -2,6 +2,7 @@
 #include <wayfire/util/log.hpp>
 #include "../core/core-impl.hpp"
 #include "view-impl.hpp"
+#include "wayfire/geometry.hpp"
 #include "wayfire/opengl.hpp"
 #include "wayfire/output.hpp"
 #include "wayfire/scene-render.hpp"
@@ -639,7 +640,6 @@ void wf::view_interface_t::fullscreen_request(wf::output_t *out, bool state,
 void wf::view_interface_t::damage()
 {
     auto bbox = get_untransformed_bounding_box();
-    view_impl->offscreen_buffer.cached_damage |= bbox;
     view_damage_raw(self(), bbox);
 }
 
@@ -787,59 +787,29 @@ const wf::render_target_t& wf::view_interface_t::take_snapshot()
         return view_impl->offscreen_buffer;
     }
 
-    auto& offscreen_buffer = view_impl->offscreen_buffer;
-
-    auto buffer_geometry = get_untransformed_bounding_box();
-    offscreen_buffer.geometry = buffer_geometry;
-
+    wf::render_target_t& offscreen_buffer = view_impl->offscreen_buffer;
+    std::shared_ptr<scene::view_node_t> root_node = get_surface_root_node();
+    const wf::geometry_t bbox = root_node->get_bounding_box();
     float scale = get_output()->handle->scale;
 
-    offscreen_buffer.cached_damage &= buffer_geometry;
-    /* Nothing has changed, the last buffer is still valid */
-    if (offscreen_buffer.cached_damage.empty())
-    {
-        return view_impl->offscreen_buffer;
-    }
-
-    int scaled_width  = buffer_geometry.width * scale;
-    int scaled_height = buffer_geometry.height * scale;
-    if ((scaled_width != offscreen_buffer.viewport_width) ||
-        (scaled_height != offscreen_buffer.viewport_height))
-    {
-        offscreen_buffer.cached_damage |= buffer_geometry;
-    }
-
     OpenGL::render_begin();
-    offscreen_buffer.allocate(scaled_width, scaled_height);
-    offscreen_buffer.scale = scale;
-    offscreen_buffer.bind();
-    for (auto& box : offscreen_buffer.cached_damage)
-    {
-        offscreen_buffer.logic_scissor(wlr_box_from_pixman_box(box));
-        OpenGL::clear({0, 0, 0, 0});
-    }
-
+    offscreen_buffer.allocate(bbox.width * scale, bbox.height * scale);
     OpenGL::render_end();
 
-    auto output_geometry = get_output_geometry();
-    auto children = enumerate_surfaces({output_geometry.x, output_geometry.y});
-    for (auto& child : wf::reverse(children))
-    {
-        wlr_box child_box{
-            child.position.x,
-            child.position.y,
-            child.surface->get_size().width,
-            child.surface->get_size().height
-        };
+    offscreen_buffer.geometry = root_node->get_bounding_box();
+    offscreen_buffer.scale    = scale;
 
-        child.surface->simple_render(offscreen_buffer,
-            child.position.x, child.position.y,
-            offscreen_buffer.cached_damage & child_box);
-    }
+    std::vector<scene::render_instance_uptr> instances;
+    root_node->gen_render_instances(instances, [] (auto) {}, get_output());
 
-    offscreen_buffer.cached_damage.clear();
+    scene::render_pass_params_t params;
+    params.background_color = {0, 0, 0, 0};
+    params.damage    = bbox;
+    params.target    = offscreen_buffer;
+    params.instances = &instances;
 
-    return view_impl->offscreen_buffer;
+    scene::run_render_pass(params, scene::RPASS_CLEAR_BACKGROUND);
+    return offscreen_buffer;
 }
 
 wf::view_interface_t::view_interface_t()
@@ -911,7 +881,6 @@ void wf::view_interface_t::damage_surface_box(const wlr_box& box)
     auto damaged = box;
     damaged.x += obox.x;
     damaged.y += obox.y;
-    view_impl->offscreen_buffer.cached_damage |= damaged;
     view_damage_raw(self(), damaged);
 }
 
