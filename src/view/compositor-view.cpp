@@ -148,3 +148,9 @@ bool wf::color_rect_view_t::should_be_decorated()
 {
     return false;
 }
+
+void wf::color_rect_view_t::initialize()
+{
+    view_interface_t::initialize();
+    this->get_root_node()->set_enabled(true);
+}

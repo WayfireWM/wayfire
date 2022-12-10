@@ -284,6 +284,7 @@ void wf::wlr_view_t::commit()
 
 void wf::wlr_view_t::map(wlr_surface *surface)
 {
+    scene::set_node_enabled(view_impl->root_node, true);
     wlr_surface_base_t::map(surface);
     if (wf::get_core_impl().uses_csd.count(surface))
     {
@@ -319,6 +320,7 @@ void wf::wlr_view_t::unmap()
 
     wlr_surface_base_t::unmap();
     emit_view_unmap();
+    scene::set_node_enabled(view_impl->root_node, false);
 }
 
 void wf::emit_view_map_signal(wayfire_view view, bool has_position)

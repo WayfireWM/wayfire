@@ -46,6 +46,8 @@ class color_rect_view_t : public wf::view_interface_t,
      */
     color_rect_view_t();
 
+    virtual void initialize() override;
+
     /**
      * Emit the unmap signal and then drop the internal reference.
      */

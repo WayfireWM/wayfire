@@ -848,6 +848,7 @@ void wf::view_interface_t::initialize()
     // Set up view content to scene.
     view_impl->transformed_node->set_children_list({view_impl->surface_root_node});
     view_impl->root_node->set_children_list({view_impl->transformed_node});
+    view_impl->root_node->set_enabled(false);
 }
 
 void wf::view_interface_t::deinitialize()

@@ -73,7 +73,7 @@ class preview_indication_view_t : public wf::color_rect_view_t
 
     void initialize() override
     {
-        view_interface_t::initialize();
+        color_rect_view_t::initialize();
 
         set_color(base_color);
         set_border_color(base_border);

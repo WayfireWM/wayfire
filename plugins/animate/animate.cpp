@@ -9,6 +9,7 @@
 #include "system_fade.hpp"
 #include "basic_animations.hpp"
 #include "fire/fire.hpp"
+#include "wayfire/scene.hpp"
 #include <wayfire/matcher.hpp>
 
 void animation_base::init(wayfire_view, int, wf_animation_type)
@@ -158,6 +159,7 @@ struct animation_hook : public animation_hook_base
         // remove from list
         if (type == ANIMATION_TYPE_UNMAP)
         {
+            wf::scene::set_node_enabled(view->get_root_node(), false);
             view->unref();
         }
     }
@@ -314,6 +316,7 @@ class wayfire_animation : public wf::singleton_plugin_t<animation_global_cleanup
 
         if (type == ANIMATION_TYPE_UNMAP)
         {
+            wf::scene::set_node_enabled(view->get_root_node(), true);
             view->take_ref();
             view->take_snapshot();
         }
