@@ -1,4 +1,5 @@
 #include "wayfire/plugins/common/util.hpp"
+#include "wayfire/render-manager.hpp"
 #include <wayfire/plugin.hpp>
 #include <wayfire/output.hpp>
 #include <wayfire/core.hpp>
@@ -130,7 +131,6 @@ class wayfire_expo : public wf::plugin_interface_t
 
         setup_workspace_bindings_from_config();
         wall = std::make_unique<wf::workspace_wall_t>(this->output);
-        wall->connect_signal("frame", &on_frame);
 
         output->add_activator(toggle_binding, &toggle_cb);
         grab_interface->callbacks.pointer.button =
@@ -144,6 +144,7 @@ class wayfire_expo : public wf::plugin_interface_t
             auto gc = output->get_cursor_position();
             handle_input_press(gc.x, gc.y, state);
         };
+
         grab_interface->callbacks.pointer.motion = [=] (int32_t x, int32_t y)
         {
             handle_input_move({x, y});
@@ -285,6 +286,10 @@ class wayfire_expo : public wf::plugin_interface_t
         state.button_pressed = false;
         start_zoom(true);
 
+        wall->start_output_renderer();
+        output->render->add_effect(&post_frame, wf::OUTPUT_EFFECT_POST);
+        output->render->schedule_redraw();
+
         auto cws = output->workspace->get_current_workspace();
         initial_ws = target_ws = cws;
 
@@ -333,8 +338,6 @@ class wayfire_expo : public wf::plugin_interface_t
         state.zoom_in = zoom_in;
         zoom_animation.start();
         wall->set_viewport(zoom_animation);
-        wall->start_output_renderer();
-        output->render->schedule_redraw();
     }
 
     void deactivate()
@@ -685,33 +688,34 @@ class wayfire_expo : public wf::plugin_interface_t
         }
     }
 
-    wf::signal_connection_t on_frame = {[=] (wf::signal_data_t*)
+    wf::effect_hook_t post_frame = [=] ()
+    {
+        if (zoom_animation.running())
         {
-            if (zoom_animation.running())
-            {
-                output->render->schedule_redraw();
-                wall->set_viewport(zoom_animation);
-            } else if (!state.zoom_in)
-            {
-                finalize_and_exit();
-                return;
-            }
+            output->render->schedule_redraw();
+            wall->set_viewport(zoom_animation);
+        } else if (!state.zoom_in)
+        {
+            finalize_and_exit();
+            return;
+        }
 
-            auto size = this->output->workspace->get_workspace_grid_size();
-            for (int x = 0; x < size.width; x++)
+        auto size = this->output->workspace->get_workspace_grid_size();
+        for (int x = 0; x < size.width; x++)
+        {
+            for (int y = 0; y < size.height; y++)
             {
-                for (int y = 0; y < size.height; y++)
+                auto& anim = ws_fade.at(x).at(y);
+                if (anim.running())
                 {
-                    auto& anim = ws_fade.at(x).at(y);
-                    if (anim.running())
-                    {
-                        wall->get_ws_color({x, y}) = glm::vec4(
-                            anim, anim, anim, 1.0f);
-                        output->render->schedule_redraw();
-                    }
+                    wall->get_ws_color({x, y}) = glm::vec4(
+                        anim, anim, anim, 1.0f);
+                    output->render->schedule_redraw();
                 }
             }
         }
+
+        output->render->damage_whole();
     };
 
     void resize_ws_fade()
@@ -762,6 +766,7 @@ class wayfire_expo : public wf::plugin_interface_t
         output->deactivate_plugin(grab_interface);
         grab_interface->ungrab();
         wall->stop_output_renderer(true);
+        output->render->rem_effect(&post_frame);
         key_repeat.disconnect();
         key_pressed = 0;
     }

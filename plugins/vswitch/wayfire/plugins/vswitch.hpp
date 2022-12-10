@@ -1,5 +1,6 @@
 #pragma once
 
+#include "wayfire/render-manager.hpp"
 #include "wayfire/scene-render.hpp"
 #include "wayfire/scene.hpp"
 #include <memory>
@@ -64,6 +65,8 @@ class workspace_switch_t
             output->workspace->get_current_workspace()));
         wall->set_background_color(background_color);
         wall->start_output_renderer();
+        output->render->add_effect(&post_render, OUTPUT_EFFECT_POST);
+
         running = true;
 
         /* Setup animation */
@@ -156,6 +159,7 @@ class workspace_switch_t
         }
 
         wall->stop_output_renderer(true);
+        output->render->rem_effect(&post_render);
         running = false;
     }
 
@@ -242,15 +246,18 @@ class workspace_switch_t
             start.height,
         };
         wall->set_viewport(viewport);
-
         render_overlay_view(fb);
-        output->render->schedule_redraw();
+    }
 
+    wf::effect_hook_t post_render = [=] ()
+    {
+        output->render->damage_whole();
+        output->render->schedule_redraw();
         if (!animation.running())
         {
             stop_switch(true);
         }
-    }
+    };
 
     /**
      * Emit the view-change-workspace signal from the old workspace to the current

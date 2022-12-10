@@ -2,6 +2,13 @@
 
 
 #include <glm/gtc/matrix_transform.hpp>
+#include <memory>
+#include "wayfire/core.hpp"
+#include "wayfire/debug.hpp"
+#include "wayfire/region.hpp"
+#include "wayfire/render-manager.hpp"
+#include "wayfire/scene-operations.hpp"
+#include "wayfire/scene.hpp"
 #include "workspace-stream-sharing.hpp"
 
 namespace wf
@@ -103,29 +110,33 @@ class workspace_wall_t : public wf::signal_provider_t
      * @param geometry The rectangle in fb to draw to, in the same coordinate
      *   system as the framebuffer's geometry.
      */
-    void render_wall(const wf::render_target_t& fb, wf::geometry_t geometry)
+    void render_wall(const wf::render_target_t& fb, const wf::region_t& damage)
     {
         update_streams();
 
+        auto wall_matrix = calculate_viewport_transformation_matrix(this->viewport,
+            output->get_relative_geometry());
+
         OpenGL::render_begin(fb);
-        fb.logic_scissor(geometry);
-
-        OpenGL::clear(this->background_color);
-        auto wall_matrix =
-            calculate_viewport_transformation_matrix(this->viewport, geometry);
-        /* After all transformations of the framebuffer, the workspace should
-         * span the visible part of the OpenGL coordinate space. */
-        const wf::geometry_t workspace_geometry = {-1, 1, 2, -2};
-        for (auto& ws : get_visible_workspaces(this->viewport))
+        for (auto box : damage)
         {
-            auto ws_matrix = calculate_workspace_matrix(ws);
-            OpenGL::render_transformed_texture(
-                streams->get(ws).buffer.tex, workspace_geometry,
-                fb.get_orthographic_projection() * wall_matrix * ws_matrix,
-                get_ws_color(ws));
-        }
+            fb.logic_scissor(wlr_box_from_pixman_box(box));
 
-        OpenGL::render_end();
+            OpenGL::clear(this->background_color);
+            /* After all transformations of the framebuffer, the workspace should
+             * span the visible part of the OpenGL coordinate space. */
+            const wf::geometry_t workspace_geometry = {-1, 1, 2, -2};
+            for (auto& ws : get_visible_workspaces(this->viewport))
+            {
+                auto ws_matrix = calculate_workspace_matrix(ws);
+                OpenGL::render_transformed_texture(
+                    streams->get(ws).buffer.tex, workspace_geometry,
+                    fb.get_orthographic_projection() * wall_matrix * ws_matrix,
+                    get_ws_color(ws));
+            }
+
+            OpenGL::render_end();
+        }
 
         wall_frame_event_t data{fb};
         this->emit_signal("frame", &data);
@@ -137,11 +148,9 @@ class workspace_wall_t : public wf::signal_provider_t
      */
     void start_output_renderer()
     {
-        if (!render_hook_set)
-        {
-            this->output->render->set_renderer(on_render);
-            render_hook_set = true;
-        }
+        wf::dassert(render_node == nullptr, "Starting workspace-wall twice?");
+        render_node = std::make_shared<workspace_wall_node_t>(this);
+        scene::add_front(wf::get_core().scene(), render_node);
     }
 
     /**
@@ -152,11 +161,11 @@ class workspace_wall_t : public wf::signal_provider_t
      */
     void stop_output_renderer(bool reset_viewport)
     {
-        if (render_hook_set)
-        {
-            this->output->render->set_renderer(nullptr);
-            render_hook_set = false;
-        }
+        wf::dassert(render_node != nullptr,
+            "Stopping without having started workspace-wall?");
+
+        scene::remove_child(render_node);
+        render_node = nullptr;
 
         if (reset_viewport)
         {
@@ -291,12 +300,6 @@ class workspace_wall_t : public wf::signal_provider_t
         return translation * scaling;
     }
 
-    bool render_hook_set = false;
-    wf::render_hook_t on_render = [=] (const wf::render_target_t& target)
-    {
-        render_wall(target, this->output->get_relative_geometry());
-    };
-
     void resize_colors()
     {
         auto size = this->output->workspace->get_workspace_grid_size();
@@ -311,5 +314,67 @@ class workspace_wall_t : public wf::signal_provider_t
     {
         resize_colors();
     };
+
+  protected:
+    class workspace_wall_node_t : public scene::node_t
+    {
+        class wwall_render_instance_t : public scene::render_instance_t
+        {
+            workspace_wall_node_t *self;
+
+          public:
+            wwall_render_instance_t(workspace_wall_node_t *self)
+            {
+                this->self = self;
+            }
+
+            void schedule_instructions(
+                std::vector<scene::render_instruction_t>& instructions,
+                const wf::render_target_t& target, wf::region_t& damage) override
+            {
+                auto bbox = self->get_bounding_box();
+                instructions.push_back(scene::render_instruction_t{
+                        .instance = this,
+                        .target   = target,
+                        .damage   = damage & bbox,
+                    });
+
+                damage ^= bbox;
+            }
+
+            void render(const wf::render_target_t& target,
+                const wf::region_t& region) override
+            {
+                self->wall->render_wall(target, region);
+            }
+        };
+
+      public:
+        workspace_wall_node_t(workspace_wall_t *wall) : node_t(false)
+        {
+            this->wall = wall;
+        }
+
+        virtual void gen_render_instances(
+            std::vector<scene::render_instance_uptr>& instances,
+            scene::damage_callback push_damage, wf::output_t *shown_on)
+        {
+            if (shown_on != this->wall->output)
+            {
+                return;
+            }
+
+            instances.push_back(std::make_unique<wwall_render_instance_t>(this));
+        }
+
+        wf::geometry_t get_bounding_box()
+        {
+            return wall->output->get_layout_geometry();
+        }
+
+      private:
+        workspace_wall_t *wall;
+    };
+    std::shared_ptr<workspace_wall_node_t> render_node;
 };
 }

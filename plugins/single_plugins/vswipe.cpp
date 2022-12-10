@@ -106,38 +106,38 @@ class vswipe : public wf::plugin_interface_t
         wall->connect_signal("frame", &this->on_frame);
     }
 
-    wf::signal_connection_t on_frame = {[=] (wf::signal_data_t*)
+    wf::effect_hook_t post_frame = [=] ()
+    {
+        if (!smooth_delta.running() && !state.swiping)
         {
-            if (!smooth_delta.running() && !state.swiping)
-            {
-                finalize_and_exit();
-
-                return;
-            }
-
-            output->render->schedule_redraw();
-
-            wf::point_t current_workspace = {state.vx, state.vy};
-            int dx = 0, dy = 0;
-
-            if (state.direction & HORIZONTAL)
-            {
-                dx = 1;
-            }
-
-            if (state.direction & VERTICAL)
-            {
-                dy = 1;
-            }
-
-            wf::point_t next_ws =
-            {current_workspace.x + dx, current_workspace.y + dy};
-            auto g1 = wall->get_workspace_rectangle(current_workspace);
-            auto g2 = wall->get_workspace_rectangle(next_ws);
-
-            wall->set_viewport(interpolate(g1, g2, -smooth_delta.dx,
-                -smooth_delta.dy));
+            finalize_and_exit();
+            return;
         }
+
+        output->render->schedule_redraw();
+        output->render->damage_whole();
+    };
+
+    wf::signal_connection_t on_frame = [=] (wf::signal_data_t*)
+    {
+        wf::point_t current_workspace = {state.vx, state.vy};
+        int dx = 0, dy = 0;
+
+        if (state.direction & HORIZONTAL)
+        {
+            dx = 1;
+        }
+
+        if (state.direction & VERTICAL)
+        {
+            dy = 1;
+        }
+
+        wf::point_t next_ws =
+        {current_workspace.x + dx, current_workspace.y + dy};
+        auto g1 = wall->get_workspace_rectangle(current_workspace);
+        auto g2 = wall->get_workspace_rectangle(next_ws);
+        wall->set_viewport(interpolate(g1, g2, -smooth_delta.dx, -smooth_delta.dy));
     };
 
     template<class wlr_event> using event = wf::input_event_signal<wlr_event>;
@@ -206,6 +206,7 @@ class vswipe : public wf::plugin_interface_t
         wall->set_gap_size(gap);
         wall->set_viewport(wall->get_workspace_rectangle(ws));
         wall->start_output_renderer();
+        output->render->add_effect(&post_frame, wf::OUTPUT_EFFECT_POST);
     }
 
     // XXX: how to determine this??
@@ -365,6 +366,7 @@ class vswipe : public wf::plugin_interface_t
         grab_interface->ungrab();
         output->deactivate_plugin(grab_interface);
         wall->stop_output_renderer(true);
+        output->render->rem_effect(&post_frame);
         state.animating = false;
     }
 
