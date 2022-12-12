@@ -115,11 +115,11 @@ wf::pointf_t view_2d_transformer_t::to_local(const wf::pointf_t& point)
 {
     auto midpoint = get_center(view->get_wm_geometry());
     auto result   = point - midpoint;
-    result.x /= scale_x;
-    result.y /= scale_y;
-    rotate_xy(result.x, result.y, angle);
     result.x -= translation_x;
     result.y -= translation_y;
+    rotate_xy(result.x, result.y, angle);
+    result.x /= scale_x;
+    result.y /= scale_y;
     result   += midpoint;
     return result;
 }
