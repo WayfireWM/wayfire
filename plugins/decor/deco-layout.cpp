@@ -167,8 +167,7 @@ void decoration_layout_t::resize(int width, int height)
  * @return The decoration areas which need to be rendered, in top to bottom
  *  order.
  */
-std::vector<nonstd::observer_ptr<decoration_area_t>> decoration_layout_t::
-get_renderable_areas()
+std::vector<nonstd::observer_ptr<decoration_area_t>> decoration_layout_t::get_renderable_areas()
 {
     std::vector<nonstd::observer_ptr<decoration_area_t>> renderable;
     for (auto& area : layout_areas)

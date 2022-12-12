@@ -967,14 +967,12 @@ const wf::scene::floating_inner_ptr& wf::view_interface_t::get_root_node() const
     return view_impl->root_node;
 }
 
-std::shared_ptr<wf::scene::transform_manager_node_t> wf::view_interface_t::
-get_transformed_node() const
+std::shared_ptr<wf::scene::transform_manager_node_t> wf::view_interface_t::get_transformed_node() const
 {
     return view_impl->transformed_node;
 }
 
-const std::shared_ptr<wf::scene::view_node_t>& wf::view_interface_t::
-get_surface_root_node() const
+const std::shared_ptr<wf::scene::view_node_t>& wf::view_interface_t::get_surface_root_node() const
 {
     return view_impl->surface_root_node;
 }

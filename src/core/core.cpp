@@ -454,8 +454,7 @@ void wf::compositor_core_impl_t::rem_touch_gesture(
     seat->touch->rem_touch_gesture(gesture);
 }
 
-std::vector<nonstd::observer_ptr<wf::input_device_t>> wf::compositor_core_impl_t::
-get_input_devices()
+std::vector<nonstd::observer_ptr<wf::input_device_t>> wf::compositor_core_impl_t::get_input_devices()
 {
     std::vector<nonstd::observer_ptr<wf::input_device_t>> list;
     for (auto& dev : input->input_devices)
