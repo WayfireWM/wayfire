@@ -32,10 +32,11 @@ struct gl_geometry
 
 namespace wf
 {
-/* Simple framebuffer, used mostly to allocate framebuffers for workspace
- * streams.
- *
- * Resources (tex/fb) are not automatically destroyed */
+/**
+ * A simple class for managing framebuffers.
+ * It can handle allocation and deallocation (not done automatically) of
+ * framebuffers and their backing textures.
+ */
 struct framebuffer_t
 {
     GLuint tex = -1, fb = -1;
@@ -66,9 +67,13 @@ struct framebuffer_t
     void reset();
 };
 
-/* A more feature-complete framebuffer.
- * It represents an area of the output, with the corresponding dimensions,
- * transforms, etc */
+/**
+ * A render target contains a framebuffer and information on how to map
+ * coordinates from the logical coordinate space (output-local coordinates, etc.)
+ * to framebuffer coordinates.
+ *
+ * A render target may or not cover the full framebuffer.
+ */
 struct render_target_t : public framebuffer_t
 {
     // Describes the logical coordinates of the render area, in whatever
