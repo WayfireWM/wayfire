@@ -1140,7 +1140,7 @@ wf::region_t scene::run_render_pass(
     // Render instances
     for (auto& instr : wf::reverse(instructions))
     {
-        instr.instance->render(instr.target, instr.damage);
+        instr.instance->render(instr.target, instr.damage, instr.data);
         if (params.reference_output)
         {
             instr.instance->presentation_feedback(params.reference_output);

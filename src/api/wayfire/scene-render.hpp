@@ -3,6 +3,7 @@
 #include "wayfire/nonstd/observer_ptr.h"
 #include <memory>
 #include <vector>
+#include <any>
 #include <wayfire/config/types.hpp>
 #include <wayfire/region.hpp>
 #include <wayfire/geometry.hpp>
@@ -48,6 +49,7 @@ struct render_instruction_t
     render_instance_t *instance = NULL;
     wf::render_target_t target;
     wf::region_t damage;
+    std::any data = {};
 };
 
 /**
@@ -105,7 +107,19 @@ class render_instance_t
      *   @schedule_instructions.
      */
     virtual void render(const wf::render_target_t& target,
-        const wf::region_t& region) = 0;
+        const wf::region_t& region)
+    {}
+
+    /**
+     * Render instances may also pass custom data to their render callbacks.
+     * However, since few of them do this, it is enough to override the version
+     * without custom data.
+     */
+    virtual void render(const wf::render_target_t& target,
+        const wf::region_t& region, const std::any& custom_data)
+    {
+        render(target, region);
+    }
 
     /**
      * Notify the render instance that it has been presented on an output.
@@ -143,6 +157,17 @@ struct node_damage_signal
 {
     wf::region_t region;
 };
+
+/**
+ * A helper function to emit the damage signal on a node.
+ */
+template<class NodePtr>
+inline void damage_node(NodePtr node, wf::region_t damage)
+{
+    node_damage_signal data;
+    data.region = damage;
+    node->emit(&data);
+}
 
 /**
  * Signal that a render pass starts.
