@@ -398,10 +398,8 @@ class output_render_instance_t : public default_render_instance_t
         // In principle, we just have to schedule the children.
         // However, we need to adjust the target's geometry and the damage to
         // fit with the coordinate system of the output.
-        wf::render_target_t new_target = target;
         auto offset = wf::origin(output->get_layout_geometry());
-        new_target.geometry.x -= offset.x;
-        new_target.geometry.y -= offset.y;
+        wf::render_target_t new_target = target.translated(-offset);
 
         damage += -offset;
         for (auto& ch : children)

@@ -850,9 +850,8 @@ class wf::render_manager::impl
             output->workspace->get_current_workspace());
         params.damage += wf::origin(output->get_layout_geometry());
 
-        params.target = postprocessing->get_target_framebuffer();
-        params.target.geometry = params.target.geometry +
-            wf::origin(output->get_layout_geometry());
+        params.target = postprocessing->get_target_framebuffer().translated(
+            wf::origin(output->get_layout_geometry()));
         params.background_color = background_color_opt;
         params.reference_output = this->output;
 

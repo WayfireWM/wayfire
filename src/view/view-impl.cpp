@@ -99,8 +99,9 @@ void wf::wlr_view_t::set_position(int x, int y,
 
     /* Make sure that if we move the view while it is unmapped, its snapshot
      * is still valid coordinates */
-    view_impl->offscreen_buffer.geometry.x += x - data.old_geometry.x;
-    view_impl->offscreen_buffer.geometry.y += y - data.old_geometry.y;
+    view_impl->offscreen_buffer = view_impl->offscreen_buffer.translated({
+        x - data.old_geometry.x, y - data.old_geometry.y,
+    });
 
     damage();
 

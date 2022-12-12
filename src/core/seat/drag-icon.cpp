@@ -56,8 +56,7 @@ class dnd_icon_root_render_instance_t : public render_instance_t
         std::vector<render_instruction_t>& instructions,
         const wf::render_target_t& target, wf::region_t& damage) override
     {
-        wf::render_target_t our_target = target;
-        our_target.geometry = our_target.geometry + -icon->get_position();
+        wf::render_target_t our_target = target.translated(-icon->get_position());
 
         damage += -icon->get_position();
         for (auto& ch : this->children)

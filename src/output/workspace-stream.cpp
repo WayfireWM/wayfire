@@ -79,16 +79,14 @@ void workspace_stream_t::render_frame()
 
     scene::render_pass_params_t params;
 
-    params.target = current_output->render->get_target_framebuffer();
+    auto g   = current_output->get_relative_geometry();
+    auto cws = current_output->workspace->get_current_workspace();
+    params.target = current_output->render->get_target_framebuffer()
+        .translated({(ws.x - cws.x) * g.width, (ws.y - cws.y) * g.height});
 
     /* Use the workspace buffers */
     params.target.fb  = this->buffer.fb;
     params.target.tex = this->buffer.tex;
-
-    auto g   = current_output->get_relative_geometry();
-    auto cws = current_output->workspace->get_current_workspace();
-    params.target.geometry.x = (ws.x - cws.x) * g.width,
-    params.target.geometry.y = (ws.y - cws.y) * g.height;
 
     wf::option_wrapper_t<wf::color_t> background_color_opt{"core/background_color"};
     params.background_color =

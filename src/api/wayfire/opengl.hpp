@@ -71,9 +71,15 @@ struct framebuffer_t
  * transforms, etc */
 struct render_target_t : public framebuffer_t
 {
+    // Describes the logical coordinates of the render area, in whatever
+    // coordinate system the render target needs.
     wf::geometry_t geometry = {0, 0, 0, 0};
 
     uint32_t wl_transform = WL_OUTPUT_TRANSFORM_NORMAL;
+    // The scale of a framebuffer is a hint at how bigger the actual framebuffer
+    // is compared to the logical geometry. It is useful for plugins utilizing
+    // auxilliary buffers in logical coordinates, so that they know they should
+    // render with higher resolution and still get a crisp image on the screen.
     float scale = 1.0;
 
     /* Indicates if the framebuffer has other transform than indicated
@@ -84,8 +90,11 @@ struct render_target_t : public framebuffer_t
      * other framebuffer transformations, if has_nonstandard_transform is set */
     glm::mat4 transform = glm::mat4(1.0);
 
-    /* The functions below to convert between coordinate systems don't need a
-     * bound OpenGL context */
+    /**
+     * Get a render target which is the same as this, but whose geometry is
+     * translated by @offset.
+     */
+    render_target_t translated(wf::point_t offset) const;
 
     /**
      * Get the geometry of the given box after projecting it onto the framebuffer.
@@ -102,7 +111,7 @@ struct render_target_t : public framebuffer_t
     /**
      * Set the scissor region to the given box.
      *
-     * In contrast to wf::framebuffer_base_t, this method takes its argument
+     * In contrast to framebuffer_t::scissor(), this method takes its argument
      * as a box with "logical" coordinates, not raw framebuffer coordinates.
      *
      * @param box The scissor box, in the same coordinate system as the

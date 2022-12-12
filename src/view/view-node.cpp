@@ -203,12 +203,15 @@ class view_render_instance_t : public render_instance_t
             // Adjust geometry of damage/target so that view is always visible if
             // sticky
             auto output_size = view->get_output()->get_screen_size();
-            our_target.geometry.x = target.geometry.x % output_size.width;
-            our_target.geometry.y = target.geometry.y % output_size.height;
-            offset = wf::origin(target.geometry) - wf::origin(our_target.geometry);
+            offset = {
+                (target.geometry.x % output_size.width) - target.geometry.x,
+                (target.geometry.y % output_size.height) - target.geometry.y,
+            };
+
+            our_target = target.translated(offset);
         }
 
-        damage += -offset;
+        damage += offset;
 
         auto bbox = view->get_surface_root_node()->get_bounding_box();
         wf::region_t our_damage = damage & bbox;
@@ -225,7 +228,8 @@ class view_render_instance_t : public render_instance_t
             {
                 auto surface_offset = wf::origin(view->get_output_geometry());
                 damage += -surface_offset;
-                our_target.geometry = our_target.geometry + -surface_offset;
+
+                our_target = our_target.translated(-surface_offset);
                 for (auto& ch : this->children)
                 {
                     ch->schedule_instructions(instructions, our_target, damage);
@@ -235,7 +239,7 @@ class view_render_instance_t : public render_instance_t
             }
         }
 
-        damage += offset;
+        damage += -offset;
     }
 
     void render(const wf::render_target_t& target,

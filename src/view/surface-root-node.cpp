@@ -83,11 +83,10 @@ class surface_root_render_instance_t : public render_instance_t
     void schedule_instructions(std::vector<render_instruction_t>& instructions,
         const wf::render_target_t& target, wf::region_t& damage) override
     {
-        wf::render_target_t our_target = target;
         wf::point_t offset = si->get_offset();
-
         damage += -offset;
-        our_target.geometry = our_target.geometry + -offset;
+
+        auto our_target = target.translated(-offset);
         for (auto& ch : this->children)
         {
             ch->schedule_instructions(instructions, our_target, damage);
