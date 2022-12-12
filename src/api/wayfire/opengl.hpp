@@ -82,9 +82,11 @@ struct render_target_t : public framebuffer_t
     // render with higher resolution and still get a crisp image on the screen.
     float scale = 1.0;
 
-    /* Indicates if the framebuffer has other transform than indicated
-     * by scale and wl_transform */
-    bool has_nonstandard_transform = false;
+    // If set, the subbuffer indicates a subrectangle of the framebuffer which
+    // is used instead of the full buffer. In that case, the logical @geometry
+    // is mapped only to that subrectangle and not to the full framebuffer.
+    // Note: (0,0) is top-left for subbuffer.
+    std::optional<wf::geometry_t> subbuffer;
 
     /* Transform contains output rotation, and possibly
      * other framebuffer transformations, if has_nonstandard_transform is set */
@@ -98,6 +100,7 @@ struct render_target_t : public framebuffer_t
 
     /**
      * Get the geometry of the given box after projecting it onto the framebuffer.
+     * In the values returned, (0,0) is top-left.
      *
      * The resulting geometry is affected by the framebuffer geometry, scale and
      * transform.

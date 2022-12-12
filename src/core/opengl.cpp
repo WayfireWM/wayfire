@@ -1,6 +1,7 @@
 #include <wayfire/util/log.hpp>
 #include <map>
 #include "opengl-priv.hpp"
+#include "wayfire/geometry.hpp"
 #include "wayfire/output.hpp"
 #include "core-impl.hpp"
 #include "config.h"
@@ -431,15 +432,6 @@ wlr_box wf::render_target_t::framebuffer_box_from_geometry_box(wlr_box box) cons
     wlr_box scaled = box * scale;
 
     /* Step 3: rotate */
-    if (has_nonstandard_transform)
-    {
-        // TODO: unimplemented, but also unused for now
-        LOGE("unimplemented reached: framebuffer_box_from_geometry_box"
-             " with has_nonstandard_transform");
-
-        return {0, 0, 0, 0};
-    }
-
     int width = viewport_width, height = viewport_height;
     if (wl_transform & 1)
     {
@@ -452,6 +444,12 @@ wlr_box wf::render_target_t::framebuffer_box_from_geometry_box(wlr_box box) cons
 
     wlr_box_transform(&result, &scaled, transform, width, height);
 
+    if (subbuffer)
+    {
+        result = scale_box({0, 0, viewport_width, viewport_height},
+            subbuffer.value(), result);
+    }
+
     return result;
 }
 
@@ -461,6 +459,29 @@ glm::mat4 wf::render_target_t::get_orthographic_projection() const
         1.0f * geometry.x + 1.0f * geometry.width,
         1.0f * geometry.y + 1.0f * geometry.height,
         1.0f * geometry.y);
+
+    if (subbuffer)
+    {
+        auto sub = subbuffer.value();
+
+        float scale_x = 1.0 * sub.width / viewport_width;
+        float scale_y = 1.0 * sub.height / viewport_height;
+
+        // Translation is calculated between the midpoint of the whole buffer
+        // and the midpoint of the subbuffer, then scaled to NDC.
+        float half_w = viewport_width / 2.0;
+        float half_h = viewport_height / 2.0;
+
+        float translate_x = ((sub.x + sub.width / 2.0) - half_w) / half_w;
+        float translate_y = (half_h - sub.y - sub.height / 2.0) / half_h;
+
+        glm::mat4 scale = glm::scale(glm::mat4(1.0),
+            glm::vec3(scale_x, scale_y, 1.0));
+        glm::mat4 translate = glm::translate(glm::mat4(1.0),
+            glm::vec3(translate_x, translate_y, 0.0));
+
+        return translate * scale * this->transform * ortho;
+    }
 
     return this->transform * ortho;
 }
