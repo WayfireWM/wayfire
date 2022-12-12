@@ -168,3 +168,20 @@ wf::geometry_t wf::construct_box(
         origin.x, origin.y, dimensions.width, dimensions.height
     };
 }
+
+wf::geometry_t wf::scale_box(
+    wf::geometry_t A, wf::geometry_t B, wf::geometry_t box)
+{
+    // Figure out damage relative to the viewport
+    double px = 1.0 * (box.x - A.x) / A.width;
+    double py = 1.0 * (box.y - A.y) / A.height;
+    double pw = 1.0 * box.width / A.width;
+    double ph = 1.0 * box.height / A.height;
+
+    return wf::geometry_t{
+        .x     = int(std::floor(B.x + B.width * px)),
+        .y     = int(std::floor(B.y + B.height * py)),
+        .width = int(std::ceil(B.width * pw)),
+        .height = int(std::ceil(B.height * ph)),
+    };
+}

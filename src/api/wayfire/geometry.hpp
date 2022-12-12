@@ -96,6 +96,11 @@ T clamp(T value, T min, T max)
  * The returned geometry might be smaller, but never bigger than window.
  */
 geometry_t clamp(geometry_t window, geometry_t output);
+
+// Transform a subbox from coordinate space A to coordinate space B.
+// The returned subbox will occupy the same relative part of @B as
+// @box occupies in @A.
+wf::geometry_t scale_box(wf::geometry_t A, wf::geometry_t B, wf::geometry_t box);
 }
 
 bool operator ==(const wf::geometry_t& a, const wf::geometry_t& b);
