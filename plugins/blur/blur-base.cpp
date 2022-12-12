@@ -158,8 +158,8 @@ wlr_box wf_blur_base::copy_region(wf::framebuffer_t& result,
     GL_CALL(glBindFramebuffer(GL_READ_FRAMEBUFFER, source.fb));
     GL_CALL(glBindFramebuffer(GL_DRAW_FRAMEBUFFER, result.fb));
     GL_CALL(glBlitFramebuffer(
-        subbox.x, source_box.height - subbox.y - subbox.height,
-        subbox.x + subbox.width, source_box.height - subbox.y,
+        subbox.x, source.viewport_height - subbox.y - subbox.height,
+        subbox.x + subbox.width, source.viewport_height - subbox.y,
         0, 0, degraded_width, degraded_height,
         GL_COLOR_BUFFER_BIT, GL_LINEAR));
     OpenGL::render_end();
@@ -229,8 +229,6 @@ void wf_blur_base::pre_render(wlr_box src_box,
 void wf_blur_base::render(wf::texture_t src_tex, wlr_box src_box,
     wlr_box scissor_box, const wf::render_target_t& target_fb)
 {
-    wlr_box fb_geom =
-        target_fb.framebuffer_box_from_geometry_box(target_fb.geometry);
     auto view_box = target_fb.framebuffer_box_from_geometry_box(src_box);
 
     OpenGL::render_begin(target_fb);
@@ -257,8 +255,11 @@ void wf_blur_base::render(wf::texture_t src_tex, wlr_box src_box,
     GL_CALL(glBindTexture(GL_TEXTURE_2D, fb[1].tex));
     /* Render it to target_fb */
     target_fb.bind();
-    GL_CALL(glViewport(view_box.x, fb_geom.height - view_box.y - view_box.height,
+
+    GL_CALL(glViewport(view_box.x,
+        target_fb.viewport_height - view_box.y - view_box.height,
         view_box.width, view_box.height));
+
     target_fb.logic_scissor(scissor_box);
 
     GL_CALL(glDrawArrays(GL_TRIANGLE_FAN, 0, 4));
