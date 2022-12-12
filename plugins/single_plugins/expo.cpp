@@ -548,14 +548,10 @@ class wayfire_expo : public wf::plugin_interface_t
             {
                 if ((x == target_ws.x) && (y == target_ws.y))
                 {
-                    wall->get_ws_color({x, y}) = glm::vec4(1.0f);
+                    wall->set_ws_dim({x, y}, 1.0);
                 } else
                 {
-                    wall->get_ws_color({x, y}) = glm::vec4(
-                        (float)inactive_brightness,
-                        (float)inactive_brightness,
-                        (float)inactive_brightness,
-                        1.0f);
+                    wall->set_ws_dim({x, y}, inactive_brightness);
                 }
             }
         }
@@ -692,7 +688,6 @@ class wayfire_expo : public wf::plugin_interface_t
     {
         if (zoom_animation.running())
         {
-            output->render->schedule_redraw();
             wall->set_viewport(zoom_animation);
         } else if (!state.zoom_in)
         {
@@ -708,14 +703,10 @@ class wayfire_expo : public wf::plugin_interface_t
                 auto& anim = ws_fade.at(x).at(y);
                 if (anim.running())
                 {
-                    wall->get_ws_color({x, y}) = glm::vec4(
-                        anim, anim, anim, 1.0f);
-                    output->render->schedule_redraw();
+                    wall->set_ws_dim({x, y}, anim);
                 }
             }
         }
-
-        output->render->damage_whole();
     };
 
     void resize_ws_fade()

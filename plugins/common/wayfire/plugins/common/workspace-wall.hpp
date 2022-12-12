@@ -5,10 +5,16 @@
 #include <memory>
 #include "wayfire/core.hpp"
 #include "wayfire/debug.hpp"
+#include "wayfire/geometry.hpp"
+#include "wayfire/opengl.hpp"
 #include "wayfire/region.hpp"
 #include "wayfire/render-manager.hpp"
+#include "wayfire/scene-input.hpp"
 #include "wayfire/scene-operations.hpp"
+#include "wayfire/scene-render.hpp"
 #include "wayfire/scene.hpp"
+#include "wayfire/signal-provider.hpp"
+#include "wayfire/workspace-stream.hpp"
 #include "workspace-stream-sharing.hpp"
 
 namespace wf
@@ -38,8 +44,6 @@ class workspace_wall_t : public wf::signal_provider_t
     workspace_wall_t(wf::output_t *_output) : output(_output)
     {
         this->viewport = get_wall_rectangle();
-        streams = workspace_stream_pool_t::ensure_pool(output);
-
         resize_colors();
         output->connect_signal("workspace-grid-changed", &on_workspace_grid_changed);
     }
@@ -47,7 +51,6 @@ class workspace_wall_t : public wf::signal_provider_t
     ~workspace_wall_t()
     {
         stop_output_renderer(false);
-        streams->unref();
     }
 
     /**
@@ -84,23 +87,12 @@ class workspace_wall_t : public wf::signal_provider_t
      */
     void set_viewport(const wf::geometry_t& viewport_geometry)
     {
-        /*
-         * XXX: Check which workspaces should be stopped.
-         * Algorithm can be reduced to O(N) but O(N^2) should be more than enough.
-         */
-        auto previously_visible = get_visible_workspaces(this->viewport);
-        auto newly_visible = get_visible_workspaces(viewport_geometry);
-        for (wf::point_t old : previously_visible)
-        {
-            auto it = std::find_if(newly_visible.begin(), newly_visible.end(),
-                [&] (auto neww) { return neww == old; });
-            if (it == newly_visible.end())
-            {
-                streams->stop(old);
-            }
-        }
-
         this->viewport = viewport_geometry;
+        if (render_node)
+        {
+            scene::damage_node(this->render_node,
+                this->render_node->get_bounding_box());
+        }
     }
 
     /**
@@ -112,32 +104,6 @@ class workspace_wall_t : public wf::signal_provider_t
      */
     void render_wall(const wf::render_target_t& fb, const wf::region_t& damage)
     {
-        update_streams();
-
-        auto wall_matrix = calculate_viewport_transformation_matrix(this->viewport,
-            output->get_relative_geometry());
-
-        OpenGL::render_begin(fb);
-        for (auto box : damage)
-        {
-            fb.logic_scissor(wlr_box_from_pixman_box(box));
-
-            OpenGL::clear(this->background_color);
-            /* After all transformations of the framebuffer, the workspace should
-             * span the visible part of the OpenGL coordinate space. */
-            const wf::geometry_t workspace_geometry = {-1, 1, 2, -2};
-            for (auto& ws : get_visible_workspaces(this->viewport))
-            {
-                auto ws_matrix = calculate_workspace_matrix(ws);
-                OpenGL::render_transformed_texture(
-                    streams->get(ws).buffer.tex, workspace_geometry,
-                    fb.get_orthographic_projection() * wall_matrix * ws_matrix,
-                    get_ws_color(ws));
-            }
-
-            OpenGL::render_end();
-        }
-
         wall_frame_event_t data{fb};
         this->emit_signal("frame", &data);
     }
@@ -161,8 +127,10 @@ class workspace_wall_t : public wf::signal_provider_t
      */
     void stop_output_renderer(bool reset_viewport)
     {
-        wf::dassert(render_node != nullptr,
-            "Stopping without having started workspace-wall?");
+        if (!render_node)
+        {
+            return;
+        }
 
         scene::remove_child(render_node);
         render_node = nullptr;
@@ -208,12 +176,15 @@ class workspace_wall_t : public wf::signal_provider_t
     }
 
     /**
-     * Get the color multiplier for a given workspace.
-     * This can be used to set to a desired color as well.
+     * Get/set the dimming factor for a given workspace.
      */
-    glm::vec4& get_ws_color(const wf::point_t& ws)
+    void set_ws_dim(const wf::point_t& ws, float value)
     {
-        return render_colors.at(ws.x).at(ws.y);
+        render_colors[ws.x][ws.y] = value;
+        if (render_node)
+        {
+            scene::damage_node(render_node, render_node->get_bounding_box());
+        }
     }
 
   protected:
@@ -221,20 +192,9 @@ class workspace_wall_t : public wf::signal_provider_t
 
     wf::color_t background_color = {0, 0, 0, 0};
     int gap_size = 0;
-
     wf::geometry_t viewport = {0, 0, 0, 0};
-    nonstd::observer_ptr<workspace_stream_pool_t> streams;
 
-    std::vector<std::vector<glm::vec4>> render_colors;
-
-    /** Update or start visible streams */
-    void update_streams()
-    {
-        for (auto& ws : get_visible_workspaces(viewport))
-        {
-            streams->update(ws);
-        }
-    }
+    std::vector<std::vector<float>> render_colors;
 
     /**
      * Get a list of workspaces visible in the viewport.
@@ -257,56 +217,13 @@ class workspace_wall_t : public wf::signal_provider_t
         return visible;
     }
 
-    /**
-     * Calculate the workspace matrix.
-     *
-     * Workspaces are always rendered with width/height 2 and centered around (0, 0).
-     * To obtain the correct output image, the following is done:
-     *
-     * 1. Output rotation is undone from the workspace stream texture.
-     * 2. Workspace quad is scaled to the correct size.
-     * 3. Workspace quad is translated to the correct global position.
-     */
-    glm::mat4 calculate_workspace_matrix(const wf::point_t& ws) const
-    {
-        auto target_geometry = get_workspace_rectangle(ws);
-        auto fb = output->render->get_target_framebuffer();
-        auto translation = glm::translate(glm::mat4(1.0),
-            glm::vec3{target_geometry.x, target_geometry.y, 0.0});
-
-        return translation * glm::inverse(fb.get_orthographic_projection());
-    }
-
-    /**
-     * Calculate the viewport transformation matrix.
-     *
-     * This matrix transforms the workspace's quad from the logical wall space
-     * to the actual box to be displayed on the screen.
-     */
-    glm::mat4 calculate_viewport_transformation_matrix(
-        const wf::geometry_t& viewport, const wf::geometry_t& target) const
-    {
-        const double scale_x = target.width * 1.0 / viewport.width;
-        const double scale_y = target.height * 1.0 / viewport.height;
-
-        const double x_after_scale = viewport.x * scale_x;
-        const double y_after_scale = viewport.y * scale_y;
-
-        auto scaling = glm::scale(glm::mat4(
-            1.0), glm::vec3{scale_x, scale_y, 1.0});
-        auto translation = glm::translate(glm::mat4(1.0),
-            glm::vec3{target.x - x_after_scale, target.y - y_after_scale, 0.0});
-
-        return translation * scaling;
-    }
-
     void resize_colors()
     {
         auto size = this->output->workspace->get_workspace_grid_size();
         render_colors.resize(size.width);
         for (auto& v : render_colors)
         {
-            v.resize(size.height, glm::vec4(1.f));
+            v.resize(size.height, 1.0);
         }
     }
 
@@ -322,37 +239,189 @@ class workspace_wall_t : public wf::signal_provider_t
         {
             workspace_wall_node_t *self;
 
+            std::vector<std::vector<std::vector<scene::render_instance_uptr>>>
+            instances;
+
+            scene::damage_callback push_damage;
+            wf::signal::connection_t<scene::node_damage_signal> on_wall_damage =
+                [=] (scene::node_damage_signal *ev)
+            {
+                push_damage(ev->region);
+            };
+
+            wf::geometry_t get_workspace_rect(wf::point_t ws)
+            {
+                auto output_size = self->wall->output->get_screen_size();
+                return {
+                    .x     = ws.x * (output_size.width + self->wall->gap_size),
+                    .y     = ws.y * (output_size.height + self->wall->gap_size),
+                    .width = output_size.width,
+                    .height = output_size.height,
+                };
+            }
+
           public:
-            wwall_render_instance_t(workspace_wall_node_t *self)
+            wwall_render_instance_t(workspace_wall_node_t *self,
+                scene::damage_callback push_damage)
             {
                 this->self = self;
+                this->push_damage = push_damage;
+                self->connect(&on_wall_damage);
+
+                instances.resize(self->workspaces.size());
+                for (int i = 0; i < (int)self->workspaces.size(); i++)
+                {
+                    instances[i].resize(self->workspaces[i].size());
+                    for (int j = 0; j < (int)self->workspaces[i].size(); j++)
+                    {
+                        auto push_damage_child = [=] (const wf::region_t& damage)
+                        {
+                            wf::region_t our_damage;
+                            for (auto& rect : damage)
+                            {
+                                wf::geometry_t box = wlr_box_from_pixman_box(rect);
+                                box = box + wf::origin(get_workspace_rect({i, j}));
+                                auto A = self->wall->viewport;
+                                auto B = self->get_bounding_box();
+                                our_damage |= scale_box(A, B, box);
+                            }
+
+                            push_damage(our_damage);
+                        };
+
+                        self->workspaces[i][j]->gen_render_instances(instances[i][j],
+                            push_damage_child, self->wall->output);
+                    }
+                }
             }
+
+            static constexpr int TAG_BACKGROUND = 0;
+            static constexpr int TAG_WS_DIM     = 1;
 
             void schedule_instructions(
                 std::vector<scene::render_instruction_t>& instructions,
                 const wf::render_target_t& target, wf::region_t& damage) override
             {
-                auto bbox = self->get_bounding_box();
+                // Dim inactive workspaces at the end
                 instructions.push_back(scene::render_instruction_t{
                         .instance = this,
                         .target   = target,
-                        .damage   = damage & bbox,
+                        .damage   = damage & self->get_bounding_box(),
+                        .data     = TAG_WS_DIM,
+                    });
+
+                // Scale damage to be in the workspace's coordinate system
+                wf::region_t workspaces_damage;
+                for (auto& rect : damage)
+                {
+                    auto box = wlr_box_from_pixman_box(rect);
+                    wf::geometry_t A = self->get_bounding_box();
+                    wf::geometry_t B = self->wall->viewport;
+                    workspaces_damage |= scale_box(A, B, box);
+                }
+
+                for (int i = 0; i < (int)self->workspaces.size(); i++)
+                {
+                    for (int j = 0; j < (int)self->workspaces[i].size(); j++)
+                    {
+                        // Compute render target: a subbuffer of the target buffer
+                        // which corresponds to the region occupied by the
+                        // workspace.
+                        wf::render_target_t our_target = target;
+                        our_target.geometry =
+                            self->workspaces[i][j]->get_bounding_box();
+
+                        wf::geometry_t workspace_rect = get_workspace_rect({i, j});
+                        wf::geometry_t relative_to_viewport = scale_box(
+                            self->wall->viewport, target.geometry, workspace_rect);
+
+                        our_target.subbuffer = target.framebuffer_box_from_geometry_box(relative_to_viewport);
+
+                        // Compute damage: in logical coordinates, so does not
+                        // have to be scaled.
+                        wf::point_t workspace_offset = wf::origin(workspace_rect);
+
+                        // FIXME: get_bounding_box() miiiight not really be
+                        // the size of a workspace, but it currently is
+                        wf::region_t our_damage = (workspaces_damage + -workspace_offset);
+                        our_damage &= self->get_bounding_box();
+                        for (auto& ch : instances[i][j])
+                        {
+                            ch->schedule_instructions(instructions, our_target, our_damage);
+                        }
+
+                        workspaces_damage ^= our_damage;
+                    }
+                }
+
+                auto bbox = self->get_bounding_box();
+
+                instructions.push_back(scene::render_instruction_t{
+                        .instance = this,
+                        .target   = target,
+                        .damage   = damage & self->get_bounding_box(),
+                        .data     = TAG_BACKGROUND,
                     });
 
                 damage ^= bbox;
             }
 
             void render(const wf::render_target_t& target,
-                const wf::region_t& region) override
+                const wf::region_t& region, const std::any& tag) override
             {
-                self->wall->render_wall(target, region);
+                if (std::any_cast<int>(tag) == TAG_BACKGROUND)
+                {
+                    OpenGL::render_begin(target);
+                    for (auto& box : region)
+                    {
+                        target.logic_scissor(wlr_box_from_pixman_box(box));
+                        OpenGL::clear(self->wall->background_color);
+                    }
+
+                    OpenGL::render_end();
+                } else
+                {
+                    OpenGL::render_begin(target);
+
+                    for (auto& dmg_rect : region)
+                    {
+                        target.logic_scissor(wlr_box_from_pixman_box(dmg_rect));
+                        for (int i = 0; i < (int)self->workspaces.size(); i++)
+                        {
+                            for (int j = 0; j < (int)self->workspaces[i].size(); j++)
+                            {
+                                auto workspace_rect = get_workspace_rect({i, j});
+                                auto relative_to_viewport =
+                                    scale_box(self->wall->viewport, target.geometry, workspace_rect);
+                                const float a = 1.0 - self->wall->render_colors[i][j];
+
+                                OpenGL::render_rectangle(relative_to_viewport, {0, 0, 0, a},
+                                    target.get_orthographic_projection());
+                            }
+                        }
+                    }
+
+                    OpenGL::render_end();
+                    self->wall->render_wall(target, region);
+                }
             }
         };
 
       public:
         workspace_wall_node_t(workspace_wall_t *wall) : node_t(false)
         {
-            this->wall = wall;
+            this->wall  = wall;
+            auto [w, h] = wall->output->workspace->get_workspace_grid_size();
+            workspaces.resize(w);
+            for (int i = 0; i < w; i++)
+            {
+                for (int j = 0; j < h; j++)
+                {
+                    auto node = std::make_shared<workspace_stream_node_t>(
+                        wall->output, wf::point_t{i, j});
+                    workspaces[i].push_back(node);
+                }
+            }
         }
 
         virtual void gen_render_instances(
@@ -364,7 +433,8 @@ class workspace_wall_t : public wf::signal_provider_t
                 return;
             }
 
-            instances.push_back(std::make_unique<wwall_render_instance_t>(this));
+            instances.push_back(std::make_unique<wwall_render_instance_t>(
+                this, push_damage));
         }
 
         wf::geometry_t get_bounding_box()
@@ -374,6 +444,7 @@ class workspace_wall_t : public wf::signal_provider_t
 
       private:
         workspace_wall_t *wall;
+        std::vector<std::vector<std::shared_ptr<workspace_stream_node_t>>> workspaces;
     };
     std::shared_ptr<workspace_wall_node_t> render_node;
 };
