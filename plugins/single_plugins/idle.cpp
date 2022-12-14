@@ -123,6 +123,7 @@ class wayfire_idle_singleton : public wf::singleton_plugin_t<wayfire_idle>
     wf::option_wrapper_t<double> cube_rotate_speed{"idle/cube_rotate_speed"};
     wf::option_wrapper_t<double> cube_max_zoom{"idle/cube_max_zoom"};
     wf::option_wrapper_t<bool> disable_on_fullscreen{"idle/disable_on_fullscreen"};
+    wf::option_wrapper_t<bool> disable_initially{"idle/disable_initially"};
 
     std::optional<wf::idle_inhibitor_t> fullscreen_inhibitor;
     bool has_fullscreen = false;
@@ -184,6 +185,11 @@ class wayfire_idle_singleton : public wf::singleton_plugin_t<wayfire_idle>
         singleton_plugin_t::init();
         grab_interface->name = "idle";
         grab_interface->capabilities = 0;
+
+        if (disable_initially)
+        {
+            get_instance().hotkey_inhibitor.emplace();
+        }
 
         output->add_activator(
             wf::option_wrapper_t<wf::activatorbinding_t>{"idle/toggle"},
