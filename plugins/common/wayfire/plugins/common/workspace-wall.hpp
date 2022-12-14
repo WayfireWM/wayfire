@@ -337,20 +337,16 @@ class workspace_wall_t : public wf::signal_provider_t
 
                         our_target.subbuffer = target.framebuffer_box_from_geometry_box(relative_to_viewport);
 
-                        // Compute damage: in logical coordinates, so does not
-                        // have to be scaled.
-                        wf::point_t workspace_offset = wf::origin(workspace_rect);
+                        // Take the damage for the workspace in workspace-local coordindates, as the workspace
+                        // stream node expects.
+                        wf::region_t our_damage = workspaces_damage & workspace_rect;
+                        workspaces_damage ^= our_damage;
+                        our_damage += -wf::origin(workspace_rect);
 
-                        // FIXME: get_bounding_box() miiiight not really be
-                        // the size of a workspace, but it currently is
-                        wf::region_t our_damage = (workspaces_damage + -workspace_offset);
-                        our_damage &= self->get_bounding_box();
                         for (auto& ch : instances[i][j])
                         {
                             ch->schedule_instructions(instructions, our_target, our_damage);
                         }
-
-                        workspaces_damage ^= our_damage;
                     }
                 }
 
