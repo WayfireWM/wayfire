@@ -108,6 +108,17 @@ class workspace_stream_node_t::workspace_stream_instance_t : public scene::
             ch->presentation_feedback(output);
         }
     }
+
+    void compute_visibility(wf::output_t *output, wf::region_t& visible) override
+    {
+        visible -= get_offset();
+        for (auto& ch : this->instances)
+        {
+            ch->compute_visibility(output, visible);
+        }
+
+        visible += get_offset();
+    }
 };
 
 workspace_stream_node_t::workspace_stream_node_t(

@@ -145,6 +145,15 @@ class render_instance_t
         // neither for this node, nor for nodes below.
         return direct_scanout::OCCLUSION;
     }
+
+    /**
+     * Compute the render instance's visible region on the given output.
+     *
+     * The visible region can be used for things like determining when to send frame done events to
+     * wlr_surfaces and to ignore damage to invisible parts of a render instance.
+     */
+    virtual void compute_visibility(wf::output_t *output, wf::region_t& visible)
+    {}
 };
 
 using render_instance_uptr = std::unique_ptr<render_instance_t>;

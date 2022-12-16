@@ -1,3 +1,4 @@
+#include <ctime>
 #include <memory>
 #include <wayfire/surface.hpp>
 
@@ -8,6 +9,7 @@
 #include "wayfire/scene-input.hpp"
 #include "wayfire/scene-render.hpp"
 #include "wayfire/scene.hpp"
+#include "wayfire/util.hpp"
 
 namespace wf
 {
@@ -55,6 +57,7 @@ wf::touch_interaction_t& wf::scene::surface_node_t::touch_interaction()
 class surface_render_instance_t : public render_instance_t
 {
     wf::surface_interface_t *surface;
+    wf::wl_listener_wrapper on_visibility_output_commit;
 
   public:
     surface_render_instance_t(wf::surface_interface_t *si)
@@ -93,6 +96,29 @@ class surface_render_instance_t : public render_instance_t
             wlr_presentation_surface_sampled_on_output(
                 wf::get_core_impl().protocols.presentation,
                 surface->get_wlr_surface(), output->handle);
+        }
+    }
+
+    void compute_visibility(wf::output_t *output, wf::region_t& visible) override
+    {
+        auto our_box = wf::construct_box({0, 0}, surface->get_size());
+        on_visibility_output_commit.disconnect();
+
+        if (!(visible & our_box).empty())
+        {
+            // We are visible on the given output => send wl_surface.frame on output frame, so that clients
+            // can draw the next frame.
+            on_visibility_output_commit.set_callback([=] (void *data)
+            {
+                if (surface->get_wlr_surface())
+                {
+                    timespec now;
+                    clock_gettime(CLOCK_MONOTONIC, &now);
+                    wlr_surface_send_frame_done(surface->get_wlr_surface(), &now);
+                }
+            });
+            on_visibility_output_commit.connect(&output->handle->events.frame);
+            // TODO: compute actually visible region and disable damage reporting for that region.
         }
     }
 };

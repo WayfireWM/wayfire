@@ -327,6 +327,23 @@ class view_render_instance_t : public render_instance_t
             return direct_scanout::OCCLUSION;
         }
     }
+
+    void compute_visibility(wf::output_t *output, wf::region_t& visible) override
+    {
+        if (!view->is_mapped())
+        {
+            return;
+        }
+
+        auto offset = wf::origin(view->get_output_geometry());
+        visible -= offset;
+        for (auto& ch : this->children)
+        {
+            ch->compute_visibility(output, visible);
+        }
+
+        visible += offset;
+    }
 };
 
 void view_node_t::gen_render_instances(std::vector<render_instance_uptr> & instances,

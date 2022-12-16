@@ -205,6 +205,14 @@ class fire_render_instance_t : public wf::scene::render_instance_t
         }
     }
 
+    void compute_visibility(wf::output_t *output, wf::region_t& visible) override
+    {
+        for (auto& ch : this->children)
+        {
+            ch->compute_visibility(output, visible);
+        }
+    }
+
   private:
     std::vector<wf::scene::render_instance_uptr> children;
 };

@@ -108,6 +108,18 @@ class surface_root_render_instance_t : public render_instance_t
             ch->presentation_feedback(output);
         }
     }
+
+    void compute_visibility(wf::output_t *output, wf::region_t& visible) override
+    {
+        auto offset = si->get_offset();
+        visible -= offset;
+        for (auto& ch : this->children)
+        {
+            ch->compute_visibility(output, visible);
+        }
+
+        visible += offset;
+    }
 };
 
 void surface_root_node_t::gen_render_instances(

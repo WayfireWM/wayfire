@@ -401,6 +401,21 @@ class workspace_wall_t : public wf::signal_provider_t
                     self->wall->render_wall(target, region);
                 }
             }
+
+            void compute_visibility(wf::output_t *output, wf::region_t& visible) override
+            {
+                for (int i = 0; i < (int)self->workspaces.size(); i++)
+                {
+                    for (int j = 0; j < (int)self->workspaces[i].size(); j++)
+                    {
+                        wf::region_t ws_region = self->workspaces[i][j]->get_bounding_box();
+                        for (auto& ch : this->instances[i][j])
+                        {
+                            ch->compute_visibility(output, ws_region);
+                        }
+                    }
+                }
+            }
         };
 
       public:

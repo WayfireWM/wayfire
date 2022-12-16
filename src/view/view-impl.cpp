@@ -3,6 +3,7 @@
 #include "../output/gtk-shell.hpp"
 #include "view-impl.hpp"
 #include "wayfire/decorator.hpp"
+#include "wayfire/scene.hpp"
 #include "wayfire/signal-definitions.hpp"
 #include "wayfire/workspace-manager.hpp"
 #include "wayfire/output-layout.hpp"
@@ -116,6 +117,7 @@ void wf::wlr_view_t::set_position(int x, int y,
     }
 
     last_bounding_box = get_bounding_box();
+    scene::update(this->get_surface_root_node(), scene::update_flag::GEOMETRY);
 }
 
 void wf::wlr_view_t::move(int x, int y)
@@ -182,6 +184,8 @@ void wf::wlr_view_t::update_size()
     {
         view_impl->frame->notify_view_resized(get_wm_geometry());
     }
+
+    scene::update(this->get_surface_root_node(), scene::update_flag::GEOMETRY);
 }
 
 bool wf::wlr_view_t::should_resize_client(

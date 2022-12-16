@@ -72,6 +72,17 @@ class dnd_icon_root_render_instance_t : public render_instance_t
     {
         wf::dassert(false, "Rendering a drag icon root node?");
     }
+
+    void compute_visibility(wf::output_t *output, wf::region_t& visible) override
+    {
+        visible -= icon->get_position();
+        for (auto& ch : this->children)
+        {
+            ch->compute_visibility(output, visible);
+        }
+
+        visible += icon->get_position();
+    }
 };
 
 class dnd_root_icon_root_node_t : public floating_inner_node_t

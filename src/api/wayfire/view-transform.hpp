@@ -194,6 +194,17 @@ class transformer_render_instance_t : public render_instance_t
     {
         return !children.empty();
     }
+
+    void compute_visibility(wf::output_t *output, wf::region_t& visible) override
+    {
+        // By default, we expand the region as much as possible, because we do not know what happens with
+        // the transformation (so we assume the child is always visible).
+        wf::region_t copy = self->get_children_bounding_box();
+        for (auto& ch : this->children)
+        {
+            ch->compute_visibility(output, copy);
+        }
+    }
 };
 
 /**

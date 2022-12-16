@@ -40,20 +40,35 @@ struct output_damage_t
     wlr_output_damage *damage_manager;
     output_t *wo;
 
-    void update_scenegraph()
+    void update_scenegraph(uint32_t update_mask)
     {
-        auto root = wf::get_core().scene();
+        constexpr uint32_t recompute_instances_on = scene::update_flag::CHILDREN_LIST |
+            scene::update_flag::ENABLED;
+        constexpr uint32_t recompute_visibility_on = recompute_instances_on | scene::update_flag::GEOMETRY;
 
-        scene::damage_callback push_damage = [=] (wf::region_t region)
+        if (update_mask & recompute_instances_on)
         {
-            // Damage is pushed up to the root in root coordinate system,
-            // we need it in layout-local coordinate system.
-            region += -wf::origin(wo->get_layout_geometry());
-            this->damage(region);
-        };
+            auto root = wf::get_core().scene();
+            scene::damage_callback push_damage = [=] (wf::region_t region)
+            {
+                // Damage is pushed up to the root in root coordinate system,
+                // we need it in layout-local coordinate system.
+                region += -wf::origin(wo->get_layout_geometry());
+                this->damage(region);
+            };
 
-        render_instances.clear();
-        root->gen_render_instances(render_instances, push_damage, wo);
+            render_instances.clear();
+            root->gen_render_instances(render_instances, push_damage, wo);
+        }
+
+        if (update_mask & recompute_visibility_on)
+        {
+            wf::region_t region = this->wo->get_layout_geometry();
+            for (auto& inst : render_instances)
+            {
+                inst->compute_visibility(wo, region);
+            }
+        }
     }
 
     output_damage_t(output_t *output)
@@ -69,17 +84,11 @@ struct output_damage_t
         auto root = wf::get_core().scene();
         root_update = [=] (scene::root_node_update_signal *data)
         {
-            if (!(data->flags & scene::update_flag::CHILDREN_LIST) &&
-                !(data->flags & scene::update_flag::ENABLED))
-            {
-                return;
-            }
-
-            update_scenegraph();
+            update_scenegraph(data->flags);
         };
 
         root->connect<scene::root_node_update_signal>(&root_update);
-        update_scenegraph();
+        update_scenegraph(scene::update_flag::CHILDREN_LIST);
     }
 
     /**
@@ -758,8 +767,6 @@ class wf::render_manager::impl
                     return false;
                 });
             }
-
-            send_frame_done();
         });
         on_frame.connect(&output_damage->damage_manager->events.frame);
 
@@ -1034,70 +1041,6 @@ class wf::render_manager::impl
         if (constant_redraw_counter)
         {
             output_damage->schedule_repaint();
-        }
-    }
-
-    void send_frame_done_recursive(wf::scene::node_ptr root,
-        std::optional<wf::geometry_t> limit,
-        const timespec& repaint_ended)
-    {
-        if (!root->is_enabled())
-        {
-            return;
-        }
-
-        if (auto vnode = dynamic_cast<scene::view_node_t*>(root.get()))
-        {
-            for (auto& view : vnode->get_view()->enumerate_views())
-            {
-                if (!view->is_mapped())
-                {
-                    continue;
-                }
-
-                if (limit && !(view->get_bounding_box() & *limit))
-                {
-                    continue;
-                }
-
-                for (auto& child : view->enumerate_surfaces())
-                {
-                    child.surface->send_frame_done(repaint_ended);
-                }
-            }
-        }
-
-        for (auto& ch : root->get_children())
-        {
-            send_frame_done_recursive(ch, limit, repaint_ended);
-        }
-    }
-
-    /**
-     * Send frame_done to clients.
-     */
-    void send_frame_done()
-    {
-        timespec repaint_ended;
-        clockid_t presentation_clock =
-            wlr_backend_get_presentation_clock(wf::get_core_impl().backend);
-        clock_gettime(presentation_clock, &repaint_ended);
-
-        // TODO: during rendering, we should build a list of rendered surfaces and
-        // send them all frame done instead of recalculating here.
-        for (int i = 0; i < (int)wf::scene::layer::ALL_LAYERS; i++)
-        {
-            if (renderer)
-            {
-                send_frame_done_recursive(output->node_for_layer(
-                    (wf::scene::layer)i), {}, repaint_ended);
-            } else
-            {
-                auto limit = output->render->get_ws_box(
-                    output->workspace->get_current_workspace());
-                send_frame_done_recursive(output->node_for_layer(
-                    (wf::scene::layer)i), limit, repaint_ended);
-            }
         }
     }
 };
