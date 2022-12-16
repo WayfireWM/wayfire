@@ -92,6 +92,11 @@ wf::geometry_t operator +(const wf::geometry_t & a, const wf::point_t& b)
     };
 }
 
+wf::geometry_t operator -(const wf::geometry_t & a, const wf::point_t& b)
+{
+    return a + -b;
+}
+
 wf::point_t wf::operator -(const wf::point_t& a)
 {
     return {-a.x, -a.y};
