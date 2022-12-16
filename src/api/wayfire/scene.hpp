@@ -434,6 +434,11 @@ enum update_flag
      * unmapped or moved.
      */
     INPUT_STATE   = (1 << 2),
+    /**
+     * The node's geometry changed. Changes include not just the bounding box
+     * of the view, but also things like opaque regions.
+     */
+    GEOMETRY      = (1 << 3),
 };
 }
 
