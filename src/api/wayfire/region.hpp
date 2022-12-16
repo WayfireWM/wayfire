@@ -32,6 +32,9 @@ struct region_t
     region_t operator +(const point_t& vector) const;
     region_t& operator +=(const point_t& vector);
 
+    region_t operator -(const point_t& vector) const;
+    region_t& operator -=(const point_t& vector);
+
     region_t operator *(float scale) const;
     region_t& operator *=(float scale);
 

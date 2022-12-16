@@ -123,14 +123,25 @@ wf::region_t wf::region_t::operator +(const wf::point_t& vector) const
 {
     wf::region_t result{*this};
     pixman_region32_translate(&result._region, vector.x, vector.y);
-
     return result;
 }
 
 wf::region_t& wf::region_t::operator +=(const wf::point_t& vector)
 {
     pixman_region32_translate(&_region, vector.x, vector.y);
+    return *this;
+}
 
+wf::region_t wf::region_t::operator -(const wf::point_t& vector) const
+{
+    wf::region_t result{*this};
+    pixman_region32_translate(&result._region, -vector.x, -vector.y);
+    return result;
+}
+
+wf::region_t& wf::region_t::operator -=(const wf::point_t& vector)
+{
+    pixman_region32_translate(&_region, -vector.x, -vector.y);
     return *this;
 }
 
