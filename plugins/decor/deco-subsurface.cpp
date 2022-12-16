@@ -90,7 +90,14 @@ class simple_decoration_surface : public wf::surface_interface_t,
 
     virtual wf::dimensions_t get_size() const final
     {
-        return size;
+        if (view->fullscreen)
+        {
+            auto vg = view->get_wm_geometry();
+            return {vg.width, vg.height};
+        } else
+        {
+            return size;
+        }
     }
 
     void render_title(const wf::render_target_t& fb,
