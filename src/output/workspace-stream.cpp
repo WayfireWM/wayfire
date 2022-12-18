@@ -111,7 +111,7 @@ class workspace_stream_node_t::workspace_stream_instance_t : public scene::
 
     void compute_visibility(wf::output_t *output, wf::region_t& visible) override
     {
-        scene::compute_visibility_from_list(instances, output, visible, get_offset());
+        scene::compute_visibility_from_list(instances, output, visible, -get_offset());
     }
 };
 

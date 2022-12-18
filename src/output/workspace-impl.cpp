@@ -528,6 +528,9 @@ class output_viewport_manager_t
         // Finally, do a refocus to update the keyboard focus
         output->refocus();
         output->emit_signal("workspace-changed", &data);
+
+        // Don't forget to update the geometry of the wset, as the geometry of it has changed now.
+        wf::scene::update(output->get_wset(), wf::scene::update_flag::GEOMETRY);
     }
 };
 
