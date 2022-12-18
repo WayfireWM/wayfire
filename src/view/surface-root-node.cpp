@@ -111,14 +111,7 @@ class surface_root_render_instance_t : public render_instance_t
 
     void compute_visibility(wf::output_t *output, wf::region_t& visible) override
     {
-        auto offset = si->get_offset();
-        visible -= offset;
-        for (auto& ch : this->children)
-        {
-            ch->compute_visibility(output, visible);
-        }
-
-        visible += offset;
+        compute_visibility_from_list(children, output, visible, si->get_offset());
     }
 };
 

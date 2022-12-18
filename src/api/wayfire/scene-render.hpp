@@ -277,5 +277,12 @@ wf::region_t run_render_pass(
 direct_scanout try_scanout_from_list(
     const std::vector<render_instance_uptr>& instances,
     wf::output_t *scanout);
+
+/**
+ * A helper function for compute_visibility implementations. It applies an offset to the damage and reverts it
+ * afterwards. It also calls compute_visibility for the children instances.
+ */
+void compute_visibility_from_list(const std::vector<render_instance_uptr>& instances, wf::output_t *output,
+    wf::region_t& region, const wf::point_t& offset);
 }
 }

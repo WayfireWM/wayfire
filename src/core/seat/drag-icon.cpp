@@ -75,13 +75,7 @@ class dnd_icon_root_render_instance_t : public render_instance_t
 
     void compute_visibility(wf::output_t *output, wf::region_t& visible) override
     {
-        visible -= icon->get_position();
-        for (auto& ch : this->children)
-        {
-            ch->compute_visibility(output, visible);
-        }
-
-        visible += icon->get_position();
+        compute_visibility_from_list(children, output, visible, icon->get_position());
     }
 };
 

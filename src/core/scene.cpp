@@ -434,13 +434,7 @@ class output_render_instance_t : public default_render_instance_t
     void compute_visibility(wf::output_t *output, wf::region_t& visible) override
     {
         auto offset = wf::origin(output->get_layout_geometry());
-        visible -= offset;
-        for (auto& ch : this->children)
-        {
-            ch->compute_visibility(output, visible);
-        }
-
-        visible += offset;
+        compute_visibility_from_list(children, output, visible, offset);
     }
 };
 

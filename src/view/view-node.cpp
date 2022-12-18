@@ -335,14 +335,7 @@ class view_render_instance_t : public render_instance_t
             return;
         }
 
-        auto offset = wf::origin(view->get_output_geometry());
-        visible -= offset;
-        for (auto& ch : this->children)
-        {
-            ch->compute_visibility(output, visible);
-        }
-
-        visible += offset;
+        compute_visibility_from_list(children, output, visible, wf::origin(view->get_output_geometry()));
     }
 };
 

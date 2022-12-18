@@ -1091,6 +1091,18 @@ scene::direct_scanout scene::try_scanout_from_list(
     return direct_scanout::SKIP;
 }
 
+void scene::compute_visibility_from_list(const std::vector<render_instance_uptr>& instances,
+    wf::output_t *output, wf::region_t& region, const wf::point_t& offset)
+{
+    region -= offset;
+    for (auto& ch : instances)
+    {
+        ch->compute_visibility(output, region);
+    }
+
+    region += offset;
+}
+
 render_manager::render_manager(output_t *o) :
     pimpl(new impl(o))
 {}
