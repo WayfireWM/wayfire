@@ -1,4 +1,5 @@
 #include "wayfire/object.hpp"
+#include "wayfire/scene-operations.hpp"
 #include "wayfire/scene-render.hpp"
 #include "wayfire/scene.hpp"
 #include <memory>
@@ -108,8 +109,78 @@ class WayfireSwitcher : public wf::plugin_interface_t
     uint32_t activating_modifiers = 0;
     bool active = false;
 
-  public:
+    class switcher_render_node_t : public wf::scene::node_t
+    {
+        class switcher_render_instance_t : public wf::scene::render_instance_t
+        {
+            switcher_render_node_t *self;
+            wf::scene::damage_callback push_damage;
+            wf::signal::connection_t<wf::scene::node_damage_signal> on_switcher_damage =
+                [=] (wf::scene::node_damage_signal *ev)
+            {
+                push_damage(ev->region);
+            };
 
+          public:
+            switcher_render_instance_t(switcher_render_node_t *self, wf::scene::damage_callback push_damage)
+            {
+                this->self = self;
+                this->push_damage = push_damage;
+                self->connect(&on_switcher_damage);
+            }
+
+            void schedule_instructions(
+                std::vector<wf::scene::render_instruction_t>& instructions,
+                const wf::render_target_t& target, wf::region_t& damage) override
+            {
+                instructions.push_back(wf::scene::render_instruction_t{
+                    .instance = this,
+                    .target   = target,
+                    .damage   = damage & self->get_bounding_box(),
+                });
+
+                // Don't render anything below
+                auto bbox = self->get_bounding_box();
+                damage ^= bbox;
+            }
+
+            void render(const wf::render_target_t& target,
+                const wf::region_t& region, const std::any& tag) override
+            {
+                self->switcher->render(target.translated(-wf::origin(self->get_bounding_box())));
+            }
+        };
+
+      public:
+        switcher_render_node_t(WayfireSwitcher *switcher) : node_t(false)
+        {
+            this->switcher = switcher;
+        }
+
+        virtual void gen_render_instances(
+            std::vector<wf::scene::render_instance_uptr>& instances,
+            wf::scene::damage_callback push_damage, wf::output_t *shown_on)
+        {
+            if (shown_on != this->switcher->output)
+            {
+                return;
+            }
+
+            instances.push_back(std::make_unique<switcher_render_instance_t>(this, push_damage));
+        }
+
+        wf::geometry_t get_bounding_box()
+        {
+            return switcher->output->get_layout_geometry();
+        }
+
+      private:
+        WayfireSwitcher *switcher;
+    };
+
+    std::shared_ptr<switcher_render_node_t> render_node;
+
+  public:
     void init() override
     {
         grab_interface->name = "switcher";
@@ -144,9 +215,19 @@ class WayfireSwitcher : public wf::plugin_interface_t
         return handle_switch_request(1);
     };
 
-    wf::effect_hook_t damage = [=] ()
+    wf::effect_hook_t pre_hook = [=] ()
     {
-        output->render->damage_whole();
+        dim_background(background_dim);
+        wf::scene::damage_node(render_node, render_node->get_bounding_box());
+
+        if (!duration.running())
+        {
+            cleanup_expired();
+            if (!active)
+            {
+                deinit_switcher();
+            }
+        }
     };
 
     wf::signal_connection_t view_removed = [=] (wf::signal_data_t *data)
@@ -238,10 +319,10 @@ class WayfireSwitcher : public wf::plugin_interface_t
             return false;
         }
 
-        output->render->add_effect(&damage, wf::OUTPUT_EFFECT_PRE);
-        output->render->set_renderer(switcher_renderer);
-        output->render->set_redraw_always();
+        output->render->add_effect(&pre_hook, wf::OUTPUT_EFFECT_PRE);
 
+        render_node = std::make_shared<switcher_render_node_t>(this);
+        wf::scene::add_front(wf::get_core().scene(), render_node);
         return true;
     }
 
@@ -250,9 +331,9 @@ class WayfireSwitcher : public wf::plugin_interface_t
     {
         output->deactivate_plugin(grab_interface);
 
-        output->render->rem_effect(&damage);
-        output->render->set_renderer(nullptr);
-        output->render->set_redraw_always(false);
+        output->render->rem_effect(&pre_hook);
+        wf::scene::remove_child(render_node);
+        render_node = nullptr;
 
         for (auto& view :
              output->workspace->get_views_in_layer(wf::ALL_LAYERS, true))
@@ -611,13 +692,12 @@ class WayfireSwitcher : public wf::plugin_interface_t
         render_view_scene(sv.view, buffer);
     }
 
-    wf::render_hook_t switcher_renderer = [=] (const wf::render_target_t& fb)
+    void render(const wf::render_target_t& fb)
     {
         OpenGL::render_begin(fb);
         OpenGL::clear({0, 0, 0, 1});
         OpenGL::render_end();
 
-        dim_background(background_dim);
         for (auto view : get_background_views())
         {
             render_view_scene(view, fb);
@@ -633,17 +713,7 @@ class WayfireSwitcher : public wf::plugin_interface_t
         {
             render_view_scene(view, fb);
         }
-
-        if (!duration.running())
-        {
-            cleanup_expired();
-
-            if (!active)
-            {
-                deinit_switcher();
-            }
-        }
-    };
+    }
 
     /* delete all views matching the given criteria, skipping the first "start" views
      * */
