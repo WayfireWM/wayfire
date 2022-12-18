@@ -331,12 +331,6 @@ class view_interface_t : public surface_interface_t, public wf::signal::provider
     bool has_transformer();
 
     /**
-     * @return true if the region intersects any of the surfaces in the view's
-     * surface tree.
-     */
-    bool intersects_region(const wlr_box& region);
-
-    /**
      * A snapshot of the view is a copy of the view's contents into a
      * framebuffer. It is used to get an image of the view while it is mapped,
      * and continue displaying it afterwards. Additionally, return the captured

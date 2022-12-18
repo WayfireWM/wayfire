@@ -757,29 +757,6 @@ wf::geometry_t wf::view_interface_t::get_untransformed_bounding_box()
     return wlr_box_from_pixman_box(bounding_region.get_extents());
 }
 
-bool wf::view_interface_t::intersects_region(const wlr_box& region)
-{
-    /* fallback to the whole transformed boundingbox, if it exists */
-    if (!is_mapped())
-    {
-        return region & get_bounding_box();
-    }
-
-    auto origin = get_output_geometry();
-    for (auto& child : enumerate_surfaces({origin.x, origin.y}))
-    {
-        wlr_box box = {child.position.x, child.position.y,
-            child.surface->get_size().width, child.surface->get_size().height};
-
-        if (region & box)
-        {
-            return true;
-        }
-    }
-
-    return false;
-}
-
 const wf::render_target_t& wf::view_interface_t::take_snapshot()
 {
     if (!is_mapped())

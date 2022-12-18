@@ -649,13 +649,9 @@ class wayfire_expo : public wf::plugin_interface_t
             }
 
             auto view_local = view_local_coordinates(view, local);
-            wlr_box box     = {view_local.x, view_local.y, 1, 1};
-            for (auto& v : view->enumerate_views())
+            if (view->get_root_node()->find_node_at(wf::pointf_t{view_local}))
             {
-                if (v->intersects_region(box))
-                {
-                    return v;
-                }
+                return view;
             }
         }
 
