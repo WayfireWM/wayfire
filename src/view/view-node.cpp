@@ -274,58 +274,18 @@ class view_render_instance_t : public render_instance_t
             return direct_scanout::SKIP;
         }
 
-        // The candidate must cover the whole output
-        if (view->get_output_geometry() != output->get_relative_geometry())
-        {
-            return direct_scanout::OCCLUSION;
-        }
-
-        // The view must have only a single surface and no transformers
-        if (view->has_transformer() ||
-            !view->children.empty())
-        {
-            return direct_scanout::OCCLUSION;
-        }
-
-        const auto& desired_size = wf::dimensions(output->get_relative_geometry());
-        auto candidate = this->view->enumerate_surfaces().front();
-        if ((candidate.position != wf::point_t{0, 0}) ||
-            (candidate.surface->get_size() != desired_size))
-        {
-            return direct_scanout::OCCLUSION;
-        }
-
-        // Must have a wlr surface with the correct scale and transform
-        auto surface = candidate.surface->get_wlr_surface();
-        if (!surface ||
-            (surface->current.scale != output->handle->scale) ||
-            (surface->current.transform != output->handle->transform))
-        {
-            return direct_scanout::OCCLUSION;
-        }
-
-        // Finally, the opaque region must be the full surface.
-        wf::region_t non_opaque = output->get_relative_geometry();
-        non_opaque ^= candidate.surface->get_opaque_region(wf::point_t{0, 0});
-        if (!non_opaque.empty())
-        {
-            return direct_scanout::OCCLUSION;
-        }
-
-        wlr_presentation_surface_sampled_on_output(
-            wf::get_core().protocols.presentation, surface, output->handle);
-        wlr_output_attach_buffer(output->handle, &surface->buffer->base);
-
-        if (wlr_output_commit(output->handle))
+        auto result = try_scanout_from_list(children, output);
+        if (result == direct_scanout::SUCCESS)
         {
             LOGC(SCANOUT, "Scanned out ", view, " on output ", output->to_string());
             return direct_scanout::SUCCESS;
         } else
         {
-            LOGC(SCANOUT, "Failed to scan out ", view, " on output ",
-                output->to_string());
+            LOGC(SCANOUT, "Failed to scan out ", view, " on output ", output->to_string());
             return direct_scanout::OCCLUSION;
         }
+
+        return result;
     }
 
     void compute_visibility(wf::output_t *output, wf::region_t& visible) override

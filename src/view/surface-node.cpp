@@ -99,6 +99,44 @@ class surface_render_instance_t : public render_instance_t
         }
     }
 
+    direct_scanout try_scanout(wf::output_t *output) override
+    {
+        const auto& desired_size = wf::dimensions(output->get_relative_geometry());
+        if (surface->get_size() != desired_size)
+        {
+            return direct_scanout::OCCLUSION;
+        }
+
+        // Must have a wlr surface with the correct scale and transform
+        auto wlr_surf = surface->get_wlr_surface();
+        if (!wlr_surf ||
+            (wlr_surf->current.scale != output->handle->scale) ||
+            (wlr_surf->current.transform != output->handle->transform))
+        {
+            return direct_scanout::OCCLUSION;
+        }
+
+        // Finally, the opaque region must be the full surface.
+        wf::region_t non_opaque = output->get_relative_geometry();
+        non_opaque ^= surface->get_opaque_region(wf::point_t{0, 0});
+        if (!non_opaque.empty())
+        {
+            return direct_scanout::OCCLUSION;
+        }
+
+        wlr_presentation_surface_sampled_on_output(
+            wf::get_core().protocols.presentation, wlr_surf, output->handle);
+        wlr_output_attach_buffer(output->handle, &wlr_surf->buffer->base);
+
+        if (wlr_output_commit(output->handle))
+        {
+            return direct_scanout::SUCCESS;
+        } else
+        {
+            return direct_scanout::OCCLUSION;
+        }
+    }
+
     void compute_visibility(wf::output_t *output, wf::region_t& visible) override
     {
         auto our_box = wf::construct_box({0, 0}, surface->get_size());

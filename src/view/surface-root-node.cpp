@@ -1,6 +1,7 @@
 #include "surface-impl.hpp"
 #include "wayfire/debug.hpp"
 #include "wayfire/geometry.hpp"
+#include "wayfire/scene-render.hpp"
 #include "wayfire/scene.hpp"
 #include <memory>
 #include <wayfire/surface.hpp>
@@ -107,6 +108,16 @@ class surface_root_render_instance_t : public render_instance_t
         {
             ch->presentation_feedback(output);
         }
+    }
+
+    direct_scanout try_scanout(wf::output_t *output) override
+    {
+        if (si->get_offset() != wf::point_t{0, 0})
+        {
+            return direct_scanout::OCCLUSION;
+        }
+
+        return try_scanout_from_list(this->children, output);
     }
 
     void compute_visibility(wf::output_t *output, wf::region_t& visible) override
