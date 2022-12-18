@@ -80,7 +80,7 @@ struct render_target_t : public framebuffer_t
     // coordinate system the render target needs.
     wf::geometry_t geometry = {0, 0, 0, 0};
 
-    uint32_t wl_transform = WL_OUTPUT_TRANSFORM_NORMAL;
+    wl_output_transform wl_transform = WL_OUTPUT_TRANSFORM_NORMAL;
     // The scale of a framebuffer is a hint at how bigger the actual framebuffer
     // is compared to the logical geometry. It is useful for plugins utilizing
     // auxilliary buffers in logical coordinates, so that they know they should
