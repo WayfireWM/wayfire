@@ -159,14 +159,6 @@ void wf::surface_interface_t::set_output(wf::output_t *output)
 * surface_interface_t functions for surfaces which are
 * backed by a wlr_surface
 ****************************/
-void wf::surface_interface_t::send_frame_done(const timespec& time)
-{
-    if (priv->wsurface)
-    {
-        wlr_surface_send_frame_done(priv->wsurface, &time);
-    }
-}
-
 bool wf::surface_interface_t::accepts_input(int32_t sx, int32_t sy)
 {
     if (!priv->wsurface || !is_mapped())

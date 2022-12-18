@@ -132,14 +132,6 @@ class surface_interface_t : public wf::object_base_t
     virtual bool accepts_input(int32_t sx, int32_t sy);
 
     /**
-     * Send wl_surface.frame event. Surfaces which aren't backed by a
-     * wlr_surface don't need to do anything here.
-     *
-     * @param frame_end The time when the frame ended.
-     */
-    virtual void send_frame_done(const timespec& frame_end);
-
-    /**
      * Get the opaque region of the surface relative to the given point.
      *
      * This is just a hint, so surface implementations don't have to implement
