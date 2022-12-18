@@ -197,12 +197,16 @@ class transformer_render_instance_t : public render_instance_t
 
     void compute_visibility(wf::output_t *output, wf::region_t& visible) override
     {
-        // By default, we expand the region as much as possible, because we do not know what happens with
-        // the transformation (so we assume the child is always visible).
-        wf::region_t copy = self->get_children_bounding_box();
-        for (auto& ch : this->children)
+        if (!(visible & self->get_bounding_box()).empty())
         {
-            ch->compute_visibility(output, copy);
+            // By default, we are not sure how the visibility region is affected, so we take a simple 0-or-1
+            // approach: if anything of the bounding box is visible, we assume the whole view is visible, and
+            // we do not subtract anything from the visibility region of the nodes below.
+            wf::region_t copy = self->get_children_bounding_box();
+            for (auto& ch : this->children)
+            {
+                ch->compute_visibility(output, copy);
+            }
         }
     }
 };
