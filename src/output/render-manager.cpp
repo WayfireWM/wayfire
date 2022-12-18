@@ -779,13 +779,6 @@ class wf::render_manager::impl
         output_damage->schedule_repaint();
     }
 
-    render_hook_t renderer;
-    void set_renderer(render_hook_t rh)
-    {
-        renderer = rh;
-        output_damage->damage_whole_idle();
-    }
-
     int constant_redraw_counter = 0;
     void set_redraw_always(bool always)
     {
@@ -833,42 +826,6 @@ class wf::render_manager::impl
         postprocessing->allocate(output->handle->width, output->handle->height);
     }
 
-    /**
-     * The default renderer, which just makes sure the correct workspace stream
-     * is drawn to the framebuffer
-     */
-    void default_renderer()
-    {
-        if (runtime_config.damage_debug)
-        {
-            /* Clear the screen to yellow, so that the repainted parts are
-             * visible */
-            swap_damage |= output_damage->get_wlr_damage_box();
-
-            OpenGL::render_begin(output->handle->width, output->handle->height,
-                postprocessing->output_fb);
-            OpenGL::clear({1, 1, 0, 1});
-            OpenGL::render_end();
-        }
-
-        scene::render_pass_params_t params;
-        params.instances = &output_damage->render_instances;
-        params.damage    = output_damage->get_ws_damage(
-            output->workspace->get_current_workspace());
-        params.damage += wf::origin(output->get_layout_geometry());
-
-        params.target = postprocessing->get_target_framebuffer().translated(
-            wf::origin(output->get_layout_geometry()));
-        params.background_color = background_color_opt;
-        params.reference_output = this->output;
-
-        this->swap_damage = scene::run_render_pass(params,
-            scene::RPASS_CLEAR_BACKGROUND | scene::RPASS_EMIT_SIGNALS);
-        swap_damage += -wf::origin(output->get_layout_geometry());
-        swap_damage  = swap_damage * output->handle->scale;
-        swap_damage &= output_damage->get_wlr_damage_box();
-    }
-
     wayfire_view get_first_view_recursive(wf::scene::node_ptr node)
     {
         if (auto vnode = dynamic_cast<wf::scene::view_node_t*>(node.get()))
@@ -898,7 +855,6 @@ class wf::render_manager::impl
     {
         const bool can_scanout =
             !output_inhibit_counter &&
-            !renderer &&
             effects->can_scanout() &&
             postprocessing->can_scanout();
 
@@ -927,15 +883,34 @@ class wf::render_manager::impl
      */
     void render_output()
     {
-        if (renderer)
+        if (runtime_config.damage_debug)
         {
-            renderer(postprocessing->get_target_framebuffer());
-            /* TODO: let custom renderers specify what they want to repaint... */
+            /* Clear the screen to yellow, so that the repainted parts are
+             * visible */
             swap_damage |= output_damage->get_wlr_damage_box();
-        } else
-        {
-            default_renderer();
+
+            OpenGL::render_begin(output->handle->width, output->handle->height,
+                postprocessing->output_fb);
+            OpenGL::clear({1, 1, 0, 1});
+            OpenGL::render_end();
         }
+
+        scene::render_pass_params_t params;
+        params.instances = &output_damage->render_instances;
+        params.damage    = output_damage->get_ws_damage(
+            output->workspace->get_current_workspace());
+        params.damage += wf::origin(output->get_layout_geometry());
+
+        params.target = postprocessing->get_target_framebuffer().translated(
+            wf::origin(output->get_layout_geometry()));
+        params.background_color = background_color_opt;
+        params.reference_output = this->output;
+
+        this->swap_damage = scene::run_render_pass(params,
+            scene::RPASS_CLEAR_BACKGROUND | scene::RPASS_EMIT_SIGNALS);
+        swap_damage += -wf::origin(output->get_layout_geometry());
+        swap_damage  = swap_damage * output->handle->scale;
+        swap_damage &= output_damage->get_wlr_damage_box();
     }
 
     void update_bound_output()
@@ -1120,10 +1095,6 @@ render_manager::render_manager(output_t *o) :
     pimpl(new impl(o))
 {}
 render_manager::~render_manager() = default;
-void render_manager::set_renderer(render_hook_t rh)
-{
-    pimpl->set_renderer(rh);
-}
 
 void render_manager::set_redraw_always(bool always)
 {
