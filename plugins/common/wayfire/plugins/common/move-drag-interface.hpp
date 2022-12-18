@@ -4,8 +4,10 @@
 #include "wayfire/geometry.hpp"
 #include "wayfire/opengl.hpp"
 #include "wayfire/region.hpp"
+#include "wayfire/scene-input.hpp"
 #include "wayfire/scene-render.hpp"
 #include "wayfire/scene.hpp"
+#include "wayfire/surface.hpp"
 #include <memory>
 #include <wayfire/nonstd/reverse.hpp>
 #include <wayfire/plugins/common/util.hpp>
@@ -345,6 +347,22 @@ class output_data_t : public custom_data_t
         apply_damage();
     };
 
+    void send_frame_done_recursive(wf::scene::node_ptr node, const timespec *now)
+    {
+        if (auto snode = dynamic_cast<wf::scene::surface_node_t*>(node.get()))
+        {
+            if (auto wlr_surf = snode->get_surface()->get_wlr_surface())
+            {
+                wlr_surface_send_frame_done(wlr_surf, now);
+            }
+        }
+
+        for (auto& ch : node->get_children())
+        {
+            send_frame_done_recursive(ch, now);
+        }
+    }
+
     effect_hook_t render_overlay = [=] ()
     {
         auto fb = output->render->get_target_framebuffer();
@@ -378,10 +396,7 @@ class output_data_t : public custom_data_t
             params.damage    = damage;
             scene::run_render_pass(params, 0);
 
-            for (auto& surf : view.view->enumerate_surfaces())
-            {
-                surf.surface->send_frame_done(repaint_ended);
-            }
+            send_frame_done_recursive(view.view->get_surface_root_node(), &repaint_ended);
         }
     };
 };
