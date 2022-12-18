@@ -92,8 +92,7 @@ class simple_decoration_surface : public wf::surface_interface_t,
     {
         if (view->fullscreen)
         {
-            auto vg = view->get_wm_geometry();
-            return {vg.width, vg.height};
+            return wf::dimensions(view->get_wm_geometry());
         } else
         {
             return size;
