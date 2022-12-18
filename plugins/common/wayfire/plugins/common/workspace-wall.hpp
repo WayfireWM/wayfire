@@ -1,6 +1,7 @@
 #pragma once
 
 
+#include <any>
 #include <glm/gtc/matrix_transform.hpp>
 #include <memory>
 #include "wayfire/core.hpp"
@@ -295,6 +296,7 @@ class workspace_wall_t : public wf::signal_provider_t
                 }
             }
 
+            using render_tag = std::tuple<int, float>;
             static constexpr int TAG_BACKGROUND = 0;
             static constexpr int TAG_WS_DIM     = 1;
 
@@ -302,14 +304,6 @@ class workspace_wall_t : public wf::signal_provider_t
                 std::vector<scene::render_instruction_t>& instructions,
                 const wf::render_target_t& target, wf::region_t& damage) override
             {
-                // Dim inactive workspaces at the end
-                instructions.push_back(scene::render_instruction_t{
-                        .instance = this,
-                        .target   = target,
-                        .damage   = damage & self->get_bounding_box(),
-                        .data     = TAG_WS_DIM,
-                    });
-
                 // Scale damage to be in the workspace's coordinate system
                 wf::region_t workspaces_damage;
                 for (auto& rect : damage)
@@ -343,6 +337,15 @@ class workspace_wall_t : public wf::signal_provider_t
                         workspaces_damage ^= our_damage;
                         our_damage += -wf::origin(workspace_rect);
 
+                        // Dim workspaces at the end (the first instruction pushed is executed last)
+                        instructions.push_back(scene::render_instruction_t{
+                                .instance = this,
+                                .target   = our_target,
+                                .damage   = our_damage,
+                                .data     = render_tag{TAG_WS_DIM, self->wall->render_colors[i][j]},
+                            });
+
+                        // Render the workspace contents first
                         for (auto& ch : instances[i][j])
                         {
                             ch->schedule_instructions(instructions, our_target, our_damage);
@@ -356,16 +359,18 @@ class workspace_wall_t : public wf::signal_provider_t
                         .instance = this,
                         .target   = target,
                         .damage   = damage & self->get_bounding_box(),
-                        .data     = TAG_BACKGROUND,
+                        .data     = render_tag{TAG_BACKGROUND, 0.0},
                     });
 
                 damage ^= bbox;
             }
 
             void render(const wf::render_target_t& target,
-                const wf::region_t& region, const std::any& tag) override
+                const wf::region_t& region, const std::any& any_tag) override
             {
-                if (std::any_cast<int>(tag) == TAG_BACKGROUND)
+                auto [tag, dim] = std::any_cast<render_tag>(any_tag);
+
+                if (tag == TAG_BACKGROUND)
                 {
                     OpenGL::render_begin(target);
                     for (auto& box : region)
@@ -382,19 +387,10 @@ class workspace_wall_t : public wf::signal_provider_t
                     for (auto& dmg_rect : region)
                     {
                         target.logic_scissor(wlr_box_from_pixman_box(dmg_rect));
-                        for (int i = 0; i < (int)self->workspaces.size(); i++)
-                        {
-                            for (int j = 0; j < (int)self->workspaces[i].size(); j++)
-                            {
-                                auto workspace_rect = get_workspace_rect({i, j});
-                                auto relative_to_viewport =
-                                    scale_box(self->wall->viewport, target.geometry, workspace_rect);
-                                const float a = 1.0 - self->wall->render_colors[i][j];
+                        const float a = 1.0 - dim;
 
-                                OpenGL::render_rectangle(relative_to_viewport, {0, 0, 0, a},
-                                    target.get_orthographic_projection());
-                            }
-                        }
+                        OpenGL::render_rectangle(target.geometry, {0, 0, 0, a},
+                            target.get_orthographic_projection());
                     }
 
                     OpenGL::render_end();
