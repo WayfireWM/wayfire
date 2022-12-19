@@ -45,13 +45,7 @@ void wf::surface_interface_t::add_subsurface(
 
     auto& container = is_below_parent ?
         priv->surface_children_below : priv->surface_children_above;
-
-    wf::subsurface_added_signal ev;
-    ev.main_surface = this;
-    ev.subsurface   = {subsurface};
-
     container.insert(container.begin(), std::move(subsurface));
-    this->emit_signal("subsurface-added", &ev);
 }
 
 std::unique_ptr<wf::surface_interface_t> wf::surface_interface_t::remove_subsurface(
@@ -71,11 +65,6 @@ std::unique_ptr<wf::surface_interface_t> wf::surface_interface_t::remove_subsurf
 
         return ret;
     };
-
-    wf::subsurface_removed_signal ev;
-    ev.main_surface = this;
-    ev.subsurface   = subsurface;
-    this->emit_signal("subsurface-removed", &ev);
 
     wf::scene::remove_child(subsurface->priv->root_node);
     if (auto surf = remove_from(priv->surface_children_above))
@@ -133,16 +122,8 @@ wlr_surface*wf::surface_interface_t::get_wlr_surface()
 
 void wf::surface_interface_t::clear_subsurfaces()
 {
-    subsurface_removed_signal ev;
-    ev.main_surface = this;
     const auto& finish_subsurfaces = [&] (auto& container)
     {
-        for (auto& surface : container)
-        {
-            ev.subsurface = {surface};
-            this->emit_signal("subsurface-removed", &ev);
-        }
-
         this->priv->root_node->set_children_list({this->get_content_node()});
         scene::update(priv->root_node, scene::update_flag::CHILDREN_LIST);
         container.clear();

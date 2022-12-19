@@ -319,29 +319,6 @@ struct workarea_changed_signal : public wf::signal_data_t
  */
 
 /* ----------------------------------------------------------------------------/
- * Surface signals
- * -------------------------------------------------------------------------- */
-struct _subsurface_signal : public wf::signal_data_t
-{
-    nonstd::observer_ptr<surface_interface_t> main_surface;
-    nonstd::observer_ptr<surface_interface_t> subsurface;
-};
-
-/**
- * name: subsurface-added
- * on: surface
- * when: Emitted when a subsurface is added to the given surface.
- */
-using subsurface_added_signal = _subsurface_signal;
-
-/**
- * name: subsurface-removed
- * on: surface
- * when: Emitted immediately before removing a subsurface from the surface.
- */
-using subsurface_removed_signal = _subsurface_signal;
-
-/* ----------------------------------------------------------------------------/
  * View signals
  * -------------------------------------------------------------------------- */
 
