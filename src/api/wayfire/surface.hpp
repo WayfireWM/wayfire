@@ -59,14 +59,6 @@ class surface_interface_t : public wf::object_base_t
     virtual bool is_mapped() const = 0;
 
     /**
-     * Related surfaces usually form hierarchies, where the topmost surface
-     * is a view, except for drag icons or surfaces managed by plugins.
-     *
-     * @return The topmost surface in the hierarchy of the surface.
-     */
-    virtual surface_interface_t *get_main_surface();
-
-    /**
      * Add a new subsurface to the surface.
      * This may potentially change the subsurface's output.
      *

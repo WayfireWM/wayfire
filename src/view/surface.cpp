@@ -89,16 +89,6 @@ std::unique_ptr<wf::surface_interface_t> wf::surface_interface_t::remove_subsurf
 wf::surface_interface_t::~surface_interface_t()
 {}
 
-wf::surface_interface_t*wf::surface_interface_t::get_main_surface()
-{
-    if (priv->parent_surface)
-    {
-        return priv->parent_surface->get_main_surface();
-    }
-
-    return this;
-}
-
 wf::output_t*wf::surface_interface_t::get_output()
 {
     return priv->output;

@@ -27,8 +27,7 @@ class input_method_relay
         auto ev = static_cast<wf::keyboard_focus_changed_signal*>(data);
         if (auto vnode = dynamic_cast<wf::scene::view_node_t*>(ev->new_focus.get()))
         {
-            auto surf = vnode->get_view()->get_main_surface();
-            set_focus(surf->get_wlr_surface());
+            set_focus(vnode->get_view()->get_wlr_surface());
         } else
         {
             set_focus(nullptr);

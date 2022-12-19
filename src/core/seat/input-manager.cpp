@@ -11,6 +11,7 @@
 #include "cursor.hpp"
 #include "input-manager.hpp"
 #include "wayfire/output-layout.hpp"
+#include "wayfire/view.hpp"
 #include "wayfire/workspace-manager.hpp"
 #include <wayfire/util/log.hpp>
 #include <wayfire/debug.hpp>
@@ -244,7 +245,7 @@ bool wf::input_manager_t::can_focus_surface(wf::surface_interface_t *surface)
     {
         /* We have exclusive focus surface, for ex. a lockscreen.
          * The only kind of things we can focus are OSKs and similar */
-        auto view = (wf::view_interface_t*)surface->get_main_surface();
+        auto view = surface_to_view(surface);
         if (view && view->get_output())
         {
             auto layer =

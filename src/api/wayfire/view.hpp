@@ -6,6 +6,7 @@
 #include <wayfire/nonstd/observer_ptr.h>
 
 #include "wayfire/opengl.hpp"
+#include "wayfire/scene-input.hpp"
 #include "wayfire/scene-render.hpp"
 #include "wayfire/surface.hpp"
 #include "wayfire/geometry.hpp"
@@ -439,6 +440,18 @@ class view_interface_t : public surface_interface_t, public wf::signal::provider
 };
 
 wayfire_view wl_surface_to_wayfire_view(wl_resource *surface);
+
+/**
+ * Find the view this (sub)surface belongs to.
+ * May return NULL if @surface is NULL or the surface is not part of any view.
+ */
+wayfire_view surface_to_view(wf::surface_interface_t *surface);
+
+/**
+ * Find a view this node belongs to.
+ * May return NULL if @node is NULL or it is not a child of a view node.
+ */
+wayfire_view node_to_view(wf::scene::node_ptr node);
 
 namespace scene
 {

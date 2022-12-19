@@ -909,5 +909,31 @@ const std::shared_ptr<wf::scene::view_node_t>& wf::view_interface_t::get_surface
     return view_impl->surface_root_node;
 }
 
+wayfire_view wf::surface_to_view(wf::surface_interface_t *surface)
+{
+    if (!surface)
+    {
+        return nullptr;
+    }
+
+    return node_to_view(surface->get_content_node());
+}
+
+wayfire_view wf::node_to_view(wf::scene::node_ptr node)
+{
+    auto ptr = node.get();
+    while (ptr)
+    {
+        if (auto vnode = dynamic_cast<scene::view_node_t*>(ptr))
+        {
+            return vnode->get_view();
+        }
+
+        ptr = ptr->parent();
+    }
+
+    return nullptr;
+}
+
 // FIXME: Consider splitting to header + source file
 #include "view-node.cpp"

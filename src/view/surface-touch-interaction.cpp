@@ -11,12 +11,6 @@ namespace wf
 class surface_touch_interaction_t final : public wf::touch_interaction_t
 {
     wf::surface_interface_t *surface;
-    wayfire_view get_view() const
-    {
-        auto view = dynamic_cast<view_interface_t*>(surface->get_main_surface());
-        assert(view);
-        return view->self();
-    }
 
   public:
     surface_touch_interaction_t(wf::surface_interface_t *si)

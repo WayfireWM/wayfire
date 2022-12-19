@@ -11,9 +11,7 @@ inline wayfire_view scale_find_view_at(wf::pointf_t at, wf::output_t *output)
     auto node = output->get_wset()->find_node_at(at);
     if (node && node->surface)
     {
-        auto view = dynamic_cast<wf::view_interface_t*>(
-            node->surface->get_main_surface());
-        return {view};
+        return wf::surface_to_view(node->surface);
     }
 
     return nullptr;

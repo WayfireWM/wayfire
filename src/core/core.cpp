@@ -1,6 +1,7 @@
 /* Needed for pipe2 */
 #ifndef _GNU_SOURCE
     #define _GNU_SOURCE
+    #include "wayfire/view.hpp"
 #endif
 
 #include <sys/wait.h>
@@ -402,10 +403,7 @@ wf::scene::node_ptr wf::compositor_core_impl_t::get_cursor_focus()
 
 wayfire_view wf::compositor_core_t::get_cursor_focus_view()
 {
-    auto focus   = get_cursor_focus();
-    auto surface = dynamic_cast<scene::surface_node_t*>(focus.get());
-    return surface ? dynamic_cast<view_interface_t*>(
-        surface->get_surface()->get_main_surface()) : nullptr;
+    return node_to_view(get_cursor_focus());
 }
 
 wf::surface_interface_t*wf::compositor_core_impl_t::get_surface_at(
@@ -418,15 +416,7 @@ wf::surface_interface_t*wf::compositor_core_impl_t::get_surface_at(
 
 wayfire_view wf::compositor_core_t::get_view_at(wf::pointf_t point)
 {
-    auto surface = get_surface_at(point);
-    if (!surface)
-    {
-        return nullptr;
-    }
-
-    auto view = dynamic_cast<wf::view_interface_t*>(surface->get_main_surface());
-
-    return view ? view->self() : nullptr;
+    return surface_to_view(get_surface_at(point));
 }
 
 wf::scene::node_ptr wf::compositor_core_impl_t::get_touch_focus()
@@ -436,10 +426,7 @@ wf::scene::node_ptr wf::compositor_core_impl_t::get_touch_focus()
 
 wayfire_view wf::compositor_core_t::get_touch_focus_view()
 {
-    auto focus   = get_touch_focus();
-    auto surface = dynamic_cast<scene::surface_node_t*>(focus.get());
-    return surface ? dynamic_cast<view_interface_t*>(
-        surface->get_surface()->get_main_surface()) : nullptr;
+    return node_to_view(get_touch_focus());
 }
 
 void wf::compositor_core_impl_t::add_touch_gesture(

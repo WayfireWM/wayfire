@@ -71,17 +71,6 @@ void wayfire_close::fini()
     output->rem_binding(&callback);
 }
 
-static wayfire_view view_from_surface(wf::surface_interface_t *surface)
-{
-    if (surface)
-    {
-        return dynamic_cast<wf::view_interface_t*>(surface->get_main_surface())
-               ->self();
-    }
-
-    return nullptr;
-}
-
 void wayfire_focus::init()
 {
     grab_interface->name = "_wf_focus";
@@ -90,7 +79,7 @@ void wayfire_focus::init()
     on_wm_focus_request.set_callback([=] (wf::signal_data_t *data)
     {
         auto ev = static_cast<wm_focus_request*>(data);
-        check_focus_surface(view_from_surface(ev->surface));
+        check_focus_surface(wf::surface_to_view(ev->surface));
     });
     output->connect_signal("wm-focus-request", &on_wm_focus_request);
 

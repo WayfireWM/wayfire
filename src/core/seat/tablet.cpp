@@ -5,6 +5,7 @@
 #include "pointer.hpp"
 #include "cursor.hpp"
 #include "input-manager.hpp"
+#include "wayfire/view.hpp"
 #include <wayfire/signal-definitions.hpp>
 #include <wayfire/output-layout.hpp>
 #include <linux/input-event-codes.h>
@@ -215,8 +216,7 @@ void wf::tablet_tool_t::handle_tip(wlr_tablet_tool_tip_event *ev)
         this->grabbed_surface = this->proximity_surface;
 
         /* Try to focus the view under the tool */
-        auto view = dynamic_cast<wf::view_interface_t*>(
-            this->proximity_surface->get_main_surface());
+        auto view = wf::surface_to_view(this->proximity_surface);
         if (view)
         {
             wm_focus_request data;
