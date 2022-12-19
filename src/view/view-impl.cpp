@@ -579,12 +579,6 @@ wf::compositor_surface_t*wf::compositor_surface_from_surface(
     return dynamic_cast<wf::compositor_surface_t*>(surface);
 }
 
-wf::compositor_interactive_view_t*wf::interactive_view_from_view(
-    wf::view_interface_t *view)
-{
-    return dynamic_cast<wf::compositor_interactive_view_t*>(view);
-}
-
 wayfire_view wf::wl_surface_to_wayfire_view(wl_resource *resource)
 {
     auto surface = (wlr_surface*)wl_resource_get_user_data(resource);

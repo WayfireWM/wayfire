@@ -21,11 +21,7 @@ class view_keyboard_interaction_t : public wf::keyboard_interaction_t
 
     void handle_keyboard_enter() override
     {
-        auto iv = interactive_view_from_view(view.get());
-        if (iv)
-        {
-            iv->handle_keyboard_enter();
-        } else if (view->get_wlr_surface())
+        if (view->get_wlr_surface())
         {
             auto seat = wf::get_core().get_current_seat();
             auto kbd  = wlr_seat_get_keyboard(seat);
@@ -39,11 +35,7 @@ class view_keyboard_interaction_t : public wf::keyboard_interaction_t
 
     void handle_keyboard_leave() override
     {
-        auto oiv = interactive_view_from_view(view.get());
-        if (oiv)
-        {
-            oiv->handle_keyboard_leave();
-        } else if (view->get_wlr_surface())
+        if (view->get_wlr_surface())
         {
             auto seat = wf::get_core().get_current_seat();
             wlr_seat_keyboard_notify_clear_focus(seat);
@@ -52,12 +44,6 @@ class view_keyboard_interaction_t : public wf::keyboard_interaction_t
 
     void handle_keyboard_key(wlr_keyboard_key_event event) override
     {
-        auto iv = interactive_view_from_view(view.get());
-        if (iv)
-        {
-            iv->handle_key(event.keycode, event.state);
-        }
-
         auto seat = wf::get_core().get_current_seat();
         wlr_seat_keyboard_notify_key(seat,
             event.time_msec, event.keycode, event.state);

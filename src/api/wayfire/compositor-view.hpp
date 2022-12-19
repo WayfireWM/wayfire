@@ -8,23 +8,6 @@
 namespace wf
 {
 /**
- * Base class for compositor views that need to interact with the keyboard
- */
-class compositor_interactive_view_t
-{
-  public:
-    void handle_keyboard_enter()
-    {}
-    void handle_keyboard_leave()
-    {}
-    void handle_key(uint32_t key, uint32_t state)
-    {}
-};
-
-compositor_interactive_view_t *interactive_view_from_view(
-    wf::view_interface_t *view);
-
-/**
  * color_rect_view_t represents another common type of compositor view - a
  * view which is simply a colored rectangle with a border.
  */
