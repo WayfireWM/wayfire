@@ -58,19 +58,33 @@ class surface_render_instance_t : public render_instance_t
 {
     wf::surface_interface_t *surface;
     wf::wl_listener_wrapper on_visibility_output_commit;
+    wf::output_t *visible_on;
     damage_callback push_damage;
 
     wf::signal::connection_t<node_damage_signal> on_surface_damage =
         [=] (node_damage_signal *data)
     {
+        if (auto wlr_surf = surface->get_wlr_surface())
+        {
+            // Make sure to expand damage, because stretching the surface may cause additional damage.
+            const float scale = wlr_surf->current.scale;
+            const float output_scale = visible_on ? visible_on->handle->scale : 1.0;
+            if (scale != output_scale)
+            {
+                data->region.expand_edges(std::ceil(std::abs(scale - output_scale)));
+            }
+        }
+
         push_damage(data->region);
     };
 
   public:
-    surface_render_instance_t(wf::surface_interface_t *si, damage_callback push_damage)
+    surface_render_instance_t(wf::surface_interface_t *si, damage_callback push_damage,
+        wf::output_t *visible_on)
     {
         this->surface     = si;
         this->push_damage = push_damage;
+        this->visible_on  = visible_on;
         auto node = si->priv->content_node;
         node->connect(&on_surface_damage);
     }
@@ -172,10 +186,9 @@ class surface_render_instance_t : public render_instance_t
 };
 
 void surface_node_t::gen_render_instances(
-    std::vector<render_instance_uptr> & instances, damage_callback damage,
-    wf::output_t *output)
+    std::vector<render_instance_uptr> & instances, damage_callback damage, wf::output_t *output)
 {
-    instances.push_back(std::make_unique<surface_render_instance_t>(this->si, damage));
+    instances.push_back(std::make_unique<surface_render_instance_t>(this->si, damage, output));
 }
 
 wf::geometry_t wf::scene::surface_node_t::get_bounding_box()

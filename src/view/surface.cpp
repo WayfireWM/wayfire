@@ -302,28 +302,12 @@ wlr_buffer*wf::wlr_surface_base_t::get_buffer()
     return nullptr;
 }
 
-void wf::wlr_surface_base_t::apply_surface_damage()
-{
-    if (!_as_si->get_output() || !_is_mapped())
-    {
-        return;
-    }
-
-    wf::region_t dmg;
-    wlr_surface_get_effective_damage(surface, dmg.to_pixman());
-
-    if ((surface->current.scale != 1) ||
-        (surface->current.scale != _as_si->get_output()->handle->scale))
-    {
-        dmg.expand_edges(1);
-    }
-
-    wf::scene::damage_node(_as_si->get_content_node(), dmg);
-}
-
 void wf::wlr_surface_base_t::commit()
 {
-    apply_surface_damage();
+    wf::region_t dmg;
+    wlr_surface_get_effective_damage(surface, dmg.to_pixman());
+    wf::scene::damage_node(_as_si->get_content_node(), dmg);
+
     if (_as_si->get_output())
     {
         /* we schedule redraw, because the surface might expect
