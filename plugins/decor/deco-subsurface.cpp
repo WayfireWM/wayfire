@@ -1,4 +1,9 @@
+#include "wayfire/geometry.hpp"
+#include "wayfire/scene-input.hpp"
+#include "wayfire/scene-operations.hpp"
 #include "wayfire/scene-render.hpp"
+#include "wayfire/scene.hpp"
+#include <memory>
 #define GLM_FORCE_RADIANS
 #include <glm/gtc/matrix_transform.hpp>
 
@@ -20,8 +25,8 @@
 
 #include <cairo.h>
 
-class simple_decoration_surface : public wf::surface_interface_t,
-    public wf::compositor_surface_t
+class simple_decoration_node_t : public wf::scene::node_t, public wf::pointer_interaction_t,
+    public wf::touch_interaction_t
 {
     bool _mapped = true;
 
@@ -67,9 +72,10 @@ class simple_decoration_surface : public wf::surface_interface_t,
     int current_thickness;
     int current_titlebar;
 
-    simple_decoration_surface(wayfire_view view) :
+    simple_decoration_node_t(wayfire_view view) :
+        node_t(false),
         theme{},
-        layout{theme, [=] (wlr_box box) { wf::scene::damage_node(get_content_node(), box); }}
+        layout{theme, [=] (wlr_box box) { wf::scene::damage_node(shared_from_this(), box + get_offset()); }}
     {
         this->view = view;
         view->connect_signal("title-changed", &title_set);
@@ -84,20 +90,9 @@ class simple_decoration_surface : public wf::surface_interface_t,
         return _mapped;
     }
 
-    wf::point_t get_offset() final
+    wf::point_t get_offset()
     {
         return {-current_thickness, -current_titlebar};
-    }
-
-    virtual wf::dimensions_t get_size() const final
-    {
-        if (view->fullscreen)
-        {
-            return wf::dimensions(view->get_wm_geometry());
-        } else
-        {
-            return size;
-        }
     }
 
     void render_title(const wf::render_target_t& fb,
@@ -133,48 +128,118 @@ class simple_decoration_surface : public wf::surface_interface_t,
         }
     }
 
-    virtual void simple_render(const wf::render_target_t& fb, int x, int y,
-        const wf::region_t& damage) override
+    std::optional<wf::scene::input_node_t> find_node_at(const wf::pointf_t& at) override
     {
-        wf::region_t frame = this->cached_region + wf::point_t{x, y};
-        frame &= damage;
-
-        for (const auto& box : frame)
+        wf::pointf_t local = at - wf::pointf_t{get_offset()};
+        if (cached_region.contains_pointf(local))
         {
-            render_scissor_box(fb, {x, y}, wlr_box_from_pixman_box(box));
+            return wf::scene::input_node_t{
+                .node    = this,
+                .surface = nullptr,
+                .local_coords = local,
+            };
+        }
+
+        return {};
+    }
+
+    pointer_interaction_t& pointer_interaction() override
+    {
+        return *this;
+    }
+
+    touch_interaction_t& touch_interaction() override
+    {
+        return *this;
+    }
+
+    class decoration_render_instance_t : public wf::scene::render_instance_t
+    {
+        simple_decoration_node_t *self;
+        wf::scene::damage_callback push_damage;
+
+        wf::signal::connection_t<wf::scene::node_damage_signal> on_surface_damage =
+            [=] (wf::scene::node_damage_signal *data)
+        {
+            push_damage(data->region);
+        };
+
+      public:
+        decoration_render_instance_t(simple_decoration_node_t *self, wf::scene::damage_callback push_damage)
+        {
+            this->self = self;
+            this->push_damage = push_damage;
+            self->connect(&on_surface_damage);
+        }
+
+        void schedule_instructions(std::vector<wf::scene::render_instruction_t>& instructions,
+            const wf::render_target_t& target, wf::region_t& damage) override
+        {
+            auto our_region = self->cached_region + self->get_offset();
+            wf::region_t our_damage = damage & our_region;
+            if (!our_damage.empty())
+            {
+                instructions.push_back(wf::scene::render_instruction_t{
+                    .instance = this,
+                    .target   = target,
+                    .damage   = std::move(our_damage),
+                });
+            }
+        }
+
+        void render(const wf::render_target_t& target,
+            const wf::region_t& region) override
+        {
+            for (const auto& box : region)
+            {
+                self->render_scissor_box(target, self->get_offset(), wlr_box_from_pixman_box(box));
+            }
+        }
+    };
+
+    void gen_render_instances(std::vector<wf::scene::render_instance_uptr>& instances,
+        wf::scene::damage_callback push_damage, wf::output_t *output = nullptr) override
+    {
+        instances.push_back(std::make_unique<decoration_render_instance_t>(this, push_damage));
+    }
+
+    wf::geometry_t get_bounding_box() override
+    {
+        if (view->fullscreen)
+        {
+            return view->get_wm_geometry();
+        } else
+        {
+            return wf::construct_box(get_offset(), size);
         }
     }
 
-    bool accepts_input(int32_t sx, int32_t sy) override
-    {
-        return pixman_region32_contains_point(cached_region.to_pixman(),
-            sx, sy, NULL);
-    }
-
     /* wf::compositor_surface_t implementation */
-    virtual void on_pointer_enter(int x, int y) override
+    void handle_pointer_enter(wf::pointf_t point) override
     {
-        layout.handle_motion(x, y);
+        point -= wf::pointf_t{get_offset()};
+        layout.handle_motion(point.x, point.y);
     }
 
-    virtual void on_pointer_leave() override
+    void handle_pointer_leave() override
     {
         layout.handle_focus_lost();
     }
 
-    virtual void on_pointer_motion(int x, int y) override
+    void handle_pointer_motion(wf::pointf_t to, uint32_t) override
     {
-        handle_action(layout.handle_motion(x, y));
+        to -= wf::pointf_t{get_offset()};
+        handle_action(layout.handle_motion(to.x, to.y));
     }
 
-    virtual void on_pointer_button(uint32_t button, uint32_t state) override
+    void handle_pointer_button(const wlr_pointer_button_event& ev) override
     {
-        if (button != BTN_LEFT)
+        if (ev.button != BTN_LEFT)
         {
             return;
         }
 
-        handle_action(layout.handle_press_event(state == WLR_BUTTON_PRESSED));
+        handle_action(layout.handle_press_event(ev.state == WLR_BUTTON_PRESSED));
     }
 
     void handle_action(wf::decor::decoration_layout_t::action_response_t action)
@@ -210,27 +275,22 @@ class simple_decoration_surface : public wf::surface_interface_t,
         }
     }
 
-    virtual void on_touch_down(int x, int y) override
+    void handle_touch_down(uint32_t time_ms, int finger_id, wf::pointf_t position) override
     {
-        layout.handle_motion(x, y);
+        handle_touch_motion(time_ms, finger_id, position);
         handle_action(layout.handle_press_event());
     }
 
-    virtual void on_touch_motion(int x, int y) override
-    {
-        handle_action(layout.handle_motion(x, y));
-    }
-
-    virtual void on_touch_up() override
+    void handle_touch_up(uint32_t time_ms, int finger_id, wf::pointf_t lift_off_position) override
     {
         handle_action(layout.handle_press_event(false));
         layout.handle_focus_lost();
     }
 
-    void unmap()
+    void handle_touch_motion(uint32_t time_ms, int finger_id, wf::pointf_t position) override
     {
-        _mapped = false;
-        wf::emit_map_state_change(this);
+        position -= wf::pointf_t{get_offset()};
+        layout.handle_motion(position.x, position.y);
     }
 
     void resize(wf::dimensions_t dims)
@@ -266,43 +326,20 @@ class simple_decoration_surface : public wf::surface_interface_t,
 class simple_decorator_t : public wf::decorator_frame_t_t
 {
     wayfire_view view;
-    nonstd::observer_ptr<simple_decoration_surface> deco;
+    std::shared_ptr<simple_decoration_node_t> deco;
 
   public:
     simple_decorator_t(wayfire_view view)
     {
         this->view = view;
-
-        auto sub = std::make_unique<simple_decoration_surface>(view);
-        deco = {sub};
-        view->add_subsurface(std::move(sub), true);
-        view->damage();
-        view->connect_signal("subsurface-removed", &on_subsurface_removed);
+        deco = std::make_shared<simple_decoration_node_t>(view);
+        wf::scene::add_back(view->get_surface_root_node(), deco);
     }
 
     ~simple_decorator_t()
     {
-        if (deco)
-        {
-            // subsurface_removed unmaps it
-            view->remove_subsurface(deco);
-        }
+        wf::scene::remove_child(deco);
     }
-
-    simple_decorator_t(const simple_decorator_t &) = delete;
-    simple_decorator_t(simple_decorator_t &&) = delete;
-    simple_decorator_t& operator =(const simple_decorator_t&) = delete;
-    simple_decorator_t& operator =(simple_decorator_t&&) = delete;
-
-    wf::signal_connection_t on_subsurface_removed = [&] (auto data)
-    {
-        auto ev = static_cast<wf::subsurface_removed_signal*>(data);
-        if (ev->subsurface.get() == deco.get())
-        {
-            deco->unmap();
-            deco = nullptr;
-        }
-    };
 
     /* frame implementation */
     virtual wf::geometry_t expand_wm_geometry(
