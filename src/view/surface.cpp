@@ -99,43 +99,6 @@ wf::surface_interface_t*wf::surface_interface_t::get_main_surface()
     return this;
 }
 
-std::vector<wf::surface_iterator_t> wf::surface_interface_t::enumerate_surfaces(
-    wf::point_t surface_origin)
-{
-    std::vector<wf::surface_iterator_t> result;
-    result.reserve(priv->last_cnt_surfaces);
-    auto add_surfaces_recursive = [&] (surface_interface_t *child)
-    {
-        if (!child->is_mapped())
-        {
-            return;
-        }
-
-        auto child_surfaces = child->enumerate_surfaces(
-            child->get_offset() + surface_origin);
-        result.insert(result.end(),
-            child_surfaces.begin(), child_surfaces.end());
-    };
-
-    for (auto& child : priv->surface_children_above)
-    {
-        add_surfaces_recursive(child.get());
-    }
-
-    if (is_mapped())
-    {
-        result.push_back({this, surface_origin});
-    }
-
-    for (auto& child : priv->surface_children_below)
-    {
-        add_surfaces_recursive(child.get());
-    }
-
-    priv->last_cnt_surfaces = result.size();
-    return result;
-}
-
 wf::output_t*wf::surface_interface_t::get_output()
 {
     return priv->output;

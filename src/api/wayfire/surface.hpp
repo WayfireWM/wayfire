@@ -89,18 +89,6 @@ class surface_interface_t : public wf::object_base_t
         nonstd::observer_ptr<surface_interface_t> subsurface);
 
     /**
-     * @param surface_origin The coordinates of the top-left corner of the
-     * surface.
-     *
-     * @return a list of each mapped surface in the surface tree, including the
-     * surface itself.
-     *
-     * The surfaces should be ordered from the topmost to the bottom-most one.
-     */
-    virtual std::vector<surface_iterator_t> enumerate_surfaces(
-        wf::point_t surface_origin = {0, 0});
-
-    /**
      * @return The output the surface is currently attached to. Note this
      * doesn't necessarily mean that it is visible.
      */
