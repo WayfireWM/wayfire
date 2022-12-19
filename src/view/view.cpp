@@ -739,22 +739,7 @@ bool wf::view_interface_t::has_transformer()
 
 wf::geometry_t wf::view_interface_t::get_untransformed_bounding_box()
 {
-    if (!is_mapped())
-    {
-        return view_impl->offscreen_buffer.geometry;
-    }
-
-    auto bbox = get_output_geometry();
-    wf::region_t bounding_region = bbox;
-
-    for (auto& child : enumerate_surfaces({bbox.x, bbox.y}))
-    {
-        auto dim = child.surface->get_size();
-        bounding_region |= {child.position.x, child.position.y,
-            dim.width, dim.height};
-    }
-
-    return wlr_box_from_pixman_box(bounding_region.get_extents());
+    return get_surface_root_node()->get_bounding_box();
 }
 
 const wf::render_target_t& wf::view_interface_t::take_snapshot()
