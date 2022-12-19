@@ -7,6 +7,7 @@
 #include <wayfire/opengl.hpp>
 
 #include "surface-impl.hpp"
+#include "wayfire/output.hpp"
 #include "wayfire/scene.hpp"
 #include "wayfire/view-transform.hpp"
 #include <wayfire/nonstd/wlroots-full.hpp>
@@ -60,6 +61,7 @@ class view_interface_t::view_priv_impl
     std::shared_ptr<scene::transform_manager_node_t> transformed_node;
     std::shared_ptr<scene::view_node_t> surface_root_node;
     bool actually_minimized = false;
+    wf::output_t *output;
 
   private:
     /** Last geometry the view has had in non-tiled and non-fullscreen state.

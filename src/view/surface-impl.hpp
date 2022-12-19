@@ -26,8 +26,6 @@ class surface_interface_t::impl
      */
     void clear_subsurfaces(surface_interface_t *self);
 
-    wf::output_t *output = nullptr;
-
     /**
      * Most surfaces don't have a wlr_surface. However, internal surface
      * implementations can set the underlying surface so that functions like
@@ -65,10 +63,6 @@ class wlr_surface_base_t
 
     /** @return The offset from the surface coordinates to the actual geometry */
     virtual wf::point_t get_window_offset();
-
-    /** Update the surface output */
-    virtual void update_output(wf::output_t *old_output,
-        wf::output_t *new_output);
 
     /*
      * Functions that need to be implemented/overridden from the
@@ -120,12 +114,6 @@ class wlr_child_surface_base_t :
         const wf::region_t& damage) override
     {
         _simple_render(fb, x, y, damage);
-    }
-
-    virtual void set_output(wf::output_t *output) override
-    {
-        update_output(get_output(), output);
-        surface_interface_t::set_output(output);
     }
 };
 }

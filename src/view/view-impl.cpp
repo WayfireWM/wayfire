@@ -262,12 +262,6 @@ void wf::wlr_view_t::set_output(wf::output_t *wo)
     toplevel_update_output(old_output, false);
     view_interface_t::set_output(wo);
     toplevel_update_output(wo, true);
-
-    /* send enter/leave events */
-    if (this->is_mapped())
-    {
-        update_output(old_output, wo);
-    }
 }
 
 void wf::wlr_view_t::commit()

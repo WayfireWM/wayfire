@@ -54,8 +54,9 @@ wf::touch_interaction_t& wf::scene::surface_node_t::touch_interaction()
     return *tch_interaction;
 }
 
-class surface_render_instance_t : public render_instance_t
+class surface_node_t::surface_render_instance_t : public render_instance_t
 {
+    surface_node_t *self;
     wf::surface_interface_t *surface;
     wf::wl_listener_wrapper on_visibility_output_commit;
     wf::output_t *visible_on;
@@ -79,14 +80,37 @@ class surface_render_instance_t : public render_instance_t
     };
 
   public:
-    surface_render_instance_t(wf::surface_interface_t *si, damage_callback push_damage,
+    surface_render_instance_t(surface_node_t *self, wf::surface_interface_t *si, damage_callback push_damage,
         wf::output_t *visible_on)
     {
-        this->surface     = si;
+        if (visible_on)
+        {
+            self->visibility[visible_on]++;
+            if (si->get_wlr_surface())
+            {
+                wlr_surface_send_enter(si->get_wlr_surface(), visible_on->handle);
+            }
+        }
+
+        this->self    = self;
+        this->surface = si;
         this->push_damage = push_damage;
         this->visible_on  = visible_on;
         auto node = si->priv->content_node;
         node->connect(&on_surface_damage);
+    }
+
+    ~surface_render_instance_t()
+    {
+        if (visible_on)
+        {
+            self->visibility[visible_on]--;
+            if ((self->visibility[visible_on] == 0) && surface->get_wlr_surface())
+            {
+                self->visibility.erase(visible_on);
+                wlr_surface_send_leave(surface->get_wlr_surface(), visible_on->handle);
+            }
+        }
     }
 
     void schedule_instructions(std::vector<render_instruction_t>& instructions,
@@ -188,7 +212,8 @@ class surface_render_instance_t : public render_instance_t
 void surface_node_t::gen_render_instances(
     std::vector<render_instance_uptr> & instances, damage_callback damage, wf::output_t *output)
 {
-    instances.push_back(std::make_unique<surface_render_instance_t>(this->si, damage, output));
+    instances.push_back(
+        std::make_unique<surface_node_t::surface_render_instance_t>(this, this->si, damage, output));
 }
 
 wf::geometry_t wf::scene::surface_node_t::get_bounding_box()

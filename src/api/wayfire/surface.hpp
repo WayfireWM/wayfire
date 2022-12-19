@@ -1,6 +1,7 @@
 #ifndef WF_SURFACE_HPP
 #define WF_SURFACE_HPP
 
+#include "wayfire/util.hpp"
 #include <cstdint>
 #include <string>
 #include <vector>
@@ -79,21 +80,6 @@ class surface_interface_t : public wf::object_base_t
      */
     std::unique_ptr<surface_interface_t> remove_subsurface(
         nonstd::observer_ptr<surface_interface_t> subsurface);
-
-    /**
-     * @return The output the surface is currently attached to. Note this
-     * doesn't necessarily mean that it is visible.
-     */
-    virtual wf::output_t *get_output();
-
-    /**
-     * Set the current output of the surface and all surfaces in its surface
-     * tree. Note that calling this for a surface with a parent is an invalid
-     * operation and may have undefined consequences.
-     *
-     * @param output The new output, may be null
-     */
-    virtual void set_output(wf::output_t *output);
 
     /** @return The offset of this surface relative to its parent surface.  */
     virtual wf::point_t get_offset() = 0;
@@ -228,6 +214,8 @@ class surface_node_t : public wf::scene::node_t
     std::unique_ptr<pointer_interaction_t> ptr_interaction;
     std::unique_ptr<touch_interaction_t> tch_interaction;
     wf::surface_interface_t *si;
+    std::map<wf::output_t*, int> visibility;
+    class surface_render_instance_t;
 };
 }
 

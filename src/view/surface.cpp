@@ -35,8 +35,6 @@ void wf::surface_interface_t::add_subsurface(
     std::unique_ptr<surface_interface_t> subsurface, bool is_below_parent)
 {
     subsurface->priv->parent_surface = this;
-    subsurface->set_output(get_output());
-
     if (is_below_parent)
     {
         wf::scene::add_back(priv->root_node, subsurface->priv->root_node);
@@ -90,25 +88,6 @@ std::unique_ptr<wf::surface_interface_t> wf::surface_interface_t::remove_subsurf
 
 wf::surface_interface_t::~surface_interface_t()
 {}
-
-wf::output_t*wf::surface_interface_t::get_output()
-{
-    return priv->output;
-}
-
-void wf::surface_interface_t::set_output(wf::output_t *output)
-{
-    priv->output = output;
-    for (auto& c : priv->surface_children_above)
-    {
-        c->set_output(output);
-    }
-
-    for (auto& c : priv->surface_children_below)
-    {
-        c->set_output(output);
-    }
-}
 
 /****************************
 * surface_interface_t functions for surfaces which are
@@ -252,12 +231,6 @@ void wf::wlr_surface_base_t::map(wlr_surface *surface)
 
     _as_si->priv->wsurface = surface;
 
-    /* force surface_send_enter(), and also check whether parent surface
-     * output hasn't changed while we were unmapped */
-    wf::output_t *output = _as_si->priv->parent_surface ?
-        _as_si->priv->parent_surface->get_output() : _as_si->get_output();
-    _as_si->set_output(output);
-
     on_new_subsurface.connect(&surface->events.new_subsurface);
     on_commit.connect(&surface->events.commit);
 
@@ -307,28 +280,6 @@ void wf::wlr_surface_base_t::commit()
     wf::region_t dmg;
     wlr_surface_get_effective_damage(surface, dmg.to_pixman());
     wf::scene::damage_node(_as_si->get_content_node(), dmg);
-
-    if (_as_si->get_output())
-    {
-        /* we schedule redraw, because the surface might expect
-         * a frame callback */
-        _as_si->get_output()->render->schedule_redraw();
-    }
-}
-
-void wf::wlr_surface_base_t::update_output(wf::output_t *old_output,
-    wf::output_t *new_output)
-{
-    /* We should send send_leave only if the output is different from the last. */
-    if (old_output && (old_output != new_output) && surface)
-    {
-        wlr_surface_send_leave(surface, old_output->handle);
-    }
-
-    if (new_output && surface)
-    {
-        wlr_surface_send_enter(surface, new_output->handle);
-    }
 }
 
 void wf::wlr_surface_base_t::_simple_render(const wf::render_target_t& fb,

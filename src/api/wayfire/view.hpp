@@ -128,7 +128,12 @@ class view_interface_t : public surface_interface_t, public wf::signal::provider
      * If the new output is different from the previous, the view will be
      * removed from the layer it was on the old output.
      */
-    virtual void set_output(wf::output_t *new_output) override;
+    virtual void set_output(wf::output_t *new_output);
+
+    /**
+     * Get the view's main output.
+     */
+    virtual wf::output_t *get_output();
 
     /** Move the view to the given output-local coordinates.  */
     virtual void move(int x, int y) = 0;

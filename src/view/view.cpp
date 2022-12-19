@@ -207,7 +207,7 @@ void wf::view_interface_t::set_output(wf::output_t *new_output)
     _output_signal data;
     data.output = get_output();
 
-    surface_interface_t::set_output(new_output);
+    this->view_impl->output = new_output;
     if ((new_output != data.output) && new_output)
     {
         view_attached_signal data;
@@ -221,6 +221,11 @@ void wf::view_interface_t::set_output(wf::output_t *new_output)
     {
         view->set_output(new_output);
     }
+}
+
+wf::output_t*wf::view_interface_t::get_output()
+{
+    return view_impl->output;
 }
 
 void wf::view_interface_t::resize(int w, int h)
