@@ -3,11 +3,13 @@
 #include <wayfire/util/log.hpp>
 #include "surface-impl.hpp"
 #include "subsurface.hpp"
+#include "wayfire/geometry.hpp"
 #include "wayfire/opengl.hpp"
 #include "../core/core-impl.hpp"
 #include "wayfire/output.hpp"
 #include <wayfire/util/log.hpp>
 #include "wayfire/render-manager.hpp"
+#include "wayfire/scene-render.hpp"
 #include "wayfire/scene.hpp"
 #include "wayfire/signal-definitions.hpp"
 
@@ -150,27 +152,6 @@ wlr_surface*wf::surface_interface_t::get_wlr_surface()
     return priv->wsurface;
 }
 
-void wf::surface_interface_t::damage_surface_region(
-    const wf::region_t& dmg)
-{
-    for (const auto& rect : dmg)
-    {
-        damage_surface_box(wlr_box_from_pixman_box(rect));
-    }
-}
-
-void wf::surface_interface_t::damage_surface_box(const wlr_box& box)
-{
-    /* wlr_view_t overrides damage_surface_box and applies it to the output */
-    if (priv->parent_surface && priv->parent_surface->is_mapped())
-    {
-        wlr_box parent_box = box;
-        parent_box.x += get_offset().x;
-        parent_box.y += get_offset().y;
-        priv->parent_surface->damage_surface_box(parent_box);
-    }
-}
-
 void wf::surface_interface_t::clear_subsurfaces()
 {
     subsurface_removed_signal ev;
@@ -295,9 +276,7 @@ void wf::wlr_surface_base_t::map(wlr_surface *surface)
 void wf::wlr_surface_base_t::unmap()
 {
     assert(this->surface);
-    apply_surface_damage();
-    _as_si->damage_surface_box({.x = 0, .y = 0,
-        .width = _get_size().width, .height = _get_size().height});
+    wf::scene::damage_node(_as_si->get_content_node(), wf::construct_box({0, 0}, _get_size()));
 
     this->surface->data = NULL;
     this->surface = nullptr;
@@ -339,7 +318,7 @@ void wf::wlr_surface_base_t::apply_surface_damage()
         dmg.expand_edges(1);
     }
 
-    _as_si->damage_surface_region(dmg);
+    wf::scene::damage_node(_as_si->get_content_node(), dmg);
 }
 
 void wf::wlr_surface_base_t::commit()

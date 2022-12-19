@@ -162,11 +162,6 @@ class surface_interface_t : public wf::object_base_t
     /** Construct a new surface. */
     surface_interface_t();
 
-    /** Damage the given box, in surface-local coordinates */
-    virtual void damage_surface_box(const wlr_box& box);
-    /** Damage the given region, in surface-local coordinates */
-    virtual void damage_surface_region(const wf::region_t& region);
-
     /** Remove all subsurfaces that we have. Should to be called after unmapping! */
     virtual void clear_subsurfaces();
 

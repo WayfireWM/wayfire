@@ -174,15 +174,3 @@ void wf::drag_icon_t::update_position()
     data.region |= last_box;
     this->priv->root_node->emit(&data);
 }
-
-void wf::drag_icon_t::damage_surface_box(const wlr_box& box)
-{
-    if (!is_mapped())
-    {
-        return;
-    }
-
-    scene::node_damage_signal data;
-    data.region |= box + get_position();
-    this->priv->root_node->emit(&data);
-}

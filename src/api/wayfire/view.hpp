@@ -395,9 +395,6 @@ class view_interface_t : public surface_interface_t, public wf::signal::provider
         return {0, 0};
     }
 
-    /** Damage the given box, in surface-local coordinates */
-    virtual void damage_surface_box(const wlr_box& box) override;
-
     /**
      * @return the bounding box of the view before transformers,
      *  in output-local coordinates

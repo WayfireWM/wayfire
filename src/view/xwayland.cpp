@@ -944,11 +944,6 @@ class wayfire_dnd_xwayland_view : public wayfire_unmanaged_xwayland_view
         wayfire_unmanaged_xwayland_view::deinitialize();
     }
 
-    void damage_surface_box(const wlr_box&) override
-    {
-        damage();
-    }
-
     wf::geometry_t last_global_bbox = {0, 0, 0, 0};
 
     void damage() override

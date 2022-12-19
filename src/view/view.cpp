@@ -837,16 +837,6 @@ wf::view_interface_t::~view_interface_t()
     unset_toplevel_parent(self());
 }
 
-void wf::view_interface_t::damage_surface_box(const wlr_box& box)
-{
-    auto obox = get_output_geometry();
-
-    auto damaged = box;
-    damaged.x += obox.x;
-    damaged.y += obox.y;
-    view_damage_raw(self(), damaged);
-}
-
 void wf::view_damage_raw(wayfire_view view, const wlr_box& box)
 {
     auto output = view->get_output();

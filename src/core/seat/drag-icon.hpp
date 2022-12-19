@@ -17,7 +17,6 @@ struct drag_icon_t : public wlr_child_surface_base_t
 
     /** Called each time the DnD icon position changes. */
     void update_position();
-    void damage_surface_box(const wlr_box& rect) override;
 
     /* Force map without receiving a wlroots event */
     void force_map()

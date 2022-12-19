@@ -58,11 +58,21 @@ class surface_render_instance_t : public render_instance_t
 {
     wf::surface_interface_t *surface;
     wf::wl_listener_wrapper on_visibility_output_commit;
+    damage_callback push_damage;
+
+    wf::signal::connection_t<node_damage_signal> on_surface_damage =
+        [=] (node_damage_signal *data)
+    {
+        push_damage(data->region);
+    };
 
   public:
-    surface_render_instance_t(wf::surface_interface_t *si)
+    surface_render_instance_t(wf::surface_interface_t *si, damage_callback push_damage)
     {
-        this->surface = si;
+        this->surface     = si;
+        this->push_damage = push_damage;
+        auto node = si->priv->content_node;
+        node->connect(&on_surface_damage);
     }
 
     void schedule_instructions(std::vector<render_instruction_t>& instructions,
@@ -165,7 +175,7 @@ void surface_node_t::gen_render_instances(
     std::vector<render_instance_uptr> & instances, damage_callback damage,
     wf::output_t *output)
 {
-    instances.push_back(std::make_unique<surface_render_instance_t>(this->si));
+    instances.push_back(std::make_unique<surface_render_instance_t>(this->si, damage));
 }
 
 wf::geometry_t wf::scene::surface_node_t::get_bounding_box()
