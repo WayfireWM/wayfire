@@ -152,13 +152,9 @@ wf::wlr_surface_base_t::wlr_surface_base_t(surface_interface_t *self)
             return;
         }
 
-        auto subsurface = std::make_unique<subsurface_implementation_t>(sub);
-        nonstd::observer_ptr<subsurface_implementation_t> ptr{subsurface};
-        _as_si->add_subsurface(std::move(subsurface), false);
-        if (sub->mapped)
-        {
-            ptr->map(sub->surface);
-        }
+        // Will be freed when the wlr_subsurface is destroyed
+        auto controller = new wlr_subsurface_controller_t(sub);
+        wf::scene::add_front(_as_si->priv->root_node, controller->get_subsurface_root());
     };
 
     on_new_subsurface.set_callback(handle_new_subsurface);
