@@ -293,3 +293,8 @@ wf::geometry_t wf::scene::wlr_surface_node_t::get_bounding_box()
 
     return {0, 0, 0, 0};
 }
+
+wlr_surface*wf::scene::wlr_surface_node_t::get_surface() const
+{
+    return this->surface;
+}

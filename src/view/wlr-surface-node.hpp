@@ -30,6 +30,8 @@ class wlr_surface_node_t : public node_t
         wf::output_t *output) override;
     wf::geometry_t get_bounding_box() override;
 
+    wlr_surface *get_surface() const;
+
   private:
     std::unique_ptr<pointer_interaction_t> ptr_interaction;
     std::unique_ptr<touch_interaction_t> tch_interaction;
