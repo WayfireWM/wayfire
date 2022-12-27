@@ -1,9 +1,11 @@
+#include "wayfire/util.hpp"
 #include <wayfire/singleton-plugin.hpp>
 #include <wayfire/view.hpp>
 #include <wayfire/output.hpp>
 #include <wayfire/workspace-manager.hpp>
 #include <wayfire/output-layout.hpp>
 #include <getopt.h>
+#include <wayland-server-core.h>
 #include <wayland-server-protocol.h>
 
 #define WAYFIRE_PLUGIN
@@ -21,9 +23,13 @@ extern "C" {
 #include <wlr/interfaces/wlr_pointer.h>
 #include <wlr/interfaces/wlr_keyboard.h>
 #include <wlr/interfaces/wlr_touch.h>
+#include <wlr/interfaces/wlr_tablet_tool.h>
+#include <wlr/interfaces/wlr_tablet_pad.h>
 #include <wlr/types/wlr_virtual_pointer_v1.h>
 #include <wlr/types/wlr_virtual_keyboard_v1.h>
 #include <wlr/types/wlr_output_layout.h>
+#include <wlr/types/wlr_tablet_pad.h>
+#include <wlr/types/wlr_tablet_tool.h>
 #include <libevdev/libevdev.h>
 }
 
@@ -109,6 +115,22 @@ static const struct wlr_touch_impl touch_impl = {
     .name = "stipc-touch-device",
 };
 
+static const struct wlr_tablet_impl tablet_impl = {
+    .name = "stipc-tablet",
+};
+
+static const struct wlr_tablet_pad_impl tablet_pad_impl = {
+    .name = "stipc-tablet-pad",
+};
+
+static void init_wlr_tool(wlr_tablet_tool *tablet_tool)
+{
+    std::memset(tablet_tool, 0, sizeof(*tablet_tool));
+    tablet_tool->type     = WLR_TABLET_TOOL_TYPE_PEN;
+    tablet_tool->pressure = true;
+    wl_signal_init(&tablet_tool->events.destroy);
+}
+
 class headless_input_backend_t
 {
   public:
@@ -116,6 +138,9 @@ class headless_input_backend_t
     wlr_pointer pointer;
     wlr_keyboard keyboard;
     wlr_touch touch;
+    wlr_tablet tablet;
+    wlr_tablet_tool tablet_tool;
+    wlr_tablet_pad tablet_pad;
 
     headless_input_backend_t()
     {
@@ -126,15 +151,22 @@ class headless_input_backend_t
         wlr_pointer_init(&pointer, &pointer_impl, "stipc_pointer");
         wlr_keyboard_init(&keyboard, &keyboard_impl, "stipc_keyboard");
         wlr_touch_init(&touch, &touch_impl, "stipc_touch");
+        wlr_tablet_init(&tablet, &tablet_impl, "stipc_tablet_tool");
+        wlr_tablet_pad_init(&tablet_pad, &tablet_pad_impl, "stipc_tablet_pad");
+        init_wlr_tool(&tablet_tool);
 
         wl_signal_emit_mutable(&backend->events.new_input, &pointer.base);
         wl_signal_emit_mutable(&backend->events.new_input, &keyboard.base);
         wl_signal_emit_mutable(&backend->events.new_input, &touch.base);
+        wl_signal_emit_mutable(&backend->events.new_input, &tablet.base);
+        wl_signal_emit_mutable(&backend->events.new_input, &tablet_pad.base);
 
         if (core.get_current_state() == compositor_state_t::RUNNING)
         {
             wlr_backend_start(backend);
         }
+
+        wl_signal_emit_mutable(&tablet_pad.events.attach_tablet, &tablet_tool);
     }
 
     ~headless_input_backend_t()
@@ -220,6 +252,66 @@ class headless_input_backend_t
         wl_signal_emit(&touch.events.frame, NULL);
     }
 
+    void do_tablet_proximity(bool prox_in, double x, double y)
+    {
+        wlr_tablet_tool_proximity_event ev;
+        ev.tablet = &tablet;
+        ev.tool   = &tablet_tool;
+        ev.state  = prox_in ? WLR_TABLET_TOOL_PROXIMITY_IN : WLR_TABLET_TOOL_PROXIMITY_OUT;
+        ev.time_msec = get_current_time();
+        ev.x = x;
+        ev.y = y;
+        wl_signal_emit(&tablet.events.proximity, &ev);
+    }
+
+    void do_tablet_tip(bool tip_down, double x, double y)
+    {
+        wlr_tablet_tool_tip_event ev;
+        ev.tablet = &tablet;
+        ev.tool   = &tablet_tool;
+        ev.state  = tip_down ? WLR_TABLET_TOOL_TIP_DOWN : WLR_TABLET_TOOL_TIP_UP;
+        ev.time_msec = get_current_time();
+        ev.x = x;
+        ev.y = y;
+        wl_signal_emit(&tablet.events.tip, &ev);
+    }
+
+    void do_tablet_button(uint32_t button, bool down)
+    {
+        wlr_tablet_tool_button_event ev;
+        ev.tablet = &tablet;
+        ev.tool   = &tablet_tool;
+        ev.button = button;
+        ev.state  = down ? WLR_BUTTON_PRESSED : WLR_BUTTON_RELEASED;
+        ev.time_msec = get_current_time();
+        wl_signal_emit(&tablet.events.button, &ev);
+    }
+
+    void do_tablet_axis(double x, double y, double pressure)
+    {
+        wlr_tablet_tool_axis_event ev;
+        ev.tablet = &tablet;
+        ev.tool   = &tablet_tool;
+        ev.time_msec = get_current_time();
+        ev.pressure  = pressure;
+        ev.x = x;
+        ev.y = y;
+
+        ev.updated_axes = WLR_TABLET_TOOL_AXIS_X | WLR_TABLET_TOOL_AXIS_Y | WLR_TABLET_TOOL_AXIS_PRESSURE;
+        wl_signal_emit(&tablet.events.axis, &ev);
+    }
+
+    void do_tablet_pad_button(uint32_t button, bool state)
+    {
+        wlr_tablet_pad_button_event ev;
+        ev.group  = 0;
+        ev.button = button;
+        ev.state  = state ? WLR_BUTTON_PRESSED : WLR_BUTTON_RELEASED;
+        ev.mode   = 0;
+        ev.time_msec = get_current_time();
+        wl_signal_emit(&tablet_pad.events.button, &ev);
+    }
+
     headless_input_backend_t(const headless_input_backend_t&) = delete;
     headless_input_backend_t(headless_input_backend_t&&) = delete;
     headless_input_backend_t& operator =(const headless_input_backend_t&) = delete;
@@ -266,6 +358,12 @@ class ipc_plugin_t
         server->register_method("core/layout_views", layout_views);
         server->register_method("core/touch", do_touch);
         server->register_method("core/touch_release", do_touch_release);
+
+        server->register_method("core/tablet/tool_proximity", do_tool_proximity);
+        server->register_method("core/tablet/tool_button", do_tool_button);
+        server->register_method("core/tablet/tool_axis", do_tool_axis);
+        server->register_method("core/tablet/tool_tip", do_tool_tip);
+        server->register_method("core/tablet/pad_button", do_pad_button);
     }
 
     using method_t = ipc::server_t::method_cb;
@@ -526,6 +624,49 @@ class ipc_plugin_t
         dpy["wayland"]  = wf::get_core().wayland_display;
         dpy["xwayland"] = wf::get_core().get_xwayland_display();
         return dpy;
+    };
+
+    method_t do_tool_proximity = [=] (nlohmann::json data)
+    {
+        EXPECT_FIELD(data, "proximity_in", boolean);
+        EXPECT_FIELD(data, "x", number);
+        EXPECT_FIELD(data, "y", number);
+        input->do_tablet_proximity(data["proximity_in"], data["x"], data["y"]);
+        return get_ok();
+    };
+
+    method_t do_tool_button = [=] (nlohmann::json data)
+    {
+        EXPECT_FIELD(data, "button", number_integer);
+        EXPECT_FIELD(data, "state", boolean);
+        input->do_tablet_button(data["button"], data["state"]);
+        return get_ok();
+    };
+
+    method_t do_tool_axis = [=] (nlohmann::json data)
+    {
+        EXPECT_FIELD(data, "x", number);
+        EXPECT_FIELD(data, "y", number);
+        EXPECT_FIELD(data, "pressure", number);
+        input->do_tablet_axis(data["x"], data["y"], data["pressure"]);
+        return get_ok();
+    };
+
+    method_t do_tool_tip = [=] (nlohmann::json data)
+    {
+        EXPECT_FIELD(data, "x", number);
+        EXPECT_FIELD(data, "y", number);
+        EXPECT_FIELD(data, "state", boolean);
+        input->do_tablet_tip(data["state"], data["x"], data["y"]);
+        return get_ok();
+    };
+
+    method_t do_pad_button = [=] (nlohmann::json data)
+    {
+        EXPECT_FIELD(data, "button", number_integer);
+        EXPECT_FIELD(data, "state", boolean);
+        input->do_tablet_pad_button(data["button"], data["state"]);
+        return get_ok();
     };
 
     std::unique_ptr<ipc::server_t> server;
