@@ -213,19 +213,25 @@ class headless_input_backend_t
         wl_signal_emit(&pointer.events.frame, NULL);
     }
 
-    void do_touch(int finger, double x, double y)
+    void convert_xy_to_relative(double *x, double *y)
     {
         auto layout = wf::get_core().output_layout->get_handle();
         wlr_box box;
         wlr_output_layout_get_box(layout, NULL, &box);
+        *x = 1.0 * (*x - box.x) / box.width;
+        *y = 1.0 * (*y - box.y) / box.height;
+    }
 
+    void do_touch(int finger, double x, double y)
+    {
+        convert_xy_to_relative(&x, &y);
         if (!wf::get_core().get_touch_state().fingers.count(finger))
         {
             wlr_touch_down_event ev;
             ev.touch     = &touch;
             ev.time_msec = get_current_time();
-            ev.x = 1.0 * (x - box.x) / box.width;
-            ev.y = 1.0 * (y - box.y) / box.height;
+            ev.x = x;
+            ev.y = y;
             ev.touch_id = finger;
             wl_signal_emit(&touch.events.down, &ev);
         } else
@@ -233,8 +239,8 @@ class headless_input_backend_t
             wlr_touch_motion_event ev;
             ev.touch     = &touch;
             ev.time_msec = get_current_time();
-            ev.x = 1.0 * (x - box.x) / box.width;
-            ev.y = 1.0 * (y - box.y) / box.height;
+            ev.x = x;
+            ev.y = y;
             ev.touch_id = finger;
             wl_signal_emit(&touch.events.motion, &ev);
         }
@@ -254,6 +260,7 @@ class headless_input_backend_t
 
     void do_tablet_proximity(bool prox_in, double x, double y)
     {
+        convert_xy_to_relative(&x, &y);
         wlr_tablet_tool_proximity_event ev;
         ev.tablet = &tablet;
         ev.tool   = &tablet_tool;
@@ -266,6 +273,7 @@ class headless_input_backend_t
 
     void do_tablet_tip(bool tip_down, double x, double y)
     {
+        convert_xy_to_relative(&x, &y);
         wlr_tablet_tool_tip_event ev;
         ev.tablet = &tablet;
         ev.tool   = &tablet_tool;
@@ -289,6 +297,7 @@ class headless_input_backend_t
 
     void do_tablet_axis(double x, double y, double pressure)
     {
+        convert_xy_to_relative(&x, &y);
         wlr_tablet_tool_axis_event ev;
         ev.tablet = &tablet;
         ev.tool   = &tablet_tool;
