@@ -374,8 +374,8 @@ void wf::output_impl_t::focus_view(wayfire_view v, uint32_t flags)
     if (v->get_keyboard_focus_surface())
     {
         make_view_visible(v);
-        give_input_focus(select_focus_view(v));
         update_active_view(v);
+        give_input_focus(select_focus_view(v));
         data.view = v;
         emit_signal("view-focused", &data);
     }
