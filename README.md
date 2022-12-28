@@ -138,7 +138,7 @@ emerge --ask --verbose "=gui-wm/wayfire-9999"
 
 See [nixpkgs-wayland].
 
-[nixpkgs-wayland]: https://github.com/colemickens/nixpkgs-wayland
+[nixpkgs-wayland]: https://github.com/nix-community/nixpkgs-wayland
 
 ###### Ubuntu
 
