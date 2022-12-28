@@ -7,6 +7,7 @@
 
 namespace wf
 {
+struct tablet_t;
 struct tablet_tool_t
 {
     /**
@@ -18,6 +19,7 @@ struct tablet_tool_t
 
     wlr_tablet_tool *tool;
     wlr_tablet_v2_tablet_tool *tool_v2;
+    tablet_t *tablet;
 
     /**
      * Called whenever a refocus of the tool is necessary

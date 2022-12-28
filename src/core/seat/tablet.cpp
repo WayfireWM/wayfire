@@ -5,6 +5,7 @@
 #include "pointer.hpp"
 #include "cursor.hpp"
 #include "input-manager.hpp"
+#include "wayfire/debug.hpp"
 #include "wayfire/view.hpp"
 #include <wayfire/signal-definitions.hpp>
 #include <wayfire/output-layout.hpp>
@@ -272,7 +273,9 @@ wf::tablet_tool_t*wf::tablet_t::ensure_tool(wlr_tablet_tool *tool)
 {
     if (tool->data == NULL)
     {
-        new wf::tablet_tool_t(tool, tablet_v2);
+        auto wtool = new wf::tablet_tool_t(tool, tablet_v2);
+        wtool->tablet = this;
+        return wtool;
     }
 
     return (wf::tablet_tool_t*)tool->data;
@@ -423,8 +426,12 @@ wf::tablet_pad_t::tablet_pad_t(wlr_input_device *pad) :
 
     on_attach.set_callback([=] (void *data)
     {
-        auto tablet = static_cast<wlr_tablet_tool*>(data);
-        attach_to_tablet((tablet_t*)tablet->data);
+        auto wlr_tool = static_cast<wlr_tablet_tool*>(data);
+        auto tool     = (tablet_tool_t*)wlr_tool->data;
+        if (tool)
+        {
+            attach_to_tablet(tool->tablet);
+        }
     });
 
     on_button.set_callback([=] (void *data)
@@ -522,7 +529,7 @@ void wf::tablet_pad_t::select_default_tool()
         auto pad_gr = get_group(this->get_wlr_handle());
         auto tab_gr = get_group(dev->get_wlr_handle());
 
-        if (pad_gr && tab_gr && (pad_gr == tab_gr))
+        if (pad_gr == tab_gr)
         {
             attach_to_tablet(static_cast<tablet_t*>(dev.get()));
             return;
