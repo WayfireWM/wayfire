@@ -303,3 +303,26 @@ wf::scene::node_ptr wf::surface_interface_t::get_content_node() const
 {
     return priv->content_node;
 }
+
+wf::wlr_surface_controller_t::wlr_surface_controller_t(wlr_surface *surface,
+    scene::floating_inner_ptr root_node)
+{
+    this->root = root_node;
+
+    on_destroy.set_callback([=] (void*)
+    {
+        delete this;
+    });
+
+    on_new_subsurface.set_callback([=] (void *data)
+    {
+        auto sub = static_cast<wlr_subsurface*>(data);
+        // Allocate memory, it will be auto-freed when the wlr objects are destroyed
+        auto sub_controller = new wlr_subsurface_controller_t(sub);
+        new wlr_surface_controller_t(sub->surface, sub_controller->get_subsurface_root());
+        wf::scene::add_front(this->root, sub_controller->get_subsurface_root());
+    });
+
+    on_destroy.connect(&surface->events.destroy);
+    on_new_subsurface.connect(&surface->events.new_subsurface);
+}
