@@ -9,7 +9,7 @@
 
 struct wm_focus_request : public wf::signal_data_t
 {
-    wf::surface_interface_t *surface;
+    wf::scene::node_ptr node;
 };
 
 class wayfire_close : public wf::plugin_interface_t

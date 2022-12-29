@@ -7,6 +7,7 @@
 #include "../../view/surface-impl.hpp"
 #include "wayfire/output.hpp"
 #include "wayfire/input-device.hpp"
+#include "wayfire/scene-input.hpp"
 
 namespace wf
 {
@@ -107,5 +108,8 @@ class seat_t
 /** Convert the given point to a node-local point */
 wf::pointf_t get_node_local_coords(wf::scene::node_t *node,
     const wf::pointf_t& point);
+
+/** Check whether a node with an implicit grab should still retain the grab. */
+bool is_grabbed_node_alive(wf::scene::node_ptr node);
 
 #endif /* end of include guard: SEAT_HPP */

@@ -24,10 +24,10 @@ struct tablet_tool_t
     /**
      * Called whenever a refocus of the tool is necessary
      */
-    void update_tool_position();
+    void update_tool_position(bool real_update);
 
     /** Set the proximity surface */
-    void set_focus(wf::surface_interface_t *surface);
+    bool set_focus(scene::node_ptr node);
 
     /**
      * Send the axis updates directly.
@@ -57,9 +57,9 @@ struct tablet_tool_t
     wlr_tablet_v2_tablet *tablet_v2;
 
     /** Surface where the tool is in */
-    wf::surface_interface_t *proximity_surface = nullptr;
+    scene::node_ptr proximity_surface = nullptr;
     /** Surface where the tool was grabbed */
-    wf::surface_interface_t *grabbed_surface = nullptr;
+    scene::node_ptr grabbed_node = nullptr;
 
     double tilt_x = 0.0;
     double tilt_y = 0.0;
@@ -101,6 +101,8 @@ struct tablet_t : public input_device_impl_t
      * The wayfire tool will be created if it doesn't exist yet.
      */
     tablet_tool_t *ensure_tool(wlr_tablet_tool *tool);
+
+    bool should_use_absolute_positioning(wlr_tablet_tool *tool);
 };
 
 struct tablet_pad_t : public input_device_impl_t

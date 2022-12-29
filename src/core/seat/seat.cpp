@@ -345,3 +345,25 @@ wf::pointf_t get_node_local_coords(wf::scene::node_t *node,
 {
     return to_local_recursive(node, point);
 }
+
+bool is_grabbed_node_alive(wf::scene::node_ptr node)
+{
+    auto cur = node.get();
+    while (cur)
+    {
+        if (!cur->is_enabled())
+        {
+            return false;
+        }
+
+        if (cur == wf::get_core().scene().get())
+        {
+            return true;
+        }
+
+        cur = cur->parent();
+    }
+
+    // We did not reach the scenegraph root => we cannot focus the node anymore, it was removed.
+    return false;
+}

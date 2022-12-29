@@ -79,7 +79,7 @@ void wayfire_focus::init()
     on_wm_focus_request.set_callback([=] (wf::signal_data_t *data)
     {
         auto ev = static_cast<wm_focus_request*>(data);
-        check_focus_surface(wf::surface_to_view(ev->surface));
+        check_focus_surface(wf::node_to_view(ev->node));
     });
     output->connect_signal("wm-focus-request", &on_wm_focus_request);
 

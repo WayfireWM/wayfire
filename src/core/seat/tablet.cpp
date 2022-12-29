@@ -5,7 +5,12 @@
 #include "pointer.hpp"
 #include "cursor.hpp"
 #include "input-manager.hpp"
+#include "view/view-impl.hpp"
+#include "view/wlr-surface-node.hpp"
+#include "wayfire/core.hpp"
 #include "wayfire/debug.hpp"
+#include "wayfire/scene-input.hpp"
+#include "wayfire/surface.hpp"
 #include "wayfire/view.hpp"
 #include <wayfire/signal-definitions.hpp>
 #include <wayfire/output-layout.hpp>
@@ -43,12 +48,12 @@ wf::tablet_tool_t::tablet_tool_t(wlr_tablet_tool *tool,
             return;
         }
 
-        if (grabbed_surface && !grabbed_surface->is_mapped())
+        if (grabbed_node && !is_grabbed_node_alive(grabbed_node))
         {
-            this->grabbed_surface = nullptr;
+            this->grabbed_node = nullptr;
         }
 
-        update_tool_position();
+        update_tool_position(false);
     };
 
     wf::get_core().scene()->connect(&on_root_node_updated);
@@ -93,16 +98,30 @@ wf::tablet_tool_t::~tablet_tool_t()
     tool->data = NULL;
 }
 
-void wf::tablet_tool_t::update_tool_position()
+static inline wlr_surface *wlr_surface_from_node(wf::scene::node_ptr node)
+{
+    if (auto snode = dynamic_cast<wf::scene::surface_node_t*>(node.get()))
+    {
+        return snode->get_surface()->get_wlr_surface();
+    }
+
+    if (auto snode = dynamic_cast<wf::scene::wlr_surface_node_t*>(node.get()))
+    {
+        return snode->get_surface();
+    }
+
+    return nullptr;
+}
+
+void wf::tablet_tool_t::update_tool_position(bool real_update)
 {
     if (!is_active)
     {
         return;
     }
 
-    auto& core  = wf::get_core_impl();
-    auto& input = core.input;
-    auto gc     = core.get_cursor_position();
+    auto& core = wf::get_core_impl();
+    auto gc    = core.get_cursor_position();
 
     /* XXX: tablet input works only with programs, Wayfire itself doesn't do
      * anything useful with it */
@@ -113,28 +132,35 @@ void wf::tablet_tool_t::update_tool_position()
 
     /* Figure out what surface is under the tool */
     wf::pointf_t local; // local to the surface
-    wf::surface_interface_t *surface = nullptr;
-    if (this->grabbed_surface)
+    wf::scene::node_ptr focus_node = nullptr;
+    if (this->grabbed_node)
     {
-        surface = this->grabbed_surface;
-        local   = get_node_local_coords(surface->get_content_node().get(), gc);
+        focus_node = this->grabbed_node;
+        local = get_node_local_coords(focus_node.get(), gc);
     } else
     {
-        surface = input->input_surface_at(gc, local);
+        auto input_node = wf::get_core().scene()->find_node_at(gc);
+        if (input_node)
+        {
+            focus_node = input_node->node->shared_from_this();
+            local = input_node->local_coords;
+        }
     }
 
-    set_focus(surface);
+    bool focus_changed = set_focus(focus_node);
 
     /* If focus is a wlr surface, send position */
-    wlr_surface *next_focus = surface ? surface->get_wlr_surface() : nullptr;
-    if (next_focus)
+    wlr_surface *next_focus = wlr_surface_from_node(focus_node);
+    if (next_focus && (real_update || focus_changed))
     {
         wlr_tablet_v2_tablet_tool_notify_motion(tool_v2, local.x, local.y);
     }
 }
 
-void wf::tablet_tool_t::set_focus(wf::surface_interface_t *surface)
+bool wf::tablet_tool_t::set_focus(wf::scene::node_ptr surface)
 {
+    bool focus_changed = surface != this->proximity_surface;
+
     /* Unfocus old surface */
     if ((surface != this->proximity_surface) && this->proximity_surface)
     {
@@ -143,19 +169,25 @@ void wf::tablet_tool_t::set_focus(wf::surface_interface_t *surface)
     }
 
     /* Set the new focus, if it is a wlr surface */
-    wf::get_core_impl().seat->ensure_input_surface(surface);
-    wlr_surface *next_focus = surface ? surface->get_wlr_surface() : nullptr;
+
+    wlr_surface *next_focus = wlr_surface_from_node(surface);
+    if (next_focus)
+    {
+        wf::xwayland_bring_to_front(next_focus);
+    }
+
     if (next_focus && wlr_surface_accepts_tablet_v2(tablet_v2, next_focus))
     {
         this->proximity_surface = surface;
-        wlr_tablet_v2_tablet_tool_notify_proximity_in(
-            tool_v2, tablet_v2, next_focus);
+        wlr_tablet_v2_tablet_tool_notify_proximity_in(tool_v2, tablet_v2, next_focus);
     }
 
     if (!next_focus)
     {
         wf::get_core().set_cursor("default");
     }
+
+    return focus_changed;
 }
 
 void wf::tablet_tool_t::passthrough_axis(wlr_tablet_tool_axis_event *ev)
@@ -214,20 +246,21 @@ void wf::tablet_tool_t::handle_tip(wlr_tablet_tool_tip_event *ev)
     if (ev->state == WLR_TABLET_TOOL_TIP_DOWN)
     {
         wlr_send_tablet_v2_tablet_tool_down(tool_v2);
-        this->grabbed_surface = this->proximity_surface;
+        this->grabbed_node = this->proximity_surface;
 
         /* Try to focus the view under the tool */
-        auto view = wf::surface_to_view(this->proximity_surface);
+        auto view = wf::node_to_view(this->proximity_surface);
         if (view)
         {
             wm_focus_request data;
-            data.surface = this->proximity_surface;
+            data.node = this->proximity_surface;
             view->get_output()->emit_signal("wm-focus-request", &data);
         }
     } else
     {
         wlr_send_tablet_v2_tablet_tool_up(tool_v2);
-        this->grabbed_surface = nullptr;
+        this->grabbed_node = nullptr;
+        update_tool_position(false);
     }
 }
 
@@ -247,7 +280,7 @@ void wf::tablet_tool_t::handle_proximity(wlr_tablet_tool_proximity_event *ev)
     } else
     {
         is_active = true;
-        update_tool_position();
+        update_tool_position(true);
     }
 }
 
@@ -284,6 +317,11 @@ wf::tablet_tool_t*wf::tablet_t::ensure_tool(wlr_tablet_tool *tool)
 void wf::tablet_t::handle_tip(wlr_tablet_tool_tip_event *ev,
     input_event_processing_mode_t mode)
 {
+    if (should_use_absolute_positioning(ev->tool))
+    {
+        wlr_cursor_warp_absolute(cursor, &ev->tablet->base, ev->x, ev->y);
+    }
+
     auto& input = wf::get_core_impl().input;
     auto& seat  = wf::get_core_impl().seat;
     seat->break_mod_bindings();
@@ -324,32 +362,16 @@ void wf::tablet_t::handle_axis(wlr_tablet_tool_axis_event *ev,
     input_event_processing_mode_t mode)
 {
     auto& input = wf::get_core_impl().input;
-    std::string motion_mode = wf::option_wrapper_t<std::string>(
-        "input/tablet_motion_mode");
 
     /* Update cursor position */
-    if (motion_mode == "absolute")
+    if (should_use_absolute_positioning(ev->tool))
     {
         double x = (ev->updated_axes & WLR_TABLET_TOOL_AXIS_X) ? ev->x : NAN;
         double y = (ev->updated_axes & WLR_TABLET_TOOL_AXIS_Y) ? ev->y : NAN;
         wlr_cursor_warp_absolute(cursor, &ev->tablet->base, x, y);
-    } else if (motion_mode == "relative")
-    {
-        wlr_cursor_move(cursor, &ev->tablet->base, ev->dx, ev->dy);
     } else
     {
-        /* Use from libinput recommended defaults */
-        switch (ev->tool->type)
-        {
-          case WLR_TABLET_TOOL_TYPE_MOUSE:
-            wlr_cursor_move(cursor, &ev->tablet->base, ev->dx, ev->dy);
-            break;
-
-          default:
-            double x = (ev->updated_axes & WLR_TABLET_TOOL_AXIS_X) ? ev->x : NAN;
-            double y = (ev->updated_axes & WLR_TABLET_TOOL_AXIS_Y) ? ev->y : NAN;
-            wlr_cursor_warp_absolute(cursor, &ev->tablet->base, x, y);
-        }
+        wlr_cursor_move(cursor, &ev->tablet->base, ev->dx, ev->dy);
     }
 
     if (input->input_grabbed())
@@ -366,7 +388,7 @@ void wf::tablet_t::handle_axis(wlr_tablet_tool_axis_event *ev,
 
     /* Update focus */
     auto tool = ensure_tool(ev->tool);
-    tool->update_tool_position();
+    tool->update_tool_position(true);
     tool->passthrough_axis(ev);
 }
 
@@ -380,8 +402,12 @@ void wf::tablet_t::handle_button(wlr_tablet_tool_button_event *ev,
 void wf::tablet_t::handle_proximity(wlr_tablet_tool_proximity_event *ev,
     input_event_processing_mode_t mode)
 {
-    ensure_tool(ev->tool)->handle_proximity(ev);
+    if (should_use_absolute_positioning(ev->tool))
+    {
+        wlr_cursor_warp_absolute(cursor, &ev->tablet->base, ev->x, ev->y);
+    }
 
+    ensure_tool(ev->tool)->handle_proximity(ev);
     auto& impl = wf::get_core_impl();
 
     /* Show appropriate cursor */
@@ -480,13 +506,14 @@ void wf::tablet_pad_t::update_focus(wlr_surface *focus_surface)
         return;
     }
 
-    if (focus_surface && attached_to)
-    {
-        wlr_tablet_v2_tablet_pad_notify_enter(pad_v2,
-            attached_to->tablet_v2, focus_surface);
-    } else if (old_focus)
+    if (old_focus)
     {
         wlr_tablet_v2_tablet_pad_notify_leave(pad_v2, old_focus);
+    }
+
+    if (focus_surface && attached_to)
+    {
+        wlr_tablet_v2_tablet_pad_notify_enter(pad_v2, attached_to->tablet_v2, focus_surface);
     }
 
     old_focus = focus_surface;
@@ -537,4 +564,21 @@ void wf::tablet_pad_t::select_default_tool()
     }
 
     attach_to_tablet(nullptr);
+}
+
+bool wf::tablet_t::should_use_absolute_positioning(wlr_tablet_tool *tool)
+{
+    static wf::option_wrapper_t<std::string> tablet_motion_mode{"input/tablet_motion_mode"};
+
+    /* Update cursor position */
+    if ((std::string)tablet_motion_mode == "absolute")
+    {
+        return true;
+    } else if ((std::string)tablet_motion_mode == "relative")
+    {
+        return false;
+    } else
+    {
+        return tool->type != WLR_TABLET_TOOL_TYPE_MOUSE;
+    }
 }
