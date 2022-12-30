@@ -145,14 +145,12 @@ class blur_render_instance_t : public transformer_render_instance_t<blur_node_t>
         // Actual region which will be repainted by this render instance.
         wf::region_t we_repaint = padded_region;
 
-        // Subtract original damage, so that we have only the padded region
-        padded_region ^= damage;
+        saved_pixels_region =
+            target.framebuffer_region_from_geometry_region(padded_region) ^
+            target.framebuffer_region_from_geometry_region(damage);
 
-        for (auto& rect : padded_region)
-        {
-            saved_pixels_region |= target.framebuffer_box_from_geometry_box(
-                wlr_box_from_pixman_box(rect));
-        }
+        // Nodes below should re-render the padded areas so that we can sample from them
+        damage |= padded_region;
 
         OpenGL::render_begin();
         saved_pixels.allocate(target.viewport_width, target.viewport_height);
@@ -170,10 +168,6 @@ class blur_render_instance_t : public transformer_render_instance_t<blur_node_t>
         }
 
         OpenGL::render_end();
-
-        // Nodes below should re-render the padded areas so that we can sample
-        // from them
-        damage |= padded_region;
         instructions.push_back(render_instruction_t{
                     .instance = this,
                     .target   = target,

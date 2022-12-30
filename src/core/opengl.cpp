@@ -10,6 +10,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 
 #include "shaders.tpp"
+#include "wayfire/region.hpp"
 
 const char *gl_error_string(const GLenum err)
 {
@@ -448,6 +449,17 @@ wlr_box wf::render_target_t::framebuffer_box_from_geometry_box(wlr_box box) cons
     {
         result = scale_box({0, 0, viewport_width, viewport_height},
             subbuffer.value(), result);
+    }
+
+    return result;
+}
+
+wf::region_t wf::render_target_t::framebuffer_region_from_geometry_region(const wf::region_t& region) const
+{
+    wf::region_t result;
+    for (const auto& rect : region)
+    {
+        result |= framebuffer_box_from_geometry_box(wlr_box_from_pixman_box(rect));
     }
 
     return result;

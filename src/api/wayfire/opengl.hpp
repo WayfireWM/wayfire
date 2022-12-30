@@ -1,6 +1,7 @@
 #ifndef WF_OPENGL_HPP
 #define WF_OPENGL_HPP
 
+#include "wayfire/region.hpp"
 #include <GLES3/gl3.h>
 
 #include <wayfire/config/types.hpp>
@@ -111,6 +112,12 @@ struct render_target_t : public framebuffer_t
      * transform.
      */
     wlr_box framebuffer_box_from_geometry_box(wlr_box box) const;
+
+    /**
+     * Get the geometry of the given region after projecting it onto the framebuffer. This is the same as
+     * iterating over the rects in the region and transforming them with framebuffer_box_from_geometry_box.
+     */
+    wf::region_t framebuffer_region_from_geometry_region(const wf::region_t& region) const;
 
     /* Returns a matrix which contains an orthographic projection from "geometry"
      * coordinates to the framebuffer coordinates. */
