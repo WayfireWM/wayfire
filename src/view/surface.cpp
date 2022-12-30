@@ -133,62 +133,6 @@ void wf::surface_interface_t::clear_subsurfaces()
     finish_subsurfaces(priv->surface_children_below);
 }
 
-wf::wlr_surface_base_t::wlr_surface_base_t(surface_interface_t *self)
-{
-    _as_si = self;
-    handle_new_subsurface = [&] (void *data)
-    {
-        auto sub = static_cast<wlr_subsurface*>(data);
-        if (sub->data)
-        {
-            LOGE("Creating the same subsurface twice!");
-
-            return;
-        }
-
-        // parent isn't mapped yet
-        if (!sub->parent->data)
-        {
-            return;
-        }
-
-        // Will be freed when the wlr_subsurface is destroyed
-        auto controller = new wlr_subsurface_controller_t(sub);
-        wf::scene::add_front(_as_si->priv->root_node, controller->get_subsurface_root());
-    };
-
-    on_new_subsurface.set_callback(handle_new_subsurface);
-    on_commit.set_callback([&] (void*) { commit(); });
-}
-
-wf::wlr_surface_base_t::~wlr_surface_base_t()
-{}
-
-
-
-wf::point_t wf::wlr_surface_base_t::get_window_offset()
-{
-    return {0, 0};
-}
-
-bool wf::wlr_surface_base_t::_is_mapped() const
-{
-    return surface;
-}
-
-wf::dimensions_t wf::wlr_surface_base_t::_get_size() const
-{
-    if (!_is_mapped())
-    {
-        return {0, 0};
-    }
-
-    return {
-        surface->current.width,
-        surface->current.height,
-    };
-}
-
 void wf::emit_map_state_change(wf::surface_interface_t *surface)
 {
     std::string state =
@@ -199,94 +143,6 @@ void wf::emit_map_state_change(wf::surface_interface_t *surface)
     wf::get_core().emit_signal(state, &data);
     wf::scene::update(surface->get_content_node(),
         wf::scene::update_flag::INPUT_STATE);
-}
-
-void wf::wlr_surface_base_t::map(wlr_surface *surface)
-{
-    assert(!this->surface && surface);
-    this->surface = surface;
-
-    _as_si->priv->wsurface = surface;
-
-    on_new_subsurface.connect(&surface->events.new_subsurface);
-    on_commit.connect(&surface->events.commit);
-
-    /* Handle subsurfaces which were created before this surface was mapped */
-    wlr_subsurface *sub;
-    wl_list_for_each(sub, &surface->current.subsurfaces_below, current.link)
-    handle_new_subsurface(sub);
-    wl_list_for_each(sub, &surface->current.subsurfaces_above, current.link)
-    handle_new_subsurface(sub);
-
-    emit_map_state_change(_as_si);
-}
-
-void wf::wlr_surface_base_t::unmap()
-{
-    assert(this->surface);
-    wf::scene::damage_node(_as_si->get_content_node(), wf::construct_box({0, 0}, _get_size()));
-
-    this->surface = nullptr;
-    this->_as_si->priv->wsurface = nullptr;
-    emit_map_state_change(_as_si);
-
-    on_new_subsurface.disconnect();
-    on_destroy.disconnect();
-    on_commit.disconnect();
-
-    // Clear all subsurfaces we have.
-    // This might remove subsurfaces that will be re-created again on map.
-    this->_as_si->clear_subsurfaces();
-}
-
-wlr_buffer*wf::wlr_surface_base_t::get_buffer()
-{
-    if (surface && wlr_surface_has_buffer(surface))
-    {
-        return &surface->buffer->base;
-    }
-
-    return nullptr;
-}
-
-void wf::wlr_surface_base_t::commit()
-{
-    wf::region_t dmg;
-    wlr_surface_get_effective_damage(surface, dmg.to_pixman());
-    wf::scene::damage_node(_as_si->get_content_node(), dmg);
-}
-
-void wf::wlr_surface_base_t::_simple_render(const wf::render_target_t& fb,
-    int x, int y, const wf::region_t& damage)
-{
-    if (!get_buffer())
-    {
-        return;
-    }
-
-    auto size = this->_get_size();
-    wf::geometry_t geometry = {x, y, size.width, size.height};
-    wf::texture_t texture{surface};
-
-    OpenGL::render_begin(fb);
-    OpenGL::render_texture(texture, fb, geometry, glm::vec4(1.f),
-        OpenGL::RENDER_FLAG_CACHED);
-    // use GL_NEAREST for integer scale.
-    // GL_NEAREST makes scaled text blocky instead of blurry, which looks better
-    // but only for integer scale.
-    if (fb.scale - floor(fb.scale) < 0.001)
-    {
-        GL_CALL(glTexParameteri(texture.target, GL_TEXTURE_MAG_FILTER, GL_NEAREST));
-    }
-
-    for (const auto& rect : damage)
-    {
-        fb.logic_scissor(wlr_box_from_pixman_box(rect));
-        OpenGL::draw_cached();
-    }
-
-    OpenGL::clear_cached();
-    OpenGL::render_end();
 }
 
 wf::scene::node_ptr wf::surface_interface_t::get_content_node() const
@@ -303,7 +159,8 @@ wf::wlr_surface_controller_t::wlr_surface_controller_t(wlr_surface *surface,
     }
 
     surface->data = this;
-    this->root = root_node;
+    this->surface = surface;
+    this->root    = root_node;
 
     on_destroy.set_callback([=] (void*)
     {
@@ -333,4 +190,9 @@ wf::wlr_surface_controller_t::wlr_surface_controller_t(wlr_surface *surface,
     {
         on_new_subsurface.emit(sub);
     }
+}
+
+wf::wlr_surface_controller_t::~wlr_surface_controller_t()
+{
+    surface->data = nullptr;
 }

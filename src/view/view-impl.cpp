@@ -1,3 +1,4 @@
+#include "view/surface-impl.hpp"
 #include "wayfire/core.hpp"
 #include "../core/core-impl.hpp"
 #include "../output/gtk-shell.hpp"
@@ -7,13 +8,15 @@
 #include "wayfire/signal-definitions.hpp"
 #include "wayfire/workspace-manager.hpp"
 #include "wayfire/output-layout.hpp"
+#include <memory>
 #include <wayfire/util/log.hpp>
 
 #include "xdg-shell.hpp"
 
-wf::wlr_view_t::wlr_view_t() :
-    wf::wlr_surface_base_t(this), wf::view_interface_t()
-{}
+wf::wlr_view_t::wlr_view_t() : wf::view_interface_t()
+{
+    on_surface_commit.set_callback([&] (void*) { commit(); });
+}
 
 void wf::wlr_view_t::set_role(view_role_t new_role)
 {
@@ -228,7 +231,7 @@ wlr_surface*wf::wlr_view_t::get_keyboard_focus_surface()
 {
     if (is_mapped() && view_impl->keyboard_focus_enabled)
     {
-        return surface;
+        return priv->wsurface;
     }
 
     return NULL;
@@ -266,7 +269,10 @@ void wf::wlr_view_t::set_output(wf::output_t *wo)
 
 void wf::wlr_view_t::commit()
 {
-    wlr_surface_base_t::commit();
+    wf::region_t dmg;
+    wlr_surface_get_effective_damage(priv->wsurface, dmg.to_pixman());
+    wf::scene::damage_node(get_content_node(), dmg);
+
     update_size();
 
     /* Clear the resize edges.
@@ -284,7 +290,11 @@ void wf::wlr_view_t::commit()
 void wf::wlr_view_t::map(wlr_surface *surface)
 {
     scene::set_node_enabled(view_impl->root_node, true);
-    wlr_surface_base_t::map(surface);
+    priv->wsurface = surface;
+    view_impl->surface_root_node->set_children_list({priv->content_node});
+    surface_controller = std::make_unique<wlr_surface_controller_t>(surface, view_impl->surface_root_node);
+    on_surface_commit.connect(&surface->events.commit);
+
     if (wf::get_core_impl().uses_csd.count(surface))
     {
         this->has_client_decoration = wf::get_core_impl().uses_csd[surface];
@@ -317,7 +327,11 @@ void wf::wlr_view_t::unmap()
 
     set_decoration(nullptr);
 
-    wlr_surface_base_t::unmap();
+    priv->wsurface = nullptr;
+    on_surface_commit.disconnect();
+    surface_controller = nullptr;
+    view_impl->surface_root_node->set_children_list({});
+
     emit_view_unmap();
     scene::set_node_enabled(view_impl->root_node, false);
 }
@@ -484,7 +498,7 @@ void wf::wlr_view_t::toplevel_send_app_id()
 
     auto default_app_id   = get_app_id();
     auto gtk_shell_app_id = wf_gtk_shell_get_custom_app_id(
-        wf::get_core_impl().gtk_shell, surface->resource);
+        wf::get_core_impl().gtk_shell, priv->wsurface->resource);
 
     std::string app_id_mode =
         wf::option_wrapper_t<std::string>("workarounds/app_id_mode");
@@ -588,4 +602,70 @@ wayfire_view wf::wl_surface_to_wayfire_view(wl_resource *resource)
 
     wf::view_interface_t *view = static_cast<wf::wlr_view_t*>(handle);
     return view ? view->self() : nullptr;
+}
+
+void wf::wlr_view_t::simple_render(
+    const wf::render_target_t& fb, int x, int y, const wf::region_t& damage)
+{
+    if (!get_buffer())
+    {
+        return;
+    }
+
+    auto size = this->get_size();
+    wf::geometry_t geometry = {x, y, size.width, size.height};
+    wf::texture_t texture{priv->wsurface};
+
+    OpenGL::render_begin(fb);
+    OpenGL::render_texture(texture, fb, geometry, glm::vec4(1.f),
+        OpenGL::RENDER_FLAG_CACHED);
+    // use GL_NEAREST for integer scale.
+    // GL_NEAREST makes scaled text blocky instead of blurry, which looks better
+    // but only for integer scale.
+    if (fb.scale - floor(fb.scale) < 0.001)
+    {
+        GL_CALL(glTexParameteri(texture.target, GL_TEXTURE_MAG_FILTER, GL_NEAREST));
+    }
+
+    for (const auto& rect : damage)
+    {
+        fb.logic_scissor(wlr_box_from_pixman_box(rect));
+        OpenGL::draw_cached();
+    }
+
+    OpenGL::clear_cached();
+    OpenGL::render_end();
+}
+
+wf::dimensions_t wf::wlr_view_t::get_size() const
+{
+    if (!is_mapped())
+    {
+        return {0, 0};
+    }
+
+    return {
+        priv->wsurface->current.width,
+        priv->wsurface->current.height,
+    };
+}
+
+bool wf::wlr_view_t::is_mapped() const
+{
+    return priv->wsurface != nullptr;
+}
+
+wlr_buffer*wf::wlr_view_t::get_buffer()
+{
+    if (priv->wsurface && wlr_surface_has_buffer(priv->wsurface))
+    {
+        return &priv->wsurface->buffer->base;
+    }
+
+    return nullptr;
+}
+
+wf::point_t wf::wlr_view_t::get_window_offset()
+{
+    return {0, 0};
 }

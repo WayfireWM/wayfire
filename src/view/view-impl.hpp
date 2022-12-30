@@ -9,6 +9,7 @@
 #include "surface-impl.hpp"
 #include "wayfire/output.hpp"
 #include "wayfire/scene.hpp"
+#include "wayfire/util.hpp"
 #include "wayfire/view-transform.hpp"
 #include <wayfire/nonstd/wlroots-full.hpp>
 
@@ -90,17 +91,11 @@ void view_damage_raw(wayfire_view view, const wlr_box& box);
 /**
  * Implementation of a view backed by a wlr_* shell struct.
  */
-class wlr_view_t :
-    public wlr_surface_base_t,
-    public view_interface_t
+class wlr_view_t : public view_interface_t
 {
   public:
     wlr_view_t();
     virtual ~wlr_view_t() = default;
-    wlr_view_t(const wlr_view_t &) = delete;
-    wlr_view_t(wlr_view_t &&) = delete;
-    wlr_view_t& operator =(const wlr_view_t&) = delete;
-    wlr_view_t& operator =(wlr_view_t&&) = delete;
 
     /* Functions which are shell-independent */
     virtual void set_role(view_role_t new_role) override final;
@@ -161,9 +156,9 @@ class wlr_view_t :
     virtual bool should_resize_client(wf::dimensions_t request,
         wf::dimensions_t current_size);
 
-    virtual void commit() override;
-    virtual void map(wlr_surface *surface) override;
-    virtual void unmap() override;
+    virtual void commit();
+    virtual void map(wlr_surface *surface);
+    virtual void unmap();
 
     /* Handle the destruction of the underlying wlroots object */
     virtual void destroy();
@@ -184,6 +179,8 @@ class wlr_view_t :
         toplevel_handle_v1_fullscreen_request,
         toplevel_handle_v1_close_request;
 
+    wf::wl_listener_wrapper on_surface_commit;
+
     /* Create/destroy the toplevel_handle */
     virtual void create_toplevel();
     virtual void destroy_toplevel();
@@ -197,22 +194,17 @@ class wlr_view_t :
     virtual void desktop_state_updated() override;
 
   public:
+    /** @return The offset from the surface coordinates to the actual geometry */
+    virtual wf::point_t get_window_offset();
+
     /* Just pass to the default wlr surface implementation */
-    virtual bool is_mapped() const override
-    {
-        return _is_mapped();
-    }
+    bool is_mapped() const override;
+    wf::dimensions_t get_size() const override;
+    void simple_render(const wf::render_target_t& fb, int x, int y, const wf::region_t& damage) override;
 
-    virtual wf::dimensions_t get_size() const override
-    {
-        return _get_size();
-    }
+    wlr_buffer *get_buffer();
 
-    virtual void simple_render(const wf::render_target_t& fb, int x, int y,
-        const wf::region_t& damage) override
-    {
-        _simple_render(fb, x, y, damage);
-    }
+    std::unique_ptr<wlr_surface_controller_t> surface_controller;
 };
 
 /** Emit the map signal for the given view */

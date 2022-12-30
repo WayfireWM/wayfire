@@ -693,8 +693,8 @@ class wayfire_xwayland_view : public wayfire_xwayland_view_base
         if (!xw->has_alpha)
         {
             pixman_region32_union_rect(
-                &surface->opaque_region, &surface->opaque_region,
-                0, 0, surface->current.width, surface->current.height);
+                &priv->wsurface->opaque_region, &priv->wsurface->opaque_region,
+                0, 0, priv->wsurface->current.width, priv->wsurface->current.height);
         }
 
         wf::wlr_view_t::commit();
