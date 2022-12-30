@@ -98,8 +98,6 @@ struct input_node_t
     wf::pointf_t local_coords;
 };
 
-using damage_callback = std::function<void (const wf::region_t&)>;
-
 /**
  * The base class for all nodes in the scenegraph.
  */

@@ -8,6 +8,7 @@
 #include <wayfire/region.hpp>
 #include <wayfire/geometry.hpp>
 #include <wayfire/opengl.hpp>
+#include <wayfire/signal-provider.hpp>
 
 namespace wf
 {
@@ -158,6 +159,8 @@ class render_instance_t
 
 using render_instance_uptr = std::unique_ptr<render_instance_t>;
 
+using damage_callback = std::function<void (const wf::region_t&)>;
+
 /**
  * A signal emitted when a part of the node is damaged.
  * on: the node itself.
@@ -284,5 +287,42 @@ direct_scanout try_scanout_from_list(
  */
 void compute_visibility_from_list(const std::vector<render_instance_uptr>& instances, wf::output_t *output,
     wf::region_t& region, const wf::point_t& offset);
+
+/**
+ * A helper class for easier implementation of render instances.
+ * It automatically schedules instruction for the current node and tracks damage from the main node.
+ */
+template<class Node>
+class simple_render_instance_t : public render_instance_t
+{
+  public:
+    simple_render_instance_t(Node *self, damage_callback push_damage, wf::output_t *output)
+    {
+        this->self = self;
+        this->push_damage = push_damage;
+        this->output = output;
+        self->connect(&on_self_damage);
+    }
+
+    void schedule_instructions(std::vector<render_instruction_t>& instructions,
+        const wf::render_target_t& target, wf::region_t& damage) override
+    {
+        instructions.push_back(render_instruction_t{
+                    .instance = this,
+                    .target   = target,
+                    .damage   = damage & self->get_bounding_box(),
+                });
+    }
+
+  protected:
+    Node *self;
+    wf::signal::connection_t<scene::node_damage_signal> on_self_damage = [=] (scene::node_damage_signal *ev)
+    {
+        push_damage(ev->region);
+    };
+
+    damage_callback push_damage;
+    wf::output_t *output;
+};
 }
 }
