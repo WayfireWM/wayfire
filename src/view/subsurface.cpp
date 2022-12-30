@@ -11,7 +11,13 @@
 
 wf::wlr_subsurface_controller_t::wlr_subsurface_controller_t(wlr_subsurface *sub)
 {
+    if (sub->data)
+    {
+        delete (wlr_subsurface_controller_t*)sub->data;
+    }
+
     this->sub = sub;
+    sub->data = this;
 
     auto surface_node = std::make_shared<scene::wlr_surface_node_t>(sub->surface);
     if (!sub->mapped)

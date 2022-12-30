@@ -211,8 +211,6 @@ void wf::wlr_surface_base_t::map(wlr_surface *surface)
     on_new_subsurface.connect(&surface->events.new_subsurface);
     on_commit.connect(&surface->events.commit);
 
-    surface->data = _as_si;
-
     /* Handle subsurfaces which were created before this surface was mapped */
     wlr_subsurface *sub;
     wl_list_for_each(sub, &surface->current.subsurfaces_below, current.link)
@@ -228,7 +226,6 @@ void wf::wlr_surface_base_t::unmap()
     assert(this->surface);
     wf::scene::damage_node(_as_si->get_content_node(), wf::construct_box({0, 0}, _get_size()));
 
-    this->surface->data = NULL;
     this->surface = nullptr;
     this->_as_si->priv->wsurface = nullptr;
     emit_map_state_change(_as_si);
@@ -300,6 +297,12 @@ wf::scene::node_ptr wf::surface_interface_t::get_content_node() const
 wf::wlr_surface_controller_t::wlr_surface_controller_t(wlr_surface *surface,
     scene::floating_inner_ptr root_node)
 {
+    if (surface->data)
+    {
+        delete (wlr_surface_controller_t*)surface->data;
+    }
+
+    surface->data = this;
     this->root = root_node;
 
     on_destroy.set_callback([=] (void*)
@@ -318,4 +321,16 @@ wf::wlr_surface_controller_t::wlr_surface_controller_t(wlr_surface *surface,
 
     on_destroy.connect(&surface->events.destroy);
     on_new_subsurface.connect(&surface->events.new_subsurface);
+
+    /* Handle subsurfaces which were created before the controller */
+    wlr_subsurface *sub;
+    wl_list_for_each(sub, &surface->current.subsurfaces_below, current.link)
+    {
+        on_new_subsurface.emit(sub);
+    }
+
+    wl_list_for_each(sub, &surface->current.subsurfaces_above, current.link)
+    {
+        on_new_subsurface.emit(sub);
+    }
 }
