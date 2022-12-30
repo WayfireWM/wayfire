@@ -26,6 +26,20 @@
 using blur_algorithm_provider =
     std::function<nonstd::observer_ptr<wf_blur_base>()>;
 
+
+static int calculate_damage_padding(const wf::render_target_t& target, int blur_radius)
+{
+    float scale = target.scale;
+    if (target.subbuffer)
+    {
+        const float subbox_scale_x = 1.0 * target.subbuffer->width / target.geometry.width;
+        const float subbox_scale_y = 1.0 * target.subbuffer->height / target.geometry.height;
+        scale *= std::max(subbox_scale_x, subbox_scale_y);
+    }
+
+    return std::ceil(blur_radius / scale);
+}
+
 namespace wf
 {
 namespace scene
@@ -80,17 +94,15 @@ class blur_render_instance_t : public transformer_render_instance_t<blur_node_t>
         return false;
     }
 
-    wf::region_t calculate_translucent_damage(float target_scale,
-        wf::region_t damage)
+    wf::region_t calculate_translucent_damage(const wf::render_target_t& target, wf::region_t damage)
     {
         if (self->get_children().size() == 1)
         {
             if (auto vnode = dynamic_cast<view_node_t*>(
                 self->get_children().front().get()))
             {
-                const int padding = std::ceil(
-                    self->provider()->calculate_blur_radius() / target_scale);
-
+                const int padding =
+                    calculate_damage_padding(target, self->provider()->calculate_blur_radius());
                 auto origin = vnode->get_view()->get_output_geometry();
                 auto opaque_region =
                     vnode->get_view()->get_opaque_region({origin.x, origin.y});
@@ -104,12 +116,10 @@ class blur_render_instance_t : public transformer_render_instance_t<blur_node_t>
         return damage;
     }
 
-    void schedule_instructions(
-        std::vector<render_instruction_t>& instructions,
+    void schedule_instructions(std::vector<render_instruction_t>& instructions,
         const wf::render_target_t& target, wf::region_t& damage) override
     {
-        const int padding = std::ceil(
-            self->provider()->calculate_blur_radius() / target.scale);
+        const int padding = std::ceil(self->provider()->calculate_blur_radius() / target.scale);
 
         auto bbox = self->get_bounding_box();
 
@@ -175,17 +185,17 @@ class blur_render_instance_t : public transformer_render_instance_t<blur_node_t>
                 });
     }
 
-    void render(const wf::render_target_t& target,
-        const wf::region_t& damage) override
+    void render(const wf::render_target_t& target, const wf::region_t& damage) override
     {
         auto tex = get_texture(target.scale);
         auto bounding_box = self->get_bounding_box();
         if (!damage.empty())
         {
-            auto translucent_damage = calculate_translucent_damage(target.scale,
-                damage);
+            auto translucent_damage = calculate_translucent_damage(target, damage);
             self->provider()->pre_render(bounding_box, translucent_damage, target);
-            for (const auto& rect : damage)
+            auto reg = target.framebuffer_region_from_geometry_region(damage);
+
+            for (const auto& rect : reg)
             {
                 auto damage_box = wlr_box_from_pixman_box(rect);
                 self->provider()->render(tex, bounding_box, damage_box, target);
@@ -248,9 +258,7 @@ class blur_global_data_t
             return;
         }
 
-        int padding = std::ceil(
-            provider()->calculate_blur_radius() / ev->target.scale);
-
+        const int padding = calculate_damage_padding(ev->target, provider()->calculate_blur_radius());
         ev->damage.expand_edges(padding);
         ev->damage &= ev->target.geometry;
     };

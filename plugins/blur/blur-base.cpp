@@ -260,7 +260,7 @@ void wf_blur_base::render(wf::texture_t src_tex, wlr_box src_box,
         target_fb.viewport_height - view_box.y - view_box.height,
         view_box.width, view_box.height));
 
-    target_fb.logic_scissor(scissor_box);
+    target_fb.scissor(scissor_box);
 
     GL_CALL(glDrawArrays(GL_TRIANGLE_FAN, 0, 4));
 
