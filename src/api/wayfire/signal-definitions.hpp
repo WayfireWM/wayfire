@@ -121,17 +121,6 @@ struct input_event_signal : public wf::signal_data_t
 };
 
 /**
- * name: surface-mapped, surface-unmapped
- * on: core
- * when: Whenever a surface map state changes. This must be emitted for all
- *   surfaces regardless of their type (view, subsurface, etc).
- */
-struct surface_map_state_changed_signal : public wf::signal_data_t
-{
-    wf::surface_interface_t *surface;
-};
-
-/**
  * name: reload-config
  * on: core
  * when: When the config file is reloaded

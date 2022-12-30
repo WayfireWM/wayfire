@@ -10,7 +10,6 @@
 #include "wayfire/core.hpp"
 #include "wayfire/debug.hpp"
 #include "wayfire/scene-input.hpp"
-#include "wayfire/surface.hpp"
 #include "wayfire/view.hpp"
 #include <wayfire/signal-definitions.hpp>
 #include <wayfire/output-layout.hpp>
@@ -100,11 +99,6 @@ wf::tablet_tool_t::~tablet_tool_t()
 
 static inline wlr_surface *wlr_surface_from_node(wf::scene::node_ptr node)
 {
-    if (auto snode = dynamic_cast<wf::scene::surface_node_t*>(node.get()))
-    {
-        return snode->get_surface()->get_wlr_surface();
-    }
-
     if (auto snode = dynamic_cast<wf::scene::wlr_surface_node_t*>(node.get()))
     {
         return snode->get_surface();

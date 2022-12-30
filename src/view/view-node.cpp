@@ -266,8 +266,8 @@ class view_render_instance_t : public render_instance_t
         {
             target.logic_scissor(wlr_box_from_pixman_box(box));
             OpenGL::render_transformed_texture(
-                view->view_impl->offscreen_buffer.tex,
-                view->view_impl->offscreen_buffer.geometry,
+                view->priv->offscreen_buffer.tex,
+                view->priv->offscreen_buffer.geometry,
                 target.get_orthographic_projection());
         }
 
@@ -353,8 +353,22 @@ wf::geometry_t wf::scene::view_node_t::get_bounding_box()
 {
     if (!view->is_mapped())
     {
-        return view->view_impl->offscreen_buffer.geometry;
+        return view->priv->offscreen_buffer.geometry;
     }
 
     return get_children_bounding_box() + wf::origin(view->get_output_geometry());
+}
+
+wf::region_t wf::scene::view_node_t::get_opaque_region() const
+{
+    if (view->is_mapped() && view->get_wlr_surface())
+    {
+        auto surf = view->get_wlr_surface();
+
+        wf::region_t region{&surf->opaque_region};
+        region += wf::origin(view->get_output_geometry());
+        return region;
+    }
+
+    return {};
 }

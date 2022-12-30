@@ -1,7 +1,6 @@
 #ifndef COMPOSITOR_VIEW_HPP
 #define COMPOSITOR_VIEW_HPP
 
-#include "wayfire/compositor-surface.hpp"
 #include "wayfire/view.hpp"
 #include <wayfire/config/types.hpp>
 
@@ -11,8 +10,7 @@ namespace wf
  * color_rect_view_t represents another common type of compositor view - a
  * view which is simply a colored rectangle with a border.
  */
-class color_rect_view_t : public wf::view_interface_t,
-    public wf::compositor_surface_t
+class color_rect_view_t : public wf::view_interface_t
 {
   protected:
     wf::color_t _color;
@@ -21,6 +19,7 @@ class color_rect_view_t : public wf::view_interface_t,
 
     wf::geometry_t geometry;
     bool _is_mapped;
+    class color_rect_node_t;
 
   public:
     /**
@@ -43,16 +42,11 @@ class color_rect_view_t : public wf::view_interface_t,
     /** Set the border width. */
     virtual void set_border(int width);
 
-    /* required for surface_interface_t */
-    virtual bool is_mapped() const override;
-    virtual wf::dimensions_t get_size() const override;
-    virtual void simple_render(const wf::render_target_t& fb, int x, int y,
-        const wf::region_t& damage) override;
-
     /* required for view_interface_t */
     virtual void move(int x, int y) override;
     virtual void resize(int w, int h) override;
     virtual wf::geometry_t get_output_geometry() override;
+    virtual bool is_mapped() const override;
 
     virtual wlr_surface *get_keyboard_focus_surface() override;
     virtual bool is_focusable() const override;

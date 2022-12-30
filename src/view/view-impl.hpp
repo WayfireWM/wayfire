@@ -7,15 +7,13 @@
 #include <wayfire/opengl.hpp>
 
 #include "surface-impl.hpp"
+#include "view/wlr-surface-node.hpp"
 #include "wayfire/output.hpp"
 #include "wayfire/scene.hpp"
 #include "wayfire/util.hpp"
 #include "wayfire/view-transform.hpp"
 #include <wayfire/nonstd/wlroots-full.hpp>
-
-// for emit_map_*()
 #include <wayfire/compositor-view.hpp>
-#include <wayfire/compositor-surface.hpp>
 
 struct wlr_seat;
 namespace wf
@@ -24,6 +22,8 @@ namespace wf
 class view_interface_t::view_priv_impl
 {
   public:
+    wlr_surface *wsurface = nullptr;
+
     /**
      * A view is alive as long as it is possible for it to become mapped in the
      * future. For wlr views, this means that their role object hasn't been
@@ -60,7 +60,7 @@ class view_interface_t::view_priv_impl
 
     scene::floating_inner_ptr root_node;
     std::shared_ptr<scene::transform_manager_node_t> transformed_node;
-    std::shared_ptr<scene::view_node_t> surface_root_node;
+    scene::floating_inner_ptr surface_root_node;
     bool actually_minimized = false;
     wf::output_t *output;
 
@@ -122,8 +122,7 @@ class wlr_view_t : public view_interface_t
     /** Used by view implementations when the title changes */
     void handle_title_changed(std::string new_title);
     /* Update the minimize hint */
-    void handle_minimize_hint(wf::surface_interface_t *relative_to,
-        const wlr_box& hint);
+    void handle_minimize_hint(wf::view_interface_t *relative_to, const wlr_box& hint);
 
     /**
      * The bounding box of the view the last time it was rendered.
@@ -192,6 +191,7 @@ class wlr_view_t : public view_interface_t
     virtual void toplevel_update_output(wf::output_t *output, bool enter);
 
     virtual void desktop_state_updated() override;
+    std::shared_ptr<wf::scene::wlr_surface_node_t> main_surface;
 
   public:
     /** @return The offset from the surface coordinates to the actual geometry */
@@ -199,8 +199,7 @@ class wlr_view_t : public view_interface_t
 
     /* Just pass to the default wlr surface implementation */
     bool is_mapped() const override;
-    wf::dimensions_t get_size() const override;
-    void simple_render(const wf::render_target_t& fb, int x, int y, const wf::region_t& damage) override;
+    wf::dimensions_t get_size() const;
 
     wlr_buffer *get_buffer();
 

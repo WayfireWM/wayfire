@@ -41,8 +41,7 @@ class crossfade_node_t : public scene::view_2d_transformer_t
         displayed_geometry = view->get_wm_geometry();
         this->view = view;
 
-        std::shared_ptr<scene::view_node_t> root_node =
-            view->get_surface_root_node();
+        auto root_node = view->get_surface_root_node();
         const wf::geometry_t bbox = root_node->get_bounding_box();
 
         original_buffer.geometry = view->get_wm_geometry();
@@ -141,7 +140,7 @@ class crossfade_render_instance_t : public scene::render_instance_t
     }
 };
 
-void crossfade_node_t::gen_render_instances(
+inline void crossfade_node_t::gen_render_instances(
     std::vector<scene::render_instance_uptr>& instances,
     scene::damage_callback push_damage, wf::output_t *shown_on)
 {

@@ -1,7 +1,6 @@
 #include <wayfire/scene.hpp>
 #include "../core/seat/input-manager.hpp"
 #include "../core/core-impl.hpp"
-#include <wayfire/compositor-surface.hpp>
 #include "view-impl.hpp"
 #include "view/wlr-surface-node.hpp"
 #include "wayfire/geometry.hpp"

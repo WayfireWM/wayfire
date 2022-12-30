@@ -10,7 +10,6 @@
 #include <linux/input-event-codes.h>
 
 #include <wayfire/nonstd/wlroots.hpp>
-#include <wayfire/compositor-surface.hpp>
 #include <wayfire/output.hpp>
 #include <wayfire/opengl.hpp>
 #include <wayfire/core.hpp>
@@ -28,8 +27,6 @@
 class simple_decoration_node_t : public wf::scene::node_t, public wf::pointer_interaction_t,
     public wf::touch_interaction_t
 {
-    bool _mapped = true;
-
     wayfire_view view;
     wf::signal_connection_t title_set = [=] (wf::signal_data_t *data)
     {
@@ -82,12 +79,6 @@ class simple_decoration_node_t : public wf::scene::node_t, public wf::pointer_in
 
         // make sure to hide frame if the view is fullscreen
         update_decoration_size();
-    }
-
-    /* wf::surface_interface_t implementation */
-    virtual bool is_mapped() const final
-    {
-        return _mapped;
     }
 
     wf::point_t get_offset()

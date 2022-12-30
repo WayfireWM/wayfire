@@ -428,7 +428,7 @@ void wayfire_layer_shell_view::map(wlr_surface *surface)
     on_commit_unmapped.disconnect();
 
     /* Read initial data */
-    view_impl->keyboard_focus_enabled = lsurface->current.keyboard_interactive;
+    priv->keyboard_focus_enabled = lsurface->current.keyboard_interactive;
     handle_app_id_changed(nonull(lsurface->namespace_t));
 
     get_output()->workspace->add_view(self(), get_layer());
@@ -454,7 +454,7 @@ void wayfire_layer_shell_view::commit()
     auto state = &lsurface->current;
     /* Update the keyboard focus enabled state. If a refocusing is needed, i.e
      * the view state changed, then this will happen when arranging layers */
-    view_impl->keyboard_focus_enabled = state->keyboard_interactive;
+    priv->keyboard_focus_enabled = state->keyboard_interactive;
 
     if (state->committed)
     {

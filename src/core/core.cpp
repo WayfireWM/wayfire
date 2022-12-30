@@ -19,7 +19,6 @@
 
 #include "view/surface-impl.hpp"
 #include "wayfire/scene-input.hpp"
-#include "wayfire/surface.hpp"
 #include "seat/keyboard.hpp"
 #include "opengl-priv.hpp"
 #include "seat/input-manager.hpp"

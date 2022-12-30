@@ -20,7 +20,6 @@
 
 namespace wf
 {
-class surface_interface_t;
 class view_interface_t;
 
 namespace scene

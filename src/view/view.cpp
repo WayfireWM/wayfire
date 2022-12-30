@@ -160,7 +160,7 @@ std::vector<wayfire_view> wf::view_interface_t::enumerate_views(
     }
 
     std::vector<wayfire_view> result;
-    result.reserve(view_impl->last_view_cnt);
+    result.reserve(priv->last_view_cnt);
     for (auto& v : this->children)
     {
         auto cdr = v->enumerate_views(mapped_only);
@@ -168,7 +168,7 @@ std::vector<wayfire_view> wf::view_interface_t::enumerate_views(
     }
 
     result.push_back(self());
-    view_impl->last_view_cnt = result.size();
+    priv->last_view_cnt = result.size();
 
     return result;
 }
@@ -207,7 +207,7 @@ void wf::view_interface_t::set_output(wf::output_t *new_output)
     _output_signal data;
     data.output = get_output();
 
-    this->view_impl->output = new_output;
+    this->priv->output = new_output;
     if ((new_output != data.output) && new_output)
     {
         view_attached_signal data;
@@ -225,7 +225,7 @@ void wf::view_interface_t::set_output(wf::output_t *new_output)
 
 wf::output_t*wf::view_interface_t::get_output()
 {
-    return view_impl->output;
+    return priv->output;
 }
 
 void wf::view_interface_t::resize(int w, int h)
@@ -241,14 +241,14 @@ void wf::view_interface_t::set_geometry(wf::geometry_t g)
 
 void wf::view_interface_t::set_resizing(bool resizing, uint32_t edges)
 {
-    view_impl->update_windowed_geometry(self(), get_wm_geometry());
+    priv->update_windowed_geometry(self(), get_wm_geometry());
     /* edges are reset on the next commit */
     if (resizing)
     {
-        this->view_impl->edges = edges;
+        this->priv->edges = edges;
     }
 
-    auto& in_resize = this->view_impl->in_continuous_resize;
+    auto& in_resize = this->priv->in_continuous_resize;
     in_resize += resizing ? 1 : -1;
 
     if (in_resize < 0)
@@ -259,8 +259,8 @@ void wf::view_interface_t::set_resizing(bool resizing, uint32_t edges)
 
 void wf::view_interface_t::set_moving(bool moving)
 {
-    view_impl->update_windowed_geometry(self(), get_wm_geometry());
-    auto& in_move = this->view_impl->in_continuous_move;
+    priv->update_windowed_geometry(self(), get_wm_geometry());
+    auto& in_move = this->priv->in_continuous_move;
 
     in_move += moving ? 1 : -1;
     if (in_move < 0)
@@ -296,20 +296,20 @@ wlr_box wf::view_interface_t::get_bounding_box()
 
 bool wf::view_interface_t::is_focusable() const
 {
-    return view_impl->keyboard_focus_enabled;
+    return priv->keyboard_focus_enabled;
 }
 
 void wf::view_interface_t::set_minimized(bool minim)
 {
     this->minimized = minim;
 
-    if (this->view_impl->actually_minimized == minim)
+    if (this->priv->actually_minimized == minim)
     {
         desktop_state_updated();
         return;
     }
 
-    this->view_impl->actually_minimized = minim;
+    this->priv->actually_minimized = minim;
     minimized = minim;
     if (minimized)
     {
@@ -357,7 +357,7 @@ void wf::view_interface_t::set_tiled(uint32_t edges)
 {
     if (edges)
     {
-        view_impl->update_windowed_geometry(self(), get_wm_geometry());
+        priv->update_windowed_geometry(self(), get_wm_geometry());
     }
 
     wf::view_tiled_signal data;
@@ -366,9 +366,9 @@ void wf::view_interface_t::set_tiled(uint32_t edges)
     data.new_edges = edges;
 
     this->tiled_edges = edges;
-    if (view_impl->frame)
+    if (priv->frame)
     {
-        view_impl->frame->notify_view_tiled();
+        priv->frame->notify_view_tiled();
     }
 
     this->emit_signal("tiled", &data);
@@ -386,13 +386,13 @@ void wf::view_interface_t::set_fullscreen(bool full)
      * before getting fullscreen so that we can restore to it */
     if (full && !fullscreen)
     {
-        view_impl->update_windowed_geometry(self(), get_wm_geometry());
+        priv->update_windowed_geometry(self(), get_wm_geometry());
     }
 
     fullscreen = full;
-    if (view_impl->frame)
+    if (priv->frame)
     {
-        view_impl->frame->notify_view_fullscreen();
+        priv->frame->notify_view_fullscreen();
     }
 
     view_fullscreen_signal data;
@@ -411,9 +411,9 @@ void wf::view_interface_t::set_fullscreen(bool full)
 
 void wf::view_interface_t::set_activated(bool active)
 {
-    if (view_impl->frame)
+    if (priv->frame)
     {
-        view_impl->frame->notify_view_activated(active);
+        priv->frame->notify_view_activated(active);
     }
 
     activated = active;
@@ -535,7 +535,7 @@ void wf::view_interface_t::tile_request(uint32_t edges, wf::point_t workspace)
     data.edges = edges;
     data.workspace    = workspace;
     data.desired_size = edges ? get_output()->workspace->get_workarea() :
-        view_impl->calculate_windowed_geometry(get_output());
+        priv->calculate_windowed_geometry(get_output());
 
     set_tiled(edges);
     if (is_mapped())
@@ -619,7 +619,7 @@ void wf::view_interface_t::fullscreen_request(wf::output_t *out, bool state,
     {
         data.desired_size = this->tiled_edges ?
             this->get_output()->workspace->get_workarea() :
-            this->view_impl->calculate_windowed_geometry(get_output());
+            this->priv->calculate_windowed_geometry(get_output());
     }
 
     set_fullscreen(state);
@@ -650,12 +650,12 @@ void wf::view_interface_t::damage()
 
 wlr_box wf::view_interface_t::get_minimize_hint()
 {
-    return this->view_impl->minimize_hint;
+    return this->priv->minimize_hint;
 }
 
 void wf::view_interface_t::set_minimize_hint(wlr_box hint)
 {
-    this->view_impl->minimize_hint = hint;
+    this->priv->minimize_hint = hint;
 }
 
 bool wf::view_interface_t::should_be_decorated()
@@ -665,7 +665,7 @@ bool wf::view_interface_t::should_be_decorated()
 
 nonstd::observer_ptr<wf::decorator_frame_t_t> wf::view_interface_t::get_decoration()
 {
-    return this->view_impl->frame.get();
+    return this->priv->frame.get();
 }
 
 void wf::view_interface_t::set_decoration(
@@ -679,7 +679,7 @@ void wf::view_interface_t::set_decoration(
         const auto wm = get_wm_geometry();
 
         // Drop the owned frame.
-        view_impl->frame = nullptr;
+        priv->frame = nullptr;
 
         // Grow the tiled view to fill its old expanded geometry that included
         // the decoration.
@@ -697,7 +697,7 @@ void wf::view_interface_t::set_decoration(
 
     damage();
     // Drop the old frame if any and assign the new one.
-    view_impl->frame = std::move(frame);
+    priv->frame = std::move(frame);
 
     /* Calculate the wm geometry of the view after adding the decoration.
      *
@@ -709,7 +709,7 @@ void wf::view_interface_t::set_decoration(
     wf::geometry_t target_wm_geometry;
     if (!fullscreen && !this->tiled_edges)
     {
-        target_wm_geometry = view_impl->frame->expand_wm_geometry(wm);
+        target_wm_geometry = priv->frame->expand_wm_geometry(wm);
         // make sure that the view doesn't go outside of the screen or such
         auto wa = get_output()->workspace->get_workarea();
         auto visible = wf::geometry_intersection(target_wm_geometry, wa);
@@ -727,7 +727,7 @@ void wf::view_interface_t::set_decoration(
     }
 
     // notify the frame of the current size
-    view_impl->frame->notify_view_resized(get_wm_geometry());
+    priv->frame->notify_view_resized(get_wm_geometry());
     // but request the target size, it will be sent to the frame on the
     // next commit
     set_geometry(target_wm_geometry);
@@ -751,11 +751,11 @@ const wf::render_target_t& wf::view_interface_t::take_snapshot()
 {
     if (!is_mapped())
     {
-        return view_impl->offscreen_buffer;
+        return priv->offscreen_buffer;
     }
 
-    wf::render_target_t& offscreen_buffer = view_impl->offscreen_buffer;
-    std::shared_ptr<scene::view_node_t> root_node = get_surface_root_node();
+    wf::render_target_t& offscreen_buffer = priv->offscreen_buffer;
+    auto root_node = get_surface_root_node();
     const wf::geometry_t bbox = root_node->get_bounding_box();
     float scale = get_output()->handle->scale;
 
@@ -781,19 +781,24 @@ const wf::render_target_t& wf::view_interface_t::take_snapshot()
 
 wf::view_interface_t::view_interface_t()
 {
-    this->view_impl = std::make_unique<wf::view_interface_t::view_priv_impl>();
+    this->priv = std::make_unique<wf::view_interface_t::view_priv_impl>();
     take_ref();
+}
+
+wf::view_interface_t::view_interface_t(scene::floating_inner_ptr surface_root_node) : view_interface_t()
+{
+    this->priv->surface_root_node = surface_root_node;
 }
 
 void wf::view_interface_t::take_ref()
 {
-    ++view_impl->ref_cnt;
+    ++priv->ref_cnt;
 }
 
 void wf::view_interface_t::unref()
 {
-    --view_impl->ref_cnt;
-    if (view_impl->ref_cnt <= 0)
+    --priv->ref_cnt;
+    if (priv->ref_cnt <= 0)
     {
         destruct();
     }
@@ -801,21 +806,18 @@ void wf::view_interface_t::unref()
 
 void wf::view_interface_t::initialize()
 {
-    view_impl->root_node = std::make_shared<scene::floating_inner_node_t>(false);
-    view_impl->transformed_node =
-        std::make_shared<scene::transform_manager_node_t>();
-    view_impl->surface_root_node = std::make_shared<scene::view_node_t>(this);
+    priv->root_node = std::make_shared<scene::floating_inner_node_t>(false);
+    priv->transformed_node = std::make_shared<scene::transform_manager_node_t>();
 
-    // Set up the surface content relationship
-
-    wf::scene::remove_child(priv->content_node);
-    view_impl->surface_root_node->set_children_list({priv->content_node});
-    priv->root_node = view_impl->surface_root_node;
+    if (!priv->surface_root_node)
+    {
+        priv->surface_root_node = std::make_shared<scene::view_node_t>(this);
+    }
 
     // Set up view content to scene.
-    view_impl->transformed_node->set_children_list({view_impl->surface_root_node});
-    view_impl->root_node->set_children_list({view_impl->transformed_node});
-    view_impl->root_node->set_enabled(false);
+    priv->transformed_node->set_children_list({priv->surface_root_node});
+    priv->root_node->set_children_list({priv->transformed_node});
+    priv->root_node->set_enabled(false);
 }
 
 void wf::view_interface_t::deinitialize()
@@ -827,12 +829,10 @@ void wf::view_interface_t::deinitialize()
     }
 
     set_decoration(nullptr);
-
-    this->clear_subsurfaces();
     this->_clear_data();
 
     OpenGL::render_begin();
-    this->view_impl->offscreen_buffer.release();
+    this->priv->offscreen_buffer.release();
     OpenGL::render_end();
 }
 
@@ -885,33 +885,23 @@ void wf::view_damage_raw(wayfire_view view, const wlr_box& box)
 
 void wf::view_interface_t::destruct()
 {
-    view_impl->is_alive = false;
+    priv->is_alive = false;
     wf::get_core_impl().erase_view(self());
 }
 
 const wf::scene::floating_inner_ptr& wf::view_interface_t::get_root_node() const
 {
-    return view_impl->root_node;
+    return priv->root_node;
 }
 
 std::shared_ptr<wf::scene::transform_manager_node_t> wf::view_interface_t::get_transformed_node() const
 {
-    return view_impl->transformed_node;
+    return priv->transformed_node;
 }
 
-const std::shared_ptr<wf::scene::view_node_t>& wf::view_interface_t::get_surface_root_node() const
+const wf::scene::floating_inner_ptr& wf::view_interface_t::get_surface_root_node() const
 {
-    return view_impl->surface_root_node;
-}
-
-wayfire_view wf::surface_to_view(wf::surface_interface_t *surface)
-{
-    if (!surface)
-    {
-        return nullptr;
-    }
-
-    return node_to_view(surface->get_content_node());
+    return priv->surface_root_node;
 }
 
 wayfire_view wf::node_to_view(wf::scene::node_ptr node)
@@ -932,3 +922,18 @@ wayfire_view wf::node_to_view(wf::scene::node_ptr node)
 
 // FIXME: Consider splitting to header + source file
 #include "view-node.cpp"
+
+wl_client*wf::view_interface_t::get_client()
+{
+    if (priv->wsurface)
+    {
+        return wl_resource_get_client(priv->wsurface->resource);
+    }
+
+    return nullptr;
+}
+
+wlr_surface*wf::view_interface_t::get_wlr_surface()
+{
+    return priv->wsurface;
+}

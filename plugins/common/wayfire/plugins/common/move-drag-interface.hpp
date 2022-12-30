@@ -7,7 +7,6 @@
 #include "wayfire/scene-input.hpp"
 #include "wayfire/scene-render.hpp"
 #include "wayfire/scene.hpp"
-#include "wayfire/surface.hpp"
 #include <memory>
 #include <wayfire/nonstd/reverse.hpp>
 #include <wayfire/plugins/common/util.hpp>
@@ -299,6 +298,7 @@ class output_data_t : public custom_data_t
 
         this->output = output;
         this->views  = views;
+        regen_instances();
     }
 
     ~output_data_t()
@@ -332,6 +332,7 @@ class output_data_t : public custom_data_t
     wf::output_t *output;
 
     std::vector<dragged_view_t> views;
+    std::vector<scene::render_instance_uptr> instances;
 
     // An effect hook for damaging the view on the current output.
     //
@@ -347,22 +348,6 @@ class output_data_t : public custom_data_t
         apply_damage();
     };
 
-    void send_frame_done_recursive(wf::scene::node_ptr node, const timespec *now)
-    {
-        if (auto snode = dynamic_cast<wf::scene::surface_node_t*>(node.get()))
-        {
-            if (auto wlr_surf = snode->get_surface()->get_wlr_surface())
-            {
-                wlr_surface_send_frame_done(wlr_surf, now);
-            }
-        }
-
-        for (auto& ch : node->get_children())
-        {
-            send_frame_done_recursive(ch, now);
-        }
-    }
-
     effect_hook_t render_overlay = [=] ()
     {
         auto fb = output->render->get_target_framebuffer();
@@ -376,29 +361,38 @@ class output_data_t : public custom_data_t
             wlr_backend_get_presentation_clock(wf::get_core().backend);
         clock_gettime(presentation_clock, &repaint_ended);
 
-        for (auto& view : wf::reverse(views))
+        wf::region_t damage;
+        for (auto& view : views)
         {
             // Convert damage from output-local coordinates (last_bbox) to
             // output-layout coords.
-            wf::region_t damage;
             damage |= view.last_bbox + wf::origin(fb.geometry);
-
-            // Render the full view, always
-            // Not very efficient
-            std::vector<scene::render_instance_uptr> instances;
-            auto node = view.view->get_transformed_node();
-            node->gen_render_instances(
-                instances, [] (auto) {});
-
-            scene::render_pass_params_t params;
-            params.instances = &instances;
-            params.target    = fb;
-            params.damage    = damage;
-            scene::run_render_pass(params, 0);
-
-            send_frame_done_recursive(view.view->get_surface_root_node(), &repaint_ended);
         }
+
+        scene::render_pass_params_t params;
+        params.instances = &instances;
+        params.target    = fb;
+        params.damage    = damage;
+        scene::run_render_pass(params, 0);
     };
+
+    void regen_instances()
+    {
+        instances.clear();
+        wf::region_t visible;
+
+        for (auto& view : views)
+        {
+            auto node = view.view->get_transformed_node();
+            node->gen_render_instances(instances, [] (auto) {}, output);
+            visible |= node->get_bounding_box();
+        }
+
+        for (auto& ch : instances)
+        {
+            ch->compute_visibility(output, visible);
+        }
+    }
 };
 
 struct drag_options_t

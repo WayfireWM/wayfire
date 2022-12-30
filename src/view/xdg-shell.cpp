@@ -18,7 +18,7 @@ wayfire_xdg_popup::wayfire_xdg_popup(wlr_xdg_popup *popup) :
         dynamic_cast<wlr_view_t*>(wf::wl_surface_to_wayfire_view(popup->parent->resource).get());
     this->popup = popup;
     this->role  = wf::VIEW_ROLE_UNMANAGED;
-    this->view_impl->keyboard_focus_enabled = false;
+    this->priv->keyboard_focus_enabled = false;
     this->set_output(popup_parent->get_output());
 }
 
@@ -378,9 +378,9 @@ wf::geometry_t wayfire_xdg_view::get_wm_geometry()
         .height = xdg_geometry.height
     };
 
-    if (view_impl->frame)
+    if (priv->frame)
     {
-        wm = view_impl->frame->expand_wm_geometry(wm);
+        wm = priv->frame->expand_wm_geometry(wm);
     }
 
     return wm;
@@ -417,9 +417,9 @@ void wayfire_xdg_view::set_fullscreen(bool full)
 
 void wayfire_xdg_view::resize(int w, int h)
 {
-    if (view_impl->frame)
+    if (priv->frame)
     {
-        view_impl->frame->calculate_resize_size(w, h);
+        priv->frame->calculate_resize_size(w, h);
     }
 
     auto current_geometry = get_xdg_geometry(xdg_toplevel);

@@ -4,7 +4,6 @@
 #include <cmath>
 #include <set>
 #include <wayfire/nonstd/observer_ptr.h>
-#include <wayfire/surface.hpp>
 #include <wayfire/util.hpp>
 #include <wayfire/option-wrapper.hpp>
 #include "wayfire/signal-definitions.hpp"

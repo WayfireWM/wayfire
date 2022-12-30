@@ -10,7 +10,6 @@
 #include "wayfire/core.hpp"
 #include "wayfire/output.hpp"
 #include "wayfire/workspace-manager.hpp"
-#include "wayfire/compositor-surface.hpp"
 #include "wayfire/output-layout.hpp"
 
 wf::touch_interface_t::touch_interface_t(wlr_cursor *cursor, wlr_seat *seat,
@@ -98,12 +97,9 @@ wf::touch_interface_t::touch_interface_t(wlr_cursor *cursor, wlr_seat *seat,
 
         for (auto& [finger_id, node] : this->focus)
         {
-            if (auto vnode = dynamic_cast<wf::scene::surface_node_t*>(node.get()))
+            if (node && !is_grabbed_node_alive(node))
             {
-                if (!vnode->get_surface()->is_mapped())
-                {
-                    set_touch_focus(nullptr, finger_id, get_current_time(), {0, 0});
-                }
+                set_touch_focus(nullptr, finger_id, get_current_time(), {0, 0});
             }
         }
     };

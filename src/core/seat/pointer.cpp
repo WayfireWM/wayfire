@@ -11,7 +11,6 @@
 #include <wayfire/util/log.hpp>
 #include <wayfire/core.hpp>
 #include <wayfire/output-layout.hpp>
-#include <wayfire/compositor-surface.hpp>
 
 wf::pointer_t::pointer_t(nonstd::observer_ptr<wf::input_manager_t> input,
     nonstd::observer_ptr<seat_t> seat)
@@ -26,13 +25,9 @@ wf::pointer_t::pointer_t(nonstd::observer_ptr<wf::input_manager_t> input,
             return;
         }
 
-        if (auto vnode =
-                dynamic_cast<wf::scene::surface_node_t*>(grabbed_node.get()))
+        if (grabbed_node && !is_grabbed_node_alive(grabbed_node))
         {
-            if (!vnode->get_surface()->is_mapped())
-            {
-                grab_surface(nullptr);
-            }
+            grab_surface(nullptr);
         }
 
         update_cursor_position(get_current_time(), false);

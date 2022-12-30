@@ -392,10 +392,10 @@ class wayfire_xwayland_view_base : public wf::wlr_view_t
             configure_geometry = wf::clamp(configure_geometry, view_workarea);
         }
 
-        if (view_impl->frame)
+        if (priv->frame)
         {
             configure_geometry =
-                view_impl->frame->expand_wm_geometry(configure_geometry);
+                priv->frame->expand_wm_geometry(configure_geometry);
         }
 
         set_geometry(configure_geometry);
@@ -474,7 +474,7 @@ class wayfire_xwayland_view_base : public wf::wlr_view_t
     void move(int x, int y) override
     {
         wf::wlr_view_t::move(x, y);
-        if (!view_impl->in_continuous_move)
+        if (!priv->in_continuous_move)
         {
             send_configure();
         }
@@ -653,7 +653,7 @@ class wayfire_xwayland_view : public wayfire_xwayland_view_base
 
     void map(wlr_surface *surface) override
     {
-        view_impl->keyboard_focus_enabled =
+        priv->keyboard_focus_enabled =
             wlr_xwayland_or_surface_wants_focus(xw);
 
         if (xw->maximized_horz && xw->maximized_vert)
@@ -668,7 +668,7 @@ class wayfire_xwayland_view : public wayfire_xwayland_view_base
                 /* Make sure geometry is properly visible on the view output */
                 save_geometry = wf::clamp(save_geometry,
                     get_output()->workspace->get_workarea());
-                view_impl->update_windowed_geometry(self(), save_geometry);
+                priv->update_windowed_geometry(self(), save_geometry);
             }
 
             tile_request(wf::TILED_EDGES_ALL);
@@ -710,7 +710,7 @@ class wayfire_xwayland_view : public wayfire_xwayland_view_base
 
         /* We don't send updates while in continuous move, because that means
          * too much configure requests. Instead, we set it at the end */
-        if (!view_impl->in_continuous_move)
+        if (!priv->in_continuous_move)
         {
             send_configure();
         }
@@ -718,9 +718,9 @@ class wayfire_xwayland_view : public wayfire_xwayland_view_base
 
     void resize(int w, int h) override
     {
-        if (view_impl->frame)
+        if (priv->frame)
         {
-            view_impl->frame->calculate_resize_size(w, h);
+            priv->frame->calculate_resize_size(w, h);
         }
 
         wf::dimensions_t current_size = {
@@ -897,13 +897,13 @@ void wayfire_unmanaged_xwayland_view::map(wlr_surface *surface)
      * plugins can detect that this view can have keyboard focus.
      *
      * Note: only actual override-redirect views should get their focus disabled */
-    view_impl->keyboard_focus_enabled = (!xw->override_redirect ||
+    priv->keyboard_focus_enabled = (!xw->override_redirect ||
         wlr_xwayland_or_surface_wants_focus(xw));
 
     get_output()->workspace->add_view(self(), wf::LAYER_UNMANAGED);
     wf::wlr_view_t::map(surface);
 
-    if (view_impl->keyboard_focus_enabled)
+    if (priv->keyboard_focus_enabled)
     {
         get_output()->focus_view(self(), true);
     }

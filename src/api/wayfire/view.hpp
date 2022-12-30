@@ -5,10 +5,10 @@
 #include <vector>
 #include <wayfire/nonstd/observer_ptr.h>
 
+#include "wayfire/object.hpp"
 #include "wayfire/opengl.hpp"
 #include "wayfire/scene-input.hpp"
 #include "wayfire/scene-render.hpp"
-#include "wayfire/surface.hpp"
 #include "wayfire/geometry.hpp"
 #include "wayfire/decorator.hpp"
 #include "wayfire/view-transform.hpp"
@@ -59,7 +59,7 @@ constexpr uint32_t TILED_EDGES_ALL =
  * view_interface_t is the base class for all "toplevel windows", i.e surfaces
  * which have no parent.
  */
-class view_interface_t : public surface_interface_t, public wf::signal::provider_t
+class view_interface_t : public wf::signal::provider_t, public wf::object_base_t
 {
   public:
     /**
@@ -80,7 +80,7 @@ class view_interface_t : public surface_interface_t, public wf::signal::provider
     /**
      * Get the node which contains the main view (+subsurfaces) only.
      */
-    const std::shared_ptr<scene::view_node_t>& get_surface_root_node() const;
+    const scene::floating_inner_ptr& get_surface_root_node() const;
 
     /**
      * The toplevel parent of the view, for ex. the main view of a file chooser
@@ -357,18 +357,30 @@ class view_interface_t : public surface_interface_t, public wf::signal::provider
      */
     void unref();
 
+    /**
+     * @return the wl_client associated with this surface, or null if the
+     *   surface doesn't have a backing wlr_surface.
+     */
+    wl_client *get_client();
+
+    /**
+     * @return the wlr_surface associated with this surface, or null if no
+     *   the surface doesn't have a backing wlr_surface. */
+    wlr_surface *get_wlr_surface();
+
+    virtual bool is_mapped() const
+    {
+        return false;
+    }
+
     virtual ~view_interface_t();
 
-    view_interface_t(const view_interface_t &) = delete;
-    view_interface_t(view_interface_t &&) = delete;
-    view_interface_t& operator =(const view_interface_t&) = delete;
-    view_interface_t& operator =(view_interface_t&&) = delete;
-
     class view_priv_impl;
-    std::unique_ptr<view_priv_impl> view_impl;
+    std::unique_ptr<view_priv_impl> priv;
 
   protected:
     view_interface_t();
+    view_interface_t(scene::floating_inner_ptr surface_root_node);
 
     friend class compositor_core_impl_t;
     /**
@@ -393,12 +405,6 @@ class view_interface_t : public surface_interface_t, public wf::signal::provider
      * is called from core just before destroying the view.
      */
     virtual void deinitialize();
-
-    /** get_offset() is not valid for views */
-    virtual wf::point_t get_offset() override
-    {
-        return {0, 0};
-    }
 
     /**
      * @return the bounding box of the view before transformers,
@@ -442,12 +448,6 @@ class view_interface_t : public surface_interface_t, public wf::signal::provider
 };
 
 wayfire_view wl_surface_to_wayfire_view(wl_resource *surface);
-
-/**
- * Find the view this (sub)surface belongs to.
- * May return NULL if @surface is NULL or the surface is not part of any view.
- */
-wayfire_view surface_to_view(wf::surface_interface_t *surface);
 
 /**
  * Find a view this node belongs to.
@@ -502,6 +502,8 @@ class view_node_t : public scene::floating_inner_node_t,
     {
         return view;
     }
+
+    wf::region_t get_opaque_region() const;
 
     keyboard_interaction_t& keyboard_interaction() override;
 

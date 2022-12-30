@@ -57,18 +57,9 @@ std::string wf::wlr_view_t::get_title()
     return this->title;
 }
 
-void wf::wlr_view_t::handle_minimize_hint(wf::surface_interface_t *relative_to,
-    const wlr_box & hint)
+void wf::wlr_view_t::handle_minimize_hint(wf::view_interface_t *relative_to, const wlr_box & hint)
 {
-    auto relative_to_view =
-        dynamic_cast<view_interface_t*>(relative_to);
-    if (!relative_to_view)
-    {
-        LOGE("Setting minimize hint to unknown surface. Wayfire currently"
-             "supports only setting hints relative to views.");
-
-        return;
-    }
+    auto relative_to_view = dynamic_cast<view_interface_t*>(relative_to);
 
     if (relative_to_view->get_output() != get_output())
     {
@@ -103,7 +94,7 @@ void wf::wlr_view_t::set_position(int x, int y,
 
     /* Make sure that if we move the view while it is unmapped, its snapshot
      * is still valid coordinates */
-    view_impl->offscreen_buffer = view_impl->offscreen_buffer.translated({
+    priv->offscreen_buffer = priv->offscreen_buffer.translated({
         x - data.old_geometry.x, y - data.old_geometry.y,
     });
 
@@ -130,15 +121,15 @@ void wf::wlr_view_t::move(int x, int y)
 
 void wf::wlr_view_t::adjust_anchored_edge(wf::dimensions_t new_size)
 {
-    if (view_impl->edges)
+    if (priv->edges)
     {
         auto wm = get_wm_geometry();
-        if (view_impl->edges & WLR_EDGE_LEFT)
+        if (priv->edges & WLR_EDGE_LEFT)
         {
             wm.x += geometry.width - new_size.width;
         }
 
-        if (view_impl->edges & WLR_EDGE_TOP)
+        if (priv->edges & WLR_EDGE_TOP)
         {
             wm.y += geometry.height - new_size.height;
         }
@@ -183,9 +174,9 @@ void wf::wlr_view_t::update_size()
         get_output()->emit_signal("view-geometry-changed", &data);
     }
 
-    if (view_impl->frame)
+    if (priv->frame)
     {
-        view_impl->frame->notify_view_resized(get_wm_geometry());
+        priv->frame->notify_view_resized(get_wm_geometry());
     }
 
     scene::update(this->get_surface_root_node(), scene::update_flag::GEOMETRY);
@@ -218,9 +209,9 @@ wf::geometry_t wf::wlr_view_t::get_output_geometry()
 
 wf::geometry_t wf::wlr_view_t::get_wm_geometry()
 {
-    if (view_impl->frame)
+    if (priv->frame)
     {
-        return view_impl->frame->expand_wm_geometry(geometry);
+        return priv->frame->expand_wm_geometry(geometry);
     } else
     {
         return geometry;
@@ -229,7 +220,7 @@ wf::geometry_t wf::wlr_view_t::get_wm_geometry()
 
 wlr_surface*wf::wlr_view_t::get_keyboard_focus_surface()
 {
-    if (is_mapped() && view_impl->keyboard_focus_enabled)
+    if (is_mapped() && priv->keyboard_focus_enabled)
     {
         return priv->wsurface;
     }
@@ -271,7 +262,7 @@ void wf::wlr_view_t::commit()
 {
     wf::region_t dmg;
     wlr_surface_get_effective_damage(priv->wsurface, dmg.to_pixman());
-    wf::scene::damage_node(get_content_node(), dmg);
+    wf::scene::damage_node(this->get_surface_root_node(), dmg);
 
     update_size();
 
@@ -279,9 +270,9 @@ void wf::wlr_view_t::commit()
      * This is must be done here because if the user(or plugin) resizes too fast,
      * the shell client might still haven't configured the surface, and in this
      * case the next commit(here) needs to still have access to the gravity */
-    if (!view_impl->in_continuous_resize)
+    if (!priv->in_continuous_resize)
     {
-        view_impl->edges = 0;
+        priv->edges = 0;
     }
 
     this->last_bounding_box = get_bounding_box();
@@ -289,10 +280,13 @@ void wf::wlr_view_t::commit()
 
 void wf::wlr_view_t::map(wlr_surface *surface)
 {
-    scene::set_node_enabled(view_impl->root_node, true);
+    scene::set_node_enabled(priv->root_node, true);
     priv->wsurface = surface;
-    view_impl->surface_root_node->set_children_list({priv->content_node});
-    surface_controller = std::make_unique<wlr_surface_controller_t>(surface, view_impl->surface_root_node);
+
+    this->main_surface = std::make_shared<scene::wlr_surface_node_t>(surface);
+    priv->surface_root_node->set_children_list({main_surface});
+    scene::update(priv->surface_root_node, scene::update_flag::CHILDREN_LIST);
+    surface_controller = std::make_unique<wlr_surface_controller_t>(surface, priv->surface_root_node);
     on_surface_commit.connect(&surface->events.commit);
 
     if (wf::get_core_impl().uses_csd.count(surface))
@@ -327,13 +321,15 @@ void wf::wlr_view_t::unmap()
 
     set_decoration(nullptr);
 
+    main_surface   = nullptr;
     priv->wsurface = nullptr;
     on_surface_commit.disconnect();
     surface_controller = nullptr;
-    view_impl->surface_root_node->set_children_list({});
+    priv->surface_root_node->set_children_list({});
+    scene::update(priv->surface_root_node, scene::update_flag::CHILDREN_LIST);
 
     emit_view_unmap();
-    scene::set_node_enabled(view_impl->root_node, false);
+    scene::set_node_enabled(priv->root_node, false);
 }
 
 void wf::emit_view_map_signal(wayfire_view view, bool has_position)
@@ -387,8 +383,8 @@ void wf::view_interface_t::emit_view_pre_unmap()
 
 void wf::wlr_view_t::destroy()
 {
-    view_impl->is_alive = false;
-    /* Drop the internal reference created in surface_interface_t */
+    priv->is_alive = false;
+    /* Drop the internal reference */
     unref();
 }
 
@@ -429,6 +425,13 @@ void wf::wlr_view_t::create_toplevel()
         auto ev = static_cast<
             wlr_foreign_toplevel_handle_v1_set_rectangle_event*>(data);
         auto surface = wl_surface_to_wayfire_view(ev->surface->resource);
+        if (!surface)
+        {
+            LOGE("Setting minimize hint to unknown surface. Wayfire currently"
+                 "supports only setting hints relative to views.");
+            return;
+        }
+
         handle_minimize_hint(surface.get(), {ev->x, ev->y, ev->width, ev->height});
     });
     toplevel_handle_v1_fullscreen_request.set_callback([&] (
@@ -571,12 +574,6 @@ void wf::init_desktop_apis()
     }
 }
 
-wf::compositor_surface_t*wf::compositor_surface_from_surface(
-    wf::surface_interface_t *surface)
-{
-    return dynamic_cast<wf::compositor_surface_t*>(surface);
-}
-
 wayfire_view wf::wl_surface_to_wayfire_view(wl_resource *resource)
 {
     auto surface = (wlr_surface*)wl_resource_get_user_data(resource);
@@ -602,39 +599,6 @@ wayfire_view wf::wl_surface_to_wayfire_view(wl_resource *resource)
 
     wf::view_interface_t *view = static_cast<wf::wlr_view_t*>(handle);
     return view ? view->self() : nullptr;
-}
-
-void wf::wlr_view_t::simple_render(
-    const wf::render_target_t& fb, int x, int y, const wf::region_t& damage)
-{
-    if (!get_buffer())
-    {
-        return;
-    }
-
-    auto size = this->get_size();
-    wf::geometry_t geometry = {x, y, size.width, size.height};
-    wf::texture_t texture{priv->wsurface};
-
-    OpenGL::render_begin(fb);
-    OpenGL::render_texture(texture, fb, geometry, glm::vec4(1.f),
-        OpenGL::RENDER_FLAG_CACHED);
-    // use GL_NEAREST for integer scale.
-    // GL_NEAREST makes scaled text blocky instead of blurry, which looks better
-    // but only for integer scale.
-    if (fb.scale - floor(fb.scale) < 0.001)
-    {
-        GL_CALL(glTexParameteri(texture.target, GL_TEXTURE_MAG_FILTER, GL_NEAREST));
-    }
-
-    for (const auto& rect : damage)
-    {
-        fb.logic_scissor(wlr_box_from_pixman_box(rect));
-        OpenGL::draw_cached();
-    }
-
-    OpenGL::clear_cached();
-    OpenGL::render_end();
 }
 
 wf::dimensions_t wf::wlr_view_t::get_size() const
