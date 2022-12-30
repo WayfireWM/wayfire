@@ -414,8 +414,8 @@ void wf::wlr_view_t::create_toplevel()
     {
         auto ev = static_cast<
             wlr_foreign_toplevel_handle_v1_set_rectangle_event*>(data);
-        auto surface = wf_view_from_void(ev->surface->data);
-        handle_minimize_hint(surface, {ev->x, ev->y, ev->width, ev->height});
+        auto surface = wl_surface_to_wayfire_view(ev->surface->resource);
+        handle_minimize_hint(surface.get(), {ev->x, ev->y, ev->width, ev->height});
     });
     toplevel_handle_v1_fullscreen_request.set_callback([&] (
         void *data)
@@ -557,16 +557,6 @@ void wf::init_desktop_apis()
     }
 }
 
-wf::surface_interface_t*wf::wf_surface_from_void(void *handle)
-{
-    return static_cast<wf::surface_interface_t*>(handle);
-}
-
-wf::view_interface_t*wf::wf_view_from_void(void *handle)
-{
-    return static_cast<wf::view_interface_t*>(handle);
-}
-
 wf::compositor_surface_t*wf::compositor_surface_from_surface(
     wf::surface_interface_t *surface)
 {
@@ -596,7 +586,6 @@ wayfire_view wf::wl_surface_to_wayfire_view(wl_resource *resource)
 
 #endif
 
-    wf::view_interface_t *view = wf::wf_view_from_void(handle);
-
+    wf::view_interface_t *view = static_cast<wf::wlr_view_t*>(handle);
     return view ? view->self() : nullptr;
 }

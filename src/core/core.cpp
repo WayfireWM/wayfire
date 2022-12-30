@@ -47,8 +47,8 @@ struct wf_server_decoration_t
         bool use_csd = decor->mode == WLR_SERVER_DECORATION_MANAGER_MODE_CLIENT;
         wf::get_core_impl().uses_csd[decor->surface] = use_csd;
 
-        auto wf_surface = dynamic_cast<wf::wlr_view_t*>(
-            wf::wf_surface_from_void(decor->surface->data));
+        auto wf_surface =
+            dynamic_cast<wf::wlr_view_t*>(wf::wl_surface_to_wayfire_view(decor->surface->resource).get());
 
         if (wf_surface)
         {
@@ -104,8 +104,8 @@ struct wf_xdg_decoration_t
             decor->current.mode == WLR_XDG_TOPLEVEL_DECORATION_V1_MODE_CLIENT_SIDE;
         wf::get_core_impl().uses_csd[decor->surface->surface] = use_csd;
 
-        auto wf_surface = dynamic_cast<wf::wlr_view_t*>(
-            wf::wf_surface_from_void(decor->surface->data));
+        auto wf_surface =
+            dynamic_cast<wf::wlr_view_t*>(wf::wl_surface_to_wayfire_view(decor->surface->resource).get());
         if (wf_surface)
         {
             wf_surface->set_decoration_mode(use_csd);

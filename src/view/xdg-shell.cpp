@@ -5,6 +5,7 @@
 #include "surface-impl.hpp"
 #include "wayfire/output.hpp"
 #include "wayfire/decorator.hpp"
+#include "wayfire/view.hpp"
 #include "xdg-shell.hpp"
 #include "wayfire/output-layout.hpp"
 #include <wayfire/workspace-manager.hpp>
@@ -14,7 +15,7 @@ wayfire_xdg_popup::wayfire_xdg_popup(wlr_xdg_popup *popup) :
     wf::wlr_view_t()
 {
     this->popup_parent =
-        dynamic_cast<wlr_view_t*>(wf::wf_surface_from_void(popup->parent->data));
+        dynamic_cast<wlr_view_t*>(wf::wl_surface_to_wayfire_view(popup->parent->resource).get());
     this->popup = popup;
     this->role  = wf::VIEW_ROLE_UNMANAGED;
     this->view_impl->keyboard_focus_enabled = false;
@@ -189,11 +190,9 @@ void wayfire_xdg_popup::ping()
 
 void create_xdg_popup(wlr_xdg_popup *popup)
 {
-    auto parent = wf::wf_surface_from_void(popup->parent->data);
-    if (!parent)
+    if (!wf::wl_surface_to_wayfire_view(popup->parent->resource))
     {
         LOGE("attempting to create a popup with unknown parent");
-
         return;
     }
 
@@ -256,9 +255,8 @@ void wayfire_xdg_view::initialize()
     });
     on_set_parent.set_callback([&] (void*)
     {
-        auto parent = xdg_toplevel->parent ?
-            wf::wf_view_from_void(
-            xdg_toplevel->parent->base->data)->self() : nullptr;
+        auto parent =
+            xdg_toplevel->parent ? (wf::view_interface_t*)(xdg_toplevel->parent->base->data) : nullptr;
         set_toplevel_parent(parent);
     });
     on_ping_timeout.set_callback([&] (void*)

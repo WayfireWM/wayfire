@@ -4,6 +4,7 @@
 #include <wayfire/render-manager.hpp>
 #include "wayfire/core.hpp"
 #include "wayfire/output.hpp"
+#include "wayfire/view.hpp"
 #include "wayfire/workspace-manager.hpp"
 #include "wayfire/decorator.hpp"
 #include "wayfire/output-layout.hpp"
@@ -584,8 +585,7 @@ class wayfire_xwayland_view : public wayfire_xwayland_view_base
                 return;
             }
 
-            auto parent = xw->parent ?
-                wf::wf_view_from_void(xw->parent->data)->self() : nullptr;
+            auto parent = xw->parent ? (wf::view_interface_t*)(xw->parent->data) : nullptr;
 
             // Make sure the parent is mapped, and that we are not a toplevel view
             if (parent)
