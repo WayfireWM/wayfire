@@ -382,11 +382,12 @@ class workspace_wall_t : public wf::signal_provider_t
                     OpenGL::render_end();
                 } else
                 {
-                    OpenGL::render_begin(target);
+                    auto fb_region = target.framebuffer_region_from_geometry_region(region);
 
-                    for (auto& dmg_rect : region)
+                    OpenGL::render_begin(target);
+                    for (auto& dmg_rect : fb_region)
                     {
-                        target.logic_scissor(wlr_box_from_pixman_box(dmg_rect));
+                        target.scissor(wlr_box_from_pixman_box(dmg_rect));
                         const float a = 1.0 - dim;
 
                         OpenGL::render_rectangle(target.geometry, {0, 0, 0, a},
