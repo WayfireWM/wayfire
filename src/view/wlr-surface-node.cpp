@@ -52,8 +52,7 @@ std::optional<wf::scene::input_node_t> wf::scene::wlr_surface_node_t::find_node_
     if (wlr_surface_point_accepts_input(surface, at.x, at.y))
     {
         wf::scene::input_node_t result;
-        result.node    = this;
-        result.surface = wf_surface_from_void(surface->data);
+        result.node = this;
         result.local_coords = at;
         return result;
     }

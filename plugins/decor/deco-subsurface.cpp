@@ -134,8 +134,7 @@ class simple_decoration_node_t : public wf::scene::node_t, public wf::pointer_in
         if (cached_region.contains_pointf(local))
         {
             return wf::scene::input_node_t{
-                .node    = this,
-                .surface = nullptr,
+                .node = this,
                 .local_coords = local,
             };
         }

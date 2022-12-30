@@ -74,12 +74,6 @@ class seat_t
     /** Update the position of the drag icon, if it exists */
     void update_drag_icon();
 
-    /**
-     * Make sure that the surface can receive input focus.
-     * If it is a xwayland surface, it will be restacked to the top.
-     */
-    void ensure_input_surface(wf::surface_interface_t *surface);
-
   private:
     wf::wl_listener_wrapper request_start_drag, start_drag, end_drag,
         request_set_selection, request_set_primary_selection;
@@ -99,9 +93,6 @@ class seat_t
 
     /** Send updated capabilities to clients */
     void update_capabilities();
-
-    // The surface which has last received input focus
-    wlr_surface *last_focus_surface = NULL;
 };
 }
 

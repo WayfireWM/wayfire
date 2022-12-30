@@ -51,8 +51,24 @@ wf::pointf_t wf::scene::view_node_t::to_global(const wf::pointf_t& point)
 std::optional<wf::scene::input_node_t> wf::scene::view_node_t::find_node_at(
     const wf::pointf_t& at)
 {
-    if (view->minimized ||
-        !wf::get_core_impl().input->can_focus_surface(view.get()))
+    auto& input_manager = wf::get_core_impl().input;
+    if (input_manager->exclusive_client && (view->get_client() != input_manager->exclusive_client))
+    {
+        /* We have exclusive focus surface, for ex. a lockscreen.
+         * The only kind of things we can focus are OSKs and similar */
+        if (view && view->get_output())
+        {
+            auto layer = view->get_output()->workspace->get_view_layer(view->self());
+            if (layer == wf::LAYER_DESKTOP_WIDGET)
+            {
+                return floating_inner_node_t::find_node_at(at);
+            }
+        }
+
+        return {};
+    }
+
+    if (view->minimized)
     {
         return {};
     }

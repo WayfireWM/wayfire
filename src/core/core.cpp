@@ -406,17 +406,10 @@ wayfire_view wf::compositor_core_t::get_cursor_focus_view()
     return node_to_view(get_cursor_focus());
 }
 
-wf::surface_interface_t*wf::compositor_core_impl_t::get_surface_at(
-    wf::pointf_t point)
-{
-    wf::pointf_t local = {0.0, 0.0};
-
-    return input->input_surface_at(point, local);
-}
-
 wayfire_view wf::compositor_core_t::get_view_at(wf::pointf_t point)
 {
-    return surface_to_view(get_surface_at(point));
+    auto isec = scene()->find_node_at(point);
+    return isec ? node_to_view(isec->node->shared_from_this()) : nullptr;
 }
 
 wf::scene::node_ptr wf::compositor_core_impl_t::get_touch_focus()

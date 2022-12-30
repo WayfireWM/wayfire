@@ -9,6 +9,7 @@
 #include "wayfire/scene-input.hpp"
 #include "wayfire/signal-provider.hpp"
 #include "wayfire/util.hpp"
+#include "wlr-surface-node.hpp"
 
 namespace wf
 {
@@ -242,12 +243,13 @@ class wlr_surface_pointer_interaction_t final : public wf::pointer_interaction_t
     void handle_motion_dnd(uint32_t time_ms)
     {
         _reset_constraint();
-        auto gc   = wf::get_core().get_cursor_position();
-        auto node = wf::get_core().scene()->find_node_at(gc);
-        if (node && node->surface && node->surface->get_wlr_surface())
+        auto seat  = wf::get_core().get_current_seat();
+        auto gc    = wf::get_core().get_cursor_position();
+        auto node  = wf::get_core().scene()->find_node_at(gc);
+        auto snode = node ? dynamic_cast<scene::wlr_surface_node_t*>(node->node.get()) : nullptr;
+        if (snode && snode->get_surface())
         {
-            auto seat = wf::get_core().get_current_seat();
-            wlr_seat_pointer_notify_enter(seat, node->surface->get_wlr_surface(),
+            wlr_seat_pointer_notify_enter(seat, snode->get_surface(),
                 node->local_coords.x, node->local_coords.y);
             wlr_seat_pointer_notify_motion(seat, time_ms,
                 node->local_coords.x, node->local_coords.y);

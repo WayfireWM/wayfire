@@ -7,8 +7,6 @@
 #include "wayfire/view.hpp"
 #include <wayfire/signal-definitions.hpp>
 
-#include "surface-map-state.hpp"
-
 // TODO: tests
 namespace wf
 {

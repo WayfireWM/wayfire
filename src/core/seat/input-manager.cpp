@@ -1,7 +1,6 @@
 #include <cassert>
 #include <algorithm>
 #include "pointer.hpp"
-#include "surface-map-state.hpp"
 #include "wayfire/core.hpp"
 #include "wayfire/signal-definitions.hpp"
 #include "../core-impl.hpp"
@@ -239,42 +238,6 @@ bool wf::input_manager_t::input_grabbed()
     return active_grab;
 }
 
-bool wf::input_manager_t::can_focus_surface(wf::surface_interface_t *surface)
-{
-    if (exclusive_client && (surface->get_client() != exclusive_client))
-    {
-        /* We have exclusive focus surface, for ex. a lockscreen.
-         * The only kind of things we can focus are OSKs and similar */
-        auto view = surface_to_view(surface);
-        if (view && view->get_output())
-        {
-            auto layer =
-                view->get_output()->workspace->get_view_layer(view->self());
-
-            return layer == wf::LAYER_DESKTOP_WIDGET;
-        }
-
-        return false;
-    }
-
-    return true;
-}
-
-wf::surface_interface_t*wf::input_manager_t::input_surface_at(
-    wf::pointf_t global, wf::pointf_t& local)
-{
-    const auto& scene = wf::get_core().scene();
-    auto isec = scene->find_node_at(global);
-
-    if (isec.has_value())
-    {
-        local = isec.value().local_coords;
-        return isec.value().surface;
-    }
-
-    return nullptr;
-}
-
 void wf::input_manager_t::set_exclusive_focus(wl_client *client)
 {
     exclusive_client = client;
@@ -309,26 +272,4 @@ wf::bindings_repository_t& wf::input_manager_t::get_active_bindings()
     }
 
     return impl->get_bindings();
-}
-
-wf::SurfaceMapStateListener::SurfaceMapStateListener()
-{
-    on_surface_map_state_change.set_callback([=] (void *data)
-    {
-        if (this->callback)
-        {
-            auto ev = static_cast<surface_map_state_changed_signal*>(data);
-            this->callback(ev ? ev->surface : nullptr);
-        }
-    });
-
-    wf::get_core().connect_signal("surface-mapped",
-        &on_surface_map_state_change);
-    wf::get_core().connect_signal("surface-unmapped",
-        &on_surface_map_state_change);
-}
-
-void wf::SurfaceMapStateListener::set_callback(Callback call)
-{
-    this->callback = call;
 }

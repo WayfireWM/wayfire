@@ -75,12 +75,6 @@ wf::scene::node_ptr mock_core_t::get_touch_focus()
     return nullptr;
 }
 
-wf::surface_interface_t*mock_core_t::get_surface_at(
-    wf::pointf_t point)
-{
-    return nullptr;
-}
-
 void mock_core_t::add_touch_gesture(
     nonstd::observer_ptr<wf::touch::gesture_t> gesture)
 {}

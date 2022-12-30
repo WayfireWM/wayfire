@@ -7,7 +7,6 @@
 #include <wayfire/surface.hpp>
 #include <wayfire/util.hpp>
 #include <wayfire/option-wrapper.hpp>
-#include "surface-map-state.hpp"
 #include "wayfire/signal-definitions.hpp"
 #include "wayfire/signal-provider.hpp"
 #include <wayfire/nonstd/wlroots-full.hpp>

@@ -37,8 +37,7 @@ class grab_node_t : public node_t
         if (output->get_layout_geometry() & at)
         {
             input_node_t result;
-            result.node    = this;
-            result.surface = {};
+            result.node = this;
             result.local_coords = to_local(at);
             return result;
         }

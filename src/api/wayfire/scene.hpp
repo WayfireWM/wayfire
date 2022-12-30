@@ -14,7 +14,6 @@
 
 namespace wf
 {
-class surface_interface_t;
 class output_t;
 class output_layout_t;
 /**
@@ -94,10 +93,6 @@ enum class node_flags : int
 struct input_node_t
 {
     nonstd::observer_ptr<node_t> node;
-
-    // FIXME: In the future, this should be a separate interface, allowing
-    // non-surface nodes to get user input as well.
-    wf::surface_interface_t *surface;
 
     // The coordinates of the user input in surface-local coordinates.
     wf::pointf_t local_coords;

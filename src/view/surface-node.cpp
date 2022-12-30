@@ -30,8 +30,7 @@ std::optional<input_node_t> surface_node_t::find_node_at(
     if (si->accepts_input(std::round(local.x), std::round(local.y)))
     {
         wf::scene::input_node_t result;
-        result.node    = this;
-        result.surface = si;
+        result.node = this;
         result.local_coords = local;
         return result;
     }

@@ -244,24 +244,6 @@ void wf::seat_t::set_keyboard_focus(wf::scene::node_ptr new_focus)
     wf::get_core().emit_signal("keyboard-focus-changed", &data);
 }
 
-void wf::seat_t::ensure_input_surface(wf::surface_interface_t *surface)
-{
-    if (!surface || !surface->get_wlr_surface())
-    {
-        last_focus_surface = nullptr;
-        return;
-    }
-
-    auto wlr_surf = surface->get_wlr_surface();
-    if (this->last_focus_surface == wlr_surf)
-    {
-        return;
-    }
-
-    this->last_focus_surface = wlr_surf;
-    wf::xwayland_bring_to_front(wlr_surf);
-}
-
 namespace wf
 {
 wlr_input_device*input_device_t::get_wlr_handle()

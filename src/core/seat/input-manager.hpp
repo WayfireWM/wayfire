@@ -70,17 +70,6 @@ class input_manager_t
 
     std::vector<std::unique_ptr<wf::input_device_impl_t>> input_devices;
 
-    /**
-     * Check if the given surface is focusable at the moment.
-     * This depends on things like exclusive clients, etc.
-     */
-    bool can_focus_surface(wf::surface_interface_t *surface);
-
-    // returns the surface under the given global coordinates
-    // if no such surface (return NULL), lx and ly are undefined
-    wf::surface_interface_t *input_surface_at(wf::pointf_t global,
-        wf::pointf_t& local);
-
     /** @return the bindings for the active output */
     wf::bindings_repository_t& get_active_bindings();
 };
