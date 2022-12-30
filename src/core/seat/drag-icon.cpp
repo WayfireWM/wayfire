@@ -1,4 +1,6 @@
 #include "drag-icon.hpp"
+#include "view/surface-impl.hpp"
+#include "view/wlr-surface-node.hpp"
 #include "wayfire/core.hpp"
 #include "wayfire/geometry.hpp"
 #include "wayfire/object.hpp"
@@ -96,8 +98,7 @@ class dnd_root_icon_root_node_t : public floating_inner_node_t
     void gen_render_instances(std::vector<render_instance_uptr>& instances,
         damage_callback push_damage, wf::output_t *output) override
     {
-        instances.push_back(std::make_unique<dnd_icon_root_render_instance_t>(
-            this, icon, push_damage));
+        instances.push_back(std::make_unique<dnd_icon_root_render_instance_t>(this, icon, push_damage));
     }
 
     std::optional<input_node_t> find_node_at(const wf::pointf_t& at) override
@@ -120,11 +121,25 @@ class dnd_root_icon_root_node_t : public floating_inner_node_t
 }
 
 /* ------------------------ Drag icon impl ---------------------------------- */
-wf::drag_icon_t::drag_icon_t(wlr_drag_icon *ic) :
-    wf::wlr_child_surface_base_t(this), icon(ic)
+wf::drag_icon_t::drag_icon_t(wlr_drag_icon *ic) : icon(ic)
 {
-    on_map.set_callback([&] (void*) { this->map(icon->surface); });
-    on_unmap.set_callback([&] (void*) { this->unmap(); });
+    this->root_node = std::make_shared<scene::dnd_root_icon_root_node_t>(this);
+
+    // Sometimes, the drag surface is reused between two or more drags.
+    // In this case, when the drag starts, the icon is already mapped.
+    if (!icon->mapped)
+    {
+        root_node->set_enabled(false);
+    }
+
+    on_map.set_callback([=] (void*)
+    {
+        wf::scene::set_node_enabled(root_node, true);
+    });
+    on_unmap.set_callback([&] (void*)
+    {
+        wf::scene::set_node_enabled(root_node, false);
+    });
     on_destroy.set_callback([&] (void*)
     {
         /* we don't dec_keep_count() because the surface memory is
@@ -136,18 +151,20 @@ wf::drag_icon_t::drag_icon_t(wlr_drag_icon *ic) :
     on_unmap.connect(&icon->events.unmap);
     on_destroy.connect(&icon->events.destroy);
 
-    // Change the root node with a dnd node
-    auto children = this->priv->root_node->get_children();
-    this->priv->root_node->set_children_list({});
-    this->priv->root_node = std::make_unique<scene::dnd_root_icon_root_node_t>(this);
-    this->priv->root_node->set_children_list(children);
 
-    wf::scene::add_front(wf::get_core().scene(), this->priv->root_node);
+    auto main_node = std::make_shared<scene::wlr_surface_node_t>(icon->surface);
+    root_node->set_children_list({main_node});
+
+    // Memory is auto-freed when the wlr_surface is destroyed
+    new wlr_surface_controller_t(icon->surface, root_node);
+
+    // Connect to the scenegraph
+    wf::scene::add_front(wf::get_core().scene(), root_node);
 }
 
 wf::drag_icon_t::~drag_icon_t()
 {
-    wf::scene::remove_child(this->priv->root_node);
+    wf::scene::remove_child(root_node);
 }
 
 wf::point_t wf::drag_icon_t::get_position()
@@ -156,7 +173,7 @@ wf::point_t wf::drag_icon_t::get_position()
         wf::get_core().get_touch_position(icon->drag->touch_id) :
         wf::get_core().get_cursor_position();
 
-    if (is_mapped())
+    if (root_node->is_enabled())
     {
         pos.x += icon->surface->sx;
         pos.y += icon->surface->sy;
@@ -168,9 +185,10 @@ wf::point_t wf::drag_icon_t::get_position()
 void wf::drag_icon_t::update_position()
 {
     // damage previous position
-    scene::node_damage_signal data;
-    data.region |= last_box;
-    last_box     = wf::construct_box(get_position(), get_size());
-    data.region |= last_box;
-    this->priv->root_node->emit(&data);
+    wf::region_t dmg_region;
+    dmg_region |= last_box;
+    last_box    =
+        wf::construct_box(get_position(), {icon->surface->current.width, icon->surface->current.height});
+    dmg_region |= last_box;
+    scene::damage_node(root_node, dmg_region);
 }

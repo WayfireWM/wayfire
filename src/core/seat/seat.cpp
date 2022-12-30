@@ -45,13 +45,6 @@ wf::seat_t::seat_t()
         if (d->icon)
         {
             this->drag_icon = std::make_unique<wf::drag_icon_t>(d->icon);
-
-            // Sometimes, the drag surface is reused between two or more drags.
-            // In this case, when the drag starts, the icon is already mapped.
-            if (d->icon->surface && wlr_surface_has_buffer(d->icon->surface))
-            {
-                this->drag_icon->force_map();
-            }
         }
 
         this->drag_active = true;
@@ -196,7 +189,7 @@ void wf::seat_t::validate_drag_request(wlr_seat_request_start_drag_event *ev)
 
 void wf::seat_t::update_drag_icon()
 {
-    if (drag_icon && drag_icon->is_mapped())
+    if (drag_icon)
     {
         drag_icon->update_position();
     }
