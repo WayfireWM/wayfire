@@ -292,13 +292,6 @@ void wf::wlr_surface_base_t::_simple_render(const wf::render_target_t& fb,
     OpenGL::render_end();
 }
 
-wf::wlr_child_surface_base_t::wlr_child_surface_base_t(
-    surface_interface_t *self) : wlr_surface_base_t(self)
-{}
-
-wf::wlr_child_surface_base_t::~wlr_child_surface_base_t()
-{}
-
 wf::scene::node_ptr wf::surface_interface_t::get_content_node() const
 {
     return priv->content_node;

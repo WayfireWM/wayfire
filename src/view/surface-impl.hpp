@@ -98,42 +98,6 @@ class wlr_surface_base_t
 
     virtual wlr_buffer *get_buffer();
 };
-
-/**
- * wlr_child_surface_base_t is a base class for wlr-surface based child
- * surfaces, i.e subsurfaces.
- *
- * However, they can still exist without a parent, for ex. drag icons.
- */
-class wlr_child_surface_base_t :
-    public surface_interface_t, public wlr_surface_base_t
-{
-  public:
-    wlr_child_surface_base_t(surface_interface_t *self);
-    virtual ~wlr_child_surface_base_t();
-
-    wlr_child_surface_base_t(const wlr_child_surface_base_t &) = delete;
-    wlr_child_surface_base_t(wlr_child_surface_base_t &&) = delete;
-    wlr_child_surface_base_t& operator =(const wlr_child_surface_base_t&) = delete;
-    wlr_child_surface_base_t& operator =(wlr_child_surface_base_t&&) = delete;
-
-    /* Just pass to the default wlr surface implementation */
-    virtual bool is_mapped() const override
-    {
-        return _is_mapped();
-    }
-
-    virtual wf::dimensions_t get_size() const override
-    {
-        return _get_size();
-    }
-
-    virtual void simple_render(const wf::render_target_t& fb, int x, int y,
-        const wf::region_t& damage) override
-    {
-        _simple_render(fb, x, y, damage);
-    }
-};
 }
 
 #endif /* end of include guard: SURFACE_IMPL_HPP */
