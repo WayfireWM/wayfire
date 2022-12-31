@@ -31,6 +31,9 @@ class keyboard_t
     /* The keycode which triggered the modifier binding */
     uint32_t mod_binding_key = 0;
 
+    /** Convert a key to a modifier */
+    uint32_t mod_from_key(uint32_t key);
+
   private:
     wf::wl_listener_wrapper on_key, on_modifier;
     void setup_listeners();
@@ -48,9 +51,6 @@ class keyboard_t
 
     bool handle_keyboard_key(uint32_t key, uint32_t state);
     void handle_keyboard_mod(uint32_t key, uint32_t state);
-
-    /** Convert a key to a modifier */
-    uint32_t mod_from_key(uint32_t key);
 
     /** Get the current locked mods */
     uint32_t get_locked_mods();

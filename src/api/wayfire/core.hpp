@@ -147,6 +147,11 @@ class compositor_core_t : public wf::object_base_t, public signal::provider_t
      */
     virtual uint32_t get_keyboard_modifiers() = 0;
 
+    /**
+     * @return The modifier mask for the given keycode.
+     */
+    virtual uint32_t modifier_from_keycode(uint32_t keycode) = 0;
+
     /** Set the cursor to the given name from the cursor theme, if available */
     virtual void set_cursor(std::string name) = 0;
     /**

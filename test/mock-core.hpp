@@ -16,6 +16,11 @@ class mock_core_t : public wf::compositor_core_impl_t
 
     wlr_seat *get_current_seat() override;
     uint32_t get_keyboard_modifiers() override;
+    uint32_t modifier_from_keycode(uint32_t) override
+    {
+        return 0u;
+    }
+
     void warp_cursor(wf::pointf_t pos) override;
     void set_cursor(std::string name) override;
     void unhide_cursor() override;

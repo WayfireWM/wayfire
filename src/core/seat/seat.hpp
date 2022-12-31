@@ -74,14 +74,14 @@ class seat_t
     /** Update the position of the drag icon, if it exists */
     void update_drag_icon();
 
+    /** The currently active keyboard device on the seat */
+    wf::keyboard_t *current_keyboard = nullptr;
+
   private:
     wf::wl_listener_wrapper request_start_drag, start_drag, end_drag,
         request_set_selection, request_set_primary_selection;
 
     wf::signal_connection_t on_new_device, on_remove_device;
-
-    /** The currently active keyboard device on the seat */
-    wf::keyboard_t *current_keyboard = nullptr;
 
     /** A list of all keyboards in this seat */
     std::vector<std::unique_ptr<wf::keyboard_t>> keyboards;
