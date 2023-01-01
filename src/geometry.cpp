@@ -178,15 +178,21 @@ wf::geometry_t wf::scale_box(
     wf::geometry_t A, wf::geometry_t B, wf::geometry_t box)
 {
     // Figure out damage relative to the viewport
-    double px = 1.0 * (box.x - A.x) / A.width;
-    double py = 1.0 * (box.y - A.y) / A.height;
-    double pw = 1.0 * box.width / A.width;
-    double ph = 1.0 * box.height / A.height;
+    double px  = 1.0 * (box.x - A.x) / A.width;
+    double py  = 1.0 * (box.y - A.y) / A.height;
+    double px2 = 1.0 * (box.x + box.width - A.x) / A.width;
+    double py2 = 1.0 * (box.y + box.height - A.y) / A.height;
+
+    int x = int(std::floor(B.x + B.width * px));
+    int y = int(std::floor(B.y + B.height * py));
+
+    int x2 = int(std::ceil(B.x + B.width * px2));
+    int y2 = int(std::floor(B.y + B.height * py2));
 
     return wf::geometry_t{
-        .x     = int(std::floor(B.x + B.width * px)),
-        .y     = int(std::floor(B.y + B.height * py)),
-        .width = int(std::ceil(B.width * pw)),
-        .height = int(std::ceil(B.height * ph)),
+        .x     = x,
+        .y     = y,
+        .width = x2 - x,
+        .height = y2 - y,
     };
 }
