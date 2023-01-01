@@ -26,7 +26,6 @@
 using blur_algorithm_provider =
     std::function<nonstd::observer_ptr<wf_blur_base>()>;
 
-
 static int calculate_damage_padding(const wf::render_target_t& target, int blur_radius)
 {
     float scale = target.scale;
@@ -119,8 +118,7 @@ class blur_render_instance_t : public transformer_render_instance_t<blur_node_t>
     void schedule_instructions(std::vector<render_instruction_t>& instructions,
         const wf::render_target_t& target, wf::region_t& damage) override
     {
-        const int padding = std::ceil(self->provider()->calculate_blur_radius() / target.scale);
-
+        const int padding = calculate_damage_padding(target, self->provider()->calculate_blur_radius());
         auto bbox = self->get_bounding_box();
 
         // In order to render a part of the blurred background, we need to sample
