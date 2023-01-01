@@ -2,12 +2,14 @@
 #include "pixman.h"
 #include "view/view-impl.hpp"
 #include "wayfire/geometry.hpp"
+#include "wayfire/render-manager.hpp"
 #include "wayfire/scene-render.hpp"
 #include "wlr-surface-pointer-interaction.cpp"
 #include "wlr-surface-touch-interaction.cpp"
 #include <memory>
 #include <sstream>
 #include <string>
+#include <wayfire/signal-provider.hpp>
 
 wf::scene::wlr_surface_node_t::wlr_surface_node_t(wlr_surface *surface) : node_t(false)
 {
@@ -35,6 +37,14 @@ wf::scene::wlr_surface_node_t::wlr_surface_node_t(wlr_surface *surface) : node_t
         wf::region_t dmg;
         wlr_surface_get_effective_damage(surface, dmg.to_pixman());
         wf::scene::damage_node(this, dmg);
+
+        if (dmg.empty())
+        {
+            for (auto& [wo, _] : visibility)
+            {
+                wo->render->schedule_redraw();
+            }
+        }
     });
 
     on_surface_destroyed.connect(&surface->events.destroy);
@@ -98,8 +108,12 @@ void wf::scene::wlr_surface_node_t::send_frame_done()
 
 class wf::scene::wlr_surface_node_t::wlr_surface_render_instance_t : public render_instance_t
 {
-    wlr_surface_node_t *self;
-    wf::wl_listener_wrapper on_visibility_output_commit;
+    std::shared_ptr<wlr_surface_node_t> self;
+    wf::signal::connection_t<wf::frame_done_signal> on_frame_done = [=] (wf::frame_done_signal *ev)
+    {
+        self->send_frame_done();
+    };
+
     wf::output_t *visible_on;
     damage_callback push_damage;
 
@@ -121,7 +135,7 @@ class wf::scene::wlr_surface_node_t::wlr_surface_render_instance_t : public rend
     };
 
   public:
-    wlr_surface_render_instance_t(wlr_surface_node_t *self,
+    wlr_surface_render_instance_t(std::shared_ptr<wlr_surface_node_t> self,
         damage_callback push_damage, wf::output_t *visible_on)
     {
         if (visible_on)
@@ -255,17 +269,13 @@ class wf::scene::wlr_surface_node_t::wlr_surface_render_instance_t : public rend
     void compute_visibility(wf::output_t *output, wf::region_t& visible) override
     {
         auto our_box = self->get_bounding_box();
-        on_visibility_output_commit.disconnect();
+        on_frame_done.disconnect();
 
         if (!(visible & our_box).empty())
         {
             // We are visible on the given output => send wl_surface.frame on output frame, so that clients
             // can draw the next frame.
-            on_visibility_output_commit.set_callback([=] (void *data)
-            {
-                self->send_frame_done();
-            });
-            on_visibility_output_commit.connect(&output->handle->events.frame);
+            output->connect(&on_frame_done);
             // TODO: compute actually visible region and disable damage reporting for that region.
         }
     }
@@ -275,7 +285,8 @@ void wf::scene::wlr_surface_node_t::gen_render_instances(
     std::vector<render_instance_uptr>& instances, damage_callback damage,
     wf::output_t *output)
 {
-    instances.push_back(std::make_unique<wlr_surface_render_instance_t>(this, damage, output));
+    instances.push_back(std::make_unique<wlr_surface_render_instance_t>(
+        std::dynamic_pointer_cast<wlr_surface_node_t>(this->shared_from_this()), damage, output));
 }
 
 wf::geometry_t wf::scene::wlr_surface_node_t::get_bounding_box()

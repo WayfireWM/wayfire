@@ -84,7 +84,7 @@ class wlr_subsurface_root_render_instance_t : public wf::scene::render_instance_
 
   public:
     wlr_subsurface_root_render_instance_t(wf::wlr_subsurface_root_node_t *self,
-        wf::scene::damage_callback push_damage)
+        wf::scene::damage_callback push_damage, wf::output_t *shown_on)
     {
         this->self = self;
         this->push_damage = push_damage;
@@ -101,7 +101,7 @@ class wlr_subsurface_root_render_instance_t : public wf::scene::render_instance_
         {
             if (ch->is_enabled())
             {
-                ch->gen_render_instances(children, push_damage_child);
+                ch->gen_render_instances(children, push_damage_child, shown_on);
             }
         }
     }
@@ -161,7 +161,7 @@ void wf::wlr_subsurface_root_node_t::gen_render_instances(
     std::vector<scene::render_instance_uptr>& instances,
     scene::damage_callback damage, wf::output_t *output)
 {
-    instances.push_back(std::make_unique<wlr_subsurface_root_render_instance_t>(this, damage));
+    instances.push_back(std::make_unique<wlr_subsurface_root_render_instance_t>(this, damage, output));
 }
 
 wf::geometry_t wf::wlr_subsurface_root_node_t::get_bounding_box()

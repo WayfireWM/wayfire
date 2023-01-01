@@ -177,12 +177,14 @@ class view_render_instance_t : public render_instance_t
     std::vector<render_instance_uptr> children;
     wayfire_view view;
     damage_callback push_damage;
+    wf::output_t *visible_on;
 
   public:
-    view_render_instance_t(wayfire_view view, damage_callback push_damage)
+    view_render_instance_t(wayfire_view view, damage_callback push_damage, wf::output_t *visible_on)
     {
         this->view = view;
         this->push_damage = push_damage;
+        this->visible_on  = visible_on;
         view->get_surface_root_node()->connect(&on_view_damage);
 
         auto push_damage_child = [=] (wf::region_t child_damage)
@@ -195,7 +197,7 @@ class view_render_instance_t : public render_instance_t
         {
             if (ch->is_enabled())
             {
-                ch->gen_render_instances(children, push_damage_child);
+                ch->gen_render_instances(children, push_damage_child, visible_on);
             }
         }
     }
@@ -331,7 +333,7 @@ void view_node_t::gen_render_instances(std::vector<render_instance_uptr> & insta
     }
 
     instances.push_back(std::make_unique<wf::scene::view_render_instance_t>(
-        this->view, push_damage));
+        this->view, push_damage, shown_on));
 }
 
 std::optional<wf::texture_t> view_node_t::to_texture() const

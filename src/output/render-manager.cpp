@@ -767,6 +767,9 @@ class wf::render_manager::impl
                     return false;
                 });
             }
+
+            frame_done_signal ev;
+            output->emit(&ev);
         });
         on_frame.connect(&output_damage->damage_manager->events.frame);
 

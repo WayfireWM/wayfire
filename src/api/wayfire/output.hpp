@@ -46,7 +46,7 @@ enum plugin_activation_flags_t
     PLUGIN_ACTIVATE_ALLOW_MULTIPLE   = (1 << 1),
 };
 
-class output_t : public wf::object_base_t
+class output_t : public wf::object_base_t, public wf::signal::provider_t
 {
   public:
     /**

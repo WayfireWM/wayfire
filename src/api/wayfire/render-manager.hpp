@@ -45,6 +45,13 @@ enum output_effect_type_t
 using post_hook_t = std::function<void (const wf::framebuffer_t& source,
     const wf::framebuffer_t& destination)>;
 
+/**
+ * The frame-done signal is emitted on an output when the frame has been completed (regardless of whether new
+ * content was painted or not).
+ */
+struct frame_done_signal
+{};
+
 /** Render manager
  *
  * Each output has a render manager, which is responsible for all rendering
