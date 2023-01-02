@@ -14,6 +14,7 @@
 #include <wayfire/rule/lambda_rule.hpp>
 #include <wayfire/rule/rule.hpp>
 #include <wayfire/util/log.hpp>
+#include <wayfire/option-wrapper.hpp>
 
 #include "lambda-rules-registration.hpp"
 #include "view-action-interface.hpp"
@@ -194,11 +195,13 @@ void wayfire_window_rules_t::setup_rules_from_config()
 {
     _rules.clear();
 
-    // Build rule list.
-    auto section = wf::get_core().config.get_section("window-rules");
-    for (auto opt : section->get_registered_options())
+    wf::option_wrapper_t<wf::config::compound_list_t<std::string>> rule_list_option{"window-rules/rules"};
+    auto rule_list = rule_list_option.value();
+
+    for (const auto& [name, rule_str] : rule_list)
     {
-        _lexer.reset(opt->get_value_str());
+        LOGW("Registering ", rule_str);
+        _lexer.reset(rule_str);
         auto rule = wf::rule_parser_t().parse(_lexer);
         if (rule != nullptr)
         {
