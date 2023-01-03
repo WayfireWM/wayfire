@@ -434,7 +434,7 @@ class workspace_wall_t : public wf::signal_provider_t
 
         virtual void gen_render_instances(
             std::vector<scene::render_instance_uptr>& instances,
-            scene::damage_callback push_damage, wf::output_t *shown_on)
+            scene::damage_callback push_damage, wf::output_t *shown_on) override
         {
             if (shown_on != this->wall->output)
             {
@@ -445,7 +445,12 @@ class workspace_wall_t : public wf::signal_provider_t
                 this, push_damage));
         }
 
-        wf::geometry_t get_bounding_box()
+        std::string stringify() const override
+        {
+            return "workspace-wall " + stringify_flags();
+        }
+
+        wf::geometry_t get_bounding_box() override
         {
             return wall->output->get_layout_geometry();
         }
