@@ -8,15 +8,18 @@ static const char *blur_blend_vertex_shader =
 #version 100
 
 attribute mediump vec2 position;
+attribute mediump vec2 uv_in;
+
 varying mediump vec2 uvpos[2];
 
 uniform mat4 mvp;
+uniform mat4 background_inverse;
 
 void main() {
 
-    gl_Position = vec4(position.xy, 0.0, 1.0);
-    uvpos[0] = (position.xy + vec2(1.0, 1.0)) / 2.0;
-    uvpos[1] = vec4(mvp * vec4(uvpos[0] - 0.5, 0.0, 1.0)).xy + 0.5;
+    gl_Position = mvp * vec4(position, 0.0, 1.0);
+    uvpos[0] = uv_in;
+    uvpos[1] = vec4(background_inverse * vec4(uv_in - 0.5, 0.0, 1.0)).xy + 0.5;
 })";
 
 static const char *blur_blend_fragment_shader =
@@ -229,23 +232,30 @@ void wf_blur_base::pre_render(wlr_box src_box,
 void wf_blur_base::render(wf::texture_t src_tex, wlr_box src_box,
     wlr_box scissor_box, const wf::render_target_t& target_fb)
 {
-    auto view_box = target_fb.framebuffer_box_from_geometry_box(src_box);
-
     OpenGL::render_begin(target_fb);
     blend_program.use(src_tex.type);
 
     /* Use shader and enable vertex and texcoord data */
-    static const float vertexData[] = {
-        -1.0f, -1.0f,
-        1.0f, -1.0f,
+    static const float vertex_data_uv[] = {
+        0.0f, 1.0f,
         1.0f, 1.0f,
-        -1.0f, 1.0f
+        1.0f, 0.0f,
+        0.0f, 0.0f,
     };
 
-    blend_program.attrib_pointer("position", 2, 0, vertexData);
+    const float vertex_data_pos[] = {
+        1.0f * src_box.x, 1.0f * src_box.y + src_box.height,
+        1.0f * src_box.x + src_box.width, 1.0f * src_box.y + src_box.height,
+        1.0f * src_box.x + src_box.width, 1.0f * src_box.y,
+        1.0f * src_box.x, 1.0f * src_box.y,
+    };
+
+    blend_program.attrib_pointer("position", 2, 0, vertex_data_pos);
+    blend_program.attrib_pointer("uv_in", 2, 0, vertex_data_uv);
 
     /* Blend blurred background with window texture src_tex */
-    blend_program.uniformMatrix4f("mvp", glm::inverse(target_fb.transform));
+    blend_program.uniformMatrix4f("background_inverse", glm::inverse(target_fb.transform));
+    blend_program.uniformMatrix4f("mvp", target_fb.get_orthographic_projection());
     /* XXX: core should give us the number of texture units used */
     blend_program.uniform1i("bg_texture", 1);
     blend_program.uniform1f("sat", saturation_opt);
@@ -256,12 +266,7 @@ void wf_blur_base::render(wf::texture_t src_tex, wlr_box src_box,
     /* Render it to target_fb */
     target_fb.bind();
 
-    GL_CALL(glViewport(view_box.x,
-        target_fb.viewport_height - view_box.y - view_box.height,
-        view_box.width, view_box.height));
-
     target_fb.scissor(scissor_box);
-
     GL_CALL(glDrawArrays(GL_TRIANGLE_FAN, 0, 4));
 
     /*
