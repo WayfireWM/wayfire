@@ -1,10 +1,12 @@
 #pragma once
 
+#include "wayfire/core.hpp"
 #include "wayfire/debug.hpp"
 #include "wayfire/geometry.hpp"
 #include "wayfire/opengl.hpp"
 #include "wayfire/region.hpp"
 #include "wayfire/scene-input.hpp"
+#include "wayfire/scene-operations.hpp"
 #include "wayfire/scene-render.hpp"
 #include "wayfire/scene.hpp"
 #include <memory>
@@ -15,6 +17,7 @@
 #include <wayfire/output-layout.hpp>
 #include <wayfire/nonstd/observer_ptr.h>
 #include <wayfire/render-manager.hpp>
+#include <wayfire/signal-provider.hpp>
 #include <wayfire/workspace-manager.hpp>
 #include <wayfire/view-transform.hpp>
 #include <wayfire/util/duration.hpp>
@@ -285,114 +288,101 @@ inline std::vector<wayfire_view> get_target_views(wayfire_view grabbed,
     return r;
 }
 
-/**
- * An object for storing per-output data.
- */
-class output_data_t : public custom_data_t
+// A node to render the dragged views in global coordinates.
+// The assumption is that all nodes have a view transformer which transforms them to global (not output-local)
+// coordinates and thus we just need to schedule them for rendering.
+class dragged_view_node_t : public wf::scene::node_t
 {
+    std::vector<dragged_view_t> views;
+
   public:
-    output_data_t(wf::output_t *output, std::vector<dragged_view_t> views)
+    dragged_view_node_t(std::vector<dragged_view_t> views) : node_t(false)
     {
-        output->render->add_effect(&damage_overlay, OUTPUT_EFFECT_PRE);
-        output->render->add_effect(&render_overlay, OUTPUT_EFFECT_OVERLAY);
-
-        this->output = output;
-        this->views  = views;
-        regen_instances();
+        this->views = views;
     }
 
-    ~output_data_t()
+    std::string stringify() const override
     {
-        output->render->rem_effect(&damage_overlay);
-        output->render->rem_effect(&render_overlay);
+        return "move-drag-view " + stringify_flags();
     }
 
-    output_data_t(const output_data_t &) = delete;
-    output_data_t(output_data_t &&) = delete;
-    output_data_t& operator =(const output_data_t&) = delete;
-    output_data_t& operator =(output_data_t&&) = delete;
-
-    void apply_damage()
+    void gen_render_instances(std::vector<scene::render_instance_uptr>& instances,
+        scene::damage_callback push_damage, wf::output_t *output = nullptr) override
     {
+        instances.push_back(std::make_unique<dragged_view_render_instance_t>(this, push_damage, output));
+    }
+
+    wf::geometry_t get_bounding_box() override
+    {
+        wf::region_t bounding;
         for (auto& view : views)
         {
             // Note: bbox will be in output layout coordinates now, since this is
             // how the transformer works
             auto bbox = view.view->get_transformed_node()->get_bounding_box();
-            bbox = bbox + -wf::origin(output->get_layout_geometry());
-
-            output->render->damage(bbox);
-            output->render->damage(view.last_bbox);
-
-            view.last_bbox = bbox;
+            bounding |= bbox;
         }
+
+        return wlr_box_from_pixman_box(bounding.get_extents());
     }
 
-  private:
-    wf::output_t *output;
-
-    std::vector<dragged_view_t> views;
-    std::vector<scene::render_instance_uptr> instances;
-
-    // An effect hook for damaging the view on the current output.
-    //
-    // This is needed on a per-output basis in order to drive the scaling animation
-    // forward, if such an animation is running.
-    //
-    // TODO: We overdo damage, for ex. in the following cases:
-    // - Expo does not need any damage (can't really be fixed, since we don't know
-    // the plugin which uses this API).
-    // - If the view has not updated, and cursor has not moved
-    effect_hook_t damage_overlay = [=] ()
+    class dragged_view_render_instance_t : public wf::scene::render_instance_t
     {
-        apply_damage();
+        wf::geometry_t last_bbox = {0, 0, 0, 0};
+        wf::scene::damage_callback push_damage;
+        std::vector<scene::render_instance_uptr> children;
+        wf::signal::connection_t<scene::node_damage_signal> on_node_damage =
+            [=] (scene::node_damage_signal *data)
+        {
+            push_damage(data->region);
+        };
+
+      public:
+        dragged_view_render_instance_t(dragged_view_node_t *self, wf::scene::damage_callback push_damage,
+            wf::output_t *shown_on)
+        {
+            auto push_damage_child = [=] (wf::region_t child_damage)
+            {
+                push_damage(last_bbox);
+                last_bbox = self->get_bounding_box();
+                push_damage(last_bbox);
+            };
+
+            for (auto& view : self->views)
+            {
+                auto node = view.view->get_transformed_node();
+                node->gen_render_instances(children, push_damage_child, shown_on);
+            }
+        }
+
+        void schedule_instructions(std::vector<scene::render_instruction_t>& instructions,
+            const wf::render_target_t& target, wf::region_t& damage) override
+        {
+            for (auto& inst : children)
+            {
+                inst->schedule_instructions(instructions, target, damage);
+            }
+        }
+
+        void presentation_feedback(wf::output_t *output) override
+        {
+            for (auto& instance : children)
+            {
+                instance->presentation_feedback(output);
+            }
+        }
+
+        void compute_visibility(wf::output_t *output, wf::region_t& visible) override
+        {
+            for (auto& instance : children)
+            {
+                const int BIG_NUMBER    = 1e5;
+                wf::region_t big_region =
+                    wf::geometry_t{-BIG_NUMBER, -BIG_NUMBER, 2 * BIG_NUMBER, 2 * BIG_NUMBER};
+                instance->compute_visibility(output, big_region);
+            }
+        }
     };
-
-    effect_hook_t render_overlay = [=] ()
-    {
-        auto fb = output->render->get_target_framebuffer();
-        fb.geometry = output->get_layout_geometry();
-
-        // FIXME: this is not accurate, but it kinda works ..
-        // It should be fixed once the dragged view is an actual node, then the
-        // output will be responsible for sending it frame events.
-        timespec repaint_ended;
-        clockid_t presentation_clock =
-            wlr_backend_get_presentation_clock(wf::get_core().backend);
-        clock_gettime(presentation_clock, &repaint_ended);
-
-        wf::region_t damage;
-        for (auto& view : views)
-        {
-            // Convert damage from output-local coordinates (last_bbox) to
-            // output-layout coords.
-            damage |= view.last_bbox + wf::origin(fb.geometry);
-        }
-
-        scene::render_pass_params_t params;
-        params.instances = &instances;
-        params.target    = fb;
-        params.damage    = damage;
-        scene::run_render_pass(params, 0);
-    };
-
-    void regen_instances()
-    {
-        instances.clear();
-        wf::region_t visible;
-
-        for (auto& view : views)
-        {
-            auto node = view.view->get_transformed_node();
-            node->gen_render_instances(instances, [] (auto) {}, output);
-            visible |= node->get_bounding_box();
-        }
-
-        for (auto& ch : instances)
-        {
-            ch->compute_visibility(output, visible);
-        }
-    }
 };
 
 struct drag_options_t
@@ -493,12 +483,8 @@ class core_drag_t : public signal_provider_t
         }
 
         // Setup overlay hooks
-        for (auto& output : wf::get_core().output_layout->get_outputs())
-        {
-            output->store_data(
-                std::make_unique<output_data_t>(output, all_views));
-        }
-
+        render_node = std::make_shared<dragged_view_node_t>(all_views);
+        wf::scene::add_front(wf::get_core().scene(), render_node);
         wf::get_core().set_cursor("grabbing");
 
         // Set up snap-off
@@ -512,6 +498,8 @@ class core_drag_t : public signal_provider_t
             grab_origin = grab_position;
             view_held_in_place = true;
         }
+
+        wf::dump_scene();
     }
 
     void start_drag(wayfire_view view, wf::point_t grab_position,
@@ -586,11 +574,8 @@ class core_drag_t : public signal_provider_t
         data.join_views     = params.join_views;
 
         // Remove overlay hooks and damage outputs BEFORE popping the transformer
-        for (auto& output : wf::get_core().output_layout->get_outputs())
-        {
-            output->get_data<output_data_t>()->apply_damage();
-            output->erase_data<output_data_t>();
-        }
+        wf::scene::remove_child(render_node);
+        render_node = nullptr;
 
         for (auto& v : all_views)
         {
@@ -658,6 +643,8 @@ class core_drag_t : public signal_provider_t
 
     // View is held in place, waiting for snap-off
     bool view_held_in_place = false;
+
+    std::shared_ptr<dragged_view_node_t> render_node;
 
     void update_current_output(wf::point_t grab)
     {
