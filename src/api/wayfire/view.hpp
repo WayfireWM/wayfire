@@ -33,6 +33,10 @@ namespace scene
 class view_node_t;
 }
 
+// A signal emitted when the view is destroyed and its memory will be freed.
+struct view_destruct_signal
+{};
+
 /* abstraction for desktop-apis, no real need for plugins
  * This is a base class to all "drawables" - desktop views, subsurfaces, popups */
 enum view_role_t
@@ -523,6 +527,7 @@ class view_node_t : public scene::floating_inner_node_t,
     view_node_t();
     wayfire_view view;
     std::unique_ptr<keyboard_interaction_t> kb_interaction;
+    wf::signal::connection_t<view_destruct_signal> on_view_destroy;
 };
 }
 }

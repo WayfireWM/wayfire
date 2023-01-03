@@ -1,3 +1,4 @@
+#include "view/view-impl.hpp"
 #include "wayfire/signal-definitions.hpp"
 #include "wayfire/signal-provider.hpp"
 #include <wayfire/view.hpp>

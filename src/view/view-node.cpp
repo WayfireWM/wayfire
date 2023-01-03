@@ -21,6 +21,13 @@ wf::scene::view_node_t::view_node_t(wayfire_view _view) :
     floating_inner_node_t(false), view(_view)
 {
     this->kb_interaction = std::make_unique<view_keyboard_interaction_t>(view);
+    on_view_destroy = [=] (view_destruct_signal *ev)
+    {
+        this->view = nullptr;
+        this->kb_interaction = std::make_unique<keyboard_interaction_t>();
+    };
+
+    view->connect(&on_view_destroy);
 }
 
 wf::scene::view_node_t::view_node_t() : floating_inner_node_t(false)
@@ -40,17 +47,32 @@ wf::keyboard_interaction_t& wf::scene::view_node_t::keyboard_interaction()
 
 wf::pointf_t wf::scene::view_node_t::to_local(const wf::pointf_t& point)
 {
+    if (!view)
+    {
+        return point;
+    }
+
     return point - wf::pointf_t(wf::origin(view->get_output_geometry()));
 }
 
 wf::pointf_t wf::scene::view_node_t::to_global(const wf::pointf_t& point)
 {
+    if (!view)
+    {
+        return point;
+    }
+
     return point + wf::pointf_t(wf::origin(view->get_output_geometry()));
 }
 
 std::optional<wf::scene::input_node_t> wf::scene::view_node_t::find_node_at(
     const wf::pointf_t& at)
 {
+    if (!view)
+    {
+        return {};
+    }
+
     auto& input_manager = wf::get_core_impl().input;
     if (input_manager->exclusive_client && (view->get_client() != input_manager->exclusive_client))
     {
@@ -85,6 +107,11 @@ static constexpr double MIN_VISIBILITY_PC = 0.1;
 wf::keyboard_focus_node_t wf::scene::view_node_t::keyboard_refocus(
     wf::output_t *output)
 {
+    if (!view)
+    {
+        return wf::keyboard_focus_node_t{};
+    }
+
     if (!this->view->is_mapped() ||
         !this->view->get_keyboard_focus_surface() ||
         this->view->minimized ||
@@ -189,6 +216,11 @@ class view_render_instance_t : public render_instance_t
 
         auto push_damage_child = [=] (wf::region_t child_damage)
         {
+            if (!view)
+            {
+                return;
+            }
+
             child_damage += wf::origin(view->get_output_geometry());
             push_damage(child_damage);
         };
@@ -213,6 +245,11 @@ class view_render_instance_t : public render_instance_t
     void schedule_instructions(std::vector<render_instruction_t>& instructions,
         const wf::render_target_t& target, wf::region_t& damage) override
     {
+        if (!view)
+        {
+            return;
+        }
+
         wf::render_target_t our_target = target;
         wf::point_t offset = {0, 0};
 
@@ -286,6 +323,11 @@ class view_render_instance_t : public render_instance_t
 
     direct_scanout try_scanout(wf::output_t *output) override
     {
+        if (!view)
+        {
+            return direct_scanout::SKIP;
+        }
+
         auto og = output->get_relative_geometry();
         if (!(this->view->get_bounding_box() & og))
         {
@@ -308,7 +350,7 @@ class view_render_instance_t : public render_instance_t
 
     void compute_visibility(wf::output_t *output, wf::region_t& visible) override
     {
-        if (!view->is_mapped())
+        if (!view || !view->is_mapped())
         {
             return;
         }
@@ -320,6 +362,11 @@ class view_render_instance_t : public render_instance_t
 void view_node_t::gen_render_instances(std::vector<render_instance_uptr> & instances,
     damage_callback push_damage, wf::output_t *shown_on)
 {
+    if (!view)
+    {
+        return;
+    }
+
     if ((this->view->role == VIEW_ROLE_DESKTOP_ENVIRONMENT) &&
         this->view->sticky)
     {
@@ -338,6 +385,11 @@ void view_node_t::gen_render_instances(std::vector<render_instance_uptr> & insta
 
 std::optional<wf::texture_t> view_node_t::to_texture() const
 {
+    if (!view)
+    {
+        return {};
+    }
+
     if (view->is_mapped() &&
         !view->has_transformer() &&
         view->get_wlr_surface() &&
@@ -353,6 +405,11 @@ std::optional<wf::texture_t> view_node_t::to_texture() const
 
 wf::geometry_t wf::scene::view_node_t::get_bounding_box()
 {
+    if (!view)
+    {
+        return {0, 0, 0, 0};
+    }
+
     if (!view->is_mapped())
     {
         return view->priv->offscreen_buffer.geometry;
@@ -363,7 +420,7 @@ wf::geometry_t wf::scene::view_node_t::get_bounding_box()
 
 wf::region_t wf::scene::view_node_t::get_opaque_region() const
 {
-    if (view->is_mapped() && view->get_wlr_surface())
+    if (view && view->is_mapped() && view->get_wlr_surface())
     {
         auto surf = view->get_wlr_surface();
 
