@@ -1,3 +1,5 @@
+#include "wayfire/plugins/common/input-grab.hpp"
+#include "wayfire/scene-input.hpp"
 #include <wayfire/plugin.hpp>
 #include <wayfire/output.hpp>
 #include <wayfire/core.hpp>
@@ -19,7 +21,8 @@
 #include <wayfire/plugins/common/move-drag-interface.hpp>
 #include <wayfire/plugins/grid.hpp>
 
-class wayfire_move : public wf::plugin_interface_t
+class wayfire_move : public wf::plugin_interface_t,
+    public wf::pointer_interaction_t, public wf::touch_interaction_t
 {
     wf::button_callback activate_binding;
 
@@ -108,12 +111,15 @@ class wayfire_move : public wf::plugin_interface_t
         deactivate();
     };
 
+    std::unique_ptr<wf::input_grab_t> input_grab;
+
   public:
     void init() override
     {
         grab_interface->name = "move";
         grab_interface->capabilities =
             wf::CAPABILITY_GRAB_INPUT | wf::CAPABILITY_MANAGE_DESKTOP;
+        input_grab = std::make_unique<wf::input_grab_t>("move", output, nullptr, this, this);
 
         activate_binding = [=] (auto)
         {
@@ -123,7 +129,7 @@ class wayfire_move : public wf::plugin_interface_t
 
             if (view && (view->role != wf::VIEW_ROLE_DESKTOP_ENVIRONMENT))
             {
-                return initiate(view);
+                initiate(view);
             }
 
             return false;
@@ -132,46 +138,8 @@ class wayfire_move : public wf::plugin_interface_t
         output->add_button(activate_button, &activate_binding);
 
         using namespace std::placeholders;
-        grab_interface->callbacks.pointer.button =
-            [=] (uint32_t b, uint32_t state)
-        {
-            if (state != WLR_BUTTON_RELEASED)
-            {
-                return;
-            }
 
-            uint32_t target_button = was_client_request ? BTN_LEFT :
-                (wf::buttonbinding_t(activate_button)).get_button();
-
-            if (target_button != b)
-            {
-                return;
-            }
-
-            drag_helper->handle_input_released();
-            return;
-        };
-
-        grab_interface->callbacks.pointer.motion = [=] (int x, int y)
-        {
-            handle_input_motion();
-        };
-
-        grab_interface->callbacks.touch.motion =
-            [=] (int32_t id, int32_t sx, int32_t sy)
-        {
-            handle_input_motion();
-        };
-
-        grab_interface->callbacks.touch.up = [=] (int32_t id)
-        {
-            if (wf::get_core().get_touch_state().fingers.empty())
-            {
-                input_pressed(WLR_BUTTON_RELEASED);
-            }
-        };
-
-        grab_interface->callbacks.cancel = [=] ()
+        grab_interface->cancel = [=] ()
         {
             input_pressed(WLR_BUTTON_RELEASED);
         };
@@ -181,6 +149,42 @@ class wayfire_move : public wf::plugin_interface_t
         drag_helper->connect_signal("focus-output", &on_drag_output_focus);
         drag_helper->connect_signal("snap-off", &on_drag_snap_off);
         drag_helper->connect_signal("done", &on_drag_done);
+    }
+
+    void handle_pointer_button(const wlr_pointer_button_event& event) override
+    {
+        if (event.state != WLR_BUTTON_RELEASED)
+        {
+            return;
+        }
+
+        uint32_t target_button =
+            was_client_request ? BTN_LEFT : (wf::buttonbinding_t(activate_button)).get_button();
+        if (target_button != event.button)
+        {
+            return;
+        }
+
+        drag_helper->handle_input_released();
+        return;
+    }
+
+    void handle_pointer_motion(wf::pointf_t pointer_position, uint32_t time_ms) override
+    {
+        handle_input_motion();
+    }
+
+    void handle_touch_up(uint32_t time_ms, int finger_id, wf::pointf_t lift_off_position) override
+    {
+        if (wf::get_core().get_touch_state().fingers.empty())
+        {
+            input_pressed(WLR_BUTTON_RELEASED);
+        }
+    }
+
+    void handle_touch_motion(uint32_t time_ms, int finger_id, wf::pointf_t position) override
+    {
+        handle_input_motion();
     }
 
     wf::signal_connection_t move_request = [=] (auto data)
@@ -257,17 +261,11 @@ class wayfire_move : public wf::plugin_interface_t
             return false;
         }
 
-        if (!grab_interface->grab())
-        {
-            output->deactivate_plugin(grab_interface);
-
-            return false;
-        }
+        this->input_grab->grab_input(wf::scene::layer::OVERLAY, true);
 
         auto touch = wf::get_core().get_touch_state();
         is_using_touch = !touch.fingers.empty();
-
-        slot.slot_id = wf::grid::SLOT_NONE;
+        slot.slot_id   = wf::grid::SLOT_NONE;
         return true;
     }
 
@@ -323,7 +321,7 @@ class wayfire_move : public wf::plugin_interface_t
 
     void deactivate()
     {
-        grab_interface->ungrab();
+        input_grab->ungrab_input();
         output->deactivate_plugin(grab_interface);
     }
 
@@ -556,7 +554,7 @@ class wayfire_move : public wf::plugin_interface_t
 
     void fini() override
     {
-        if (grab_interface->is_grabbed())
+        if (input_grab->is_grabbed())
         {
             input_pressed(WLR_BUTTON_RELEASED);
         }

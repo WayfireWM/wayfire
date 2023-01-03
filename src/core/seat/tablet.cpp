@@ -11,15 +11,17 @@
 #include "wayfire/debug.hpp"
 #include "wayfire/scene-input.hpp"
 #include "wayfire/view.hpp"
+#include <algorithm>
+#include <memory>
 #include <wayfire/signal-definitions.hpp>
 #include <wayfire/output-layout.hpp>
 #include <linux/input-event-codes.h>
 
 /* --------------------- Tablet tool implementation ------------------------- */
 wf::tablet_tool_t::tablet_tool_t(wlr_tablet_tool *tool,
-    wlr_tablet_v2_tablet *tablet)
+    wlr_tablet_v2_tablet *tablet_v2)
 {
-    this->tablet_v2 = tablet;
+    this->tablet_v2 = tablet_v2;
 
     /* Initialize tool_v2 */
     this->tool = tool;
@@ -33,7 +35,10 @@ wf::tablet_tool_t::tablet_tool_t(wlr_tablet_tool *tool,
     this->on_destroy.set_callback([=] (void*)
     {
         this->tool->data = nullptr;
-        delete this;
+        tablet->tools_list.erase(
+            std::remove_if(tablet->tools_list.begin(), tablet->tools_list.end(),
+                [this] (const auto& p) { return p.get() == this; }),
+            tablet->tools_list.end());
     });
     this->on_destroy.connect(&tool->events.destroy);
 
@@ -49,7 +54,7 @@ wf::tablet_tool_t::tablet_tool_t(wlr_tablet_tool *tool,
 
         if (grabbed_node && !is_grabbed_node_alive(grabbed_node))
         {
-            this->grabbed_node = nullptr;
+            reset_grab();
         }
 
         update_tool_position(false);
@@ -117,13 +122,6 @@ void wf::tablet_tool_t::update_tool_position(bool real_update)
     auto& core = wf::get_core_impl();
     auto gc    = core.get_cursor_position();
 
-    /* XXX: tablet input works only with programs, Wayfire itself doesn't do
-     * anything useful with it */
-    if (core.input->input_grabbed())
-    {
-        return;
-    }
-
     /* Figure out what surface is under the tool */
     wf::pointf_t local; // local to the surface
     wf::scene::node_ptr focus_node = nullptr;
@@ -182,6 +180,11 @@ bool wf::tablet_tool_t::set_focus(wf::scene::node_ptr surface)
     }
 
     return focus_changed;
+}
+
+void wf::tablet_tool_t::reset_grab()
+{
+    this->grabbed_node = nullptr;
 }
 
 void wf::tablet_tool_t::passthrough_axis(wlr_tablet_tool_axis_event *ev)
@@ -300,9 +303,11 @@ wf::tablet_tool_t*wf::tablet_t::ensure_tool(wlr_tablet_tool *tool)
 {
     if (tool->data == NULL)
     {
-        auto wtool = new wf::tablet_tool_t(tool, tablet_v2);
+        auto wtool = std::make_unique<wf::tablet_tool_t>(tool, tablet_v2);
         wtool->tablet = this;
-        return wtool;
+        auto ptr = wtool.get();
+        this->tools_list.push_back(std::move(wtool));
+        return ptr;
     }
 
     return (wf::tablet_tool_t*)tool->data;
@@ -332,19 +337,6 @@ void wf::tablet_t::handle_tip(wlr_tablet_tool_tip_event *ev,
             wf::buttonbinding_t{seat->get_modifiers(), BTN_LEFT});
     }
 
-    if (input->input_grabbed())
-    {
-        /* Simulate buttons, in case some application started moving */
-        if (input->active_grab->callbacks.pointer.button)
-        {
-            uint32_t state = ev->state == WLR_TABLET_TOOL_TIP_DOWN ?
-                WLR_BUTTON_PRESSED : WLR_BUTTON_RELEASED;
-            input->active_grab->callbacks.pointer.button(BTN_LEFT, state);
-        }
-
-        return;
-    }
-
     auto tool = ensure_tool(ev->tool);
     if (!handled_in_binding)
     {
@@ -355,8 +347,6 @@ void wf::tablet_t::handle_tip(wlr_tablet_tool_tip_event *ev,
 void wf::tablet_t::handle_axis(wlr_tablet_tool_axis_event *ev,
     input_event_processing_mode_t mode)
 {
-    auto& input = wf::get_core_impl().input;
-
     /* Update cursor position */
     if (should_use_absolute_positioning(ev->tool))
     {
@@ -366,18 +356,6 @@ void wf::tablet_t::handle_axis(wlr_tablet_tool_axis_event *ev,
     } else
     {
         wlr_cursor_move(cursor, &ev->tablet->base, ev->dx, ev->dy);
-    }
-
-    if (input->input_grabbed())
-    {
-        /* Simulate movement */
-        if (input->active_grab->callbacks.pointer.motion)
-        {
-            auto gc = wf::get_core().get_cursor_position();
-            input->active_grab->callbacks.pointer.motion(gc.x, gc.y);
-        }
-
-        return;
     }
 
     /* Update focus */

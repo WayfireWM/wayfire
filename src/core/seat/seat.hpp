@@ -3,6 +3,7 @@
 
 #include <wayfire/signal-definitions.hpp>
 #include <wayfire/nonstd/wlroots-full.hpp>
+#include <set>
 
 #include "../../view/surface-impl.hpp"
 #include "wayfire/output.hpp"
@@ -55,6 +56,9 @@ class seat_t
 
     void set_keyboard_focus(wf::scene::node_ptr keyboard_focus);
     wf::scene::node_ptr keyboard_focus;
+    // Keys sent to the current keyboard focus
+    std::multiset<uint32_t> pressed_keys;
+    void transfer_grab(wf::scene::node_ptr new_focus, bool retain_pressed_state);
 
     /**
      * Set the currently active keyboard on the seat.
@@ -93,6 +97,8 @@ class seat_t
 
     /** Send updated capabilities to clients */
     void update_capabilities();
+
+    void force_release_keys();
 };
 }
 

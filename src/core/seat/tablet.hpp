@@ -29,6 +29,8 @@ struct tablet_tool_t
     /** Set the proximity surface */
     bool set_focus(scene::node_ptr node);
 
+    void reset_grab();
+
     /**
      * Send the axis updates directly.
      * Only the position is handled separately.
@@ -91,6 +93,7 @@ struct tablet_t : public input_device_impl_t
         input_event_processing_mode_t mode);
 
     wlr_tablet_v2_tablet *tablet_v2;
+    std::vector<std::unique_ptr<tablet_tool_t>> tools_list;
 
   private:
     wlr_tablet *handle;

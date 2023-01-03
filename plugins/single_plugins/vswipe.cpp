@@ -1,3 +1,4 @@
+#include <memory>
 #include <wayfire/nonstd/wlroots-full.hpp>
 #include <wayfire/plugin.hpp>
 #include <wayfire/output.hpp>
@@ -18,6 +19,7 @@
 #include <wayfire/plugins/common/workspace-wall.hpp>
 #include <wayfire/plugins/common/geometry-animation.hpp>
 #include "vswipe-processing.hpp"
+#include "wayfire/plugins/common/input-grab.hpp"
 
 using namespace wf::animation;
 class vswipe_smoothing_t : public duration_t
@@ -90,13 +92,15 @@ class vswipe : public wf::plugin_interface_t
     wf::option_wrapper_t<double> delta_threshold{"vswipe/delta_threshold"};
     wf::option_wrapper_t<double> speed_factor{"vswipe/speed_factor"};
     wf::option_wrapper_t<double> speed_cap{"vswipe/speed_cap"};
+    std::unique_ptr<wf::input_grab_t> input_grab;
 
   public:
     void init() override
     {
         grab_interface->name = "vswipe";
-        grab_interface->capabilities     = wf::CAPABILITY_MANAGE_COMPOSITOR;
-        grab_interface->callbacks.cancel = [=] () { finalize_and_exit(); };
+        grab_interface->capabilities = wf::CAPABILITY_MANAGE_COMPOSITOR;
+        grab_interface->cancel = [=] () { finalize_and_exit(); };
+        input_grab = std::make_unique<wf::input_grab_t>("vswipe", output);
 
         wf::get_core().connect_signal("pointer_swipe_begin", &on_swipe_begin);
         wf::get_core().connect_signal("pointer_swipe_update", &on_swipe_update);
@@ -198,7 +202,7 @@ class vswipe : public wf::plugin_interface_t
             return;
         }
 
-        grab_interface->grab();
+        input_grab->grab_input(wf::scene::layer::OVERLAY);
         wf::get_core().focus_output(output);
 
         auto ws = output->workspace->get_current_workspace();
@@ -363,7 +367,7 @@ class vswipe : public wf::plugin_interface_t
     void finalize_and_exit()
     {
         state.swiping = false;
-        grab_interface->ungrab();
+        input_grab->ungrab_input();
         output->deactivate_plugin(grab_interface);
         wall->stop_output_renderer(true);
         output->render->rem_effect(&post_frame);

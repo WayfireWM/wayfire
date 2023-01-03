@@ -1,3 +1,5 @@
+#include "wayfire/plugins/common/input-grab.hpp"
+#include "wayfire/scene-input.hpp"
 #include <cmath>
 #include <wayfire/plugin.hpp>
 #include <wayfire/output.hpp>
@@ -9,7 +11,8 @@
 #include <wayfire/plugins/wobbly/wobbly-signal.hpp>
 #include <wayfire/nonstd/wlroots-full.hpp>
 
-class wayfire_resize : public wf::plugin_interface_t
+class wayfire_resize : public wf::plugin_interface_t, public wf::pointer_interaction_t,
+    public wf::touch_interaction_t
 {
     wf::signal_connection_t resize_request, view_destroyed;
     wf::button_callback activate_binding;
@@ -22,6 +25,7 @@ class wayfire_resize : public wf::plugin_interface_t
 
     uint32_t edges;
     wf::option_wrapper_t<wf::buttonbinding_t> button{"resize/activate"};
+    std::unique_ptr<wf::input_grab_t> input_grab;
 
   public:
     void init() override
@@ -29,6 +33,7 @@ class wayfire_resize : public wf::plugin_interface_t
         grab_interface->name = "resize";
         grab_interface->capabilities =
             wf::CAPABILITY_GRAB_INPUT | wf::CAPABILITY_MANAGE_DESKTOP;
+        input_grab = std::make_unique<wf::input_grab_t>("resize", output, nullptr, this, this);
 
         activate_binding = [=] (auto)
         {
@@ -37,52 +42,14 @@ class wayfire_resize : public wf::plugin_interface_t
             {
                 is_using_touch     = false;
                 was_client_request = false;
-
-                return initiate(view);
+                initiate(view);
             }
 
             return false;
         };
 
         output->add_button(button, &activate_binding);
-        grab_interface->callbacks.pointer.button = [=] (uint32_t b, uint32_t state)
-        {
-            if ((state == WLR_BUTTON_RELEASED) && was_client_request &&
-                (b == BTN_LEFT))
-            {
-                return input_pressed(state);
-            }
-
-            if (b != wf::buttonbinding_t(button).get_button())
-            {
-                return;
-            }
-
-            input_pressed(state);
-        };
-
-        grab_interface->callbacks.pointer.motion = [=] (int, int)
-        {
-            input_motion();
-        };
-
-        grab_interface->callbacks.touch.up = [=] (int32_t id)
-        {
-            if (id == 0)
-            {
-                input_pressed(WLR_BUTTON_RELEASED);
-            }
-        };
-
-        grab_interface->callbacks.touch.motion = [=] (int32_t id, int32_t, int32_t)
-        {
-            if (id == 0)
-            {
-                input_motion();
-            }
-        };
-
-        grab_interface->callbacks.cancel = [=] ()
+        grab_interface->cancel = [=] ()
         {
             input_pressed(WLR_BUTTON_RELEASED);
         };
@@ -102,6 +69,42 @@ class wayfire_resize : public wf::plugin_interface_t
         });
 
         output->connect_signal("view-disappeared", &view_destroyed);
+    }
+
+    void handle_pointer_button(const wlr_pointer_button_event& event) override
+    {
+        if ((event.state == WLR_BUTTON_RELEASED) && was_client_request && (event.button == BTN_LEFT))
+        {
+            return input_pressed(event.state);
+        }
+
+        if (event.button != wf::buttonbinding_t(button).get_button())
+        {
+            return;
+        }
+
+        input_pressed(event.state);
+    }
+
+    void handle_pointer_motion(wf::pointf_t pointer_position, uint32_t time_ms) override
+    {
+        input_motion();
+    }
+
+    void handle_touch_up(uint32_t time_ms, int finger_id, wf::pointf_t lift_off_position) override
+    {
+        if (finger_id == 0)
+        {
+            input_pressed(WLR_BUTTON_RELEASED);
+        }
+    }
+
+    void handle_touch_motion(uint32_t time_ms, int finger_id, wf::pointf_t position) override
+    {
+        if (finger_id == 0)
+        {
+            input_motion();
+        }
     }
 
     void resize_requested(wf::signal_data_t *data)
@@ -204,13 +207,7 @@ class wayfire_resize : public wf::plugin_interface_t
             return false;
         }
 
-        if (!grab_interface->grab())
-        {
-            output->deactivate_plugin(grab_interface);
-
-            return false;
-        }
-
+        input_grab->grab_input(wf::scene::layer::OVERLAY, true);
         grab_start = get_input_coords();
         grabbed_geometry = view->get_wm_geometry();
 
@@ -255,7 +252,7 @@ class wayfire_resize : public wf::plugin_interface_t
             return;
         }
 
-        grab_interface->ungrab();
+        input_grab->ungrab_input();
         output->deactivate_plugin(grab_interface);
 
         if (view)
@@ -308,7 +305,7 @@ class wayfire_resize : public wf::plugin_interface_t
 
     void fini() override
     {
-        if (grab_interface->is_grabbed())
+        if (input_grab->is_grabbed())
         {
             input_pressed(WLR_BUTTON_RELEASED);
         }

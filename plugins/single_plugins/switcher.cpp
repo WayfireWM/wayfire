@@ -1,4 +1,6 @@
 #include "wayfire/object.hpp"
+#include "wayfire/plugins/common/input-grab.hpp"
+#include "wayfire/scene-input.hpp"
 #include "wayfire/scene-operations.hpp"
 #include "wayfire/scene-render.hpp"
 #include "wayfire/scene.hpp"
@@ -92,7 +94,7 @@ struct SwitcherView
     }
 };
 
-class WayfireSwitcher : public wf::plugin_interface_t
+class WayfireSwitcher : public wf::plugin_interface_t, public wf::keyboard_interaction_t
 {
     wf::option_wrapper_t<double> view_thumbnail_scale{
         "switcher/view_thumbnail_scale"};
@@ -101,6 +103,8 @@ class WayfireSwitcher : public wf::plugin_interface_t
     duration_t duration{speed};
     duration_t background_dim_duration{speed};
     timed_transition_t background_dim{background_dim_duration};
+
+    std::unique_ptr<wf::input_grab_t> input_grab;
 
     /* If a view comes before another in this list, it is on top of it */
     std::vector<SwitcherView> views;
@@ -194,25 +198,29 @@ class WayfireSwitcher : public wf::plugin_interface_t
             &prev_view_binding);
         output->connect_signal("view-detached", &view_removed);
 
-        grab_interface->callbacks.keyboard.mod = [=] (uint32_t mod, uint32_t state)
-        {
-            if ((state == WLR_KEY_RELEASED) && (mod & activating_modifiers))
-            {
-                handle_done();
-            }
-        };
+        input_grab = std::make_unique<wf::input_grab_t>("switcher", output, this, nullptr, nullptr);
+        grab_interface->cancel = [=] () {deinit_switcher();};
+    }
 
-        grab_interface->callbacks.cancel = [=] () {deinit_switcher();};
+    void handle_keyboard_key(wlr_keyboard_key_event event) override
+    {
+        auto mod = wf::get_core().modifier_from_keycode(event.keycode);
+        if ((event.state == WLR_KEY_RELEASED) && (mod & activating_modifiers))
+        {
+            handle_done();
+        }
     }
 
     wf::key_callback next_view_binding = [=] (auto)
     {
-        return handle_switch_request(-1);
+        handle_switch_request(-1);
+        return false;
     };
 
     wf::key_callback prev_view_binding = [=] (auto)
     {
-        return handle_switch_request(1);
+        handle_switch_request(1);
+        return false;
     };
 
     wf::effect_hook_t pre_hook = [=] ()
@@ -286,10 +294,7 @@ class WayfireSwitcher : public wf::plugin_interface_t
         if (!active)
         {
             active = true;
-
-            // grabs shouldn't fail if we could successfully activate plugin
-            auto grab = grab_interface->grab();
-            assert(grab);
+            input_grab->grab_input(wf::scene::layer::OVERLAY, true);
 
             focus_next(dir);
             arrange();
@@ -307,7 +312,7 @@ class WayfireSwitcher : public wf::plugin_interface_t
     {
         cleanup_expired();
         dearrange();
-        grab_interface->ungrab();
+        input_grab->ungrab_input();
     }
 
     /* Sets up basic hooks needed while switcher works and/or displays animations.

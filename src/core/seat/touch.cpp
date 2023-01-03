@@ -9,6 +9,7 @@
 #include "../core-impl.hpp"
 #include "wayfire/core.hpp"
 #include "wayfire/output.hpp"
+#include "wayfire/util.hpp"
 #include "wayfire/workspace-manager.hpp"
 #include "wayfire/output-layout.hpp"
 
@@ -122,21 +123,6 @@ wf::scene::node_ptr wf::touch_interface_t::get_focus(int finger_id) const
     return (it == focus.end() ? nullptr : it->second);
 }
 
-void wf::touch_interface_t::set_grab(wf::plugin_grab_interface_t *grab)
-{
-    if (grab)
-    {
-        this->grab = grab;
-        for (auto& f : this->get_state().fingers)
-        {
-            set_touch_focus(nullptr, f.first, get_current_time(), {0, 0});
-        }
-    } else
-    {
-        this->grab = nullptr;
-    }
-}
-
 void wf::touch_interface_t::add_touch_gesture(
     nonstd::observer_ptr<touch::gesture_t> gesture)
 {
@@ -168,6 +154,22 @@ void wf::touch_interface_t::set_touch_focus(wf::scene::node_ptr node,
     {
         auto local = get_node_local_coords(node.get(), point);
         node->touch_interaction().handle_touch_down(time, id, local);
+    }
+}
+
+void wf::touch_interface_t::transfer_grab(scene::node_ptr grab_node, bool retain_pressed_state)
+{
+    auto new_focus = retain_pressed_state ? grab_node : nullptr;
+    for (auto& [id, focused_node] : this->focus)
+    {
+        if (focused_node && (focused_node != new_focus))
+        {
+            const auto lift_off_position = finger_state.fingers[id].current;
+            focused_node->touch_interaction().handle_touch_up(get_current_time(), id,
+                {lift_off_position.x, lift_off_position.y});
+        }
+
+        focused_node = new_focus;
     }
 }
 
@@ -210,17 +212,10 @@ void wf::touch_interface_t::handle_touch_down(int32_t id, uint32_t time,
     };
     finger_state.update(gesture_event);
 
-    if (this->grab || (mode != input_event_processing_mode_t::FULL))
+    if (mode != input_event_processing_mode_t::FULL)
     {
         update_gestures(gesture_event);
         update_cursor_state();
-        if (grab->callbacks.touch.down)
-        {
-            auto wo = wf::get_core().get_active_output();
-            auto og = wo->get_layout_geometry();
-            grab->callbacks.touch.down(id, point.x - og.x, point.y - og.y);
-        }
-
         return;
     }
 
@@ -253,18 +248,6 @@ void wf::touch_interface_t::handle_touch_motion(int32_t id, uint32_t time,
         finger_state.update(gesture_event);
     }
 
-    if (this->grab)
-    {
-        auto wo = wf::get_core().output_layout->get_output_at(point.x, point.y);
-        auto og = wo->get_layout_geometry();
-        if (grab->callbacks.touch.motion && is_real_event)
-        {
-            grab->callbacks.touch.motion(id, point.x - og.x, point.y - og.y);
-        }
-
-        return;
-    }
-
     if (focus[id])
     {
         auto local = get_node_local_coords(focus[id].get(), point);
@@ -291,19 +274,7 @@ void wf::touch_interface_t::handle_touch_up(int32_t id, uint32_t time,
     finger_state.update(gesture_event);
 
     update_cursor_state();
-
-    if (this->grab)
-    {
-        if (grab->callbacks.touch.up)
-        {
-            grab->callbacks.touch.up(id);
-        }
-
-        return;
-    }
-
-    set_touch_focus(nullptr, id, time,
-        {lift_off_position.x, lift_off_position.y});
+    set_touch_focus(nullptr, id, time, {lift_off_position.x, lift_off_position.y});
 }
 
 void wf::touch_interface_t::update_cursor_state()

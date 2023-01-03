@@ -42,69 +42,16 @@ enum plugin_capabilities_t
  */
 struct plugin_grab_interface_t
 {
-  private:
-    bool grabbed = false;
-
-  public:
-    /** The name of the plugin. Not important */
+    // The name of the plugin. Used mostly for debugging purposes.
     std::string name;
-    /** The plugin capabilities. A bitmask of the values specified above */
+    // The plugin capabilities. A bitmask of the values specified above
     uint32_t capabilities;
-    /** The output the grab interface is on */
-    wf::output_t*const output;
-
-    plugin_grab_interface_t(wf::output_t *_output);
 
     /**
-     * Grab the input on the output. Requires CAPABILITY_GRAB_INPUT.
-     * On successful grab, core will reset keyboard/pointer/touch focus.
-     *
-     * @return True if input was successfully grabbed.
+     * Each plugin might be deactivated forcefully, for example when the desktop is locked. Plugins should
+     * honor this signal and exit their grabs/renderers immediately.
      */
-    bool grab();
-    /** @return If the grab interface is grabbed */
-    bool is_grabbed();
-    /** Ungrab input, if it is grabbed. */
-    void ungrab();
-
-    /**
-     * When grabbed, core will redirect all input events to the grabbing plugin.
-     * The grabbing plugin can subscribe to different input events by setting
-     * the callbacks below.
-     */
-    struct
-    {
-        struct
-        {
-            std::function<void(wlr_pointer_axis_event*)> axis;
-            std::function<void(uint32_t, uint32_t)> button; // button, state
-            std::function<void(int32_t, int32_t)> motion; // x, y
-            std::function<void(wlr_pointer_motion_event*)> relative_motion;
-        } pointer;
-
-        struct
-        {
-            std::function<void(uint32_t, uint32_t)> key; // button, state
-            std::function<void(uint32_t, uint32_t)> mod; // modifier, state
-        } keyboard;
-
-        struct
-        {
-            std::function<void(int32_t, int32_t, int32_t)> down; // id, x, y
-            std::function<void(int32_t)> up; // id
-            std::function<void(int32_t, int32_t, int32_t)> motion; // id, x, y
-        } touch;
-
-        /**
-         * Each plugin might be deactivated forcefully, for example when the
-         * desktop is locked. Plugins MUST honor this signal and exit their
-         * grabs/renderers immediately.
-         *
-         * Note that cancel() is emitted even when the plugin is just activated
-         * without grabbing input.
-         */
-        std::function<void()> cancel;
-    } callbacks;
+    std::function<void()> cancel;
 };
 
 using plugin_grab_interface_uptr = std::unique_ptr<plugin_grab_interface_t>;

@@ -1,5 +1,8 @@
+#include "wayfire/plugins/common/input-grab.hpp"
 #include "wayfire/plugins/common/util.hpp"
 #include "wayfire/render-manager.hpp"
+#include "wayfire/scene-input.hpp"
+#include <memory>
 #include <wayfire/plugin.hpp>
 #include <wayfire/output.hpp>
 #include <wayfire/core.hpp>
@@ -15,7 +18,8 @@
 /* TODO: this file should be included in some header maybe(plugin.hpp) */
 #include <linux/input-event-codes.h>
 
-class wayfire_expo : public wf::plugin_interface_t
+class wayfire_expo : public wf::plugin_interface_t, public wf::keyboard_interaction_t,
+    public wf::pointer_interaction_t, public wf::touch_interaction_t
 {
   private:
     wf::point_t convert_workspace_index_to_coords(int index)
@@ -33,17 +37,12 @@ class wayfire_expo : public wf::plugin_interface_t
         if (!state.active)
         {
             return activate();
-        } else
+        } else if (!zoom_animation.running() || state.zoom_in)
         {
-            if (!zoom_animation.running() || state.zoom_in)
-            {
-                deactivate();
-
-                return true;
-            }
+            deactivate();
         }
 
-        return false;
+        return true;
     };
 
     wf::option_wrapper_t<wf::activatorbinding_t> toggle_binding{"expo/toggle"};
@@ -82,6 +81,7 @@ class wayfire_expo : public wf::plugin_interface_t
 
     /* fade animations for each workspace */
     std::vector<std::vector<wf::animation::simple_animation_t>> ws_fade;
+    std::unique_ptr<wf::input_grab_t> input_grab;
 
   public:
     void setup_workspace_bindings_from_config()
@@ -128,79 +128,14 @@ class wayfire_expo : public wf::plugin_interface_t
     {
         grab_interface->name = "expo";
         grab_interface->capabilities = wf::CAPABILITY_MANAGE_COMPOSITOR;
+        input_grab = std::make_unique<wf::input_grab_t>("expo", output, this, this, this);
 
         setup_workspace_bindings_from_config();
         wall = std::make_unique<wf::workspace_wall_t>(this->output);
 
         output->add_activator(toggle_binding, &toggle_cb);
-        grab_interface->callbacks.pointer.button =
-            [=] (uint32_t button, uint32_t state)
-        {
-            if (button != BTN_LEFT)
-            {
-                return;
-            }
 
-            auto gc = output->get_cursor_position();
-            handle_input_press(gc.x, gc.y, state);
-        };
-
-        grab_interface->callbacks.pointer.motion = [=] (int32_t x, int32_t y)
-        {
-            handle_input_move({x, y});
-        };
-
-        grab_interface->callbacks.keyboard.key = [=] (uint32_t key, uint32_t state)
-        {
-            if (state == WLR_KEY_PRESSED)
-            {
-                if (should_handle_key())
-                {
-                    handle_key_pressed(key);
-                }
-            } else
-            {
-                if (key == key_pressed)
-                {
-                    key_repeat.disconnect();
-                    key_pressed = 0;
-                }
-            }
-        };
-
-        grab_interface->callbacks.touch.down =
-            [=] (int32_t id, wl_fixed_t sx, wl_fixed_t sy)
-        {
-            if (id > 0)
-            {
-                return;
-            }
-
-            handle_input_press(sx, sy, WLR_BUTTON_PRESSED);
-        };
-
-        grab_interface->callbacks.touch.up = [=] (int32_t id)
-        {
-            if (id > 0)
-            {
-                return;
-            }
-
-            handle_input_press(0, 0, WLR_BUTTON_RELEASED);
-        };
-
-        grab_interface->callbacks.touch.motion =
-            [=] (int32_t id, int32_t sx, int32_t sy)
-        {
-            if (id > 0) // we handle just the first finger
-            {
-                return;
-            }
-
-            handle_input_move({sx, sy});
-        };
-
-        grab_interface->callbacks.cancel = [=] ()
+        grab_interface->cancel = [=] ()
         {
             finalize_and_exit();
         };
@@ -211,6 +146,70 @@ class wayfire_expo : public wf::plugin_interface_t
 
         resize_ws_fade();
         output->connect_signal("workspace-grid-changed", &on_workspace_grid_changed);
+    }
+
+    void handle_pointer_button(const wlr_pointer_button_event& event) override
+    {
+        if (event.button != BTN_LEFT)
+        {
+            return;
+        }
+
+        auto gc = output->get_cursor_position();
+        handle_input_press(gc.x, gc.y, event.state);
+    }
+
+    void handle_pointer_motion(wf::pointf_t pointer_position, uint32_t time_ms) override
+    {
+        handle_input_move({(int)pointer_position.x, (int)pointer_position.y});
+    }
+
+    void handle_keyboard_key(wlr_keyboard_key_event event) override
+    {
+        if (event.state == WLR_KEY_PRESSED)
+        {
+            if (should_handle_key())
+            {
+                handle_key_pressed(event.keycode);
+            }
+        } else
+        {
+            if (event.keycode == key_pressed)
+            {
+                key_repeat.disconnect();
+                key_pressed = 0;
+            }
+        }
+    }
+
+    void handle_touch_down(uint32_t time_ms, int finger_id, wf::pointf_t position) override
+    {
+        if (finger_id > 0)
+        {
+            return;
+        }
+
+        handle_input_press(position.x, position.y, WLR_BUTTON_PRESSED);
+    }
+
+    void handle_touch_up(uint32_t time_ms, int finger_id, wf::pointf_t lift_off_position) override
+    {
+        if (finger_id > 0)
+        {
+            return;
+        }
+
+        handle_input_press(0, 0, WLR_BUTTON_RELEASED);
+    }
+
+    void handle_touch_motion(uint32_t time_ms, int finger_id, wf::pointf_t position) override
+    {
+        if (finger_id > 0) // we handle just the first finger
+        {
+            return;
+        }
+
+        handle_input_move({(int)position.x, (int)position.y});
     }
 
     bool can_handle_drag()
@@ -280,8 +279,7 @@ class wayfire_expo : public wf::plugin_interface_t
             return false;
         }
 
-        grab_interface->grab();
-
+        input_grab->grab_input(wf::scene::layer::OVERLAY);
         state.active = true;
         state.button_pressed = false;
         start_zoom(true);
@@ -300,7 +298,6 @@ class wayfire_expo : public wf::plugin_interface_t
         }
 
         highlight_active_workspace();
-
         return true;
     }
 
@@ -751,7 +748,7 @@ class wayfire_expo : public wf::plugin_interface_t
         }
 
         output->deactivate_plugin(grab_interface);
-        grab_interface->ungrab();
+        input_grab->ungrab_input();
         wall->stop_output_renderer(true);
         output->render->rem_effect(&post_frame);
         key_repeat.disconnect();

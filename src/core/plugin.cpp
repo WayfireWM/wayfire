@@ -6,59 +6,6 @@
 #include <wayfire/util/log.hpp>
 #include <wayfire/config-backend.hpp>
 
-wf::plugin_grab_interface_t::plugin_grab_interface_t(wf::output_t *wo) :
-    output(wo)
-{}
-
-bool wf::plugin_grab_interface_t::grab()
-{
-    if (!(capabilities & CAPABILITY_GRAB_INPUT))
-    {
-        LOGE("attempt to grab iface ", name, " without input grabbing ability");
-
-        return false;
-    }
-
-    if (grabbed)
-    {
-        return true;
-    }
-
-    if (!output->is_plugin_active(name))
-    {
-        return false;
-    }
-
-    grabbed = true;
-
-    if (output == wf::get_core_impl().get_active_output())
-    {
-        return wf::get_core_impl().input->grab_input(this);
-    } else
-    {
-        return true;
-    }
-}
-
-void wf::plugin_grab_interface_t::ungrab()
-{
-    if (!grabbed)
-    {
-        return;
-    }
-
-    grabbed = false;
-    if (output == wf::get_core_impl().get_active_output())
-    {
-        wf::get_core_impl().input->ungrab_input();
-    }
-}
-
-bool wf::plugin_grab_interface_t::is_grabbed()
-{
-    return grabbed;
-}
-
 void wf::plugin_interface_t::fini()
 {}
 wf::plugin_interface_t::~plugin_interface_t()

@@ -68,6 +68,7 @@ class compositor_core_impl_t : public compositor_core_t
     uint32_t get_keyboard_modifiers() override;
     uint32_t modifier_from_keycode(uint32_t keycode) override;
     void warp_cursor(wf::pointf_t pos) override;
+    void transfer_grab(wf::scene::node_ptr node, bool retain_pressed_state) override;
     void set_cursor(std::string name) override;
     void unhide_cursor() override;
     void hide_cursor() override;

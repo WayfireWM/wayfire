@@ -101,14 +101,18 @@ class input_grab_t
         touch_interaction_t *touch = NULL)
     {
         this->output = output;
-        grab_node    = std::make_shared<scene::grab_node_t>(name, output,
-            keyboard, pointer, touch);
+        grab_node    = std::make_shared<scene::grab_node_t>(name, output, keyboard, pointer, touch);
+    }
+
+    bool is_grabbed() const
+    {
+        return grab_node->parent() != nullptr;
     }
 
     /**
      * Grab input from all layers from background to @layer_below.
      */
-    void grab_input(wf::scene::layer layer_below)
+    void grab_input(wf::scene::layer layer_below, bool retain_pressed_state = false)
     {
         wf::dassert(grab_node->parent() == nullptr, "Trying to grab twice!");
 
@@ -121,8 +125,8 @@ class input_grab_t
         wf::dassert(idx != children.end(), "Could not find node for a layer: " +
             std::to_string((int)layer_below));
         children.insert(idx, grab_node);
-
         root->set_children_list(children);
+        wf::get_core().transfer_grab(grab_node, retain_pressed_state);
         scene::update(root, scene::update_flag::CHILDREN_LIST);
         output->refocus();
     }

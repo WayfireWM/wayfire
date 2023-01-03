@@ -51,15 +51,6 @@ class input_manager_t
     /** Destroy an input device */
     void handle_input_destroyed(wlr_input_device *dev);
 
-    wf::plugin_grab_interface_t *active_grab = nullptr;
-
-    /** Set the currently active grab interface */
-    bool grab_input(wf::plugin_grab_interface_t*);
-    /** Unset the active grab interface */
-    void ungrab_input();
-    /** @return true if the input is grabbed */
-    bool input_grabbed();
-
     wl_client *exclusive_client = NULL;
     /**
      * Set the exclusive client.

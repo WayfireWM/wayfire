@@ -176,68 +176,6 @@ wf::input_manager_t::input_manager_t()
     wf::get_core().output_layout->connect_signal("output-added", &output_added);
 }
 
-bool wf::input_manager_t::grab_input(wf::plugin_grab_interface_t *iface)
-{
-    if (!iface || !iface->is_grabbed())
-    {
-        return false;
-    }
-
-    assert(!active_grab); // cannot have two active input grabs!
-
-    auto& seat = wf::get_core_impl().seat;
-
-    seat->touch->set_grab(iface);
-    active_grab = iface;
-
-    // TODO: move this to the seat via a signal?
-    auto kbd  = wlr_seat_get_keyboard(seat->seat);
-    auto mods = kbd ? kbd->modifiers : wlr_keyboard_modifiers{0, 0, 0, 0};
-    mods.depressed = 0;
-    wlr_seat_keyboard_send_modifiers(seat->seat, &mods);
-
-    seat->set_keyboard_focus(nullptr);
-    seat->lpointer->set_enable_focus(false);
-    wf::get_core().set_cursor("default");
-
-    return true;
-}
-
-void wf::input_manager_t::ungrab_input()
-{
-    active_grab = nullptr;
-    if (wf::get_core().get_active_output())
-    {
-        wf::get_core().get_active_output()->refocus();
-    }
-
-    // We must update cursor focus, however, if we update "too soon", the current
-    // pointer event (button press/release, maybe something else) will be sent to
-    // the client, which shouldn't happen (at the time of the event, there was
-    // still an active input grab)
-
-    // In addition: if the idle_update_cursor was already connected (for ex.
-    // rapidly switching the focused output when all outputs are grabbed),
-    // we need to make sure that we enable focus on the lpointer as often as
-    // we have disabled it.
-    if (idle_update_cursor.is_connected())
-    {
-        wf::get_core_impl().seat->lpointer->set_enable_focus(true);
-    }
-
-    idle_update_cursor.run_once([&] ()
-    {
-        auto& seat = wf::get_core_impl().seat;
-        seat->touch->set_grab(nullptr);
-        seat->lpointer->set_enable_focus(true);
-    });
-}
-
-bool wf::input_manager_t::input_grabbed()
-{
-    return active_grab;
-}
-
 void wf::input_manager_t::set_exclusive_focus(wl_client *client)
 {
     exclusive_client = client;

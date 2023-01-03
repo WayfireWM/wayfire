@@ -22,6 +22,8 @@ class mock_core_t : public wf::compositor_core_impl_t
     }
 
     void warp_cursor(wf::pointf_t pos) override;
+    void transfer_grab(wf::scene::node_ptr, bool) override
+    {}
     void set_cursor(std::string name) override;
     void unhide_cursor() override;
     void hide_cursor() override;

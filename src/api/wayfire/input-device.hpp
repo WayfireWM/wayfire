@@ -25,6 +25,7 @@ class input_device_t
      * @return true if the compositor should receive events from the device
      */
     bool is_enabled();
+    virtual ~input_device_t() = default;
 
   protected:
     wlr_input_device *handle;

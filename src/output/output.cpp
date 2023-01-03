@@ -478,9 +478,7 @@ bool wf::output_impl_t::deactivate_plugin(
 
     if (active_plugins.count(owner.get()) == 0)
     {
-        owner->ungrab();
         active_plugins.erase(owner.get());
-
         return true;
     }
 
@@ -492,7 +490,7 @@ void wf::output_impl_t::cancel_active_plugins()
     std::vector<wf::plugin_grab_interface_t*> ifaces;
     for (auto p : active_plugins)
     {
-        if (p->callbacks.cancel)
+        if (p->cancel)
         {
             ifaces.push_back(p);
         }
@@ -500,7 +498,7 @@ void wf::output_impl_t::cancel_active_plugins()
 
     for (auto p : ifaces)
     {
-        p->callbacks.cancel();
+        p->cancel();
     }
 }
 
@@ -515,19 +513,6 @@ bool wf::output_impl_t::is_plugin_active(std::string name) const
     }
 
     return false;
-}
-
-wf::plugin_grab_interface_t*wf::output_impl_t::get_input_grab_interface()
-{
-    for (auto p : active_plugins)
-    {
-        if (p && p->is_grabbed())
-        {
-            return p;
-        }
-    }
-
-    return nullptr;
 }
 
 void wf::output_impl_t::inhibit_plugins()

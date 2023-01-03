@@ -1,3 +1,4 @@
+#include <memory>
 #include <wayfire/plugin.hpp>
 #include <wayfire/opengl.hpp>
 #include <wayfire/output.hpp>
@@ -6,6 +7,7 @@
 #include <wayfire/render-manager.hpp>
 #include <wayfire/workspace-manager.hpp>
 #include <wayfire/scene-operations.hpp>
+#include <wayfire/plugins/common/input-grab.hpp>
 
 #include <glm/gtc/matrix_transform.hpp>
 #include <wayfire/img.hpp>
@@ -32,7 +34,7 @@
 #include "shaders.tpp"
 #include "shaders-3-2.tpp"
 
-class wayfire_cube : public wf::plugin_interface_t
+class wayfire_cube : public wf::plugin_interface_t, public wf::pointer_interaction_t
 {
     class cube_render_node_t : public wf::scene::node_t
     {
@@ -170,6 +172,7 @@ class wayfire_cube : public wf::plugin_interface_t
         wayfire_cube *cube;
     };
 
+    std::unique_ptr<wf::input_grab_t> input_grab;
     std::shared_ptr<cube_render_node_t> render_node;
 
     wf::button_callback activate_binding;
@@ -236,6 +239,7 @@ class wayfire_cube : public wf::plugin_interface_t
     {
         grab_interface->name = "cube";
         grab_interface->capabilities = wf::CAPABILITY_MANAGE_COMPOSITOR;
+        input_grab = std::make_unique<wf::input_grab_t>("cube", output, nullptr, this, nullptr);
 
         animation.cube_animation.offset_y.set(0, 0);
         animation.cube_animation.offset_z.set(0, 0);
@@ -267,24 +271,7 @@ class wayfire_cube : public wf::plugin_interface_t
         output->add_activator(key_right, &rotate_right);
         output->connect_signal("cube-control", &on_cube_control);
 
-        grab_interface->callbacks.pointer.button = [=] (uint32_t b, uint32_t s)
-        {
-            if (s == WL_POINTER_BUTTON_STATE_RELEASED)
-            {
-                input_ungrabbed();
-            }
-        };
-
-        grab_interface->callbacks.pointer.axis = [=] (
-            wlr_pointer_axis_event *ev)
-        {
-            if (ev->orientation == WLR_AXIS_ORIENTATION_VERTICAL)
-            {
-                pointer_scrolled(ev->delta);
-            }
-        };
-
-        grab_interface->callbacks.cancel = [=] ()
+        grab_interface->cancel = [=] ()
         {
             deactivate();
         };
@@ -292,6 +279,22 @@ class wayfire_cube : public wf::plugin_interface_t
         OpenGL::render_begin();
         load_program();
         OpenGL::render_end();
+    }
+
+    void handle_pointer_button(const wlr_pointer_button_event& event) override
+    {
+        if (event.state == WLR_BUTTON_RELEASED)
+        {
+            input_ungrabbed();
+        }
+    }
+
+    void handle_pointer_axis(const wlr_pointer_axis_event& event) override
+    {
+        if (event.orientation == WLR_AXIS_ORIENTATION_VERTICAL)
+        {
+            pointer_scrolled(event.delta);
+        }
     }
 
     void load_program()
@@ -396,7 +399,7 @@ class wayfire_cube : public wf::plugin_interface_t
         output->render->add_effect(&pre_hook, wf::OUTPUT_EFFECT_PRE);
 
         wf::get_core().hide_cursor();
-        grab_interface->grab();
+        input_grab->grab_input(wf::scene::layer::OVERLAY);
 
         auto wsize = output->workspace->get_workspace_grid_size();
         animation.side_angle = 2 * M_PI / float(wsize.width);
@@ -409,7 +412,6 @@ class wayfire_cube : public wf::plugin_interface_t
 
         animation.cube_animation.offset_z.set(identity_z_offset + Z_OFFSET_NEAR,
             identity_z_offset + Z_OFFSET_NEAR);
-
         return true;
     }
 
@@ -432,7 +434,7 @@ class wayfire_cube : public wf::plugin_interface_t
         render_node = nullptr;
         output->render->rem_effect(&pre_hook);
 
-        grab_interface->ungrab();
+        input_grab->ungrab_input();
         output->deactivate_plugin(grab_interface);
         wf::get_core().unhide_cursor();
         wf::get_core().disconnect_signal(&on_motion_event);

@@ -1,5 +1,7 @@
 #include <wayfire/plugin.hpp>
 #include "wayfire/debug.hpp"
+#include "wayfire/plugins/common/input-grab.hpp"
+#include "wayfire/scene-input.hpp"
 #include "wayfire/view.hpp"
 #include "wayfire/view-transform.hpp"
 #include "wayfire/output.hpp"
@@ -31,7 +33,7 @@ enum class mode
     ROT_3D,
 };
 
-class wf_wrot : public wf::plugin_interface_t
+class wf_wrot : public wf::plugin_interface_t, public wf::pointer_interaction_t
 {
     wf::button_callback call;
     wf::option_wrapper_t<double> reset_radius{"wrot/reset_radius"};
@@ -40,6 +42,7 @@ class wf_wrot : public wf::plugin_interface_t
 
     wf::pointf_t last_position;
     wayfire_view current_view = nullptr;
+    std::unique_ptr<wf::input_grab_t> input_grab;
 
     mode current_mode = mode::NONE;
 
@@ -74,7 +77,7 @@ class wf_wrot : public wf::plugin_interface_t
 
         output->focus_view(current_view, true);
         current_view->connect_signal("unmapped", &current_view_unmapped);
-        grab_interface->grab();
+        input_grab->grab_input(wf::scene::layer::OVERLAY);
 
         last_position = output->get_cursor_position();
         current_mode  = mode::ROT_3D;
@@ -102,7 +105,7 @@ class wf_wrot : public wf::plugin_interface_t
     wf::signal_connection_t current_view_unmapped = [this] (wf::signal_data_t *data)
     {
         auto view = wf::get_signaled_view(data);
-        if (grab_interface->is_grabbed() && (current_view == view))
+        if (input_grab->is_grabbed() && (current_view == view))
         {
             current_view = nullptr;
             input_released();
@@ -165,6 +168,7 @@ class wf_wrot : public wf::plugin_interface_t
     {
         grab_interface->name = "wrot";
         grab_interface->capabilities = wf::CAPABILITY_GRAB_INPUT;
+        input_grab = std::make_unique<wf::input_grab_t>("wrot", output, nullptr, this, nullptr);
 
         call = [=] (auto)
         {
@@ -182,59 +186,54 @@ class wf_wrot : public wf::plugin_interface_t
             if (!current_view || (current_view->role != wf::VIEW_ROLE_TOPLEVEL))
             {
                 output->deactivate_plugin(grab_interface);
-
                 return false;
             }
 
             output->focus_view(current_view, true);
             current_view->connect_signal("unmapped", &current_view_unmapped);
-            grab_interface->grab();
+            input_grab->grab_input(wf::scene::layer::OVERLAY);
 
             last_position = output->get_cursor_position();
             current_mode  = mode::ROT_2D;
             return true;
         };
 
-        output->add_button(
-            wf::option_wrapper_t<wf::buttonbinding_t>("wrot/activate"), &call);
-        output->add_button(
-            wf::option_wrapper_t<wf::buttonbinding_t>("wrot/activate-3d"), &call_3d);
-        output->add_key(wf::option_wrapper_t<wf::keybinding_t>{"wrot/reset"},
-            &reset);
-        output->add_key(wf::option_wrapper_t<wf::keybinding_t>{"wrot/reset-one"},
-            &reset_one);
+        output->add_button(wf::option_wrapper_t<wf::buttonbinding_t>("wrot/activate"), &call);
+        output->add_button(wf::option_wrapper_t<wf::buttonbinding_t>("wrot/activate-3d"), &call_3d);
+        output->add_key(wf::option_wrapper_t<wf::keybinding_t>{"wrot/reset"}, &reset);
+        output->add_key(wf::option_wrapper_t<wf::keybinding_t>{"wrot/reset-one"}, &reset_one);
 
-        grab_interface->callbacks.pointer.motion = [=] (int x, int y)
+        grab_interface->cancel = [=] ()
         {
-            if (current_mode == mode::ROT_2D)
-            {
-                motion_2d(x, y);
-            } else if (current_mode == mode::ROT_3D)
-            {
-                motion_3d(x, y);
-            }
-        };
-
-        grab_interface->callbacks.pointer.button = [=] (uint32_t, uint32_t s)
-        {
-            if (s == WLR_BUTTON_RELEASED)
-            {
-                input_released();
-            }
-        };
-
-        grab_interface->callbacks.cancel = [=] ()
-        {
-            if (grab_interface->is_grabbed())
+            if (input_grab->is_grabbed())
             {
                 input_released();
             }
         };
     }
 
+    void handle_pointer_button(const wlr_pointer_button_event& event) override
+    {
+        if (event.state == WLR_BUTTON_RELEASED)
+        {
+            input_released();
+        }
+    }
+
+    void handle_pointer_motion(wf::pointf_t pointer_position, uint32_t time_ms) override
+    {
+        if (current_mode == mode::ROT_2D)
+        {
+            motion_2d(pointer_position.x, pointer_position.y);
+        } else if (current_mode == mode::ROT_3D)
+        {
+            motion_3d(pointer_position.x, pointer_position.y);
+        }
+    }
+
     void input_released()
     {
-        grab_interface->ungrab();
+        input_grab->ungrab_input();
         output->deactivate_plugin(grab_interface);
         current_view_unmapped.disconnect();
         if ((current_mode == mode::ROT_3D) && current_view)
@@ -264,7 +263,7 @@ class wf_wrot : public wf::plugin_interface_t
 
     void fini() override
     {
-        if (grab_interface->is_grabbed())
+        if (input_grab->is_grabbed())
         {
             input_released();
         }

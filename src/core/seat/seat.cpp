@@ -17,6 +17,7 @@
 #include <wayfire/nonstd/wlroots.hpp>
 
 #include "drag-icon.hpp"
+#include "wayfire/util.hpp"
 
 /* ----------------------- wf::seat_t implementation ------------------------ */
 wf::seat_t::seat_t()
@@ -198,8 +199,7 @@ void wf::seat_t::update_drag_icon()
 void wf::seat_t::set_keyboard(wf::keyboard_t *keyboard)
 {
     this->current_keyboard = keyboard;
-    wlr_seat_set_keyboard(seat,
-        keyboard ? wlr_keyboard_from_input_device(keyboard->device) : NULL);
+    wlr_seat_set_keyboard(seat, keyboard ? wlr_keyboard_from_input_device(keyboard->device) : NULL);
 }
 
 void wf::seat_t::break_mod_bindings()
@@ -215,19 +215,58 @@ uint32_t wf::seat_t::get_modifiers()
     return current_keyboard ? current_keyboard->get_modifiers() : 0;
 }
 
-void wf::seat_t::set_keyboard_focus(wf::scene::node_ptr new_focus)
+void wf::seat_t::force_release_keys()
 {
-    /* Don't focus if we have an active grab */
-    if (wf::get_core_impl().input->active_grab)
+    if (this->keyboard_focus)
     {
-        new_focus = nullptr;
+        // Release currently pressed buttons
+        for (auto key : this->pressed_keys)
+        {
+            wlr_keyboard_key_event ev;
+            ev.keycode = key;
+            ev.state   = WL_KEYBOARD_KEY_STATE_RELEASED;
+            ev.update_state = true;
+            ev.time_msec    = get_current_time();
+            this->keyboard_focus->keyboard_interaction().handle_keyboard_key(ev);
+        }
+    }
+}
+
+void wf::seat_t::transfer_grab(wf::scene::node_ptr grab_node, bool retain_pressed_state)
+{
+    if (this->keyboard_focus == grab_node)
+    {
+        return;
     }
 
+    force_release_keys();
+    if (!retain_pressed_state)
+    {
+        pressed_keys.clear();
+    }
+
+    if (this->keyboard_focus)
+    {
+        this->keyboard_focus->keyboard_interaction().handle_keyboard_leave();
+    }
+
+    this->keyboard_focus = grab_node;
+    grab_node->keyboard_interaction().handle_keyboard_enter();
+
+    wf::keyboard_focus_changed_signal data;
+    data.new_focus = grab_node;
+    wf::get_core().emit_signal("keyboard-focus-changed", &data);
+}
+
+void wf::seat_t::set_keyboard_focus(wf::scene::node_ptr new_focus)
+{
     if (this->keyboard_focus == new_focus)
     {
         return;
     }
 
+    force_release_keys();
+    pressed_keys.clear();
     if (this->keyboard_focus)
     {
         this->keyboard_focus->keyboard_interaction().handle_keyboard_leave();

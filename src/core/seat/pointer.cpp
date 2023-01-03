@@ -92,6 +92,57 @@ void wf::pointer_t::update_cursor_position(int64_t time_msec, bool real_update)
     seat->update_drag_icon();
 }
 
+void wf::pointer_t::force_release_buttons()
+{
+    if (cursor_focus)
+    {
+        for (auto button : this->currently_sent_buttons)
+        {
+            wlr_pointer_button_event event;
+            event.pointer   = NULL;
+            event.button    = button;
+            event.state     = WLR_BUTTON_RELEASED;
+            event.time_msec = wf::get_current_time();
+            cursor_focus->pointer_interaction().handle_pointer_button(event);
+        }
+
+        cursor_focus->pointer_interaction().handle_pointer_leave();
+    }
+}
+
+void wf::pointer_t::transfer_grab(scene::node_ptr node, bool retain_pressed_state)
+{
+    if (node == cursor_focus)
+    {
+        LOGD("transfer grab ", cursor_focus.get(), " -> ", node.get(), ": do nothing");
+        // Node might already be focused, in case for example there was no input surface when the grab node
+        // was added to the scenegraph.
+        return;
+    }
+
+    LOGD("transfer grab ", cursor_focus.get(), " -> ", node.get());
+    force_release_buttons();
+    cursor_focus = node;
+
+    // Send pointer_enter to the grab
+    auto gc    = wf::get_core().get_cursor_position();
+    auto local = get_node_local_coords(node.get(), gc);
+    node->pointer_interaction().handle_pointer_enter(local);
+
+    if (!retain_pressed_state)
+    {
+        currently_sent_buttons.clear();
+    }
+
+    if (currently_sent_buttons.size())
+    {
+        grabbed_node = node;
+    } else
+    {
+        grabbed_node = nullptr;
+    }
+}
+
 void wf::pointer_t::update_cursor_focus(wf::scene::node_ptr new_focus)
 {
     bool focus_change = (cursor_focus != new_focus);
@@ -105,21 +156,7 @@ void wf::pointer_t::update_cursor_focus(wf::scene::node_ptr new_focus)
     // buttons since otherwise we'll cancel DnD
     if (focus_change)
     {
-        if (cursor_focus)
-        {
-            for (auto button : this->currently_sent_buttons)
-            {
-                wlr_pointer_button_event event;
-                event.pointer   = NULL;
-                event.button    = button;
-                event.state     = WLR_BUTTON_RELEASED;
-                event.time_msec = wf::get_current_time();
-                cursor_focus->pointer_interaction().handle_pointer_button(event);
-            }
-
-            cursor_focus->pointer_interaction().handle_pointer_leave();
-        }
-
+        force_release_buttons();
         currently_sent_buttons.clear();
     }
 
@@ -215,16 +252,6 @@ void wf::pointer_t::check_implicit_grab()
 
 void wf::pointer_t::send_button(wlr_pointer_button_event *ev, bool has_binding)
 {
-    if (input->active_grab)
-    {
-        if (input->active_grab->callbacks.pointer.button)
-        {
-            input->active_grab->callbacks.pointer.button(ev->button, ev->state);
-        }
-
-        return;
-    }
-
     /* Clients do not receive buttons for bindings */
     if (has_binding)
     {
@@ -253,15 +280,6 @@ void wf::pointer_t::send_button(wlr_pointer_button_event *ev, bool has_binding)
 
 void wf::pointer_t::send_motion(uint32_t time_msec)
 {
-    if (input->input_grabbed())
-    {
-        auto oc = wf::get_core().get_active_output()->get_cursor_position();
-        if (input->active_grab->callbacks.pointer.motion)
-        {
-            input->active_grab->callbacks.pointer.motion(oc.x, oc.y);
-        }
-    }
-
     if (cursor_focus)
     {
         auto gc    = wf::get_core().get_cursor_position();
@@ -273,15 +291,8 @@ void wf::pointer_t::send_motion(uint32_t time_msec)
 void wf::pointer_t::handle_pointer_motion(wlr_pointer_motion_event *ev,
     input_event_processing_mode_t mode)
 {
-    if (input->input_grabbed() &&
-        input->active_grab->callbacks.pointer.relative_motion)
-    {
-        input->active_grab->callbacks.pointer.relative_motion(ev);
-    }
-
     /* XXX: maybe warp directly? */
-    wlr_cursor_move(seat->cursor->cursor, &ev->pointer->base, ev->delta_x,
-        ev->delta_y);
+    wlr_cursor_move(seat->cursor->cursor, &ev->pointer->base, ev->delta_x, ev->delta_y);
     update_cursor_position(ev->time_msec);
 }
 
@@ -311,16 +322,6 @@ void wf::pointer_t::handle_pointer_axis(wlr_pointer_axis_event *ev,
     bool handled_in_binding = input->get_active_bindings().handle_axis(
         seat->get_modifiers(), ev);
     seat->break_mod_bindings();
-
-    if (input->active_grab)
-    {
-        if (input->active_grab->callbacks.pointer.axis)
-        {
-            input->active_grab->callbacks.pointer.axis(ev);
-        }
-
-        return;
-    }
 
     /* Do not send scroll events to clients if an axis binding has used up the
      * event */

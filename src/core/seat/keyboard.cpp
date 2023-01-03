@@ -1,5 +1,6 @@
 #include <cstring>
 #include <linux/input-event-codes.h>
+#include <wayland-server-protocol.h>
 #include <xkbcommon/xkbcommon.h>
 
 #include <wayfire/util/log.hpp>
@@ -32,10 +33,25 @@ void wf::keyboard_t::setup_listeners()
         if (!handle_keyboard_key(ev->keycode, ev->state) &&
             (mode != input_event_processing_mode_t::NO_CLIENT))
         {
+            if (ev->state == WL_KEYBOARD_KEY_STATE_PRESSED)
+            {
+                seat->pressed_keys.insert(ev->keycode);
+            }
+
+            if (ev->state == WL_KEYBOARD_KEY_STATE_RELEASED)
+            {
+                if (seat->pressed_keys.count(ev->keycode))
+                {
+                    seat->pressed_keys.erase(seat->pressed_keys.find(ev->keycode));
+                } else
+                {
+                    return;
+                }
+            }
+
             if (seat->keyboard_focus)
             {
-                seat->keyboard_focus->keyboard_interaction()
-                    .handle_keyboard_key(*ev);
+                seat->keyboard_focus->keyboard_interaction().handle_keyboard_key(*ev);
             }
         }
 
@@ -265,19 +281,8 @@ bool wf::keyboard_t::handle_keyboard_key(uint32_t key, uint32_t state)
     auto& input = wf::get_core_impl().input;
     auto& seat  = wf::get_core_impl().seat;
 
-    auto active_grab = input->active_grab;
-    bool handled_in_plugin = (active_grab != nullptr);
-    if (active_grab && active_grab->callbacks.keyboard.key)
-    {
-        active_grab->callbacks.keyboard.key(key, state);
-    }
-
+    bool handled_in_plugin = false;
     auto mod = mod_from_key(key);
-    if (mod)
-    {
-        handle_keyboard_mod(mod, state);
-    }
-
     input->locked_mods = this->get_locked_mods();
 
     if (state == WLR_KEY_PRESSED)
@@ -325,13 +330,4 @@ bool wf::keyboard_t::handle_keyboard_key(uint32_t key, uint32_t state)
     }
 
     return handled_in_plugin;
-}
-
-void wf::keyboard_t::handle_keyboard_mod(uint32_t modifier, uint32_t state)
-{
-    auto active_grab = wf::get_core_impl().input->active_grab;
-    if (active_grab && active_grab->callbacks.keyboard.mod)
-    {
-        active_grab->callbacks.keyboard.mod(modifier, state);
-    }
 }

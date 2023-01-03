@@ -6,6 +6,7 @@
 #include <wayfire/nonstd/observer_ptr.h>
 #include <wayfire/util.hpp>
 #include <wayfire/option-wrapper.hpp>
+#include "wayfire/scene-input.hpp"
 #include "wayfire/signal-definitions.hpp"
 #include "wayfire/signal-provider.hpp"
 #include <wayfire/nonstd/wlroots-full.hpp>
@@ -83,6 +84,11 @@ class pointer_t
      */
     void update_cursor_position(int64_t time_msec, bool real_update = true);
 
+    /**
+     * Transfer focus and pressed buttons to the given grab.
+     */
+    void transfer_grab(scene::node_ptr node, bool retain_pressed_state);
+
   private:
     nonstd::observer_ptr<wf::input_manager_t> input;
     nonstd::observer_ptr<seat_t> seat;
@@ -128,6 +134,11 @@ class pointer_t
      * active grab or the focused surface.
      */
     void send_motion(uint32_t time_msec);
+
+    /**
+     * Send synthetic button release events to the current cursor focus.
+     */
+    void force_release_buttons();
 };
 }
 

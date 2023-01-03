@@ -41,8 +41,8 @@ class vswitch : public wf::plugin_interface_t
   public:
     void init()
     {
-        grab_interface->name = "vswitch";
-        grab_interface->callbacks.cancel = [=] ()
+        grab_interface->name   = "vswitch";
+        grab_interface->cancel = [=] ()
         {
             algorithm->stop_switch(false);
         };

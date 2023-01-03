@@ -505,7 +505,8 @@ void set_node_enabled(wf::scene::node_ptr node, bool enabled)
 void update(node_ptr changed_node, uint32_t flags)
 {
     if ((flags & update_flag::CHILDREN_LIST) ||
-        (flags & update_flag::ENABLED))
+        (flags & update_flag::ENABLED) ||
+        (flags & update_flag::GEOMETRY))
     {
         flags |= update_flag::INPUT_STATE;
     }

@@ -136,7 +136,7 @@ class wayfire_scale : public wf::plugin_interface_t,
         grab = std::make_unique<wf::input_grab_t>(
             "scale", output, this, this, nullptr);
 
-        grab_interface->callbacks.cancel = [=] ()
+        grab_interface->cancel = [=] ()
         {
             finalize();
         };
@@ -261,7 +261,6 @@ class wayfire_scale : public wf::plugin_interface_t,
                        (want_all_workspaces == this->all_workspaces)))
         {
             deactivate();
-
             return true;
         }
 
@@ -269,7 +268,6 @@ class wayfire_scale : public wf::plugin_interface_t,
         if (active)
         {
             switch_scale_modes();
-
             return true;
         } else
         {

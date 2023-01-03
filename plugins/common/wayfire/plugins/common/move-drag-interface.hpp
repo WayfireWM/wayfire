@@ -560,6 +560,12 @@ class core_drag_t : public signal_provider_t
 
     void handle_input_released()
     {
+        if (!view || all_views.empty())
+        {
+            // Input already released => don't do anything
+            return;
+        }
+
         // Store data for the drag done signal
         drag_done_signal data;
         data.grab_position = all_views.front().transformer->grab_position;

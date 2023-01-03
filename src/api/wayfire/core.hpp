@@ -168,6 +168,18 @@ class compositor_core_t : public wf::object_base_t, public signal::provider_t
      */
     virtual void warp_cursor(wf::pointf_t position) = 0;
 
+    /**
+     * Break any grabs on pointer, touch and tablet input.
+     * Then, transfer input focus to the given node in a grab mode.
+     *
+     * @param node The node which should receive the grabbed input.
+     * @param retain_pressed_state Some plugins may be activated with a button/touch/etc. press (for example
+     *   the move plugin). They want to receive the matching button_release event, even though they have not
+     *   received the button press event. In these cases, they can use the @retain_pressed_state parameter to
+     *   indicate to core their desire for receiving unmatched button release events.
+     */
+    virtual void transfer_grab(wf::scene::node_ptr node, bool retain_pressed_state) = 0;
+
     /** no such coordinate will ever realistically be used for input */
     static constexpr double invalid_coordinate =
         std::numeric_limits<double>::quiet_NaN();

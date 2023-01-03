@@ -211,6 +211,14 @@ void parse_extended_debugging(const std::vector<std::string>& categories)
     }
 }
 
+// extern "C" {
+// void __cxa_throw(void *ex, void *info, void (*dest)(void*))
+// {
+// wf::print_trace(false);
+// std::_Exit(-1);
+// }
+// }
+//
 int main(int argc, char *argv[])
 {
     wf::log::log_level_t log_level = wf::log::LOG_LEVEL_INFO;

@@ -113,11 +113,6 @@ class output_impl_t : public output_t
     /** @return true if the output is inhibited */
     bool is_inhibited() const;
 
-    /**
-     * @return The currently active input grab interface, or nullptr if none
-     */
-    plugin_grab_interface_t *get_input_grab_interface();
-
     /** @return The bindings repository of the output */
     bindings_repository_t& get_bindings();
 

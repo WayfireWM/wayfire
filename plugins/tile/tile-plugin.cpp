@@ -8,6 +8,8 @@
 
 #include "tree-controller.hpp"
 #include "wayfire/debug.hpp"
+#include "wayfire/plugins/common/input-grab.hpp"
+#include "wayfire/scene-input.hpp"
 #include "wayfire/scene-operations.hpp"
 #include "wayfire/scene.hpp"
 
@@ -39,7 +41,7 @@ class tile_workspace_implementation_t : public wf::workspace_implementation_t
 class view_auto_tile_t : public wf::custom_data_t
 {};
 
-class tile_plugin_t : public wf::plugin_interface_t
+class tile_plugin_t : public wf::plugin_interface_t, public wf::pointer_interaction_t
 {
   private:
     wf::view_matcher_t tile_by_default{"simple-tile/tile_by_default"};
@@ -61,6 +63,7 @@ class tile_plugin_t : public wf::plugin_interface_t
     wf::option_wrapper_t<int> outer_vert_gaps{"simple-tile/outer_vert_gap_size"};
 
   private:
+    std::unique_ptr<wf::input_grab_t> input_grab;
     std::vector<std::vector<std::unique_ptr<wf::tile::tree_node_t>>> roots;
     std::vector<std::vector<wf::scene::floating_inner_ptr>> tiled_sublayer;
 
@@ -228,16 +231,9 @@ class tile_plugin_t : public wf::plugin_interface_t
             return false;
         }
 
-        if (grab_interface->grab())
-        {
-            auto vp = output->workspace->get_current_workspace();
-            controller = std::make_unique<Controller>(
-                roots[vp.x][vp.y], get_global_input_coordinates());
-        } else
-        {
-            output->deactivate_plugin(grab_interface);
-        }
-
+        input_grab->grab_input(wf::scene::layer::OVERLAY);
+        auto vp = output->workspace->get_current_workspace();
+        controller = std::make_unique<Controller>(roots[vp.x][vp.y], get_global_input_coordinates());
         return true;
     }
 
@@ -538,6 +534,19 @@ class tile_plugin_t : public wf::plugin_interface_t
         return start_controller<tile::resize_view_controller_t>();
     };
 
+    void handle_pointer_button(const wlr_pointer_button_event& event) override
+    {
+        if (event.state == WLR_BUTTON_RELEASED)
+        {
+            stop_controller(false);
+        }
+    }
+
+    void handle_pointer_motion(wf::pointf_t pointer_position, uint32_t time_ms) override
+    {
+        controller->input_motion(get_global_input_coordinates());
+    }
+
     void setup_callbacks()
     {
         output->add_button(button_move, &on_move_view);
@@ -548,20 +557,6 @@ class tile_plugin_t : public wf::plugin_interface_t
         output->add_key(key_focus_right, &on_focus_adjacent);
         output->add_key(key_focus_above, &on_focus_adjacent);
         output->add_key(key_focus_below, &on_focus_adjacent);
-
-        grab_interface->callbacks.pointer.button =
-            [=] (uint32_t b, uint32_t state)
-        {
-            if (state == WLR_BUTTON_RELEASED)
-            {
-                stop_controller(false);
-            }
-        };
-
-        grab_interface->callbacks.pointer.motion = [=] (auto, auto)
-        {
-            controller->input_motion(get_global_input_coordinates());
-        };
 
         inner_gaps.set_callback(update_gaps);
         outer_horiz_gaps.set_callback(update_gaps);
@@ -576,6 +571,7 @@ class tile_plugin_t : public wf::plugin_interface_t
         /* TODO: change how grab interfaces work - plugins should do ifaces on
          * their own, and should be able to have more than one */
         this->grab_interface->capabilities = CAPABILITY_MANAGE_COMPOSITOR;
+        input_grab = std::make_unique<wf::input_grab_t>("simple-tile", output, nullptr, this, nullptr);
 
         resize_roots(output->workspace->get_workspace_grid_size());
         // TODO: check whether this was successful

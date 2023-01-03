@@ -3,6 +3,7 @@
 
 #include <map>
 #include <wayfire/touch/touch.hpp>
+#include "wayfire/scene-input.hpp"
 #include "wayfire/util.hpp"
 #include "wayfire/view.hpp"
 #include <wayfire/signal-definitions.hpp>
@@ -10,7 +11,6 @@
 // TODO: tests
 namespace wf
 {
-struct plugin_grab_interface_t;
 using input_surface_selector_t =
     std::function<wf::scene::node_ptr(const wf::pointf_t&)>;
 
@@ -36,14 +36,6 @@ class touch_interface_t
     wf::scene::node_ptr get_focus(int finger_id = 0) const;
 
     /**
-     * Set the active grab interface.
-     *
-     * If a grab interface is active, all input events will be sent to it
-     * instead of the client.
-     */
-    void set_grab(wf::plugin_grab_interface_t *grab);
-
-    /**
      * Register a new touchscreen gesture.
      */
     void add_touch_gesture(nonstd::observer_ptr<touch::gesture_t> gesture);
@@ -53,11 +45,15 @@ class touch_interface_t
      */
     void rem_touch_gesture(nonstd::observer_ptr<touch::gesture_t> gesture);
 
+    /**
+     * Transfer input focus to the given grab.
+     */
+    void transfer_grab(scene::node_ptr grab_node, bool retain_pressed_state);
+
   private:
     wlr_seat *seat;
     wlr_cursor *cursor;
     input_surface_selector_t surface_at;
-    wf::plugin_grab_interface_t *grab = nullptr;
 
     wf::wl_listener_wrapper on_down, on_up, on_motion, on_cancel, on_frame;
     void handle_touch_down(int32_t id, uint32_t time, wf::pointf_t current,

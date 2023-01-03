@@ -217,11 +217,7 @@ void wf::cursor_t::set_cursor(
         }
     }
 
-    if (!wf::get_core_impl().input->input_grabbed())
-    {
-        wlr_cursor_set_surface(cursor, ev->surface,
-            ev->hotspot_x, ev->hotspot_y);
-    }
+    wlr_cursor_set_surface(cursor, ev->surface, ev->hotspot_x, ev->hotspot_y);
 }
 
 void wf::cursor_t::set_touchscreen_mode(bool enabled)

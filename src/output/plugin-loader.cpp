@@ -55,7 +55,7 @@ plugin_manager::~plugin_manager()
 
 void plugin_manager::init_plugin(wayfire_plugin& p)
 {
-    p->grab_interface = std::make_unique<wf::plugin_grab_interface_t>(output);
+    p->grab_interface = std::make_unique<wf::plugin_grab_interface_t>();
     p->output = output;
     p->init();
 }
@@ -63,8 +63,6 @@ void plugin_manager::init_plugin(wayfire_plugin& p)
 void plugin_manager::destroy_plugin(wayfire_plugin& p)
 {
     p->fini();
-
-    p->grab_interface->ungrab();
     output->deactivate_plugin(p->grab_interface);
 
     auto handle = p->handle;

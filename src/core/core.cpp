@@ -1,9 +1,12 @@
 /* Needed for pipe2 */
 #ifndef _GNU_SOURCE
     #define _GNU_SOURCE
-    #include "wayfire/view.hpp"
+    #include "wayfire/util.hpp"
 #endif
 
+#include "seat/tablet.hpp"
+#include "wayfire/touch/touch.hpp"
+#include "wayfire/view.hpp"
 #include <sys/wait.h>
 #include <unistd.h>
 #include <fcntl.h>
@@ -377,6 +380,24 @@ void wf::compositor_core_impl_t::warp_cursor(wf::pointf_t pos)
     seat->cursor->warp_cursor(pos);
 }
 
+void wf::compositor_core_impl_t::transfer_grab(wf::scene::node_ptr node, bool retain_pressed_state)
+{
+    seat->transfer_grab(node, retain_pressed_state);
+    seat->lpointer->transfer_grab(node, retain_pressed_state);
+    seat->touch->transfer_grab(node, retain_pressed_state);
+
+    for (auto dev : this->get_input_devices())
+    {
+        if (auto tablet = dynamic_cast<wf::tablet_t*>(dev.get()))
+        {
+            for (auto& tool : tablet->tools_list)
+            {
+                tool->reset_grab();
+            }
+        }
+    }
+}
+
 wf::pointf_t wf::compositor_core_impl_t::get_cursor_position()
 {
     if (seat->cursor)
@@ -473,23 +494,12 @@ void wf::compositor_core_impl_t::focus_output(wf::output_t *wo)
         wo->ensure_pointer((active_output == nullptr));
     }
 
-    wf::plugin_grab_interface_t *old_grab = nullptr;
     if (active_output)
     {
-        auto output_impl = dynamic_cast<wf::output_impl_t*>(active_output);
-        old_grab = output_impl->get_input_grab_interface();
         active_output->focus_view(nullptr);
     }
 
     active_output = wo;
-
-    /* invariant: input is grabbed only if the current output
-     * has an input grab */
-    if (input->input_grabbed())
-    {
-        assert(old_grab);
-        input->ungrab_input();
-    }
 
     /* On shutdown */
     if (!active_output)
@@ -497,17 +507,7 @@ void wf::compositor_core_impl_t::focus_output(wf::output_t *wo)
         return;
     }
 
-    auto output_impl = dynamic_cast<wf::output_impl_t*>(wo);
-    wf::plugin_grab_interface_t *iface = output_impl->get_input_grab_interface();
-    if (!iface)
-    {
-        wo->refocus();
-    } else
-    {
-        input->grab_input(iface);
-    }
-
-    wlr_output_schedule_frame(active_output->handle);
+    wo->refocus();
 
     wf::output_gain_focus_signal data;
     data.output = active_output;
