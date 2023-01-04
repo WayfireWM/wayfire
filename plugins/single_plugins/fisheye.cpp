@@ -22,7 +22,7 @@
  * SOFTWARE.
  */
 
-#include <wayfire/plugin.hpp>
+#include <wayfire/per-output-plugin.hpp>
 #include <wayfire/output.hpp>
 #include <wayfire/opengl.hpp>
 #include <wayfire/util/duration.hpp>
@@ -96,7 +96,7 @@ void main()
 }
 )";
 
-class wayfire_fisheye : public wf::plugin_interface_t
+class wayfire_fisheye : public wf::per_output_plugin_instance_t
 {
     wf::animation::simple_animation_t progression{wf::create_option<int>(300)};
 
@@ -108,16 +108,16 @@ class wayfire_fisheye : public wf::plugin_interface_t
 
     OpenGL::program_t program;
 
+    wf::plugin_grab_interface_t grab_interface = {
+        .name = "fisheye",
+        .capabilities = 0,
+    };
+
   public:
     void init() override
     {
-        grab_interface->name = "fisheye";
-        grab_interface->capabilities = 0;
-
         hook_set = active = false;
-        output->add_activator(
-            wf::option_wrapper_t<wf::activatorbinding_t>{"fisheye/toggle"},
-            &toggle_cb);
+        output->add_activator(wf::option_wrapper_t<wf::activatorbinding_t>{"fisheye/toggle"}, &toggle_cb);
 
         target_zoom = zoom;
         zoom.set_callback([=] ()
@@ -136,7 +136,7 @@ class wayfire_fisheye : public wf::plugin_interface_t
 
     wf::activator_callback toggle_cb = [=] (auto)
     {
-        if (!output->can_activate_plugin(grab_interface))
+        if (!output->can_activate_plugin(&grab_interface))
         {
             return false;
         }
@@ -223,4 +223,4 @@ class wayfire_fisheye : public wf::plugin_interface_t
     }
 };
 
-DECLARE_WAYFIRE_PLUGIN(wayfire_fisheye);
+DECLARE_WAYFIRE_PLUGIN(wf::per_output_plugin_t<wayfire_fisheye>);

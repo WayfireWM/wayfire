@@ -485,18 +485,9 @@ struct output_layout_output_t
             get_core().focus_output(wo);
         }
 
-        /*
-         * At this point, this->output is a valid output and is part of the
-         * get_outputs() list.
-         *
-         * We have also have updated the focused output. So, at this point
-         * all plugin-relevant structures have been updated.
-         */
-        this->output->start_plugins();
-
         output_added_signal data;
         data.output = wo;
-        get_core().output_layout->emit_signal("output-added", &data);
+        get_core().output_layout->emit(&data);
     }
 
     void destroy_wayfire_output()
@@ -509,11 +500,11 @@ struct output_layout_output_t
         LOGE("disabling output: ", output->handle->name);
 
         auto wo = output.get();
+
         output_pre_remove_signal data;
         data.output = wo;
-
-        wo->emit_signal("pre-remove", &data);
-        get_core().output_layout->emit_signal("output-pre-remove", &data);
+        wo->emit(&data);
+        get_core().output_layout->emit(&data);
         wo->cancel_active_plugins();
 
         bool shutdown = is_shutting_down();
@@ -528,9 +519,11 @@ struct output_layout_output_t
 
         /* It doesn't make sense to transfer to another output if we're
          * going to shut down the compositor */
-        transfer_views(wo,
-            shutdown ? nullptr : get_core().get_active_output());
-        get_core().output_layout->emit_signal("output-removed", &data);
+        transfer_views(wo, shutdown ? nullptr : get_core().get_active_output());
+
+        wf::output_removed_signal data2;
+        data2.output = wo;
+        get_core().output_layout->emit(&data2);
         this->output = nullptr;
     }
 

@@ -2,7 +2,7 @@
 #include "wayfire/plugins/common/input-grab.hpp"
 #include "wayfire/plugins/common/util.hpp"
 #include "wayfire/scene-input.hpp"
-#include <wayfire/plugin.hpp>
+#include <wayfire/per-output-plugin.hpp>
 #include <wayfire/signal-definitions.hpp>
 #include <wayfire/view-transform.hpp>
 #include <wayfire/view.hpp>
@@ -14,7 +14,7 @@
  * It works similarly to the alt-esc binding in Windows or GNOME
  */
 
-class wayfire_fast_switcher : public wf::plugin_interface_t, public wf::keyboard_interaction_t
+class wayfire_fast_switcher : public wf::per_output_plugin_instance_t, public wf::keyboard_interaction_t
 {
     wf::option_wrapper_t<wf::keybinding_t> activate_key{"fast-switcher/activate"};
     wf::option_wrapper_t<wf::keybinding_t> activate_key_backward{
@@ -27,16 +27,18 @@ class wayfire_fast_switcher : public wf::plugin_interface_t, public wf::keyboard
     bool active = false;
     std::unique_ptr<wf::input_grab_t> input_grab;
 
+    wf::plugin_grab_interface_t grab_interface = {
+        .name = "fast-switcher",
+        .capabilities = wf::CAPABILITY_MANAGE_COMPOSITOR,
+    };
+
   public:
     void init() override
     {
-        grab_interface->name = "fast-switcher";
-        grab_interface->capabilities = wf::CAPABILITY_MANAGE_COMPOSITOR;
-
         output->add_key(activate_key, &fast_switch);
         output->add_key(activate_key_backward, &fast_switch_backward);
         input_grab = std::make_unique<wf::input_grab_t>("fast-switch", output, this, nullptr, nullptr);
-        grab_interface->cancel = [=] () { switch_terminate(); };
+        grab_interface.cancel = [=] () { switch_terminate(); };
     }
 
     void handle_keyboard_key(wlr_keyboard_key_event event) override
@@ -130,7 +132,7 @@ class wayfire_fast_switcher : public wf::plugin_interface_t, public wf::keyboard
             return true;
         }
 
-        if (!output->activate_plugin(grab_interface))
+        if (!output->activate_plugin(&grab_interface))
         {
             return false;
         }
@@ -139,7 +141,7 @@ class wayfire_fast_switcher : public wf::plugin_interface_t, public wf::keyboard
 
         if (views.size() < 1)
         {
-            output->deactivate_plugin(grab_interface);
+            output->deactivate_plugin(&grab_interface);
             return false;
         }
 
@@ -173,7 +175,7 @@ class wayfire_fast_switcher : public wf::plugin_interface_t, public wf::keyboard
     void switch_terminate()
     {
         input_grab->ungrab_input();
-        output->deactivate_plugin(grab_interface);
+        output->deactivate_plugin(&grab_interface);
 
         // May modify alpha
         view_chosen(current_view_index, false);
@@ -216,4 +218,4 @@ class wayfire_fast_switcher : public wf::plugin_interface_t, public wf::keyboard
     }
 };
 
-DECLARE_WAYFIRE_PLUGIN(wayfire_fast_switcher);
+DECLARE_WAYFIRE_PLUGIN(wf::per_output_plugin_t<wayfire_fast_switcher>);

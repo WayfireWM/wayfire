@@ -1,7 +1,7 @@
 #include "wayfire/plugins/common/input-grab.hpp"
 #include "wayfire/scene-input.hpp"
 #include <cmath>
-#include <wayfire/plugin.hpp>
+#include <wayfire/per-output-plugin.hpp>
 #include <wayfire/output.hpp>
 #include <wayfire/view.hpp>
 #include <wayfire/core.hpp>
@@ -11,7 +11,7 @@
 #include <wayfire/plugins/wobbly/wobbly-signal.hpp>
 #include <wayfire/nonstd/wlroots-full.hpp>
 
-class wayfire_resize : public wf::plugin_interface_t, public wf::pointer_interaction_t,
+class wayfire_resize : public wf::per_output_plugin_instance_t, public wf::pointer_interaction_t,
     public wf::touch_interaction_t
 {
     wf::signal_connection_t resize_request, view_destroyed;
@@ -26,13 +26,14 @@ class wayfire_resize : public wf::plugin_interface_t, public wf::pointer_interac
     uint32_t edges;
     wf::option_wrapper_t<wf::buttonbinding_t> button{"resize/activate"};
     std::unique_ptr<wf::input_grab_t> input_grab;
+    wf::plugin_grab_interface_t grab_interface = {
+        .name = "resize",
+        .capabilities = wf::CAPABILITY_GRAB_INPUT | wf::CAPABILITY_MANAGE_DESKTOP,
+    };
 
   public:
     void init() override
     {
-        grab_interface->name = "resize";
-        grab_interface->capabilities =
-            wf::CAPABILITY_GRAB_INPUT | wf::CAPABILITY_MANAGE_DESKTOP;
         input_grab = std::make_unique<wf::input_grab_t>("resize", output, nullptr, this, this);
 
         activate_binding = [=] (auto)
@@ -49,7 +50,7 @@ class wayfire_resize : public wf::plugin_interface_t, public wf::pointer_interac
         };
 
         output->add_button(button, &activate_binding);
-        grab_interface->cancel = [=] ()
+        grab_interface.cancel = [=] ()
         {
             input_pressed(WLR_BUTTON_RELEASED);
         };
@@ -202,7 +203,7 @@ class wayfire_resize : public wf::plugin_interface_t, public wf::pointer_interac
             return false;
         }
 
-        if (!output->activate_plugin(grab_interface))
+        if (!output->activate_plugin(&grab_interface))
         {
             return false;
         }
@@ -253,7 +254,7 @@ class wayfire_resize : public wf::plugin_interface_t, public wf::pointer_interac
         }
 
         input_grab->ungrab_input();
-        output->deactivate_plugin(grab_interface);
+        output->deactivate_plugin(&grab_interface);
 
         if (view)
         {
@@ -314,4 +315,4 @@ class wayfire_resize : public wf::plugin_interface_t, public wf::pointer_interac
     }
 };
 
-DECLARE_WAYFIRE_PLUGIN(wayfire_resize);
+DECLARE_WAYFIRE_PLUGIN(wf::per_output_plugin_t<wayfire_resize>);

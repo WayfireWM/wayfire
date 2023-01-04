@@ -1,5 +1,5 @@
 #include <memory>
-#include <wayfire/plugin.hpp>
+#include <wayfire/per-output-plugin.hpp>
 #include <wayfire/output.hpp>
 #include <wayfire/core.hpp>
 #include <wayfire/matcher.hpp>
@@ -41,7 +41,7 @@ class tile_workspace_implementation_t : public wf::workspace_implementation_t
 class view_auto_tile_t : public wf::custom_data_t
 {};
 
-class tile_plugin_t : public wf::plugin_interface_t, public wf::pointer_interaction_t
+class tile_plugin_t : public wf::per_output_plugin_instance_t, public wf::pointer_interaction_t
 {
   private:
     wf::view_matcher_t tile_by_default{"simple-tile/tile_by_default"};
@@ -226,7 +226,7 @@ class tile_plugin_t : public wf::plugin_interface_t, public wf::pointer_interact
             return false;
         }
 
-        if (!output->activate_plugin(grab_interface))
+        if (!output->activate_plugin(&grab_interface))
         {
             return false;
         }
@@ -239,13 +239,13 @@ class tile_plugin_t : public wf::plugin_interface_t, public wf::pointer_interact
 
     void stop_controller(bool force_stop)
     {
-        if (!output->is_plugin_active(grab_interface->name))
+        if (!output->is_plugin_active(grab_interface.name))
         {
             return;
         }
 
         // Deactivate plugin, so that others can react to the events
-        output->deactivate_plugin(grab_interface);
+        output->deactivate_plugin(&grab_interface);
         if (!force_stop)
         {
             controller->input_released();
@@ -453,7 +453,7 @@ class tile_plugin_t : public wf::plugin_interface_t, public wf::pointer_interact
             return false;
         }
 
-        if (output->can_activate_plugin(grab_interface))
+        if (output->can_activate_plugin(&grab_interface))
         {
             func(view);
             return true;
@@ -564,15 +564,15 @@ class tile_plugin_t : public wf::plugin_interface_t, public wf::pointer_interact
         update_gaps();
     }
 
+    wf::plugin_grab_interface_t grab_interface = {
+        .name = "simple-tile",
+        .capabilities = CAPABILITY_MANAGE_COMPOSITOR,
+    };
+
   public:
     void init() override
     {
-        this->grab_interface->name = "simple-tile";
-        /* TODO: change how grab interfaces work - plugins should do ifaces on
-         * their own, and should be able to have more than one */
-        this->grab_interface->capabilities = CAPABILITY_MANAGE_COMPOSITOR;
         input_grab = std::make_unique<wf::input_grab_t>("simple-tile", output, nullptr, this, nullptr);
-
         resize_roots(output->workspace->get_workspace_grid_size());
         // TODO: check whether this was successful
         output->workspace->set_workspace_implementation(
@@ -632,4 +632,4 @@ class tile_plugin_t : public wf::plugin_interface_t, public wf::pointer_interact
 };
 }
 
-DECLARE_WAYFIRE_PLUGIN(wf::tile_plugin_t);
+DECLARE_WAYFIRE_PLUGIN(wf::per_output_plugin_t<wf::tile_plugin_t>);

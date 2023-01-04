@@ -1,17 +1,17 @@
-#include <wayfire/singleton-plugin.hpp>
+#include <wayfire/plugin.hpp>
 #include <wayfire/core.hpp>
 #include <wayfire/util/log.hpp>
 #include <wayfire/option-wrapper.hpp>
 #include <config.h>
 
-class wayfire_autostart
+class wayfire_autostart : public wf::plugin_interface_t
 {
     wf::option_wrapper_t<bool> autostart_wf_shell{"autostart/autostart_wf_shell"};
     wf::option_wrapper_t<wf::config::compound_list_t<std::string>>
     autostart_entries{"autostart/autostart"};
 
   public:
-    wayfire_autostart()
+    void init() override
     {
         /* Run only once, at startup */
         auto section = wf::get_core().config.get_section("autostart");
@@ -50,6 +50,11 @@ class wayfire_autostart
             wf::get_core().run("wf-background");
         }
     }
+
+    bool is_unloadable() override
+    {
+        return false;
+    }
 };
 
-DECLARE_WAYFIRE_PLUGIN((wf::singleton_plugin_t<wayfire_autostart, false>));
+DECLARE_WAYFIRE_PLUGIN(wayfire_autostart);

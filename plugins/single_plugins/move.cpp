@@ -1,6 +1,6 @@
 #include "wayfire/plugins/common/input-grab.hpp"
 #include "wayfire/scene-input.hpp"
-#include <wayfire/plugin.hpp>
+#include <wayfire/per-output-plugin.hpp>
 #include <wayfire/output.hpp>
 #include <wayfire/core.hpp>
 #include <wayfire/view.hpp>
@@ -21,7 +21,7 @@
 #include <wayfire/plugins/common/move-drag-interface.hpp>
 #include <wayfire/plugins/grid.hpp>
 
-class wayfire_move : public wf::plugin_interface_t,
+class wayfire_move : public wf::per_output_plugin_instance_t,
     public wf::pointer_interaction_t, public wf::touch_interaction_t
 {
     wf::button_callback activate_binding;
@@ -52,7 +52,7 @@ class wayfire_move : public wf::plugin_interface_t,
 
     bool can_handle_drag()
     {
-        bool yes = output->can_activate_plugin(grab_interface,
+        bool yes = output->can_activate_plugin(&grab_interface,
             wf::PLUGIN_ACTIVATE_ALLOW_MULTIPLE);
         return yes;
     }
@@ -64,7 +64,7 @@ class wayfire_move : public wf::plugin_interface_t,
         {
             drag_helper->set_scale(1.0);
 
-            if (!output->is_plugin_active(grab_interface->name))
+            if (!output->is_plugin_active(grab_interface.name))
             {
                 grab_input(nullptr);
             }
@@ -112,15 +112,15 @@ class wayfire_move : public wf::plugin_interface_t,
     };
 
     std::unique_ptr<wf::input_grab_t> input_grab;
+    wf::plugin_grab_interface_t grab_interface = {
+        .name = "move",
+        .capabilities = wf::CAPABILITY_GRAB_INPUT | wf::CAPABILITY_MANAGE_DESKTOP,
+    };
 
   public:
     void init() override
     {
-        grab_interface->name = "move";
-        grab_interface->capabilities =
-            wf::CAPABILITY_GRAB_INPUT | wf::CAPABILITY_MANAGE_DESKTOP;
         input_grab = std::make_unique<wf::input_grab_t>("move", output, nullptr, this, this);
-
         activate_binding = [=] (auto)
         {
             is_using_touch     = false;
@@ -139,7 +139,7 @@ class wayfire_move : public wf::plugin_interface_t,
 
         using namespace std::placeholders;
 
-        grab_interface->cancel = [=] ()
+        grab_interface.cancel = [=] ()
         {
             input_pressed(WLR_BUTTON_RELEASED);
         };
@@ -245,7 +245,7 @@ class wayfire_move : public wf::plugin_interface_t,
             return false;
         }
 
-        return output->can_activate_plugin(grab_interface, get_act_flags(view));
+        return output->can_activate_plugin(&grab_interface, get_act_flags(view));
     }
 
     bool grab_input(wayfire_view view)
@@ -256,7 +256,7 @@ class wayfire_move : public wf::plugin_interface_t,
             return false;
         }
 
-        if (!output->activate_plugin(grab_interface, get_act_flags(view)))
+        if (!output->activate_plugin(&grab_interface, get_act_flags(view)))
         {
             return false;
         }
@@ -322,7 +322,7 @@ class wayfire_move : public wf::plugin_interface_t,
     void deactivate()
     {
         input_grab->ungrab_input();
-        output->deactivate_plugin(grab_interface);
+        output->deactivate_plugin(&grab_interface);
     }
 
     void input_pressed(uint32_t state)
@@ -563,4 +563,4 @@ class wayfire_move : public wf::plugin_interface_t,
     }
 };
 
-DECLARE_WAYFIRE_PLUGIN(wayfire_move);
+DECLARE_WAYFIRE_PLUGIN(wf::per_output_plugin_t<wayfire_move>);

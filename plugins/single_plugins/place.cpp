@@ -1,10 +1,10 @@
-#include <wayfire/plugin.hpp>
+#include <wayfire/per-output-plugin.hpp>
 #include <wayfire/view.hpp>
 #include <wayfire/core.hpp>
 #include <wayfire/workspace-manager.hpp>
 #include <wayfire/signal-definitions.hpp>
 
-class wayfire_place_window : public wf::plugin_interface_t
+class wayfire_place_window : public wf::per_output_plugin_instance_t
 {
     wf::signal_connection_t created_cb = [=] (wf::signal_data_t *data)
     {
@@ -122,4 +122,4 @@ class wayfire_place_window : public wf::plugin_interface_t
     }
 };
 
-DECLARE_WAYFIRE_PLUGIN(wayfire_place_window);
+DECLARE_WAYFIRE_PLUGIN(wf::per_output_plugin_t<wayfire_place_window>);

@@ -1,10 +1,10 @@
 #include <wayfire/plugins/vswitch.hpp>
-#include <wayfire/plugin.hpp>
+#include <wayfire/per-output-plugin.hpp>
 #include <linux/input.h>
 #include <wayfire/util/log.hpp>
 
 
-class vswitch : public wf::plugin_interface_t
+class vswitch : public wf::per_output_plugin_instance_t
 {
   private:
 
@@ -38,20 +38,19 @@ class vswitch : public wf::plugin_interface_t
     // a custom renderer.
     static constexpr uint32_t base_caps = wf::CAPABILITY_CUSTOM_RENDERER;
 
+    wf::plugin_grab_interface_t grab_interface = {
+        .name   = "vswitch",
+        .cancel = [=] () { algorithm->stop_switch(false); },
+    };
+
   public:
     void init()
     {
-        grab_interface->name   = "vswitch";
-        grab_interface->cancel = [=] ()
-        {
-            algorithm->stop_switch(false);
-        };
-
         output->connect_signal("set-workspace-request", &on_set_workspace_request);
         output->connect_signal("view-disappeared", &on_grabbed_view_disappear);
 
         algorithm = std::make_unique<vswitch_basic_plugin>(output,
-            [=] () { output->deactivate_plugin(grab_interface); });
+            [=] () { output->deactivate_plugin(&grab_interface); });
 
         bindings = std::make_unique<wf::vswitch::control_bindings_t>(output);
         bindings->setup([this] (wf::point_t delta, wayfire_view view, bool only_view)
@@ -102,12 +101,12 @@ class vswitch : public wf::plugin_interface_t
 
     inline bool is_active()
     {
-        return output->is_plugin_active(grab_interface->name);
+        return output->is_plugin_active(grab_interface.name);
     }
 
     inline bool can_activate()
     {
-        return is_active() || output->can_activate_plugin(grab_interface);
+        return is_active() || output->can_activate_plugin(&grab_interface);
     }
 
     /**
@@ -123,13 +122,13 @@ class vswitch : public wf::plugin_interface_t
         uint32_t total_caps = caps | base_caps;
         if (!is_active())
         {
-            this->grab_interface->capabilities = total_caps;
+            this->grab_interface.capabilities = total_caps;
 
             return true;
         }
 
         // already have everything needed
-        if ((grab_interface->capabilities & total_caps) == total_caps)
+        if ((grab_interface.capabilities & total_caps) == total_caps)
         {
             // note: do not downgrade, in case total_caps are a subset of
             // current_caps
@@ -139,7 +138,7 @@ class vswitch : public wf::plugin_interface_t
         // check for only the additional caps
         if (output->can_activate_plugin(caps))
         {
-            grab_interface->capabilities = total_caps;
+            grab_interface.capabilities = total_caps;
 
             return true;
         } else
@@ -209,7 +208,7 @@ class vswitch : public wf::plugin_interface_t
 
     bool start_switch()
     {
-        if (!output->activate_plugin(grab_interface))
+        if (!output->activate_plugin(&grab_interface))
         {
             return false;
         }
@@ -230,4 +229,4 @@ class vswitch : public wf::plugin_interface_t
     }
 };
 
-DECLARE_WAYFIRE_PLUGIN(vswitch);
+DECLARE_WAYFIRE_PLUGIN(wf::per_output_plugin_t<vswitch>);

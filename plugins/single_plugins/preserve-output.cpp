@@ -4,7 +4,7 @@
 #include "wayfire/util.hpp"
 #include <sys/types.h>
 #include <chrono>
-#include <wayfire/plugin.hpp>
+#include <wayfire/per-output-plugin.hpp>
 #include <wayfire/view.hpp>
 #include <wayfire/core.hpp>
 #include <wayfire/workspace-manager.hpp>
@@ -111,7 +111,7 @@ class preserve_output_t
  * preserve-output plugin
  */
 
-class wayfire_preserve_output : public wf::plugin_interface_t
+class wayfire_preserve_output : public wf::per_output_plugin_instance_t
 {
     bool outputs_being_removed = false;
     wf::shared_data::ref_ptr_t<preserve_output_t> core_data;
@@ -328,4 +328,4 @@ class wayfire_preserve_output : public wf::plugin_interface_t
     }
 };
 
-DECLARE_WAYFIRE_PLUGIN(wayfire_preserve_output);
+DECLARE_WAYFIRE_PLUGIN(wf::per_output_plugin_t<wayfire_preserve_output>);

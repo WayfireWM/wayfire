@@ -1,8 +1,8 @@
-#include <cctype>
+#include "wayfire/plugins/common/shared-core-data.hpp"
 #include <string>
 #include <map>
 #include <wayfire/plugin.hpp>
-#include <wayfire/singleton-plugin.hpp>
+#include <wayfire/per-output-plugin.hpp>
 #include <wayfire/output.hpp>
 #include <wayfire/signal-definitions.hpp>
 #include <wayfire/util/log.hpp>
@@ -73,11 +73,12 @@ struct scale_title_filter_text
     }
 };
 
-class scale_title_filter : public wf::singleton_plugin_t<scale_title_filter_text>
+class scale_title_filter : public wf::per_output_plugin_instance_t
 {
     wf::option_wrapper_t<bool> case_sensitive{"scale-title-filter/case_sensitive"};
     wf::option_wrapper_t<bool> share_filter{"scale-title-filter/share_filter"};
     scale_title_filter_text local_filter;
+    wf::shared_data::ref_ptr_t<scale_title_filter_text> global_filter;
 
     inline void fix_case(std::string& string)
     {
@@ -120,7 +121,7 @@ class scale_title_filter : public wf::singleton_plugin_t<scale_title_filter_text
 
     scale_title_filter_text& get_active_filter()
     {
-        return share_filter ? get_instance() : local_filter;
+        return share_filter ? *global_filter.get() : local_filter;
     }
 
   public:
@@ -133,14 +134,7 @@ class scale_title_filter : public wf::singleton_plugin_t<scale_title_filter_text
 
     void init() override
     {
-        wf::singleton_plugin_t<scale_title_filter_text>::init();
-
-        auto& global = get_instance();
-        global.add_instance(this);
-
-        grab_interface->name = "scale-title-filter";
-        grab_interface->capabilities = 0;
-
+        global_filter->add_instance(this);
         share_filter.set_callback(shared_option_changed);
         output->connect_signal("scale-filter", &view_filter);
         output->connect_signal("scale-end", &scale_end);
@@ -149,11 +143,7 @@ class scale_title_filter : public wf::singleton_plugin_t<scale_title_filter_text
     void fini() override
     {
         do_end_scale();
-
-        auto& global = get_instance();
-        global.rem_instance(this);
-
-        wf::singleton_plugin_t<scale_title_filter_text>::fini();
+        global_filter->rem_instance(this);
     }
 
     wf::signal_connection_t view_filter{[this] (wf::signal_data_t *data)
@@ -253,7 +243,7 @@ class scale_title_filter : public wf::singleton_plugin_t<scale_title_filter_text
         if (scale_running)
         {
             /* clear the filter that is not used anymore */
-            auto& filter = share_filter ? local_filter : get_instance();
+            auto& filter = get_active_filter();
             filter.clear();
             output->emit_signal("scale-update", nullptr);
             update_overlay();
@@ -447,4 +437,4 @@ void scale_title_filter_text::check_scale_end()
     }
 }
 
-DECLARE_WAYFIRE_PLUGIN(scale_title_filter);
+DECLARE_WAYFIRE_PLUGIN(wf::per_output_plugin_t<scale_title_filter>);

@@ -39,8 +39,7 @@ class ref_ptr_t
     ref_ptr_t()
     {
         update_use_count(+1);
-        this->data =
-            &wf::get_core().get_data_safe<detail::shared_data_t<T>>()->data;
+        this->data = &wf::get_core().get_data_safe<detail::shared_data_t<T>>()->data;
     }
 
     ref_ptr_t(const ref_ptr_t<T>& other)
@@ -61,6 +60,11 @@ class ref_ptr_t
     ~ref_ptr_t()
     {
         update_use_count(-1);
+    }
+
+    T *get()
+    {
+        return data;
     }
 
     T*operator ->()

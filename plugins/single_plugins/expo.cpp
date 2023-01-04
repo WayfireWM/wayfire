@@ -3,7 +3,7 @@
 #include "wayfire/render-manager.hpp"
 #include "wayfire/scene-input.hpp"
 #include <memory>
-#include <wayfire/plugin.hpp>
+#include <wayfire/per-output-plugin.hpp>
 #include <wayfire/output.hpp>
 #include <wayfire/core.hpp>
 #include <wayfire/output-layout.hpp>
@@ -18,7 +18,7 @@
 /* TODO: this file should be included in some header maybe(plugin.hpp) */
 #include <linux/input-event-codes.h>
 
-class wayfire_expo : public wf::plugin_interface_t, public wf::keyboard_interaction_t,
+class wayfire_expo : public wf::per_output_plugin_instance_t, public wf::keyboard_interaction_t,
     public wf::pointer_interaction_t, public wf::touch_interaction_t
 {
   private:
@@ -124,22 +124,20 @@ class wayfire_expo : public wf::plugin_interface_t, public wf::keyboard_interact
         }
     }
 
+    wf::plugin_grab_interface_t grab_interface = {
+        .name = "expo",
+        .capabilities = wf::CAPABILITY_MANAGE_COMPOSITOR,
+        .cancel = [=] () { finalize_and_exit(); },
+    };
+
     void init() override
     {
-        grab_interface->name = "expo";
-        grab_interface->capabilities = wf::CAPABILITY_MANAGE_COMPOSITOR;
         input_grab = std::make_unique<wf::input_grab_t>("expo", output, this, this, this);
 
         setup_workspace_bindings_from_config();
         wall = std::make_unique<wf::workspace_wall_t>(this->output);
 
         output->add_activator(toggle_binding, &toggle_cb);
-
-        grab_interface->cancel = [=] ()
-        {
-            finalize_and_exit();
-        };
-
         drag_helper->connect_signal("focus-output", &on_drag_output_focus);
         drag_helper->connect_signal("snap-off", &on_drag_snap_off);
         drag_helper->connect_signal("done", &on_drag_done);
@@ -214,7 +212,7 @@ class wayfire_expo : public wf::plugin_interface_t, public wf::keyboard_interact
 
     bool can_handle_drag()
     {
-        return output->is_plugin_active(grab_interface->name);
+        return output->is_plugin_active(grab_interface.name);
     }
 
     wf::signal_connection_t on_drag_output_focus = [=] (auto data)
@@ -274,7 +272,7 @@ class wayfire_expo : public wf::plugin_interface_t, public wf::keyboard_interact
 
     bool activate()
     {
-        if (!output->activate_plugin(grab_interface))
+        if (!output->activate_plugin(&grab_interface))
         {
             return false;
         }
@@ -293,8 +291,7 @@ class wayfire_expo : public wf::plugin_interface_t, public wf::keyboard_interact
 
         for (size_t i = 0; i < keyboard_select_cbs.size(); i++)
         {
-            output->add_activator(keyboard_select_options[i],
-                &keyboard_select_cbs[i]);
+            output->add_activator(keyboard_select_options[i], &keyboard_select_cbs[i]);
         }
 
         highlight_active_workspace();
@@ -747,7 +744,7 @@ class wayfire_expo : public wf::plugin_interface_t, public wf::keyboard_interact
             drag_helper->handle_input_released();
         }
 
-        output->deactivate_plugin(grab_interface);
+        output->deactivate_plugin(&grab_interface);
         input_grab->ungrab_input();
         wall->stop_output_renderer(true);
         output->render->rem_effect(&post_frame);
@@ -766,4 +763,4 @@ class wayfire_expo : public wf::plugin_interface_t, public wf::keyboard_interact
     }
 };
 
-DECLARE_WAYFIRE_PLUGIN(wayfire_expo);
+DECLARE_WAYFIRE_PLUGIN(wf::per_output_plugin_t<wayfire_expo>);

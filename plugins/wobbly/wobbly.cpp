@@ -2,7 +2,7 @@
 #include "wayfire/opengl.hpp"
 #include "wayfire/region.hpp"
 #include <memory>
-#include <wayfire/plugin.hpp>
+#include <wayfire/per-output-plugin.hpp>
 #include <wayfire/signal-definitions.hpp>
 #include <wayfire/core.hpp>
 #include <wayfire/view-transform.hpp>
@@ -647,7 +647,7 @@ class wobbly_transformer_node_t : public wf::scene::floating_inner_node_t
 
     wf::signal_connection_t view_output_changed = [=] (wf::signal_data_t *data)
     {
-        auto sig = static_cast<wf::_output_signal*>(data);
+        auto sig = static_cast<wf::view_set_output_signal*>(data);
 
         if (!view->get_output())
         {
@@ -913,23 +913,19 @@ void wobbly_transformer_node_t::gen_render_instances(
         this, push_damage, shown_on));
 }
 
-class wayfire_wobbly : public wf::plugin_interface_t
+class wayfire_wobbly : public wf::per_output_plugin_instance_t
 {
     wf::signal_connection_t wobbly_changed;
 
   public:
     void init() override
     {
-        grab_interface->capabilities = 0;
-        grab_interface->name = "wobbly";
-
         wobbly_changed.set_callback([=] (wf::signal_data_t *data)
         {
             adjust_wobbly(static_cast<wobbly_signal*>(data));
         });
 
         output->connect_signal("wobbly-event", &wobbly_changed);
-
         wobbly_graphics::load_program();
     }
 
@@ -1014,4 +1010,4 @@ class wayfire_wobbly : public wf::plugin_interface_t
     }
 };
 
-DECLARE_WAYFIRE_PLUGIN(wayfire_wobbly);
+DECLARE_WAYFIRE_PLUGIN(wf::per_output_plugin_t<wayfire_wobbly>);

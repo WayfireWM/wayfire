@@ -1,4 +1,4 @@
-#include <wayfire/plugin.hpp>
+#include <wayfire/per-output-plugin.hpp>
 #include <wayfire/output.hpp>
 #include <wayfire/core.hpp>
 #include <wayfire/view.hpp>
@@ -7,6 +7,7 @@
 #include <algorithm>
 #include <cmath>
 #include <linux/input-event-codes.h>
+#include "wayfire/plugin.hpp"
 #include "wayfire/signal-definitions.hpp"
 #include <wayfire/plugins/common/geometry-animation.hpp>
 #include "wayfire/plugins/grid.hpp"
@@ -16,8 +17,6 @@
 #include <wayfire/view-transform.hpp>
 
 const std::string grid_view_id = "grid-view";
-
-
 
 class wf_grid_slot_data : public wf::custom_data_t
 {
@@ -97,7 +96,7 @@ static uint32_t get_slot_from_tiled_edges(uint32_t edges)
     return 0;
 }
 
-class wayfire_grid : public wf::plugin_interface_t
+class wayfire_grid : public wf::per_output_plugin_instance_t
 {
     std::vector<std::string> slots =
     {"unused", "bl", "b", "br", "l", "c", "r", "tl", "t", "tr"};
@@ -105,9 +104,14 @@ class wayfire_grid : public wf::plugin_interface_t
     wf::option_wrapper_t<wf::activatorbinding_t> keys[10];
     wf::option_wrapper_t<wf::activatorbinding_t> restore_opt{"grid/restore"};
 
+    wf::plugin_grab_interface_t grab_interface{
+        .name = "grid",
+        .capabilities = wf::CAPABILITY_MANAGE_DESKTOP,
+    };
+
     wf::activator_callback restore = [=] (auto)
     {
-        if (!output->can_activate_plugin(grab_interface))
+        if (!output->can_activate_plugin(&grab_interface))
         {
             return false;
         }
@@ -126,9 +130,6 @@ class wayfire_grid : public wf::plugin_interface_t
   public:
     void init() override
     {
-        grab_interface->name = "grid";
-        grab_interface->capabilities = wf::CAPABILITY_MANAGE_DESKTOP;
-
         for (int i = 1; i < 10; i++)
         {
             keys[i].load_option("grid/slot_" + slots[i]);
@@ -326,4 +327,4 @@ class wayfire_grid : public wf::plugin_interface_t
     }
 };
 
-DECLARE_WAYFIRE_PLUGIN(wayfire_grid);
+DECLARE_WAYFIRE_PLUGIN(wf::per_output_plugin_t<wayfire_grid>);

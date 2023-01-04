@@ -1,10 +1,10 @@
-#include <wayfire/plugin.hpp>
+#include <wayfire/per-output-plugin.hpp>
 #include <wayfire/output.hpp>
 #include <wayfire/core.hpp>
 #include <wayfire/view.hpp>
 #include <wayfire/output-layout.hpp>
 
-class wayfire_output_manager : public wf::plugin_interface_t
+class wayfire_output_manager : public wf::per_output_plugin_instance_t
 {
     wf::wl_idle_call idle_next_output;
 
@@ -48,14 +48,9 @@ class wayfire_output_manager : public wf::plugin_interface_t
   public:
     void init()
     {
-        grab_interface->name = "oswitch";
-        grab_interface->capabilities = 0;
-
-        output->add_activator(
-            wf::option_wrapper_t<wf::activatorbinding_t>{"oswitch/next_output"},
+        output->add_activator(wf::option_wrapper_t<wf::activatorbinding_t>{"oswitch/next_output"},
             &switch_output);
-        output->add_activator(
-            wf::option_wrapper_t<wf::activatorbinding_t>{"oswitch/next_output_with_win"},
+        output->add_activator(wf::option_wrapper_t<wf::activatorbinding_t>{"oswitch/next_output_with_win"},
             &switch_output_with_window);
     }
 
@@ -67,4 +62,4 @@ class wayfire_output_manager : public wf::plugin_interface_t
     }
 };
 
-DECLARE_WAYFIRE_PLUGIN(wayfire_output_manager);
+DECLARE_WAYFIRE_PLUGIN(wf::per_output_plugin_t<wayfire_output_manager>);

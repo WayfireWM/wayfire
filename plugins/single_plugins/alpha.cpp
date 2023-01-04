@@ -25,22 +25,23 @@
 #include <memory>
 #include <wayfire/core.hpp>
 #include <wayfire/view.hpp>
-#include <wayfire/plugin.hpp>
+#include <wayfire/per-output-plugin.hpp>
 #include <wayfire/output.hpp>
 #include "wayfire/view-transform.hpp"
 #include "wayfire/workspace-manager.hpp"
 
-class wayfire_alpha : public wf::plugin_interface_t
+class wayfire_alpha : public wf::per_output_plugin_instance_t
 {
     wf::option_wrapper_t<wf::keybinding_t> modifier{"alpha/modifier"};
     wf::option_wrapper_t<double> min_value{"alpha/min_value"};
+    wf::plugin_grab_interface_t grab_interface{
+        .name = "alpha",
+        .capabilities = wf::CAPABILITY_MANAGE_DESKTOP,
+    };
 
   public:
     void init() override
     {
-        grab_interface->name = "alpha";
-        grab_interface->capabilities = wf::CAPABILITY_MANAGE_DESKTOP;
-
         min_value.set_callback(min_value_changed);
         output->add_axis(modifier, &axis_cb);
     }
@@ -72,12 +73,12 @@ class wayfire_alpha : public wf::plugin_interface_t
 
     wf::axis_callback axis_cb = [=] (wlr_pointer_axis_event *ev)
     {
-        if (!output->activate_plugin(grab_interface))
+        if (!output->activate_plugin(&grab_interface))
         {
             return false;
         }
 
-        output->deactivate_plugin(grab_interface);
+        output->deactivate_plugin(&grab_interface);
 
         auto view = wf::get_core().get_cursor_focus_view();
         if (!view)
@@ -131,4 +132,4 @@ class wayfire_alpha : public wf::plugin_interface_t
     }
 };
 
-DECLARE_WAYFIRE_PLUGIN(wayfire_alpha);
+DECLARE_WAYFIRE_PLUGIN(wf::per_output_plugin_t<wayfire_alpha>);

@@ -11,8 +11,6 @@
 class wayfire_config;
 namespace wf
 {
-class output_t;
-
 /**
  * Plugins can set their capabilities to indicate what kind of plugin they are.
  * At any point, only one plugin with a given capability can be active on its
@@ -43,15 +41,15 @@ enum plugin_capabilities_t
 struct plugin_grab_interface_t
 {
     // The name of the plugin. Used mostly for debugging purposes.
-    std::string name;
+    std::string name = "";
     // The plugin capabilities. A bitmask of the values specified above
-    uint32_t capabilities;
+    uint32_t capabilities = 0;
 
     /**
      * Each plugin might be deactivated forcefully, for example when the desktop is locked. Plugins should
      * honor this signal and exit their grabs/renderers immediately.
      */
-    std::function<void()> cancel;
+    std::function<void()> cancel = [] () {};
 };
 
 using plugin_grab_interface_uptr = std::unique_ptr<plugin_grab_interface_t>;
@@ -59,18 +57,6 @@ using plugin_grab_interface_uptr = std::unique_ptr<plugin_grab_interface_t>;
 class plugin_interface_t
 {
   public:
-    /**
-     * The output this plugin is running on. Initialized by core.
-     * Each output has its own set of plugin instances. This way, a plugin
-     * rarely if ever needs to care about multi-monitor setups.
-     */
-    wf::output_t *output;
-
-    /**
-     * The grab interface of the plugin, initialized by core.
-     */
-    std::unique_ptr<plugin_grab_interface_t> grab_interface;
-
     /**
      * The init method is the entry of the plugin. In the init() method, the
      * plugin should register all bindings it provides, connect to signals, etc.
@@ -97,10 +83,7 @@ class plugin_interface_t
         return true;
     }
 
-    virtual ~plugin_interface_t();
-
-    /** Handle to the plugin's .so file, used by the plugin loader */
-    void *handle = NULL;
+    virtual ~plugin_interface_t() = default;
 };
 }
 
@@ -114,7 +97,7 @@ class plugin_interface_t
 using wayfire_plugin_load_func = wf::plugin_interface_t * (*)();
 
 /** The version of Wayfire's API/ABI */
-constexpr uint32_t WAYFIRE_API_ABI_VERSION = 2023'01'04;
+constexpr uint32_t WAYFIRE_API_ABI_VERSION = 2023'01'04'1;
 
 /**
  * Each plugin must also provide a function which returns the Wayfire API/ABI

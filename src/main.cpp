@@ -15,7 +15,7 @@
 #include <wayland-server.h>
 
 #include "wayfire/config-backend.hpp"
-#include "output/plugin-loader.hpp"
+#include "core/plugin-loader.hpp"
 #include "core/core-impl.hpp"
 #include "wayfire/output.hpp"
 

@@ -1,10 +1,10 @@
-#include <wayfire/plugin.hpp>
+#include <wayfire/per-output-plugin.hpp>
 #include <wayfire/output.hpp>
 #include <wayfire/opengl.hpp>
 #include <wayfire/render-manager.hpp>
 #include <wayfire/util/duration.hpp>
 
-class wayfire_zoom_screen : public wf::plugin_interface_t
+class wayfire_zoom_screen : public wf::per_output_plugin_instance_t
 {
     enum class interpolation_method_t
     {
@@ -19,14 +19,15 @@ class wayfire_zoom_screen : public wf::plugin_interface_t
     wf::animation::simple_animation_t progression{smoothing_duration};
     bool hook_set = false;
 
+    wf::plugin_grab_interface_t grab_interface = {
+        .name = "zoom",
+        .capabilities = 0,
+    };
+
   public:
     void init() override
     {
-        grab_interface->name = "zoom";
-        grab_interface->capabilities = 0;
-
         progression.set(1, 1);
-
         output->add_axis(modifier, &axis);
     }
 
@@ -51,7 +52,7 @@ class wayfire_zoom_screen : public wf::plugin_interface_t
 
     wf::axis_callback axis = [=] (wlr_pointer_axis_event *ev)
     {
-        if (!output->can_activate_plugin(grab_interface))
+        if (!output->can_activate_plugin(&grab_interface))
         {
             return false;
         }
@@ -129,4 +130,4 @@ class wayfire_zoom_screen : public wf::plugin_interface_t
     }
 };
 
-DECLARE_WAYFIRE_PLUGIN(wayfire_zoom_screen);
+DECLARE_WAYFIRE_PLUGIN(wf::per_output_plugin_t<wayfire_zoom_screen>);

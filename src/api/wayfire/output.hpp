@@ -117,8 +117,7 @@ class output_t : public wf::object_base_t, public wf::signal::provider_t
      *
      * @return true if the plugin is able to be activated, false otherwise.
      */
-    virtual bool can_activate_plugin(const plugin_grab_interface_uptr& owner,
-        uint32_t flags = 0) = 0;
+    virtual bool can_activate_plugin(wf::plugin_grab_interface_t *owner, uint32_t flags = 0) = 0;
 
     /**
      * Same as can_activate_plugin(plugin_grab_interface_uptr), but checks for
@@ -138,8 +137,7 @@ class output_t : public wf::object_base_t, public wf::signal::provider_t
      *
      * @return true if the plugin was successfully activated, false otherwise.
      */
-    virtual bool activate_plugin(const plugin_grab_interface_uptr& owner,
-        uint32_t flags = 0) = 0;
+    virtual bool activate_plugin(wf::plugin_grab_interface_t *owner, uint32_t flags = 0) = 0;
 
     /**
      * Deactivates a plugin once, i.e if the plugin was activated more than
@@ -147,7 +145,7 @@ class output_t : public wf::object_base_t, public wf::signal::provider_t
      *
      * @return true if the plugin remains activated, false otherwise.
      */
-    virtual bool deactivate_plugin(const plugin_grab_interface_uptr& owner) = 0;
+    virtual bool deactivate_plugin(wf::plugin_grab_interface_t *owner) = 0;
 
     /**
      * Send cancel to all active plugins,

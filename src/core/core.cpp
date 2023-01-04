@@ -2,8 +2,10 @@
 #ifndef _GNU_SOURCE
     #define _GNU_SOURCE
     #include "wayfire/util.hpp"
+    #include <memory>
 #endif
 
+#include "plugin-loader.hpp"
 #include "seat/tablet.hpp"
 #include "wayfire/touch/touch.hpp"
 #include "wayfire/view.hpp"
@@ -310,11 +312,11 @@ void wf::compositor_core_impl_t::post_init()
 {
     this->emit_signal("_backend_started", nullptr);
     this->state = compositor_state_t::RUNNING;
+    plugin_mgr  = std::make_unique<wf::plugin_manager_t>();
 
     // Move pointer to the middle of the leftmost, topmost output
     wf::pointf_t p;
-    wf::output_t *wo =
-        wf::get_core().output_layout->get_output_coords_at({FLT_MIN, FLT_MIN}, p);
+    wf::output_t *wo = wf::get_core().output_layout->get_output_coords_at({FLT_MIN, FLT_MIN}, p);
     // Output might be noop but guaranteed to not be null
     wo->ensure_pointer(true);
     focus_output(wo);

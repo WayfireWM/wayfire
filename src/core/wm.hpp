@@ -2,6 +2,7 @@
 #define WM_H
 
 #include "wayfire/plugin.hpp"
+#include "wayfire/per-output-plugin.hpp"
 #include "wayfire/bindings.hpp"
 #include "wayfire/view.hpp"
 #include "wayfire/touch/touch.hpp"
@@ -12,16 +13,21 @@ struct wm_focus_request : public wf::signal_data_t
     wf::scene::node_ptr node;
 };
 
-class wayfire_close : public wf::plugin_interface_t
+class wayfire_close : public wf::per_output_plugin_instance_t
 {
     wf::activator_callback callback;
+
+    wf::plugin_grab_interface_t grab_interface = {
+        .name = "builtin-close-view",
+        .capabilities = wf::CAPABILITY_GRAB_INPUT,
+    };
 
   public:
     void init() override;
     void fini() override;
 };
 
-class wayfire_focus : public wf::plugin_interface_t
+class wayfire_focus : public wf::per_output_plugin_instance_t
 {
     wf::signal_connection_t on_button;
     wf::signal_connection_t on_wm_focus_request;
@@ -35,12 +41,17 @@ class wayfire_focus : public wf::plugin_interface_t
     wf::option_wrapper_t<bool> pass_btns{"core/focus_buttons_passthrough"};
     wf::option_wrapper_t<wf::activatorbinding_t> focus_btns{"core/focus_buttons"};
 
+    wf::plugin_grab_interface_t grab_interface = {
+        .name = "_wf_focus",
+        .capabilities = wf::CAPABILITY_MANAGE_DESKTOP,
+    };
+
   public:
     void init() override;
     void fini() override;
 };
 
-class wayfire_exit : public wf::plugin_interface_t
+class wayfire_exit : public wf::per_output_plugin_instance_t
 {
     wf::key_callback key;
 
@@ -48,4 +59,5 @@ class wayfire_exit : public wf::plugin_interface_t
     void init() override;
     void fini() override;
 };
+
 #endif

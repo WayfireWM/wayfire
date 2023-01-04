@@ -1,4 +1,4 @@
-#include <wayfire/plugin.hpp>
+#include <wayfire/per-output-plugin.hpp>
 #include <wayfire/output.hpp>
 #include <wayfire/opengl.hpp>
 #include <wayfire/render-manager.hpp>
@@ -42,7 +42,7 @@ void main()
 }
 )";
 
-class wayfire_invert_screen : public wf::plugin_interface_t
+class wayfire_invert_screen : public wf::per_output_plugin_instance_t
 {
     wf::post_hook_t hook;
     wf::activator_callback toggle_cb;
@@ -51,13 +51,15 @@ class wayfire_invert_screen : public wf::plugin_interface_t
     bool active = false;
     OpenGL::program_t program;
 
+    wf::plugin_grab_interface_t grab_interface = {
+        .name = "invert",
+        .capabilities = 0,
+    };
+
   public:
     void init() override
     {
         wf::option_wrapper_t<wf::activatorbinding_t> toggle_key{"invert/toggle"};
-
-        grab_interface->name = "invert";
-        grab_interface->capabilities = 0;
 
         hook = [=] (const wf::framebuffer_t& source,
                     const wf::framebuffer_t& destination)
@@ -67,7 +69,7 @@ class wayfire_invert_screen : public wf::plugin_interface_t
 
         toggle_cb = [=] (auto)
         {
-            if (!output->can_activate_plugin(grab_interface))
+            if (!output->can_activate_plugin(&grab_interface))
             {
                 return false;
             }
@@ -144,4 +146,4 @@ class wayfire_invert_screen : public wf::plugin_interface_t
     }
 };
 
-DECLARE_WAYFIRE_PLUGIN(wayfire_invert_screen);
+DECLARE_WAYFIRE_PLUGIN(wf::per_output_plugin_t<wayfire_invert_screen>);

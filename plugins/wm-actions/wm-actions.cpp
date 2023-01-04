@@ -1,5 +1,5 @@
 #include <wayfire/view.hpp>
-#include <wayfire/plugin.hpp>
+#include <wayfire/per-output-plugin.hpp>
 #include <wayfire/output.hpp>
 #include <wayfire/workspace-manager.hpp>
 #include <wayfire/util/log.hpp>
@@ -7,7 +7,7 @@
 #include "wayfire/scene.hpp"
 #include "wm-actions-signals.hpp"
 
-class wayfire_wm_actions_t : public wf::plugin_interface_t
+class wayfire_wm_actions_t : public wf::per_output_plugin_instance_t
 {
     wf::scene::floating_inner_ptr always_above;
     bool showdesktop_active = false;
@@ -27,9 +27,14 @@ class wayfire_wm_actions_t : public wf::plugin_interface_t
     wf::option_wrapper_t<wf::activatorbinding_t> send_to_back{
         "wm-actions/send_to_back"};
 
+    wf::plugin_grab_interface_t grab_interface = {
+        .name = "wm-actions",
+        .capabilities = 0,
+    };
+
     bool set_keep_above_state(wayfire_view view, bool above)
     {
-        if (!view || !output->can_activate_plugin(this->grab_interface))
+        if (!view || !output->can_activate_plugin(&grab_interface))
         {
             return false;
         }
@@ -191,7 +196,7 @@ class wayfire_wm_actions_t : public wf::plugin_interface_t
         std::function<bool(wayfire_view)> for_view)
     {
         auto view = choose_view(source);
-        if (!view || !output->can_activate_plugin(this->grab_interface))
+        if (!view || !output->can_activate_plugin(&grab_interface))
         {
             return false;
         }
@@ -379,4 +384,4 @@ class wayfire_wm_actions_t : public wf::plugin_interface_t
     }
 };
 
-DECLARE_WAYFIRE_PLUGIN(wayfire_wm_actions_t);
+DECLARE_WAYFIRE_PLUGIN(wf::per_output_plugin_t<wayfire_wm_actions_t>);

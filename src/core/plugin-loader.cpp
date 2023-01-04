@@ -10,12 +10,11 @@
 #include "wayfire/output.hpp"
 #include "../core/wm.hpp"
 #include "wayfire/core.hpp"
+#include "wayfire/plugin.hpp"
 #include <wayfire/util/log.hpp>
 
-
-plugin_manager::plugin_manager(wf::output_t *o)
+wf::plugin_manager_t::plugin_manager_t()
 {
-    this->output = o;
     this->plugins_opt.load_option("core/plugins");
 
     reload_dynamic_plugins();
@@ -24,27 +23,27 @@ plugin_manager::plugin_manager(wf::output_t *o)
     this->plugins_opt.set_callback([=] ()
     {
         /* reload when config reload has finished */
-        idle_reaload_plugins.run_once([&] () {reload_dynamic_plugins(); });
+        idle_reload_plugins.run_once([&] () { reload_dynamic_plugins(); });
     });
 }
 
-void plugin_manager::deinit_plugins(bool unloadable)
+void wf::plugin_manager_t::deinit_plugins(bool unloadable)
 {
-    for (auto& p : loaded_plugins)
+    for (auto& [name, plugin] : loaded_plugins)
     {
-        if (!p.second) // already destroyed on the previous iteration
+        if (!plugin.instance)
         {
             continue;
         }
 
-        if (p.second->is_unloadable() == unloadable)
+        if (plugin.instance->is_unloadable() == unloadable)
         {
-            destroy_plugin(p.second);
+            destroy_plugin(plugin);
         }
     }
 }
 
-plugin_manager::~plugin_manager()
+wf::plugin_manager_t::~plugin_manager_t()
 {
     /* First remove unloadable plugins, then others */
     deinit_plugins(true);
@@ -53,20 +52,10 @@ plugin_manager::~plugin_manager()
     loaded_plugins.clear();
 }
 
-void plugin_manager::init_plugin(wayfire_plugin& p)
+void wf::plugin_manager_t::destroy_plugin(wf::loaded_plugin_t& p)
 {
-    p->grab_interface = std::make_unique<wf::plugin_grab_interface_t>();
-    p->output = output;
-    p->init();
-}
-
-void plugin_manager::destroy_plugin(wayfire_plugin& p)
-{
-    p->fini();
-    output->deactivate_plugin(p->grab_interface);
-
-    auto handle = p->handle;
-    p.reset();
+    p.instance->fini();
+    p.instance.reset();
 
     /* dlopen()/dlclose() do reference counting, so we should close the plugin
      * as many times as we opened it.
@@ -85,9 +74,9 @@ void plugin_manager::destroy_plugin(wayfire_plugin& p)
      * [3]:
      * https://wiki.musl-libc.org/functional-differences-from-glibc.html#Unloading-libraries
      * */
-    if (handle)
+    if (p.so_handle)
     {
-        dlclose(handle);
+        dlclose(p.so_handle);
     }
 }
 
@@ -110,8 +99,7 @@ std::pair<void*, void*> wf::get_new_instance_handle(const std::string& path)
         return {nullptr, nullptr};
     }
 
-    auto version_func =
-        union_cast<void*, wayfire_plugin_version_func>(version_func_ptr);
+    auto version_func = union_cast<void*, wayfire_plugin_version_func>(version_func_ptr);
     int32_t plugin_abi_version = version_func();
 
     if (version_func() != WAYFIRE_API_ABI_VERSION)
@@ -135,25 +123,23 @@ std::pair<void*, void*> wf::get_new_instance_handle(const std::string& path)
     return {handle, new_instance_func_ptr};
 }
 
-wayfire_plugin plugin_manager::load_plugin_from_file(std::string path)
+std::optional<wf::loaded_plugin_t> wf::plugin_manager_t::load_plugin_from_file(std::string path)
 {
     auto [handle, new_instance_func_ptr] = wf::get_new_instance_handle(path);
-
     if (new_instance_func_ptr)
     {
-        auto new_instance_func =
-            wf::union_cast<void*, wayfire_plugin_load_func>(new_instance_func_ptr);
+        auto new_instance_func = union_cast<void*, wayfire_plugin_load_func>(new_instance_func_ptr);
 
-        auto ptr = wayfire_plugin(new_instance_func());
-        ptr->handle = handle;
-
-        return ptr;
+        loaded_plugin_t lp;
+        lp.instance  = std::unique_ptr<wf::plugin_interface_t>(new_instance_func());
+        lp.so_handle = handle;
+        return lp;
     }
 
-    return nullptr;
+    return {};
 }
 
-void plugin_manager::reload_dynamic_plugins()
+void wf::plugin_manager_t::reload_dynamic_plugins()
 {
     std::string plugin_list = plugins_opt;
     if (plugin_list == "none")
@@ -173,16 +159,14 @@ void plugin_manager::reload_dynamic_plugins()
     {
         if (plugin_name.size())
         {
-            auto plugin_path =
-                wf::get_plugin_path_for_name(plugin_paths, plugin_name);
+            auto plugin_path = wf::get_plugin_path_for_name(plugin_paths, plugin_name);
             if (plugin_path)
             {
                 next_plugins.push_back(plugin_path.value());
             } else
             {
                 LOGE("Failed to load plugin \"", plugin_name, "\". ",
-                    "Make sure it is installed in ", PLUGIN_PATH,
-                    " or in $WAYFIRE_PLUGIN_PATH.");
+                    "Make sure it is installed in ", PLUGIN_PATH, " or in $WAYFIRE_PLUGIN_PATH.");
             }
         }
     }
@@ -198,9 +182,8 @@ void plugin_manager::reload_dynamic_plugins()
             continue;
         }
 
-        if ((std::find(next_plugins.begin(), next_plugins.end(),
-            it->first) == next_plugins.end()) &&
-            it->second->is_unloadable())
+        if ((std::find(next_plugins.begin(), next_plugins.end(), it->first) == next_plugins.end()) &&
+            it->second.instance->is_unloadable())
         {
             LOGD("unload plugin ", it->first.c_str());
             destroy_plugin(it->second);
@@ -222,27 +205,27 @@ void plugin_manager::reload_dynamic_plugins()
         auto ptr = load_plugin_from_file(plugin);
         if (ptr)
         {
-            init_plugin(ptr);
-            loaded_plugins[plugin] = std::move(ptr);
+            ptr->instance->init();
+            loaded_plugins[plugin] = std::move(*ptr);
         }
     }
 }
 
 template<class T>
-static wayfire_plugin create_plugin()
+static wf::loaded_plugin_t create_plugin()
 {
-    return std::unique_ptr<wf::plugin_interface_t>(new T);
+    wf::loaded_plugin_t lp;
+    lp.instance  = std::make_unique<T>();
+    lp.so_handle = nullptr;
+    lp.instance->init();
+    return lp;
 }
 
-void plugin_manager::load_static_plugins()
+void wf::plugin_manager_t::load_static_plugins()
 {
-    loaded_plugins["_exit"]  = create_plugin<wayfire_exit>();
-    loaded_plugins["_focus"] = create_plugin<wayfire_focus>();
-    loaded_plugins["_close"] = create_plugin<wayfire_close>();
-
-    init_plugin(loaded_plugins["_exit"]);
-    init_plugin(loaded_plugins["_focus"]);
-    init_plugin(loaded_plugins["_close"]);
+    loaded_plugins["_exit"]  = create_plugin<wf::per_output_plugin_t<wayfire_exit>>();
+    loaded_plugins["_focus"] = create_plugin<wf::per_output_plugin_t<wayfire_focus>>();
+    loaded_plugins["_close"] = create_plugin<wf::per_output_plugin_t<wayfire_close>>();
 }
 
 std::vector<std::string> wf::get_plugin_paths()
@@ -264,8 +247,7 @@ std::vector<std::string> wf::get_plugin_paths()
 }
 
 std::optional<std::string> wf::get_plugin_path_for_name(
-    std::vector<std::string> plugin_paths,
-    std::string plugin_name)
+    std::vector<std::string> plugin_paths, std::string plugin_name)
 {
     if (plugin_name.at(0) == '/')
     {

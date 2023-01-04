@@ -1,5 +1,4 @@
-#ifndef PLUGIN_LOADER_HPP
-#define PLUGIN_LOADER_HPP
+#pragma once
 
 #include <vector>
 #include <unordered_map>
@@ -10,36 +9,34 @@
 
 namespace wf
 {
-class output_t;
-}
-
-class wayfire_config;
-
-using wayfire_plugin = std::unique_ptr<wf::plugin_interface_t>;
-struct plugin_manager
+struct loaded_plugin_t
 {
-    plugin_manager(wf::output_t *o);
-    ~plugin_manager();
+    // A pointer to the plugin
+    std::unique_ptr<wf::plugin_interface_t> instance;
+
+    // A handle returned by dlopen().
+    void *so_handle;
+};
+
+struct plugin_manager_t
+{
+    plugin_manager_t();
+    ~plugin_manager_t();
 
     void reload_dynamic_plugins();
-    wf::wl_idle_call idle_reaload_plugins;
+    wf::wl_idle_call idle_reload_plugins;
 
   private:
-    wf::output_t *output;
     wf::option_wrapper_t<std::string> plugins_opt;
-    std::unordered_map<std::string, wayfire_plugin> loaded_plugins;
+    std::unordered_map<std::string, loaded_plugin_t> loaded_plugins;
 
     void deinit_plugins(bool unloadable);
 
-    wayfire_plugin load_plugin_from_file(std::string path);
+    std::optional<loaded_plugin_t> load_plugin_from_file(std::string path);
     void load_static_plugins();
-
-    void init_plugin(wayfire_plugin& plugin);
-    void destroy_plugin(wayfire_plugin& plugin);
+    void destroy_plugin(loaded_plugin_t& plugin);
 };
 
-namespace wf
-{
 /** Helper functions */
 template<class A, class B>
 B union_cast(A object)
@@ -75,11 +72,8 @@ std::vector<std::string> get_plugin_paths();
  * plugin_name
  * @param plugin_paths A list of locations where wayfire plugins are installed
  * @param plugin_name The plugin to be searched. If @param plugin_name is an
- *   absolute path, then it is retuned without modifiction.
+ *   absolute path, then it is returned without modification.
  */
 std::optional<std::string> get_plugin_path_for_name(
-    std::vector<std::string> plugin_paths,
-    std::string plugin_name);
+    std::vector<std::string> plugin_paths, std::string plugin_name);
 }
-
-#endif /* end of include guard: PLUGIN_LOADER_HPP */

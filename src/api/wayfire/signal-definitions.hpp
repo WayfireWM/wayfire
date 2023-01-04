@@ -1,6 +1,7 @@
 #ifndef SIGNAL_DEFINITIONS_HPP
 #define SIGNAL_DEFINITIONS_HPP
 
+#include "wayfire/object.hpp"
 #include "wayfire/view.hpp"
 #include "wayfire/output.hpp"
 
@@ -142,34 +143,36 @@ struct keyboard_focus_changed_signal : public wf::signal_data_t
  * -------------------------------------------------------------------------- */
 
 /** Base class for all output signals. */
-struct _output_signal : public wf::signal_data_t
-{
-    wf::output_t *output;
-};
-
-/** @return The output in the signal. Must be an _output_signal. */
-output_t *get_signaled_output(signal_data_t *data);
 
 /**
  * name: output-added
  * on: output-layout
  * when: Each time a new output is added.
  */
-using output_added_signal = _output_signal;
+struct output_added_signal
+{
+    wf::output_t *output;
+};
 
 /**
  * name: pre-remove
  * on: output, output-layout(output-)
  * when: Emitted just before starting the destruction procedure for an output.
  */
-using output_pre_remove_signal = _output_signal;
+struct output_pre_remove_signal
+{
+    wf::output_t *output;
+};
 
 /**
  * name: output-removed
  * on: output-layout
  * when: Each time a new output is added.
  */
-using output_removed_signal = _output_signal;
+struct output_removed_signal
+{
+    wf::output_t *output;
+};
 
 enum output_config_field_t
 {
@@ -193,10 +196,10 @@ struct output_state_t;
  * when: Each time the output's source, mode, scale, transform and/or position
  *   changes.
  */
-struct output_configuration_changed_signal : public _output_signal
+struct output_configuration_changed_signal : public wf::signal_data_t
 {
-    output_configuration_changed_signal(const wf::output_state_t& st) :
-        state(st)
+    wf::output_t *output;
+    output_configuration_changed_signal(const wf::output_state_t& st) : state(st)
     {}
     /**
      * Which output attributes actually changed.
@@ -215,7 +218,10 @@ struct output_configuration_changed_signal : public _output_signal
  * on: output, core(output-)
  * when: Immediately after the output becomes focused.
  */
-using output_gain_focus_signal = _output_signal;
+struct output_gain_focus_signal : public signal_data_t
+{
+    wf::output_t *output;
+};
 
 /* ----------------------------------------------------------------------------/
  * Output rendering signals (see also wayfire/workspace-stream.hpp)
@@ -227,7 +233,10 @@ using output_gain_focus_signal = _output_signal;
  *   either on output creation or whenever all inhibits in wayfire-shell have
  *   been removed.
  */
-using output_start_rendering_signal = _output_signal;
+struct output_start_rendering_signal : public wf::signal_data_t
+{
+    wf::output_t *output;
+};
 
 /* ----------------------------------------------------------------------------/
  * Output workspace signals
@@ -365,7 +374,10 @@ using view_unmapped_signal = _view_signal;
  *   still be on the old output.
  * argument: The old output of the view.
  */
-using view_set_output_signal = _output_signal;
+struct view_set_output_signal : public wf::signal_data_t
+{
+    wf::output_t *output;
+};
 
 /* ----------------------------------------------------------------------------/
  * View state signals

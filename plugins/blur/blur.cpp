@@ -1,3 +1,4 @@
+#include <wayfire/per-output-plugin.hpp>
 #include <cstdlib>
 #include <memory>
 #include <wayfire/config/types.hpp>
@@ -261,7 +262,7 @@ class blur_global_data_t
     }
 };
 
-class wayfire_blur : public wf::plugin_interface_t
+class wayfire_blur : public wf::per_output_plugin_instance_t
 {
     wf::button_callback button_toggle;
     wf::signal_connection_t view_attached, view_detached;
@@ -308,9 +309,6 @@ class wayfire_blur : public wf::plugin_interface_t
   public:
     void init() override
     {
-        grab_interface->name = "blur";
-        grab_interface->capabilities = 0;
-
         blur_method_changed = [=] ()
         {
             blur_algorithm = create_blur_from_name(output, method_opt);
@@ -323,11 +321,6 @@ class wayfire_blur : public wf::plugin_interface_t
         /* Toggles the blur state of the view the user clicked on */
         button_toggle = [=] (auto)
         {
-            if (!output->can_activate_plugin(grab_interface))
-            {
-                return false;
-            }
-
             auto view = wf::get_core().get_cursor_focus_view();
             if (!view)
             {
@@ -395,4 +388,4 @@ class wayfire_blur : public wf::plugin_interface_t
     }
 };
 
-DECLARE_WAYFIRE_PLUGIN(wayfire_blur);
+DECLARE_WAYFIRE_PLUGIN(wf::per_output_plugin_t<wayfire_blur>);

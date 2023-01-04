@@ -44,16 +44,15 @@ void wayfire_exit::fini()
 
 void wayfire_close::init()
 {
-    grab_interface->capabilities = wf::CAPABILITY_GRAB_INPUT;
     wf::option_wrapper_t<wf::activatorbinding_t> key("core/close_top_view");
     callback = [=] (const wf::activator_data_t& ev)
     {
-        if (!output->activate_plugin(grab_interface))
+        if (!output->activate_plugin(&grab_interface))
         {
             return false;
         }
 
-        output->deactivate_plugin(grab_interface);
+        output->deactivate_plugin(&grab_interface);
         auto view = output->get_active_view();
         if (view && (view->role == wf::VIEW_ROLE_TOPLEVEL))
         {
@@ -73,9 +72,6 @@ void wayfire_close::fini()
 
 void wayfire_focus::init()
 {
-    grab_interface->name = "_wf_focus";
-    grab_interface->capabilities = wf::CAPABILITY_MANAGE_DESKTOP;
-
     on_wm_focus_request.set_callback([=] (wf::signal_data_t *data)
     {
         auto ev = static_cast<wm_focus_request*>(data);
@@ -129,8 +125,7 @@ void wayfire_focus::init()
 
 bool wayfire_focus::check_focus_surface(wayfire_view view)
 {
-    if (!view || !view->is_mapped() ||
-        !output->can_activate_plugin(grab_interface->capabilities))
+    if (!view || !view->is_mapped() || !output->can_activate_plugin(grab_interface.capabilities))
     {
         return false;
     }

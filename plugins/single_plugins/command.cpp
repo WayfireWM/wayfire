@@ -1,4 +1,4 @@
-#include <wayfire/plugin.hpp>
+#include <wayfire/per-output-plugin.hpp>
 #include <wayfire/output.hpp>
 #include <wayfire/core.hpp>
 #include <linux/input.h>
@@ -37,7 +37,7 @@ static int repeat_once_handler(void *callback)
  * Push-To-Talk. They have a prefix release_
  * */
 
-class wayfire_command : public wf::plugin_interface_t
+class wayfire_command : public wf::per_output_plugin_instance_t
 {
     std::vector<wf::activator_callback> bindings;
 
@@ -58,8 +58,7 @@ class wayfire_command : public wf::plugin_interface_t
         BINDING_RELEASE,
     };
 
-    bool on_binding(std::string command, binding_mode mode,
-        const wf::activator_data_t& data)
+    bool on_binding(std::string command, binding_mode mode, const wf::activator_data_t& data)
     {
         /* We already have a repeatable command, do not accept further bindings */
         if (repeat.pressed_key || repeat.pressed_button)
@@ -73,7 +72,7 @@ class wayfire_command : public wf::plugin_interface_t
             act_flags |= wf::PLUGIN_ACTIVATION_IGNORE_INHIBIT;
         }
 
-        if (!output->activate_plugin(grab_interface, act_flags))
+        if (!output->activate_plugin(&grab_interface, act_flags))
         {
             return false;
         }
@@ -103,7 +102,7 @@ class wayfire_command : public wf::plugin_interface_t
             (data.source == wf::activator_source_t::GESTURE) ||
             (data.activation_data == 0))
         {
-            output->deactivate_plugin(grab_interface);
+            output->deactivate_plugin(&grab_interface);
 
             return true;
         }
@@ -132,8 +131,7 @@ class wayfire_command : public wf::plugin_interface_t
     std::function<void()> on_repeat_delay_timeout = [=] ()
     {
         repeat_delay_source = NULL;
-        repeat_source = wl_event_loop_add_timer(wf::get_core().ev_loop,
-            repeat_once_handler, &on_repeat_once);
+        repeat_source = wl_event_loop_add_timer(wf::get_core().ev_loop, repeat_once_handler, &on_repeat_once);
         on_repeat_once();
     };
 
@@ -164,7 +162,7 @@ class wayfire_command : public wf::plugin_interface_t
         }
 
         repeat.pressed_key = repeat.pressed_button = 0;
-        output->deactivate_plugin(grab_interface);
+        output->deactivate_plugin(&grab_interface);
 
         wf::get_core().disconnect_signal(&on_button_event);
         wf::get_core().disconnect_signal(&on_key_event);
@@ -172,10 +170,8 @@ class wayfire_command : public wf::plugin_interface_t
 
     wf::signal_connection_t on_button_event = [=] (wf::signal_data_t *data)
     {
-        auto ev = static_cast<
-            wf::input_event_signal<wlr_pointer_button_event>*>(data);
-        if ((ev->event->button == repeat.pressed_button) &&
-            (ev->event->state == WLR_BUTTON_RELEASED))
+        auto ev = static_cast<wf::input_event_signal<wlr_pointer_button_event>*>(data);
+        if ((ev->event->button == repeat.pressed_button) && (ev->event->state == WLR_BUTTON_RELEASED))
         {
             reset_repeat();
         }
@@ -183,10 +179,8 @@ class wayfire_command : public wf::plugin_interface_t
 
     wf::signal_connection_t on_key_event = [=] (wf::signal_data_t *data)
     {
-        auto ev = static_cast<
-            wf::input_event_signal<wlr_keyboard_key_event>*>(data);
-        if ((ev->event->keycode == repeat.pressed_key) &&
-            (ev->event->state == WLR_KEY_RELEASED))
+        auto ev = static_cast<wf::input_event_signal<wlr_keyboard_key_event>*>(data);
+        if ((ev->event->keycode == repeat.pressed_key) && (ev->event->state == WLR_KEY_RELEASED))
         {
             reset_repeat();
         }
@@ -194,14 +188,12 @@ class wayfire_command : public wf::plugin_interface_t
 
     wf::signal_connection_t on_key_event_release = [=] (wf::signal_data_t *data)
     {
-        auto ev = static_cast<
-            wf::input_event_signal<wlr_keyboard_key_event>*>(data);
-        if ((ev->event->keycode == repeat.pressed_key) &&
-            (ev->event->state == WLR_KEY_RELEASED))
+        auto ev = static_cast<wf::input_event_signal<wlr_keyboard_key_event>*>(data);
+        if ((ev->event->keycode == repeat.pressed_key) && (ev->event->state == WLR_KEY_RELEASED))
         {
             wf::get_core().run(repeat.repeat_command.c_str());
             repeat.pressed_key = repeat.pressed_button = 0;
-            output->deactivate_plugin(grab_interface);
+            output->deactivate_plugin(&grab_interface);
 
             wf::get_core().disconnect_signal(&on_key_event_release);
         }
@@ -209,14 +201,12 @@ class wayfire_command : public wf::plugin_interface_t
 
     wf::signal_connection_t on_button_event_release = [=] (wf::signal_data_t *data)
     {
-        auto ev = static_cast<
-            wf::input_event_signal<wlr_pointer_button_event>*>(data);
-        if ((ev->event->button == repeat.pressed_button) &&
-            (ev->event->state == WLR_BUTTON_RELEASED))
+        auto ev = static_cast<wf::input_event_signal<wlr_pointer_button_event>*>(data);
+        if ((ev->event->button == repeat.pressed_button) && (ev->event->state == WLR_BUTTON_RELEASED))
         {
             wf::get_core().run(repeat.repeat_command.c_str());
             repeat.pressed_key = repeat.pressed_button = 0;
-            output->deactivate_plugin(grab_interface);
+            output->deactivate_plugin(&grab_interface);
 
             wf::get_core().disconnect_signal(&on_button_event_release);
         }
@@ -226,18 +216,15 @@ class wayfire_command : public wf::plugin_interface_t
     wf::option_wrapper_t<wf::config::compound_list_t<
         std::string, wf::activatorbinding_t>> regular_bindings{"command/bindings"};
 
-    wf::option_wrapper_t<wf::config::compound_list_t<
-        std::string, wf::activatorbinding_t>> repeat_bindings{
+    wf::option_wrapper_t<wf::config::compound_list_t<std::string, wf::activatorbinding_t>> repeat_bindings{
         "command/repeatable_bindings"
     };
 
-    wf::option_wrapper_t<wf::config::compound_list_t<
-        std::string, wf::activatorbinding_t>> always_bindings{
+    wf::option_wrapper_t<wf::config::compound_list_t<std::string, wf::activatorbinding_t>> always_bindings{
         "command/always_bindings"
     };
 
-    wf::option_wrapper_t<wf::config::compound_list_t<
-        std::string, wf::activatorbinding_t>> release_bindings{
+    wf::option_wrapper_t<wf::config::compound_list_t<std::string, wf::activatorbinding_t>> release_bindings{
         "command/release_bindings"
     };
 
@@ -254,16 +241,13 @@ class wayfire_command : public wf::plugin_interface_t
             regular.size() + repeatable.size() + always.size() + release.size());
         size_t i = 0;
 
-        const auto& push_bindings = [&] (
-            wf::config::compound_list_t<std::string, wf::activatorbinding_t>& list,
-            binding_mode mode)
+        const auto& push_bindings =
+            [&] (wf::config::compound_list_t<std::string, wf::activatorbinding_t>& list, binding_mode mode)
         {
             for (const auto& [_, cmd, activator] : list)
             {
-                bindings[i] = std::bind(std::mem_fn(&wayfire_command::on_binding),
-                    this, cmd, mode, _1);
-                output->add_activator(
-                    wf::create_option(activator), &bindings[i]);
+                bindings[i] = std::bind(std::mem_fn(&wayfire_command::on_binding), this, cmd, mode, _1);
+                output->add_activator(wf::create_option(activator), &bindings[i]);
                 ++i;
             }
         };
@@ -286,13 +270,14 @@ class wayfire_command : public wf::plugin_interface_t
 
     wf::signal_connection_t reload_config;
 
+    wf::plugin_grab_interface_t grab_interface = {
+        .name = "command",
+        .capabilities = wf::CAPABILITY_GRAB_INPUT,
+    };
+
     void init()
     {
-        grab_interface->name = "command";
-        grab_interface->capabilities = wf::CAPABILITY_GRAB_INPUT;
-
         using namespace std::placeholders;
-
         setup_bindings_from_config();
         reload_config.set_callback([=] (wf::signal_data_t*)
         {
@@ -309,4 +294,4 @@ class wayfire_command : public wf::plugin_interface_t
     }
 };
 
-DECLARE_WAYFIRE_PLUGIN(wayfire_command);
+DECLARE_WAYFIRE_PLUGIN(wf::per_output_plugin_t<wayfire_command>);

@@ -8,6 +8,7 @@
 #include "seat.hpp"
 #include "bindings-repository.hpp"
 #include "wayfire/plugin.hpp"
+#include "wayfire/signal-provider.hpp"
 #include "wayfire/view.hpp"
 #include "wayfire/core.hpp"
 #include "wayfire/signal-definitions.hpp"
@@ -28,7 +29,7 @@ class input_manager_t
     wf::wl_idle_call idle_update_cursor;
 
     wf::signal_connection_t config_updated;
-    wf::signal_connection_t output_added;
+    wf::signal::connection_t<output_added_signal> output_added;
 
   public:
     /**

@@ -163,9 +163,9 @@ wf::input_manager_t::input_manager_t()
 
     wf::get_core().connect_signal("reload-config", &config_updated);
 
-    output_added.set_callback([=] (wf::signal_data_t *data)
+    output_added.set_callback([=] (output_added_signal *ev)
     {
-        auto wo = (wf::output_impl_t*)get_signaled_output(data);
+        auto wo = (wf::output_impl_t*)ev->output;
         if (exclusive_client != nullptr)
         {
             wo->inhibit_plugins();
@@ -173,7 +173,7 @@ wf::input_manager_t::input_manager_t()
 
         refresh_device_mappings();
     });
-    wf::get_core().output_layout->connect_signal("output-added", &output_added);
+    wf::get_core().output_layout->connect(&output_added);
 }
 
 void wf::input_manager_t::set_exclusive_focus(wl_client *client)

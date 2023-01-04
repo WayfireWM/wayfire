@@ -1,4 +1,4 @@
-#include <wayfire/plugin.hpp>
+#include <wayfire/per-output-plugin.hpp>
 #include <wayfire/core.hpp>
 #include <wayfire/touch/touch.hpp>
 #include <wayfire/view.hpp>
@@ -11,7 +11,7 @@
 namespace wf
 {
 using namespace touch;
-class extra_gestures_plugin_t : public plugin_interface_t
+class extra_gestures_plugin_t : public per_output_plugin_instance_t
 {
     std::unique_ptr<gesture_t> touch_and_hold_move;
     std::unique_ptr<gesture_t> tap_to_close;
@@ -21,11 +21,13 @@ class extra_gestures_plugin_t : public plugin_interface_t
 
     wf::option_wrapper_t<int> close_fingers{"extra-gestures/close_fingers"};
 
+    wf::plugin_grab_interface_t grab_interface = {
+        .capabilities = CAPABILITY_MANAGE_COMPOSITOR,
+    };
+
   public:
     void init() override
     {
-        this->grab_interface->capabilities = CAPABILITY_MANAGE_COMPOSITOR;
-
         build_touch_and_hold_move();
         move_fingers.set_callback([=] () { build_touch_and_hold_move(); });
         move_delay.set_callback([=] () { build_touch_and_hold_move(); });
@@ -53,7 +55,7 @@ class extra_gestures_plugin_t : public plugin_interface_t
         }
 
         /** Make sure we don't interfere with already activated plugins */
-        if (!output->can_activate_plugin(this->grab_interface))
+        if (!output->can_activate_plugin(&this->grab_interface))
         {
             return;
         }
@@ -122,4 +124,4 @@ class extra_gestures_plugin_t : public plugin_interface_t
 };
 }
 
-DECLARE_WAYFIRE_PLUGIN(wf::extra_gestures_plugin_t);
+DECLARE_WAYFIRE_PLUGIN(wf::per_output_plugin_t<wf::extra_gestures_plugin_t>);

@@ -2,6 +2,7 @@
 #include "wayfire/core.hpp"
 #include "wayfire/debug.hpp"
 #include "wayfire/output.hpp"
+#include "wayfire/plugin.hpp"
 #include "wayfire/scene-input.hpp"
 #include "wayfire/scene-operations.hpp"
 #include "wayfire/scene.hpp"
@@ -82,11 +83,6 @@ wf::scene::floating_inner_ptr wf::output_impl_t::get_wset() const
     return this->wset;
 }
 
-void wf::output_impl_t::start_plugins()
-{
-    plugin = std::make_unique<plugin_manager>(this);
-}
-
 std::string wf::output_t::to_string() const
 {
     return handle->name;
@@ -122,7 +118,6 @@ wf::output_t::~output_t()
 wf::output_impl_t::~output_impl_t()
 {
     // Release plugins before bindings
-    this->plugin.reset();
     this->bindings.reset();
 
     for (auto& layer_root : nodes)
@@ -426,15 +421,14 @@ bool wf::output_impl_t::can_activate_plugin(uint32_t caps,
     return true;
 }
 
-bool wf::output_impl_t::can_activate_plugin(const plugin_grab_interface_uptr& owner,
-    uint32_t flags)
+bool wf::output_impl_t::can_activate_plugin(wf::plugin_grab_interface_t *owner, uint32_t flags)
 {
     if (!owner)
     {
         return false;
     }
 
-    if (active_plugins.find(owner.get()) != active_plugins.end())
+    if (active_plugins.find(owner) != active_plugins.end())
     {
         return flags & wf::PLUGIN_ACTIVATE_ALLOW_MULTIPLE;
     }
@@ -442,32 +436,29 @@ bool wf::output_impl_t::can_activate_plugin(const plugin_grab_interface_uptr& ow
     return can_activate_plugin(owner->capabilities, flags);
 }
 
-bool wf::output_impl_t::activate_plugin(const plugin_grab_interface_uptr& owner,
-    uint32_t flags)
+bool wf::output_impl_t::activate_plugin(wf::plugin_grab_interface_t *owner, uint32_t flags)
 {
     if (!can_activate_plugin(owner, flags))
     {
         return false;
     }
 
-    if (active_plugins.find(owner.get()) != active_plugins.end())
+    if (active_plugins.find(owner) != active_plugins.end())
     {
-        LOGD("output ", handle->name,
-            ": activate plugin ", owner->name, " again");
+        LOGD("output ", handle->name, ": activate plugin ", owner->name, " again");
     } else
     {
         LOGD("output ", handle->name, ": activate plugin ", owner->name);
     }
 
-    active_plugins.insert(owner.get());
+    active_plugins.insert(owner);
 
     return true;
 }
 
-bool wf::output_impl_t::deactivate_plugin(
-    const plugin_grab_interface_uptr& owner)
+bool wf::output_impl_t::deactivate_plugin(wf::plugin_grab_interface_t *owner)
 {
-    auto it = active_plugins.find(owner.get());
+    auto it = active_plugins.find(owner);
     if (it == active_plugins.end())
     {
         return true;
@@ -476,9 +467,9 @@ bool wf::output_impl_t::deactivate_plugin(
     active_plugins.erase(it);
     LOGD("output ", handle->name, ": deactivate plugin ", owner->name);
 
-    if (active_plugins.count(owner.get()) == 0)
+    if (active_plugins.count(owner) == 0)
     {
-        active_plugins.erase(owner.get());
+        active_plugins.erase(owner);
         return true;
     }
 

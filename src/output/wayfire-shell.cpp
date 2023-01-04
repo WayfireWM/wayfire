@@ -50,7 +50,7 @@ class wfs_hotspot
         });
     };
 
-    wf::signal_connection_t on_output_removed;
+    wf::signal::connection_t<wf::output_removed_signal> on_output_removed;
 
     void process_input_motion(wf::point_t gc)
     {
@@ -134,9 +134,8 @@ class wfs_hotspot
             handle_hotspot_destroy);
 
         // setup output destroy listener
-        on_output_removed.set_callback([this, output] (wf::signal_data_t *data)
+        on_output_removed.set_callback([this, output] (wf::output_removed_signal *ev)
         {
-            auto ev = static_cast<wf::output_removed_signal*>(data);
             if (ev->output == output)
             {
                 /* Make hotspot inactive by setting the region to empty */
@@ -148,9 +147,7 @@ class wfs_hotspot
         wf::get_core().connect_signal("pointer_motion", &on_motion_event);
         wf::get_core().connect_signal("tablet_axis", &on_motion_event);
         wf::get_core().connect_signal("touch_motion", &on_touch_motion_event);
-
-        wf::get_core().output_layout->connect_signal("output-removed",
-            &on_output_removed);
+        wf::get_core().output_layout->connect(&on_output_removed);
     }
 
     ~wfs_hotspot() = default;
@@ -190,13 +187,13 @@ class wfs_output
 
     void disconnect_from_output()
     {
-        wf::get_core().output_layout->disconnect_signal(&on_output_removed);
+        wf::get_core().output_layout->disconnect(&on_output_removed);
         output->disconnect_signal(&on_fullscreen_layer_focused);
     }
 
-    wf::signal_connection_t on_output_removed = [=] (wf::signal_data_t *data)
+    wf::signal::connection_t<wf::output_removed_signal> on_output_removed =
+        [=] (wf::output_removed_signal *ev)
     {
-        auto ev = static_cast<wf::output_removed_signal*>(data);
         if (ev->output == this->output)
         {
             disconnect_from_output();
@@ -222,13 +219,9 @@ class wfs_output
         this->output = output;
 
         resource = wl_resource_create(client, &zwf_output_v2_interface, 1, id);
-        wl_resource_set_implementation(resource, &zwf_output_impl,
-            this, handle_output_destroy);
-
-        output->connect_signal("fullscreen-layer-focused",
-            &on_fullscreen_layer_focused);
-        wf::get_core().output_layout->connect_signal("output-removed",
-            &on_output_removed);
+        wl_resource_set_implementation(resource, &zwf_output_impl, this, handle_output_destroy);
+        output->connect_signal("fullscreen-layer-focused", &on_fullscreen_layer_focused);
+        wf::get_core().output_layout->connect(&on_output_removed);
     }
 
     ~wfs_output()

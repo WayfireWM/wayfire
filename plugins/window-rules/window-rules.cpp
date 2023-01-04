@@ -3,7 +3,7 @@
 #include <memory>
 #include <vector>
 
-#include <wayfire/plugin.hpp>
+#include <wayfire/per-output-plugin.hpp>
 #include <wayfire/view.hpp>
 #include <wayfire/view-access-interface.hpp>
 #include <wayfire/signal-definitions.hpp>
@@ -18,7 +18,7 @@
 #include "lambda-rules-registration.hpp"
 #include "view-action-interface.hpp"
 
-class wayfire_window_rules_t : public wf::plugin_interface_t
+class wayfire_window_rules_t : public wf::per_output_plugin_instance_t
 {
   public:
     void init() override;
@@ -207,4 +207,4 @@ void wayfire_window_rules_t::setup_rules_from_config()
     }
 }
 
-DECLARE_WAYFIRE_PLUGIN(wayfire_window_rules_t);
+DECLARE_WAYFIRE_PLUGIN(wf::per_output_plugin_t<wayfire_window_rules_t>);

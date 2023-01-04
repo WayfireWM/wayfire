@@ -1,4 +1,5 @@
-#include <wayfire/singleton-plugin.hpp>
+#include <cstddef>
+#include <wayfire/per-output-plugin.hpp>
 #include <wayfire/output.hpp>
 #include <wayfire/signal-definitions.hpp>
 #include <wayfire/render-manager.hpp>
@@ -9,6 +10,7 @@
 #include "system_fade.hpp"
 #include "basic_animations.hpp"
 #include "fire/fire.hpp"
+#include "wayfire/plugin.hpp"
 #include "wayfire/scene.hpp"
 #include <wayfire/matcher.hpp>
 
@@ -206,26 +208,7 @@ static void cleanup_views_on_output(wf::output_t *output)
     }
 }
 
-/**
- * Cleanup when the last animate plugin is unloaded.
- */
-struct animation_global_cleanup_t
-{
-    animation_global_cleanup_t() = default;
-    ~animation_global_cleanup_t()
-    {
-        cleanup_views_on_output(nullptr);
-    }
-
-    animation_global_cleanup_t(const animation_global_cleanup_t &) = delete;
-    animation_global_cleanup_t(animation_global_cleanup_t &&) = delete;
-    animation_global_cleanup_t& operator =(const animation_global_cleanup_t&) =
-    delete;
-    animation_global_cleanup_t& operator =(animation_global_cleanup_t&&) = delete;
-};
-
-class wayfire_animation : public wf::singleton_plugin_t<animation_global_cleanup_t,
-        true>
+class wayfire_animation : public wf::plugin_interface_t, private wf::per_output_tracker_mixin_t<>
 {
     wf::option_wrapper_t<std::string> open_animation{"animate/open_animation"};
     wf::option_wrapper_t<std::string> close_animation{"animate/close_animation"};
@@ -245,15 +228,25 @@ class wayfire_animation : public wf::singleton_plugin_t<animation_global_cleanup
   public:
     void init() override
     {
-        singleton_plugin_t::init();
+        init_output_tracking();
+    }
 
-        grab_interface->name = "animate";
-        grab_interface->capabilities = 0;
-
+    void handle_new_output(wf::output_t *output) override
+    {
         output->connect_signal("view-mapped", &on_view_mapped);
         output->connect_signal("view-pre-unmapped", &on_view_unmapped);
         output->connect_signal("start-rendering", &on_render_start);
         output->connect_signal("view-minimize-request", &on_minimize_request);
+    }
+
+    void handle_output_removed(wf::output_t *output) override
+    {
+        cleanup_views_on_output(output);
+    }
+
+    void fini() override
+    {
+        cleanup_views_on_output(nullptr);
     }
 
     struct view_animation_t
@@ -418,15 +411,9 @@ class wayfire_animation : public wf::singleton_plugin_t<animation_global_cleanup
 
     wf::signal_connection_t on_render_start = [=] (wf::signal_data_t *data)
     {
-        new wf_system_fade(output, startup_duration);
+        auto ev = static_cast<wf::output_start_rendering_signal*>(data);
+        new wf_system_fade(ev->output, startup_duration);
     };
-
-    void fini() override
-    {
-        /* Clear up all active animations on the current output */
-        cleanup_views_on_output(output);
-        singleton_plugin_t::fini();
-    }
 };
 
 DECLARE_WAYFIRE_PLUGIN(wayfire_animation);

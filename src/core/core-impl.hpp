@@ -1,6 +1,7 @@
 #ifndef WF_CORE_CORE_IMPL_HPP
 #define WF_CORE_CORE_IMPL_HPP
 
+#include "core/plugin-loader.hpp"
 #include "wayfire/core.hpp"
 #include "wayfire/scene-input.hpp"
 #include "wayfire/scene.hpp"
@@ -34,6 +35,7 @@ class compositor_core_impl_t : public compositor_core_t
     std::unique_ptr<seat_t> seat;
     std::unique_ptr<wf::input_manager_t> input;
     std::unique_ptr<input_method_relay> im_relay;
+    std::unique_ptr<plugin_manager_t> plugin_mgr;
 
     /**
      * Initialize the compositor core.

@@ -3,7 +3,7 @@
  */
 #include <map>
 #include <memory>
-#include <wayfire/plugin.hpp>
+#include <wayfire/per-output-plugin.hpp>
 #include <wayfire/output.hpp>
 #include <wayfire/util/duration.hpp>
 #include <wayfire/view-transform.hpp>
@@ -25,6 +25,7 @@
 #include "scale-title-overlay.hpp"
 #include "wayfire/core.hpp"
 #include "wayfire/debug.hpp"
+#include "wayfire/plugin.hpp"
 #include "wayfire/scene-input.hpp"
 #include "wayfire/scene.hpp"
 #include "wayfire/view.hpp"
@@ -81,7 +82,7 @@ struct view_scale_data
  * BTN_MIDDLE:
  * - If middle_click_close is true, closes the view clicked
  */
-class wayfire_scale : public wf::plugin_interface_t,
+class wayfire_scale : public wf::per_output_plugin_instance_t,
     public wf::keyboard_interaction_t,
     public wf::pointer_interaction_t,
     public wf::touch_interaction_t
@@ -118,28 +119,21 @@ class wayfire_scale : public wf::plugin_interface_t,
 
     std::unique_ptr<wf::input_grab_t> grab;
 
+    wf::plugin_grab_interface_t grab_interface{
+        .name = "scale",
+        .capabilities = wf::CAPABILITY_MANAGE_DESKTOP | wf::CAPABILITY_GRAB_INPUT,
+        .cancel = [=] () { finalize(); },
+    };
+
   public:
     void init() override
     {
-        grab_interface->name = "scale";
-        grab_interface->capabilities =
-            wf::CAPABILITY_MANAGE_DESKTOP | wf::CAPABILITY_GRAB_INPUT;
         active = hook_set = false;
-
+        output->add_activator(wf::option_wrapper_t<wf::activatorbinding_t>{"scale/toggle"}, &toggle_cb);
         output->add_activator(
-            wf::option_wrapper_t<wf::activatorbinding_t>{"scale/toggle"},
-            &toggle_cb);
-        output->add_activator(
-            wf::option_wrapper_t<wf::activatorbinding_t>{"scale/toggle_all"},
-            &toggle_all_cb);
+            wf::option_wrapper_t<wf::activatorbinding_t>{"scale/toggle_all"}, &toggle_all_cb);
         output->connect_signal("scale-update", &update_cb);
-        grab = std::make_unique<wf::input_grab_t>(
-            "scale", output, this, this, nullptr);
-
-        grab_interface->cancel = [=] ()
-        {
-            finalize();
-        };
+        grab = std::make_unique<wf::input_grab_t>("scale", output, this, this, nullptr);
 
         allow_scale_zoom.set_callback(allow_scale_zoom_option_changed);
 
@@ -159,7 +153,7 @@ class wayfire_scale : public wf::plugin_interface_t,
         workspace_bindings->setup([&] (wf::point_t delta,
                                        wayfire_view view, bool only_view)
         {
-            if (!output->is_plugin_active(grab_interface->name))
+            if (!output->is_plugin_active(grab_interface.name))
             {
                 return false;
             }
@@ -1046,7 +1040,7 @@ class wayfire_scale : public wf::plugin_interface_t,
      * current workspace */
     void switch_scale_modes()
     {
-        if (!output->is_plugin_active(grab_interface->name))
+        if (!output->is_plugin_active(grab_interface.name))
         {
             return;
         }
@@ -1080,7 +1074,7 @@ class wayfire_scale : public wf::plugin_interface_t,
     wf::config::option_base_t::updated_callback_t allow_scale_zoom_option_changed =
         [=] ()
     {
-        if (!output->is_plugin_active(grab_interface->name))
+        if (!output->is_plugin_active(grab_interface.name))
         {
             return;
         }
@@ -1249,7 +1243,7 @@ class wayfire_scale : public wf::plugin_interface_t,
 
     bool can_handle_drag()
     {
-        return output->is_plugin_active(this->grab_interface->name);
+        return output->is_plugin_active(this->grab_interface.name);
     }
 
     wf::signal_connection_t on_drag_output_focus = [=] (auto data)
@@ -1295,7 +1289,7 @@ class wayfire_scale : public wf::plugin_interface_t,
             return false;
         }
 
-        if (!output->activate_plugin(grab_interface))
+        if (!output->activate_plugin(&grab_interface))
         {
             return false;
         }
@@ -1303,8 +1297,7 @@ class wayfire_scale : public wf::plugin_interface_t,
         auto views = get_views();
         if (views.empty())
         {
-            output->deactivate_plugin(grab_interface);
-
+            output->deactivate_plugin(&grab_interface);
             return false;
         }
 
@@ -1353,7 +1346,7 @@ class wayfire_scale : public wf::plugin_interface_t,
         view_geometry_changed.disconnect();
 
         grab->ungrab_input();
-        output->deactivate_plugin(grab_interface);
+        output->deactivate_plugin(&grab_interface);
 
         for (auto& e : scale_data)
         {
@@ -1398,7 +1391,7 @@ class wayfire_scale : public wf::plugin_interface_t,
         view_minimized.disconnect();
         workspace_changed.disconnect();
         view_geometry_changed.disconnect();
-        output->deactivate_plugin(grab_interface);
+        output->deactivate_plugin(&grab_interface);
 
         wf::scene::update(wf::get_core().scene(),
             wf::scene::update_flag::INPUT_STATE);
@@ -1440,4 +1433,4 @@ class wayfire_scale : public wf::plugin_interface_t,
     }
 };
 
-DECLARE_WAYFIRE_PLUGIN(wayfire_scale);
+DECLARE_WAYFIRE_PLUGIN(wf::per_output_plugin_t<wayfire_scale>);

@@ -204,7 +204,7 @@ void wf::view_interface_t::set_output(wf::output_t *new_output)
         get_output()->emit_signal("view-detached", &data);
     }
 
-    _output_signal data;
+    view_set_output_signal data;
     data.output = get_output();
 
     this->priv->output = new_output;

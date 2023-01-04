@@ -1,4 +1,5 @@
-#include "wayfire/singleton-plugin.hpp"
+#include "wayfire/per-output-plugin.hpp"
+#include "wayfire/plugins/common/shared-core-data.hpp"
 #include "wayfire/render-manager.hpp"
 #include "wayfire/output.hpp"
 #include "wayfire/core.hpp"
@@ -49,11 +50,6 @@ class wayfire_idle
         });
         create_dpms_timeout(dpms_timeout);
     }
-
-    wayfire_idle(const wayfire_idle&) = delete;
-    wayfire_idle& operator =(const wayfire_idle&) = delete;
-    wayfire_idle(wayfire_idle&&) = delete;
-    wayfire_idle& operator =(wayfire_idle&&) = delete;
 
     void destroy_dpms_timeout()
     {
@@ -113,7 +109,7 @@ class wayfire_idle
     }
 };
 
-class wayfire_idle_singleton : public wf::singleton_plugin_t<wayfire_idle>
+class wayfire_idle_plugin : public wf::per_output_plugin_instance_t
 {
     double rotation = 0.0;
 
@@ -134,20 +130,21 @@ class wayfire_idle_singleton : public wf::singleton_plugin_t<wayfire_idle>
     uint32_t last_time;
     wlr_idle_timeout *timeout_screensaver = NULL;
     wf::wl_listener_wrapper on_idle_screensaver, on_resume_screensaver;
+    wf::shared_data::ref_ptr_t<wayfire_idle> global_idle;
 
     wf::activator_callback toggle = [=] (auto)
     {
-        if (!output->can_activate_plugin(grab_interface))
+        if (!output->can_activate_plugin(&grab_interface))
         {
             return false;
         }
 
-        if (get_instance().hotkey_inhibitor.has_value())
+        if (global_idle->hotkey_inhibitor.has_value())
         {
-            get_instance().hotkey_inhibitor.reset();
+            global_idle->hotkey_inhibitor.reset();
         } else
         {
-            get_instance().hotkey_inhibitor.emplace();
+            global_idle->hotkey_inhibitor.emplace();
         }
 
         return true;
@@ -180,15 +177,17 @@ class wayfire_idle_singleton : public wf::singleton_plugin_t<wayfire_idle>
         }
     }
 
+    wf::plugin_grab_interface_t grab_interface = {
+        .name = "idle",
+        .capabilities = 0,
+    };
+
+  public:
     void init() override
     {
-        singleton_plugin_t::init();
-        grab_interface->name = "idle";
-        grab_interface->capabilities = 0;
-
         if (disable_initially)
         {
-            get_instance().hotkey_inhibitor.emplace();
+            global_idle->hotkey_inhibitor.emplace();
         }
 
         output->add_activator(
@@ -416,8 +415,7 @@ class wayfire_idle_singleton : public wf::singleton_plugin_t<wayfire_idle>
     {
         destroy_screensaver_timeout();
         output->rem_binding(&toggle);
-        singleton_plugin_t::fini();
     }
 };
 
-DECLARE_WAYFIRE_PLUGIN(wayfire_idle_singleton);
+DECLARE_WAYFIRE_PLUGIN(wf::per_output_plugin_t<wayfire_idle_plugin>);

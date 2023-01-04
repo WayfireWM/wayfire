@@ -1,6 +1,6 @@
 #include <memory>
 #include <wayfire/nonstd/wlroots-full.hpp>
-#include <wayfire/plugin.hpp>
+#include <wayfire/per-output-plugin.hpp>
 #include <wayfire/output.hpp>
 #include <wayfire/core.hpp>
 #include <wayfire/view.hpp>
@@ -47,7 +47,7 @@ static inline wf::geometry_t interpolate(wf::geometry_t a, wf::geometry_t b,
     };
 }
 
-class vswipe : public wf::plugin_interface_t
+class vswipe : public wf::per_output_plugin_instance_t
 {
   private:
     enum swipe_direction_t
@@ -93,13 +93,15 @@ class vswipe : public wf::plugin_interface_t
     wf::option_wrapper_t<double> speed_factor{"vswipe/speed_factor"};
     wf::option_wrapper_t<double> speed_cap{"vswipe/speed_cap"};
     std::unique_ptr<wf::input_grab_t> input_grab;
+    wf::plugin_grab_interface_t grab_interface = {
+        .name = "vswipe",
+        .capabilities = wf::CAPABILITY_MANAGE_COMPOSITOR,
+        .cancel = [=] () { finalize_and_exit(); },
+    };
 
   public:
     void init() override
     {
-        grab_interface->name = "vswipe";
-        grab_interface->capabilities = wf::CAPABILITY_MANAGE_COMPOSITOR;
-        grab_interface->cancel = [=] () { finalize_and_exit(); };
         input_grab = std::make_unique<wf::input_grab_t>("vswipe", output);
 
         wf::get_core().connect_signal("pointer_swipe_begin", &on_swipe_begin);
@@ -152,7 +154,7 @@ class vswipe : public wf::plugin_interface_t
             return;
         }
 
-        if (output->is_plugin_active(grab_interface->name))
+        if (output->is_plugin_active(grab_interface.name))
         {
             return;
         }
@@ -197,7 +199,7 @@ class vswipe : public wf::plugin_interface_t
         assert(direction != UNKNOWN);
         state.direction = direction;
 
-        if (!output->activate_plugin(grab_interface))
+        if (!output->activate_plugin(&grab_interface))
         {
             return;
         }
@@ -326,7 +328,7 @@ class vswipe : public wf::plugin_interface_t
 
     wf::signal_connection_t on_swipe_end = [=] (wf::signal_data_t *data)
     {
-        if (!state.swiping || !output->is_plugin_active(grab_interface->name))
+        if (!state.swiping || !output->is_plugin_active(grab_interface.name))
         {
             state.swiping = false;
 
@@ -368,7 +370,7 @@ class vswipe : public wf::plugin_interface_t
     {
         state.swiping = false;
         input_grab->ungrab_input();
-        output->deactivate_plugin(grab_interface);
+        output->deactivate_plugin(&grab_interface);
         wall->stop_output_renderer(true);
         output->render->rem_effect(&post_frame);
         state.animating = false;
@@ -383,4 +385,4 @@ class vswipe : public wf::plugin_interface_t
     }
 };
 
-DECLARE_WAYFIRE_PLUGIN(vswipe);
+DECLARE_WAYFIRE_PLUGIN(wf::per_output_plugin_t<vswipe>);

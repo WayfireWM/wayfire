@@ -1,4 +1,4 @@
-#include <wayfire/plugin.hpp>
+#include <wayfire/per-output-plugin.hpp>
 #include "wayfire/debug.hpp"
 #include "wayfire/plugins/common/input-grab.hpp"
 #include "wayfire/scene-input.hpp"
@@ -33,7 +33,7 @@ enum class mode
     ROT_3D,
 };
 
-class wf_wrot : public wf::plugin_interface_t, public wf::pointer_interaction_t
+class wf_wrot : public wf::per_output_plugin_instance_t, public wf::pointer_interaction_t
 {
     wf::button_callback call;
     wf::option_wrapper_t<double> reset_radius{"wrot/reset_radius"};
@@ -62,7 +62,7 @@ class wf_wrot : public wf::plugin_interface_t, public wf::pointer_interaction_t
             return false;
         }
 
-        if (!output->activate_plugin(grab_interface))
+        if (!output->activate_plugin(&grab_interface))
         {
             return false;
         }
@@ -70,8 +70,7 @@ class wf_wrot : public wf::plugin_interface_t, public wf::pointer_interaction_t
         current_view = wf::get_core().get_cursor_focus_view();
         if (!current_view || (current_view->role != wf::VIEW_ROLE_TOPLEVEL))
         {
-            output->deactivate_plugin(grab_interface);
-
+            output->deactivate_plugin(&grab_interface);
             return false;
         }
 
@@ -163,11 +162,14 @@ class wf_wrot : public wf::plugin_interface_t, public wf::pointer_interaction_t
         last_position = {(double)x, (double)y};
     }
 
+    wf::plugin_grab_interface_t grab_interface = {
+        .name = "wrot",
+        .capabilities = wf::CAPABILITY_GRAB_INPUT,
+    };
+
   public:
     void init() override
     {
-        grab_interface->name = "wrot";
-        grab_interface->capabilities = wf::CAPABILITY_GRAB_INPUT;
         input_grab = std::make_unique<wf::input_grab_t>("wrot", output, nullptr, this, nullptr);
 
         call = [=] (auto)
@@ -177,7 +179,7 @@ class wf_wrot : public wf::plugin_interface_t, public wf::pointer_interaction_t
                 return false;
             }
 
-            if (!output->activate_plugin(grab_interface))
+            if (!output->activate_plugin(&grab_interface))
             {
                 return false;
             }
@@ -185,7 +187,7 @@ class wf_wrot : public wf::plugin_interface_t, public wf::pointer_interaction_t
             current_view = wf::get_core().get_cursor_focus_view();
             if (!current_view || (current_view->role != wf::VIEW_ROLE_TOPLEVEL))
             {
-                output->deactivate_plugin(grab_interface);
+                output->deactivate_plugin(&grab_interface);
                 return false;
             }
 
@@ -203,7 +205,7 @@ class wf_wrot : public wf::plugin_interface_t, public wf::pointer_interaction_t
         output->add_key(wf::option_wrapper_t<wf::keybinding_t>{"wrot/reset"}, &reset);
         output->add_key(wf::option_wrapper_t<wf::keybinding_t>{"wrot/reset-one"}, &reset_one);
 
-        grab_interface->cancel = [=] ()
+        grab_interface.cancel = [=] ()
         {
             if (input_grab->is_grabbed())
             {
@@ -234,7 +236,7 @@ class wf_wrot : public wf::plugin_interface_t, public wf::pointer_interaction_t
     void input_released()
     {
         input_grab->ungrab_input();
-        output->deactivate_plugin(grab_interface);
+        output->deactivate_plugin(&grab_interface);
         current_view_unmapped.disconnect();
         if ((current_mode == mode::ROT_3D) && current_view)
         {
@@ -277,4 +279,4 @@ class wf_wrot : public wf::plugin_interface_t, public wf::pointer_interaction_t
     }
 };
 
-DECLARE_WAYFIRE_PLUGIN(wf_wrot);
+DECLARE_WAYFIRE_PLUGIN(wf::per_output_plugin_t<wf_wrot>);

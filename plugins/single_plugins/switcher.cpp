@@ -5,7 +5,7 @@
 #include "wayfire/scene-render.hpp"
 #include "wayfire/scene.hpp"
 #include <memory>
-#include <wayfire/plugin.hpp>
+#include <wayfire/per-output-plugin.hpp>
 #include <wayfire/opengl.hpp>
 #include <wayfire/view-transform.hpp>
 #include <wayfire/core.hpp>
@@ -94,7 +94,7 @@ struct SwitcherView
     }
 };
 
-class WayfireSwitcher : public wf::plugin_interface_t, public wf::keyboard_interaction_t
+class WayfireSwitcher : public wf::per_output_plugin_instance_t, public wf::keyboard_interaction_t
 {
     wf::option_wrapper_t<double> view_thumbnail_scale{
         "switcher/view_thumbnail_scale"};
@@ -183,13 +183,14 @@ class WayfireSwitcher : public wf::plugin_interface_t, public wf::keyboard_inter
     };
 
     std::shared_ptr<switcher_render_node_t> render_node;
+    wf::plugin_grab_interface_t grab_interface = {
+        .name = "switcher",
+        .capabilities = wf::CAPABILITY_MANAGE_COMPOSITOR,
+    };
 
   public:
     void init() override
     {
-        grab_interface->name = "switcher";
-        grab_interface->capabilities = wf::CAPABILITY_MANAGE_COMPOSITOR;
-
         output->add_key(
             wf::option_wrapper_t<wf::keybinding_t>{"switcher/next_view"},
             &next_view_binding);
@@ -199,7 +200,7 @@ class WayfireSwitcher : public wf::plugin_interface_t, public wf::keyboard_inter
         output->connect_signal("view-detached", &view_removed);
 
         input_grab = std::make_unique<wf::input_grab_t>("switcher", output, this, nullptr, nullptr);
-        grab_interface->cancel = [=] () {deinit_switcher();};
+        grab_interface.cancel = [=] () {deinit_switcher();};
     }
 
     void handle_keyboard_key(wlr_keyboard_key_event event) override
@@ -246,7 +247,7 @@ class WayfireSwitcher : public wf::plugin_interface_t, public wf::keyboard_inter
     void handle_view_removed(wayfire_view view)
     {
         // not running at all, don't care
-        if (!output->is_plugin_active(grab_interface->name))
+        if (!output->is_plugin_active(grab_interface.name))
         {
             return;
         }
@@ -281,7 +282,7 @@ class WayfireSwitcher : public wf::plugin_interface_t, public wf::keyboard_inter
         }
 
         /* If we haven't grabbed, then we haven't setup anything */
-        if (!output->is_plugin_active(grab_interface->name))
+        if (!output->is_plugin_active(grab_interface.name))
         {
             if (!init_switcher())
             {
@@ -319,7 +320,7 @@ class WayfireSwitcher : public wf::plugin_interface_t, public wf::keyboard_inter
      * Also lower any fullscreen views that are active */
     bool init_switcher()
     {
-        if (!output->activate_plugin(grab_interface))
+        if (!output->activate_plugin(&grab_interface))
         {
             return false;
         }
@@ -334,7 +335,7 @@ class WayfireSwitcher : public wf::plugin_interface_t, public wf::keyboard_inter
     /* The reverse of init_switcher */
     void deinit_switcher()
     {
-        output->deactivate_plugin(grab_interface);
+        output->deactivate_plugin(&grab_interface);
 
         output->render->rem_effect(&pre_hook);
         wf::scene::remove_child(render_node);
@@ -363,7 +364,7 @@ class WayfireSwitcher : public wf::plugin_interface_t, public wf::keyboard_inter
     /* offset from the left or from the right */
     float get_center_offset()
     {
-        return output->get_relative_geometry().width / 3;
+        return output->get_relative_geometry().width / 3.0;
     }
 
     /* get the scale for non-focused views */
@@ -463,8 +464,8 @@ class WayfireSwitcher : public wf::plugin_interface_t, public wf::keyboard_inter
         auto og   = output->get_relative_geometry();
         auto bbox = wf::view_bounding_box_up_to(sv.view, switcher_transformer);
 
-        float dx = (og.width / 2 - bbox.width / 2) - bbox.x;
-        float dy = bbox.y - (og.height / 2 - bbox.height / 2);
+        float dx = (og.width / 2.0 - bbox.width / 2.0) - bbox.x;
+        float dy = bbox.y - (og.height / 2.0 - bbox.height / 2.0);
 
         sv.attribs.off_x.set(0, dx);
         sv.attribs.off_y.set(0, dy);
@@ -901,7 +902,7 @@ class WayfireSwitcher : public wf::plugin_interface_t, public wf::keyboard_inter
 
     void fini() override
     {
-        if (output->is_plugin_active(grab_interface->name))
+        if (output->is_plugin_active(grab_interface.name))
         {
             deinit_switcher();
         }
@@ -911,4 +912,4 @@ class WayfireSwitcher : public wf::plugin_interface_t, public wf::keyboard_inter
     }
 };
 
-DECLARE_WAYFIRE_PLUGIN(WayfireSwitcher);
+DECLARE_WAYFIRE_PLUGIN(wf::per_output_plugin_t<WayfireSwitcher>);

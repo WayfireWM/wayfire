@@ -1,5 +1,5 @@
+#include "wayfire/plugin.hpp"
 #include "wayfire/util.hpp"
-#include <wayfire/singleton-plugin.hpp>
 #include <wayfire/view.hpp>
 #include <wayfire/output.hpp>
 #include <wayfire/workspace-manager.hpp>
@@ -341,10 +341,10 @@ static inline nlohmann::json get_error(std::string msg)
     };
 }
 
-class ipc_plugin_t
+class ipc_plugin_t : public wf::plugin_interface_t
 {
   public:
-    ipc_plugin_t()
+    void init() override
     {
         input = std::make_unique<headless_input_backend_t>();
 
@@ -373,6 +373,11 @@ class ipc_plugin_t
         server->register_method("core/tablet/tool_axis", do_tool_axis);
         server->register_method("core/tablet/tool_tip", do_tool_tip);
         server->register_method("core/tablet/pad_button", do_pad_button);
+    }
+
+    bool is_unloadable() override
+    {
+        return false;
     }
 
     using method_t = ipc::server_t::method_cb;
@@ -683,4 +688,4 @@ class ipc_plugin_t
 };
 }
 
-DECLARE_WAYFIRE_PLUGIN((wf::singleton_plugin_t<wf::ipc_plugin_t, false>));
+DECLARE_WAYFIRE_PLUGIN(wf::ipc_plugin_t);

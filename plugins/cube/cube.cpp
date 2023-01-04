@@ -1,3 +1,4 @@
+#include <wayfire/per-output-plugin.hpp>
 #include <memory>
 #include <wayfire/plugin.hpp>
 #include <wayfire/opengl.hpp>
@@ -34,7 +35,7 @@
 #include "shaders.tpp"
 #include "shaders-3-2.tpp"
 
-class wayfire_cube : public wf::plugin_interface_t, public wf::pointer_interaction_t
+class wayfire_cube : public wf::per_output_plugin_instance_t, public wf::pointer_interaction_t
 {
     class cube_render_node_t : public wf::scene::node_t
     {
@@ -234,11 +235,15 @@ class wayfire_cube : public wf::plugin_interface_t, public wf::pointer_interacti
         return output->workspace->get_workspace_grid_size().width;
     }
 
+    wf::plugin_grab_interface_t grab_interface{
+        .name = "cube",
+        .capabilities = wf::CAPABILITY_MANAGE_COMPOSITOR,
+        .cancel = [=] () { deactivate(); },
+    };
+
   public:
     void init() override
     {
-        grab_interface->name = "cube";
-        grab_interface->capabilities = wf::CAPABILITY_MANAGE_COMPOSITOR;
         input_grab = std::make_unique<wf::input_grab_t>("cube", output, nullptr, this, nullptr);
 
         animation.cube_animation.offset_y.set(0, 0);
@@ -270,11 +275,6 @@ class wayfire_cube : public wf::plugin_interface_t, public wf::pointer_interacti
         output->add_activator(key_left, &rotate_left);
         output->add_activator(key_right, &rotate_right);
         output->connect_signal("cube-control", &on_cube_control);
-
-        grab_interface->cancel = [=] ()
-        {
-            deactivate();
-        };
 
         OpenGL::render_begin();
         load_program();
@@ -382,12 +382,12 @@ class wayfire_cube : public wf::plugin_interface_t, public wf::pointer_interacti
     /* Tries to initialize renderer, activate plugin, etc. */
     bool activate()
     {
-        if (output->is_plugin_active(grab_interface->name))
+        if (output->is_plugin_active(grab_interface.name))
         {
             return true;
         }
 
-        if (!output->activate_plugin(grab_interface))
+        if (!output->activate_plugin(&grab_interface))
         {
             return false;
         }
@@ -425,7 +425,7 @@ class wayfire_cube : public wf::plugin_interface_t, public wf::pointer_interacti
     /* Disable custom rendering and deactivate plugin */
     void deactivate()
     {
-        if (!output->is_plugin_active(grab_interface->name))
+        if (!output->is_plugin_active(grab_interface.name))
         {
             return;
         }
@@ -435,7 +435,7 @@ class wayfire_cube : public wf::plugin_interface_t, public wf::pointer_interacti
         output->render->rem_effect(&pre_hook);
 
         input_grab->ungrab_input();
-        output->deactivate_plugin(grab_interface);
+        output->deactivate_plugin(&grab_interface);
         wf::get_core().unhide_cursor();
         wf::get_core().disconnect_signal(&on_motion_event);
 
@@ -770,7 +770,7 @@ class wayfire_cube : public wf::plugin_interface_t, public wf::pointer_interacti
 
     void fini() override
     {
-        if (output->is_plugin_active(grab_interface->name))
+        if (output->is_plugin_active(grab_interface.name))
         {
             deactivate();
         }
@@ -785,4 +785,4 @@ class wayfire_cube : public wf::plugin_interface_t, public wf::pointer_interacti
     }
 };
 
-DECLARE_WAYFIRE_PLUGIN(wayfire_cube);
+DECLARE_WAYFIRE_PLUGIN(wf::per_output_plugin_t<wayfire_cube>);
