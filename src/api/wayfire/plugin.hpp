@@ -35,10 +35,10 @@ enum plugin_capabilities_t
 };
 
 /**
- * The plugin grab interface is what the plugins use to announce themselves to
- * the core and other plugins as active, and to request to grab input.
+ * Plugins use the plugin activation data to indicate that they are active on a particular output.
+ * The information is used to avoid conflicts between plugins with the same capabilities.
  */
-struct plugin_grab_interface_t
+struct plugin_activation_data_t
 {
     // The name of the plugin. Used mostly for debugging purposes.
     std::string name = "";
@@ -47,12 +47,11 @@ struct plugin_grab_interface_t
 
     /**
      * Each plugin might be deactivated forcefully, for example when the desktop is locked. Plugins should
-     * honor this signal and exit their grabs/renderers immediately.
+     * honor this signal and exit their grabs/renderers immediately. Note: this is sent only to active
+     * plugins.
      */
     std::function<void()> cancel = [] () {};
 };
-
-using plugin_grab_interface_uptr = std::unique_ptr<plugin_grab_interface_t>;
 
 class plugin_interface_t
 {
@@ -97,7 +96,7 @@ class plugin_interface_t
 using wayfire_plugin_load_func = wf::plugin_interface_t * (*)();
 
 /** The version of Wayfire's API/ABI */
-constexpr uint32_t WAYFIRE_API_ABI_VERSION = 2023'01'04'1;
+constexpr uint32_t WAYFIRE_API_ABI_VERSION = 2023'01'05;
 
 /**
  * Each plugin must also provide a function which returns the Wayfire API/ABI

@@ -183,7 +183,7 @@ class WayfireSwitcher : public wf::per_output_plugin_instance_t, public wf::keyb
     };
 
     std::shared_ptr<switcher_render_node_t> render_node;
-    wf::plugin_grab_interface_t grab_interface = {
+    wf::plugin_activation_data_t grab_interface = {
         .name = "switcher",
         .capabilities = wf::CAPABILITY_MANAGE_COMPOSITOR,
     };

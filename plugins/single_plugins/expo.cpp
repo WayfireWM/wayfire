@@ -124,7 +124,7 @@ class wayfire_expo : public wf::per_output_plugin_instance_t, public wf::keyboar
         }
     }
 
-    wf::plugin_grab_interface_t grab_interface = {
+    wf::plugin_activation_data_t grab_interface = {
         .name = "expo",
         .capabilities = wf::CAPABILITY_MANAGE_COMPOSITOR,
         .cancel = [=] () { finalize_and_exit(); },

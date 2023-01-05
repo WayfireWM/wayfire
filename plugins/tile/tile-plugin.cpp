@@ -564,7 +564,7 @@ class tile_plugin_t : public wf::per_output_plugin_instance_t, public wf::pointe
         update_gaps();
     }
 
-    wf::plugin_grab_interface_t grab_interface = {
+    wf::plugin_activation_data_t grab_interface = {
         .name = "simple-tile",
         .capabilities = CAPABILITY_MANAGE_COMPOSITOR,
     };

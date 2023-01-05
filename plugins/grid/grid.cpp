@@ -104,7 +104,7 @@ class wayfire_grid : public wf::per_output_plugin_instance_t
     wf::option_wrapper_t<wf::activatorbinding_t> keys[10];
     wf::option_wrapper_t<wf::activatorbinding_t> restore_opt{"grid/restore"};
 
-    wf::plugin_grab_interface_t grab_interface{
+    wf::plugin_activation_data_t grab_interface{
         .name = "grid",
         .capabilities = wf::CAPABILITY_MANAGE_DESKTOP,
     };

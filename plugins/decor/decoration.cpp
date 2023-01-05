@@ -30,7 +30,7 @@ class wayfire_decoration : public wf::plugin_interface_t, private wf::per_output
         }
     }
 
-    wf::plugin_grab_interface_t grab_interface{
+    wf::plugin_activation_data_t grab_interface{
         .name = "simple-decoration",
         .capabilities = wf::CAPABILITY_VIEW_DECORATOR,
     };

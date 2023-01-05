@@ -38,7 +38,7 @@ class vswitch : public wf::per_output_plugin_instance_t
     // a custom renderer.
     static constexpr uint32_t base_caps = wf::CAPABILITY_CUSTOM_RENDERER;
 
-    wf::plugin_grab_interface_t grab_interface = {
+    wf::plugin_activation_data_t grab_interface = {
         .name   = "vswitch",
         .cancel = [=] () { algorithm->stop_switch(false); },
     };

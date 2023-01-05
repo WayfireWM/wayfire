@@ -441,7 +441,7 @@ bool wf::output_impl_t::can_activate_plugin(uint32_t caps,
     return true;
 }
 
-bool wf::output_impl_t::can_activate_plugin(wf::plugin_grab_interface_t *owner, uint32_t flags)
+bool wf::output_impl_t::can_activate_plugin(wf::plugin_activation_data_t *owner, uint32_t flags)
 {
     if (!owner)
     {
@@ -456,7 +456,7 @@ bool wf::output_impl_t::can_activate_plugin(wf::plugin_grab_interface_t *owner, 
     return can_activate_plugin(owner->capabilities, flags);
 }
 
-bool wf::output_impl_t::activate_plugin(wf::plugin_grab_interface_t *owner, uint32_t flags)
+bool wf::output_impl_t::activate_plugin(wf::plugin_activation_data_t *owner, uint32_t flags)
 {
     if (!can_activate_plugin(owner, flags))
     {
@@ -476,7 +476,7 @@ bool wf::output_impl_t::activate_plugin(wf::plugin_grab_interface_t *owner, uint
     return true;
 }
 
-bool wf::output_impl_t::deactivate_plugin(wf::plugin_grab_interface_t *owner)
+bool wf::output_impl_t::deactivate_plugin(wf::plugin_activation_data_t *owner)
 {
     auto it = active_plugins.find(owner);
     if (it == active_plugins.end())
@@ -498,7 +498,7 @@ bool wf::output_impl_t::deactivate_plugin(wf::plugin_grab_interface_t *owner)
 
 void wf::output_impl_t::cancel_active_plugins()
 {
-    std::vector<wf::plugin_grab_interface_t*> ifaces;
+    std::vector<wf::plugin_activation_data_t*> ifaces;
     for (auto p : active_plugins)
     {
         if (p->cancel)

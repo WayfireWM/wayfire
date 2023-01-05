@@ -21,7 +21,7 @@ class extra_gestures_plugin_t : public per_output_plugin_instance_t
 
     wf::option_wrapper_t<int> close_fingers{"extra-gestures/close_fingers"};
 
-    wf::plugin_grab_interface_t grab_interface = {
+    wf::plugin_activation_data_t grab_interface = {
         .capabilities = CAPABILITY_MANAGE_COMPOSITOR,
     };
 

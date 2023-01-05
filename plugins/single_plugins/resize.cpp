@@ -26,7 +26,7 @@ class wayfire_resize : public wf::per_output_plugin_instance_t, public wf::point
     uint32_t edges;
     wf::option_wrapper_t<wf::buttonbinding_t> button{"resize/activate"};
     std::unique_ptr<wf::input_grab_t> input_grab;
-    wf::plugin_grab_interface_t grab_interface = {
+    wf::plugin_activation_data_t grab_interface = {
         .name = "resize",
         .capabilities = wf::CAPABILITY_GRAB_INPUT | wf::CAPABILITY_MANAGE_DESKTOP,
     };

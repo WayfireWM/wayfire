@@ -34,7 +34,7 @@ class wayfire_alpha : public wf::per_output_plugin_instance_t
 {
     wf::option_wrapper_t<wf::keybinding_t> modifier{"alpha/modifier"};
     wf::option_wrapper_t<double> min_value{"alpha/min_value"};
-    wf::plugin_grab_interface_t grab_interface{
+    wf::plugin_activation_data_t grab_interface{
         .name = "alpha",
         .capabilities = wf::CAPABILITY_MANAGE_DESKTOP,
     };

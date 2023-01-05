@@ -93,7 +93,7 @@ class vswipe : public wf::per_output_plugin_instance_t
     wf::option_wrapper_t<double> speed_factor{"vswipe/speed_factor"};
     wf::option_wrapper_t<double> speed_cap{"vswipe/speed_cap"};
     std::unique_ptr<wf::input_grab_t> input_grab;
-    wf::plugin_grab_interface_t grab_interface = {
+    wf::plugin_activation_data_t grab_interface = {
         .name = "vswipe",
         .capabilities = wf::CAPABILITY_MANAGE_COMPOSITOR,
         .cancel = [=] () { finalize_and_exit(); },

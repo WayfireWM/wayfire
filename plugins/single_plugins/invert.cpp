@@ -51,7 +51,7 @@ class wayfire_invert_screen : public wf::per_output_plugin_instance_t
     bool active = false;
     OpenGL::program_t program;
 
-    wf::plugin_grab_interface_t grab_interface = {
+    wf::plugin_activation_data_t grab_interface = {
         .name = "invert",
         .capabilities = 0,
     };

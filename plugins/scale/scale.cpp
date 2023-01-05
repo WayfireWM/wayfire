@@ -119,7 +119,7 @@ class wayfire_scale : public wf::per_output_plugin_instance_t,
 
     std::unique_ptr<wf::input_grab_t> grab;
 
-    wf::plugin_grab_interface_t grab_interface{
+    wf::plugin_activation_data_t grab_interface{
         .name = "scale",
         .capabilities = wf::CAPABILITY_MANAGE_DESKTOP | wf::CAPABILITY_GRAB_INPUT,
         .cancel = [=] () { finalize(); },

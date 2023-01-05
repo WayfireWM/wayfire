@@ -27,7 +27,7 @@ class wayfire_wm_actions_t : public wf::per_output_plugin_instance_t
     wf::option_wrapper_t<wf::activatorbinding_t> send_to_back{
         "wm-actions/send_to_back"};
 
-    wf::plugin_grab_interface_t grab_interface = {
+    wf::plugin_activation_data_t grab_interface = {
         .name = "wm-actions",
         .capabilities = 0,
     };

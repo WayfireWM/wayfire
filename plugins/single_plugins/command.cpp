@@ -270,7 +270,7 @@ class wayfire_command : public wf::per_output_plugin_instance_t
 
     wf::signal_connection_t reload_config;
 
-    wf::plugin_grab_interface_t grab_interface = {
+    wf::plugin_activation_data_t grab_interface = {
         .name = "command",
         .capabilities = wf::CAPABILITY_GRAB_INPUT,
     };

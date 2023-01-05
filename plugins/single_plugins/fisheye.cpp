@@ -108,7 +108,7 @@ class wayfire_fisheye : public wf::per_output_plugin_instance_t
 
     OpenGL::program_t program;
 
-    wf::plugin_grab_interface_t grab_interface = {
+    wf::plugin_activation_data_t grab_interface = {
         .name = "fisheye",
         .capabilities = 0,
     };

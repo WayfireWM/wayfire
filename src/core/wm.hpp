@@ -17,7 +17,7 @@ class wayfire_close : public wf::per_output_plugin_instance_t
 {
     wf::activator_callback callback;
 
-    wf::plugin_grab_interface_t grab_interface = {
+    wf::plugin_activation_data_t grab_interface = {
         .name = "builtin-close-view",
         .capabilities = wf::CAPABILITY_GRAB_INPUT,
     };
@@ -41,7 +41,7 @@ class wayfire_focus : public wf::per_output_plugin_instance_t
     wf::option_wrapper_t<bool> pass_btns{"core/focus_buttons_passthrough"};
     wf::option_wrapper_t<wf::activatorbinding_t> focus_btns{"core/focus_buttons"};
 
-    wf::plugin_grab_interface_t grab_interface = {
+    wf::plugin_activation_data_t grab_interface = {
         .name = "_wf_focus",
         .capabilities = wf::CAPABILITY_MANAGE_DESKTOP,
     };

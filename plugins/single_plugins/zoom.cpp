@@ -19,7 +19,7 @@ class wayfire_zoom_screen : public wf::per_output_plugin_instance_t
     wf::animation::simple_animation_t progression{smoothing_duration};
     bool hook_set = false;
 
-    wf::plugin_grab_interface_t grab_interface = {
+    wf::plugin_activation_data_t grab_interface = {
         .name = "zoom",
         .capabilities = 0,
     };
