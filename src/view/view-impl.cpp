@@ -576,7 +576,16 @@ void wf::init_desktop_apis()
 
 wayfire_view wf::wl_surface_to_wayfire_view(wl_resource *resource)
 {
+    if (!resource)
+    {
+        return nullptr;
+    }
+
     auto surface = (wlr_surface*)wl_resource_get_user_data(resource);
+    if (!surface)
+    {
+        return nullptr;
+    }
 
     void *handle = NULL;
     if (wlr_surface_is_xdg_surface(surface))
