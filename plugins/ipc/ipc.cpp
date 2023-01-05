@@ -1,4 +1,5 @@
 #include "ipc.hpp"
+#include "wayfire/plugins/common/shared-core-data.hpp"
 #include <wayfire/util/log.hpp>
 #include <wayfire/core.hpp>
 #include <wayfire/plugin.hpp>
@@ -14,12 +15,19 @@
  */
 int wl_loop_handle_ipc_fd_connection(int, uint32_t, void *data)
 {
-    auto ipc = (wf::ipc::server_t*)data;
-    ipc->accept_new_client();
+    (*((std::function<void()>*)data))();
     return 0;
 }
 
-wf::ipc::server_t::server_t(std::string socket_path)
+wf::ipc::server_t::server_t()
+{
+    accept_new_client = [=] ()
+    {
+        do_accept_new_client();
+    };
+}
+
+void wf::ipc::server_t::init(std::string socket_path)
 {
     this->fd = setup_socket(socket_path.c_str());
     if (fd == -1)
@@ -29,16 +37,18 @@ wf::ipc::server_t::server_t(std::string socket_path)
     }
 
     listen(fd, 3);
-    source = wl_event_loop_add_fd(wl_display_get_event_loop(
-        wf::get_core().display), fd,
-        WL_EVENT_READABLE, wl_loop_handle_ipc_fd_connection, this);
+    source = wl_event_loop_add_fd(wl_display_get_event_loop(wf::get_core().display),
+        fd, WL_EVENT_READABLE, wl_loop_handle_ipc_fd_connection, &accept_new_client);
 }
 
 wf::ipc::server_t::~server_t()
 {
-    close(fd);
-    unlink(saddr.sun_path);
-    wl_event_source_remove(source);
+    if (fd != -1)
+    {
+        close(fd);
+        unlink(saddr.sun_path);
+        wl_event_source_remove(source);
+    }
 }
 
 int wf::ipc::server_t::setup_socket(const char *address)
@@ -76,7 +86,7 @@ int wf::ipc::server_t::setup_socket(const char *address)
     return fd;
 }
 
-void wf::ipc::server_t::accept_new_client()
+void wf::ipc::server_t::do_accept_new_client()
 {
     // Heavily inspired by Sway
     int cfd = accept(this->fd, NULL, NULL);
@@ -108,18 +118,30 @@ void wf::ipc::server_t::accept_new_client()
 
 void wf::ipc::server_t::client_disappeared(client_t *client)
 {
-    LOGI("Removing IPC client");
+    LOGD("Removing IPC client ", client);
+
+    client_disconnected_signal ev;
+    ev.client = client;
+    this->emit(&ev);
+
     auto it = std::remove_if(clients.begin(), clients.end(),
         [&] (const auto& cl) { return cl.get() == client; });
     clients.erase(it, clients.end());
+}
+
+void wf::ipc::server_t::handle_incoming_message(
+    client_t *client, nlohmann::json message)
+{
+    this->current_client = client;
+    client->send_json(method_repository->call_method(message["method"], message["data"]));
+    this->current_client = nullptr;
 }
 
 /* --------------------------- Per-client code ------------------------------*/
 
 int wl_loop_handle_ipc_client_fd_event(int, uint32_t mask, void *data)
 {
-    auto client = (wf::ipc::client_t*)data;
-    client->handle_fd_activity(mask);
+    (*((std::function<void(uint32_t)>*)data))(mask);
     return 0;
 }
 
@@ -135,10 +157,14 @@ wf::ipc::client_t::client_t(server_t *ipc, int fd)
 
     auto ev_loop = wf::get_core().ev_loop;
     source = wl_event_loop_add_fd(ev_loop, fd, WL_EVENT_READABLE,
-        wl_loop_handle_ipc_client_fd_event, this);
+        wl_loop_handle_ipc_client_fd_event, &this->handle_fd_activity);
 
     // +1 for null byte at the end
     buffer.resize(MAX_MESSAGE_LEN + 1);
+    this->handle_fd_activity = [=] (uint32_t event_mask)
+    {
+        handle_fd_incoming(event_mask);
+    };
 }
 
 // -1 error, 0 success, 1 try again later
@@ -170,7 +196,7 @@ int wf::ipc::client_t::read_up_to(int n, int *available)
     return 0;
 }
 
-void wf::ipc::client_t::handle_fd_activity(uint32_t event_mask)
+void wf::ipc::client_t::handle_fd_incoming(uint32_t event_mask)
 {
     if (event_mask & (WL_EVENT_ERROR | WL_EVENT_HANGUP))
     {
@@ -240,7 +266,7 @@ void wf::ipc::client_t::handle_fd_activity(uint32_t event_mask)
             return;
         }
 
-        send_json(method_repository->call_method(message["method"], message["data"]));
+        ipc->handle_incoming_message(this, std::move(message));
         // Reset for next message
         current_buffer_valid = 0;
     }
@@ -283,7 +309,7 @@ namespace wf
 class ipc_plugin_t : public wf::plugin_interface_t
 {
   private:
-    std::unique_ptr<ipc::server_t> server;
+    shared_data::ref_ptr_t<ipc::server_t> server;
 
   public:
     void init() override
@@ -292,7 +318,7 @@ class ipc_plugin_t : public wf::plugin_interface_t
         const auto& dname  = wf::get_core().wayland_display;
         std::string socket = pre_socket ?: "/tmp/wayfire-" + dname + ".socket";
         setenv("WAYFIRE_SOCKET", socket.c_str(), 1);
-        server = std::make_unique<ipc::server_t>(socket);
+        server->init(socket);
     }
 
     bool is_unloadable() override
@@ -300,6 +326,6 @@ class ipc_plugin_t : public wf::plugin_interface_t
         return false;
     }
 };
-}
+} // namespace wf
 
 DECLARE_WAYFIRE_PLUGIN(wf::ipc_plugin_t);

@@ -14,6 +14,7 @@
 #include <wayfire/debug.hpp>
 
 #include "ipc.hpp"
+#include "ipc-helpers.hpp"
 #include <wayfire/touch/touch.hpp>
 
 extern "C" {
@@ -38,16 +39,6 @@ extern "C" {
 #include <wayfire/util/log.hpp>
 #include <wayfire/core.hpp>
 
-#define EXPECT_FIELD(data, field, type) \
-    if (!data.count(field)) \
-    { \
-        return get_error("Missing \"" field "\""); \
-    } \
-    else if (!data[field].is_ ## type()) \
-    { \
-        return get_error("Field \"" field "\" does not have the correct type " #type); \
-    }
-
 static void locate_wayland_backend(wlr_backend *backend, void *data)
 {
     if (wlr_backend_is_wl(backend))
@@ -59,16 +50,6 @@ static void locate_wayland_backend(wlr_backend *backend, void *data)
 
 namespace wf
 {
-static nlohmann::json geometry_to_json(wf::geometry_t g)
-{
-    nlohmann::json j;
-    j["x"]     = g.x;
-    j["y"]     = g.y;
-    j["width"] = g.width;
-    j["height"] = g.height;
-    return j;
-}
-
 static std::string layer_to_string(uint32_t layer)
 {
     switch (layer)
@@ -329,20 +310,6 @@ class headless_input_backend_t
     headless_input_backend_t& operator =(headless_input_backend_t&&) = delete;
 };
 
-static inline nlohmann::json get_ok()
-{
-    return nlohmann::json{
-        {"result", "ok"}
-    };
-}
-
-static inline nlohmann::json get_error(std::string msg)
-{
-    return nlohmann::json{
-        {"error", std::string(msg)}
-    };
-}
-
 class stipc_plugin_t : public wf::plugin_interface_t
 {
     wf::shared_data::ref_ptr_t<wf::ipc::method_repository_t> method_repository;
@@ -385,8 +352,8 @@ class stipc_plugin_t : public wf::plugin_interface_t
             v["id"]     = view->get_id();
             v["title"]  = view->get_title();
             v["app-id"] = view->get_app_id();
-            v["geometry"] = geometry_to_json(view->get_wm_geometry());
-            v["base-geometry"] = geometry_to_json(view->get_output_geometry());
+            v["geometry"] = wf::ipc::geometry_to_json(view->get_wm_geometry());
+            v["base-geometry"] = wf::ipc::geometry_to_json(view->get_output_geometry());
             v["state"] = {
                 {"tiled", view->tiled_edges},
                 {"fullscreen", view->fullscreen},
@@ -410,14 +377,14 @@ class stipc_plugin_t : public wf::plugin_interface_t
     ipc::method_callback layout_views = [] (nlohmann::json data)
     {
         auto views = wf::get_core().get_all_views();
-        EXPECT_FIELD(data, "views", array);
+        WFJSON_EXPECT_FIELD(data, "views", array);
         for (auto v : data["views"])
         {
-            EXPECT_FIELD(v, "id", number);
-            EXPECT_FIELD(v, "x", number);
-            EXPECT_FIELD(v, "y", number);
-            EXPECT_FIELD(v, "width", number);
-            EXPECT_FIELD(v, "height", number);
+            WFJSON_EXPECT_FIELD(v, "id", number);
+            WFJSON_EXPECT_FIELD(v, "x", number);
+            WFJSON_EXPECT_FIELD(v, "y", number);
+            WFJSON_EXPECT_FIELD(v, "width", number);
+            WFJSON_EXPECT_FIELD(v, "height", number);
 
             auto it = std::find_if(views.begin(), views.end(), [&] (auto& view)
             {
@@ -426,17 +393,17 @@ class stipc_plugin_t : public wf::plugin_interface_t
 
             if (it == views.end())
             {
-                return get_error("Could not find view with id " +
+                return wf::ipc::json_error("Could not find view with id " +
                     std::to_string((int)v["id"]));
             }
 
             if (v.contains("output"))
             {
-                EXPECT_FIELD(v, "output", string);
+                WFJSON_EXPECT_FIELD(v, "output", string);
                 auto wo = wf::get_core().output_layout->find_output(v["output"]);
                 if (!wo)
                 {
-                    return get_error("Unknown output " + (std::string)v["output"]);
+                    return wf::ipc::json_error("Unknown output " + (std::string)v["output"]);
                 }
 
                 wf::get_core().move_view_to_output(*it, wo, false);
@@ -446,7 +413,7 @@ class stipc_plugin_t : public wf::plugin_interface_t
             (*it)->set_geometry(g);
         }
 
-        return get_ok();
+        return wf::ipc::json_ok();
     };
 
     ipc::method_callback create_wayland_output = [] (nlohmann::json)
@@ -459,25 +426,25 @@ class stipc_plugin_t : public wf::plugin_interface_t
 
         if (!wayland_backend)
         {
-            return get_error("Wayfire is not running in nested wayland mode!");
+            return wf::ipc::json_error("Wayfire is not running in nested wayland mode!");
         }
 
         wlr_wl_output_create(wayland_backend);
-        return get_ok();
+        return wf::ipc::json_ok();
     };
 
     ipc::method_callback destroy_wayland_output = [] (nlohmann::json data)
     {
-        EXPECT_FIELD(data, "output", string);
+        WFJSON_EXPECT_FIELD(data, "output", string);
         auto output = wf::get_core().output_layout->find_output(data["output"]);
         if (!output)
         {
-            return get_error("Could not find output: \"" +
+            return wf::ipc::json_error("Could not find output: \"" +
                 (std::string)data["output"] + "\"");
         }
 
         wlr_output_destroy(output->handle);
-        return get_ok();
+        return wf::ipc::json_ok();
     };
 
     struct key_t
@@ -518,14 +485,14 @@ class stipc_plugin_t : public wf::plugin_interface_t
 
     ipc::method_callback feed_key = [=] (nlohmann::json data)
     {
-        EXPECT_FIELD(data, "key", string);
-        EXPECT_FIELD(data, "state", boolean);
+        WFJSON_EXPECT_FIELD(data, "key", string);
+        WFJSON_EXPECT_FIELD(data, "state", boolean);
 
         std::string key = data["key"];
         int keycode     = libevdev_event_code_from_name(EV_KEY, key.c_str());
         if (keycode == -1)
         {
-            return get_error("Failed to parse evdev key \"" + key + "\"");
+            return wf::ipc::json_error("Failed to parse evdev key \"" + key + "\"");
         }
 
         if (data["state"])
@@ -536,7 +503,7 @@ class stipc_plugin_t : public wf::plugin_interface_t
             input->do_key(keycode, WL_KEYBOARD_KEY_STATE_RELEASED);
         }
 
-        return get_ok();
+        return wf::ipc::json_ok();
     };
 
     ipc::method_callback feed_button = [=] (nlohmann::json data)
@@ -545,12 +512,12 @@ class stipc_plugin_t : public wf::plugin_interface_t
         auto button = std::get_if<key_t>(&result);
         if (!button)
         {
-            return get_error(std::get<std::string>(result));
+            return wf::ipc::json_error(std::get<std::string>(result));
         }
 
         if (!data.count("mode") || !data["mode"].is_string())
         {
-            return get_error("No mode specified");
+            return wf::ipc::json_error("No mode specified");
         }
 
         auto mode = data["mode"];
@@ -574,7 +541,7 @@ class stipc_plugin_t : public wf::plugin_interface_t
             }
         }
 
-        return get_ok();
+        return wf::ipc::json_ok();
     };
 
     ipc::method_callback move_cursor = [=] (nlohmann::json data)
@@ -582,47 +549,47 @@ class stipc_plugin_t : public wf::plugin_interface_t
         if (!data.count("x") || !data.count("y") ||
             !data["x"].is_number() || !data["y"].is_number())
         {
-            return get_error("Move cursor needs double x/y arguments");
+            return wf::ipc::json_error("Move cursor needs double x/y arguments");
         }
 
         double x = data["x"];
         double y = data["y"];
         input->do_motion(x, y);
-        return get_ok();
+        return wf::ipc::json_ok();
     };
 
     ipc::method_callback do_touch = [=] (nlohmann::json data)
     {
-        EXPECT_FIELD(data, "finger", number_integer);
-        EXPECT_FIELD(data, "x", number);
-        EXPECT_FIELD(data, "y", number);
+        WFJSON_EXPECT_FIELD(data, "finger", number_integer);
+        WFJSON_EXPECT_FIELD(data, "x", number);
+        WFJSON_EXPECT_FIELD(data, "y", number);
 
         input->do_touch(data["finger"], data["x"], data["y"]);
-        return get_ok();
+        return wf::ipc::json_ok();
     };
 
     ipc::method_callback do_touch_release = [=] (nlohmann::json data)
     {
-        EXPECT_FIELD(data, "finger", number_integer);
+        WFJSON_EXPECT_FIELD(data, "finger", number_integer);
         input->do_touch_release(data["finger"]);
-        return get_ok();
+        return wf::ipc::json_ok();
     };
 
     ipc::method_callback run = [=] (nlohmann::json data)
     {
         if (!data.count("cmd") || !data["cmd"].is_string())
         {
-            return get_error("run command needs a cmd to run");
+            return wf::ipc::json_error("run command needs a cmd to run");
         }
 
-        auto response = get_ok();
+        auto response = wf::ipc::json_ok();
         response["pid"] = wf::get_core().run(data["cmd"]);
         return response;
     };
 
     ipc::method_callback ping = [=] (nlohmann::json data)
     {
-        return get_ok();
+        return wf::ipc::json_ok();
     };
 
     ipc::method_callback get_display = [=] (nlohmann::json data)
@@ -635,45 +602,45 @@ class stipc_plugin_t : public wf::plugin_interface_t
 
     ipc::method_callback do_tool_proximity = [=] (nlohmann::json data)
     {
-        EXPECT_FIELD(data, "proximity_in", boolean);
-        EXPECT_FIELD(data, "x", number);
-        EXPECT_FIELD(data, "y", number);
+        WFJSON_EXPECT_FIELD(data, "proximity_in", boolean);
+        WFJSON_EXPECT_FIELD(data, "x", number);
+        WFJSON_EXPECT_FIELD(data, "y", number);
         input->do_tablet_proximity(data["proximity_in"], data["x"], data["y"]);
-        return get_ok();
+        return wf::ipc::json_ok();
     };
 
     ipc::method_callback do_tool_button = [=] (nlohmann::json data)
     {
-        EXPECT_FIELD(data, "button", number_integer);
-        EXPECT_FIELD(data, "state", boolean);
+        WFJSON_EXPECT_FIELD(data, "button", number_integer);
+        WFJSON_EXPECT_FIELD(data, "state", boolean);
         input->do_tablet_button(data["button"], data["state"]);
-        return get_ok();
+        return wf::ipc::json_ok();
     };
 
     ipc::method_callback do_tool_axis = [=] (nlohmann::json data)
     {
-        EXPECT_FIELD(data, "x", number);
-        EXPECT_FIELD(data, "y", number);
-        EXPECT_FIELD(data, "pressure", number);
+        WFJSON_EXPECT_FIELD(data, "x", number);
+        WFJSON_EXPECT_FIELD(data, "y", number);
+        WFJSON_EXPECT_FIELD(data, "pressure", number);
         input->do_tablet_axis(data["x"], data["y"], data["pressure"]);
-        return get_ok();
+        return wf::ipc::json_ok();
     };
 
     ipc::method_callback do_tool_tip = [=] (nlohmann::json data)
     {
-        EXPECT_FIELD(data, "x", number);
-        EXPECT_FIELD(data, "y", number);
-        EXPECT_FIELD(data, "state", boolean);
+        WFJSON_EXPECT_FIELD(data, "x", number);
+        WFJSON_EXPECT_FIELD(data, "y", number);
+        WFJSON_EXPECT_FIELD(data, "state", boolean);
         input->do_tablet_tip(data["state"], data["x"], data["y"]);
-        return get_ok();
+        return wf::ipc::json_ok();
     };
 
     ipc::method_callback do_pad_button = [=] (nlohmann::json data)
     {
-        EXPECT_FIELD(data, "button", number_integer);
-        EXPECT_FIELD(data, "state", boolean);
+        WFJSON_EXPECT_FIELD(data, "button", number_integer);
+        WFJSON_EXPECT_FIELD(data, "state", boolean);
         input->do_tablet_pad_button(data["button"], data["state"]);
-        return get_ok();
+        return wf::ipc::json_ok();
     };
 
     std::unique_ptr<headless_input_backend_t> input;

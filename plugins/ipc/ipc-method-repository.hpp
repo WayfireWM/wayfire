@@ -59,5 +59,30 @@ class method_repository_t
   private:
     std::map<std::string, method_callback> methods;
 };
+
+// A few helper definitions for IPC method implementations.
+inline nlohmann::json json_ok()
+{
+    return nlohmann::json{
+        {"result", "ok"}
+    };
+}
+
+inline nlohmann::json json_error(std::string msg)
+{
+    return nlohmann::json{
+        {"error", std::string(msg)}
+    };
+}
+
+#define WFJSON_EXPECT_FIELD(data, field, type) \
+    if (!data.count(field)) \
+    { \
+        return wf::ipc::json_error("Missing \"" field "\""); \
+    } \
+    else if (!data[field].is_ ## type()) \
+    { \
+        return wf::ipc::json_error("Field \"" field "\" does not have the correct type " #type); \
+    }
 }
 }
