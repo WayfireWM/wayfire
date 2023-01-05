@@ -195,21 +195,6 @@ void wf::bindings_repository_t::handle_gesture(const wf::touchgesture_t& gesture
     }
 }
 
-bool wf::bindings_repository_t::handle_activator(
-    const std::string& activator, const wf::activator_data_t& data)
-{
-    auto opt = wf::get_core().config.get_option(activator);
-    for (auto& act : this->priv->activators)
-    {
-        if (act->activated_by == opt)
-        {
-            return (*act->callback)(data);
-        }
-    }
-
-    return false;
-}
-
 void wf::bindings_repository_t::rem_binding(void *callback)
 {
     const auto& erase = [callback] (auto& container)

@@ -56,9 +56,6 @@ class bindings_repository_t
     /** Handle a gesture from the user. */
     void handle_gesture(const wf::touchgesture_t& gesture);
 
-    /** Handle a direct call to an activator binding */
-    bool handle_activator(const std::string& activator, const wf::activator_data_t& data);
-
     /** Erase binding of any type by callback */
     void rem_binding(void *callback);
 
