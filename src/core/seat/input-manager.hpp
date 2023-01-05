@@ -6,7 +6,6 @@
 #include <chrono>
 
 #include "seat.hpp"
-#include "bindings-repository.hpp"
 #include "wayfire/plugin.hpp"
 #include "wayfire/signal-provider.hpp"
 #include "wayfire/view.hpp"
@@ -61,9 +60,6 @@ class input_manager_t
     void set_exclusive_focus(wl_client *client);
 
     std::vector<std::unique_ptr<wf::input_device_impl_t>> input_devices;
-
-    /** @return the bindings for the active output */
-    wf::bindings_repository_t& get_active_bindings();
 };
 }
 

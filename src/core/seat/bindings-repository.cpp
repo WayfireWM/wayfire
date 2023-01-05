@@ -1,12 +1,61 @@
-#include "bindings-repository.hpp"
 #include <wayfire/core.hpp>
 #include <algorithm>
+#include "bindings-repository-impl.hpp"
+
+wf::bindings_repository_t::bindings_repository_t()
+{
+    priv = std::make_unique<impl>();
+    priv->on_config_reload.set_callback([=] (wf::signal_data_t*)
+    {
+        priv->recreate_hotspots();
+    });
+
+    wf::get_core().connect_signal("reload-config", &priv->on_config_reload);
+}
+
+template<class Option, class Callback>
+static void push_binding(wf::binding_container_t<Option, Callback>& bindings,
+    wf::option_sptr_t<Option> opt, Callback *callback)
+{
+    auto bnd = std::make_unique<wf::binding_t<Option, Callback>>();
+    bnd->activated_by = opt;
+    bnd->callback     = callback;
+    bindings.emplace_back(std::move(bnd));
+}
+
+wf::bindings_repository_t::~bindings_repository_t()
+{}
+
+void wf::bindings_repository_t::add_key(option_sptr_t<keybinding_t> key, wf::key_callback *cb)
+{
+    push_binding(priv->keys, key, cb);
+}
+
+void wf::bindings_repository_t::add_axis(option_sptr_t<keybinding_t> axis, wf::axis_callback *cb)
+{
+    push_binding(priv->axes, axis, cb);
+}
+
+void wf::bindings_repository_t::add_button(option_sptr_t<buttonbinding_t> button, wf::button_callback *cb)
+{
+    push_binding(priv->buttons, button, cb);
+}
+
+void wf::bindings_repository_t::add_activator(
+    option_sptr_t<activatorbinding_t> activator, wf::activator_callback *cb)
+{
+    push_binding(priv->activators, activator, cb);
+    if (activator->get_value().get_hotspots().size())
+    {
+        priv->recreate_hotspots();
+    }
+}
 
 bool wf::bindings_repository_t::handle_key(const wf::keybinding_t& pressed,
     uint32_t mod_binding_key)
 {
     std::vector<std::function<bool()>> callbacks;
-    for (auto& binding : this->keys)
+    for (auto& binding : this->priv->keys)
     {
         if (binding->activated_by->get_value() == pressed)
         {
@@ -20,7 +69,7 @@ bool wf::bindings_repository_t::handle_key(const wf::keybinding_t& pressed,
         }
     }
 
-    for (auto& binding : this->activators)
+    for (auto& binding : this->priv->activators)
     {
         if (binding->activated_by->get_value().has_match(pressed))
         {
@@ -59,7 +108,7 @@ bool wf::bindings_repository_t::handle_axis(uint32_t modifiers,
 {
     std::vector<wf::axis_callback*> callbacks;
 
-    for (auto& binding : this->axes)
+    for (auto& binding : this->priv->axes)
     {
         if (binding->activated_by->get_value() == wf::keybinding_t{modifiers, 0})
         {
@@ -78,7 +127,7 @@ bool wf::bindings_repository_t::handle_axis(uint32_t modifiers,
 bool wf::bindings_repository_t::handle_button(const wf::buttonbinding_t& pressed)
 {
     std::vector<std::function<bool()>> callbacks;
-    for (auto& binding : this->buttons)
+    for (auto& binding : this->priv->buttons)
     {
         if (binding->activated_by->get_value() == pressed)
         {
@@ -92,7 +141,7 @@ bool wf::bindings_repository_t::handle_button(const wf::buttonbinding_t& pressed
         }
     }
 
-    for (auto& binding : this->activators)
+    for (auto& binding : this->priv->activators)
     {
         if (binding->activated_by->get_value().has_match(pressed))
         {
@@ -122,7 +171,7 @@ bool wf::bindings_repository_t::handle_button(const wf::buttonbinding_t& pressed
 void wf::bindings_repository_t::handle_gesture(const wf::touchgesture_t& gesture)
 {
     std::vector<std::function<void()>> callbacks;
-    for (auto& binding : this->activators)
+    for (auto& binding : this->priv->activators)
     {
         if (binding->activated_by->get_value().has_match(gesture))
         {
@@ -150,7 +199,7 @@ bool wf::bindings_repository_t::handle_activator(
     const std::string& activator, const wf::activator_data_t& data)
 {
     auto opt = wf::get_core().config.get_option(activator);
-    for (auto& act : this->activators)
+    for (auto& act : this->priv->activators)
     {
         if (act->activated_by == opt)
         {
@@ -173,49 +222,19 @@ void wf::bindings_repository_t::rem_binding(void *callback)
         container.erase(it, container.end());
     };
 
-    erase(keys);
-    erase(buttons);
-    erase(axes);
-    erase(activators);
-
-    recreate_hotspots();
-}
-
-void wf::bindings_repository_t::rem_binding(binding_t *binding)
-{
-    const auto& erase = [binding] (auto& container)
+    bool update_hotspots = false;
+    for (auto& act : this->priv->activators)
     {
-        auto it = std::remove_if(container.begin(), container.end(),
-            [binding] (const auto& ptr)
-        {
-            return ptr.get() == binding;
-        });
-        container.erase(it, container.end());
-    };
+        update_hotspots |= !act->activated_by->get_value().get_hotspots().empty();
+    }
 
-    erase(keys);
-    erase(buttons);
-    erase(axes);
-    erase(activators);
+    erase(priv->keys);
+    erase(priv->buttons);
+    erase(priv->axes);
+    erase(priv->activators);
 
-    recreate_hotspots();
-}
-
-wf::bindings_repository_t::bindings_repository_t(wf::output_t *output) :
-    hotspot_mgr(output)
-{
-    on_config_reload.set_callback([=] (wf::signal_data_t*)
+    if (update_hotspots)
     {
-        recreate_hotspots();
-    });
-
-    wf::get_core().connect_signal("reload-config", &on_config_reload);
-}
-
-void wf::bindings_repository_t::recreate_hotspots()
-{
-    this->idle_recreate_hotspots.run_once([=] ()
-    {
-        hotspot_mgr.update_hotspots(activators);
-    });
+        priv->recreate_hotspots();
+    }
 }

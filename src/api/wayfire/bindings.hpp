@@ -9,7 +9,6 @@
 namespace wf
 {
 struct touchgesture_t;
-struct binding_t;
 
 /**
  * A callback for key bindings.

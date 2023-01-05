@@ -6,7 +6,6 @@
 #include <wayfire/bindings.hpp>
 #include <wayfire/config/option-wrapper.hpp>
 #include <wayfire/config/types.hpp>
-#include "hotspot-manager.hpp"
 
 namespace wf
 {
@@ -17,7 +16,23 @@ namespace wf
 class bindings_repository_t
 {
   public:
-    bindings_repository_t(wf::output_t *output);
+    bindings_repository_t();
+    ~bindings_repository_t();
+
+    /**
+     * Plugins can use the add_* functions to register their own bindings.
+     *
+     * @param key/axis/button/activator The corresponding values are used to know when to trigger this
+     *   binding. The values that the shared pointer points to may be modified, in which case core will use
+     *   the latest value stored there.
+     *
+     * @param cb The plugin callback to be executed when the binding is triggered. Can be used to unregister
+     *   the binding.
+     */
+    void add_key(option_sptr_t<keybinding_t> key, wf::key_callback *cb);
+    void add_axis(option_sptr_t<keybinding_t> axis, wf::axis_callback *cb);
+    void add_button(option_sptr_t<buttonbinding_t> button, wf::button_callback *cb);
+    void add_activator(option_sptr_t<activatorbinding_t> activator, wf::activator_callback *cb);
 
     /**
      * Handle a keybinding pressed by the user.
@@ -34,7 +49,6 @@ class bindings_repository_t
 
     /**
      * Handle a buttonbinding pressed by the user.
-     *
      * @return true if any of the matching registered bindings consume the event.
      */
     bool handle_button(const wf::buttonbinding_t& pressed);
@@ -43,34 +57,12 @@ class bindings_repository_t
     void handle_gesture(const wf::touchgesture_t& gesture);
 
     /** Handle a direct call to an activator binding */
-    bool handle_activator(
-        const std::string& activator, const wf::activator_data_t& data);
+    bool handle_activator(const std::string& activator, const wf::activator_data_t& data);
 
     /** Erase binding of any type by callback */
     void rem_binding(void *callback);
-    /** Erase binding of any type */
-    void rem_binding(binding_t *binding);
 
-    /**
-     * Recreate hotspots.
-     *
-     * The action will take place on the next idle.
-     */
-    void recreate_hotspots();
-
-  private:
-    // output_t directly pushes in the binding containers to avoid having the
-    // same wrapped functions as in the output public API.
-    friend class output_impl_t;
-
-    binding_container_t<wf::keybinding_t, key_callback> keys;
-    binding_container_t<wf::keybinding_t, axis_callback> axes;
-    binding_container_t<wf::buttonbinding_t, button_callback> buttons;
-    binding_container_t<wf::activatorbinding_t, activator_callback> activators;
-
-    hotspot_manager_t hotspot_mgr;
-
-    wf::signal_connection_t on_config_reload;
-    wf::wl_idle_call idle_recreate_hotspots;
+    struct impl;
+    std::unique_ptr<impl> priv;
 };
 }

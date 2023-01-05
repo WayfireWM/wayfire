@@ -160,19 +160,6 @@ class output_t : public wf::object_base_t, public wf::signal::provider_t
     virtual bool is_plugin_active(std::string owner_name) const = 0;
 
     /**
-     * Call a plugin's registered activator binding.
-     *
-     * @param activator The name of the activator binding, for ex. "expo/toggle"
-     * @param data The activator data to pass to the view.
-     *   Supports also custom data types.
-     *
-     * @return True if a plugin's binding matches the given name and the plugin
-     *   consumes the event, False otherwise.
-     */
-    virtual bool call_plugin(const std::string& activator,
-        const wf::activator_data_t& data) const = 0;
-
-    /**
      * @return The topmost view in the workspace layer
      */
     wayfire_view get_top_view() const;
@@ -239,19 +226,10 @@ class output_t : public wf::object_base_t, public wf::signal::provider_t
      *
      * @return The wf::binding_t which can be used to unregister the binding.
      */
-    virtual wf::binding_t *add_key(option_sptr_t<keybinding_t> key,
-        wf::key_callback*) = 0;
-    virtual wf::binding_t *add_axis(option_sptr_t<keybinding_t> axis,
-        wf::axis_callback*) = 0;
-    virtual wf::binding_t *add_button(option_sptr_t<buttonbinding_t> button,
-        wf::button_callback*) = 0;
-    virtual wf::binding_t *add_activator(option_sptr_t<activatorbinding_t> activator,
-        wf::activator_callback*) = 0;
-
-    /**
-     * Remove the given binding, regardless of its type.
-     */
-    virtual void rem_binding(wf::binding_t *binding) = 0;
+    virtual void add_key(option_sptr_t<keybinding_t> key, wf::key_callback*)    = 0;
+    virtual void add_axis(option_sptr_t<keybinding_t> axis, wf::axis_callback*) = 0;
+    virtual void add_button(option_sptr_t<buttonbinding_t> button, wf::button_callback*) = 0;
+    virtual void add_activator(option_sptr_t<activatorbinding_t> activator, wf::activator_callback*) = 0;
 
     /**
      * Remove all bindings which have the given callback, regardless of the type.

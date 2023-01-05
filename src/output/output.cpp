@@ -1,5 +1,7 @@
 #include "output-impl.hpp"
+#include "wayfire/bindings.hpp"
 #include "wayfire/core.hpp"
+#include "wayfire/bindings-repository.hpp"
 #include "wayfire/debug.hpp"
 #include "wayfire/output.hpp"
 #include "wayfire/plugin.hpp"
@@ -17,6 +19,7 @@
 #include "../core/seat/input-manager.hpp"
 #include "../view/xdg-shell.hpp"
 #include <memory>
+#include <wayfire/config/types.hpp>
 #include <wayfire/util/log.hpp>
 #include <wayfire/nonstd/wlroots-full.hpp>
 
@@ -28,7 +31,6 @@ wf::output_t::output_t() = default;
 wf::output_impl_t::output_impl_t(wlr_output *handle,
     const wf::dimensions_t& effective_size)
 {
-    this->bindings = std::make_unique<bindings_repository_t>(this);
     this->set_effective_size(effective_size);
     this->handle = handle;
 
@@ -117,8 +119,26 @@ wf::output_t::~output_t()
 
 wf::output_impl_t::~output_impl_t()
 {
-    // Release plugins before bindings
-    this->bindings.reset();
+    auto& bindings = wf::get_core().bindings;
+    for (auto& [_, act] : this->key_map)
+    {
+        bindings->rem_binding(&act);
+    }
+
+    for (auto& [_, act] : this->button_map)
+    {
+        bindings->rem_binding(&act);
+    }
+
+    for (auto& [_, act] : this->axis_map)
+    {
+        bindings->rem_binding(&act);
+    }
+
+    for (auto& [_, act] : this->activator_map)
+    {
+        bindings->rem_binding(&act);
+    }
 
     for (auto& layer_root : nodes)
     {
@@ -524,65 +544,93 @@ bool wf::output_impl_t::is_inhibited() const
 
 namespace wf
 {
-template<class Option, class Callback>
-static wf::binding_t *push_binding(
-    binding_container_t<Option, Callback>& bindings,
-    option_sptr_t<Option> opt,
-    Callback *callback)
+void output_impl_t::add_key(option_sptr_t<keybinding_t> key, wf::key_callback *callback)
 {
-    auto bnd = std::make_unique<output_binding_t<Option, Callback>>();
-    bnd->activated_by = opt;
-    bnd->callback     = callback;
-    bindings.emplace_back(std::move(bnd));
+    this->key_map[callback] = [=] (const wf::keybinding_t& kb)
+    {
+        if (this != wf::get_core().get_active_output())
+        {
+            return false;
+        }
 
-    return bindings.back().get();
+        return (*callback)(kb);
+    };
+
+    wf::get_core().bindings->add_key(key, &key_map[callback]);
 }
 
-binding_t*output_impl_t::add_key(option_sptr_t<keybinding_t> key,
-    wf::key_callback *callback)
-{
-    return push_binding(this->bindings->keys, key, callback);
-}
-
-binding_t*output_impl_t::add_axis(option_sptr_t<keybinding_t> axis,
+void output_impl_t::add_axis(option_sptr_t<keybinding_t> axis,
     wf::axis_callback *callback)
 {
-    return push_binding(this->bindings->axes, axis, callback);
+    this->axis_map[callback] = [=] (wlr_pointer_axis_event *ax)
+    {
+        if (this != wf::get_core().get_active_output())
+        {
+            return false;
+        }
+
+        return (*callback)(ax);
+    };
+
+    wf::get_core().bindings->add_axis(axis, &axis_map[callback]);
 }
 
-binding_t*output_impl_t::add_button(option_sptr_t<buttonbinding_t> button,
+void output_impl_t::add_button(option_sptr_t<buttonbinding_t> button,
     wf::button_callback *callback)
 {
-    return push_binding(this->bindings->buttons, button, callback);
+    this->button_map[callback] = [=] (const wf::buttonbinding_t& kb)
+    {
+        if (this != wf::get_core().get_active_output())
+        {
+            return false;
+        }
+
+        return (*callback)(kb);
+    };
+
+    wf::get_core().bindings->add_button(button, &button_map[callback]);
 }
 
-binding_t*output_impl_t::add_activator(
+void output_impl_t::add_activator(
     option_sptr_t<activatorbinding_t> activator, wf::activator_callback *callback)
 {
-    auto result = push_binding(this->bindings->activators, activator, callback);
-    this->bindings->recreate_hotspots();
-    return result;
+    this->activator_map[callback] = [=] (const wf::activator_data_t& act)
+    {
+        if (act.source == activator_source_t::HOTSPOT)
+        {
+            auto pos = wf::get_core().get_cursor_position();
+            auto wo  = wf::get_core().output_layout->get_output_at(pos.x, pos.y);
+            if (this != wo)
+            {
+                return false;
+            }
+        } else if (this != wf::get_core().get_active_output())
+        {
+            return false;
+        }
+
+        return (*callback)(act);
+    };
+
+    wf::get_core().bindings->add_activator(activator, &activator_map[callback]);
 }
 
-void wf::output_impl_t::rem_binding(wf::binding_t *binding)
+template<class Type>
+void remove_binding(std::map<Type*, Type>& map, Type *cb)
 {
-    return this->bindings->rem_binding(binding);
+    if (map.count(cb))
+    {
+        wf::get_core().bindings->rem_binding(&map[cb]);
+        map.erase(cb);
+    }
 }
 
 void wf::output_impl_t::rem_binding(void *callback)
 {
-    return this->bindings->rem_binding(callback);
-}
-
-bindings_repository_t& output_impl_t::get_bindings()
-{
-    return *bindings;
-}
-
-bool output_impl_t::call_plugin(
-    const std::string& activator, const wf::activator_data_t& data) const
-{
-    return this->bindings->handle_activator(activator, data);
+    remove_binding(key_map, (key_callback*)callback);
+    remove_binding(button_map, (button_callback*)callback);
+    remove_binding(axis_map, (axis_callback*)callback);
+    remove_binding(activator_map, (activator_callback*)callback);
 }
 
 uint32_t all_layers_not_below(uint32_t layer)

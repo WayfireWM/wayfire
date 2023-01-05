@@ -1,6 +1,7 @@
 #include <cmath>
 
 #include <wayfire/util/log.hpp>
+#include <wayfire/bindings-repository.hpp>
 
 #include "core/seat/seat.hpp"
 #include "touch.hpp"
@@ -506,13 +507,12 @@ void wf::touch_interface_t::add_default_gestures()
             direction,
             swp_ptr->cnt_fingers
         };
-        wf::get_core_impl().input->get_active_bindings().handle_gesture(gesture);
+        wf::get_core().bindings->handle_gesture(gesture);
     };
 
     auto ack_edge_swipe = [esw_ptr, this] ()
     {
-        uint32_t possible_edges =
-            find_swipe_edges(finger_state.get_center().origin);
+        uint32_t possible_edges = find_swipe_edges(finger_state.get_center().origin);
         uint32_t direction = wf_touch_to_wf_dir(esw_ptr->target_direction);
 
         possible_edges &= direction;
@@ -524,7 +524,7 @@ void wf::touch_interface_t::add_default_gestures()
                 esw_ptr->cnt_fingers
             };
 
-            wf::get_core_impl().input->get_active_bindings().handle_gesture(gesture);
+            wf::get_core().bindings->handle_gesture(gesture);
         }
     };
 
@@ -536,7 +536,7 @@ void wf::touch_interface_t::add_default_gestures()
             pnc_ptr->cnt_fingers
         };
 
-        wf::get_core_impl().input->get_active_bindings().handle_gesture(gesture);
+        wf::get_core().bindings->handle_gesture(gesture);
     };
 
     this->multiswipe = std::make_unique<gesture_t>(std::move(

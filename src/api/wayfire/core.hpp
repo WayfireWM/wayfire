@@ -41,6 +41,7 @@ namespace wf
 class output_t;
 class output_layout_t;
 class input_device_t;
+class bindings_repository_t;
 
 /** Describes the state of the compositor */
 enum class compositor_state_t
@@ -96,6 +97,7 @@ class compositor_core_t : public wf::object_base_t, public signal::provider_t
 
     std::unique_ptr<wf::config_backend_t> config_backend;
     std::unique_ptr<wf::output_layout_t> output_layout;
+    std::unique_ptr<wf::bindings_repository_t> bindings;
 
     /**
      * Various protocols supported by wlroots

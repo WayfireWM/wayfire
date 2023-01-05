@@ -1,4 +1,5 @@
 #include <cstring>
+#include <wayfire/bindings-repository.hpp>
 #include <linux/input-event-codes.h>
 #include <wayland-server-protocol.h>
 #include <xkbcommon/xkbcommon.h>
@@ -308,7 +309,7 @@ bool wf::keyboard_t::handle_keyboard_key(uint32_t key, uint32_t state)
             mod_binding_key = 0;
         }
 
-        handled_in_plugin |= input->get_active_bindings().handle_key(
+        handled_in_plugin |= wf::get_core().bindings->handle_key(
             wf::keybinding_t{get_modifiers(), key}, mod_binding_key);
     } else
     {
@@ -321,7 +322,7 @@ bool wf::keyboard_t::handle_keyboard_key(uint32_t key, uint32_t state)
 
             if ((timeout <= 0) || (time_elapsed < milliseconds(timeout)))
             {
-                handled_in_plugin |= input->get_active_bindings().handle_key(
+                handled_in_plugin |= wf::get_core().bindings->handle_key(
                     wf::keybinding_t{get_modifiers() | mod, 0}, mod_binding_key);
             }
         }

@@ -1,10 +1,13 @@
 /* Needed for pipe2 */
 #ifndef _GNU_SOURCE
     #define _GNU_SOURCE
+    #include "wayfire/bindings-repository.hpp"
     #include "wayfire/util.hpp"
     #include <memory>
+    #include <type_traits>
 #endif
 
+#include "core/seat/bindings-repository-impl.hpp"
 #include "plugin-loader.hpp"
 #include "seat/tablet.hpp"
 #include "wayfire/touch/touch.hpp"
@@ -302,7 +305,7 @@ void wf::compositor_core_impl_t::init()
 
     wf_shell  = wayfire_shell_create(display);
     gtk_shell = wf_gtk_shell_create(display);
-
+    this->bindings = std::make_unique<bindings_repository_t>();
     image_io::init();
     OpenGL::init();
     this->state = compositor_state_t::START_BACKEND;

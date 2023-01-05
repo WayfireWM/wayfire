@@ -1,3 +1,4 @@
+#include <wayfire/bindings-repository.hpp>
 #include "tablet.hpp"
 #include "../core-impl.hpp"
 #include "../wm.hpp"
@@ -321,8 +322,7 @@ void wf::tablet_t::handle_tip(wlr_tablet_tool_tip_event *ev,
         wlr_cursor_warp_absolute(cursor, &ev->tablet->base, ev->x, ev->y);
     }
 
-    auto& input = wf::get_core_impl().input;
-    auto& seat  = wf::get_core_impl().seat;
+    auto& seat = wf::get_core_impl().seat;
     seat->break_mod_bindings();
 
     bool handled_in_binding = false;
@@ -333,7 +333,7 @@ void wf::tablet_t::handle_tip(wlr_tablet_tool_tip_event *ev,
             wf::get_core().output_layout->get_output_at(gc.x, gc.y);
         wf::get_core().focus_output(output);
 
-        handled_in_binding |= input->get_active_bindings().handle_button(
+        handled_in_binding |= wf::get_core().bindings->handle_button(
             wf::buttonbinding_t{seat->get_modifiers(), BTN_LEFT});
     }
 

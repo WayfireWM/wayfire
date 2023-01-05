@@ -198,16 +198,3 @@ void wf::input_manager_t::set_exclusive_focus(wl_client *client)
         wf::get_core().get_active_output()->refocus();
     }
 }
-
-wf::bindings_repository_t& wf::input_manager_t::get_active_bindings()
-{
-    auto wo   = wf::get_core().get_active_output();
-    auto impl = dynamic_cast<wf::output_impl_t*>(wo);
-    if (!impl)
-    {
-        static wf::bindings_repository_t dummy_repo{nullptr};
-        return dummy_repo;
-    }
-
-    return impl->get_bindings();
-}

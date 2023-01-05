@@ -1,4 +1,5 @@
 #include "pointer.hpp"
+#include <wayfire/bindings-repository.hpp>
 #include "core/seat/seat.hpp"
 #include "cursor.hpp"
 #include "pointing-device.hpp"
@@ -219,7 +220,7 @@ void wf::pointer_t::handle_pointer_button(wlr_pointer_button_event *ev,
             wf::get_core().focus_output(output);
         }
 
-        handled_in_binding |= input->get_active_bindings().handle_button(
+        handled_in_binding |= wf::get_core().bindings->handle_button(
             wf::buttonbinding_t{seat->get_modifiers(), ev->button});
     } else
     {
@@ -319,7 +320,7 @@ void wf::pointer_t::handle_pointer_motion_absolute(
 void wf::pointer_t::handle_pointer_axis(wlr_pointer_axis_event *ev,
     input_event_processing_mode_t mode)
 {
-    bool handled_in_binding = input->get_active_bindings().handle_axis(
+    bool handled_in_binding = wf::get_core().bindings->handle_axis(
         seat->get_modifiers(), ev);
     seat->break_mod_bindings();
 

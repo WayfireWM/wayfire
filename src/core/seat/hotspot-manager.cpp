@@ -1,11 +1,27 @@
 #include "hotspot-manager.hpp"
+#include "wayfire/core.hpp"
+#include "wayfire/debug.hpp"
+#include <wayfire/output-layout.hpp>
 
-void wf::hotspot_instance_t::process_input_motion(wf::point_t gc)
+void wf::hotspot_instance_t::process_input_motion(wf::pointf_t gc)
 {
-    if (!(hotspot_geometry[0] & gc) && !(hotspot_geometry[1] & gc))
+    const auto& reset_hotspot = [&] ()
     {
         timer.disconnect();
         this->armed = true;
+    };
+
+    auto target = wf::get_core().output_layout->get_output_coords_at(gc, gc);
+    if (target != last_output)
+    {
+        reset_hotspot();
+        last_output = target;
+        recalc_geometry();
+    }
+
+    if (!(hotspot_geometry[0] & gc) && !(hotspot_geometry[1] & gc))
+    {
+        reset_hotspot();
         return;
     }
 
@@ -22,7 +38,12 @@ void wf::hotspot_instance_t::process_input_motion(wf::point_t gc)
 
 wf::geometry_t wf::hotspot_instance_t::pin(wf::dimensions_t dim) noexcept
 {
-    auto og = output->get_layout_geometry();
+    if (!last_output)
+    {
+        return {0, 0, 0, 0};
+    }
+
+    auto og = last_output->get_layout_geometry();
 
     wf::geometry_t result;
     result.width  = dim.width;
@@ -78,11 +99,9 @@ void wf::hotspot_instance_t::recalc_geometry() noexcept
     }
 }
 
-wf::hotspot_instance_t::hotspot_instance_t(wf::output_t *output, uint32_t edges,
-    uint32_t along, uint32_t away, int32_t timeout,
+wf::hotspot_instance_t::hotspot_instance_t(uint32_t edges, uint32_t along, uint32_t away, int32_t timeout,
     std::function<void(uint32_t)> callback)
 {
-    output->connect_signal("configuration-changed", &on_output_config_changed);
     wf::get_core().connect_signal("pointer_motion", &on_motion_event);
     wf::get_core().connect_signal("tablet_axis", &on_motion_event);
     wf::get_core().connect_signal("touch_motion", &on_touch_motion_event);
@@ -91,7 +110,6 @@ wf::hotspot_instance_t::hotspot_instance_t(wf::output_t *output, uint32_t edges,
     this->along = along;
     this->away  = away;
     this->timeout_ms = timeout;
-    this->output     = output;
     this->callback   = callback;
 
     recalc_geometry();
@@ -99,21 +117,12 @@ wf::hotspot_instance_t::hotspot_instance_t(wf::output_t *output, uint32_t edges,
     // callbacks
     on_motion_event.set_callback([=] (wf::signal_data_t *data)
     {
-        auto gcf = wf::get_core().get_cursor_position();
-        wf::point_t gc{(int)gcf.x, (int)gcf.y};
-        process_input_motion(gc);
+        process_input_motion(wf::get_core().get_cursor_position());
     });
 
     on_touch_motion_event.set_callback([=] (wf::signal_data_t *data)
     {
-        auto gcf = wf::get_core().get_touch_position(0);
-        wf::point_t gc{(int)gcf.x, (int)gcf.y};
-        process_input_motion(gc);
-    });
-
-    on_output_config_changed.set_callback([=] (wf::signal_data_t*)
-    {
-        recalc_geometry();
+        process_input_motion(wf::get_core().get_touch_position(0));
     });
 }
 
@@ -135,9 +144,8 @@ void wf::hotspot_manager_t::update_hotspots(const container_t& activators)
                 (*activator_cb)(data);
             };
 
-            auto instance = std::make_unique<hotspot_instance_t>(output,
-                hs.get_edges(), hs.get_size_along_edge(),
-                hs.get_size_away_from_edge(), hs.get_timeout(), callback);
+            auto instance = std::make_unique<hotspot_instance_t>(hs.get_edges(),
+                hs.get_size_along_edge(), hs.get_size_away_from_edge(), hs.get_timeout(), callback);
             hotspots.push_back(std::move(instance));
         }
     }
