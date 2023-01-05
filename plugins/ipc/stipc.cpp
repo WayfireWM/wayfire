@@ -1,4 +1,6 @@
+#include "ipc-method-repository.hpp"
 #include "wayfire/plugin.hpp"
+#include "wayfire/plugins/common/shared-core-data.hpp"
 #include "wayfire/util.hpp"
 #include <wayfire/view.hpp>
 #include <wayfire/output.hpp>
@@ -341,38 +343,31 @@ static inline nlohmann::json get_error(std::string msg)
     };
 }
 
-class ipc_plugin_t : public wf::plugin_interface_t
+class stipc_plugin_t : public wf::plugin_interface_t
 {
+    wf::shared_data::ref_ptr_t<wf::ipc::method_repository_t> method_repository;
+
   public:
     void init() override
     {
         input = std::make_unique<headless_input_backend_t>();
-
-        char *pre_socket   = getenv("_WAYFIRE_SOCKET");
-        const auto& dname  = wf::get_core().wayland_display;
-        std::string socket = pre_socket ?: "/tmp/wayfire-" + dname + ".socket";
-        setenv("WAYFIRE_SOCKET", socket.c_str(), 1);
-
-        server = std::make_unique<ipc::server_t>(socket);
-        server->register_method("core/list_views", list_views);
-        server->register_method("core/create_wayland_output", create_wayland_output);
-        server->register_method("core/destroy_wayland_output",
-            destroy_wayland_output);
-        server->register_method("core/feed_key", feed_key);
-        server->register_method("core/feed_button", feed_button);
-        server->register_method("core/move_cursor", move_cursor);
-        server->register_method("core/run", run);
-        server->register_method("core/ping", ping);
-        server->register_method("core/get_display", get_display);
-        server->register_method("core/layout_views", layout_views);
-        server->register_method("core/touch", do_touch);
-        server->register_method("core/touch_release", do_touch_release);
-
-        server->register_method("core/tablet/tool_proximity", do_tool_proximity);
-        server->register_method("core/tablet/tool_button", do_tool_button);
-        server->register_method("core/tablet/tool_axis", do_tool_axis);
-        server->register_method("core/tablet/tool_tip", do_tool_tip);
-        server->register_method("core/tablet/pad_button", do_pad_button);
+        method_repository->register_method("stipc/list_views", list_views);
+        method_repository->register_method("stipc/create_wayland_output", create_wayland_output);
+        method_repository->register_method("stipc/destroy_wayland_output", destroy_wayland_output);
+        method_repository->register_method("stipc/feed_key", feed_key);
+        method_repository->register_method("stipc/feed_button", feed_button);
+        method_repository->register_method("stipc/move_cursor", move_cursor);
+        method_repository->register_method("stipc/run", run);
+        method_repository->register_method("stipc/ping", ping);
+        method_repository->register_method("stipc/get_display", get_display);
+        method_repository->register_method("stipc/layout_views", layout_views);
+        method_repository->register_method("stipc/touch", do_touch);
+        method_repository->register_method("stipc/touch_release", do_touch_release);
+        method_repository->register_method("stipc/tablet/tool_proximity", do_tool_proximity);
+        method_repository->register_method("stipc/tablet/tool_button", do_tool_button);
+        method_repository->register_method("stipc/tablet/tool_axis", do_tool_axis);
+        method_repository->register_method("stipc/tablet/tool_tip", do_tool_tip);
+        method_repository->register_method("stipc/tablet/pad_button", do_pad_button);
     }
 
     bool is_unloadable() override
@@ -380,9 +375,7 @@ class ipc_plugin_t : public wf::plugin_interface_t
         return false;
     }
 
-    using method_t = ipc::server_t::method_cb;
-
-    method_t list_views = [] (nlohmann::json)
+    ipc::method_callback list_views = [] (nlohmann::json)
     {
         auto response = nlohmann::json::array();
 
@@ -414,7 +407,7 @@ class ipc_plugin_t : public wf::plugin_interface_t
         return response;
     };
 
-    method_t layout_views = [] (nlohmann::json data)
+    ipc::method_callback layout_views = [] (nlohmann::json data)
     {
         auto views = wf::get_core().get_all_views();
         EXPECT_FIELD(data, "views", array);
@@ -456,7 +449,7 @@ class ipc_plugin_t : public wf::plugin_interface_t
         return get_ok();
     };
 
-    method_t create_wayland_output = [] (nlohmann::json)
+    ipc::method_callback create_wayland_output = [] (nlohmann::json)
     {
         auto backend = wf::get_core().backend;
 
@@ -473,7 +466,7 @@ class ipc_plugin_t : public wf::plugin_interface_t
         return get_ok();
     };
 
-    method_t destroy_wayland_output = [] (nlohmann::json data)
+    ipc::method_callback destroy_wayland_output = [] (nlohmann::json data)
     {
         EXPECT_FIELD(data, "output", string);
         auto output = wf::get_core().output_layout->find_output(data["output"]);
@@ -523,7 +516,7 @@ class ipc_plugin_t : public wf::plugin_interface_t
         return key_t{modifier, key};
     }
 
-    method_t feed_key = [=] (nlohmann::json data)
+    ipc::method_callback feed_key = [=] (nlohmann::json data)
     {
         EXPECT_FIELD(data, "key", string);
         EXPECT_FIELD(data, "state", boolean);
@@ -546,7 +539,7 @@ class ipc_plugin_t : public wf::plugin_interface_t
         return get_ok();
     };
 
-    method_t feed_button = [=] (nlohmann::json data)
+    ipc::method_callback feed_button = [=] (nlohmann::json data)
     {
         auto result = parse_key(data);
         auto button = std::get_if<key_t>(&result);
@@ -584,7 +577,7 @@ class ipc_plugin_t : public wf::plugin_interface_t
         return get_ok();
     };
 
-    method_t move_cursor = [=] (nlohmann::json data)
+    ipc::method_callback move_cursor = [=] (nlohmann::json data)
     {
         if (!data.count("x") || !data.count("y") ||
             !data["x"].is_number() || !data["y"].is_number())
@@ -598,7 +591,7 @@ class ipc_plugin_t : public wf::plugin_interface_t
         return get_ok();
     };
 
-    method_t do_touch = [=] (nlohmann::json data)
+    ipc::method_callback do_touch = [=] (nlohmann::json data)
     {
         EXPECT_FIELD(data, "finger", number_integer);
         EXPECT_FIELD(data, "x", number);
@@ -608,14 +601,14 @@ class ipc_plugin_t : public wf::plugin_interface_t
         return get_ok();
     };
 
-    method_t do_touch_release = [=] (nlohmann::json data)
+    ipc::method_callback do_touch_release = [=] (nlohmann::json data)
     {
         EXPECT_FIELD(data, "finger", number_integer);
         input->do_touch_release(data["finger"]);
         return get_ok();
     };
 
-    method_t run = [=] (nlohmann::json data)
+    ipc::method_callback run = [=] (nlohmann::json data)
     {
         if (!data.count("cmd") || !data["cmd"].is_string())
         {
@@ -627,12 +620,12 @@ class ipc_plugin_t : public wf::plugin_interface_t
         return response;
     };
 
-    method_t ping = [=] (nlohmann::json data)
+    ipc::method_callback ping = [=] (nlohmann::json data)
     {
         return get_ok();
     };
 
-    method_t get_display = [=] (nlohmann::json data)
+    ipc::method_callback get_display = [=] (nlohmann::json data)
     {
         nlohmann::json dpy;
         dpy["wayland"]  = wf::get_core().wayland_display;
@@ -640,7 +633,7 @@ class ipc_plugin_t : public wf::plugin_interface_t
         return dpy;
     };
 
-    method_t do_tool_proximity = [=] (nlohmann::json data)
+    ipc::method_callback do_tool_proximity = [=] (nlohmann::json data)
     {
         EXPECT_FIELD(data, "proximity_in", boolean);
         EXPECT_FIELD(data, "x", number);
@@ -649,7 +642,7 @@ class ipc_plugin_t : public wf::plugin_interface_t
         return get_ok();
     };
 
-    method_t do_tool_button = [=] (nlohmann::json data)
+    ipc::method_callback do_tool_button = [=] (nlohmann::json data)
     {
         EXPECT_FIELD(data, "button", number_integer);
         EXPECT_FIELD(data, "state", boolean);
@@ -657,7 +650,7 @@ class ipc_plugin_t : public wf::plugin_interface_t
         return get_ok();
     };
 
-    method_t do_tool_axis = [=] (nlohmann::json data)
+    ipc::method_callback do_tool_axis = [=] (nlohmann::json data)
     {
         EXPECT_FIELD(data, "x", number);
         EXPECT_FIELD(data, "y", number);
@@ -666,7 +659,7 @@ class ipc_plugin_t : public wf::plugin_interface_t
         return get_ok();
     };
 
-    method_t do_tool_tip = [=] (nlohmann::json data)
+    ipc::method_callback do_tool_tip = [=] (nlohmann::json data)
     {
         EXPECT_FIELD(data, "x", number);
         EXPECT_FIELD(data, "y", number);
@@ -675,7 +668,7 @@ class ipc_plugin_t : public wf::plugin_interface_t
         return get_ok();
     };
 
-    method_t do_pad_button = [=] (nlohmann::json data)
+    ipc::method_callback do_pad_button = [=] (nlohmann::json data)
     {
         EXPECT_FIELD(data, "button", number_integer);
         EXPECT_FIELD(data, "state", boolean);
@@ -683,9 +676,8 @@ class ipc_plugin_t : public wf::plugin_interface_t
         return get_ok();
     };
 
-    std::unique_ptr<ipc::server_t> server;
     std::unique_ptr<headless_input_backend_t> input;
 };
 }
 
-DECLARE_WAYFIRE_PLUGIN(wf::ipc_plugin_t);
+DECLARE_WAYFIRE_PLUGIN(wf::stipc_plugin_t);

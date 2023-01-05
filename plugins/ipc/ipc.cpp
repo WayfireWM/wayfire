@@ -1,6 +1,7 @@
 #include "ipc.hpp"
 #include <wayfire/util/log.hpp>
 #include <wayfire/core.hpp>
+#include <wayfire/plugin.hpp>
 
 #include <fcntl.h>
 #include <sys/socket.h>
@@ -38,30 +39,6 @@ wf::ipc::server_t::~server_t()
     close(fd);
     unlink(saddr.sun_path);
     wl_event_source_remove(source);
-}
-
-void wf::ipc::server_t::register_method(
-    std::string method, method_cb handler)
-{
-    this->methods[method] = handler;
-}
-
-void wf::ipc::server_t::unregister_method(std::string method)
-{
-    this->methods.erase(method);
-}
-
-nlohmann::json wf::ipc::server_t::call_method(std::string method,
-    nlohmann::json data)
-{
-    if (this->methods.count(method))
-    {
-        return this->methods[method](std::move(data));
-    }
-
-    return {
-        {"error", "No such method found!"}
-    };
 }
 
 int wf::ipc::server_t::setup_socket(const char *address)
@@ -263,7 +240,7 @@ void wf::ipc::client_t::handle_fd_activity(uint32_t event_mask)
             return;
         }
 
-        send_json(ipc->call_method(message["method"], message["data"]));
+        send_json(method_repository->call_method(message["method"], message["data"]));
         // Reset for next message
         current_buffer_valid = 0;
     }
@@ -300,3 +277,29 @@ void wf::ipc::client_t::send_json(nlohmann::json json)
     write_exact(fd, (char*)&len, 4);
     write_exact(fd, buffer.data(), len);
 }
+
+namespace wf
+{
+class ipc_plugin_t : public wf::plugin_interface_t
+{
+  private:
+    std::unique_ptr<ipc::server_t> server;
+
+  public:
+    void init() override
+    {
+        char *pre_socket   = getenv("_WAYFIRE_SOCKET");
+        const auto& dname  = wf::get_core().wayland_display;
+        std::string socket = pre_socket ?: "/tmp/wayfire-" + dname + ".socket";
+        setenv("WAYFIRE_SOCKET", socket.c_str(), 1);
+        server = std::make_unique<ipc::server_t>(socket);
+    }
+
+    bool is_unloadable() override
+    {
+        return false;
+    }
+};
+}
+
+DECLARE_WAYFIRE_PLUGIN(wf::ipc_plugin_t);

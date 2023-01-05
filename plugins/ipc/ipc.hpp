@@ -5,17 +5,13 @@
 #include <wayfire/object.hpp>
 #include <variant>
 #include <wayland-server.h>
+#include <wayfire/plugins/common/shared-core-data.hpp>
+#include "ipc-method-repository.hpp"
 
 namespace wf
 {
 namespace ipc
 {
-struct error_response_t
-{
-    std::string message;
-    nlohmann::json data;
-};
-
 /**
  * Represents a single connected client to the IPC.
  */
@@ -34,6 +30,7 @@ class client_t
     int fd;
     wl_event_source *source;
     server_t *ipc;
+    wf::shared_data::ref_ptr_t<wf::ipc::method_repository_t> method_repository;
 
     int current_buffer_valid = 0;
     std::vector<char> buffer;
@@ -48,25 +45,14 @@ class client_t
 class server_t
 {
   public:
-    using method_cb = std::function<nlohmann::json(nlohmann::json)>;
-
     server_t(std::string socket_path);
     ~server_t();
-
-    // Register a handler for the given method
-    // It will get the params object from the request, and must return either a valid
-    // json object indicating the
-    // response or an error.
-    void register_method(std::string method, method_cb handler);
-    void unregister_method(std::string method);
 
     // non-copyable, non-movable
     server_t(const server_t&) = delete;
     server_t(server_t&&) = delete;
     server_t& operator =(const server_t&) = delete;
     server_t& operator =(server_t&&) = delete;
-
-    nlohmann::json call_method(std::string method, nlohmann::json data);
 
     void accept_new_client();
     void client_disappeared(client_t *client);
@@ -80,8 +66,6 @@ class server_t
 
     sockaddr_un saddr;
     wl_event_source *source;
-
-    std::map<std::string, method_cb> methods;
     std::vector<std::unique_ptr<client_t>> clients;
 };
 }
