@@ -522,7 +522,7 @@ class output_viewport_manager_t
             vdata.view = v;
             vdata.from = old_workspace;
             vdata.to   = get_view_main_workspace(v);
-            output->emit_signal("view-change-workspace", &vdata);
+            output->emit(&vdata);
             output->focus_view(v, true);
         }
 
@@ -702,12 +702,13 @@ class workspace_manager::impl
         workarea_manager.reflow_reserved_areas();
     };
 
-    signal_connection_t view_changed_workspace = [=] (signal_data_t *data)
+    wf::signal::connection_t<view_change_workspace_signal> view_changed_workspace =
+        [=] (view_change_workspace_signal *ev)
     {
         update_promoted_views();
     };
 
-    signal_connection_t on_view_state_updated = [=] (signal_data_t*)
+    wf::signal::connection_t<view_fullscreen_signal> on_view_fullscreen = [=] (view_fullscreen_signal *ev)
     {
         update_promoted_views();
     };
@@ -732,9 +733,9 @@ class workspace_manager::impl
         output = o;
         output_geometry = output->get_relative_geometry();
 
-        o->connect_signal("view-change-workspace", &view_changed_workspace);
+        o->connect(&view_changed_workspace);
         o->connect(&output_geometry_changed);
-        o->connect_signal("view-fullscreen", &on_view_state_updated);
+        o->connect(&on_view_fullscreen);
         o->connect(&on_view_unmap);
     }
 
@@ -844,7 +845,7 @@ class workspace_manager::impl
     {
         view_layer_attached_signal data;
         data.view = view;
-        output->emit_signal("view-layer-attached", &data);
+        output->emit(&data);
     }
 
     void add_view_to_layer(wayfire_view view, layer_t layer)
@@ -879,7 +880,7 @@ class workspace_manager::impl
 
         view_layer_detached_signal data;
         data.view = view;
-        output->emit_signal("view-layer-detached", &data);
+        output->emit(&data);
 
         /* Check if the next focused view is fullscreen. If so, then we need
          * to make sure it is in the fullscreen layer */

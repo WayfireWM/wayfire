@@ -28,12 +28,10 @@ class simple_decoration_node_t : public wf::scene::node_t, public wf::pointer_in
     public wf::touch_interaction_t
 {
     wayfire_view view;
-    wf::signal_connection_t title_set = [=] (wf::signal_data_t *data)
+    wf::signal::connection_t<wf::view_title_changed_signal> title_set =
+        [=] (wf::view_title_changed_signal *ev)
     {
-        if (get_signaled_view(data) == view)
-        {
-            view->damage(); // trigger re-render
-        }
+        view->damage(); // trigger re-render
     };
 
     void update_title(int width, int height, double scale)
@@ -75,7 +73,7 @@ class simple_decoration_node_t : public wf::scene::node_t, public wf::pointer_in
         layout{theme, [=] (wlr_box box) { wf::scene::damage_node(shared_from_this(), box + get_offset()); }}
     {
         this->view = view;
-        view->connect_signal("title-changed", &title_set);
+        view->connect(&title_set);
 
         // make sure to hide frame if the view is fullscreen
         update_decoration_size();

@@ -262,7 +262,7 @@ class wayfire_expo : public wf::per_output_plugin_instance_t, public wf::keyboar
                 data.view = ev->main_view;
                 data.from = move_started_ws;
                 data.to   = target_ws;
-                output->emit_signal("view-change-workspace", &data);
+                output->emit(&data);
             }
 
             move_started_ws = offscreen_point;

@@ -2,6 +2,7 @@
 #define XDG_SHELL_HPP
 
 #include "view-impl.hpp"
+#include "wayfire/signal-definitions.hpp"
 
 /**
  * A class for xdg-shell popups
@@ -11,8 +12,10 @@ class wayfire_xdg_popup : public wf::wlr_view_t
   protected:
     wf::wl_listener_wrapper on_destroy, on_new_popup,
         on_map, on_unmap, on_ping_timeout;
-    wf::signal_connection_t parent_geometry_changed,
-        parent_title_changed, parent_app_id_changed;
+
+    wf::signal::connection_t<wf::view_geometry_changed_signal> parent_geometry_changed;
+    wf::signal::connection_t<wf::view_title_changed_signal> parent_title_changed;
+    wf::signal::connection_t<wf::view_app_id_changed_signal> parent_app_id_changed;
 
     wf::wl_idle_call pending_close;
     wlr_xdg_popup *popup;

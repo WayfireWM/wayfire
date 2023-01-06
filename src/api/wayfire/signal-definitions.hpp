@@ -356,11 +356,13 @@ struct _view_signal : public wf::signal_data_t
 wayfire_view get_signaled_view(wf::signal_data_t *data);
 
 /**
- * name: view-created
  * on: core
  * when: A view is created.
  */
-using view_created_signal = _view_signal;
+struct view_added_signal
+{
+    wayfire_view view;
+};
 
 /**
  * on: view, output, core
@@ -411,25 +413,24 @@ struct view_set_output_signal
  * -------------------------------------------------------------------------- */
 
 /**
- * name: minimized
  * on: view, output(view-)
  * when: After the view's minimized state changes.
  */
-struct view_minimized_signal : public _view_signal
+struct view_minimized_signal
 {
-    /** true is minimized, false is restored */
-    bool state;
+    wayfire_view view;
 };
 
 /**
- * name: view-minimize-request
  * on: output
  * when: Emitted whenever some entity requests that the view's minimized state
  *   changes. If no plugin is available to service the request, it is carried
  *   out by core. See view_interface_t::minimize_request()
  */
-struct view_minimize_request_signal : public _view_signal
+struct view_minimize_request_signal
 {
+    wayfire_view view;
+
     /** true is minimized, false is restored */
     bool state;
 
@@ -445,8 +446,10 @@ struct view_minimize_request_signal : public _view_signal
  * on: view, output(view-)
  * when: After the view's tiled edges change.
  */
-struct view_tiled_signal : public _view_signal
+struct view_tiled_signal
 {
+    wayfire_view view;
+
     /** Previously tiled edges */
     uint32_t old_edges;
     /** Currently tiled edges */
@@ -454,14 +457,15 @@ struct view_tiled_signal : public _view_signal
 };
 
 /**
- * name: view-tile-request
  * on: output
  * when: Emitted whenever some entity requests that the view's tiled edges
  *   change. If no plugin is available to service the request, it is carried
  *   out by core. See view_interface_t::tile_request()
  */
-struct view_tile_request_signal : public _view_signal
+struct view_tile_request_signal
 {
+    wayfire_view view;
+
     /** The desired edges */
     uint32_t edges;
 
@@ -484,28 +488,36 @@ struct view_tile_request_signal : public _view_signal
     bool carried_out = false;
 };
 
-
 /**
- * name: fullscreen
  * on: view, output(view-)
  * when: After the view's fullscreen state changes.
  */
-struct view_fullscreen_signal : public _view_signal
+struct view_fullscreen_signal
 {
+    wayfire_view view;
+    bool state;
+};
+
+/**
+ * on: output
+ * when: Emitted whenever some entity requests that the view's fullscreen state
+ *   change. If no plugin is available to service the request, it is carried
+ *   out by core. See view_interface_t::fullscreen_request()
+ */
+struct view_fullscreen_request_signal
+{
+    wayfire_view view;
+
     /** The desired fullscreen state */
     bool state;
 
     /**
-     * For view-fullscreen-request:
-     *
      * Whether some plugin will service the fullscreen request, in which case
      * other plugins and core should ignore the request.
      */
     bool carried_out = false;
 
     /**
-     * For view-fullscreen-request:
-     *
      * The geometry the view should have. This is for example the last geometry
      * a view had before being fullscreened. The given geometry is only a hint
      * by core and plugins may override it. It may also be undefined (0,0 0x0).
@@ -513,29 +525,20 @@ struct view_fullscreen_signal : public _view_signal
     wf::geometry_t desired_size;
 
     /**
-     * For view-fullscreen-request:
-     *
      * The target workspace of the operation.
      */
     wf::point_t workspace;
 };
 
-/**
- * name: view-fullscreen-request
- * on: output
- * when: Emitted whenever some entity requests that the view's fullscreen state
- *   change. If no plugin is available to service the request, it is carried
- *   out by core. See view_interface_t::fullscreen_request()
- */
-using view_fullscreen_request_signal = view_fullscreen_signal;
 
 /**
- * name: view-focus-request
  * on: view, core
  * when: Emitted whenever some entity (typically a panel) wants to focus the view.
  */
-struct view_focus_request_signal : public _view_signal
+struct view_focus_request_signal
 {
+    wayfire_view view;
+
     /** Set to true if core and other plugins should not handle this request. */
     bool carried_out = false;
 
@@ -548,52 +551,62 @@ struct view_focus_request_signal : public _view_signal
  * on: view, output(view-)
  * when: Whenever the view's sticky state changes.
  */
-using view_set_sticky_signal = _view_signal;
+struct view_set_sticky_signal
+{
+    wayfire_view view;
+};
 
 /**
- * name: title-changed
  * on: view
  * when: After the view's title has changed.
  */
-using title_changed_signal = _view_signal;
+struct view_title_changed_signal
+{
+    wayfire_view view;
+};
 
 /**
- * name: app-id-changed
  * on: view
  * when: After the view's app-id has changed.
  */
-using app_id_changed_signal = _view_signal;
+struct view_app_id_changed_signal
+{
+    wayfire_view view;
+};
 
 /**
- * name: view-show-window-menu
  * on: output, core
  * when: To show a menu with window related actions.
  */
-struct view_show_window_menu_signal : public _view_signal
+struct view_show_window_menu_signal
 {
+    wayfire_view view;
+
     /** The position as requested by the client, in surface coordinates */
     wf::point_t relative_position;
 };
 
 /**
- * name: geometry-changed
  * on: view, output(view-), core(view-)
  * when: Whenever the view's wm geometry changes.
  */
-struct view_geometry_changed_signal : public _view_signal
+struct view_geometry_changed_signal
 {
+    wayfire_view view;
+
     /** The old wm geometry */
     wf::geometry_t old_geometry;
 };
 
 /**
- * name: view-change-workspace
  * on: output
  * when: Whenever the view's workspace changes. (Every plugin changing the
  *   view's workspace should emit this signal).
  */
-struct view_change_workspace_signal : public _view_signal
+struct view_change_workspace_signal
 {
+    wayfire_view view;
+
     wf::point_t from, to;
 
     /**
@@ -604,74 +617,80 @@ struct view_change_workspace_signal : public _view_signal
 };
 
 /**
- * name: region-damaged
- * on: view
- * when: Whenever a region of the view becomes damaged, for ex. when the client
- *   updates its contents.
- * argument: Unused.
- */
-
-/**
- * name: decoration-state-updated
  * on: view, output(view-)
  * when: Whenever the value of view::should_be_decorated() changes.
  */
-using view_decoration_state_updated_signal = _view_signal;
+struct view_decoration_state_updated_signal
+{
+    wayfire_view view;
+};
 
 /**
- * name: decoration-changed
  * on: view
  * when: Whenever the view's decoration changes.
  * argument: unused.
  */
+struct view_decoration_changed_signal
+{
+    wayfire_view view;
+};
 
 /**
- * name: ping-timeout
  * on: view
  * when: Whenever the client fails to respond to a ping request within
  *   the expected time(10 seconds).
  */
-using view_ping_timeout_signal = _view_signal;
+struct view_ping_timeout_signal
+{
+    wayfire_view view;
+};
 
 /* ----------------------------------------------------------------------------/
  * View <-> output signals
  * -------------------------------------------------------------------------- */
 
 /**
- * name: view-attached
  * on: output
  * when: As soon as the view's output is set to the given output. This is the
  *   first point where the view is considered to be part of that output.
  */
-using view_attached_signal = _view_signal;
+struct view_attached_signal
+{
+    wayfire_view view;
+};
 
 /**
- * name: view-layer-attached
  * on: output
  * when: Emitted when the view is added to a layer in the output's workspace
  *   manager and it was in no layer previously.
  */
-using view_layer_attached_signal = _view_signal;
+struct view_layer_attached_signal
+{
+    wayfire_view view;
+};
 
 /**
- * name: view-detached
  * on: output
  * when: Emitted when the view's output is about to be changed to another one.
  *   This is the last point where the view is considered to be part of the given
  *   output.
  */
-using view_detached_signal = _view_signal;
+struct view_detached_signal
+{
+    wayfire_view view;
+};
 
 /**
- * name: view-layer-detached
  * on: output
  * when: Emitted when the view is removed from a layer but is not added to
  *   another.
  */
-using view_layer_detached_signal = _view_signal;
+struct view_layer_detached_signal
+{
+    wayfire_view view;
+};
 
 /**
- * name: view-pre-moved-to-output
  * on: core
  * when: Immediately before the view is moved to another output. The usual
  *   sequence when moving views to another output is:
@@ -679,7 +698,7 @@ using view_layer_detached_signal = _view_signal;
  *   pre-moved-to-output -> layer-detach -> detach ->
  *      attach -> layer-attach -> moved-to-output
  */
-struct view_pre_moved_to_output_signal : public signal_data_t
+struct view_pre_moved_to_output_signal
 {
     /* The view being moved */
     wayfire_view view;
@@ -690,68 +709,85 @@ struct view_pre_moved_to_output_signal : public signal_data_t
 };
 
 /**
- * name: view-moved-to-output
  * on: core
  * when: After the view has been moved to a new output.
  */
-using view_moved_to_output_signal = view_pre_moved_to_output_signal;
+struct view_moved_to_output_signal
+{
+    /* The view being moved */
+    wayfire_view view;
+    /* The output the view was on, may be NULL. */
+    wf::output_t *old_output;
+    /* The output the view is being moved to. */
+    wf::output_t *new_output;
+};
 
 /**
- * name: view-disappeared
  * on: output
  * when: This is a signal which combines view-unmapped, view-detached and
  *   view-minimized, and is emitted together with each of these three. Semantic
  *   meaning is that the view is no longer available for focus, interaction with
  *   the user, etc.
  */
-using view_disappeared_signal = _view_signal;
+struct view_disappeared_signal
+{
+    wayfire_view view;
+};
 
 /**
- * name: view-focused
  * on: output
  * when: As soon as the output focus changes.
  * argument: The newly focused view.
  */
-using focus_view_signal = _view_signal;
+struct focus_view_signal
+{
+    wayfire_view view;
+};
 
 /**
- * name: view-move-request
  * on: output
  * when: Whenever an interactive move is requested on the view. See also
  *   view_interface_t::move_request()
  */
-using view_move_request_signal = _view_signal;
+struct view_move_request_signal
+{
+    wayfire_view view;
+};
 
 /**
- * name: view-resize-request
  * on: output
  * when: Whenever an interactive resize is requested on the view. See also
  *   view_interface_t::resize_request()
  */
-struct view_resize_request_signal : public _view_signal
+struct view_resize_request_signal
 {
+    wayfire_view view;
+
     /** The requested resize edges */
     uint32_t edges;
 };
 
 /**
- * name: hints-changed
  * on: view and core(view-)
  * when: the client indicates the views hints have changed (example urgency hint).
  */
-struct view_hints_changed_signal : public _view_signal
+struct view_hints_changed_signal
 {
+    wayfire_view view;
+
     bool demands_attention = false;
 };
 
 /**
- * name: view-system-bell
  * on: core
  * when: Whenever a client wants to invoke the system bell if such is available.
  *   Note the system bell may or may not be tied to a particular view, so the
  *   signal may be emitted with a nullptr view.
  */
-using view_system_bell_signal = _view_signal;
+struct view_system_bell_signal
+{
+    wayfire_view view;
+};
 }
 
 #endif

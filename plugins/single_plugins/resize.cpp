@@ -14,7 +14,37 @@
 class wayfire_resize : public wf::per_output_plugin_instance_t, public wf::pointer_interaction_t,
     public wf::touch_interaction_t
 {
-    wf::signal_connection_t resize_request, view_destroyed;
+    wf::signal::connection_t<wf::view_resize_request_signal> on_resize_request =
+        [=] (wf::view_resize_request_signal *request)
+    {
+        if (!request->view)
+        {
+            return;
+        }
+
+        auto touch = wf::get_core().get_touch_position(0);
+        if (!std::isnan(touch.x) && !std::isnan(touch.y))
+        {
+            is_using_touch = true;
+        } else
+        {
+            is_using_touch = false;
+        }
+
+        was_client_request = true;
+        initiate(request->view, request->edges);
+    };
+
+    wf::signal::connection_t<wf::view_disappeared_signal> on_view_disappeared =
+        [=] (wf::view_disappeared_signal *ev)
+    {
+        if (ev->view == view)
+        {
+            view = nullptr;
+            input_pressed(WLR_BUTTON_RELEASED);
+        }
+    };
+
     wf::button_callback activate_binding;
 
     wayfire_view view;
@@ -55,21 +85,8 @@ class wayfire_resize : public wf::per_output_plugin_instance_t, public wf::point
             input_pressed(WLR_BUTTON_RELEASED);
         };
 
-        using namespace std::placeholders;
-        resize_request.set_callback(std::bind(
-            std::mem_fn(&wayfire_resize::resize_requested), this, _1));
-        output->connect_signal("view-resize-request", &resize_request);
-
-        view_destroyed.set_callback([=] (wf::signal_data_t *data)
-        {
-            if (get_signaled_view(data) == view)
-            {
-                view = nullptr;
-                input_pressed(WLR_BUTTON_RELEASED);
-            }
-        });
-
-        output->connect_signal("view-disappeared", &view_destroyed);
+        output->connect(&on_resize_request);
+        output->connect(&on_view_disappeared);
     }
 
     void handle_pointer_button(const wlr_pointer_button_event& event) override
@@ -109,27 +126,7 @@ class wayfire_resize : public wf::per_output_plugin_instance_t, public wf::point
     }
 
     void resize_requested(wf::signal_data_t *data)
-    {
-        auto request = static_cast<wf::view_resize_request_signal*>(data);
-        auto view    = get_signaled_view(data);
-
-        if (!view)
-        {
-            return;
-        }
-
-        auto touch = wf::get_core().get_touch_position(0);
-        if (!std::isnan(touch.x) && !std::isnan(touch.y))
-        {
-            is_using_touch = true;
-        } else
-        {
-            is_using_touch = false;
-        }
-
-        was_client_request = true;
-        initiate(view, request->edges);
-    }
+    {}
 
     /* Returns the currently used input coordinates in global compositor space */
     wf::point_t get_global_input_coords()
@@ -271,7 +268,7 @@ class wayfire_resize : public wf::per_output_plugin_instance_t, public wf::point
             workspace_may_changed.view = this->view;
             workspace_may_changed.to   = output->workspace->get_current_workspace();
             workspace_may_changed.old_workspace_valid = false;
-            output->emit_signal("view-change-workspace", &workspace_may_changed);
+            output->emit(&workspace_may_changed);
         }
     }
 

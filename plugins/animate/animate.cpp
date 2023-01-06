@@ -103,8 +103,9 @@ struct animation_hook : public animation_hook_base
         current_output = new_output;
     }
 
-    wf::signal_connection_t on_set_output = {[this] (wf::signal_data_t *data)
-        { set_output(view->get_output()); }
+    wf::signal::connection_t<wf::view_set_output_signal> on_set_output = [=] (auto)
+    {
+        set_output(view->get_output());
     };
 
     animation_hook(wayfire_view view, int duration, wf_animation_type type,
@@ -120,7 +121,7 @@ struct animation_hook : public animation_hook_base
         set_output(view->get_output());
         /* Animation is driven by the output render cycle the view is on.
          * Thus, we need to keep in sync with the current output. */
-        view->connect_signal("set-output", &on_set_output);
+        view->connect(&on_set_output);
     }
 
     void stop_hook(bool detached) override
@@ -237,7 +238,7 @@ class wayfire_animation : public wf::plugin_interface_t, private wf::per_output_
         output->connect(&on_view_mapped);
         output->connect(&on_view_pre_unmap);
         output->connect(&on_render_start);
-        output->connect_signal("view-minimize-request", &on_minimize_request);
+        output->connect(&on_minimize_request);
     }
 
     void handle_output_removed(wf::output_t *output) override
@@ -393,18 +394,16 @@ class wayfire_animation : public wf::plugin_interface_t, private wf::per_output_
         }
     };
 
-    wf::signal_connection_t on_minimize_request = [=] (wf::signal_data_t *data)
+    wf::signal::connection_t<wf::view_minimize_request_signal> on_minimize_request =
+        [=] (wf::view_minimize_request_signal *ev)
     {
-        auto ev = static_cast<wf::view_minimize_request_signal*>(data);
         if (ev->state)
         {
             ev->carried_out = true;
-            set_animation<zoom_animation>(
-                ev->view, ANIMATION_TYPE_MINIMIZE, default_duration, "minimize");
+            set_animation<zoom_animation>(ev->view, ANIMATION_TYPE_MINIMIZE, default_duration, "minimize");
         } else
         {
-            set_animation<zoom_animation>(
-                ev->view, ANIMATION_TYPE_RESTORE, default_duration, "minimize");
+            set_animation<zoom_animation>(ev->view, ANIMATION_TYPE_RESTORE, default_duration, "minimize");
         }
     };
 

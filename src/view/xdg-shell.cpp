@@ -49,25 +49,22 @@ void wayfire_xdg_popup::initialize()
     on_ping_timeout.connect(&popup->base->events.ping_timeout);
 
     popup->base->data = this;
-    parent_geometry_changed.set_callback([=] (wf::signal_data_t*)
+    parent_geometry_changed.set_callback([=] (auto)
     {
         this->update_position();
     });
-    parent_app_id_changed.set_callback([=] (wf::signal_data_t*)
+    parent_app_id_changed.set_callback([=] (auto)
     {
         this->handle_app_id_changed(popup_parent->get_app_id());
     });
-    parent_title_changed.set_callback([=] (wf::signal_data_t*)
+    parent_title_changed.set_callback([=] (auto)
     {
         this->handle_title_changed(popup_parent->get_title());
     });
 
-    popup_parent->connect_signal("geometry-changed",
-        &this->parent_geometry_changed);
-    popup_parent->connect_signal("app-id-changed",
-        &this->parent_app_id_changed);
-    popup_parent->connect_signal("title-changed",
-        &this->parent_title_changed);
+    popup_parent->connect(&this->parent_geometry_changed);
+    popup_parent->connect(&this->parent_app_id_changed);
+    popup_parent->connect(&this->parent_title_changed);
 
     unconstrain();
 }
@@ -250,8 +247,8 @@ void wayfire_xdg_view::initialize()
         d.view = view;
         d.relative_position.x = event->x;
         d.relative_position.y = event->y;
-        output->emit_signal("view-show-window-menu", &d);
-        wf::get_core().emit_signal("view-show-window-menu", &d);
+        output->emit(&d);
+        wf::get_core().emit(&d);
     });
     on_set_parent.set_callback([&] (void*)
     {

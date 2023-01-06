@@ -93,8 +93,8 @@ static void handle_gtk_surface_present(wl_client *client, wl_resource *resource,
         wf::view_focus_request_signal data;
         data.view = view;
         data.self_request = true;
-        view->emit_signal("view-focus-request", &data);
-        wf::get_core().emit_signal("view-focus-request", &data);
+        view->emit(&data);
+        wf::get_core().emit(&data);
     }
 }
 
@@ -115,8 +115,8 @@ static void handle_gtk_surface_request_focus(struct wl_client *client,
         wf::view_focus_request_signal data;
         data.view = view;
         data.self_request = true;
-        view->emit_signal("view-focus-request", &data);
-        wf::get_core().emit_signal("view-focus-request", &data);
+        view->emit(&data);
+        wf::get_core().emit(&data);
     }
 }
 
@@ -308,7 +308,7 @@ static void handle_gtk_shell_system_bell(wl_client *client, wl_resource *resourc
         data.view = wf::wl_surface_to_wayfire_view(gtk_surface->wl_surface);
     }
 
-    wf::get_core().emit_signal("view-system-bell", &data);
+    wf::get_core().emit(&data);
 }
 
 /**

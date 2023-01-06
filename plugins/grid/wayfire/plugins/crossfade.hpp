@@ -6,6 +6,7 @@
 #include "wayfire/region.hpp"
 #include "wayfire/scene-render.hpp"
 #include "wayfire/scene.hpp"
+#include "wayfire/signal-definitions.hpp"
 #include "wayfire/signal-provider.hpp"
 #include <memory>
 #include <wayfire/view-transform.hpp>
@@ -181,7 +182,7 @@ class grid_animation_t : public wf::custom_data_t
         this->animation = wf::geometry_animation_t{duration};
 
         output->render->add_effect(&pre_hook, wf::OUTPUT_EFFECT_PRE);
-        output->connect_signal("view-disappeared", &unmapped);
+        output->connect(&on_disappear);
     }
 
     /**
@@ -285,9 +286,9 @@ class grid_animation_t : public wf::custom_data_t
     wf::geometry_t original;
     wayfire_view view;
     wf::output_t *output;
-    wf::signal_connection_t unmapped = [=] (auto data)
+    wf::signal::connection_t<view_disappeared_signal> on_disappear = [=] (view_disappeared_signal *ev)
     {
-        if (get_signaled_view(data) == view)
+        if (ev->view == view)
         {
             destroy();
         }

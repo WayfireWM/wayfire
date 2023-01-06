@@ -283,12 +283,12 @@ class tile_plugin_t : public wf::per_output_plugin_instance_t, public wf::pointe
         return tile_by_default.matches(view) && can_tile_view(view);
     }
 
-    signal_connection_t on_view_attached = [=] (signal_data_t *data)
+    wf::signal::connection_t<view_layer_attached_signal> on_view_attached =
+        [=] (view_layer_attached_signal *ev)
     {
-        auto view = get_signaled_view(data);
-        if (view->has_data<view_auto_tile_t>() || tile_window_by_default(view))
+        if (ev->view->has_data<view_auto_tile_t>() || tile_window_by_default(ev->view))
         {
-            attach_view(view);
+            attach_view(ev->view);
         }
     };
 
@@ -302,9 +302,9 @@ class tile_plugin_t : public wf::per_output_plugin_instance_t, public wf::pointe
         }
     };
 
-    signal_connection_t on_view_pre_moved_to_output = [=] (signal_data_t *data)
+    wf::signal::connection_t<view_pre_moved_to_output_signal> on_view_pre_moved_to_output =
+        [=] (view_pre_moved_to_output_signal *ev)
     {
-        auto ev   = static_cast<wf::view_pre_moved_to_output_signal*>(data);
         auto node = wf::tile::view_node_t::get_node(ev->view);
         if ((ev->new_output == this->output) && node)
         {
@@ -335,11 +335,9 @@ class tile_plugin_t : public wf::per_output_plugin_instance_t, public wf::pointe
         }
     }
 
-    signal_connection_t on_view_detached = [=] (signal_data_t *data)
+    wf::signal::connection_t<view_detached_signal> on_view_detached = [=] (view_detached_signal *ev)
     {
-        auto view = get_signaled_view(data);
-        auto view_node = wf::tile::view_node_t::get_node(view);
-
+        auto view_node = wf::tile::view_node_t::get_node(ev->view);
         if (view_node)
         {
             detach_view(view_node, false);
@@ -351,9 +349,8 @@ class tile_plugin_t : public wf::per_output_plugin_instance_t, public wf::pointe
         update_root_size(output->workspace->get_workarea());
     };
 
-    signal_connection_t on_tile_request = [=] (signal_data_t *data)
+    wf::signal::connection_t<view_tile_request_signal> on_tile_request = [=] (view_tile_request_signal *ev)
     {
-        auto ev = static_cast<view_tile_request_signal*>(data);
         if (ev->carried_out || !tile::view_node_t::get_node(ev->view))
         {
             return;
@@ -370,9 +367,9 @@ class tile_plugin_t : public wf::per_output_plugin_instance_t, public wf::pointe
         update_root_size(output->workspace->get_workarea());
     }
 
-    signal_connection_t on_fullscreen_request = [=] (signal_data_t *data)
+    wf::signal::connection_t<view_fullscreen_request_signal> on_fullscreen_request =
+        [=] (view_fullscreen_request_signal *ev)
     {
-        auto ev = static_cast<view_fullscreen_signal*>(data);
         if (ev->carried_out || !tile::view_node_t::get_node(ev->view))
         {
             return;
@@ -382,10 +379,9 @@ class tile_plugin_t : public wf::per_output_plugin_instance_t, public wf::pointe
         set_view_fullscreen(ev->view, ev->state);
     };
 
-    signal_connection_t on_focus_changed = [=] (signal_data_t *data)
+    wf::signal::connection_t<focus_view_signal> on_focus_changed = [=] (focus_view_signal *ev)
     {
-        auto view = get_signaled_view(data);
-        if (view && tile::view_node_t::get_node(view) && !view->fullscreen)
+        if (ev->view && tile::view_node_t::get_node(ev->view) && !ev->view->fullscreen)
         {
             auto vp = output->workspace->get_current_workspace();
             for_each_view(roots[vp.x][vp.y], [&] (wayfire_view view)
@@ -408,26 +404,25 @@ class tile_plugin_t : public wf::per_output_plugin_instance_t, public wf::pointe
         }
     }
 
-    signal_connection_t on_view_change_workspace = [=] (signal_data_t *data)
+    wf::signal::connection_t<view_change_workspace_signal> on_view_change_workspace =
+        [=] (view_change_workspace_signal *ev)
     {
-        auto ev = (view_change_workspace_signal*)(data);
         if (ev->old_workspace_valid)
         {
             change_view_workspace(ev->view, ev->to);
         }
     };
 
-    signal_connection_t on_view_minimized = [=] (signal_data_t *data)
+    wf::signal::connection_t<view_minimized_signal> on_view_minimized = [=] (view_minimized_signal *ev)
     {
-        auto ev = (view_minimize_request_signal*)data;
         auto existing_node = wf::tile::view_node_t::get_node(ev->view);
 
-        if (ev->state && existing_node)
+        if (ev->view->minimized && existing_node)
         {
             detach_view(existing_node);
         }
 
-        if (!ev->state && tile_window_by_default(ev->view))
+        if (!ev->view->minimized && tile_window_by_default(ev->view))
         {
             attach_view(ev->view);
         }
@@ -580,16 +575,16 @@ class tile_plugin_t : public wf::per_output_plugin_instance_t, public wf::pointe
             std::make_unique<tile_workspace_implementation_t>(), true);
 
         output->connect(&on_view_unmapped);
-        output->connect_signal("view-layer-attached", &on_view_attached);
-        output->connect_signal("view-layer-detached", &on_view_detached);
+        output->connect(&on_view_attached);
+        output->connect(&on_view_detached);
         output->connect(&on_workarea_changed);
-        output->connect_signal("view-tile-request", &on_tile_request);
-        output->connect_signal("view-fullscreen-request", &on_fullscreen_request);
-        output->connect_signal("view-focused", &on_focus_changed);
-        output->connect_signal("view-change-workspace", &on_view_change_workspace);
-        output->connect_signal("view-minimize-request", &on_view_minimized);
+        output->connect(&on_tile_request);
+        output->connect(&on_fullscreen_request);
+        output->connect(&on_focus_changed);
+        output->connect(&on_view_change_workspace);
+        output->connect(&on_view_minimized);
         output->connect(&on_workspace_grid_changed);
-        wf::get_core().connect_signal("view-pre-moved-to-output", &on_view_pre_moved_to_output);
+        wf::get_core().connect(&on_view_pre_moved_to_output);
 
         setup_callbacks();
     }

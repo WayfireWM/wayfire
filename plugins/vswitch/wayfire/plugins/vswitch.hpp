@@ -274,7 +274,7 @@ class workspace_switch_t
         data.view = overlay_view;
         data.from = old_workspace;
         data.to   = output->workspace->get_current_workspace();
-        output->emit_signal("view-change-workspace", &data);
+        output->emit(&data);
 
         set_overlay_view(nullptr);
     }

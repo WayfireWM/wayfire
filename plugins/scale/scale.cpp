@@ -200,7 +200,7 @@ class wayfire_scale : public wf::per_output_plugin_instance_t,
             "scale");
         /* Transformers are added only once when scale is activated so
          * this is a good place to connect the geometry-changed handler */
-        view->connect_signal("geometry-changed", &view_geometry_changed);
+        view->connect(&view_geometry_changed);
 
         set_tiled_wobbly(view, true);
 
@@ -1094,9 +1094,10 @@ class wayfire_scale : public wf::per_output_plugin_instance_t,
     }
 
     /* New view or view moved to output with scale active */
-    wf::signal_connection_t view_attached = [this] (wf::signal_data_t *data)
+    wf::signal::connection_t<wf::view_layer_attached_signal> view_attached =
+        [=] (wf::view_layer_attached_signal *ev)
     {
-        handle_new_view(wf::get_signaled_view(data));
+        handle_new_view(ev->view);
     };
 
     wf::signal::connection_t<wf::view_mapped_signal> on_view_mapped = [=] (wf::view_mapped_signal *ev)
@@ -1122,9 +1123,10 @@ class wayfire_scale : public wf::per_output_plugin_instance_t,
     }
 
     /* Destroyed view or view moved to another output */
-    wf::signal_connection_t view_detached = [this] (wf::signal_data_t *data)
+    wf::signal::connection_t<wf::view_layer_detached_signal> view_detached =
+        [=] (wf::view_layer_detached_signal *ev)
     {
-        handle_view_disappeared(get_signaled_view(data));
+        handle_view_disappeared(ev->view);
     };
 
     /* Workspace changed */
@@ -1140,26 +1142,24 @@ class wayfire_scale : public wf::per_output_plugin_instance_t,
     };
 
     /* View geometry changed. Also called when workspace changes */
-    wf::signal_connection_t view_geometry_changed{[this] (wf::signal_data_t *data)
+    wf::signal::connection_t<wf::view_geometry_changed_signal> view_geometry_changed =
+        [=] (wf::view_geometry_changed_signal *ev)
+    {
+        auto views = get_views();
+        if (!views.size())
         {
-            auto views = get_views();
-            if (!views.size())
-            {
-                deactivate();
+            deactivate();
 
-                return;
-            }
-
-            layout_slots(std::move(views));
+            return;
         }
+
+        layout_slots(std::move(views));
     };
 
     /* View minimized */
-    wf::signal_connection_t view_minimized = [this] (wf::signal_data_t *data)
+    wf::signal::connection_t<wf::view_minimized_signal> view_minimized = [=] (wf::view_minimized_signal *ev)
     {
-        auto ev = static_cast<wf::view_minimized_signal*>(data);
-
-        if (ev->state)
+        if (ev->view->minimized)
         {
             handle_view_disappeared(ev->view);
         } else if (should_scale_view(ev->view))
@@ -1175,12 +1175,11 @@ class wayfire_scale : public wf::per_output_plugin_instance_t,
     };
 
     /* View focused. This handler makes sure our view remains focused */
-    wf::signal_connection_t view_focused = [this] (wf::signal_data_t *data)
+    wf::signal::connection_t<wf::focus_view_signal> view_focused = [=] (wf::focus_view_signal *ev)
     {
-        auto view = get_signaled_view(data);
-        fade_out_all_except(view);
-        fade_in(view);
-        current_focus_view = view;
+        fade_out_all_except(ev->view);
+        fade_in(ev->view);
+        current_focus_view = ev->view;
     };
 
     /* Our own refocus that uses untransformed coordinates */
@@ -1326,13 +1325,13 @@ class wayfire_scale : public wf::per_output_plugin_instance_t,
 
         layout_slots(get_views());
 
-        output->connect_signal("view-layer-attached", &view_attached);
+        output->connect(&view_attached);
         output->connect(&on_view_mapped);
         output->connect(&workspace_changed);
-        output->connect_signal("view-layer-detached", &view_detached);
-        output->connect_signal("view-minimized", &view_minimized);
+        output->connect(&view_detached);
+        output->connect(&view_minimized);
         output->connect(&view_unmapped);
-        output->connect_signal("view-focused", &view_focused);
+        output->connect(&view_focused);
 
         fade_out_all_except(current_focus_view);
         fade_in(current_focus_view);

@@ -265,7 +265,25 @@ class blur_global_data_t
 class wayfire_blur : public wf::per_output_plugin_instance_t
 {
     wf::button_callback button_toggle;
-    wf::signal_connection_t view_attached, view_detached;
+
+    wf::signal::connection_t<wf::view_attached_signal> view_attached = [=] (wf::view_attached_signal *ev)
+    {
+        /* View was just created -> we don't know its layer yet */
+        if (!ev->view->is_mapped())
+        {
+            return;
+        }
+
+        if (blur_by_default.matches(ev->view))
+        {
+            add_transformer(ev->view);
+        }
+    };
+
+    wf::signal::connection_t<wf::view_detached_signal> view_detached = [=] (wf::view_detached_signal *ev)
+    {
+        pop_transformer(ev->view);
+    };
 
     wf::signal::connection_t<wf::view_mapped_signal> on_view_mapped = [=] (wf::view_mapped_signal *ev)
     {
@@ -348,32 +366,8 @@ class wayfire_blur : public wf::per_output_plugin_instance_t
         output->add_button(toggle_button, &button_toggle);
         global_data->provider = [=] () { return this->blur_algorithm.get(); };
 
-        // Add blur transformers to views which have blur enabled
-        view_attached.set_callback([=] (wf::signal_data_t *data)
-        {
-            auto view = get_signaled_view(data);
-            /* View was just created -> we don't know its layer yet */
-            if (!view->is_mapped())
-            {
-                return;
-            }
-
-            if (blur_by_default.matches(view))
-            {
-                add_transformer(view);
-            }
-        });
-
-        /* If a view is detached, we remove its blur transformer.
-         * If it is just moved to another output, the blur plugin
-         * on the other output will add its own transformer there */
-        view_detached.set_callback([=] (wf::signal_data_t *data)
-        {
-            auto view = get_signaled_view(data);
-            pop_transformer(view);
-        });
-        output->connect_signal("view-attached", &view_attached);
-        output->connect_signal("view-detached", &view_detached);
+        output->connect(&view_attached);
+        output->connect(&view_detached);
         output->connect(&on_view_mapped);
 
         for (auto& view : output->workspace->get_views_in_layer(wf::ALL_LAYERS))

@@ -569,10 +569,10 @@ class wobbly_transformer_node_t : public wf::scene::floating_inner_node_t
         view->get_output()->connect(&on_workspace_changed);
 
         view->connect(&on_view_unmap);
-        view->connect_signal("tiled", &view_state_changed);
-        view->connect_signal("fullscreen", &view_state_changed);
+        view->connect(&on_view_tiled);
+        view->connect(&on_view_fullscreen);
         view->connect(&view_output_changed);
-        view->connect_signal("geometry-changed", &view_geometry_changed);
+        view->connect(&on_view_geometry_changed);
 
         /* Set to free state initially but then look for the correct state */
         this->state = std::make_unique<wf::wobbly_state_free_t>(model, view);
@@ -627,15 +627,21 @@ class wobbly_transformer_node_t : public wf::scene::floating_inner_node_t
         destroy_self();
     };
 
-    wf::signal_connection_t view_state_changed = [=] (wf::signal_data_t*)
+    wf::signal::connection_t<wf::view_tiled_signal> on_view_tiled = [=] (wf::view_tiled_signal *ev)
     {
         update_wobbly_state(false, {0, 0}, false);
     };
 
-    wf::signal_connection_t view_geometry_changed = [=] (wf::signal_data_t *data)
+    wf::signal::connection_t<wf::view_fullscreen_signal> on_view_fullscreen =
+        [=] (wf::view_fullscreen_signal *ev)
     {
-        auto sig = static_cast<wf::view_geometry_changed_signal*>(data);
-        state->handle_wm_geometry(sig->old_geometry);
+        update_wobbly_state(false, {0, 0}, false);
+    };
+
+    wf::signal::connection_t<wf::view_geometry_changed_signal> on_view_geometry_changed =
+        [=] (wf::view_geometry_changed_signal *ev)
+    {
+        state->handle_wm_geometry(ev->old_geometry);
     };
 
     wf::signal::connection_t<wf::workspace_changed_signal> on_workspace_changed =
@@ -699,9 +705,9 @@ class wobbly_transformer_node_t : public wf::scene::floating_inner_node_t
 
         /* It is possible that the wobbly state needs to adjust view geometry.
          * We do not want it to get feedback from itself */
-        view->disconnect_signal(&this->view_geometry_changed);
+        on_view_geometry_changed.disconnect();
         state->handle_frame();
-        view->connect_signal("geometry-changed", &this->view_geometry_changed);
+        view->connect(&on_view_geometry_changed);
 
         /* Update all the wobbly model */
         auto now = wf::get_current_time();

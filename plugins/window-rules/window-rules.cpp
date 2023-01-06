@@ -37,27 +37,22 @@ class wayfire_window_rules_t : public wf::per_output_plugin_instance_t
     };
 
     // Maximized rule handler.
-    wf::signal_connection_t _maximized = [=] (wf::signal_data_t *data)
+    wf::signal::connection_t<wf::view_tiled_signal> _tiled = [=] (wf::view_tiled_signal *ev)
     {
-        apply("maximized", wf::get_signaled_view(data));
-    };
-
-    // Unaximized rule handler.
-    wf::signal_connection_t _unmaximized = [=] (wf::signal_data_t *data)
-    {
-        apply("unmaximized", wf::get_signaled_view(data));
+        apply("maximized", ev->view);
+        apply("unmaximized", ev->view);
     };
 
     // Minimized rule handler.
-    wf::signal_connection_t _minimized = [=] (wf::signal_data_t *data)
+    wf::signal::connection_t<wf::view_minimized_signal> _minimized = [=] (wf::view_minimized_signal *ev)
     {
-        apply("minimized", wf::get_signaled_view(data));
+        apply("minimized", ev->view);
     };
 
     // Fullscreened rule handler.
-    wf::signal_connection_t _fullscreened = [=] (wf::signal_data_t *data)
+    wf::signal::connection_t<wf::view_fullscreen_signal> _fullscreened = [=] (wf::view_fullscreen_signal *ev)
     {
-        apply("fullscreened", wf::get_signaled_view(data));
+        apply("fullscreened", ev->view);
     };
 
     // Auto-reload on changes to config file
@@ -83,10 +78,9 @@ void wayfire_window_rules_t::init()
     setup_rules_from_config();
 
     output->connect(&on_view_mapped);
-    output->connect_signal("view-tiled", &_maximized);
-    output->connect_signal("view-tiled", &_unmaximized);
-    output->connect_signal("view-minimized", &_minimized);
-    output->connect_signal("view-fullscreen", &_fullscreened);
+    output->connect(&_tiled);
+    output->connect(&_minimized);
+    output->connect(&_fullscreened);
     wf::get_core().connect(&_reload_config);
 }
 

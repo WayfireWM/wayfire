@@ -47,7 +47,7 @@ class vswitch : public wf::per_output_plugin_instance_t
     void init()
     {
         output->connect(&on_set_workspace_request);
-        output->connect_signal("view-disappeared", &on_grabbed_view_disappear);
+        output->connect(&on_grabbed_view_disappear);
 
         algorithm = std::make_unique<vswitch_basic_plugin>(output,
             [=] () { output->deactivate_plugin(&grab_interface); });
@@ -85,7 +85,7 @@ class vswitch : public wf::per_output_plugin_instance_t
                     data.view = view;
                     data.from = output->workspace->get_current_workspace();
                     data.to   = data.from + delta;
-                    output->emit_signal("view-change-workspace", &data);
+                    output->emit(&data);
                     output->refocus();
 
                     return true;
@@ -166,10 +166,10 @@ class vswitch : public wf::per_output_plugin_instance_t
         return true;
     }
 
-    wf::signal_connection_t on_grabbed_view_disappear = [=] (
-        wf::signal_data_t *data)
+    wf::signal::connection_t<wf::view_disappeared_signal> on_grabbed_view_disappear =
+        [=] (wf::view_disappeared_signal *ev)
     {
-        if (get_signaled_view(data) == algorithm->get_overlay_view())
+        if (ev->view == algorithm->get_overlay_view())
         {
             algorithm->set_overlay_view(nullptr);
         }

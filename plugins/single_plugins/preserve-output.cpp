@@ -270,13 +270,13 @@ class wayfire_preserve_output : public wf::per_output_plugin_instance_t
         }
 
         // Start listening for view resize events AFTER this callback has finished
-        output->connect_signal("view-geometry-changed", &view_moved);
+        output->connect(&view_moved);
     }
 
-    wf::signal_connection_t view_moved = [=] (wf::signal_data_t *data)
+    wf::signal::connection_t<wf::view_geometry_changed_signal> view_moved =
+        [=] (wf::view_geometry_changed_signal *signal_data)
     {
         // Triggered whenever a view on this output's geometry changed
-        auto signal_data = (wf::view_geometry_changed_signal*)data;
         auto view = signal_data->view;
 
         // Ignore event if geometry didn't actually change

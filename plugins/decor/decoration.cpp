@@ -18,9 +18,10 @@ class wayfire_decoration : public wf::plugin_interface_t, private wf::per_output
         update_view_decoration(ev->view);
     };
 
-    wf::signal_connection_t view_updated = [=] (wf::signal_data_t *data)
+    wf::signal::connection_t<wf::view_decoration_changed_signal> on_decoration_state_changed =
+        [=] (wf::view_decoration_changed_signal *ev)
     {
-        update_view_decoration(get_signaled_view(data));
+        update_view_decoration(ev->view);
     };
 
   public:
@@ -45,7 +46,7 @@ class wayfire_decoration : public wf::plugin_interface_t, private wf::per_output
     void handle_new_output(wf::output_t *output) override
     {
         output->connect(&on_view_mapped);
-        output->connect_signal("view-decoration-state-updated", &view_updated);
+        output->connect(&on_decoration_state_changed);
         for (auto& view : output->workspace->get_views_in_layer(wf::ALL_LAYERS))
         {
             update_view_decoration(view);

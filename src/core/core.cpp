@@ -543,9 +543,9 @@ void wf::compositor_core_impl_t::add_view(
         v->set_output(active_output);
     }
 
-    view_created_signal data;
+    view_added_signal data;
     data.view = v;
-    emit_signal("view-added", &data);
+    emit(&data);
 }
 
 std::vector<wayfire_view> wf::compositor_core_impl_t::get_all_views()
@@ -681,7 +681,7 @@ void wf::compositor_core_impl_t::move_view_to_output(wayfire_view v,
     data.view = v;
     data.old_output = old_output;
     data.new_output = new_output;
-    this->emit_signal("view-pre-moved-to-output", &data);
+    this->emit(&data);
 
     uint32_t edges;
     bool fullscreen;
@@ -724,7 +724,7 @@ void wf::compositor_core_impl_t::move_view_to_output(wayfire_view v,
         }
     }
 
-    this->emit_signal("view-moved-to-output", &data);
+    this->emit(&data);
 }
 
 const std::shared_ptr<wf::scene::root_node_t>& wf::compositor_core_impl_t::scene()

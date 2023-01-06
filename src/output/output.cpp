@@ -28,6 +28,21 @@
 
 wf::output_t::output_t() = default;
 
+void wf::output_impl_t::handle_view_removed(wayfire_view view)
+{
+    if (this->active_view == view)
+    {
+        this->active_view = nullptr;
+    }
+
+    if (this->last_active_toplevel == view)
+    {
+        this->last_active_toplevel = nullptr;
+    }
+
+    refocus();
+}
+
 wf::output_impl_t::output_impl_t(wlr_output *handle,
     const wf::dimensions_t& effective_size)
 {
@@ -55,23 +70,11 @@ wf::output_impl_t::output_impl_t(wlr_output *handle,
     workspace = std::make_unique<workspace_manager>(this);
     render    = std::make_unique<render_manager>(this);
 
-    view_disappeared_cb.set_callback([=] (wf::signal_data_t *data)
-    {
-        if (this->active_view == wf::get_signaled_view(data))
-        {
-            this->active_view = nullptr;
-        }
+    on_view_disappeared.set_callback([=] (view_disappeared_signal *ev) { handle_view_removed(ev->view); });
+    on_view_detached.set_callback([=] (view_detached_signal *ev) { handle_view_removed(ev->view); });
 
-        if (this->last_active_toplevel == wf::get_signaled_view(data))
-        {
-            this->last_active_toplevel = nullptr;
-        }
-
-        refocus();
-    });
-
-    connect_signal("view-disappeared", &view_disappeared_cb);
-    connect_signal("view-detached", &view_disappeared_cb);
+    connect(&on_view_disappeared);
+    connect(&on_view_detached);
 }
 
 std::shared_ptr<wf::scene::output_node_t> wf::output_impl_t::node_for_layer(
@@ -376,7 +379,7 @@ void wf::output_impl_t::focus_view(wayfire_view v, uint32_t flags)
         update_active_view(nullptr);
 
         data.view = nullptr;
-        emit_signal("focus-view", &data);
+        emit(&data);
         return;
     }
 
@@ -392,7 +395,7 @@ void wf::output_impl_t::focus_view(wayfire_view v, uint32_t flags)
         update_active_view(v);
         give_input_focus(select_focus_view(v));
         data.view = v;
-        emit_signal("view-focused", &data);
+        emit(&data);
     }
 }
 

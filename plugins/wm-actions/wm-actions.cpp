@@ -104,27 +104,25 @@ class wayfire_wm_actions_t : public wf::per_output_plugin_instance_t
     /**
      * Ensures views marked as above are still above if their output changes.
      */
-    wf::signal_connection_t on_view_output_changed
-    {[=] (wf::signal_data_t *data)
+    wf::signal::connection_t<wf::view_moved_to_output_signal> on_view_output_changed =
+        [=] (wf::view_moved_to_output_signal *signal)
+    {
+        if (signal->new_output != output)
         {
-            auto signal = static_cast<wf::view_moved_to_output_signal*>(data);
-            if (signal->new_output != output)
-            {
-                return;
-            }
+            return;
+        }
 
-            auto view = signal->view;
+        auto view = signal->view;
 
-            if (!view)
-            {
-                return;
-            }
+        if (!view)
+        {
+            return;
+        }
 
-            if (view->has_data("wm-actions-above"))
-            {
-                wf::scene::remove_child(view->get_root_node());
-                wf::scene::add_front(always_above, view->get_root_node());
-            }
+        if (view->has_data("wm-actions-above"))
+        {
+            wf::scene::remove_child(view->get_root_node());
+            wf::scene::add_front(always_above, view->get_root_node());
         }
     };
 
@@ -132,27 +130,18 @@ class wayfire_wm_actions_t : public wf::per_output_plugin_instance_t
      * Ensures views marked as above are still above if they are minimized and
      * unminimized.
      */
-    wf::signal_connection_t on_view_minimized
-    {[=] (wf::signal_data_t *data)
+    wf::signal::connection_t<wf::view_minimized_signal> on_view_minimized =
+        [=] (wf::view_minimized_signal *ev)
+    {
+        if (ev->view->get_output() != output)
         {
-            auto signal = static_cast<wf::view_minimized_signal*>(data);
-            auto view   = signal->view;
+            return;
+        }
 
-            if (!view)
-            {
-                return;
-            }
-
-            if (view->get_output() != output)
-            {
-                return;
-            }
-
-            if (view->has_data("wm-actions-above") && (signal->state == false))
-            {
-                wf::scene::remove_child(view->get_root_node());
-                wf::scene::add_front(always_above, view->get_root_node());
-            }
+        if (ev->view->has_data("wm-actions-above") && !ev->view->minimized)
+        {
+            wf::scene::remove_child(ev->view->get_root_node());
+            wf::scene::add_front(always_above, ev->view->get_root_node());
         }
     };
 
@@ -170,9 +159,10 @@ class wayfire_wm_actions_t : public wf::per_output_plugin_instance_t
      * Disables show desktop if the workspace is changed or any view is attached,
      * mapped or unminimized.
      */
-    wf::signal_connection_t view_attached = [this] (wf::signal_data_t *data)
+    wf::signal::connection_t<wf::view_layer_attached_signal> view_attached =
+        [=] (wf::view_layer_attached_signal *ev)
     {
-        check_disable_showdesktop(get_signaled_view(data));
+        check_disable_showdesktop(ev->view);
     };
 
     wf::signal::connection_t<wf::view_mapped_signal> on_view_mapped = [=] (wf::view_mapped_signal *ev)
@@ -186,16 +176,14 @@ class wayfire_wm_actions_t : public wf::per_output_plugin_instance_t
         disable_showdesktop();
     };
 
-    wf::signal_connection_t view_minimized = [this] (wf::signal_data_t *data)
+    wf::signal::connection_t<wf::view_minimized_signal> view_minimized = [=] (wf::view_minimized_signal *ev)
     {
-        auto ev = static_cast<wf::view_minimized_signal*>(data);
-
         if ((ev->view->role != wf::VIEW_ROLE_TOPLEVEL) || !ev->view->is_mapped())
         {
             return;
         }
 
-        if (!ev->state)
+        if (!ev->view->minimized)
         {
             disable_showdesktop();
         }
@@ -280,9 +268,9 @@ class wayfire_wm_actions_t : public wf::per_output_plugin_instance_t
                 }
             }
 
-            output->connect_signal("view-layer-attached", &view_attached);
+            output->connect(&view_attached);
             output->connect(&workspace_changed);
-            output->connect_signal("view-minimized", &view_minimized);
+            output->connect(&view_minimized);
             output->connect(&on_view_mapped);
             return true;
         }
@@ -370,9 +358,8 @@ class wayfire_wm_actions_t : public wf::per_output_plugin_instance_t
         output->add_activator(send_to_back, &on_send_to_back);
         output->connect_signal("wm-actions-set-above-state",
             &on_set_above_state_signal);
-        output->connect_signal("view-minimized", &on_view_minimized);
-        wf::get_core().connect_signal("view-moved-to-output",
-            &on_view_output_changed);
+        output->connect(&on_view_minimized);
+        wf::get_core().connect(&on_view_output_changed);
     }
 
     void fini() override

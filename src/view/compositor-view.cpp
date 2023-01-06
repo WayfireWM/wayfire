@@ -135,7 +135,7 @@ void wf::color_rect_view_t::move(int x, int y)
     this->geometry.y = y;
 
     damage();
-    emit_signal("geometry-changed", &data);
+    emit(&data);
 }
 
 void wf::color_rect_view_t::resize(int w, int h)
@@ -148,7 +148,7 @@ void wf::color_rect_view_t::resize(int w, int h)
     this->geometry.height = h;
 
     damage();
-    emit_signal("geometry-changed", &data);
+    emit(&data);
 }
 
 wf::geometry_t wf::color_rect_view_t::get_output_geometry()

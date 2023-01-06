@@ -158,8 +158,8 @@ class wayfire_grid : public wf::per_output_plugin_instance_t
         output->connect(&on_workarea_changed);
         output->connect_signal("grid-snap-view", &on_snap_signal);
         output->connect_signal("grid-query-geometry", &on_snap_query);
-        output->connect_signal("view-tile-request", &on_maximize_signal);
-        output->connect_signal("view-fullscreen-request", &on_fullscreen_signal);
+        output->connect(&on_maximize_signal);
+        output->connect(&on_fullscreen_signal);
     }
 
     bool can_adjust_view(wayfire_view view)
@@ -277,10 +277,9 @@ class wayfire_grid : public wf::per_output_plugin_instance_t
         return geometry;
     }
 
-    wf::signal_connection_t on_maximize_signal = [=] (wf::signal_data_t *ddata)
+    wf::signal::connection_t<wf::view_tile_request_signal> on_maximize_signal =
+        [=] (wf::view_tile_request_signal *data)
     {
-        auto data = static_cast<wf::view_tile_request_signal*>(ddata);
-
         if (data->carried_out || (data->desired_size.width <= 0) ||
             !can_adjust_view(data->view))
         {
@@ -300,11 +299,10 @@ class wayfire_grid : public wf::per_output_plugin_instance_t
             get_tiled_edges_for_slot(slot));
     };
 
-    wf::signal_connection_t on_fullscreen_signal = [=] (wf::signal_data_t *ev)
+    wf::signal::connection_t<wf::view_fullscreen_request_signal> on_fullscreen_signal =
+        [=] (wf::view_fullscreen_request_signal *data)
     {
-        auto data = static_cast<wf::view_fullscreen_signal*>(ev);
         static const std::string fs_data_name = "grid-saved-fs";
-
         if (data->carried_out || (data->desired_size.width <= 0) ||
             !can_adjust_view(data->view))
         {

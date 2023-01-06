@@ -330,17 +330,22 @@ view_node_t::view_node_t(wayfire_view view)
     this->view = view;
     view->store_data(std::make_unique<view_node_custom_data_t>(this));
 
-    this->on_geometry_changed.set_callback([=] (wf::signal_data_t*)
+    this->on_geometry_changed.set_callback([=] (auto)
     {
         update_transformer();
     });
-    this->on_decoration_changed.set_callback([=] (wf::signal_data_t*)
+    this->on_decoration_changed.set_callback([=] (auto)
     {
         set_geometry(geometry);
     });
-    view->connect_signal("geometry-changed", &on_geometry_changed);
-    view->connect_signal("decoration-changed", &on_decoration_changed);
-    view->connect_signal("simple-tile-adjust-transformer", &on_geometry_changed);
+    on_adjust_transformer.set_callback([=] (auto)
+    {
+        update_transformer();
+    });
+
+    view->connect(&on_geometry_changed);
+    view->connect(&on_decoration_changed);
+    view->connect_signal("simple-tile-adjust-transformer", &on_adjust_transformer);
 }
 
 view_node_t::~view_node_t()

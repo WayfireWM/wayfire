@@ -105,7 +105,7 @@ class wayfire_move : public wf::per_output_plugin_instance_t,
             data.view = ev->main_view;
             data.to   = output->workspace->get_current_workspace();
             data.old_workspace_valid = false;
-            output->emit_signal("view-change-workspace", &data);
+            output->emit(&data);
         }
 
         deactivate();
@@ -144,7 +144,7 @@ class wayfire_move : public wf::per_output_plugin_instance_t,
             input_pressed(WLR_BUTTON_RELEASED);
         };
 
-        output->connect_signal("view-move-request", &move_request);
+        output->connect(&move_request);
 
         drag_helper->connect_signal("focus-output", &on_drag_output_focus);
         drag_helper->connect_signal("snap-off", &on_drag_snap_off);
@@ -187,10 +187,11 @@ class wayfire_move : public wf::per_output_plugin_instance_t,
         handle_input_motion();
     }
 
-    wf::signal_connection_t move_request = [=] (auto data)
+    wf::signal::connection_t<wf::view_move_request_signal> move_request =
+        [=] (wf::view_move_request_signal *ev)
     {
         was_client_request = true;
-        initiate(wf::get_signaled_view(data));
+        initiate(ev->view);
     };
 
     /**

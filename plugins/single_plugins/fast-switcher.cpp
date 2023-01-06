@@ -73,12 +73,10 @@ class wayfire_fast_switcher : public wf::per_output_plugin_instance_t, public wf
         }
     }
 
-    wf::signal_connection_t cleanup_view = [=] (wf::signal_data_t *data)
+    wf::signal::connection_t<wf::view_disappeared_signal> cleanup_view = [=] (wf::view_disappeared_signal *ev)
     {
-        auto view = get_signaled_view(data);
-
         size_t i = 0;
-        for (; i < views.size() && views[i] != view; i++)
+        for (; i < views.size() && views[i] != ev->view; i++)
         {}
 
         if (i == views.size())
@@ -158,7 +156,7 @@ class wayfire_fast_switcher : public wf::per_output_plugin_instance_t, public wf
         activating_modifiers = wf::get_core().get_keyboard_modifiers();
         switch_next(forward);
 
-        output->connect_signal("view-disappeared", &cleanup_view);
+        output->connect(&cleanup_view);
         return true;
     }
 
@@ -187,7 +185,7 @@ class wayfire_fast_switcher : public wf::per_output_plugin_instance_t, public wf
         }
 
         active = false;
-        output->disconnect_signal(&cleanup_view);
+        cleanup_view.disconnect();
     }
 
     void switch_next(bool forward)

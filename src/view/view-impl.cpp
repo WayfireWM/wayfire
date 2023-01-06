@@ -32,9 +32,9 @@ void wf::wlr_view_t::handle_app_id_changed(std::string new_app_id)
     this->app_id = new_app_id;
     toplevel_send_app_id();
 
-    app_id_changed_signal data;
+    view_app_id_changed_signal data;
     data.view = self();
-    emit_signal("app-id-changed", &data);
+    emit(&data);
 }
 
 std::string wf::wlr_view_t::get_app_id()
@@ -47,9 +47,9 @@ void wf::wlr_view_t::handle_title_changed(std::string new_title)
     this->title = new_title;
     toplevel_send_title();
 
-    title_changed_signal data;
+    view_title_changed_signal data;
     data.view = self();
-    emit_signal("title-changed", &data);
+    emit(&data);
 }
 
 std::string wf::wlr_view_t::get_title()
@@ -102,11 +102,11 @@ void wf::wlr_view_t::set_position(int x, int y,
 
     if (send_signal)
     {
-        emit_signal("geometry-changed", &data);
-        wf::get_core().emit_signal("view-geometry-changed", &data);
+        emit(&data);
+        wf::get_core().emit(&data);
         if (get_output())
         {
-            get_output()->emit_signal("view-geometry-changed", &data);
+            get_output()->emit(&data);
         }
     }
 
@@ -167,11 +167,11 @@ void wf::wlr_view_t::update_size()
     /* Damage new size */
     last_bounding_box = get_bounding_box();
     view_damage_raw(self(), last_bounding_box);
-    emit_signal("geometry-changed", &data);
-    wf::get_core().emit_signal("view-geometry-changed", &data);
+    emit(&data);
+    wf::get_core().emit(&data);
     if (get_output())
     {
-        get_output()->emit_signal("view-geometry-changed", &data);
+        get_output()->emit(&data);
     }
 
     if (priv->frame)
@@ -242,10 +242,10 @@ void wf::wlr_view_t::set_decoration_mode(bool use_csd)
         wf::view_decoration_state_updated_signal data;
         data.view = self();
 
-        this->emit_signal("decoration-state-updated", &data);
+        this->emit(&data);
         if (get_output())
         {
-            get_output()->emit_signal("view-decoration-state-updated", &data);
+            get_output()->emit(&data);
         }
     }
 }
@@ -347,7 +347,7 @@ void wf::emit_ping_timeout_signal(wayfire_view view)
 {
     wf::view_ping_timeout_signal data;
     data.view = view;
-    view->emit_signal("ping-timeout", &data);
+    view->emit(&data);
 }
 
 void wf::view_interface_t::emit_view_map()
@@ -366,7 +366,7 @@ void wf::view_interface_t::emit_view_unmap()
 
         view_disappeared_signal disappeared_data;
         data.view = self();
-        get_output()->emit_signal("view-disappeared", &disappeared_data);
+        get_output()->emit(&disappeared_data);
     }
 
     this->emit(&data);

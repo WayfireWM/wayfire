@@ -4,6 +4,7 @@
 #include "wayfire/scene-input.hpp"
 #include "wayfire/scene-render.hpp"
 #include "wayfire/scene.hpp"
+#include "wayfire/signal-definitions.hpp"
 #include "wayfire/signal-provider.hpp"
 
 #include <memory>
@@ -27,7 +28,11 @@ class output_impl_t : public output_t
 
   private:
     std::unordered_multiset<wf::plugin_activation_data_t*> active_plugins;
-    signal_connection_t view_disappeared_cb;
+
+    wf::signal::connection_t<view_disappeared_signal> on_view_disappeared;
+    wf::signal::connection_t<view_detached_signal> on_view_detached;
+    void handle_view_removed(wayfire_view view);
+
     bool inhibited = false;
 
     enum focus_view_flags_t

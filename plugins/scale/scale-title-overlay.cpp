@@ -6,6 +6,7 @@
 #include "wayfire/plugins/common/util.hpp"
 #include "wayfire/render-manager.hpp"
 #include "wayfire/scene-operations.hpp"
+#include "wayfire/signal-definitions.hpp"
 #include "wayfire/view-transform.hpp"
 
 #include <memory>
@@ -56,7 +57,8 @@ struct view_title_texture_t : public wf::custom_data_t
         overflow = res.width > overlay.tex.width;
     }
 
-    wf::signal_connection_t view_changed = [this] (auto)
+    wf::signal::connection_t<wf::view_title_changed_signal> view_changed_title =
+        [=] (wf::view_title_changed_signal *ev)
     {
         if (overlay.tex.tex != (GLuint) - 1)
         {
@@ -73,7 +75,7 @@ struct view_title_texture_t : public wf::custom_data_t
         par.exact_size   = true;
         par.output_scale = output_scale;
 
-        view->connect_signal("title-changed", &view_changed);
+        view->connect(&view_changed_title);
     }
 };
 

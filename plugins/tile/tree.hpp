@@ -1,6 +1,7 @@
 #ifndef WF_TILE_PLUGIN_TREE
 #define WF_TILE_PLUGIN_TREE
 
+#include "wayfire/signal-definitions.hpp"
 #include <wayfire/view.hpp>
 #include <wayfire/option-wrapper.hpp>
 
@@ -168,7 +169,10 @@ struct view_node_t : public tree_node_t
   private:
     struct scale_transformer_t;
     nonstd::observer_ptr<scale_transformer_t> transformer;
-    signal_connection_t on_geometry_changed, on_decoration_changed;
+
+    wf::signal::connection_t<view_geometry_changed_signal> on_geometry_changed;
+    wf::signal::connection_t<view_decoration_changed_signal> on_decoration_changed;
+    signal_connection_t on_adjust_transformer;
 
     wf::option_wrapper_t<int> animation_duration{"simple-tile/animation_duration"};
 

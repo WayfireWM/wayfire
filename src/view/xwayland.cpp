@@ -554,8 +554,8 @@ class wayfire_xwayland_view : public wayfire_xwayland_view_base
                 wf::view_focus_request_signal data;
                 data.view = self();
                 data.self_request = true;
-                emit_signal("view-focus-request", &data);
-                wf::get_core().emit_signal("view-focus-request", &data);
+                emit(&data);
+                wf::get_core().emit(&data);
             }
         });
 
@@ -608,8 +608,8 @@ class wayfire_xwayland_view : public wayfire_xwayland_view_base
                 data.demands_attention = true;
             }
 
-            wf::get_core().emit_signal("view-hints-changed", &data);
-            this->emit_signal("hints-changed", &data);
+            wf::get_core().emit(&data);
+            this->emit(&data);
         });
         on_set_parent.connect(&xw->events.set_parent);
         on_set_hints.connect(&xw->events.set_hints);

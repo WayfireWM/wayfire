@@ -198,10 +198,14 @@ void wf::view_interface_t::set_output(wf::output_t *new_output)
         /* Emit view-layer-detached first */
         get_output()->workspace->remove_view(self());
 
-        view_detached_signal data;
-        data.view = self();
-        get_output()->emit_signal("view-disappeared", &data);
-        get_output()->emit_signal("view-detached", &data);
+        view_detached_signal data_detached;
+        data_detached.view = self();
+
+        view_disappeared_signal data_disappeared;
+        data_disappeared.view = self();
+
+        get_output()->emit(&data_disappeared);
+        get_output()->emit(&data_detached);
     }
 
     view_set_output_signal data;
@@ -213,7 +217,7 @@ void wf::view_interface_t::set_output(wf::output_t *new_output)
     {
         view_attached_signal data;
         data.view = self();
-        get_output()->emit_signal("view-attached", &data);
+        get_output()->emit(&data);
     }
 
     this->emit(&data);
@@ -317,7 +321,7 @@ void wf::view_interface_t::set_minimized(bool minim)
     {
         view_disappeared_signal data;
         data.view = self();
-        get_output()->emit_signal("view-disappeared", &data);
+        get_output()->emit(&data);
         wf::scene::set_node_enabled(get_root_node(), false);
     } else
     {
@@ -326,10 +330,9 @@ void wf::view_interface_t::set_minimized(bool minim)
     }
 
     view_minimized_signal data;
-    data.view  = self();
-    data.state = minimized;
-    this->emit_signal("minimized", &data);
-    get_output()->emit_signal("view-minimized", &data);
+    data.view = self();
+    this->emit(&data);
+    get_output()->emit(&data);
 
     desktop_state_updated();
 }
@@ -348,10 +351,10 @@ void wf::view_interface_t::set_sticky(bool sticky)
     wf::view_set_sticky_signal data;
     data.view = self();
 
-    this->emit_signal("set-sticky", &data);
+    this->emit(&data);
     if (this->get_output())
     {
-        this->get_output()->emit_signal("view-set-sticky", &data);
+        this->get_output()->emit(&data);
     }
 }
 
@@ -373,10 +376,10 @@ void wf::view_interface_t::set_tiled(uint32_t edges)
         priv->frame->notify_view_tiled();
     }
 
-    this->emit_signal("tiled", &data);
+    this->emit(&data);
     if (this->get_output())
     {
-        get_output()->emit_signal("view-tiled", &data);
+        get_output()->emit(&data);
     }
 
     desktop_state_updated();
@@ -400,14 +403,13 @@ void wf::view_interface_t::set_fullscreen(bool full)
     view_fullscreen_signal data;
     data.view  = self();
     data.state = full;
-    data.desired_size = {0, 0, 0, 0};
 
     if (get_output())
     {
-        get_output()->emit_signal("view-fullscreen", &data);
+        get_output()->emit(&data);
     }
 
-    this->emit_signal("fullscreen", &data);
+    this->emit(&data);
     desktop_state_updated();
 }
 
@@ -431,7 +433,7 @@ void wf::view_interface_t::move_request()
 {
     view_move_request_signal data;
     data.view = self();
-    get_output()->emit_signal("view-move-request", &data);
+    get_output()->emit(&data);
 }
 
 void wf::view_interface_t::focus_request()
@@ -442,8 +444,8 @@ void wf::view_interface_t::focus_request()
         data.view = self();
         data.self_request = false;
 
-        emit_signal("view-focus-request", &data);
-        wf::get_core().emit_signal("view-focus-request", &data);
+        emit(&data);
+        wf::get_core().emit(&data);
         if (!data.carried_out)
         {
             wf::get_core().focus_output(get_output());
@@ -458,7 +460,7 @@ void wf::view_interface_t::resize_request(uint32_t edges)
     view_resize_request_signal data;
     data.view  = self();
     data.edges = edges;
-    get_output()->emit_signal("view-resize-request", &data);
+    get_output()->emit(&data);
 }
 
 void wf::view_interface_t::tile_request(uint32_t edges)
@@ -542,7 +544,7 @@ void wf::view_interface_t::tile_request(uint32_t edges, wf::point_t workspace)
     set_tiled(edges);
     if (is_mapped())
     {
-        get_output()->emit_signal("view-tile-request", &data);
+        get_output()->emit(&data);
     }
 
     if (!data.carried_out)
@@ -572,7 +574,7 @@ void wf::view_interface_t::minimize_request(bool state)
 
     if (is_mapped())
     {
-        get_output()->emit_signal("view-minimize-request", &data);
+        get_output()->emit(&data);
         /* Some plugin (e.g animate) will take care of the request, so we need
          * to just send proper state to foreign-toplevel clients */
         if (data.carried_out)
@@ -611,7 +613,7 @@ void wf::view_interface_t::fullscreen_request(wf::output_t *out, bool state,
         wf::get_core().move_view_to_output(self(), wo, false);
     }
 
-    view_fullscreen_signal data;
+    view_fullscreen_request_signal data;
     data.view  = self();
     data.state = state;
     data.workspace    = workspace;
@@ -627,7 +629,7 @@ void wf::view_interface_t::fullscreen_request(wf::output_t *out, bool state,
     set_fullscreen(state);
     if (is_mapped())
     {
-        wo->emit_signal("view-fullscreen-request", &data);
+        wo->emit(&data);
     }
 
     if (!data.carried_out)
@@ -690,7 +692,9 @@ void wf::view_interface_t::set_decoration(
             set_geometry(wm);
         }
 
-        emit_signal("decoration-changed", nullptr);
+        view_decoration_changed_signal data;
+        data.view = self();
+        emit(&data);
         return;
     }
 
@@ -735,7 +739,9 @@ void wf::view_interface_t::set_decoration(
     set_geometry(target_wm_geometry);
     damage();
 
-    emit_signal("decoration-changed", nullptr);
+    view_decoration_changed_signal ev;
+    ev.view = self();
+    emit(&ev);
 }
 
 bool wf::view_interface_t::has_transformer()
