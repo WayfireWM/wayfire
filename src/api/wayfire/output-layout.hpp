@@ -61,7 +61,7 @@ using output_configuration_t = std::map<wlr_output*, output_state_t>;
 
 /* output_layout_t is responsible for managing outputs and their attributes -
  * mode, scale, position, transform. */
-class output_layout_t : public wf::signal_provider_t, public wf::signal::provider_t
+class output_layout_t : public wf::signal::provider_t
 {
     class impl;
     std::unique_ptr<impl> pimpl;

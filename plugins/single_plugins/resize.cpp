@@ -125,9 +125,6 @@ class wayfire_resize : public wf::per_output_plugin_instance_t, public wf::point
         }
     }
 
-    void resize_requested(wf::signal_data_t *data)
-    {}
-
     /* Returns the currently used input coordinates in global compositor space */
     wf::point_t get_global_input_coords()
     {

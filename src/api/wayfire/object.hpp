@@ -10,94 +10,6 @@
 namespace wf
 {
 /**
- * signal_data_t is the base class for all signal data.
- */
-struct signal_data_t
-{
-    signal_data_t() = default;
-    virtual ~signal_data_t() = default;
-    signal_data_t(const signal_data_t &) = default;
-    signal_data_t(signal_data_t &&) = default;
-    signal_data_t& operator =(const signal_data_t&) = default;
-    signal_data_t& operator =(signal_data_t&&) = default;
-};
-
-using signal_callback_t = std::function<void (signal_data_t*)>;
-class signal_provider_t;
-
-/**
- * Provides an interface to connect to signal providers.
- *
- * The same signal connection object can be used to connect to multiple signal
- * providers.
- */
-class signal_connection_t
-{
-  public:
-    /** Initialize an empty signal connection */
-    signal_connection_t();
-    /** Automatically disconnects from all providers */
-    ~signal_connection_t();
-
-    /** Initialize a signal connection with the given callback */
-    template<class T> using convertible_to_callback_t =
-        std::enable_if_t<std::is_constructible_v<wf::signal_callback_t, T>, void>;
-    template<class T, class U = convertible_to_callback_t<T>>
-    signal_connection_t(T callback) : signal_connection_t()
-    {
-        set_callback(callback);
-    }
-
-    /** Set the signal callback or override the existing signal callback. */
-    void set_callback(signal_callback_t callback);
-
-    /** Call the stored callback with the given data. */
-    void emit(signal_data_t *data);
-
-    /** Disconnect from all connected signal providers */
-    void disconnect();
-
-    class impl;
-    std::unique_ptr<impl> priv;
-
-    /* Non-copyable */
-    signal_connection_t(const signal_connection_t& other) = delete;
-    signal_connection_t& operator =(const signal_connection_t& other) = delete;
-
-    /* Non-movable (signal-providers store pointers to this object) */
-    signal_connection_t(signal_connection_t&& other) = delete;
-    signal_connection_t& operator =(signal_connection_t&& other) = delete;
-};
-
-class signal_provider_t
-{
-  public:
-    /** Register a connection to be called when the given signal is emitted. */
-    void connect_signal(std::string name, signal_connection_t *callback);
-    /** Unregister a connection. */
-    void disconnect_signal(signal_connection_t *callback);
-
-    /** Emit the given signal. No type checking for data is required */
-    void emit_signal(std::string name, signal_data_t *data);
-
-    virtual ~signal_provider_t();
-
-    signal_provider_t(const signal_provider_t& other) = delete;
-    signal_provider_t& operator =(const signal_provider_t& other) = delete;
-
-    /* Non-movable (signal-connections hold pointers to this object) */
-    signal_provider_t(signal_provider_t&& other) = delete;
-    signal_provider_t& operator =(signal_provider_t&& other) = delete;
-
-  protected:
-    signal_provider_t();
-
-  private:
-    class sprovider_impl;
-    std::unique_ptr<sprovider_impl> sprovider_priv;
-};
-
-/**
  * Subclasses of custom_data_t can be stored inside an object_base_t
  */
 class custom_data_t
@@ -115,7 +27,7 @@ class custom_data_t
  * A base class for "objects". Objects provide signals and ways for plugins to
  * store custom data about the object.
  */
-class object_base_t : public signal_provider_t
+class object_base_t
 {
   public:
     /** Get a human-readable description of the object */

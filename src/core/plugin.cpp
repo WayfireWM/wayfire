@@ -11,19 +11,6 @@ void wf::plugin_interface_t::fini()
 
 namespace wf
 {
-wayfire_view get_signaled_view(wf::signal_data_t *data)
-{
-    auto conv = static_cast<wf::_view_signal*>(data);
-    if (!conv)
-    {
-        LOGE("Got a bad _view_signal");
-
-        return nullptr;
-    }
-
-    return conv->view;
-}
-
 /** Implementation of default config backend functions. */
 std::shared_ptr<config::section_t> wf::config_backend_t::get_output_section(
     wlr_output *output)

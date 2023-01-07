@@ -56,7 +56,7 @@ struct frame_done_signal
  *
  * Each output has a render manager, which is responsible for all rendering
  * operations that happen on it, and also for damage tracking. */
-class render_manager : public wf::signal_provider_t
+class render_manager
 {
   public:
     /** Create a render manager for the given output. Plugins do not need

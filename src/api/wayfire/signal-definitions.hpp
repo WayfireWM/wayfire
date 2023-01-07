@@ -324,7 +324,7 @@ struct workspace_grid_changed_signal
  * on: output
  * when: Whenever the available workarea changes.
  */
-struct workarea_changed_signal : public wf::signal_data_t
+struct workarea_changed_signal
 {
     wf::geometry_t old_workarea;
     wf::geometry_t new_workarea;
@@ -342,19 +342,6 @@ struct fullscreen_layer_focused_signal
 /* ----------------------------------------------------------------------------/
  * View signals
  * -------------------------------------------------------------------------- */
-
-/** Base class for all view signals. */
-struct _view_signal : public wf::signal_data_t
-{
-    wayfire_view view;
-};
-
-/**
- * @return The view contained in the signal data, it must be
- * a _view_signal.
- */
-wayfire_view get_signaled_view(wf::signal_data_t *data);
-
 /**
  * on: core
  * when: A view is created.
