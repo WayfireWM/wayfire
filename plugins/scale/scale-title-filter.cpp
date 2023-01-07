@@ -136,8 +136,8 @@ class scale_title_filter : public wf::per_output_plugin_instance_t
     {
         global_filter->add_instance(this);
         share_filter.set_callback(shared_option_changed);
-        output->connect_signal("scale-filter", &view_filter);
-        output->connect_signal("scale-end", &scale_end);
+        output->connect(&view_filter);
+        output->connect(&scale_end);
     }
 
     void fini() override
@@ -146,21 +146,19 @@ class scale_title_filter : public wf::per_output_plugin_instance_t
         global_filter->rem_instance(this);
     }
 
-    wf::signal_connection_t view_filter{[this] (wf::signal_data_t *data)
+    wf::signal::connection_t<scale_filter_signal> view_filter = [=] (scale_filter_signal *ev)
+    {
+        if (!scale_running)
         {
-            if (!scale_running)
-            {
-                wf::get_core().connect(&scale_key);
-                scale_running = true;
-                update_overlay();
-            }
-
-            auto signal = static_cast<scale_filter_signal*>(data);
-            scale_filter_views(signal, [this] (wayfire_view v)
-            {
-                return !should_show_view(v);
-            });
+            wf::get_core().connect(&scale_key);
+            scale_running = true;
+            update_overlay();
         }
+
+        scale_filter_views(ev, [this] (wayfire_view v)
+        {
+            return !should_show_view(v);
+        });
     };
 
     std::map<uint32_t, std::unique_ptr<wf::key_repeat_t>> keys;
@@ -192,7 +190,8 @@ class scale_title_filter : public wf::per_output_plugin_instance_t
     {
         if (scale_running)
         {
-            output->emit_signal("scale-update", nullptr);
+            scale_update_signal ev;
+            output->emit(&ev);
             update_overlay();
         }
     }
@@ -221,7 +220,7 @@ class scale_title_filter : public wf::per_output_plugin_instance_t
     };
 
 
-    wf::signal_connection_t scale_end = [this] (wf::signal_data_t*)
+    wf::signal::connection_t<scale_end_signal> scale_end = [=] (scale_end_signal *ev)
     {
         do_end_scale();
     };
@@ -242,7 +241,9 @@ class scale_title_filter : public wf::per_output_plugin_instance_t
             /* clear the filter that is not used anymore */
             auto& filter = get_active_filter();
             filter.clear();
-            output->emit_signal("scale-update", nullptr);
+
+            scale_update_signal ev;
+            output->emit(&ev);
             update_overlay();
         }
     };

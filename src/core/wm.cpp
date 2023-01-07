@@ -72,12 +72,11 @@ void wayfire_close::fini()
 
 void wayfire_focus::init()
 {
-    on_wm_focus_request.set_callback([=] (wf::signal_data_t *data)
+    on_wm_focus_request.set_callback([=] (wm_focus_request_signal *ev)
     {
-        auto ev = static_cast<wm_focus_request*>(data);
         check_focus_surface(wf::node_to_view(ev->node));
     });
-    output->connect_signal("wm-focus-request", &on_wm_focus_request);
+    output->connect(&on_wm_focus_request);
 
     on_pointer_button = [=] (wf::input_event_signal<wlr_pointer_button_event> *ev)
     {

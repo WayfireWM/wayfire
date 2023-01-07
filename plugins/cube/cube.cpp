@@ -275,7 +275,7 @@ class wayfire_cube : public wf::per_output_plugin_instance_t, public wf::pointer
         output->add_button(button, &activate_binding);
         output->add_activator(key_left, &rotate_left);
         output->add_activator(key_right, &rotate_right);
-        output->connect_signal("cube-control", &on_cube_control);
+        output->connect(&on_cube_control);
 
         OpenGL::render_begin();
         load_program();
@@ -344,9 +344,8 @@ class wayfire_cube : public wf::per_output_plugin_instance_t, public wf::pointer
         animation.projection = glm::perspective(45.0f, 1.f, 0.1f, 100.f);
     }
 
-    wf::signal_connection_t on_cube_control = [=] (wf::signal_data_t *data)
+    wf::signal::connection_t<cube_control_signal> on_cube_control = [=] (cube_control_signal *d)
     {
-        cube_control_signal *d = dynamic_cast<cube_control_signal*>(data);
         rotate_and_zoom_cube(d->angle, d->zoom, d->ease, d->last_frame);
         d->carried_out = true;
     };

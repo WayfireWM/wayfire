@@ -28,7 +28,7 @@ namespace wf
  *
  * The target framebuffer is passed as signal data.
  */
-struct wall_frame_event_t : public signal_data_t
+struct wall_frame_event_t
 {
     const wf::render_target_t& target;
     wall_frame_event_t(const wf::render_target_t& t) : target(t)
@@ -38,7 +38,7 @@ struct wall_frame_event_t : public signal_data_t
 /**
  * A helper class to render workspaces arranged in a grid.
  */
-class workspace_wall_t : public wf::signal_provider_t
+class workspace_wall_t : public wf::signal::provider_t
 {
   public:
     /**
@@ -113,7 +113,7 @@ class workspace_wall_t : public wf::signal_provider_t
     void render_wall(const wf::render_target_t& fb, const wf::region_t& damage)
     {
         wall_frame_event_t data{fb};
-        this->emit_signal("frame", &data);
+        this->emit(&data);
     }
 
     /**
@@ -306,11 +306,19 @@ class workspace_wall_t : public wf::signal_provider_t
             using render_tag = std::tuple<int, float>;
             static constexpr int TAG_BACKGROUND = 0;
             static constexpr int TAG_WS_DIM     = 1;
+            static constexpr int FRAME_EV = 2;
 
             void schedule_instructions(
                 std::vector<scene::render_instruction_t>& instructions,
                 const wf::render_target_t& target, wf::region_t& damage) override
             {
+                instructions.push_back(scene::render_instruction_t{
+                        .instance = this,
+                        .target   = target,
+                        .damage   = wf::region_t{},
+                        .data     = render_tag{FRAME_EV, 0.0},
+                    });
+
                 // Scale damage to be in the workspace's coordinate system
                 wf::region_t workspaces_damage;
                 for (auto& rect : damage)
@@ -387,6 +395,9 @@ class workspace_wall_t : public wf::signal_provider_t
                     }
 
                     OpenGL::render_end();
+                } else if (tag == FRAME_EV)
+                {
+                    self->wall->render_wall(target, region);
                 } else
                 {
                     auto fb_region = target.framebuffer_region_from_geometry_region(region);
@@ -402,7 +413,6 @@ class workspace_wall_t : public wf::signal_provider_t
                     }
 
                     OpenGL::render_end();
-                    self->wall->render_wall(target, region);
                 }
             }
 

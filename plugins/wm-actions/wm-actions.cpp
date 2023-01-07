@@ -56,10 +56,9 @@ class wayfire_wm_actions_t : public wf::per_output_plugin_instance_t
             }
         }
 
-        wf::wm_actions_above_changed data;
+        wf::wm_actions_above_changed_signal data;
         data.view = view;
-        output->emit_signal("wm-actions-above-changed", &data);
-
+        output->emit(&data);
         return true;
     }
 
@@ -88,16 +87,12 @@ class wayfire_wm_actions_t : public wf::per_output_plugin_instance_t
     /**
      * Calling a specific view / specific keep_above action via signal
      */
-    wf::signal_connection_t on_set_above_state_signal =
-    {[=] (wf::signal_data_t *data)
+    wf::signal::connection_t<wf::wm_actions_set_above_state_signal> on_set_above_state_signal =
+        [=] (wf::wm_actions_set_above_state_signal *signal)
+    {
+        if (!set_keep_above_state(signal->view, signal->above))
         {
-            auto signal = static_cast<wf::wm_actions_set_above_state*>(data);
-
-            if (!set_keep_above_state(signal->view, signal->above))
-            {
-                LOG(wf::log::LOG_LEVEL_DEBUG,
-                    "view above action failed via signal.");
-            }
+            LOG(wf::log::LOG_LEVEL_DEBUG, "view above action failed via signal.");
         }
     };
 
@@ -356,8 +351,7 @@ class wayfire_wm_actions_t : public wf::per_output_plugin_instance_t
         output->add_activator(toggle_fullscreen, &on_toggle_fullscreen);
         output->add_activator(toggle_sticky, &on_toggle_sticky);
         output->add_activator(send_to_back, &on_send_to_back);
-        output->connect_signal("wm-actions-set-above-state",
-            &on_set_above_state_signal);
+        output->connect(&on_set_above_state_signal);
         output->connect(&on_view_minimized);
         wf::get_core().connect(&on_view_output_changed);
     }

@@ -110,7 +110,7 @@ class vswipe : public wf::per_output_plugin_instance_t
         wf::get_core().connect(&on_swipe_end);
 
         wall = std::make_unique<wf::workspace_wall_t>(output);
-        wall->connect_signal("frame", &this->on_frame);
+        wall->connect(&this->on_frame);
     }
 
     wf::effect_hook_t post_frame = [=] ()
@@ -125,7 +125,7 @@ class vswipe : public wf::per_output_plugin_instance_t
         output->render->damage_whole();
     };
 
-    wf::signal_connection_t on_frame = [=] (wf::signal_data_t*)
+    wf::signal::connection_t<wf::wall_frame_event_t> on_frame = [=] (wf::wall_frame_event_t *ev)
     {
         wf::point_t current_workspace = {state.vx, state.vy};
         int dx = 0, dy = 0;
@@ -216,7 +216,7 @@ class vswipe : public wf::per_output_plugin_instance_t
     }
 
     // XXX: how to determine this??
-    static constexpr double initial_direction_threshold   = 0.05;
+    static constexpr double initial_direction_threshold = 0.05;
     static constexpr double secondary_direction_threshold = 0.3;
     static constexpr double diagonal_threshold = 1.73; // tan(30deg)
     bool is_diagonal(wf::pointf_t deltas)

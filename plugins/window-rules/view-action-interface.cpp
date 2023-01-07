@@ -159,7 +159,7 @@ bool view_action_interface_t::execute(const std::string & name,
 
         LOGI("View action interface: Snap to ", location, ".");
 
-        output->emit_signal("grid-snap-view", &data);
+        output->emit(&data);
 
         return false;
     } else if (name == "start_on_output")
@@ -248,7 +248,7 @@ void view_action_interface_t::_make_sticky()
 
 void view_action_interface_t::_always_on_top()
 {
-    wf::wm_actions_set_above_state data;
+    wf::wm_actions_set_above_state_signal data;
 
     auto output = _view->get_output();
     if (!output)
@@ -258,7 +258,7 @@ void view_action_interface_t::_always_on_top()
 
     data.view  = _view;
     data.above = true;
-    output->emit_signal("wm-actions-set-above-state", &data);
+    output->emit(&data);
 }
 
 std::tuple<bool, float> view_action_interface_t::_expect_float(

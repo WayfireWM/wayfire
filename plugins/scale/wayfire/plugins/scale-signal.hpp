@@ -26,7 +26,7 @@
  * for a plugin to move a view from views_hidden to views_shown, but this will
  * likely not have predictable results.
  */
-struct scale_filter_signal : public wf::signal_data_t
+struct scale_filter_signal
 {
     std::vector<wayfire_view>& views_shown;
     std::vector<wayfire_view>& views_hidden;
@@ -63,6 +63,8 @@ void scale_filter_views(scale_filter_signal *signal, pred&& p)
  *   happen at the next activation of scale.
  * argument: unused
  */
+struct scale_end_signal
+{};
 
 /**
  * name: scale-update
@@ -72,6 +74,8 @@ void scale_filter_views(scale_filter_signal *signal, pred&& p)
  *   the filter is changed. It is a no-op if scale is not currently running.
  * argument: unused
  */
+struct scale_update_signal
+{};
 
 /**
  * name: scale-transformer-added
@@ -80,12 +84,12 @@ void scale_filter_views(scale_filter_signal *signal, pred&& p)
  *   plugins extending its functionality can add their overlays to it.
  * argument: pointer to the newly added transformer
  */
-struct scale_transformer_added_signal : public wf::signal_data_t
+struct scale_transformer_added_signal
 {
     wayfire_view view;
 };
 
-struct scale_transformer_removed_signal : public wf::signal_data_t
+struct scale_transformer_removed_signal
 {
     wayfire_view view;
 };

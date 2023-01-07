@@ -9,7 +9,7 @@
  */
 
 /* Rotate cube to given angle and zoom level */
-struct cube_control_signal : public wf::signal_data_t
+struct cube_control_signal
 {
     double angle; // cube rotation in radians
     double zoom; // 1.0 means 100%; increase value to zoom

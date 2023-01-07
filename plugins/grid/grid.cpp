@@ -156,8 +156,8 @@ class wayfire_grid : public wf::per_output_plugin_instance_t
         output->add_activator(restore_opt, &restore);
 
         output->connect(&on_workarea_changed);
-        output->connect_signal("grid-snap-view", &on_snap_signal);
-        output->connect_signal("grid-query-geometry", &on_snap_query);
+        output->connect(&on_snap_signal);
+        output->connect(&on_snap_query);
         output->connect(&on_maximize_signal);
         output->connect(&on_fullscreen_signal);
     }
@@ -254,16 +254,15 @@ class wayfire_grid : public wf::per_output_plugin_instance_t
         }
     };
 
-    wf::signal_connection_t on_snap_query = [=] (wf::signal_data_t *data)
+    wf::signal::connection_t<wf::grid::grid_query_geometry_signal> on_snap_query =
+        [=] (wf::grid::grid_query_geometry_signal *query)
     {
-        auto query = dynamic_cast<wf::grid::grid_query_geometry_signal*>(data);
-        assert(query);
         query->out_geometry = get_slot_dimensions(query->slot);
     };
 
-    wf::signal_connection_t on_snap_signal = [=] (wf::signal_data_t *ddata)
+    wf::signal::connection_t<wf::grid::grid_snap_view_signal> on_snap_signal =
+        [=] (wf::grid::grid_snap_view_signal *data)
     {
-        auto data = dynamic_cast<wf::grid::grid_snap_view_signal*>(ddata);
         handle_slot(data->view, data->slot);
     };
 

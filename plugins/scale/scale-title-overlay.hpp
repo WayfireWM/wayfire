@@ -38,10 +38,10 @@ class scale_show_title_t
 
   protected:
     /* signals */
-    wf::signal_connection_t view_filter;
-    wf::signal_connection_t scale_end;
-    wf::signal_connection_t add_title_overlay;
-    wf::signal_connection_t rem_title_overlay;
+    wf::signal::connection_t<scale_filter_signal> view_filter;
+    wf::signal::connection_t<scale_end_signal> scale_end;
+    wf::signal::connection_t<scale_transformer_added_signal> add_title_overlay;
+    wf::signal::connection_t<scale_transformer_removed_signal> rem_title_overlay;
     wf::signal::connection_t<wf::post_input_event_signal<wlr_pointer_motion_event>> post_motion;
     wf::signal::connection_t<wf::post_input_event_signal<wlr_pointer_motion_absolute_event>>
     post_absolute_motion;

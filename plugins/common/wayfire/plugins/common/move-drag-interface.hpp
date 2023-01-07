@@ -57,7 +57,7 @@ namespace move_drag
  * when: Emitted output whenever the output where the drag happens changes,
  *   including when the drag begins.
  */
-struct drag_focus_output_signal : public signal_data_t
+struct drag_focus_output_signal
 {
     /** The output which was focused up to now, might be null. */
     wf::output_t *previous_focus_output;
@@ -71,7 +71,7 @@ struct drag_focus_output_signal : public signal_data_t
  * when: Emitted if snap-off is enabled and the view was moved more than the
  *   threshold.
  */
-struct snap_off_signal : public signal_data_t
+struct snap_off_signal
 {
     /** The output which is focused now. */
     wf::output_t *focus_output;
@@ -83,7 +83,7 @@ struct snap_off_signal : public signal_data_t
  * when: Emitted after the drag operation has ended, and if the view is unmapped
  *   while being dragged.
  */
-struct drag_done_signal : public signal_data_t
+struct drag_done_signal
 {
     /** The output where the view was dropped. */
     wf::output_t *focused_output;
@@ -413,7 +413,7 @@ struct drag_options_t
  *
  * Intended for use via wf::shared_data::ref_ptr_t.
  */
-class core_drag_t : public signal_provider_t
+class core_drag_t : public signal::provider_t
 {
     /**
      * Rebuild the wobbly model after a change in the scaling, so that the wobbly
@@ -531,7 +531,7 @@ class core_drag_t : public signal_provider_t
 
                 snap_off_signal data;
                 data.focus_output = current_output;
-                emit_signal("snap-off", &data);
+                emit(&data);
             }
         }
 
@@ -615,7 +615,7 @@ class core_drag_t : public signal_provider_t
         wf::get_core().set_cursor("default");
 
         // Lastly, let the plugins handle what happens on drag end.
-        emit_signal("done", &data);
+        emit(&data);
         on_view_unmap.disconnect();
     }
 
@@ -667,7 +667,7 @@ class core_drag_t : public signal_provider_t
             current_output    = output;
             data.focus_output = output;
             wf::get_core().focus_output(output);
-            emit_signal("focus-output", &data);
+            emit(&data);
         }
     }
 

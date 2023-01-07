@@ -292,7 +292,7 @@ class wayfire_idle_plugin : public wf::per_output_plugin_instance_t
         data.last_frame  = true;
         data.carried_out = false;
 
-        output->emit_signal("cube-control", &data);
+        output->emit(&data);
         if (hook_set)
         {
             output->render->rem_effect(&screensaver_frame);
@@ -341,7 +341,7 @@ class wayfire_idle_plugin : public wf::per_output_plugin_instance_t
         data.last_frame  = false;
         data.carried_out = false;
 
-        output->emit_signal("cube-control", &data);
+        output->emit(&data);
         if (!data.carried_out)
         {
             screensaver_terminate();
@@ -365,7 +365,7 @@ class wayfire_idle_plugin : public wf::per_output_plugin_instance_t
         data.last_frame  = false;
         data.carried_out = false;
 
-        output->emit_signal("cube-control", &data);
+        output->emit(&data);
         if (data.carried_out)
         {
             if (!hook_set)

@@ -316,7 +316,9 @@ class tile_view_animation_t : public wf::grid::grid_animation_t
         // transformer so that we can enforce the correct geometry from the
         // start.
         view->get_transformed_node()->rem_transformer<grid::crossfade_node_t>();
-        view->emit_signal("simple-tile-adjust-transformer", nullptr);
+
+        tile_adjust_transformer_signal ev;
+        view->emit(&ev);
     }
 
     tile_view_animation_t(const tile_view_animation_t &) = delete;
@@ -345,7 +347,7 @@ view_node_t::view_node_t(wayfire_view view)
 
     view->connect(&on_geometry_changed);
     view->connect(&on_decoration_changed);
-    view->connect_signal("simple-tile-adjust-transformer", &on_adjust_transformer);
+    view->connect(&on_adjust_transformer);
 }
 
 view_node_t::~view_node_t()

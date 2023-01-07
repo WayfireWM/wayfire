@@ -4,6 +4,7 @@
 #include "wayfire/geometry.hpp"
 #include "wayfire/output.hpp"
 #include "wayfire/plugins/common/util.hpp"
+#include "wayfire/plugins/scale-signal.hpp"
 #include "wayfire/render-manager.hpp"
 #include "wayfire/scene-operations.hpp"
 #include "wayfire/signal-definitions.hpp"
@@ -373,7 +374,7 @@ scale_show_title_t::scale_show_title_t() :
         update_title_overlay_opt();
     }},
 
-    scale_end{[this] (wf::signal_data_t*)
+    scale_end{[this] (auto)
     {
         show_view_title_overlay = title_overlay_t::NEVER;
         last_title_overlay = nullptr;
@@ -383,7 +384,7 @@ scale_show_title_t::scale_show_title_t() :
     }
 },
 
-add_title_overlay{[this] (wf::signal_data_t *data)
+add_title_overlay{[this] (scale_transformer_added_signal *signal)
     {
         const std::string& opt = show_view_title_overlay_opt;
         if (opt == "never")
@@ -404,7 +405,6 @@ add_title_overlay{[this] (wf::signal_data_t *data)
             pos = title_overlay_node_t::position::BOTTOM;
         }
 
-        auto signal = static_cast<scale_transformer_added_signal*>(data);
         auto tr     = signal->view->get_transformed_node()->get_transformer("scale");
         auto parent = std::dynamic_pointer_cast<wf::scene::floating_inner_node_t>(
             tr->parent()->shared_from_this());
@@ -414,13 +414,10 @@ add_title_overlay{[this] (wf::signal_data_t *data)
     }
 },
 
-rem_title_overlay{[] (wf::signal_data_t *data)
+rem_title_overlay{[] (scale_transformer_removed_signal *signal)
     {
         using namespace wf::scene;
-        auto signal = static_cast<scale_transformer_removed_signal*>(data);
-
-        node_t *tr =
-            signal->view->get_transformed_node()->get_transformer("scale").get();
+        node_t *tr = signal->view->get_transformed_node()->get_transformer("scale").get();
 
         while (tr)
         {
@@ -455,10 +452,10 @@ post_absolute_motion{[=] (auto)
 void scale_show_title_t::init(wf::output_t *output)
 {
     this->output = output;
-    output->connect_signal("scale-filter", &view_filter);
-    output->connect_signal("scale-transformer-added", &add_title_overlay);
-    output->connect_signal("scale-transformer-removed", &rem_title_overlay);
-    output->connect_signal("scale-end", &scale_end);
+    output->connect(&view_filter);
+    output->connect(&add_title_overlay);
+    output->connect(&rem_title_overlay);
+    output->connect(&scale_end);
 }
 
 void scale_show_title_t::fini()

@@ -14,14 +14,15 @@ enum wobbly_event
 };
 
 /**
- * name: wobbly-event
  * on: output
  * when: This signal is used to control(start/stop/update) the wobbly state
  *   for a view. Note that plugins usually would use the helper functions below,
  *   instead of emitting this signal directly.
  */
-struct wobbly_signal : public wf::_view_signal
+struct wobbly_signal
 {
+    wayfire_view view;
+
     wobbly_event events;
 
     /**
@@ -46,7 +47,7 @@ inline void start_wobbly(wayfire_view view, int grab_x, int grab_y)
     sig.events = WOBBLY_EVENT_GRAB;
     sig.pos    = {grab_x, grab_y};
 
-    view->get_output()->emit_signal("wobbly-event", &sig);
+    view->get_output()->emit(&sig);
 }
 
 /**
@@ -63,7 +64,7 @@ inline void start_wobbly_rel(wayfire_view view, wf::pointf_t rel_grab)
     sig.pos.x = bbox.x + rel_grab.x * bbox.width;
     sig.pos.y = bbox.y + rel_grab.y * bbox.height;
 
-    view->get_output()->emit_signal("wobbly-event", &sig);
+    view->get_output()->emit(&sig);
 }
 
 /**
@@ -74,7 +75,7 @@ inline void end_wobbly(wayfire_view view)
     wobbly_signal sig;
     sig.view   = view;
     sig.events = WOBBLY_EVENT_END;
-    view->get_output()->emit_signal("wobbly-event", &sig);
+    view->get_output()->emit(&sig);
 }
 
 /**
@@ -86,7 +87,7 @@ inline void move_wobbly(wayfire_view view, int grab_x, int grab_y)
     sig.view   = view;
     sig.events = WOBBLY_EVENT_MOVE;
     sig.pos    = {grab_x, grab_y};
-    view->get_output()->emit_signal("wobbly-event", &sig);
+    view->get_output()->emit(&sig);
 }
 
 /**
@@ -100,7 +101,7 @@ inline void activate_wobbly(wayfire_view view)
         wobbly_signal sig;
         sig.view   = view;
         sig.events = WOBBLY_EVENT_ACTIVATE;
-        view->get_output()->emit_signal("wobbly-event", &sig);
+        view->get_output()->emit(&sig);
     }
 }
 
@@ -113,7 +114,7 @@ inline void translate_wobbly(wayfire_view view, wf::point_t delta)
     sig.view   = view;
     sig.events = WOBBLY_EVENT_TRANSLATE;
     sig.pos    = delta;
-    view->get_output()->emit_signal("wobbly-event", &sig);
+    view->get_output()->emit(&sig);
 }
 
 /**
@@ -126,7 +127,7 @@ inline void set_tiled_wobbly(wayfire_view view, bool tiled)
     wobbly_signal sig;
     sig.view   = view;
     sig.events = tiled ? WOBBLY_EVENT_FORCE_TILE : WOBBLY_EVENT_UNTILE;
-    view->get_output()->emit_signal("wobbly-event", &sig);
+    view->get_output()->emit(&sig);
 }
 
 /**
@@ -138,5 +139,5 @@ inline void modify_wobbly(wayfire_view view, wf::geometry_t target)
     sig.view     = view;
     sig.events   = WOBBLY_EVENT_SCALE;
     sig.geometry = target;
-    view->get_output()->emit_signal("wobbly-event", &sig);
+    view->get_output()->emit(&sig);
 }

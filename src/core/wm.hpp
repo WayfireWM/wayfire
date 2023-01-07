@@ -10,7 +10,7 @@
 #include "wayfire/touch/touch.hpp"
 #include "wayfire/option-wrapper.hpp"
 
-struct wm_focus_request : public wf::signal_data_t
+struct wm_focus_request_signal
 {
     wf::scene::node_ptr node;
 };
@@ -32,7 +32,7 @@ class wayfire_close : public wf::per_output_plugin_instance_t
 class wayfire_focus : public wf::per_output_plugin_instance_t
 {
     wf::signal::connection_t<wf::input_event_signal<wlr_pointer_button_event>> on_pointer_button;
-    wf::signal_connection_t on_wm_focus_request;
+    wf::signal::connection_t<wm_focus_request_signal> on_wm_focus_request;
 
     std::unique_ptr<wf::touch::gesture_t> tap_gesture;
 

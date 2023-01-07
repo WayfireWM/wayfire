@@ -139,9 +139,9 @@ class wayfire_expo : public wf::per_output_plugin_instance_t, public wf::keyboar
         wall = std::make_unique<wf::workspace_wall_t>(this->output);
 
         output->add_activator(toggle_binding, &toggle_cb);
-        drag_helper->connect_signal("focus-output", &on_drag_output_focus);
-        drag_helper->connect_signal("snap-off", &on_drag_snap_off);
-        drag_helper->connect_signal("done", &on_drag_done);
+        drag_helper->connect(&on_drag_output_focus);
+        drag_helper->connect(&on_drag_snap_off);
+        drag_helper->connect(&on_drag_done);
 
         resize_ws_fade();
         output->connect(&on_workspace_grid_changed);
@@ -216,9 +216,9 @@ class wayfire_expo : public wf::per_output_plugin_instance_t, public wf::keyboar
         return output->is_plugin_active(grab_interface.name);
     }
 
-    wf::signal_connection_t on_drag_output_focus = [=] (auto data)
+    wf::signal::connection_t<wf::move_drag::drag_focus_output_signal> on_drag_output_focus =
+        [=] (wf::move_drag::drag_focus_output_signal *ev)
     {
-        auto ev = static_cast<wf::move_drag::drag_focus_output_signal*>(data);
         if ((ev->focus_output == output) && can_handle_drag())
         {
             state.button_pressed = true;
@@ -227,18 +227,18 @@ class wayfire_expo : public wf::per_output_plugin_instance_t, public wf::keyboar
         }
     };
 
-    wf::signal_connection_t on_drag_snap_off = [=] (auto data)
+    wf::signal::connection_t<wf::move_drag::snap_off_signal> on_drag_snap_off =
+        [=] (wf::move_drag::snap_off_signal *ev)
     {
-        auto ev = static_cast<wf::move_drag::snap_off_signal*>(data);
         if ((ev->focus_output == output) && can_handle_drag())
         {
             wf::move_drag::adjust_view_on_snap_off(drag_helper->view);
         }
     };
 
-    wf::signal_connection_t on_drag_done = [=] (auto data)
+    wf::signal::connection_t<wf::move_drag::drag_done_signal> on_drag_done =
+        [=] (wf::move_drag::drag_done_signal *ev)
     {
-        auto ev = static_cast<wf::move_drag::drag_done_signal*>(data);
         if ((ev->focused_output == output) && can_handle_drag())
         {
             bool same_output = ev->main_view->get_output() == output;

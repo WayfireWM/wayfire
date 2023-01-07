@@ -250,9 +250,9 @@ void wf::tablet_tool_t::handle_tip(wlr_tablet_tool_tip_event *ev)
         auto view = wf::node_to_view(this->proximity_surface);
         if (view)
         {
-            wm_focus_request data;
+            wm_focus_request_signal data;
             data.node = this->proximity_surface;
-            view->get_output()->emit_signal("wm-focus-request", &data);
+            view->get_output()->emit(&data);
         }
     } else
     {

@@ -45,7 +45,7 @@ class workspace_switch_t
     {
         this->output = output;
         wall = std::make_unique<workspace_wall_t>(output);
-        wall->connect_signal("frame", &on_frame);
+        wall->connect(&on_frame);
 
         animation = workspace_animation_t{
             wf::option_wrapper_t<int>{"vswitch/duration"}
@@ -183,9 +183,9 @@ class workspace_switch_t
     wayfire_view overlay_view;
 
     bool running = false;
-    wf::signal_connection_t on_frame = [=] (wf::signal_data_t *data)
+    wf::signal::connection_t<wall_frame_event_t> on_frame = [=] (wall_frame_event_t *ev)
     {
-        render_frame(static_cast<wall_frame_event_t*>(data)->target);
+        render_frame(ev->target);
     };
 
     virtual void render_overlay_view(const render_target_t& fb)

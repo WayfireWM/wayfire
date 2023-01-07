@@ -57,9 +57,9 @@ class wayfire_move : public wf::per_output_plugin_instance_t,
         return yes;
     }
 
-    wf::signal_connection_t on_drag_output_focus = [=] (auto data)
+    wf::signal::connection_t<wf::move_drag::drag_focus_output_signal> on_drag_output_focus =
+        [=] (wf::move_drag::drag_focus_output_signal *ev)
     {
-        auto ev = static_cast<wf::move_drag::drag_focus_output_signal*>(data);
         if ((ev->focus_output == output) && can_handle_drag())
         {
             drag_helper->set_scale(1.0);
@@ -74,18 +74,18 @@ class wayfire_move : public wf::per_output_plugin_instance_t,
         }
     };
 
-    wf::signal_connection_t on_drag_snap_off = [=] (auto data)
+    wf::signal::connection_t<wf::move_drag::snap_off_signal> on_drag_snap_off =
+        [=] (wf::move_drag::snap_off_signal *ev)
     {
-        auto ev = static_cast<wf::move_drag::snap_off_signal*>(data);
         if ((ev->focus_output == output) && can_handle_drag())
         {
             wf::move_drag::adjust_view_on_snap_off(drag_helper->view);
         }
     };
 
-    wf::signal_connection_t on_drag_done = [=] (auto data)
+    wf::signal::connection_t<wf::move_drag::drag_done_signal> on_drag_done =
+        [=] (wf::move_drag::drag_done_signal *ev)
     {
-        auto ev = static_cast<wf::move_drag::drag_done_signal*>(data);
         if ((ev->focused_output == output) && can_handle_drag())
         {
             wf::move_drag::adjust_view_on_output(ev);
@@ -95,7 +95,7 @@ class wayfire_move : public wf::per_output_plugin_instance_t,
                 wf::grid::grid_snap_view_signal data;
                 data.view = ev->main_view;
                 data.slot = slot.slot_id;
-                output->emit_signal("grid-snap-view", &data);
+                output->emit(&data);
 
                 /* Update slot, will hide the preview as well */
                 update_slot(wf::grid::SLOT_NONE);
@@ -146,9 +146,9 @@ class wayfire_move : public wf::per_output_plugin_instance_t,
 
         output->connect(&move_request);
 
-        drag_helper->connect_signal("focus-output", &on_drag_output_focus);
-        drag_helper->connect_signal("snap-off", &on_drag_snap_off);
-        drag_helper->connect_signal("done", &on_drag_done);
+        drag_helper->connect(&on_drag_output_focus);
+        drag_helper->connect(&on_drag_snap_off);
+        drag_helper->connect(&on_drag_done);
     }
 
     void handle_pointer_button(const wlr_pointer_button_event& event) override
@@ -473,7 +473,7 @@ class wayfire_move : public wf::per_output_plugin_instance_t,
             wf::grid::grid_query_geometry_signal query;
             query.slot = new_slot_id;
             query.out_geometry = {0, 0, -1, -1};
-            output->emit_signal("grid-query-geometry", &query);
+            output->emit(&query);
 
             /* Unknown slot geometry, can't show a preview */
             if ((query.out_geometry.width <= 0) || (query.out_geometry.height <= 0))

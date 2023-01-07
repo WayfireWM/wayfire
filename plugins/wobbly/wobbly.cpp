@@ -914,17 +914,15 @@ void wobbly_transformer_node_t::gen_render_instances(
 
 class wayfire_wobbly : public wf::per_output_plugin_instance_t
 {
-    wf::signal_connection_t wobbly_changed;
+    wf::signal::connection_t<wobbly_signal> wobbly_changed = [=] (wobbly_signal *ev)
+    {
+        adjust_wobbly(ev);
+    };
 
   public:
     void init() override
     {
-        wobbly_changed.set_callback([=] (wf::signal_data_t *data)
-        {
-            adjust_wobbly(static_cast<wobbly_signal*>(data));
-        });
-
-        output->connect_signal("wobbly-event", &wobbly_changed);
+        output->connect(&wobbly_changed);
         wobbly_graphics::load_program();
     }
 
@@ -1005,7 +1003,6 @@ class wayfire_wobbly : public wf::per_output_plugin_instance_t
         }
 
         wobbly_graphics::destroy_program();
-        output->disconnect_signal(&wobbly_changed);
     }
 };
 

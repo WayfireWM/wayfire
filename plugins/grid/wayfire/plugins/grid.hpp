@@ -30,7 +30,7 @@ enum slot_t
  * when: A plugin can emit this signal to ask the grid plugin to calculate
  *   the geometry of a given slot.
  */
-struct grid_query_geometry_signal : public wf::signal_data_t
+struct grid_query_geometry_signal
 {
     // The slot to calculate geometry for
     slot_t slot;
@@ -45,7 +45,7 @@ struct grid_query_geometry_signal : public wf::signal_data_t
  * when: A plugin can emit this signal to ask the grid plugin to snap the
  *   view to the given slot.
  */
-struct grid_snap_view_signal : public wf::signal_data_t
+struct grid_snap_view_signal
 {
     wayfire_view view;
     slot_t slot;
