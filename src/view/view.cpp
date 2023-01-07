@@ -12,7 +12,6 @@
 #include "wayfire/workspace-manager.hpp"
 #include "wayfire/render-manager.hpp"
 #include "xdg-shell.hpp"
-#include "../output/gtk-shell.hpp"
 #include "../core/seat/input-manager.hpp"
 
 #include <algorithm>

@@ -47,8 +47,7 @@ wayfire_sources = ['geometry.cpp',
                    'output/render-manager.cpp',
                    'output/workspace-stream.cpp',
                    'output/workspace-impl.cpp',
-                   'output/wayfire-shell.cpp',
-                   'output/gtk-shell.cpp']
+                   'output/wayfire-shell.cpp']
 
 wayfire_dependencies = [wayland_server, wlroots, xkbcommon, libinput,
                        pixman, drm, egl, glesv2, glm, wf_protos, libdl,

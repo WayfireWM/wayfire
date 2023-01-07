@@ -1,17 +1,21 @@
-#include "gtk-shell.hpp"
 #include "gtk-shell-protocol.h"
-#include <wayfire/util/log.hpp>
-#include <wayfire/view.hpp>
-#include "../core/core-impl.hpp"
-#include <wayfire/core.hpp>
+#include "wayfire/core.hpp"
+#include "wayfire/object.hpp"
 #include <map>
+#include <string>
+#include <wayfire/util.hpp>
+#include <wayfire/view.hpp>
 #include <wayfire/signal-definitions.hpp>
-#include <wayfire/gtk-shell.hpp>
 #include <wayfire/nonstd/wlroots-full.hpp>
+#include <wayfire/plugin.hpp>
+
+#include "gtk-shell.hpp"
+
 #define GTK_SHELL_VERSION 3
 
-struct wf_gtk_shell
+class wf_gtk_shell : public wf::custom_data_t
 {
+  public:
     std::map<wl_resource*, std::string> surface_app_id;
 };
 
@@ -37,8 +41,7 @@ static void handle_gtk_surface_set_dbus_properties(wl_client *client,
     auto surface = static_cast<wf_gtk_surface*>(wl_resource_get_user_data(resource));
     if (application_id)
     {
-        wf::get_core_impl().gtk_shell->surface_app_id[surface->wl_surface] =
-            application_id;
+        wf::get_core().get_data_safe<wf_gtk_shell>()->surface_app_id[surface->wl_surface] = application_id;
     }
 }
 
@@ -246,9 +249,8 @@ const struct gtk_surface1_interface gtk_surface1_impl = {
 /**
  * Initializes a gtk_surface object and passes it to the client.
  */
-static void handle_gtk_shell_get_gtk_surface(wl_client *client,
-    wl_resource *resource, uint32_t id,
-    wl_resource *surface)
+static void handle_gtk_shell_get_gtk_surface(wl_client *client, wl_resource *resource,
+    uint32_t id, wl_resource *surface)
 {
     wf_gtk_surface *gtk_surface = new wf_gtk_surface;
     gtk_surface->resource = wl_resource_create(client, &gtk_surface1_interface,
@@ -281,7 +283,6 @@ static void handle_gtk_shell_notify_launch(wl_client *client, wl_resource *resou
     const char *startup_id)
 {}
 
-
 /**
  *  A view could use this to receive notification when the surface is ready.
  *  Gets the DESKTOP_STARTUP_ID from environment and unsets this env var afterwards
@@ -291,7 +292,6 @@ static void handle_gtk_shell_notify_launch(wl_client *client, wl_resource *resou
 static void handle_gtk_shell_set_startup_id(wl_client *client, wl_resource *resource,
     const char *startup_id)
 {}
-
 
 /**
  *  A view could use this to invoke the system bell, be it aural, visual or none at
@@ -303,8 +303,7 @@ static void handle_gtk_shell_system_bell(wl_client *client, wl_resource *resourc
     wf::view_system_bell_signal data;
     if (surface)
     {
-        auto gtk_surface =
-            static_cast<wf_gtk_surface*>(wl_resource_get_user_data(surface));
+        auto gtk_surface = static_cast<wf_gtk_surface*>(wl_resource_get_user_data(surface));
         data.view = wf::wl_surface_to_wayfire_view(gtk_surface->wl_surface);
     }
 
@@ -335,55 +334,34 @@ static void handle_gtk_shell1_destroy(wl_resource *resource)
  */
 void bind_gtk_shell1(wl_client *client, void *data, uint32_t version, uint32_t id)
 {
-    auto resource = wl_resource_create(client, &gtk_shell1_interface,
-        GTK_SHELL_VERSION, id);
-    wl_resource_set_implementation(resource, &gtk_shell1_impl, data,
-        handle_gtk_shell1_destroy);
+    auto resource = wl_resource_create(client, &gtk_shell1_interface, GTK_SHELL_VERSION, id);
+    wl_resource_set_implementation(resource, &gtk_shell1_impl, data, handle_gtk_shell1_destroy);
 }
 
-/**
- * Creates a new wf_gtk_shell object.
- * There is one in the compositor initialized at compositor startup.
- */
-wf_gtk_shell *wf_gtk_shell_create(wl_display *display)
+class wayfire_gtk_shell_impl : public wf::plugin_interface_t
 {
-    wf_gtk_shell *gtk_shell = new wf_gtk_shell;
-    wl_global *global = wl_global_create(display, &gtk_shell1_interface,
-        GTK_SHELL_VERSION, gtk_shell,
-        bind_gtk_shell1);
-    if (global == NULL)
+  public:
+    void init() override
     {
-        LOGE("Failed to create gtk_shell");
-
-        return nullptr;
+        auto display = wf::get_core().display;
+        wl_global_create(display, &gtk_shell1_interface, GTK_SHELL_VERSION, NULL, bind_gtk_shell1);
+        wf::get_core().connect(&on_app_id_query);
     }
 
-    return gtk_shell;
-}
-
-/**
- * Get's a 'fixed' app_id for some gnome-clients
- * to match the app_id with the desktop file.
- */
-std::string wf_gtk_shell_get_custom_app_id(wf_gtk_shell *shell, wl_resource *surface)
-{
-    return shell->surface_app_id[surface];
-}
-
-std::string get_gtk_shell_app_id(wayfire_view view)
-{
-    if (!view)
+    bool is_unloadable() override
     {
-        return "";
+        return false;
     }
 
-    auto surface = view->get_wlr_surface();
-
-    if (!surface)
+    wf::signal::connection_t<gtk_shell_app_id_query_signal> on_app_id_query =
+        [=] (gtk_shell_app_id_query_signal *ev)
     {
-        return "";
-    }
+        if (auto surface = ev->view->get_wlr_surface())
+        {
+            auto shell = wf::get_core().get_data_safe<wf_gtk_shell>();
+            ev->app_id = shell->surface_app_id[surface->resource];
+        }
+    };
+};
 
-    return wf_gtk_shell_get_custom_app_id(
-        wf::get_core_impl().gtk_shell, surface->resource);
-}
+DECLARE_WAYFIRE_PLUGIN(wayfire_gtk_shell_impl);

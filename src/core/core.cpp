@@ -1,11 +1,12 @@
 /* Needed for pipe2 */
 #ifndef _GNU_SOURCE
     #define _GNU_SOURCE
-    #include "wayfire/bindings-repository.hpp"
-    #include "wayfire/util.hpp"
-    #include <memory>
-    #include <type_traits>
 #endif
+
+#include "wayfire/bindings-repository.hpp"
+#include "wayfire/util.hpp"
+#include <memory>
+#include <type_traits>
 
 #include "core/seat/bindings-repository-impl.hpp"
 #include "plugin-loader.hpp"
@@ -37,7 +38,6 @@
 #include "../view/view-impl.hpp"
 #include "../output/wayfire-shell.hpp"
 #include "../output/output-impl.hpp"
-#include "../output/gtk-shell.hpp"
 #include "main.hpp"
 #include "seat/drag-icon.hpp"
 
@@ -303,8 +303,7 @@ void wf::compositor_core_impl_t::init()
     protocols.foreign_v2 = wlr_xdg_foreign_v2_create(display,
         protocols.foreign_registry);
 
-    wf_shell  = wayfire_shell_create(display);
-    gtk_shell = wf_gtk_shell_create(display);
+    wf_shell = wayfire_shell_create(display);
     this->bindings = std::make_unique<bindings_repository_t>();
     image_io::init();
     OpenGL::init();

@@ -5,8 +5,7 @@
 #include <memory>
 #include <wayfire/plugin.hpp>
 #include <wayfire/nonstd/wlroots-full.hpp>
-
-#include <wayfire/gtk-shell.hpp>
+#include "gtk-shell.hpp"
 
 class wayfire_foreign_toplevel;
 using foreign_toplevel_map_type = std::map<wayfire_view, std::unique_ptr<wayfire_foreign_toplevel>>;
@@ -64,22 +63,25 @@ class wayfire_foreign_toplevel
     {
         std::string app_id;
 
-        auto default_app_id     = view->get_app_id();
-        auto gtk_shell_app_id   = get_gtk_shell_app_id(view);
+        auto default_app_id = view->get_app_id();
+
+        gtk_shell_app_id_query_signal ev;
+        ev.view = view;
+        wf::get_core().emit(&ev);
         std::string app_id_mode = wf::option_wrapper_t<std::string>("workarounds/app_id_mode");
 
-        if ((app_id_mode == "gtk-shell") && (gtk_shell_app_id.length() > 0))
+        if ((app_id_mode == "gtk-shell") && (ev.app_id.length() > 0))
         {
-            app_id = gtk_shell_app_id;
+            app_id = ev.app_id;
         } else if (app_id_mode == "full")
         {
             if (view->get_wlr_surface() && wlr_surface_is_xwayland_surface(view->get_wlr_surface()))
             {
                 auto xw_surface = wlr_xwayland_surface_from_wlr_surface(view->get_wlr_surface());
-                gtk_shell_app_id = nonull(xw_surface->instance);
+                ev.app_id = nonull(xw_surface->instance);
             }
 
-            app_id = default_app_id + " " + gtk_shell_app_id;
+            app_id = default_app_id + " " + ev.app_id;
         } else
         {
             app_id = default_app_id;

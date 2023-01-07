@@ -12,7 +12,6 @@
 #include <unordered_map>
 
 struct wayfire_shell;
-struct wf_gtk_shell;
 
 namespace wf
 {
@@ -50,7 +49,6 @@ class compositor_core_impl_t : public compositor_core_t
     virtual void post_init();
 
     wayfire_shell *wf_shell;
-    wf_gtk_shell *gtk_shell;
 
     /**
      * Remove a view from the compositor list. This is called when the view's

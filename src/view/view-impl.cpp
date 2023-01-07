@@ -1,7 +1,6 @@
 #include "view/surface-impl.hpp"
 #include "wayfire/core.hpp"
 #include "../core/core-impl.hpp"
-#include "../output/gtk-shell.hpp"
 #include "view-impl.hpp"
 #include "wayfire/decorator.hpp"
 #include "wayfire/scene.hpp"
