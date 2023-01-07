@@ -6,6 +6,7 @@
 #include <wayfire/plugin.hpp>
 #include <wayfire/nonstd/wlroots-full.hpp>
 #include "gtk-shell.hpp"
+#include "config.h"
 
 class wayfire_foreign_toplevel;
 using foreign_toplevel_map_type = std::map<wayfire_view, std::unique_ptr<wayfire_foreign_toplevel>>;
@@ -75,11 +76,14 @@ class wayfire_foreign_toplevel
             app_id = ev.app_id;
         } else if (app_id_mode == "full")
         {
+#if WF_HAS_XWAYLAND
             if (view->get_wlr_surface() && wlr_surface_is_xwayland_surface(view->get_wlr_surface()))
             {
                 auto xw_surface = wlr_xwayland_surface_from_wlr_surface(view->get_wlr_surface());
                 ev.app_id = nonull(xw_surface->instance);
             }
+
+#endif
 
             app_id = default_app_id + " " + ev.app_id;
         } else
