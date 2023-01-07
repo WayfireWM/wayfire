@@ -2,6 +2,7 @@
 
 #include "transaction-priv.hpp"
 #include "../core-impl.hpp"
+#include "wayfire/transaction/instruction.hpp"
 
 namespace wf
 {
@@ -9,17 +10,15 @@ namespace txn
 {
 transaction_impl_t::transaction_impl_t()
 {
-    this->on_instruction_cancel.set_callback([=] (wf::signal_data_t*)
+    this->on_instruction_cancel.set_callback([=] (auto)
     {
         state = TXN_CANCELLED;
         emit_done(TXN_CANCELLED);
         commit_timeout.disconnect();
     });
 
-    this->on_instruction_ready.set_callback([=] (wf::signal_data_t *data)
+    this->on_instruction_ready.set_callback([=] (instruction_ready_signal *ev)
     {
-        auto ev = static_cast<instruction_ready_signal*>(data);
-
         ++instructions_done;
         LOGC(TXNI, "Transaction id=", this->id,
             ": instruction ", ev->instruction.get(),
@@ -43,7 +42,7 @@ void transaction_impl_t::set_pending()
         LOGC(TXNI, "Transaction id=", this->id,
             ": instruction ", i.get(), " is pending.");
         i->set_pending();
-        i->connect_signal("cancel", &on_instruction_cancel);
+        i->connect(&on_instruction_cancel);
     }
 
     this->state = TXN_PENDING;
@@ -63,7 +62,7 @@ void transaction_impl_t::commit()
 
     for (auto& i : this->instructions)
     {
-        i->connect_signal("ready", &on_instruction_ready);
+        i->connect(&on_instruction_ready);
         i->precommit();
     }
 
@@ -128,7 +127,7 @@ void transaction_impl_t::add_instruction(instruction_uptr_t instr,
 
     if (state == TXN_PENDING)
     {
-        instr->connect_signal("cancel", &on_instruction_cancel);
+        instr->connect(&on_instruction_cancel);
         if (!already_pending)
         {
             LOGC(TXNI, "Transaction id=", this->id,
@@ -175,7 +174,7 @@ void transaction_impl_t::emit_done(transaction_state_t end_state)
     priv_done_signal ev;
     ev.id    = this->get_id();
     ev.state = end_state;
-    this->emit_signal("done", &ev);
+    this->emit(&ev);
 }
 
 transaction_uptr_t transaction_t::create()

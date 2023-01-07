@@ -1,6 +1,7 @@
 #include <wayfire/debug.hpp>
 #include <iostream>
 #include "transaction-priv.hpp"
+#include "wayfire/transaction/transaction.hpp"
 
 namespace wf
 {
@@ -31,7 +32,7 @@ class transaction_manager_t::impl
 
         LOGC(TXN, "New transaction ", tx_impl->get_id());
         tx_impl->set_pending();
-        tx_impl->connect_signal("done", &on_tx_done);
+        tx_impl->connect(&on_tx_done);
         collect_instructions(tx_impl);
 
         auto tx_iuptr = transaction_iuptr_t(tx_impl);
@@ -67,12 +68,12 @@ class transaction_manager_t::impl
 
     void collect_instructions(transaction_impl_t *tx)
     {
-        pending_signal ev;
-        ev.tx = {tx};
+        transaction_pending_signal pending_ev;
+        pending_ev.tx = {tx};
         while (tx->is_dirty())
         {
             tx->clear_dirty();
-            emit_signal("pending", &ev);
+            emit_signal(&pending_ev);
         }
     }
 
@@ -175,13 +176,14 @@ class transaction_manager_t::impl
 
     // Committed transactions
     std::vector<transaction_iuptr_t> committed;
-    wf::signal_connection_t on_tx_done = [=] (wf::signal_data_t *data)
+    wf::signal::connection_t<priv_done_signal> on_tx_done = [=] (priv_done_signal *ev)
     {
-        auto ev  = static_cast<priv_done_signal*>(data);
         auto& tx = find_transaction(ev->id);
 
-        ready_signal emit_ev;
-        emit_ev.tx = {tx};
+        transaction_ready_signal ready_ev;
+        transaction_done_signal done_ev;
+        ready_ev.tx = {tx};
+        done_ev.tx  = {tx};
 
         switch (ev->state)
         {
@@ -190,9 +192,9 @@ class transaction_manager_t::impl
           case TXN_TIMED_OUT:
             LOGC(TXN, "Applying transaction ", tx->get_id(),
                 " (timeout: ", ev->state == TXN_TIMED_OUT, ")");
-            emit_signal("ready", &emit_ev);
+            emit_signal(&ready_ev);
             tx->apply();
-            emit_signal("done", &emit_ev);
+            emit_signal(&done_ev);
 
             // NB: we need to first commit the next instruction, and clean up
             // after that. This way, surface locks can be transferred from the
@@ -203,7 +205,7 @@ class transaction_manager_t::impl
 
           case TXN_CANCELLED:
             LOGC(TXN, "Transaction ", tx->get_id(), " cancelled");
-            emit_signal("done", &emit_ev);
+            emit_signal(&done_ev);
 
             // NB: we need to first commit the next instruction, and clean up
             // after that. This way, surface locks can be transferred from the
@@ -251,12 +253,13 @@ class transaction_manager_t::impl
         committed.back()->commit();
     }
 
-    void emit_signal(const std::string& name, transaction_signal *data)
+    template<class SignalType>
+    void emit_signal(SignalType *data)
     {
-        transaction_manager_t::get().emit_signal(name, data);
+        transaction_manager_t::get().emit(data);
         for (auto view : data->tx->get_views())
         {
-            view->emit_signal("transaction-" + name, data);
+            view->emit(data);
         }
     }
 

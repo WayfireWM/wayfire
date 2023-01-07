@@ -1,5 +1,6 @@
 #pragma once
 
+#include "wayfire/signal-provider.hpp"
 #include <wayfire/transaction/instruction.hpp>
 #include <wayfire/view.hpp>
 #include <memory>
@@ -52,16 +53,7 @@ enum transaction_state_t
 class transaction_t;
 using transaction_uptr_t = std::unique_ptr<transaction_t>;
 
-struct transaction_signal : public wf::signal_data_t
-{
-    /**
-     * The transaction which this signal is about.
-     */
-    nonstd::observer_ptr<transaction_t> tx;
-};
-
 /**
- * name: pending
  * on: transaction-manager, view(transaction-)
  * when: Pending is emitted when there are new pending instructions in a
  *   transaction. This happens when the transaction moves from NEW to PENDING.
@@ -71,22 +63,38 @@ struct transaction_signal : public wf::signal_data_t
  *   instructions, because that may cause infinite loops if they keep adding
  *   new instructions on every pending signal.
  */
-using pending_signal = transaction_signal;
+struct transaction_pending_signal
+{
+    /**
+     * The transaction which this signal is about.
+     */
+    nonstd::observer_ptr<transaction_t> tx;
+};
 
 /**
- * name: ready
  * on: transaction-manager, view(transaction-)
  * when: Whenever a transaction is about to be applied. This can happen when
  *   the transaction is READY or TIMED_OUT.
  */
-using ready_signal = transaction_signal;
+struct transaction_ready_signal
+{
+    /**
+     * The transaction which this signal is about.
+     */
+    nonstd::observer_ptr<transaction_t> tx;
+};
 
 /**
- * name: done
  * on: transaction-manager, view(transaction-)
  * when: Whenever a transaction has been applied or cancelled.
  */
-using done_signal = transaction_signal;
+struct transaction_done_signal
+{
+    /**
+     * The transaction which this signal is about.
+     */
+    nonstd::observer_ptr<transaction_t> tx;
+};
 
 /**
  * transaction_t represents a collection of changes to views' states which
@@ -182,7 +190,7 @@ class transaction_t
  * It is responsible for merging pending transactions, committing and finalizing
  * transactions.
  */
-class transaction_manager_t : public signal_provider_t
+class transaction_manager_t : public signal::provider_t
 {
   public:
     /**

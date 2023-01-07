@@ -231,9 +231,8 @@ TEST_CASE("Transaction Impl Signals")
         REQUIRE(nr_timeout == timeout);
     };
 
-    wf::signal_connection_t on_done = [&] (wf::signal_data_t *data)
+    wf::signal::connection_t<priv_done_signal> on_done = [&] (priv_done_signal *ev)
     {
-        auto ev = static_cast<priv_done_signal*>(data);
         REQUIRE(ev->id == 0);
 
         switch (ev->state)
@@ -255,7 +254,7 @@ TEST_CASE("Transaction Impl Signals")
         }
     };
 
-    tx_ab->connect_signal("done", &on_done);
+    tx_ab->connect(&on_done);
     tx_ab->set_id(0);
 
     SUBCASE("Merge into pending, then cancel")

@@ -1,5 +1,7 @@
 #pragma once
 
+#include "wayfire/signal-provider.hpp"
+#include "wayfire/transaction/instruction.hpp"
 #include <map>
 #include <wayfire/transaction/transaction.hpp>
 #include <wayfire/util.hpp>
@@ -15,7 +17,7 @@ using transaction_iuptr_t = std::unique_ptr<transaction_impl_t>;
 /**
  * Same as txn::done_signal, but on the transaction itself.
  */
-struct priv_done_signal : public signal_data_t
+struct priv_done_signal
 {
     uint64_t id;
     transaction_state_t state;
@@ -24,7 +26,7 @@ struct priv_done_signal : public signal_data_t
 /**
  * Emits done/cancel if an instruction does so.
  */
-class transaction_impl_t : public transaction_t, public signal_provider_t
+class transaction_impl_t : public transaction_t, public signal::provider_t
 {
   public:
     transaction_impl_t();
@@ -100,8 +102,8 @@ class transaction_impl_t : public transaction_t, public signal_provider_t
     transaction_state_t state = TXN_NEW;
     std::vector<instruction_uptr_t> instructions;
 
-    wf::signal_connection_t on_instruction_cancel;
-    wf::signal_connection_t on_instruction_ready;
+    wf::signal::connection_t<instruction_ready_signal> on_instruction_ready;
+    wf::signal::connection_t<instruction_cancel_signal> on_instruction_cancel;
 
     wf::option_wrapper_t<int> timeout_ms{"core/transaction_timeout"};
     wf::wl_timer commit_timeout;

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "wayfire/signal-provider.hpp"
 #include <wayfire/object.hpp>
 
 namespace wf
@@ -7,24 +8,24 @@ namespace wf
 namespace txn
 {
 class instruction_t;
-struct _instruction_signal : public wf::signal_data_t
+
+/**
+ * on: instruction
+ * when: Emitted whenever the instruction is ready to be applied.
+ */
+struct instruction_ready_signal
 {
     nonstd::observer_ptr<instruction_t> instruction;
 };
 
 /**
- * name: ready
- * on: instruction
- * when: Emitted whenever the instruction is ready to be applied.
- */
-using instruction_ready_signal = _instruction_signal;
-
-/**
- * name: cancel
  * on: instruction
  * when: Emitted whenever the instruction can no longer be applied.
  */
-using instruction_cancel_signal = _instruction_signal;
+struct instruction_cancel_signal
+{
+    nonstd::observer_ptr<instruction_t> instruction;
+};
 
 /**
  * A single instruction which is part of a transaction.
@@ -50,7 +51,7 @@ using instruction_cancel_signal = _instruction_signal;
  * unmapped, output becomes destroyed, etc.), the 'cancel' signal should be
  * emitted on the instruction.
  */
-class instruction_t : public wf::signal_provider_t
+class instruction_t : public wf::signal::provider_t
 {
   public:
     /**
@@ -94,6 +95,8 @@ class instruction_t : public wf::signal_provider_t
      * trigger signals.
      */
     virtual void apply() = 0;
+
+    virtual ~instruction_t() = default;
 };
 
 using instruction_uptr_t = std::unique_ptr<instruction_t>;

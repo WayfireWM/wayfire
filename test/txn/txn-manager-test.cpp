@@ -1,3 +1,4 @@
+#include "wayfire/transaction/transaction.hpp"
 #define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
 #include <doctest/doctest.h>
 
@@ -49,9 +50,8 @@ TEST_CASE("Submit and extend transaction")
     // Add only X on the view signal
     std::vector<std::string> in_view_pending = {"X"};
 
-    wf::signal_connection_t on_pending = [&] (wf::signal_data_t *data)
+    wf::signal::connection_t<transaction_pending_signal> on_pending = [&] (transaction_pending_signal *ev)
     {
-        auto ev = static_cast<pending_signal*>(data);
         if (nr_pending < (int)in_pending.size())
         {
             ev->tx->add_instruction(
@@ -61,9 +61,9 @@ TEST_CASE("Submit and extend transaction")
         ++nr_pending;
     };
 
-    wf::signal_connection_t on_view_pending = [&] (wf::signal_data_t *data)
+    wf::signal::connection_t<transaction_pending_signal> on_view_pending =
+        [&] (transaction_pending_signal *ev)
     {
-        auto ev = static_cast<pending_signal*>(data);
         if (nr_view_pending < (int)in_view_pending.size())
         {
             ev->tx->add_instruction(
@@ -73,8 +73,8 @@ TEST_CASE("Submit and extend transaction")
         ++nr_view_pending;
     };
 
-    manager.connect_signal("pending", &on_pending);
-    fake_view.connect_signal("transaction-pending", &on_view_pending);
+    manager.connect(&on_pending);
+    fake_view.connect(&on_view_pending);
 
     auto tx_raw = tx.get();
     manager.submit(std::move(tx));
@@ -104,29 +104,28 @@ TEST_CASE("Commit and then apply transaction")
     std::map<int, int> nr_ready;
     std::map<int, int> nr_done;
 
-    wf::signal_connection_t on_pending = [&] (wf::signal_data_t *data)
+    wf::signal::connection_t<transaction_pending_signal> on_pending = [&] (transaction_pending_signal *ev)
     {
-        auto ev = static_cast<pending_signal*>(data);
         REQUIRE(i->pending == 1);
         REQUIRE(nr_ready[ev->tx->get_id()] == 0);
         REQUIRE(nr_done[ev->tx->get_id()] == 0);
         nr_pending[ev->tx->get_id()]++;
     };
-    wf::signal_connection_t on_ready = [&] (wf::signal_data_t *data)
+
+    wf::signal::connection_t<transaction_ready_signal> on_ready = [&] (transaction_ready_signal *ev)
     {
-        auto ev = static_cast<ready_signal*>(data);
         REQUIRE(nr_done[ev->tx->get_id()] == 0);
         nr_ready[ev->tx->get_id()]++;
     };
-    wf::signal_connection_t on_done = [&] (wf::signal_data_t *data)
+
+    wf::signal::connection_t<transaction_done_signal> on_done = [&] (transaction_done_signal *ev)
     {
-        auto ev = static_cast<done_signal*>(data);
         nr_done[ev->tx->get_id()]++;
     };
 
-    manager.connect_signal("pending", &on_pending);
-    manager.connect_signal("ready", &on_ready);
-    manager.connect_signal("done", &on_done);
+    manager.connect(&on_pending);
+    manager.connect(&on_ready);
+    manager.connect(&on_done);
 
     // 0-> new, 1 -> pending, 2-> committed, 3->ready, 4-> done
     const auto& require = [&nr_pending, &nr_ready, &nr_done] (
@@ -294,16 +293,15 @@ TEST_CASE("Commit and then apply transaction")
         auto i52 = new mock_instruction_t("a");
         tx5->add_instruction(instruction_uptr_t(i51));
 
-        wf::signal_connection_t on_pending_add_a = [&] (wf::signal_data_t *data)
+        wf::signal::connection_t<transaction_pending_signal> on_pending_add_a =
+            [=] (transaction_pending_signal *ev)
         {
-            auto ev = static_cast<pending_signal*>(data);
-            if (ev->tx->get_objects().count("c") &&
-                !ev->tx->get_objects().count("a"))
+            if (ev->tx->get_objects().count("c") && !ev->tx->get_objects().count("a"))
             {
                 ev->tx->add_instruction(instruction_uptr_t(i52));
             }
         };
-        manager.connect_signal("pending", &on_pending_add_a);
+        manager.connect(&on_pending_add_a);
 
         auto id2 = manager.submit(std::move(tx2));
         auto id3 = manager.submit(std::move(tx3));
