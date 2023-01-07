@@ -237,6 +237,7 @@ class view_interface_t : public wf::signal::provider_t, public wf::object_base_t
     /** Whether the view is in minimized state, usually you want to use either
      * set_minimized() or minimize_request() */
     bool minimized = false;
+    bool pending_minimized = false;
     /** Whether the view is sticky. If a view is sticky it will not be affected
      * by changes of the current workspace. */
     bool sticky = false;
@@ -423,11 +424,6 @@ class view_interface_t : public wf::signal::provider_t, public wf::object_base_t
      * accessed after destruct() is called.
      */
     virtual void destruct();
-
-    /**
-     * Called whenever the minimized, tiled, fullscreened
-     * or activated state changes */
-    virtual void desktop_state_updated();
 
     /**
      * Emit the view map signal. It indicates that a view has been mapped, i.e.

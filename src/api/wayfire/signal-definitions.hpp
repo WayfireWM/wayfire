@@ -398,6 +398,12 @@ struct view_set_output_signal
 /* ----------------------------------------------------------------------------/
  * View state signals
  * -------------------------------------------------------------------------- */
+/**
+ * on: view
+ * when: After the view's parent changes.
+ */
+struct view_parent_changed_signal
+{};
 
 /**
  * on: view, output(view-)
@@ -429,7 +435,13 @@ struct view_minimize_request_signal
 };
 
 /**
- * name: tiled
+ * on: view
+ * when: After the view's activated state changes.
+ */
+struct view_activated_state_signal
+{};
+
+/**
  * on: view, output(view-)
  * when: After the view's tiled edges change.
  */

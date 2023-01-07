@@ -18,20 +18,9 @@ wf::wlr_view_t::wlr_view_t() : wf::view_interface_t()
     on_surface_commit.set_callback([&] (void*) { commit(); });
 }
 
-void wf::wlr_view_t::set_role(view_role_t new_role)
-{
-    view_interface_t::set_role(new_role);
-    if (new_role != wf::VIEW_ROLE_TOPLEVEL)
-    {
-        destroy_toplevel();
-    }
-}
-
 void wf::wlr_view_t::handle_app_id_changed(std::string new_app_id)
 {
     this->app_id = new_app_id;
-    toplevel_send_app_id();
-
     view_app_id_changed_signal data;
     data.view = self();
     emit(&data);
@@ -45,8 +34,6 @@ std::string wf::wlr_view_t::get_app_id()
 void wf::wlr_view_t::handle_title_changed(std::string new_title)
 {
     this->title = new_title;
-    toplevel_send_title();
-
     view_title_changed_signal data;
     data.view = self();
     emit(&data);
@@ -250,14 +237,6 @@ void wf::wlr_view_t::set_decoration_mode(bool use_csd)
     }
 }
 
-void wf::wlr_view_t::set_output(wf::output_t *wo)
-{
-    auto old_output = get_output();
-    toplevel_update_output(old_output, false);
-    view_interface_t::set_output(wo);
-    toplevel_update_output(wo, true);
-}
-
 void wf::wlr_view_t::commit()
 {
     wf::region_t dmg;
@@ -316,9 +295,6 @@ void wf::wlr_view_t::unmap()
 {
     damage();
     emit_view_pre_unmap();
-
-    destroy_toplevel();
-
     set_decoration(nullptr);
 
     main_surface   = nullptr;
@@ -392,180 +368,6 @@ void wf::wlr_view_t::destroy()
     priv->is_alive = false;
     /* Drop the internal reference */
     unref();
-}
-
-void wf::wlr_view_t::create_toplevel()
-{
-    if (toplevel_handle)
-    {
-        return;
-    }
-
-    /* We don't want to create toplevels for shell views or xwayland menus */
-    if (role != VIEW_ROLE_TOPLEVEL)
-    {
-        return;
-    }
-
-    toplevel_handle = wlr_foreign_toplevel_handle_v1_create(
-        wf::get_core().protocols.toplevel_manager);
-
-    toplevel_handle_v1_maximize_request.set_callback([&] (void *data)
-    {
-        auto ev =
-            static_cast<wlr_foreign_toplevel_handle_v1_maximized_event*>(data);
-        tile_request(ev->maximized ? wf::TILED_EDGES_ALL : 0);
-    });
-    toplevel_handle_v1_minimize_request.set_callback([&] (void *data)
-    {
-        auto ev =
-            static_cast<wlr_foreign_toplevel_handle_v1_minimized_event*>(data);
-        minimize_request(ev->minimized);
-    });
-    toplevel_handle_v1_activate_request.set_callback(
-        [&] (void*) { focus_request(); });
-    toplevel_handle_v1_close_request.set_callback([&] (void*) { close(); });
-
-    toplevel_handle_v1_set_rectangle_request.set_callback([&] (void *data)
-    {
-        auto ev = static_cast<
-            wlr_foreign_toplevel_handle_v1_set_rectangle_event*>(data);
-        auto surface = wl_surface_to_wayfire_view(ev->surface->resource);
-        if (!surface)
-        {
-            LOGE("Setting minimize hint to unknown surface. Wayfire currently"
-                 "supports only setting hints relative to views.");
-            return;
-        }
-
-        handle_minimize_hint(surface.get(), {ev->x, ev->y, ev->width, ev->height});
-    });
-    toplevel_handle_v1_fullscreen_request.set_callback([&] (
-        void *data)
-    {
-        auto ev = static_cast<wlr_foreign_toplevel_handle_v1_fullscreen_event*>(data);
-        auto wo = wf::get_core().output_layout->find_output(ev->output);
-        fullscreen_request(wo, ev->fullscreen);
-    });
-
-    toplevel_handle_v1_maximize_request.connect(
-        &toplevel_handle->events.request_maximize);
-    toplevel_handle_v1_minimize_request.connect(
-        &toplevel_handle->events.request_minimize);
-    toplevel_handle_v1_activate_request.connect(
-        &toplevel_handle->events.request_activate);
-    toplevel_handle_v1_set_rectangle_request.connect(
-        &toplevel_handle->events.set_rectangle);
-    toplevel_handle_v1_fullscreen_request.connect(
-        &toplevel_handle->events.request_fullscreen);
-    toplevel_handle_v1_close_request.connect(
-        &toplevel_handle->events.request_close);
-
-    toplevel_send_title();
-    toplevel_send_app_id();
-    toplevel_send_state();
-    toplevel_update_output(get_output(), true);
-}
-
-void wf::wlr_view_t::destroy_toplevel()
-{
-    if (!toplevel_handle)
-    {
-        return;
-    }
-
-    toplevel_handle_v1_maximize_request.disconnect();
-    toplevel_handle_v1_activate_request.disconnect();
-    toplevel_handle_v1_minimize_request.disconnect();
-    toplevel_handle_v1_set_rectangle_request.disconnect();
-    toplevel_handle_v1_fullscreen_request.disconnect();
-    toplevel_handle_v1_close_request.disconnect();
-
-    wlr_foreign_toplevel_handle_v1_destroy(toplevel_handle);
-    toplevel_handle = nullptr;
-}
-
-void wf::wlr_view_t::toplevel_send_title()
-{
-    if (!toplevel_handle)
-    {
-        return;
-    }
-
-    wlr_foreign_toplevel_handle_v1_set_title(toplevel_handle,
-        get_title().c_str());
-}
-
-void wf::wlr_view_t::toplevel_send_app_id()
-{
-    if (!toplevel_handle)
-    {
-        return;
-    }
-
-    std::string app_id;
-
-    auto default_app_id   = get_app_id();
-    auto gtk_shell_app_id = wf_gtk_shell_get_custom_app_id(
-        wf::get_core_impl().gtk_shell, priv->wsurface->resource);
-
-    std::string app_id_mode =
-        wf::option_wrapper_t<std::string>("workarounds/app_id_mode");
-
-    if ((app_id_mode == "gtk-shell") && (gtk_shell_app_id.length() > 0))
-    {
-        app_id = gtk_shell_app_id;
-    } else if (app_id_mode == "full")
-    {
-        app_id = default_app_id + " " + gtk_shell_app_id;
-    } else
-    {
-        app_id = default_app_id;
-    }
-
-    wlr_foreign_toplevel_handle_v1_set_app_id(toplevel_handle, app_id.c_str());
-}
-
-void wf::wlr_view_t::toplevel_send_state()
-{
-    if (!toplevel_handle)
-    {
-        return;
-    }
-
-    wlr_foreign_toplevel_handle_v1_set_maximized(toplevel_handle,
-        tiled_edges == TILED_EDGES_ALL);
-    wlr_foreign_toplevel_handle_v1_set_activated(toplevel_handle, activated);
-    wlr_foreign_toplevel_handle_v1_set_minimized(toplevel_handle, minimized);
-    wlr_foreign_toplevel_handle_v1_set_fullscreen(toplevel_handle, fullscreen);
-
-    /* update parent as well */
-    wf::wlr_view_t *parent_ptr = dynamic_cast<wf::wlr_view_t*>(parent.get());
-    wlr_foreign_toplevel_handle_v1_set_parent(toplevel_handle,
-        parent_ptr ? parent_ptr->toplevel_handle : nullptr);
-}
-
-void wf::wlr_view_t::toplevel_update_output(wf::output_t *wo, bool enter)
-{
-    if (!wo || !toplevel_handle)
-    {
-        return;
-    }
-
-    if (enter)
-    {
-        wlr_foreign_toplevel_handle_v1_output_enter(
-            toplevel_handle, wo->handle);
-    } else
-    {
-        wlr_foreign_toplevel_handle_v1_output_leave(
-            toplevel_handle, wo->handle);
-    }
-}
-
-void wf::wlr_view_t::desktop_state_updated()
-{
-    toplevel_send_state();
 }
 
 void wf::init_desktop_apis()

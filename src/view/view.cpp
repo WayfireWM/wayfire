@@ -117,7 +117,8 @@ void wf::view_interface_t::set_toplevel_parent(wayfire_view new_parent)
         }
 
         parent = new_parent;
-        desktop_state_updated();
+        view_parent_changed_signal ev;
+        this->emit(&ev);
     }
 
     if (parent)
@@ -308,14 +309,17 @@ bool wf::view_interface_t::is_focusable() const
 void wf::view_interface_t::set_minimized(bool minim)
 {
     this->minimized = minim;
+    view_minimized_signal data;
+    data.view = self();
+    this->emit(&data);
+    get_output()->emit(&data);
 
-    if (this->priv->actually_minimized == minim)
+    if (pending_minimized == minim)
     {
-        desktop_state_updated();
         return;
     }
 
-    this->priv->actually_minimized = minim;
+    this->pending_minimized = minim;
     minimized = minim;
     if (minimized)
     {
@@ -328,13 +332,6 @@ void wf::view_interface_t::set_minimized(bool minim)
         wf::scene::set_node_enabled(get_root_node(), true);
         get_output()->focus_view(self(), true);
     }
-
-    view_minimized_signal data;
-    data.view = self();
-    this->emit(&data);
-    get_output()->emit(&data);
-
-    desktop_state_updated();
 }
 
 void wf::view_interface_t::set_sticky(bool sticky)
@@ -381,8 +378,6 @@ void wf::view_interface_t::set_tiled(uint32_t edges)
     {
         get_output()->emit(&data);
     }
-
-    desktop_state_updated();
 }
 
 void wf::view_interface_t::set_fullscreen(bool full)
@@ -410,7 +405,6 @@ void wf::view_interface_t::set_fullscreen(bool full)
     }
 
     this->emit(&data);
-    desktop_state_updated();
 }
 
 void wf::view_interface_t::set_activated(bool active)
@@ -421,12 +415,9 @@ void wf::view_interface_t::set_activated(bool active)
     }
 
     activated = active;
-    desktop_state_updated();
-}
 
-void wf::view_interface_t::desktop_state_updated()
-{
-    /* no-op */
+    view_activated_state_signal ev;
+    this->emit(&ev);
 }
 
 void wf::view_interface_t::move_request()
@@ -580,7 +571,6 @@ void wf::view_interface_t::minimize_request(bool state)
         if (data.carried_out)
         {
             minimized = state;
-            desktop_state_updated();
             get_output()->refocus();
         } else
         {

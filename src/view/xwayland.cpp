@@ -684,7 +684,6 @@ class wayfire_xwayland_view : public wayfire_xwayland_view_base
         }
 
         wf::wlr_view_t::map(surface);
-        create_toplevel();
     }
 
     void commit() override
@@ -759,36 +758,6 @@ class wayfire_xwayland_view : public wayfire_xwayland_view_base
         {
             wlr_xwayland_surface_set_maximized(xw, !!edges);
         }
-    }
-
-    virtual void toplevel_send_app_id() override
-    {
-        if (!toplevel_handle)
-        {
-            return;
-        }
-
-        /* Xwayland windows have two "app-id"s - the class and the instance.
-         * Some apps' icons can be found by looking up the class, for others
-         * the instance. So, just like the workaround for gtk-shell, we can
-         * send both the instance and the class to clients, so that they can
-         * find the appropriate icons. */
-        std::string app_id;
-        auto default_app_id  = get_app_id();
-        auto instance_app_id = nonull(xw->instance);
-
-        std::string app_id_mode =
-            wf::option_wrapper_t<std::string>("workarounds/app_id_mode");
-        if (app_id_mode == "full")
-        {
-            app_id = default_app_id + " " + instance_app_id;
-        } else
-        {
-            app_id = default_app_id;
-        }
-
-        wlr_foreign_toplevel_handle_v1_set_app_id(
-            toplevel_handle, app_id.c_str());
     }
 
     void set_fullscreen(bool full) override

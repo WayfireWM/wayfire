@@ -4,6 +4,7 @@ if get_option('debug_ipc')
   subdir('ipc')
 endif
 
+subdir('protocols')
 subdir('vswitch')
 subdir('wobbly')
 subdir('grid')

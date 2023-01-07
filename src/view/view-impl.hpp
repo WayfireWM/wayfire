@@ -61,7 +61,6 @@ class view_interface_t::view_priv_impl
     scene::floating_inner_ptr root_node;
     std::shared_ptr<scene::transform_manager_node_t> transformed_node;
     scene::floating_inner_ptr surface_root_node;
-    bool actually_minimized = false;
     wf::output_t *output;
 
   private:
@@ -97,9 +96,6 @@ class wlr_view_t : public view_interface_t
     wlr_view_t();
     virtual ~wlr_view_t() = default;
 
-    /* Functions which are shell-independent */
-    virtual void set_role(view_role_t new_role) override final;
-
     virtual std::string get_app_id() override final;
     virtual std::string get_title() override final;
 
@@ -112,7 +108,6 @@ class wlr_view_t : public view_interface_t
 
     virtual bool should_be_decorated() override;
     virtual void set_decoration_mode(bool use_csd);
-    virtual void set_output(wf::output_t*) override;
     bool has_client_decoration = true;
 
   protected:
@@ -162,35 +157,7 @@ class wlr_view_t : public view_interface_t
     /* Handle the destruction of the underlying wlroots object */
     virtual void destroy();
 
-    /*
-     * wlr_foreign_toplevel_v1 implementation functions
-     */
-
-    /* The toplevel is created by the individual view's mapping functions,
-     * i.e in xdg-shell, xwayland, etc.
-     * The handle is automatically destroyed when the view is unmapped */
-    wlr_foreign_toplevel_handle_v1 *toplevel_handle = NULL;
-
-    wf::wl_listener_wrapper toplevel_handle_v1_maximize_request,
-        toplevel_handle_v1_activate_request,
-        toplevel_handle_v1_minimize_request,
-        toplevel_handle_v1_set_rectangle_request,
-        toplevel_handle_v1_fullscreen_request,
-        toplevel_handle_v1_close_request;
-
     wf::wl_listener_wrapper on_surface_commit;
-
-    /* Create/destroy the toplevel_handle */
-    virtual void create_toplevel();
-    virtual void destroy_toplevel();
-
-    /* The following are no-op if toplevel_handle == NULL */
-    virtual void toplevel_send_title();
-    virtual void toplevel_send_app_id();
-    virtual void toplevel_send_state();
-    virtual void toplevel_update_output(wf::output_t *output, bool enter);
-
-    virtual void desktop_state_updated() override;
     std::shared_ptr<wf::scene::wlr_surface_node_t> main_surface;
 
   public:
