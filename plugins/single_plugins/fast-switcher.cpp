@@ -10,11 +10,19 @@
 #include <wayfire/workspace-set.hpp>
 #include <wayfire/util/log.hpp>
 #include <wayfire/seat.hpp>
+#include <wayfire/render-manager.hpp>
+#include <wayfire/util/duration.hpp>
 
 /*
  * This plugin provides abilities to switch between views.
  * It works similarly to the alt-esc binding in Windows or GNOME
  */
+
+class animation_data_t : public wf::custom_data_t
+{
+  public:
+    wf::animation::simple_animation_t anim;
+};
 
 class wayfire_fast_switcher : public wf::per_output_plugin_instance_t, public wf::keyboard_interaction_t
 {
@@ -22,11 +30,13 @@ class wayfire_fast_switcher : public wf::per_output_plugin_instance_t, public wf
     wf::option_wrapper_t<wf::keybinding_t> activate_key_backward{
         "fast-switcher/activate_backward"};
     wf::option_wrapper_t<double> inactive_alpha{"fast-switcher/inactive_alpha"};
+    wf::option_wrapper_t<int> animation_duration{"fast-switcher/animation_duration"};
     std::vector<wayfire_view> views; // all views on current viewport
     size_t current_view_index = 0;
     // the modifiers which were used to activate switcher
     uint32_t activating_modifiers = 0;
     bool active = false;
+    bool animations_ongoing = false;
     std::unique_ptr<wf::input_grab_t> input_grab;
 
     wf::plugin_activation_data_t grab_interface = {
@@ -86,6 +96,9 @@ class wayfire_fast_switcher : public wf::per_output_plugin_instance_t, public wf
             return;
         }
 
+        ev->view->erase_data<animation_data_t>();
+        ev->view->get_transformed_node()->rem_transformer(transformer_name);
+
         views.erase(views.begin() + i);
 
         if (views.empty())
@@ -105,12 +118,77 @@ class wayfire_fast_switcher : public wf::per_output_plugin_instance_t, public wf
 
     const std::string transformer_name = "fast-switcher";
 
-    void set_view_alpha(wayfire_view view, float alpha)
+    wf::effect_hook_t pre_hook = [this] ()
     {
-        auto tr = wf::ensure_named_transformer<wf::scene::view_2d_transformer_t>(
+        for (auto view : views)
+        {
+            auto anim_data = view->get_data<animation_data_t>();
+            if (!anim_data)
+            {
+                continue;
+            }
+
+            auto transformer =
+                view->get_transformed_node()->get_transformer<wf::scene::view_2d_transformer_t>(
+                    transformer_name);
+            if (!transformer)
+            {
+                continue;
+            }
+
+            transformer->alpha = static_cast<double>(anim_data->anim);
+            view->damage();
+        }
+    };
+
+    wf::effect_hook_t post_hook = [this] ()
+    {
+        // only remove transformers when the switcher mode is not active anymore
+        if (active)
+        {
+            return;
+        }
+
+        assert(animations_ongoing);
+
+        // don't remove them yet if any of the animations are still ongoing
+        for (auto view : views)
+        {
+            if (auto anim_data = view->get_data<animation_data_t>())
+            {
+                if (anim_data->anim.running())
+                {
+                    return;
+                }
+            }
+        }
+
+        for (auto view : views)
+        {
+            view->erase_data<animation_data_t>();
+            view->get_transformed_node()->rem_transformer(transformer_name);
+        }
+
+        output->render->rem_effect(&pre_hook);
+        output->render->rem_effect(&post_hook);
+        animations_ongoing = false;
+    };
+
+    void set_view_alpha(wayfire_view view, float end_alpha)
+    {
+        wf::ensure_named_transformer<wf::scene::view_2d_transformer_t>(
             view, wf::TRANSFORMER_2D, transformer_name, view);
-        tr->alpha = alpha;
-        view->damage();
+        if (auto data = view->get_data<animation_data_t>())
+        {
+            data->anim.animate(static_cast<double>(data->anim), end_alpha);
+        } else
+        {
+            auto anim_data = std::make_unique<animation_data_t>();
+            anim_data->anim = wf::animation::simple_animation_t(
+                animation_duration, wf::animation::smoothing::sigmoid);
+            anim_data->anim.animate(1, end_alpha);
+            view->store_data(std::move(anim_data));
+        }
     }
 
     void update_views()
@@ -158,6 +236,14 @@ class wayfire_fast_switcher : public wf::per_output_plugin_instance_t, public wf
         switch_next(forward);
 
         output->connect(&cleanup_view);
+
+        if (!animations_ongoing)
+        {
+            output->render->add_effect(&pre_hook, wf::OUTPUT_EFFECT_PRE);
+            output->render->add_effect(&post_hook, wf::OUTPUT_EFFECT_POST);
+            animations_ongoing = true;
+        }
+
         return true;
     }
 
@@ -179,10 +265,11 @@ class wayfire_fast_switcher : public wf::per_output_plugin_instance_t, public wf
         // May modify alpha
         view_chosen(current_view_index, false);
 
-        // Remove transformers after modifying alpha
+        // Reset the alpha back to 1.0, the transformers will be removed in the post_hook callback
+        // once the animation is finished
         for (auto view : views)
         {
-            view->get_transformed_node()->rem_transformer(transformer_name);
+            set_view_alpha(view, 1.0);
         }
 
         active = false;

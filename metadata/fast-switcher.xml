@@ -22,5 +22,11 @@
 			<min>0.0</min>
 			<max>1.0</max>
 		</option>
+		<option name="animation_duration" type="int">
+			<_short>Alpha animation duration</_short>
+			<_long>The duration in milliseconds of the alpha animation when the current view is changed.</_long>
+			<default>100</default>
+			<min>0</min>
+		</option>
 	</plugin>
 </wayfire>
