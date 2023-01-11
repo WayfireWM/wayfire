@@ -8,6 +8,7 @@
 #include <wayfire/view.hpp>
 #include <wayfire/workspace-manager.hpp>
 #include <wayfire/util/log.hpp>
+#include <wayfire/seat.hpp>
 
 /*
  * This plugin provides abilities to switch between views.
@@ -43,7 +44,7 @@ class wayfire_fast_switcher : public wf::per_output_plugin_instance_t, public wf
 
     void handle_keyboard_key(wlr_keyboard_key_event event) override
     {
-        auto mod = wf::get_core().modifier_from_keycode(event.keycode);
+        auto mod = wf::get_core().seat->modifier_from_keycode(event.keycode);
         if ((event.state == WLR_KEY_RELEASED) && (mod & activating_modifiers))
         {
             switch_terminate();
@@ -153,7 +154,7 @@ class wayfire_fast_switcher : public wf::per_output_plugin_instance_t, public wf
         }
 
         input_grab->grab_input(wf::scene::layer::OVERLAY, true);
-        activating_modifiers = wf::get_core().get_keyboard_modifiers();
+        activating_modifiers = wf::get_core().seat->get_keyboard_modifiers();
         switch_next(forward);
 
         output->connect(&cleanup_view);

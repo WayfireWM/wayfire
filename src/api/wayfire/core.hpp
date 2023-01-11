@@ -42,6 +42,7 @@ class output_t;
 class output_layout_t;
 class input_device_t;
 class bindings_repository_t;
+class seat_t;
 
 /** Describes the state of the compositor */
 enum class compositor_state_t
@@ -98,6 +99,7 @@ class compositor_core_t : public wf::object_base_t, public signal::provider_t
     std::unique_ptr<wf::config_backend_t> config_backend;
     std::unique_ptr<wf::output_layout_t> output_layout;
     std::unique_ptr<wf::bindings_repository_t> bindings;
+    std::unique_ptr<wf::seat_t> seat;
 
     /**
      * Various protocols supported by wlroots
@@ -143,16 +145,6 @@ class compositor_core_t : public wf::object_base_t, public signal::provider_t
      * which means get_current_seat() will always return the same (and only) seat.
      */
     virtual wlr_seat *get_current_seat() = 0;
-
-    /**
-     * @return A bit mask of the currently pressed modifiers
-     */
-    virtual uint32_t get_keyboard_modifiers() = 0;
-
-    /**
-     * @return The modifier mask for the given keycode.
-     */
-    virtual uint32_t modifier_from_keycode(uint32_t keycode) = 0;
 
     /** Set the cursor to the given name from the cursor theme, if available */
     virtual void set_cursor(std::string name) = 0;
@@ -259,12 +251,6 @@ class compositor_core_t : public wf::object_base_t, public signal::provider_t
      *  properties, etc.
      */
     virtual std::vector<wayfire_view> get_all_views() = 0;
-
-    /**
-     * Set the keyboard focus node. Note that this changes only the focus state
-     * and does not reorder nodes or anything like this.
-     */
-    virtual void set_active_node(wf::scene::node_ptr node) = 0;
 
     /**
      * Focus the given view and its output (if necessary).

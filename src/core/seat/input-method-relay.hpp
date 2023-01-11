@@ -1,5 +1,5 @@
 #pragma once
-#include "seat.hpp"
+#include "seat-impl.hpp"
 #include "wayfire/util.hpp"
 #include "wayfire/signal-definitions.hpp"
 #include <wayfire/nonstd/wlroots-full.hpp>

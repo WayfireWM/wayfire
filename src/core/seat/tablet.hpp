@@ -2,7 +2,7 @@
 #define WF_SEAT_TABLET_HPP
 
 #include <wayfire/util.hpp>
-#include "seat.hpp"
+#include "seat-impl.hpp"
 #include "wayfire/object.hpp"
 #include "wayfire/signal-definitions.hpp"
 #include "wayfire/signal-provider.hpp"

@@ -1,4 +1,4 @@
-#include "seat.hpp"
+#include "seat-impl.hpp"
 #include "cursor.hpp"
 #include "wayfire/compositor-view.hpp"
 #include "wayfire/geometry.hpp"
@@ -15,77 +15,102 @@
 #include "wayfire/scene-input.hpp"
 #include "wayfire/signal-definitions.hpp"
 #include <wayfire/nonstd/wlroots.hpp>
+#include <wayfire/seat.hpp>
+#include <string>
+
 
 #include "drag-icon.hpp"
 #include "wayfire/util.hpp"
 
-/* ----------------------- wf::seat_t implementation ------------------------ */
-wf::seat_t::seat_t()
+wf::seat_t::~seat_t() = default;
+void wf::seat_t::set_active_node(wf::scene::node_ptr node)
 {
-    seat     = wlr_seat_create(wf::get_core().display, "default");
-    cursor   = std::make_unique<wf::cursor_t>(this);
-    lpointer = std::make_unique<wf::pointer_t>(
+    priv->set_keyboard_focus(node);
+}
+
+uint32_t wf::seat_t::get_keyboard_modifiers()
+{
+    return priv->get_modifiers();
+}
+
+uint32_t wf::seat_t::modifier_from_keycode(uint32_t keycode)
+{
+    if (priv->current_keyboard)
+    {
+        return priv->current_keyboard->mod_from_key(keycode);
+    }
+
+    return 0;
+}
+
+/* ----------------------- wf::seat_t implementation ------------------------ */
+wf::seat_t::seat_t(wl_display *display, std::string name) : seat(wlr_seat_create(display, name.c_str()))
+{
+    priv = std::make_unique<impl>();
+    priv->seat     = seat;
+    priv->cursor   = std::make_unique<wf::cursor_t>(this);
+    priv->lpointer = std::make_unique<wf::pointer_t>(
         wf::get_core_impl().input, nonstd::make_observer(this));
-    touch = std::make_unique<wf::touch_interface_t>(cursor->cursor, seat,
+    priv->touch = std::make_unique<wf::touch_interface_t>(priv->cursor->cursor, seat,
         [] (const wf::pointf_t& global) -> wf::scene::node_ptr
     {
         auto value = wf::get_core().scene()->find_node_at(global);
         return value ? value->node->shared_from_this() : nullptr;
     });
 
-    request_start_drag.set_callback([&] (void *data)
+    priv->request_start_drag.set_callback([&] (void *data)
     {
         auto ev = static_cast<wlr_seat_request_start_drag_event*>(data);
-        validate_drag_request(ev);
+        priv->validate_drag_request(ev);
     });
-    request_start_drag.connect(&seat->events.request_start_drag);
+    priv->request_start_drag.connect(&seat->events.request_start_drag);
 
-    start_drag.set_callback([&] (void *data)
+    priv->start_drag.set_callback([&] (void *data)
     {
         auto d = static_cast<wlr_drag*>(data);
         if (d->icon)
         {
-            this->drag_icon = std::make_unique<wf::drag_icon_t>(d->icon);
+            this->priv->drag_icon = std::make_unique<wf::drag_icon_t>(d->icon);
         }
 
-        this->drag_active = true;
-        end_drag.set_callback([&] (void*)
+        this->priv->drag_active = true;
+        priv->end_drag.set_callback([&] (void*)
         {
-            this->drag_active = false;
-            end_drag.disconnect();
+            this->priv->drag_active = false;
+            priv->end_drag.disconnect();
         });
-        end_drag.connect(&d->events.destroy);
+        priv->end_drag.connect(&d->events.destroy);
     });
-    start_drag.connect(&seat->events.start_drag);
+    priv->start_drag.connect(&seat->events.start_drag);
 
-    request_set_selection.set_callback([&] (void *data)
+    priv->request_set_selection.set_callback([&] (void *data)
     {
         auto ev = static_cast<wlr_seat_request_set_selection_event*>(data);
         wlr_seat_set_selection(wf::get_core().get_current_seat(),
             ev->source, ev->serial);
     });
-    request_set_selection.connect(&seat->events.request_set_selection);
+    priv->request_set_selection.connect(&seat->events.request_set_selection);
 
-    request_set_primary_selection.set_callback([&] (void *data)
+    priv->request_set_primary_selection.set_callback([&] (void *data)
     {
         auto ev =
             static_cast<wlr_seat_request_set_primary_selection_event*>(data);
         wlr_seat_set_primary_selection(wf::get_core().get_current_seat(),
             ev->source, ev->serial);
     });
-    request_set_primary_selection.connect(
+    priv->request_set_primary_selection.connect(
         &seat->events.request_set_primary_selection);
 
-    on_new_device = [&] (wf::input_device_added_signal *ev)
+    priv->on_new_device = [&] (wf::input_device_added_signal *ev)
     {
         switch (ev->device->get_wlr_handle()->type)
         {
           case WLR_INPUT_DEVICE_KEYBOARD:
-            this->keyboards.emplace_back(std::make_unique<wf::keyboard_t>(
+            this->priv->keyboards.emplace_back(std::make_unique<wf::keyboard_t>(
                 ev->device->get_wlr_handle()));
-            if (this->current_keyboard == nullptr)
+            if (this->priv->current_keyboard == nullptr)
             {
-                set_keyboard(keyboards.back().get());
+                priv->set_keyboard(priv->keyboards.back().get());
             }
 
             break;
@@ -93,52 +118,52 @@ wf::seat_t::seat_t()
           case WLR_INPUT_DEVICE_TOUCH:
           case WLR_INPUT_DEVICE_POINTER:
           case WLR_INPUT_DEVICE_TABLET_TOOL:
-            this->cursor->add_new_device(ev->device->get_wlr_handle());
+            this->priv->cursor->add_new_device(ev->device->get_wlr_handle());
             break;
 
           default:
             break;
         }
 
-        update_capabilities();
+        priv->update_capabilities();
     };
 
-    on_remove_device = [&] (wf::input_device_removed_signal *ev)
+    priv->on_remove_device = [&] (wf::input_device_removed_signal *ev)
     {
         auto dev = ev->device->get_wlr_handle();
         if (dev->type == WLR_INPUT_DEVICE_KEYBOARD)
         {
             bool current_kbd_destroyed = false;
-            if (current_keyboard && (current_keyboard->device == dev))
+            if (priv->current_keyboard && (priv->current_keyboard->device == dev))
             {
                 current_kbd_destroyed = true;
             }
 
-            auto it = std::remove_if(keyboards.begin(), keyboards.end(),
+            auto it = std::remove_if(priv->keyboards.begin(), priv->keyboards.end(),
                 [=] (const std::unique_ptr<wf::keyboard_t>& kbd)
             {
                 return kbd->device == dev;
             });
 
-            keyboards.erase(it, keyboards.end());
+            priv->keyboards.erase(it, priv->keyboards.end());
 
-            if (current_kbd_destroyed && keyboards.size())
+            if (current_kbd_destroyed && priv->keyboards.size())
             {
-                set_keyboard(keyboards.front().get());
+                priv->set_keyboard(priv->keyboards.front().get());
             } else
             {
-                set_keyboard(nullptr);
+                priv->set_keyboard(nullptr);
             }
         }
 
-        update_capabilities();
+        priv->update_capabilities();
     };
 
-    wf::get_core().connect(&on_new_device);
-    wf::get_core().connect(&on_remove_device);
+    wf::get_core().connect(&priv->on_new_device);
+    wf::get_core().connect(&priv->on_remove_device);
 }
 
-void wf::seat_t::update_capabilities()
+void wf::seat_t::impl::update_capabilities()
 {
     uint32_t caps = 0;
     for (const auto& dev : wf::get_core().get_input_devices())
@@ -165,7 +190,7 @@ void wf::seat_t::update_capabilities()
     wlr_seat_set_capabilities(seat, caps);
 }
 
-void wf::seat_t::validate_drag_request(wlr_seat_request_start_drag_event *ev)
+void wf::seat_t::impl::validate_drag_request(wlr_seat_request_start_drag_event *ev)
 {
     auto seat = wf::get_core().get_current_seat();
 
@@ -187,7 +212,7 @@ void wf::seat_t::validate_drag_request(wlr_seat_request_start_drag_event *ev)
     wlr_data_source_destroy(ev->drag->source);
 }
 
-void wf::seat_t::update_drag_icon()
+void wf::seat_t::impl::update_drag_icon()
 {
     if (drag_icon)
     {
@@ -195,13 +220,13 @@ void wf::seat_t::update_drag_icon()
     }
 }
 
-void wf::seat_t::set_keyboard(wf::keyboard_t *keyboard)
+void wf::seat_t::impl::set_keyboard(wf::keyboard_t *keyboard)
 {
     this->current_keyboard = keyboard;
     wlr_seat_set_keyboard(seat, keyboard ? wlr_keyboard_from_input_device(keyboard->device) : NULL);
 }
 
-void wf::seat_t::break_mod_bindings()
+void wf::seat_t::impl::break_mod_bindings()
 {
     for (auto& kbd : this->keyboards)
     {
@@ -209,12 +234,12 @@ void wf::seat_t::break_mod_bindings()
     }
 }
 
-uint32_t wf::seat_t::get_modifiers()
+uint32_t wf::seat_t::impl::get_modifiers()
 {
     return current_keyboard ? current_keyboard->get_modifiers() : 0;
 }
 
-void wf::seat_t::force_release_keys()
+void wf::seat_t::impl::force_release_keys()
 {
     if (this->keyboard_focus)
     {
@@ -231,7 +256,7 @@ void wf::seat_t::force_release_keys()
     }
 }
 
-void wf::seat_t::transfer_grab(wf::scene::node_ptr grab_node, bool retain_pressed_state)
+void wf::seat_t::impl::transfer_grab(wf::scene::node_ptr grab_node, bool retain_pressed_state)
 {
     if (this->keyboard_focus == grab_node)
     {
@@ -257,7 +282,7 @@ void wf::seat_t::transfer_grab(wf::scene::node_ptr grab_node, bool retain_presse
     wf::get_core().emit(&data);
 }
 
-void wf::seat_t::set_keyboard_focus(wf::scene::node_ptr new_focus)
+void wf::seat_t::impl::set_keyboard_focus(wf::scene::node_ptr new_focus)
 {
     if (this->keyboard_focus == new_focus)
     {

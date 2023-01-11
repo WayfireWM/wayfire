@@ -5,7 +5,7 @@
 #include <vector>
 #include <chrono>
 
-#include "seat.hpp"
+#include "seat-impl.hpp"
 #include "wayfire/plugin.hpp"
 #include "wayfire/signal-provider.hpp"
 #include "wayfire/view.hpp"

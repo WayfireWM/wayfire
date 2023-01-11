@@ -1,7 +1,7 @@
 #ifndef CURSOR_HPP
 #define CURSOR_HPP
 
-#include "seat.hpp"
+#include "seat-impl.hpp"
 #include "wayfire/plugin.hpp"
 #include "wayfire/signal-definitions.hpp"
 #include "wayfire/util.hpp"

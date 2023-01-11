@@ -11,10 +11,10 @@
 #include "wayfire/scene.hpp"
 #include "wayfire/debug.hpp"
 #include "../core-impl.hpp"
-#include "seat.hpp"
 #include "wayfire/signal-provider.hpp"
 #include <memory>
 #include <type_traits>
+#include "seat-impl.hpp"
 
 namespace wf
 {
@@ -144,7 +144,7 @@ wf::drag_icon_t::drag_icon_t(wlr_drag_icon *ic) : icon(ic)
     {
         /* we don't dec_keep_count() because the surface memory is
          * managed by the unique_ptr */
-        wf::get_core_impl().seat->drag_icon = nullptr;
+        wf::get_core().seat->priv->drag_icon = nullptr;
     });
 
     on_map.connect(&icon->events.map);

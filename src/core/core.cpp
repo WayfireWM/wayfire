@@ -145,7 +145,7 @@ struct wf_pointer_constraint
     wf_pointer_constraint(wlr_pointer_constraint_v1 *constraint)
     {
         // set correct constraint
-        auto& lpointer = wf::get_core_impl().seat->lpointer;
+        auto& lpointer = wf::get_core_impl().seat->priv->lpointer;
         auto focus     = lpointer->get_focus();
         if (focus)
         {
@@ -197,7 +197,7 @@ void wf::compositor_core_impl_t::init()
     /* Somehow GTK requires the tablet_v2 to be advertised pretty early */
     protocols.tablet_v2 = wlr_tablet_v2_create(display);
     input = std::make_unique<wf::input_manager_t>();
-    seat  = std::make_unique<wf::seat_t>();
+    seat  = std::make_unique<wf::seat_t>(display, "default");
 
     protocols.screencopy = wlr_screencopy_manager_v1_create(display);
     protocols.gamma_v1   = wlr_gamma_control_manager_v1_create(display);
@@ -328,7 +328,7 @@ void wf::compositor_core_impl_t::post_init()
     input->refresh_device_mappings();
 
     // Start processing cursor events
-    seat->cursor->setup_listeners();
+    seat->priv->cursor->setup_listeners();
 
     core_startup_finished_signal startup_ev;
     this->emit(&startup_ev);
@@ -352,46 +352,31 @@ wlr_seat*wf::compositor_core_impl_t::get_current_seat()
     return seat->seat;
 }
 
-uint32_t wf::compositor_core_impl_t::get_keyboard_modifiers()
-{
-    return seat->get_modifiers();
-}
-
-uint32_t wf::compositor_core_impl_t::modifier_from_keycode(uint32_t keycode)
-{
-    if (seat->current_keyboard)
-    {
-        return seat->current_keyboard->mod_from_key(keycode);
-    }
-
-    return 0;
-}
-
 void wf::compositor_core_impl_t::set_cursor(std::string name)
 {
-    seat->cursor->set_cursor(name);
+    seat->priv->cursor->set_cursor(name);
 }
 
 void wf::compositor_core_impl_t::unhide_cursor()
 {
-    seat->cursor->unhide_cursor();
+    seat->priv->cursor->unhide_cursor();
 }
 
 void wf::compositor_core_impl_t::hide_cursor()
 {
-    seat->cursor->hide_cursor();
+    seat->priv->cursor->hide_cursor();
 }
 
 void wf::compositor_core_impl_t::warp_cursor(wf::pointf_t pos)
 {
-    seat->cursor->warp_cursor(pos);
+    seat->priv->cursor->warp_cursor(pos);
 }
 
 void wf::compositor_core_impl_t::transfer_grab(wf::scene::node_ptr node, bool retain_pressed_state)
 {
-    seat->transfer_grab(node, retain_pressed_state);
-    seat->lpointer->transfer_grab(node, retain_pressed_state);
-    seat->touch->transfer_grab(node, retain_pressed_state);
+    seat->priv->transfer_grab(node, retain_pressed_state);
+    seat->priv->lpointer->transfer_grab(node, retain_pressed_state);
+    seat->priv->touch->transfer_grab(node, retain_pressed_state);
 
     for (auto dev : this->get_input_devices())
     {
@@ -407,9 +392,9 @@ void wf::compositor_core_impl_t::transfer_grab(wf::scene::node_ptr node, bool re
 
 wf::pointf_t wf::compositor_core_impl_t::get_cursor_position()
 {
-    if (seat->cursor)
+    if (seat->priv->cursor)
     {
-        return seat->cursor->get_cursor_position();
+        return seat->priv->cursor->get_cursor_position();
     } else
     {
         return {invalid_coordinate, invalid_coordinate};
@@ -418,7 +403,7 @@ wf::pointf_t wf::compositor_core_impl_t::get_cursor_position()
 
 wf::pointf_t wf::compositor_core_impl_t::get_touch_position(int id)
 {
-    const auto& state = seat->touch->get_state();
+    const auto& state = seat->priv->touch->get_state();
     auto it = state.fingers.find(id);
     if (it != state.fingers.end())
     {
@@ -430,12 +415,12 @@ wf::pointf_t wf::compositor_core_impl_t::get_touch_position(int id)
 
 const wf::touch::gesture_state_t& wf::compositor_core_impl_t::get_touch_state()
 {
-    return seat->touch->get_state();
+    return seat->priv->touch->get_state();
 }
 
 wf::scene::node_ptr wf::compositor_core_impl_t::get_cursor_focus()
 {
-    return seat->lpointer->get_focus();
+    return seat->priv->lpointer->get_focus();
 }
 
 wayfire_view wf::compositor_core_t::get_cursor_focus_view()
@@ -451,7 +436,7 @@ wayfire_view wf::compositor_core_t::get_view_at(wf::pointf_t point)
 
 wf::scene::node_ptr wf::compositor_core_impl_t::get_touch_focus()
 {
-    return seat->touch->get_focus();
+    return seat->priv->touch->get_focus();
 }
 
 wayfire_view wf::compositor_core_t::get_touch_focus_view()
@@ -462,13 +447,13 @@ wayfire_view wf::compositor_core_t::get_touch_focus_view()
 void wf::compositor_core_impl_t::add_touch_gesture(
     nonstd::observer_ptr<wf::touch::gesture_t> gesture)
 {
-    seat->touch->add_touch_gesture(gesture);
+    seat->priv->touch->add_touch_gesture(gesture);
 }
 
 void wf::compositor_core_impl_t::rem_touch_gesture(
     nonstd::observer_ptr<wf::touch::gesture_t> gesture)
 {
-    seat->touch->rem_touch_gesture(gesture);
+    seat->priv->touch->rem_touch_gesture(gesture);
 }
 
 std::vector<nonstd::observer_ptr<wf::input_device_t>> wf::compositor_core_impl_t::get_input_devices()
@@ -484,7 +469,7 @@ std::vector<nonstd::observer_ptr<wf::input_device_t>> wf::compositor_core_impl_t
 
 wlr_cursor*wf::compositor_core_impl_t::get_wlr_cursor()
 {
-    return seat->cursor->cursor;
+    return seat->priv->cursor->cursor;
 }
 
 void wf::compositor_core_impl_t::focus_output(wf::output_t *wo)
@@ -556,11 +541,6 @@ std::vector<wayfire_view> wf::compositor_core_impl_t::get_all_views()
     }
 
     return result;
-}
-
-void wf::compositor_core_impl_t::set_active_node(wf::scene::node_ptr node)
-{
-    seat->set_keyboard_focus(node);
 }
 
 void wf::compositor_core_impl_t::focus_view(wayfire_view v)

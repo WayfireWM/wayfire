@@ -1,7 +1,7 @@
 #pragma once
 
 #include <chrono>
-#include "seat.hpp"
+#include "seat-impl.hpp"
 #include "wayfire/signal-definitions.hpp"
 #include "wayfire/signal-provider.hpp"
 #include "wayfire/util.hpp"

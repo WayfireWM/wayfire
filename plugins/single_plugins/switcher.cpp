@@ -11,6 +11,7 @@
 #include <wayfire/core.hpp>
 #include <wayfire/debug.hpp>
 #include <wayfire/plugins/common/util.hpp>
+#include <wayfire/seat.hpp>
 
 #include <wayfire/view.hpp>
 #include <wayfire/output.hpp>
@@ -205,7 +206,7 @@ class WayfireSwitcher : public wf::per_output_plugin_instance_t, public wf::keyb
 
     void handle_keyboard_key(wlr_keyboard_key_event event) override
     {
-        auto mod = wf::get_core().modifier_from_keycode(event.keycode);
+        auto mod = wf::get_core().seat->modifier_from_keycode(event.keycode);
         if ((event.state == WLR_KEY_RELEASED) && (mod & activating_modifiers))
         {
             handle_done();
@@ -299,7 +300,7 @@ class WayfireSwitcher : public wf::per_output_plugin_instance_t, public wf::keyb
 
             focus_next(dir);
             arrange();
-            activating_modifiers = wf::get_core().get_keyboard_modifiers();
+            activating_modifiers = wf::get_core().seat->get_keyboard_modifiers();
         } else
         {
             next_view(dir);

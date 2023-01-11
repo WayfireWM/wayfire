@@ -1,7 +1,7 @@
 #ifndef WF_SEAT_POINTING_DEVICE_HPP
 #define WF_SEAT_POINTING_DEVICE_HPP
 
-#include "seat.hpp"
+#include "seat-impl.hpp"
 
 namespace wf
 {

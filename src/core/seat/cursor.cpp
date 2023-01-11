@@ -50,7 +50,7 @@ void wf::cursor_t::setup_listeners()
     /* Dispatch pointer events to the pointer_t */
     on_frame.set_callback([&] (void*)
     {
-        seat->lpointer->handle_pointer_frame();
+        seat->priv->lpointer->handle_pointer_frame();
         wlr_idle_notify_activity(core.protocols.idle,
             core.get_current_seat());
     });
@@ -61,7 +61,7 @@ void wf::cursor_t::setup_listeners()
         set_touchscreen_mode(false); \
         auto ev   = static_cast<wlr_pointer_ ## evname ## _event*>(data); \
         auto mode = emit_device_event_signal(ev); \
-        seat->lpointer->handle_pointer_ ## evname(ev, mode); \
+        seat->priv->lpointer->handle_pointer_ ## evname(ev, mode); \
         wlr_idle_notify_activity(core.protocols.idle, core.get_current_seat()); \
         emit_device_post_event_signal(ev); \
     }); \

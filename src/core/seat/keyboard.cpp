@@ -29,30 +29,30 @@ void wf::keyboard_t::setup_listeners()
         auto mode = emit_device_event_signal(ev);
 
         auto& seat = wf::get_core_impl().seat;
-        seat->set_keyboard(this);
+        seat->priv->set_keyboard(this);
 
         if (!handle_keyboard_key(ev->keycode, ev->state) &&
             (mode != input_event_processing_mode_t::NO_CLIENT))
         {
             if (ev->state == WL_KEYBOARD_KEY_STATE_PRESSED)
             {
-                seat->pressed_keys.insert(ev->keycode);
+                seat->priv->pressed_keys.insert(ev->keycode);
             }
 
             if (ev->state == WL_KEYBOARD_KEY_STATE_RELEASED)
             {
-                if (seat->pressed_keys.count(ev->keycode))
+                if (seat->priv->pressed_keys.count(ev->keycode))
                 {
-                    seat->pressed_keys.erase(seat->pressed_keys.find(ev->keycode));
+                    seat->priv->pressed_keys.erase(seat->priv->pressed_keys.find(ev->keycode));
                 } else
                 {
                     return;
                 }
             }
 
-            if (seat->keyboard_focus)
+            if (seat->priv->keyboard_focus)
             {
-                seat->keyboard_focus->keyboard_interaction().handle_keyboard_key(*ev);
+                seat->priv->keyboard_focus->keyboard_interaction().handle_keyboard_key(*ev);
             }
         }
 
@@ -294,8 +294,8 @@ bool wf::keyboard_t::handle_keyboard_key(uint32_t key, uint32_t state)
             return true;
         }
 
-        bool modifiers_only = !seat->lpointer->has_pressed_buttons() &&
-            (seat->touch->get_state().fingers.empty()) &&
+        bool modifiers_only = !seat->priv->lpointer->has_pressed_buttons() &&
+            (seat->priv->touch->get_state().fingers.empty()) &&
             this->has_only_modifiers();
 
         /* as long as we have pressed only modifiers, we should check for modifier

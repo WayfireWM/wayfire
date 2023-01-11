@@ -3,6 +3,7 @@
  */
 #include <map>
 #include <memory>
+#include <wayfire/seat.hpp>
 #include <wayfire/per-output-plugin.hpp>
 #include <wayfire/output.hpp>
 #include <wayfire/util/duration.hpp>
@@ -609,7 +610,7 @@ class wayfire_scale : public wf::per_output_plugin_instance_t,
         int next_col = cur_col;
 
         if ((ev.state != WLR_KEY_PRESSED) ||
-            wf::get_core().get_keyboard_modifiers())
+            wf::get_core().seat->get_keyboard_modifiers())
         {
             return;
         }

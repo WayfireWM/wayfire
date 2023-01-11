@@ -2,7 +2,6 @@
 #include <wayfire/output-layout.hpp>
 #include <wayfire/touch/touch.hpp>
 
-#include "../src/core/seat/seat.hpp"
 #include "../src/core/seat/input-manager.hpp"
 #include "../src/core/seat/pointer.hpp"
 #include "../src/core/seat/input-method-relay.hpp"
@@ -30,11 +29,6 @@ wf::compositor_state_t mock_core_t::get_current_state()
 wlr_seat*mock_core_t::get_current_seat()
 {
     return nullptr;
-}
-
-uint32_t mock_core_t::get_keyboard_modifiers()
-{
-    return 0;
 }
 
 void mock_core_t::set_cursor(std::string name)
@@ -109,9 +103,6 @@ std::vector<wayfire_view> mock_core_t::get_all_views()
 {
     return {};
 }
-
-void mock_core_t::set_active_node(wf::scene::node_ptr)
-{}
 
 void mock_core_t::focus_view(wayfire_view v)
 {}

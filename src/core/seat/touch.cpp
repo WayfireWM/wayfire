@@ -3,7 +3,6 @@
 #include <wayfire/util/log.hpp>
 #include <wayfire/bindings-repository.hpp>
 
-#include "core/seat/seat.hpp"
 #include "touch.hpp"
 #include "cursor.hpp"
 #include "input-manager.hpp"
@@ -54,7 +53,7 @@ wf::touch_interface_t::touch_interface_t(wlr_cursor *cursor, wlr_seat *seat,
 
         double lx, ly;
         wlr_cursor_absolute_to_layout_coords(
-            wf::get_core_impl().seat->cursor->cursor, &ev->touch->base,
+            wf::get_core_impl().seat->priv->cursor->cursor, &ev->touch->base,
             ev->x, ev->y, &lx, &ly);
 
         wf::pointf_t point;
@@ -189,7 +188,7 @@ void wf::touch_interface_t::handle_touch_down(int32_t id, uint32_t time,
     wf::pointf_t point, input_event_processing_mode_t mode)
 {
     auto& seat = wf::get_core_impl().seat;
-    seat->break_mod_bindings();
+    seat->priv->break_mod_bindings();
 
     if (id == 0)
     {
@@ -220,7 +219,7 @@ void wf::touch_interface_t::handle_touch_down(int32_t id, uint32_t time,
     auto focus = this->surface_at(point);
     set_touch_focus(focus, id, time, point);
 
-    seat->update_drag_icon();
+    seat->priv->update_drag_icon();
     update_gestures(gesture_event);
     update_cursor_state();
 }
@@ -253,7 +252,7 @@ void wf::touch_interface_t::handle_touch_motion(int32_t id, uint32_t time,
     }
 
     auto& seat = wf::get_core_impl().seat;
-    seat->update_drag_icon();
+    seat->priv->update_drag_icon();
 }
 
 void wf::touch_interface_t::handle_touch_up(int32_t id, uint32_t time,
@@ -279,7 +278,7 @@ void wf::touch_interface_t::update_cursor_state()
 {
     auto& seat = wf::get_core_impl().seat;
     /* just set the cursor mode, independent of how many fingers we have */
-    seat->cursor->set_touchscreen_mode(true);
+    seat->priv->cursor->set_touchscreen_mode(true);
 }
 
 // Swipe params

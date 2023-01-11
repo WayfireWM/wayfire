@@ -14,7 +14,6 @@
 #include "../core/core-impl.hpp"
 #include "wayfire/util.hpp"
 #include "wayfire/workspace-manager.hpp"
-#include "../core/seat/seat.hpp"
 #include "../core/opengl-priv.hpp"
 #include "../main.hpp"
 #include <algorithm>

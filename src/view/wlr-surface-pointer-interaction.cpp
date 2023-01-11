@@ -2,7 +2,7 @@
 #include <wayfire/scene.hpp>
 #include "../core/seat/input-manager.hpp"
 #include "../core/core-impl.hpp"
-#include "core/seat/seat.hpp"
+#include "core/seat/seat-impl.hpp"
 #include "view-impl.hpp"
 #include "view/surface-impl.hpp"
 #include "wayfire/core.hpp"
@@ -174,11 +174,11 @@ class wlr_surface_pointer_interaction_t final : public wf::pointer_interaction_t
     void handle_pointer_button(const wlr_pointer_button_event& event) final
     {
         auto& seat = wf::get_core_impl().seat;
-        bool drag_was_active = seat->drag_active;
+        bool drag_was_active = seat->priv->drag_active;
         wlr_seat_pointer_notify_button(seat->seat,
             event.time_msec, event.button, event.state);
 
-        if (drag_was_active != seat->drag_active)
+        if (drag_was_active != seat->priv->drag_active)
         {
             // Drag and drop ended. We should refocus the current surface, if we
             // still have focus, because we have set the wlroots focus in a
@@ -206,7 +206,7 @@ class wlr_surface_pointer_interaction_t final : public wf::pointer_interaction_t
     void handle_pointer_motion(wf::pointf_t local, uint32_t time_ms) final
     {
         auto& seat = wf::get_core_impl().seat;
-        if (seat->drag_active)
+        if (seat->priv->drag_active)
         {
             // Special mode: when drag-and-drop is active, we get an implicit
             // grab on the originating node. So, the original node receives all

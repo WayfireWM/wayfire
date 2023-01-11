@@ -2,7 +2,6 @@
 #include "tablet.hpp"
 #include "../core-impl.hpp"
 #include "../wm.hpp"
-#include "core/seat/seat.hpp"
 #include "pointer.hpp"
 #include "cursor.hpp"
 #include "input-manager.hpp"
@@ -93,7 +92,7 @@ wf::tablet_tool_t::tablet_tool_t(wlr_tablet_tool *tool,
         pev.hotspot_y = ev->hotspot_y;
         pev.serial    = ev->serial;
         pev.seat_client = ev->seat_client;
-        wf::get_core_impl().seat->cursor->set_cursor(&pev, false);
+        wf::get_core_impl().seat->priv->cursor->set_cursor(&pev, false);
     });
     on_set_cursor.connect(&tool_v2->events.set_cursor);
 }
@@ -323,18 +322,18 @@ void wf::tablet_t::handle_tip(wlr_tablet_tool_tip_event *ev,
     }
 
     auto& seat = wf::get_core_impl().seat;
-    seat->break_mod_bindings();
+    seat->priv->break_mod_bindings();
 
     bool handled_in_binding = false;
     if (ev->state == WLR_TABLET_TOOL_TIP_DOWN)
     {
-        auto gc     = seat->cursor->get_cursor_position();
+        auto gc     = seat->priv->cursor->get_cursor_position();
         auto output =
             wf::get_core().output_layout->get_output_at(gc.x, gc.y);
         wf::get_core().focus_output(output);
 
         handled_in_binding |= wf::get_core().bindings->handle_button(
-            wf::buttonbinding_t{seat->get_modifiers(), BTN_LEFT});
+            wf::buttonbinding_t{seat->priv->get_modifiers(), BTN_LEFT});
     }
 
     auto tool = ensure_tool(ev->tool);
@@ -386,11 +385,11 @@ void wf::tablet_t::handle_proximity(wlr_tablet_tool_proximity_event *ev,
     if (ev->state == WLR_TABLET_TOOL_PROXIMITY_OUT)
     {
         impl.set_cursor("default");
-        impl.seat->lpointer->set_enable_focus(true);
+        impl.seat->priv->lpointer->set_enable_focus(true);
     } else
     {
         wf::get_core().set_cursor("crosshair");
-        impl.seat->lpointer->set_enable_focus(false);
+        impl.seat->priv->lpointer->set_enable_focus(false);
     }
 }
 

@@ -7,7 +7,6 @@
 #include "wayfire/util.hpp"
 
 #include "../output/output-impl.hpp"
-#include "seat/seat.hpp"
 #include "seat/cursor.hpp"
 #include "core-impl.hpp"
 
@@ -858,7 +857,7 @@ struct output_layout_output_t
             if (handle->scale != state.scale)
             {
                 wlr_output_set_scale(handle, state.scale);
-                wf::get_core_impl().seat->cursor->load_xcursor_scale(
+                wf::get_core_impl().seat->priv->cursor->load_xcursor_scale(
                     state.scale);
             }
 

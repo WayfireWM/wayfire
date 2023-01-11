@@ -1,8 +1,8 @@
-#ifndef SEAT_HPP
-#define SEAT_HPP
+#pragma once
 
 #include <wayfire/signal-definitions.hpp>
 #include <wayfire/nonstd/wlroots-full.hpp>
+#include <wayfire/seat.hpp>
 #include <set>
 
 #include "../../view/surface-impl.hpp"
@@ -45,13 +45,9 @@ class drag_icon_t;
  * In addition, each seat has its own clipboard, primary selection and DnD state.
  * Currently, Wayfire supports just a single seat.
  */
-class seat_t
+struct seat_t::impl
 {
-  public:
-    seat_t();
-
     uint32_t get_modifiers();
-
     void break_mod_bindings();
 
     void set_keyboard_focus(wf::scene::node_ptr keyboard_focus);
@@ -81,7 +77,6 @@ class seat_t
     /** The currently active keyboard device on the seat */
     wf::keyboard_t *current_keyboard = nullptr;
 
-  private:
     wf::wl_listener_wrapper request_start_drag, start_drag, end_drag,
         request_set_selection, request_set_primary_selection;
 
@@ -109,5 +104,3 @@ wf::pointf_t get_node_local_coords(wf::scene::node_t *node,
 
 /** Check whether a node with an implicit grab should still retain the grab. */
 bool is_grabbed_node_alive(wf::scene::node_ptr node);
-
-#endif /* end of include guard: SEAT_HPP */

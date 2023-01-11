@@ -99,7 +99,7 @@ void wf::output_impl_t::do_update_focus(wf::scene::node_t *new_focus)
         new_focus ? new_focus->shared_from_this() : nullptr;
     if (this == wf::get_core().get_active_output())
     {
-        wf::get_core().set_active_node(focus);
+        wf::get_core().seat->set_active_node(focus);
     }
 }
 

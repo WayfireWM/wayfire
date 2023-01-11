@@ -31,7 +31,6 @@ class compositor_core_impl_t : public compositor_core_t
     wlr_egl *egl;
     wlr_compositor *compositor;
 
-    std::unique_ptr<seat_t> seat;
     std::unique_ptr<wf::input_manager_t> input;
     std::unique_ptr<input_method_relay> im_relay;
     std::unique_ptr<plugin_manager_t> plugin_mgr;
@@ -65,8 +64,6 @@ class compositor_core_impl_t : public compositor_core_t
     static compositor_core_impl_t& get();
 
     wlr_seat *get_current_seat() override;
-    uint32_t get_keyboard_modifiers() override;
-    uint32_t modifier_from_keycode(uint32_t keycode) override;
     void warp_cursor(wf::pointf_t pos) override;
     void transfer_grab(wf::scene::node_ptr node, bool retain_pressed_state) override;
     void set_cursor(std::string name) override;
@@ -91,7 +88,6 @@ class compositor_core_impl_t : public compositor_core_t
 
     void add_view(std::unique_ptr<wf::view_interface_t> view) override;
     std::vector<wayfire_view> get_all_views() override;
-    void set_active_node(wf::scene::node_ptr node) override;
     void focus_view(wayfire_view win) override;
     void move_view_to_output(wayfire_view v, wf::output_t *new_output,
         bool reconfigure) override;

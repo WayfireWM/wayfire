@@ -1,6 +1,5 @@
 #include "pointer.hpp"
 #include <wayfire/bindings-repository.hpp>
-#include "core/seat/seat.hpp"
 #include "cursor.hpp"
 #include "pointing-device.hpp"
 #include "input-manager.hpp"
@@ -72,7 +71,7 @@ bool wf::pointer_t::focus_enabled() const
 
 void wf::pointer_t::update_cursor_position(int64_t time_msec, bool real_update)
 {
-    wf::pointf_t gc = seat->cursor->get_cursor_position();
+    wf::pointf_t gc = seat->priv->cursor->get_cursor_position();
 
     /* If we have a grabbed surface, but no drag, we want to continue sending
      * events to the grabbed surface, even if the pointer goes outside of it.
@@ -90,7 +89,7 @@ void wf::pointer_t::update_cursor_position(int64_t time_msec, bool real_update)
         this->send_motion(time_msec);
     }
 
-    seat->update_drag_icon();
+    seat->priv->update_drag_icon();
 }
 
 void wf::pointer_t::force_release_buttons()
@@ -204,7 +203,7 @@ void wf::pointer_t::grab_surface(wf::scene::node_ptr node)
 void wf::pointer_t::handle_pointer_button(wlr_pointer_button_event *ev,
     input_event_processing_mode_t mode)
 {
-    seat->break_mod_bindings();
+    seat->priv->break_mod_bindings();
     bool handled_in_binding = (mode != input_event_processing_mode_t::FULL);
 
     if (ev->state == WLR_BUTTON_PRESSED)
@@ -214,14 +213,14 @@ void wf::pointer_t::handle_pointer_button(wlr_pointer_button_event *ev,
         {
             /* Focus only the first click, since then we also start an implicit
              * grab, and we don't want to suddenly change the output */
-            auto gc     = seat->cursor->get_cursor_position();
+            auto gc     = seat->priv->cursor->get_cursor_position();
             auto output =
                 wf::get_core().output_layout->get_output_at(gc.x, gc.y);
             wf::get_core().focus_output(output);
         }
 
         handled_in_binding |= wf::get_core().bindings->handle_button(
-            wf::buttonbinding_t{seat->get_modifiers(), ev->button});
+            wf::buttonbinding_t{seat->priv->get_modifiers(), ev->button});
     } else
     {
         count_pressed_buttons--;
@@ -293,7 +292,7 @@ void wf::pointer_t::handle_pointer_motion(wlr_pointer_motion_event *ev,
     input_event_processing_mode_t mode)
 {
     /* XXX: maybe warp directly? */
-    wlr_cursor_move(seat->cursor->cursor, &ev->pointer->base, ev->delta_x, ev->delta_y);
+    wlr_cursor_move(seat->priv->cursor->cursor, &ev->pointer->base, ev->delta_x, ev->delta_y);
     update_cursor_position(ev->time_msec);
 }
 
@@ -302,18 +301,18 @@ void wf::pointer_t::handle_pointer_motion_absolute(
 {
     // next coordinates
     double cx, cy;
-    wlr_cursor_absolute_to_layout_coords(seat->cursor->cursor, &ev->pointer->base,
+    wlr_cursor_absolute_to_layout_coords(seat->priv->cursor->cursor, &ev->pointer->base,
         ev->x, ev->y, &cx, &cy);
 
     // send relative motion
-    double dx = cx - seat->cursor->cursor->x;
-    double dy = cy - seat->cursor->cursor->y;
+    double dx = cx - seat->priv->cursor->cursor->x;
+    double dy = cy - seat->priv->cursor->cursor->y;
     wlr_relative_pointer_manager_v1_send_relative_motion(
         wf::get_core().protocols.relative_pointer, seat->seat,
         (uint64_t)ev->time_msec * 1000, dx, dy, dx, dy);
 
     // TODO: indirection via wf_cursor
-    wlr_cursor_warp_closest(seat->cursor->cursor, NULL, cx, cy);
+    wlr_cursor_warp_closest(seat->priv->cursor->cursor, NULL, cx, cy);
     update_cursor_position(ev->time_msec);
 }
 
@@ -321,8 +320,8 @@ void wf::pointer_t::handle_pointer_axis(wlr_pointer_axis_event *ev,
     input_event_processing_mode_t mode)
 {
     bool handled_in_binding = wf::get_core().bindings->handle_axis(
-        seat->get_modifiers(), ev);
-    seat->break_mod_bindings();
+        seat->priv->get_modifiers(), ev);
+    seat->priv->break_mod_bindings();
 
     /* Do not send scroll events to clients if an axis binding has used up the
      * event */

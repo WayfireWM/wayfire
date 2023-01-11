@@ -32,7 +32,7 @@ static std::unique_ptr<wf::input_device_impl_t> create_wf_device_for_device(
 
       case WLR_INPUT_DEVICE_TABLET_TOOL:
         return std::make_unique<wf::tablet_t>(
-            wf::get_core_impl().seat->cursor->cursor, device);
+            wf::get_core_impl().seat->priv->cursor->cursor, device);
 
       case WLR_INPUT_DEVICE_TABLET_PAD:
         return std::make_unique<wf::tablet_pad_t>(device);

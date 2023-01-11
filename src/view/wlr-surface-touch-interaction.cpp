@@ -23,7 +23,7 @@ class wlr_surface_touch_interaction_t final : public wf::touch_interaction_t
         auto& seat = wf::get_core_impl().seat;
         wlr_seat_touch_notify_down(seat->seat, surface, time_ms, finger_id, local.x, local.y);
 
-        if (!seat->drag_active)
+        if (!seat->priv->drag_active)
         {
             wf::xwayland_bring_to_front(surface);
         }
@@ -39,7 +39,7 @@ class wlr_surface_touch_interaction_t final : public wf::touch_interaction_t
         wf::pointf_t local) override
     {
         auto& seat = wf::get_core_impl().seat;
-        if (seat->drag_active)
+        if (seat->priv->drag_active)
         {
             auto gc    = wf::get_core().get_touch_position(finger_id);
             auto node  = wf::get_core().scene()->find_node_at(gc);

@@ -127,7 +127,7 @@ wf::keyboard_focus_node_t wf::scene::view_node_t::keyboard_refocus(
     const uint64_t output_last_ts = view->get_output()->get_last_focus_timestamp();
     const uint64_t our_ts = keyboard_interaction().last_focus_timestamp;
 
-    auto cur_focus = wf::get_core_impl().seat->keyboard_focus.get();
+    auto cur_focus = wf::get_core_impl().seat->priv->keyboard_focus.get();
     bool has_focus = (cur_focus == this) || (our_ts == output_last_ts);
 
     const auto cur_layer = view->get_output()->workspace->get_view_layer(view);

@@ -4,6 +4,7 @@
 #include "wayfire/core.hpp"
 #include "wayfire/workspace-manager.hpp"
 #include "wayfire/output-layout.hpp"
+#include <wayfire/seat.hpp>
 
 #include <wayfire/util/log.hpp>
 #include <wayfire/nonstd/wlroots-full.hpp>
@@ -87,7 +88,7 @@ void wayfire_focus::init()
 
         /* focuse_btns->get_value() does not compile */
         wf::option_sptr_t<wf::activatorbinding_t> tmp = focus_btns;
-        if ((!focus_modifiers && wf::get_core().get_keyboard_modifiers()) ||
+        if ((!focus_modifiers && wf::get_core().seat->get_keyboard_modifiers()) ||
             !tmp->get_value().has_match(wf::buttonbinding_t(0, ev->event->button)))
         {
             return;
