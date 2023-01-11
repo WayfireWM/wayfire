@@ -586,7 +586,7 @@ class wayfire_scale : public wf::per_output_plugin_instance_t,
     /* Process key event */
 
 
-    void handle_keyboard_key(wlr_keyboard_key_event ev) override
+    void handle_keyboard_key(wf::seat_t*, wlr_keyboard_key_event ev) override
     {
         auto view = output->get_active_view();
         if (!view)

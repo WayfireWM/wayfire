@@ -251,7 +251,7 @@ void wf::seat_t::impl::force_release_keys()
             ev.state   = WL_KEYBOARD_KEY_STATE_RELEASED;
             ev.update_state = true;
             ev.time_msec    = get_current_time();
-            this->keyboard_focus->keyboard_interaction().handle_keyboard_key(ev);
+            this->keyboard_focus->keyboard_interaction().handle_keyboard_key(wf::get_core().seat.get(), ev);
         }
     }
 }
@@ -271,11 +271,11 @@ void wf::seat_t::impl::transfer_grab(wf::scene::node_ptr grab_node, bool retain_
 
     if (this->keyboard_focus)
     {
-        this->keyboard_focus->keyboard_interaction().handle_keyboard_leave();
+        this->keyboard_focus->keyboard_interaction().handle_keyboard_leave(wf::get_core().seat.get());
     }
 
     this->keyboard_focus = grab_node;
-    grab_node->keyboard_interaction().handle_keyboard_enter();
+    grab_node->keyboard_interaction().handle_keyboard_enter(wf::get_core().seat.get());
 
     wf::keyboard_focus_changed_signal data;
     data.new_focus = grab_node;
@@ -293,13 +293,13 @@ void wf::seat_t::impl::set_keyboard_focus(wf::scene::node_ptr new_focus)
     pressed_keys.clear();
     if (this->keyboard_focus)
     {
-        this->keyboard_focus->keyboard_interaction().handle_keyboard_leave();
+        this->keyboard_focus->keyboard_interaction().handle_keyboard_leave(wf::get_core().seat.get());
     }
 
     this->keyboard_focus = new_focus;
     if (new_focus)
     {
-        new_focus->keyboard_interaction().handle_keyboard_enter();
+        new_focus->keyboard_interaction().handle_keyboard_enter(wf::get_core().seat.get());
     }
 
     wf::keyboard_focus_changed_signal data;

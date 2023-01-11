@@ -42,7 +42,7 @@ class wayfire_fast_switcher : public wf::per_output_plugin_instance_t, public wf
         grab_interface.cancel = [=] () { switch_terminate(); };
     }
 
-    void handle_keyboard_key(wlr_keyboard_key_event event) override
+    void handle_keyboard_key(wf::seat_t*, wlr_keyboard_key_event event) override
     {
         auto mod = wf::get_core().seat->modifier_from_keycode(event.keycode);
         if ((event.state == WLR_KEY_RELEASED) && (mod & activating_modifiers))

@@ -8,6 +8,7 @@
 
 namespace wf
 {
+class seat_t;
 namespace scene
 {
 class node_t;
@@ -62,23 +63,18 @@ struct keyboard_focus_node_t
 class keyboard_interaction_t
 {
   public:
-    keyboard_interaction_t(const keyboard_interaction_t&) = delete;
-    keyboard_interaction_t(keyboard_interaction_t&&) = delete;
-    keyboard_interaction_t& operator =(const keyboard_interaction_t&) = delete;
-    keyboard_interaction_t& operator =(keyboard_interaction_t&&) = delete;
-
     /**
      * Handle a keyboard enter event.
      * This means that the node is now focused.
      */
-    virtual void handle_keyboard_enter()
+    virtual void handle_keyboard_enter(wf::seat_t *seat)
     {}
 
     /**
      * Handle a keyboard leave event.
      * The node is no longer focused.
      */
-    virtual void handle_keyboard_leave()
+    virtual void handle_keyboard_leave(wf::seat_t *seat)
     {}
 
     /**
@@ -89,7 +85,7 @@ class keyboard_interaction_t
      *
      * @return What should happen with the further processing of the event.
      */
-    virtual void handle_keyboard_key(wlr_keyboard_key_event event)
+    virtual void handle_keyboard_key(wf::seat_t *seat, wlr_keyboard_key_event event)
     {}
 
     keyboard_interaction_t() = default;

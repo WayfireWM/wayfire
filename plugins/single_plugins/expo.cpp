@@ -163,7 +163,7 @@ class wayfire_expo : public wf::per_output_plugin_instance_t, public wf::keyboar
         handle_input_move({(int)pointer_position.x, (int)pointer_position.y});
     }
 
-    void handle_keyboard_key(wlr_keyboard_key_event event) override
+    void handle_keyboard_key(wf::seat_t*, wlr_keyboard_key_event event) override
     {
         if (event.state == WLR_KEY_PRESSED)
         {

@@ -5,6 +5,7 @@
 #include <wayfire/scene-input.hpp>
 #include <wayfire/compositor-view.hpp>
 #include <wayfire/core.hpp>
+#include <wayfire/seat.hpp>
 
 #include <wayfire/nonstd/wlroots-full.hpp>
 /**
@@ -20,13 +21,12 @@ class view_keyboard_interaction_t : public wf::keyboard_interaction_t
         this->view = _view;
     }
 
-    void handle_keyboard_enter() override
+    void handle_keyboard_enter(wf::seat_t *seat) override
     {
         if (view->get_wlr_surface())
         {
-            auto seat = wf::get_core().get_current_seat();
-            auto kbd  = wlr_seat_get_keyboard(seat);
-            wlr_seat_keyboard_notify_enter(seat,
+            auto kbd = wlr_seat_get_keyboard(seat->seat);
+            wlr_seat_keyboard_notify_enter(seat->seat,
                 view->get_wlr_surface(),
                 kbd ? kbd->keycodes : NULL,
                 kbd ? kbd->num_keycodes : 0,
@@ -34,19 +34,16 @@ class view_keyboard_interaction_t : public wf::keyboard_interaction_t
         }
     }
 
-    void handle_keyboard_leave() override
+    void handle_keyboard_leave(wf::seat_t *seat) override
     {
         if (view->get_wlr_surface())
         {
-            auto seat = wf::get_core().get_current_seat();
-            wlr_seat_keyboard_notify_clear_focus(seat);
+            wlr_seat_keyboard_notify_clear_focus(seat->seat);
         }
     }
 
-    void handle_keyboard_key(wlr_keyboard_key_event event) override
+    void handle_keyboard_key(wf::seat_t *seat, wlr_keyboard_key_event event) override
     {
-        auto seat = wf::get_core().get_current_seat();
-        wlr_seat_keyboard_notify_key(seat,
-            event.time_msec, event.keycode, event.state);
+        wlr_seat_keyboard_notify_key(seat->seat, event.time_msec, event.keycode, event.state);
     }
 };

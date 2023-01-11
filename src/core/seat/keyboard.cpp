@@ -52,7 +52,8 @@ void wf::keyboard_t::setup_listeners()
 
             if (seat->priv->keyboard_focus)
             {
-                seat->priv->keyboard_focus->keyboard_interaction().handle_keyboard_key(*ev);
+                seat->priv->keyboard_focus->keyboard_interaction()
+                    .handle_keyboard_key(wf::get_core().seat.get(), *ev);
             }
         }
 

@@ -204,7 +204,7 @@ class WayfireSwitcher : public wf::per_output_plugin_instance_t, public wf::keyb
         grab_interface.cancel = [=] () {deinit_switcher();};
     }
 
-    void handle_keyboard_key(wlr_keyboard_key_event event) override
+    void handle_keyboard_key(wf::seat_t*, wlr_keyboard_key_event event) override
     {
         auto mod = wf::get_core().seat->modifier_from_keycode(event.keycode);
         if ((event.state == WLR_KEY_RELEASED) && (mod & activating_modifiers))
