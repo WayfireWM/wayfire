@@ -455,6 +455,17 @@ wayfire_view wl_surface_to_wayfire_view(wl_resource *surface);
  */
 wayfire_view node_to_view(wf::scene::node_ptr node);
 
+/**
+ * A base class for nodes which are to be identified as views.
+ * Used by @node_to_view in order to figure out whether a given node is a view or not.
+ */
+class view_node_tag_t
+{
+  public:
+    virtual ~view_node_tag_t() = default;
+    virtual wayfire_view get_view() const = 0;
+};
+
 namespace scene
 {
 /**
@@ -487,7 +498,7 @@ namespace scene
  * corner of the view's main surface.
  */
 class view_node_t : public scene::floating_inner_node_t,
-    public zero_copy_texturable_node_t
+    public zero_copy_texturable_node_t, public view_node_tag_t
 {
   public:
     view_node_t(wayfire_view view);
@@ -498,7 +509,7 @@ class view_node_t : public scene::floating_inner_node_t,
     wf::pointf_t to_local(const wf::pointf_t& point) override;
     wf::pointf_t to_global(const wf::pointf_t& point) override;
 
-    wayfire_view get_view() const
+    wayfire_view get_view() const override
     {
         return view;
     }

@@ -908,7 +908,7 @@ wayfire_view wf::node_to_view(wf::scene::node_ptr node)
     auto ptr = node.get();
     while (ptr)
     {
-        if (auto vnode = dynamic_cast<scene::view_node_t*>(ptr))
+        if (auto vnode = dynamic_cast<view_node_tag_t*>(ptr))
         {
             return vnode->get_view();
         }
