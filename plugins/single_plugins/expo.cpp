@@ -72,6 +72,7 @@ class wayfire_expo : public wf::per_output_plugin_instance_t, public wf::keyboar
         bool active = false;
         bool button_pressed = false;
         bool zoom_in = false;
+        bool accepting_input = false;
     } state;
 
     wf::point_t target_ws, initial_ws;
@@ -280,7 +281,8 @@ class wayfire_expo : public wf::per_output_plugin_instance_t, public wf::keyboar
 
         input_grab->grab_input(wf::scene::layer::OVERLAY);
         state.active = true;
-        state.button_pressed = false;
+        state.button_pressed  = false;
+        state.accepting_input = true;
         start_zoom(true);
 
         wall->start_output_renderer();
@@ -337,6 +339,7 @@ class wayfire_expo : public wf::per_output_plugin_instance_t, public wf::keyboar
 
     void deactivate()
     {
+        state.accepting_input = false;
         start_zoom(false);
         output->workspace->set_workspace(target_ws);
         for (size_t i = 0; i < keyboard_select_cbs.size(); i++)
@@ -456,8 +459,7 @@ class wayfire_expo : public wf::per_output_plugin_instance_t, public wf::keyboar
      */
     bool should_handle_key()
     {
-        return ((!zoom_animation.running() || state.zoom_in) &&
-            keyboard_interaction && !state.button_pressed);
+        return state.accepting_input && keyboard_interaction && !state.button_pressed;
     }
 
     void handle_key_pressed(uint32_t key)
