@@ -43,6 +43,22 @@ uint32_t wf::seat_t::modifier_from_keycode(uint32_t keycode)
     return 0;
 }
 
+xkb_state*wf::seat_t::get_xkb_state()
+{
+    if (priv->current_keyboard)
+    {
+        return priv->current_keyboard->handle->xkb_state;
+    }
+
+    return nullptr;
+}
+
+std::vector<uint32_t> wf::seat_t::get_pressed_keys()
+{
+    std::vector<uint32_t> pressed_keys{priv->pressed_keys.begin(), priv->pressed_keys.end()};
+    return pressed_keys;
+}
+
 /* ----------------------- wf::seat_t implementation ------------------------ */
 wf::seat_t::seat_t(wl_display *display, std::string name) : seat(wlr_seat_create(display, name.c_str()))
 {
@@ -263,12 +279,6 @@ void wf::seat_t::impl::transfer_grab(wf::scene::node_ptr grab_node, bool retain_
         return;
     }
 
-    force_release_keys();
-    if (!retain_pressed_state)
-    {
-        pressed_keys.clear();
-    }
-
     if (this->keyboard_focus)
     {
         this->keyboard_focus->keyboard_interaction().handle_keyboard_leave(wf::get_core().seat.get());
@@ -289,8 +299,6 @@ void wf::seat_t::impl::set_keyboard_focus(wf::scene::node_ptr new_focus)
         return;
     }
 
-    force_release_keys();
-    pressed_keys.clear();
     if (this->keyboard_focus)
     {
         this->keyboard_focus->keyboard_interaction().handle_keyboard_leave(wf::get_core().seat.get());

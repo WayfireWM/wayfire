@@ -19,12 +19,25 @@ class seat_t
     wlr_seat*const seat;
 
     /**
-     * @return A bit mask of the currently pressed modifiers
+     * Get the xkb_state of the currently active keyboard.
+     * Note: may be null if there is no keyboard connected to the seat.
+     */
+    xkb_state *get_xkb_state();
+
+    /**
+     * Get a list of all currently pressed keys.
+     */
+    std::vector<uint32_t> get_pressed_keys();
+
+    /**
+     * Get a bitmask of the pressed modifiers on the current keyboard.
+     * The returned value is a bitmask of WLR_MODIFIER_*.
      */
     uint32_t get_keyboard_modifiers();
 
     /**
-     * @return The modifier mask for the given keycode.
+     * Figure out whether the given keycode is a modifier on the current keyboard's keymap.
+     * If yes, return the modifier as a WLR_MODIFIER_* bitmask, otherwise, return 0.
      */
     uint32_t modifier_from_keycode(uint32_t keycode);
 

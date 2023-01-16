@@ -25,12 +25,11 @@ class view_keyboard_interaction_t : public wf::keyboard_interaction_t
     {
         if (view->get_wlr_surface())
         {
+            auto pressed_keys = seat->get_pressed_keys();
+
             auto kbd = wlr_seat_get_keyboard(seat->seat);
-            wlr_seat_keyboard_notify_enter(seat->seat,
-                view->get_wlr_surface(),
-                kbd ? kbd->keycodes : NULL,
-                kbd ? kbd->num_keycodes : 0,
-                kbd ? &kbd->modifiers : NULL);
+            wlr_seat_keyboard_notify_enter(seat->seat, view->get_wlr_surface(),
+                pressed_keys.data(), pressed_keys.size(), kbd ? &kbd->modifiers : NULL);
         }
     }
 

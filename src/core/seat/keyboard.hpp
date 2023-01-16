@@ -43,8 +43,7 @@ class keyboard_t
     wf::signal::connection_t<wf::reload_config_signal> on_config_reload;
     void reload_input_options();
 
-    wf::option_wrapper_t<std::string>
-    model, variant, layout, options, rules;
+    wf::option_wrapper_t<std::string> model, variant, layout, options, rules;
     wf::option_wrapper_t<int> repeat_rate, repeat_delay;
     /** Options have changed in the config file */
     bool dirty_options = true;
