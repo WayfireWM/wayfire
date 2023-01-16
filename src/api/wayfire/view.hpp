@@ -454,6 +454,7 @@ wayfire_view wl_surface_to_wayfire_view(wl_resource *surface);
  * May return NULL if @node is NULL or it is not a child of a view node.
  */
 wayfire_view node_to_view(wf::scene::node_ptr node);
+wayfire_view node_to_view(wf::scene::node_t *node);
 
 /**
  * A base class for nodes which are to be identified as views.

@@ -148,11 +148,11 @@ class output_layer_manager_t
     void push_views_from_scenegraph(wf::scene::node_ptr root,
         std::vector<wayfire_view>& result, bool target_minimized)
     {
-        if (auto vnode = dynamic_cast<scene::view_node_t*>(root.get()))
+        if (auto view = node_to_view(root))
         {
-            if (vnode->get_view()->minimized == target_minimized)
+            if (view->minimized == target_minimized)
             {
-                result.push_back(vnode->get_view());
+                result.push_back(view);
             }
         } else
         {

@@ -828,25 +828,6 @@ class wf::render_manager::impl
         postprocessing->allocate(output->handle->width, output->handle->height);
     }
 
-    wayfire_view get_first_view_recursive(wf::scene::node_ptr node)
-    {
-        if (auto vnode = dynamic_cast<wf::scene::view_node_t*>(node.get()))
-        {
-            return vnode->get_view();
-        }
-
-        for (auto& ch : node->get_children())
-        {
-            auto view = get_first_view_recursive(ch);
-            if (view)
-            {
-                return view;
-            }
-        }
-
-        return nullptr;
-    }
-
     /**
      * Try to directly scanout a view on the output, thereby skipping rendering
      * entirely.

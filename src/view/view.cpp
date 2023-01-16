@@ -801,6 +801,34 @@ void wf::view_interface_t::unref()
     }
 }
 
+class view_root_node_t : public wf::scene::floating_inner_node_t, wf::view_node_tag_t
+{
+  public:
+    view_root_node_t(wayfire_view _view) : floating_inner_node_t(false), view(_view)
+    {
+        view->connect(&on_destruct);
+    }
+
+    wayfire_view get_view() const override
+    {
+        return view;
+    }
+
+    std::string stringify() const override
+    {
+        std::ostringstream out;
+        out << this->view;
+        return "view-root-node of " + out.str() + " " + stringify_flags();
+    }
+
+  private:
+    wayfire_view view;
+    wf::signal::connection_t<wf::view_destruct_signal> on_destruct = [=] (wf::view_destruct_signal *ev)
+    {
+        view = nullptr;
+    };
+};
+
 void wf::view_interface_t::initialize()
 {
     priv->root_node = std::make_shared<scene::floating_inner_node_t>(false);
@@ -903,20 +931,24 @@ const wf::scene::floating_inner_ptr& wf::view_interface_t::get_surface_root_node
     return priv->surface_root_node;
 }
 
-wayfire_view wf::node_to_view(wf::scene::node_ptr node)
+wayfire_view wf::node_to_view(wf::scene::node_t *node)
 {
-    auto ptr = node.get();
-    while (ptr)
+    while (node)
     {
-        if (auto vnode = dynamic_cast<view_node_tag_t*>(ptr))
+        if (auto vnode = dynamic_cast<view_node_tag_t*>(node))
         {
             return vnode->get_view();
         }
 
-        ptr = ptr->parent();
+        node = node->parent();
     }
 
     return nullptr;
+}
+
+wayfire_view wf::node_to_view(wf::scene::node_ptr node)
+{
+    return node_to_view(node.get());
 }
 
 // FIXME: Consider splitting to header + source file

@@ -106,9 +106,9 @@ void wf::output_impl_t::do_update_focus(wf::scene::node_t *new_focus)
 void wf::output_impl_t::refocus()
 {
     auto new_focus = wf::get_core().scene()->keyboard_refocus(this);
-    if (auto vnode = dynamic_cast<scene::view_node_t*>(new_focus.node))
+    if (auto view = node_to_view(new_focus.node))
     {
-        update_active_view(vnode->get_view());
+        update_active_view(view);
     } else if (new_focus.node == nullptr)
     {
         update_active_view(nullptr);
