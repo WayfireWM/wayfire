@@ -135,7 +135,7 @@ class wayfire_scale : public wf::per_output_plugin_instance_t,
         output->add_activator(
             wf::option_wrapper_t<wf::activatorbinding_t>{"scale/toggle_all"}, &toggle_all_cb);
         output->connect(&update_cb);
-        grab = std::make_unique<wf::input_grab_t>("scale", output, this, this, nullptr);
+        grab = std::make_unique<wf::input_grab_t>("scale", output, this, this, this);
 
         allow_scale_zoom.set_callback(allow_scale_zoom_option_changed);
 
