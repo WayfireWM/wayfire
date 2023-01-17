@@ -38,11 +38,6 @@ class wayfire_decoration : public wf::plugin_interface_t, private wf::per_output
         }
     }
 
-    wf::plugin_activation_data_t grab_interface{
-        .name = "simple-decoration",
-        .capabilities = wf::CAPABILITY_VIEW_DECORATOR,
-    };
-
     void handle_new_output(wf::output_t *output) override
     {
         output->connect(&on_view_mapped);
