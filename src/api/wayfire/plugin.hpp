@@ -18,15 +18,13 @@ namespace wf
  */
 enum plugin_capabilities_t
 {
-    /** The plugin provides view decorations */
-    CAPABILITY_VIEW_DECORATOR    = 1 << 0,
     /** The plugin grabs input.
      * Required in order to use plugin_grab_interface_t::grab() */
-    CAPABILITY_GRAB_INPUT        = 1 << 1,
+    CAPABILITY_GRAB_INPUT        = 1 << 0,
     /** The plugin uses custom renderer */
-    CAPABILITY_CUSTOM_RENDERER   = 1 << 2,
+    CAPABILITY_CUSTOM_RENDERER   = 1 << 1,
     /** The plugin manages the whole desktop, for ex. switches workspaces. */
-    CAPABILITY_MANAGE_DESKTOP    = 1 << 3,
+    CAPABILITY_MANAGE_DESKTOP    = 1 << 2,
     /* Compound capabilities */
 
     /** The plugin manages the whole compositor state */
@@ -96,7 +94,7 @@ class plugin_interface_t
 using wayfire_plugin_load_func = wf::plugin_interface_t * (*)();
 
 /** The version of Wayfire's API/ABI */
-constexpr uint32_t WAYFIRE_API_ABI_VERSION = 2023'01'16;
+constexpr uint32_t WAYFIRE_API_ABI_VERSION = 2023'01'17;
 
 /**
  * Each plugin must also provide a function which returns the Wayfire API/ABI
