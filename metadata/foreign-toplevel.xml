@@ -3,6 +3,6 @@
 	<plugin name="foreign-toplevel">
 		<_short>Foreign Toplevel Protocol</_short>
 		<_long>An implementation of the wlr-foreign-toplevel-management-v1 protocol.</_long>
-		<category>General</category>
+		<category>Utility</category>
 	</plugin>
 </wayfire>

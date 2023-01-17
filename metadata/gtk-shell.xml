@@ -3,6 +3,6 @@
 	<plugin name="gtk-shell">
 		<_short>GTK Shell Protocol</_short>
 		<_long>An implementation of the gtk-shell protocol.</_long>
-		<category>General</category>
+		<category>Utility</category>
 	</plugin>
 </wayfire>
