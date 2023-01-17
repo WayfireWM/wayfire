@@ -801,10 +801,10 @@ void wf::view_interface_t::unref()
     }
 }
 
-class view_root_node_t : public wf::scene::floating_inner_node_t, wf::view_node_tag_t
+class view_root_node_t : public wf::scene::floating_inner_node_t, public wf::view_node_tag_t
 {
   public:
-    view_root_node_t(wayfire_view _view) : floating_inner_node_t(false), view(_view)
+    view_root_node_t(wf::view_interface_t *_view) : floating_inner_node_t(false), view(_view)
     {
         view->connect(&on_destruct);
     }
@@ -816,13 +816,19 @@ class view_root_node_t : public wf::scene::floating_inner_node_t, wf::view_node_
 
     std::string stringify() const override
     {
-        std::ostringstream out;
-        out << this->view;
-        return "view-root-node of " + out.str() + " " + stringify_flags();
+        if (view)
+        {
+            std::ostringstream out;
+            out << this->view->self();
+            return "view-root-node of " + out.str() + " " + stringify_flags();
+        } else
+        {
+            return "inert view-root-node " + stringify_flags();
+        }
     }
 
   private:
-    wayfire_view view;
+    wf::view_interface_t *view;
     wf::signal::connection_t<wf::view_destruct_signal> on_destruct = [=] (wf::view_destruct_signal *ev)
     {
         view = nullptr;
@@ -831,7 +837,7 @@ class view_root_node_t : public wf::scene::floating_inner_node_t, wf::view_node_
 
 void wf::view_interface_t::initialize()
 {
-    priv->root_node = std::make_shared<scene::floating_inner_node_t>(false);
+    priv->root_node = std::make_shared<view_root_node_t>(this);
     priv->transformed_node = std::make_shared<scene::transform_manager_node_t>();
 
     if (!priv->surface_root_node)
