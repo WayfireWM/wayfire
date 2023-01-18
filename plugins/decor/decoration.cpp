@@ -18,8 +18,8 @@ class wayfire_decoration : public wf::plugin_interface_t, private wf::per_output
         update_view_decoration(ev->view);
     };
 
-    wf::signal::connection_t<wf::view_decoration_changed_signal> on_decoration_state_changed =
-        [=] (wf::view_decoration_changed_signal *ev)
+    wf::signal::connection_t<wf::view_decoration_state_updated_signal> on_decoration_state_changed =
+        [=] (wf::view_decoration_state_updated_signal *ev)
     {
         update_view_decoration(ev->view);
     };
