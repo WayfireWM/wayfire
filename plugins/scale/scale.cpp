@@ -544,6 +544,13 @@ class wayfire_scale : public wf::per_output_plugin_instance_t,
                 }
             }
         }
+
+        auto view = scale_find_view_at(to_f, output);
+        if (view && (current_focus_view != view))
+        {
+            // view_focused handler will update the view state
+            output->focus_view(view, false);
+        }
     }
 
     /* Get the workspace for the center point of the untransformed view geometry */
