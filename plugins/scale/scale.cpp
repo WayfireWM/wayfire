@@ -846,7 +846,15 @@ class wayfire_scale : public wf::per_output_plugin_instance_t,
         std::vector<wayfire_view>& views)
     {
         std::vector<std::vector<wayfire_view>> view_grid;
-        std::sort(views.begin(), views.end(), view_compare_y);
+        // First ensure a consistent sorting of all views using a persistent
+        // identifier before sorting by geometry.
+        // This is so that if two views have exactly the same geometry,
+        // they will always appear in the same order in the output list.
+        std::sort(views.begin(), views.end(), [] (auto a, auto b)
+        {
+            return a.get() < b.get();
+        });
+        std::stable_sort(views.begin(), views.end(), view_compare_y);
 
         int rows = sqrt(views.size() + 1);
         int views_per_row = (int)std::ceil((double)views.size() / rows);
@@ -855,7 +863,7 @@ class wayfire_scale : public wf::per_output_plugin_instance_t,
         {
             size_t j = std::min(i + views_per_row, n);
             view_grid.emplace_back(views.begin() + i, views.begin() + j);
-            std::sort(view_grid.back().begin(), view_grid.back().end(),
+            std::stable_sort(view_grid.back().begin(), view_grid.back().end(),
                 view_compare_x);
         }
 
