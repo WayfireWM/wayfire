@@ -9,7 +9,7 @@
 #include "transaction-test-object.hpp"
 #include <wayfire/txn/transaction.hpp>
 
-static void run_transaction_test(bool timeout)
+static void run_transaction_test(bool timeout, bool autoready)
 {
     setup_wayfire_debugging_state();
     wf::wl_timer::callback_t tx_timeout_callback;
@@ -30,8 +30,8 @@ static void run_transaction_test(bool timeout)
 
     wf::txn::transaction_t tx(1234);
     tx.connect(&on_apply);
-    auto object1 = std::make_shared<txn_test_object_t>(false);
-    auto object2 = std::make_shared<txn_test_object_t>(false);
+    auto object1 = std::make_shared<txn_test_object_t>(autoready);
+    auto object2 = std::make_shared<txn_test_object_t>(autoready);
 
     tx.add_object(object1);
     tx.add_object(object2);
@@ -46,6 +46,17 @@ static void run_transaction_test(bool timeout)
 
     tx.commit(timer_setter);
     REQUIRE(tx_timeout_callback);
+
+    if (autoready)
+    {
+        REQUIRE(object1->number_applied == 1);
+        REQUIRE(object1->number_committed == 1);
+        REQUIRE(object2->number_applied == 1);
+        REQUIRE(object2->number_committed == 1);
+        REQUIRE(applied == true);
+        return;
+    }
+
     REQUIRE(object1->number_applied == 0);
     REQUIRE(object1->number_committed == 1);
     REQUIRE(object2->number_applied == 0);
@@ -75,10 +86,15 @@ static void run_transaction_test(bool timeout)
 
 TEST_CASE("Transaction can be successfully committed and applied")
 {
-    run_transaction_test(false);
+    run_transaction_test(false, false);
 }
 
 TEST_CASE("Transaction is applied even after a timeout")
 {
-    run_transaction_test(true);
+    run_transaction_test(true, false);
+}
+
+TEST_CASE("Transaction is applied immediately if all objects are ready")
+{
+    run_transaction_test(false, true);
 }
