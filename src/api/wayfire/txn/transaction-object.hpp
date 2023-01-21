@@ -26,6 +26,11 @@ class transaction_object_t : public signal::provider_t
 {
   public:
     /**
+     * Get a string representing the transaction object. Used for debugging purposes.
+     */
+    virtual std::string stringify() const;
+
+    /**
      * Make the pending state committed.
      * This function is called when a transaction is committed.
      */

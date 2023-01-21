@@ -89,9 +89,10 @@ class wl_idle_call
     /** execute the callback now. do not use manually! */
     void execute();
 
+    static wl_event_loop *loop;
+
   private:
     callback_t call;
-    wl_event_loop *loop     = NULL;
     wl_event_source *source = NULL;
 };
 

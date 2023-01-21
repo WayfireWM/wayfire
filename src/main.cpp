@@ -184,14 +184,9 @@ void parse_extended_debugging(const std::vector<std::string>& categories)
             LOGD("Enabling extended debugging for transactions");
             wf::log::enabled_categories.set(
                 (size_t)wf::log::logging_category::TXN, 1);
-        } else if (cat == "txnview")
+        } else if (cat == "txni")
         {
-            LOGD("Enabling extended debugging for view instructions");
-            wf::log::enabled_categories.set(
-                (size_t)wf::log::logging_category::TXNV, 1);
-        } else if (cat == "txninstr")
-        {
-            LOGD("Enabling extended debugging for transaction instructions");
+            LOGD("Enabling extended debugging for transaction objects");
             wf::log::enabled_categories.set(
                 (size_t)wf::log::logging_category::TXNI, 1);
         } else if (cat == "wlroots")

@@ -49,6 +49,8 @@ void wl_idle_call::set_callback(callback_t call)
     this->call = call;
 }
 
+wl_event_loop*wl_idle_call::loop = NULL;
+
 void wl_idle_call::run_once()
 {
     if (!call || source)

@@ -60,14 +60,12 @@ enum class logging_category : size_t
 {
     // Transactions - general
     TXN     = 0,
-    // Transactions - view instructions
-    TXNV    = 1,
-    // Transactions - instructions lifetime (pending, ready, timeout, etc.)
-    TXNI    = 2,
+    // Transactions - individual objects
+    TXNI    = 1,
     // Wlroots messages
-    WLR     = 3,
+    WLR     = 2,
     // Direct scanout
-    SCANOUT = 4,
+    SCANOUT = 3,
     TOTAL,
 };
 
