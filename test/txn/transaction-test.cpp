@@ -9,7 +9,7 @@
 #include "transaction-test-object.hpp"
 #include <wayfire/txn/transaction.hpp>
 
-TEST_CASE("Transaction can be successfully committed and applied")
+static void run_transaction_test(bool timeout)
 {
     setup_wayfire_debugging_state();
     wf::wl_timer::callback_t tx_timeout_callback;
@@ -21,8 +21,10 @@ TEST_CASE("Transaction can be successfully committed and applied")
     };
 
     bool applied = false;
-    wf::signal::connection_t<wf::txn::transaction_applied_signal> on_apply = [&] (auto)
+    wf::signal::connection_t<wf::txn::transaction_applied_signal> on_apply =
+        [&] (wf::txn::transaction_applied_signal *ev)
     {
+        REQUIRE(ev->timed_out == timeout);
         applied = true;
     };
 
@@ -56,10 +58,27 @@ TEST_CASE("Transaction can be successfully committed and applied")
     REQUIRE(object2->number_committed == 1);
     REQUIRE(applied == false);
 
-    object2->emit_ready();
+    if (!timeout)
+    {
+        object2->emit_ready();
+    } else
+    {
+        tx_timeout_callback();
+    }
+
     REQUIRE(object1->number_applied == 1);
     REQUIRE(object1->number_committed == 1);
     REQUIRE(object2->number_applied == 1);
     REQUIRE(object2->number_committed == 1);
     REQUIRE(applied == true);
+}
+
+TEST_CASE("Transaction can be successfully committed and applied")
+{
+    run_transaction_test(false);
+}
+
+TEST_CASE("Transaction is applied even after a timeout")
+{
+    run_transaction_test(true);
 }
