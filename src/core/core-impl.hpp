@@ -19,13 +19,6 @@ class input_method_relay;
 class compositor_core_impl_t : public compositor_core_t
 {
   public:
-    /**
-     * When we get a request for setting CSD, the view might not have been
-     * created. So, we store all requests in core, and the views pick this
-     * information when they are created
-     */
-    std::unordered_map<wlr_surface*, uint32_t> uses_csd;
-
     wlr_egl *egl;
     wlr_compositor *compositor;
 
@@ -97,8 +90,6 @@ class compositor_core_impl_t : public compositor_core_t
     const std::shared_ptr<scene::root_node_t>& scene() final;
 
   protected:
-    wf::wl_listener_wrapper decoration_created;
-    wf::wl_listener_wrapper xdg_decoration_created;
     wf::wl_listener_wrapper vkbd_created;
     wf::wl_listener_wrapper vptr_created;
     wf::wl_listener_wrapper input_inhibit_activated;

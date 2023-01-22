@@ -267,11 +267,6 @@ void wf::wlr_view_t::map(wlr_surface *surface)
     surface_controller = std::make_unique<wlr_surface_controller_t>(surface, priv->surface_root_node);
     on_surface_commit.connect(&surface->events.commit);
 
-    if (wf::get_core_impl().uses_csd.count(surface))
-    {
-        this->has_client_decoration = wf::get_core_impl().uses_csd[surface];
-    }
-
     update_size();
 
     if (role == VIEW_ROLE_TOPLEVEL)

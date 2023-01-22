@@ -11,6 +11,13 @@
 #include <wayfire/workspace-manager.hpp>
 #include <wayfire/signal-definitions.hpp>
 
+/**
+ * When we get a request for setting CSD, the view might not have been
+ * created. So, we store all requests in core, and the views pick this
+ * information when they are created
+ */
+std::unordered_map<wlr_surface*, uint32_t> uses_csd;
+
 wayfire_xdg_popup::wayfire_xdg_popup(wlr_xdg_popup *popup) :
     wf::wlr_view_t()
 {
@@ -322,6 +329,16 @@ wf::geometry_t get_xdg_geometry(wlr_xdg_toplevel *toplevel)
     return xdg_geometry;
 }
 
+void wayfire_xdg_view::map(wlr_surface *surf)
+{
+    if (uses_csd.count(surf))
+    {
+        this->has_client_decoration = uses_csd[surf];
+    }
+
+    wlr_view_t::map(surf);
+}
+
 void wayfire_xdg_view::commit()
 {
     wlr_view_t::commit();
@@ -487,4 +504,135 @@ void wf::init_xdg_shell()
         });
         on_xdg_created.connect(&xdg_handle->events.new_surface);
     }
+}
+
+/* decorations impl */
+struct wf_server_decoration_t
+{
+    wlr_server_decoration *decor;
+    wf::wl_listener_wrapper on_mode_set, on_destroy;
+
+    std::function<void(void*)> mode_set = [&] (void*)
+    {
+        bool use_csd = decor->mode == WLR_SERVER_DECORATION_MANAGER_MODE_CLIENT;
+        uses_csd[decor->surface] = use_csd;
+
+        auto view =
+            dynamic_cast<wayfire_xdg_view*>(wf::wl_surface_to_wayfire_view(decor->surface->resource).get());
+        if (view)
+        {
+            view->has_client_decoration = use_csd;
+        }
+    };
+
+    wf_server_decoration_t(wlr_server_decoration *_decor) :
+        decor(_decor)
+    {
+        on_mode_set.set_callback(mode_set);
+        on_destroy.set_callback([&] (void*)
+        {
+            uses_csd.erase(decor->surface);
+            delete this;
+        });
+
+        on_mode_set.connect(&decor->events.mode);
+        on_destroy.connect(&decor->events.destroy);
+        /* Read initial decoration settings */
+        mode_set(NULL);
+    }
+};
+
+struct wf_xdg_decoration_t
+{
+    wlr_xdg_toplevel_decoration_v1 *decor;
+    wf::wl_listener_wrapper on_mode_request, on_commit, on_destroy;
+
+    std::function<void(void*)> mode_request = [&] (void*)
+    {
+        wf::option_wrapper_t<std::string>
+        deco_mode{"core/preferred_decoration_mode"};
+        wlr_xdg_toplevel_decoration_v1_mode default_mode =
+            WLR_XDG_TOPLEVEL_DECORATION_V1_MODE_CLIENT_SIDE;
+        if ((std::string)deco_mode == "server")
+        {
+            default_mode = WLR_XDG_TOPLEVEL_DECORATION_V1_MODE_SERVER_SIDE;
+        }
+
+        auto mode = decor->pending.mode;
+        if (mode == WLR_XDG_TOPLEVEL_DECORATION_V1_MODE_NONE)
+        {
+            mode = default_mode;
+        }
+
+        wlr_xdg_toplevel_decoration_v1_set_mode(decor, mode);
+    };
+
+    std::function<void(void*)> commit = [&] (void*)
+    {
+        bool use_csd = (decor->current.mode == WLR_XDG_TOPLEVEL_DECORATION_V1_MODE_CLIENT_SIDE);
+        uses_csd[decor->surface->surface] = use_csd;
+
+        auto wf_surface = dynamic_cast<wayfire_xdg_view*>(
+            wf::wl_surface_to_wayfire_view(decor->surface->surface->resource).get());
+        if (wf_surface)
+        {
+            wf_surface->set_decoration_mode(use_csd);
+        }
+    };
+
+    wf_xdg_decoration_t(wlr_xdg_toplevel_decoration_v1 *_decor) :
+        decor(_decor)
+    {
+        on_mode_request.set_callback(mode_request);
+        on_commit.set_callback(commit);
+        on_destroy.set_callback([&] (void*)
+        {
+            uses_csd.erase(decor->surface->surface);
+            delete this;
+        });
+
+        on_mode_request.connect(&decor->events.request_mode);
+        on_commit.connect(&decor->surface->surface->events.commit);
+        on_destroy.connect(&decor->events.destroy);
+        /* Read initial decoration settings */
+        mode_request(NULL);
+    }
+};
+
+static void init_legacy_decoration()
+{
+    static wf::wl_listener_wrapper decoration_created;
+    wf::option_wrapper_t<std::string> deco_mode{"core/preferred_decoration_mode"};
+    uint32_t default_mode = WLR_SERVER_DECORATION_MANAGER_MODE_CLIENT;
+    if ((std::string)deco_mode == "server")
+    {
+        default_mode = WLR_SERVER_DECORATION_MANAGER_MODE_SERVER;
+    }
+
+    wlr_server_decoration_manager_set_default_mode(wf::get_core().protocols.decorator_manager, default_mode);
+
+    decoration_created.set_callback([&] (void *data)
+    {
+        /* will be freed by the destroy request */
+        new wf_server_decoration_t((wlr_server_decoration*)(data));
+    });
+    decoration_created.connect(&wf::get_core().protocols.decorator_manager->events.new_decoration);
+}
+
+static void init_xdg_decoration()
+{
+    static wf::wl_listener_wrapper xdg_decoration_created;
+    xdg_decoration_created.set_callback([&] (void *data)
+    {
+        /* will be freed by the destroy request */
+        new wf_xdg_decoration_t((wlr_xdg_toplevel_decoration_v1*)(data));
+    });
+
+    xdg_decoration_created.connect(&wf::get_core().protocols.xdg_decorator->events.new_toplevel_decoration);
+}
+
+void wf::init_xdg_decoration_handlers()
+{
+    init_legacy_decoration();
+    init_xdg_decoration();
 }

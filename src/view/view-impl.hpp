@@ -188,6 +188,7 @@ void xwayland_update_default_cursor();
 void xwayland_bring_to_front(wlr_surface *surface);
 
 void init_desktop_apis();
+void init_xdg_decoration_handlers();
 }
 
 #endif /* end of include guard: VIEW_IMPL_HPP */
