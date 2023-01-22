@@ -10,9 +10,10 @@ std::string wf::txn::transaction_object_t::stringify() const
     return out.str();
 }
 
-wf::txn::transaction_t::transaction_t(uint64_t timeout)
+wf::txn::transaction_t::transaction_t(uint64_t timeout, timer_setter_t timer_setter)
 {
     this->timeout = timeout;
+    this->timer_setter = timer_setter;
 
     this->on_object_ready = [=] (object_ready_signal *ev)
     {
@@ -34,20 +35,20 @@ const std::vector<wf::txn::transaction_object_sptr>& wf::txn::transaction_t::get
 
 void wf::txn::transaction_t::add_object(transaction_object_sptr object)
 {
-    LOGC(TXNI, "Transaction ", this, " add object ", object->stringify());
     auto it = std::find(objects.begin(), objects.end(), object);
     if (it == objects.end())
     {
+        LOGC(TXNI, "Transaction ", this, " add object ", object->stringify());
         objects.push_back(object);
-        object->connect(&on_object_ready);
     }
 }
 
-void wf::txn::transaction_t::commit(timer_setter_t timer_setter)
+void wf::txn::transaction_t::commit()
 {
     LOGC(TXN, "Committing transaction ", this, " with timeout ", this->timeout);
     for (auto& obj : this->objects)
     {
+        obj->connect(&on_object_ready);
         obj->commit();
     }
 

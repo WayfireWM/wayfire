@@ -24,7 +24,7 @@ class transaction_t : public signal::provider_t
      * @param timeout The maximal duration, in milliseconds, to wait for transaction objects to become ready.
      *   When the timeout is reached, all committed state is applied.
      */
-    transaction_t(uint64_t timeout);
+    transaction_t(uint64_t timeout, timer_setter_t timer_setter);
 
     /**
      * Add a new object to the transaction. If the object was already part of it, this is no-op.
@@ -40,16 +40,19 @@ class transaction_t : public signal::provider_t
      * Commit the transaction, that is, commit the pending state of all participating objects.
      * As soon as all objects are ready or the transaction times out, the state will be applied.
      */
-    void commit(timer_setter_t timer);
+    void commit();
 
   private:
     std::vector<transaction_object_sptr> objects;
     int count_ready_objects = 0;
     uint64_t timeout;
+    timer_setter_t timer_setter;
 
     void apply(bool did_timeout);
     wf::signal::connection_t<object_ready_signal> on_object_ready;
 };
+
+using transaction_uptr = std::unique_ptr<transaction_t>;
 
 /**
  * A signal emitted on a transaction as soon as it has been applied.

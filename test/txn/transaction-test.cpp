@@ -28,7 +28,7 @@ static void run_transaction_test(bool timeout, bool autoready)
         applied = true;
     };
 
-    wf::txn::transaction_t tx(1234);
+    wf::txn::transaction_t tx(1234, timer_setter);
     tx.connect(&on_apply);
     auto object1 = std::make_shared<txn_test_object_t>(autoready);
     auto object2 = std::make_shared<txn_test_object_t>(autoready);
@@ -44,7 +44,7 @@ static void run_transaction_test(bool timeout, bool autoready)
     REQUIRE(object2->number_committed == 0);
     REQUIRE(tx.get_objects() == std::vector<wf::txn::transaction_object_sptr>{object1, object2});
 
-    tx.commit(timer_setter);
+    tx.commit();
     REQUIRE(tx_timeout_callback);
 
     if (autoready)
