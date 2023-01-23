@@ -521,7 +521,7 @@ class wayfire_move : public wf::per_output_plugin_instance_t,
 
     bool is_snap_enabled()
     {
-        if (!enable_snap || drag_helper->is_view_held_in_place())
+        if (!enable_snap || !drag_helper->view || drag_helper->is_view_held_in_place())
         {
             return false;
         }
