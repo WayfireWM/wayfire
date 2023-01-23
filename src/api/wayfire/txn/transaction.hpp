@@ -18,6 +18,14 @@ class transaction_t : public signal::provider_t
     using timer_setter_t = std::function<void (uint64_t, wf::wl_timer::callback_t)>;
 
     /**
+     * Create a new transaction.
+     *
+     * @param timeout The timeout for the transaction in milliseconds after it is committed.
+     *   -1 means that core should pick a default timeout.
+     */
+    static std::unique_ptr<transaction_t> create(int64_t timeout = -1);
+
+    /**
      * Create a new empty transaction.
      *
      * @param timer A function used to set timeout callbacks at runtime.

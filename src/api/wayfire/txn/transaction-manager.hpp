@@ -22,6 +22,7 @@ class transaction_manager_t : public signal::provider_t
 {
   public:
     transaction_manager_t();
+    ~transaction_manager_t();
 
     /**
      * Add a new transaction to the list of scheduled transactions. The transaction might be merged with

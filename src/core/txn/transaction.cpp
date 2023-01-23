@@ -1,3 +1,4 @@
+#include "wayfire/option-wrapper.hpp"
 #include "wayfire/txn/transaction-object.hpp"
 #include <wayfire/txn/transaction.hpp>
 #include <sstream>
@@ -71,4 +72,35 @@ void wf::txn::transaction_t::apply(bool did_timeout)
     ev.self = this;
     ev.timed_out = did_timeout;
     this->emit(&ev);
+}
+
+/**
+ * A transaction which uses wl_timer for timeouts.
+ */
+class wayfire_default_transaction_t : public wf::txn::transaction_t
+{
+  public:
+    wayfire_default_transaction_t(int64_t timeout) : transaction_t(timeout, get_timer_setter())
+    {}
+
+  private:
+    wf::wl_timer timer;
+    timer_setter_t get_timer_setter()
+    {
+        return [this] (uint64_t timeout, wf::wl_timer::callback_t cb)
+        {
+            timer.set_timeout(timeout, cb);
+        };
+    }
+};
+
+std::unique_ptr<wf::txn::transaction_t> wf::txn::transaction_t::create(int64_t timeout)
+{
+    if (timeout == -1)
+    {
+        static wf::option_wrapper_t<int> tx_timeout{"core/transaction_timeout"};
+        timeout = tx_timeout;
+    }
+
+    return std::make_unique<wayfire_default_transaction_t>(timeout);
 }

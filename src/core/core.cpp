@@ -3,6 +3,7 @@
     #define _GNU_SOURCE
 #endif
 
+#include "wayfire/txn/transaction-manager.hpp"
 #include "wayfire/bindings-repository.hpp"
 #include "wayfire/util.hpp"
 #include <memory>
@@ -76,6 +77,7 @@ struct wlr_idle_inhibitor_t : public wf::idle_inhibitor_t
 void wf::compositor_core_impl_t::init()
 {
     this->scene_root = std::make_shared<scene::root_node_t>();
+    this->tx_manager = std::make_unique<txn::transaction_manager_t>();
 
     wlr_renderer_init_wl_display(renderer, display);
 

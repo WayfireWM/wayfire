@@ -27,6 +27,11 @@ namespace scene
 class root_node_t;
 }
 
+namespace txn
+{
+class transaction_manager_t;
+}
+
 namespace touch
 {
 class gesture_t;
@@ -100,6 +105,7 @@ class compositor_core_t : public wf::object_base_t, public signal::provider_t
     std::unique_ptr<wf::output_layout_t> output_layout;
     std::unique_ptr<wf::bindings_repository_t> bindings;
     std::unique_ptr<wf::seat_t> seat;
+    std::unique_ptr<wf::txn::transaction_manager_t> tx_manager;
 
     /**
      * Various protocols supported by wlroots
