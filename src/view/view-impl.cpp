@@ -340,7 +340,7 @@ void wf::view_interface_t::emit_view_unmap()
         get_output()->emit(&data);
 
         view_disappeared_signal disappeared_data;
-        data.view = self();
+        disappeared_data.view = self();
         get_output()->emit(&disappeared_data);
     }
 
