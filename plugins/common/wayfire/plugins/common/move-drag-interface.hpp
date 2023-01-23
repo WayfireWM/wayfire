@@ -499,8 +499,6 @@ class core_drag_t : public signal::provider_t
             grab_origin = grab_position;
             view_held_in_place = true;
         }
-
-        wf::dump_scene();
     }
 
     void start_drag(wayfire_view view, wf::point_t grab_position,

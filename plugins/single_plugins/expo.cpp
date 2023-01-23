@@ -424,13 +424,16 @@ class wayfire_expo : public wf::per_output_plugin_instance_t, public wf::keyboar
             return;
         }
 
-        auto output_offset = wf::origin(output->get_layout_geometry());
+        auto local = to - wf::origin(output->get_layout_geometry());
+
         if (drag_helper->view)
         {
-            drag_helper->handle_motion(to + output_offset);
+            drag_helper->handle_motion(to);
         }
 
-        if (abs(to - input_grab_origin) < 5)
+        LOGI("Motion is ", to, " ", input_grab_origin);
+
+        if (abs(local - input_grab_origin) < 5)
         {
             /* Ignore small movements */
             return;
@@ -439,19 +442,18 @@ class wayfire_expo : public wf::per_output_plugin_instance_t, public wf::keyboar
         bool first_click = (input_grab_origin != offscreen_point);
         if (!zoom_animation.running() && first_click)
         {
-            auto view = find_view_at_coordinates(input_grab_origin.x,
-                input_grab_origin.y);
+            auto view = find_view_at_coordinates(input_grab_origin.x, input_grab_origin.y);
             if (view)
             {
                 start_moving(view, input_grab_origin);
-                drag_helper->handle_motion(to + output_offset);
+                drag_helper->handle_motion(to);
             }
         }
 
         /* As input coordinates are always positive, this will ensure that any
          * subsequent motion events while grabbed are allowed */
         input_grab_origin = offscreen_point;
-        update_target_workspace(to.x, to.y);
+        update_target_workspace(local.x, local.y);
     }
 
     /**
