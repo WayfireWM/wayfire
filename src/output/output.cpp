@@ -238,7 +238,7 @@ void wf::output_impl_t::close_popups()
     for (auto& v : workspace->get_views_in_layer(wf::ALL_LAYERS))
     {
         auto popup = dynamic_cast<wayfire_xdg_popup*>(v.get());
-        if (!popup || (popup->popup_parent == get_active_view().get()))
+        if (!popup || (popup->popup_parent == get_active_view()))
         {
             continue;
         }
@@ -247,7 +247,7 @@ void wf::output_impl_t::close_popups()
          * close the topmost popup and this will recursively destroy the others.
          *
          * Otherwise we get a race condition with wlroots. */
-        if (dynamic_cast<wayfire_xdg_popup*>(popup->popup_parent))
+        if (dynamic_cast<wayfire_xdg_popup*>(popup->popup_parent.get()))
         {
             continue;
         }

@@ -161,9 +161,6 @@ class wlr_view_t : public view_interface_t
     std::shared_ptr<wf::scene::wlr_surface_node_t> main_surface;
 
   public:
-    /** @return The offset from the surface coordinates to the actual geometry */
-    virtual wf::point_t get_window_offset();
-
     /* Just pass to the default wlr surface implementation */
     bool is_mapped() const override;
     wf::dimensions_t get_size() const;

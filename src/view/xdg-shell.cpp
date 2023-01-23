@@ -21,8 +21,7 @@ std::unordered_map<wlr_surface*, uint32_t> uses_csd;
 wayfire_xdg_popup::wayfire_xdg_popup(wlr_xdg_popup *popup) :
     wf::wlr_view_t()
 {
-    this->popup_parent =
-        dynamic_cast<wlr_view_t*>(wf::wl_surface_to_wayfire_view(popup->parent->resource).get());
+    this->popup_parent = wf::wl_surface_to_wayfire_view(popup->parent->resource).get();
     this->popup = popup;
     this->role  = wf::VIEW_ROLE_UNMANAGED;
     this->priv->keyboard_focus_enabled = false;
@@ -106,14 +105,18 @@ void wayfire_xdg_popup::update_position()
         return;
     }
 
-    wf::pointf_t popup_offset = {
-        1.0 * popup->current.geometry.x + popup_parent->get_window_offset().x,
-        1.0 * popup->current.geometry.y + popup_parent->get_window_offset().y,
-    };
+    wf::pointf_t popup_offset = {1.0 * popup->current.geometry.x, 1.0 * popup->current.geometry.y};
+    if (wlr_surface_is_xdg_surface(popup->parent))
+    {
+        wlr_box box;
+        wlr_xdg_surface_get_geometry(wlr_xdg_surface_from_wlr_surface(popup->parent), &box);
+        popup_offset.x += box.x;
+        popup_offset.y += box.y;
+    }
 
     auto parent_geometry = popup_parent->get_output_geometry();
-    popup_offset.x += parent_geometry.x - get_window_offset().x;
-    popup_offset.y += parent_geometry.y - get_window_offset().y;
+    popup_offset.x += parent_geometry.x - popup->base->current.geometry.x;
+    popup_offset.y += parent_geometry.y - popup->base->current.geometry.y;
 
     // Apply transformers to the popup position
     auto node = popup_parent->get_surface_root_node()->parent();
@@ -134,7 +137,7 @@ void wayfire_xdg_popup::unconstrain()
         auto as_popup = dynamic_cast<wayfire_xdg_popup*>(toplevel_parent);
         if (as_popup)
         {
-            toplevel_parent = as_popup->popup_parent;
+            toplevel_parent = as_popup->popup_parent.get();
         } else
         {
             break;
@@ -163,14 +166,6 @@ void wayfire_xdg_popup::destroy()
     on_ping_timeout.disconnect();
 
     wlr_view_t::destroy();
-}
-
-wf::point_t wayfire_xdg_popup::get_window_offset()
-{
-    return {
-        popup->base->current.geometry.x,
-        popup->base->current.geometry.y,
-    };
 }
 
 void wayfire_xdg_popup::close()
@@ -362,11 +357,6 @@ void wayfire_xdg_view::commit()
     {
         this->last_size_request = wf::dimensions(xdg_g);
     }
-}
-
-wf::point_t wayfire_xdg_view::get_window_offset()
-{
-    return xdg_surface_offset;
 }
 
 wf::geometry_t wayfire_xdg_view::get_wm_geometry()

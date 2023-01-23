@@ -439,8 +439,3 @@ wlr_buffer*wf::wlr_view_t::get_buffer()
 
     return nullptr;
 }
-
-wf::point_t wf::wlr_view_t::get_window_offset()
-{
-    return {0, 0};
-}
