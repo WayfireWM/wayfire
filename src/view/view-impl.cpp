@@ -43,26 +43,6 @@ std::string wf::wlr_view_t::get_title()
     return this->title;
 }
 
-void wf::wlr_view_t::handle_minimize_hint(wf::view_interface_t *relative_to, const wlr_box & hint)
-{
-    auto relative_to_view = dynamic_cast<view_interface_t*>(relative_to);
-
-    if (relative_to_view->get_output() != get_output())
-    {
-        LOGE("Minimize hint set to surface on a different output, "
-             "problems might arise");
-        /* TODO: translate coordinates in case minimize hint is on another output */
-    }
-
-    auto box = relative_to_view->get_output_geometry();
-    box.x    += hint.x;
-    box.y    += hint.y;
-    box.width = hint.width;
-    box.height = hint.height;
-
-    set_minimize_hint(box);
-}
-
 void wf::wlr_view_t::set_position(int x, int y,
     wf::geometry_t old_geometry, bool send_signal)
 {

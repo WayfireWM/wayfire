@@ -116,8 +116,6 @@ class wlr_view_t : public view_interface_t
     void handle_app_id_changed(std::string new_app_id);
     /** Used by view implementations when the title changes */
     void handle_title_changed(std::string new_title);
-    /* Update the minimize hint */
-    void handle_minimize_hint(wf::view_interface_t *relative_to, const wlr_box& hint);
 
     /**
      * The bounding box of the view the last time it was rendered.

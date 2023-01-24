@@ -36,40 +36,4 @@ class wayfire_xdg_popup : public wf::wlr_view_t
 
 void create_xdg_popup(wlr_xdg_popup *popup);
 
-class wayfire_xdg_view : public wf::wlr_view_t
-{
-  private:
-    wf::wl_listener_wrapper on_map, on_unmap, on_destroy, on_new_popup,
-        on_request_move, on_request_resize,
-        on_request_minimize, on_request_maximize,
-        on_request_fullscreen, on_set_parent,
-        on_set_title, on_set_app_id, on_show_window_menu,
-        on_ping_timeout;
-
-    wf::point_t xdg_surface_offset = {0, 0};
-    wlr_xdg_toplevel *xdg_toplevel;
-    uint32_t last_configure_serial = 0;
-
-  protected:
-    void initialize() override final;
-
-  public:
-    wayfire_xdg_view(wlr_xdg_toplevel *toplevel);
-    virtual ~wayfire_xdg_view();
-    void commit() final;
-    void map(wlr_surface *surf) final;
-    wf::geometry_t get_wm_geometry() final;
-
-    void set_tiled(uint32_t edges) final;
-    void set_activated(bool act) final;
-    void set_fullscreen(bool full) final;
-
-    void resize(int w, int h) final;
-    void request_native_size() override final;
-
-    void destroy() final;
-    void close() final;
-    void ping() final;
-};
-
 #endif /* end of include guard: XDG_SHELL_HPP */
