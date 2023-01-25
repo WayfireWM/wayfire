@@ -22,7 +22,7 @@ class scale_title_filter;
 /**
  * Class storing the filter text, shared among all outputs
  */
-struct scale_title_filter_text
+typedef struct 
 {
     std::string title_filter;
     /* since title filter is utf-8, here we store the length of each
@@ -71,7 +71,7 @@ struct scale_title_filter_text
         title_filter.clear();
         char_len.clear();
     }
-};
+}scale_title_filter_text;
 
 class scale_title_filter : public wf::per_output_plugin_instance_t
 {
@@ -89,12 +89,12 @@ class scale_title_filter : public wf::per_output_plugin_instance_t
 
         auto transform = [] (unsigned char c) -> unsigned char
         {
-            if (std::isspace(c))
+            if (!(std::isspace(c)))
             {
-                return ' ';
+                 return (c <= 127) ? (unsigned char)std::tolower(c) : c;
             }
-
-            return (c <= 127) ? (unsigned char)std::tolower(c) : c;
+                    return ' ';
+           
         };
         std::transform(string.begin(), string.end(), string.begin(), transform);
     }
@@ -103,12 +103,9 @@ class scale_title_filter : public wf::per_output_plugin_instance_t
     {
         auto filter = get_active_filter().title_filter;
 
-        if (filter.empty())
+        if (!(filter.empty()))
         {
-            return true;
-        }
-
-        auto title  = view->get_title();
+                  auto title  = view->get_title();
         auto app_id = view->get_app_id();
 
         fix_case(title);
@@ -117,6 +114,9 @@ class scale_title_filter : public wf::per_output_plugin_instance_t
 
         return (title.find(filter) != std::string::npos) ||
                (app_id.find(filter) != std::string::npos);
+        }
+  return true;
+
     }
 
     scale_title_filter_text& get_active_filter()
@@ -175,13 +175,12 @@ class scale_title_filter : public wf::per_output_plugin_instance_t
         xkb_keycode_t keycode = raw_keycode + 8;
         xkb_keysym_t keysym   = xkb_state_key_get_one_sym(xkb_state, keycode);
         auto& filter = get_active_filter();
-        if (keysym == XKB_KEY_BackSpace)
-        {
-            filter.rem_char();
-        } else
+        if (!(keysym == XKB_KEY_BackSpace))
         {
             filter.add_key(xkb_state, keycode);
         }
+        filter.rem_char();
+   
 
         return true;
     };
