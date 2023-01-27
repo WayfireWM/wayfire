@@ -200,7 +200,7 @@ void wayfire_window_rules_t::setup_rules_from_config()
 
     for (const auto& [name, rule_str] : rule_list)
     {
-        LOGW("Registering ", rule_str);
+        LOGD("Registering ", rule_str);
         _lexer.reset(rule_str);
         auto rule = wf::rule_parser_t().parse(_lexer);
         if (rule != nullptr)
