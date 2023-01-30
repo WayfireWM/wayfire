@@ -3,6 +3,7 @@
 #include "wayfire/scene-operations.hpp"
 #include "wayfire/scene-render.hpp"
 #include "wayfire/scene.hpp"
+#include "wayfire/signal-provider.hpp"
 #include <memory>
 #define GLM_FORCE_RADIANS
 #include <glm/gtc/matrix_transform.hpp>
@@ -316,12 +317,35 @@ class simple_decorator_t : public wf::decorator_frame_t_t
     wayfire_view view;
     std::shared_ptr<simple_decoration_node_t> deco;
 
+    wf::signal::connection_t<wf::view_activated_state_signal> on_view_activated = [&] (auto)
+    {
+        view->damage();
+    };
+
+    wf::signal::connection_t<wf::view_geometry_changed_signal> on_view_geometry_changed = [&] (auto)
+    {
+        deco->resize(wf::dimensions(view->get_wm_geometry()));
+    };
+
+    wf::signal::connection_t<wf::view_fullscreen_signal> on_view_fullscreen = [&] (auto)
+    {
+        deco->update_decoration_size();
+        if (!view->fullscreen)
+        {
+            deco->resize(wf::dimensions(view->get_wm_geometry()));
+        }
+    };
+
   public:
     simple_decorator_t(wayfire_view view)
     {
         this->view = view;
         deco = std::make_shared<simple_decoration_node_t>(view);
         wf::scene::add_back(view->get_surface_root_node(), deco);
+
+        view->connect(&on_view_activated);
+        view->connect(&on_view_geometry_changed);
+        view->connect(&on_view_fullscreen);
     }
 
     ~simple_decorator_t()
@@ -330,49 +354,14 @@ class simple_decorator_t : public wf::decorator_frame_t_t
     }
 
     /* frame implementation */
-    virtual wf::geometry_t expand_wm_geometry(
-        wf::geometry_t contained_wm_geometry) override
+    virtual wf::decoration_margins_t get_margins() override
     {
-        contained_wm_geometry.x     -= deco->current_thickness;
-        contained_wm_geometry.y     -= deco->current_titlebar;
-        contained_wm_geometry.width += 2 * deco->current_thickness;
-        contained_wm_geometry.height +=
-            deco->current_thickness + deco->current_titlebar;
-
-        return contained_wm_geometry;
-    }
-
-    virtual void calculate_resize_size(
-        int& target_width, int& target_height) override
-    {
-        target_width  -= 2 * deco->current_thickness;
-        target_height -= deco->current_thickness + deco->current_titlebar;
-
-        target_width  = std::max(target_width, 1);
-        target_height = std::max(target_height, 1);
-    }
-
-    virtual void notify_view_activated(bool active) override
-    {
-        view->damage();
-    }
-
-    virtual void notify_view_resized(wf::geometry_t view_geometry) override
-    {
-        deco->resize(wf::dimensions(view_geometry));
-    }
-
-    virtual void notify_view_tiled() override
-    {}
-
-    virtual void notify_view_fullscreen() override
-    {
-        deco->update_decoration_size();
-
-        if (!view->fullscreen)
-        {
-            notify_view_resized(view->get_wm_geometry());
-        }
+        return wf::decoration_margins_t{
+            .left   = deco->current_thickness,
+            .right  = deco->current_thickness,
+            .bottom = deco->current_thickness,
+            .top    = deco->current_titlebar,
+        };
     }
 };
 

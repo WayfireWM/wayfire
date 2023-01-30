@@ -361,11 +361,6 @@ void wf::view_interface_t::set_tiled(uint32_t edges)
     data.new_edges = edges;
 
     this->tiled_edges = edges;
-    if (priv->frame)
-    {
-        priv->frame->notify_view_tiled();
-    }
-
     this->emit(&data);
     if (this->get_output())
     {
@@ -383,15 +378,10 @@ void wf::view_interface_t::set_fullscreen(bool full)
     }
 
     fullscreen = full;
-    if (priv->frame)
-    {
-        priv->frame->notify_view_fullscreen();
-    }
 
     view_fullscreen_signal data;
     data.view  = self();
     data.state = full;
-
     if (get_output())
     {
         get_output()->emit(&data);
@@ -402,13 +392,7 @@ void wf::view_interface_t::set_fullscreen(bool full)
 
 void wf::view_interface_t::set_activated(bool active)
 {
-    if (priv->frame)
-    {
-        priv->frame->notify_view_activated(active);
-    }
-
     activated = active;
-
     view_activated_state_signal ev;
     this->emit(&ev);
 }
@@ -715,10 +699,6 @@ void wf::view_interface_t::set_decoration(
         target_wm_geometry = get_output()->workspace->get_workarea();
     }
 
-    // notify the frame of the current size
-    priv->frame->notify_view_resized(get_wm_geometry());
-    // but request the target size, it will be sent to the frame on the
-    // next commit
     set_geometry(target_wm_geometry);
     damage();
 

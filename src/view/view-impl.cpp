@@ -140,11 +140,6 @@ void wf::wlr_view_t::update_size()
         get_output()->emit(&data);
     }
 
-    if (priv->frame)
-    {
-        priv->frame->notify_view_resized(get_wm_geometry());
-    }
-
     scene::update(this->get_surface_root_node(), scene::update_flag::GEOMETRY);
 }
 
