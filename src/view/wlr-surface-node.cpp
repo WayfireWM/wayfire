@@ -4,14 +4,84 @@
 #include "wayfire/geometry.hpp"
 #include "wayfire/render-manager.hpp"
 #include "wayfire/scene-render.hpp"
+#include "wayfire/scene.hpp"
 #include "wlr-surface-pointer-interaction.cpp"
 #include "wlr-surface-touch-interaction.cpp"
 #include <memory>
 #include <sstream>
 #include <string>
 #include <wayfire/signal-provider.hpp>
+#include <wlr/util/box.h>
 
-wf::scene::wlr_surface_node_t::wlr_surface_node_t(wlr_surface *surface) : node_t(false)
+wf::scene::surface_state_t::surface_state_t(surface_state_t&& other)
+{
+    if (&other != this)
+    {
+        *this = std::move(other);
+    }
+}
+
+wf::scene::surface_state_t& wf::scene::surface_state_t::operator =(surface_state_t&& other)
+{
+    if (current_buffer)
+    {
+        wlr_buffer_unlock(current_buffer);
+    }
+
+    current_buffer = other.current_buffer;
+    texture = other.texture;
+    accumulated_damage = other.accumulated_damage;
+    size = other.size;
+    src_viewport = other.src_viewport;
+
+    other.current_buffer = NULL;
+    other.texture = NULL;
+    other.accumulated_damage.clear();
+    other.src_viewport.reset();
+    return *this;
+}
+
+void wf::scene::surface_state_t::merge_state(wlr_surface *surface)
+{
+    if (current_buffer)
+    {
+        wlr_buffer_unlock(current_buffer);
+    }
+
+    if (surface->buffer)
+    {
+        wlr_buffer_lock(&surface->buffer->base);
+    }
+
+    this->current_buffer = &surface->buffer->base;
+    this->texture = surface->buffer->texture;
+    this->size    = {surface->current.width, surface->current.height};
+
+    if (surface->current.viewport.has_src)
+    {
+        wlr_fbox fbox;
+        wlr_surface_get_buffer_source_box(surface, &fbox);
+        this->src_viewport = fbox;
+    } else
+    {
+        this->src_viewport.reset();
+    }
+
+    wf::region_t current_damage;
+    wlr_surface_get_effective_damage(surface, current_damage.to_pixman());
+    this->accumulated_damage |= current_damage;
+}
+
+wf::scene::surface_state_t::~surface_state_t()
+{
+    if (current_buffer)
+    {
+        wlr_buffer_unlock(current_buffer);
+    }
+}
+
+wf::scene::wlr_surface_node_t::wlr_surface_node_t(wlr_surface *surface, bool autocommit) :
+    node_t(false), autocommit(autocommit)
 {
     this->surface = surface;
     this->ptr_interaction = std::make_unique<wlr_surface_pointer_interaction_t>(surface, this);
@@ -34,22 +104,33 @@ wf::scene::wlr_surface_node_t::wlr_surface_node_t(wlr_surface *surface) : node_t
             send_frame_done();
         }
 
-        wf::region_t dmg;
-        wlr_surface_get_effective_damage(surface, dmg.to_pixman());
-        wf::scene::damage_node(this, dmg);
-
-        if (dmg.empty())
+        if (this->autocommit)
         {
-            for (auto& [wo, _] : visibility)
-            {
-                wo->render->schedule_redraw();
-            }
+            surface_state_t state;
+            state.merge_state(surface);
+            this->apply_state(std::move(state));
+        }
+
+        for (auto& [wo, _] : visibility)
+        {
+            wo->render->schedule_redraw();
         }
     });
 
     on_surface_destroyed.connect(&surface->events.destroy);
     on_surface_commit.connect(&surface->events.commit);
     send_frame_done();
+}
+
+void wf::scene::wlr_surface_node_t::apply_state(surface_state_t&& state)
+{
+    const bool size_changed = current_state.size != state.size;
+    this->current_state = std::move(state);
+    wf::scene::damage_node(this, current_state.accumulated_damage);
+    if (size_changed)
+    {
+        scene::update(this->shared_from_this(), scene::update_flag::GEOMETRY);
+    }
 }
 
 std::optional<wf::scene::input_node_t> wf::scene::wlr_surface_node_t::find_node_at(const wf::pointf_t& at)
@@ -188,13 +269,13 @@ class wf::scene::wlr_surface_node_t::wlr_surface_render_instance_t : public rend
 
     void render(const wf::render_target_t& target, const wf::region_t& region) override
     {
-        if (!self->surface)
+        if (!self->current_state.current_buffer)
         {
             return;
         }
 
         wf::geometry_t geometry = self->get_bounding_box();
-        wf::texture_t texture{self->surface};
+        wf::texture_t texture{self->current_state.texture, self->current_state.src_viewport};
 
         OpenGL::render_begin(target);
         OpenGL::render_texture(texture, target, geometry, glm::vec4(1.f), OpenGL::RENDER_FLAG_CACHED);
@@ -291,20 +372,20 @@ void wf::scene::wlr_surface_node_t::gen_render_instances(
 
 wf::geometry_t wf::scene::wlr_surface_node_t::get_bounding_box()
 {
-    if (surface)
-    {
-        return wf::geometry_t{
-            .x     = 0,
-            .y     = 0,
-            .width = surface->current.width,
-            .height = surface->current.height,
-        };
-    }
-
-    return {0, 0, 0, 0};
+    return wf::construct_box({0, 0}, current_state.size);
 }
 
 wlr_surface*wf::scene::wlr_surface_node_t::get_surface() const
 {
     return this->surface;
+}
+
+std::optional<wf::texture_t> wf::scene::wlr_surface_node_t::to_texture() const
+{
+    if (this->current_state.current_buffer)
+    {
+        return wf::texture_t{current_state.texture, current_state.src_viewport};
+    }
+
+    return {};
 }

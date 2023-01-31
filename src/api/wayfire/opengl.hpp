@@ -177,9 +177,7 @@ struct texture_t
     /** Initialize a non-inverted RGBA texture with the given texture id */
     texture_t(GLuint tex);
     /** Initialize a texture with the attributes of the wlr texture */
-    explicit texture_t(wlr_texture*);
-    /** Initialize a texture with the attributes of a mapped surface */
-    explicit texture_t(wlr_surface*);
+    explicit texture_t(wlr_texture*, std::optional<wlr_fbox> viewport = {});
 };
 }
 

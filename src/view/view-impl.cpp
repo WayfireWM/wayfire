@@ -261,7 +261,7 @@ void wf::wlr_view_t::map(wlr_surface *surface)
     scene::set_node_enabled(priv->root_node, true);
     priv->wsurface = surface;
 
-    this->main_surface = std::make_shared<scene::wlr_surface_node_t>(surface);
+    this->main_surface = std::make_shared<scene::wlr_surface_node_t>(surface, true);
     priv->surface_root_node->set_children_list({main_surface});
     scene::update(priv->surface_root_node, scene::update_flag::CHILDREN_LIST);
     surface_controller = std::make_unique<wlr_surface_controller_t>(surface, priv->surface_root_node);

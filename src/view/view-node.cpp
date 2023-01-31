@@ -12,6 +12,7 @@
 #include "wayfire/scene-render.hpp"
 #include "wayfire/scene.hpp"
 #include "wayfire/signal-provider.hpp"
+#include "wayfire/view-transform.hpp"
 #include "wayfire/view.hpp"
 #include "wayfire/workspace-manager.hpp"
 #include "wlr-layer-shell-unstable-v1-protocol.h"
@@ -385,17 +386,14 @@ void view_node_t::gen_render_instances(std::vector<render_instance_uptr> & insta
 
 std::optional<wf::texture_t> view_node_t::to_texture() const
 {
-    if (!view)
+    if (!view || !view->is_mapped() || (get_children().size() != 1))
     {
         return {};
     }
 
-    if (view->is_mapped() &&
-        !view->has_transformer() &&
-        view->get_wlr_surface() &&
-        (this->get_children().size() == 1))
+    if (auto texturable = dynamic_cast<zero_copy_texturable_node_t*>(get_children().front().get()))
     {
-        return wf::texture_t{view->get_wlr_surface()};
+        return texturable->to_texture();
     }
 
     return {};

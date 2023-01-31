@@ -152,7 +152,7 @@ wf::drag_icon_t::drag_icon_t(wlr_drag_icon *ic) : icon(ic)
     on_destroy.connect(&icon->events.destroy);
 
 
-    auto main_node = std::make_shared<scene::wlr_surface_node_t>(icon->surface);
+    auto main_node = std::make_shared<scene::wlr_surface_node_t>(icon->surface, true);
     root_node->set_children_list({main_node});
 
     // Memory is auto-freed when the wlr_surface is destroyed

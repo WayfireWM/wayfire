@@ -555,7 +555,7 @@ wf::texture_t::texture_t(GLuint tex)
     this->tex_id = tex;
 }
 
-wf::texture_t::texture_t(wlr_texture *texture)
+wf::texture_t::texture_t(wlr_texture *texture, std::optional<wlr_fbox> viewport)
 {
     assert(wlr_texture_is_gles2(texture));
     wlr_gles2_texture_attribs attribs;
@@ -574,24 +574,17 @@ wf::texture_t::texture_t(wlr_texture *texture)
     {
         this->type = wf::TEXTURE_TYPE_EXTERNAL;
     }
-}
 
-wf::texture_t::texture_t(wlr_surface *surface) :
-    texture_t(surface->buffer->texture)
-{
-    if (surface->current.viewport.has_src)
+    if (viewport)
     {
         this->has_viewport = true;
 
-        auto width  = surface->buffer->texture->width;
-        auto height = surface->buffer->texture->height;
-
-        wlr_fbox fbox;
-        wlr_surface_get_buffer_source_box(surface, &fbox);
-        viewport_box.x1 = fbox.x / width;
-        viewport_box.x2 = (fbox.x + fbox.width) / width;
-        viewport_box.y1 = 1.0 - (fbox.y + fbox.height) / height;
-        viewport_box.y2 = 1.0 - (fbox.y) / height;
+        auto width  = texture->width;
+        auto height = texture->height;
+        viewport_box.x1 = viewport->x / width;
+        viewport_box.x2 = (viewport->x + viewport->width) / width;
+        viewport_box.y1 = 1.0 - (viewport->y + viewport->height) / height;
+        viewport_box.y2 = 1.0 - (viewport->y) / height;
     }
 }
 }
