@@ -64,7 +64,7 @@ wf::output_impl_t::output_impl_t(wlr_output *handle,
         scene::add_back(root->layers[layer], nodes[layer]);
     }
 
-    wset = std::make_shared<scene::floating_inner_node_t>(false);
+    wset = std::make_shared<scene::floating_inner_node_t>(true);
     scene::add_front(node_for_layer(scene::layer::WORKSPACE), wset);
 
     workspace = std::make_unique<workspace_manager>(this);

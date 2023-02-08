@@ -108,35 +108,8 @@ wf::keyboard_focus_node_t node_t::keyboard_refocus(wf::output_t *output)
     return result;
 }
 
-static std::vector<node_t*> extract_structure_nodes(
-    const std::vector<node_ptr>& list)
-{
-    std::vector<node_t*> structure;
-    for (auto& node : list)
-    {
-        if (node->is_structure_node())
-        {
-            structure.push_back(node.get());
-        }
-    }
-
-    return structure;
-}
-
 bool floating_inner_node_t::set_children_list(std::vector<node_ptr> new_list)
 {
-    // Structure nodes should be sorted in both sequences and be the same.
-    // For simplicity, we just extract the nodes in new vectors and check that
-    // they are the same.
-    //
-    // FIXME: this could also be done with a merge-sort-like algorithm in place,
-    // but is it worth it here? The scenegraph is supposed to stay static for
-    // most of the time.
-    if (extract_structure_nodes(children) != extract_structure_nodes(new_list))
-    {
-        return false;
-    }
-
     set_children_unchecked(std::move(new_list));
     return true;
 }

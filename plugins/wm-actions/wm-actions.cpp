@@ -339,7 +339,7 @@ class wayfire_wm_actions_t : public wf::per_output_plugin_instance_t
   public:
     void init() override
     {
-        always_above = std::make_shared<wf::scene::floating_inner_node_t>(false);
+        always_above = std::make_shared<wf::scene::floating_inner_node_t>(true);
         wf::scene::add_front(
             output->node_for_layer(wf::scene::layer::WORKSPACE),
             always_above);
