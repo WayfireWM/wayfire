@@ -1,5 +1,5 @@
 protocol_plugins = [
-  'foreign-toplevel', 'gtk-shell',
+  'foreign-toplevel', 'gtk-shell', 'wayfire-shell',
 ]
 
 all_include_dirs = [wayfire_api_inc, wayfire_conf_inc, plugins_common_inc]
@@ -12,4 +12,3 @@ foreach plugin : protocol_plugins
       install: true,
       install_dir: conf_data.get('PLUGIN_PATH'))
 endforeach
-

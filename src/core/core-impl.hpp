@@ -11,8 +11,6 @@
 #include <set>
 #include <unordered_map>
 
-struct wayfire_shell;
-
 namespace wf
 {
 class seat_t;
@@ -46,8 +44,6 @@ class compositor_core_impl_t : public compositor_core_t
      * Called only by main().
      */
     virtual void post_init();
-
-    wayfire_shell *wf_shell;
 
     /**
      * Remove a view from the compositor list. This is called when the view's

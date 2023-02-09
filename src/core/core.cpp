@@ -36,7 +36,6 @@
 #include "seat/pointer.hpp"
 #include "seat/cursor.hpp"
 #include "../view/view-impl.hpp"
-#include "../output/wayfire-shell.hpp"
 #include "../output/output-impl.hpp"
 #include "main.hpp"
 #include "seat/drag-icon.hpp"
@@ -303,7 +302,6 @@ void wf::compositor_core_impl_t::init()
     protocols.foreign_v2 = wlr_xdg_foreign_v2_create(display,
         protocols.foreign_registry);
 
-    wf_shell = wayfire_shell_create(display);
     this->bindings = std::make_unique<bindings_repository_t>();
     image_io::init();
     OpenGL::init();

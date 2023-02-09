@@ -15,7 +15,6 @@
 #include "wayfire/output-layout.hpp"
 #include "wayfire/workspace-manager.hpp"
 #include "wayfire/compositor-view.hpp"
-#include "wayfire-shell.hpp"
 #include "../core/seat/input-manager.hpp"
 #include "../view/xdg-shell.hpp"
 #include <memory>
