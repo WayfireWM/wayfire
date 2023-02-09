@@ -12,7 +12,6 @@
 #include "wayfire/core.hpp"
 #include "wayfire/output-layout.hpp"
 #include "wayfire/render-manager.hpp"
-#include "wayfire-shell.hpp"
 #include "wayfire-shell-unstable-v2-protocol.h"
 #include "wayfire/signal-definitions.hpp"
 
