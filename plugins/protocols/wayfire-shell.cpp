@@ -462,11 +462,6 @@ class wayfire_shell_protocol_impl : public wf::plugin_interface_t
         delete wf_shell;
     }
 
-    bool is_unloadable() override
-    {
-        return false;
-    }
-
   private:
     wayfire_shell *wf_shell;
 };
