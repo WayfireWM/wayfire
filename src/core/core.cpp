@@ -191,6 +191,8 @@ void wf::compositor_core_impl_t::init()
     protocols.foreign_v2 = wlr_xdg_foreign_v2_create(display,
         protocols.foreign_registry);
 
+    wlr_fractional_scale_manager_v1_create(display, 1);
+
     this->bindings = std::make_unique<bindings_repository_t>();
     image_io::init();
     OpenGL::init();

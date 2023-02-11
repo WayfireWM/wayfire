@@ -252,6 +252,7 @@ class wf::scene::wlr_surface_node_t::wlr_surface_render_instance_t : public rend
             if (self->surface)
             {
                 wlr_surface_send_enter(self->surface, visible_on->handle);
+                wlr_fractional_scale_v1_notify_scale(self->surface, visible_on->handle->scale);
             }
         }
 

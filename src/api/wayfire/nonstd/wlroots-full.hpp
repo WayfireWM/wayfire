@@ -134,6 +134,7 @@ extern "C"
 #include <wlr/types/wlr_relative_pointer_v1.h>
 #include <wlr/types/wlr_text_input_v3.h>
 #include <wlr/types/wlr_primary_selection_v1.h>
+#include <wlr/types/wlr_fractional_scale_v1.h>
 
 // Activation plugin
 #include <wlr/types/wlr_xdg_activation_v1.h>
