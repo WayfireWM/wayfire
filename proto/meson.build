@@ -1,6 +1,6 @@
 wl_protocol_dir = wayland_protos.get_pkgconfig_variable('pkgdatadir')
 
-wayland_scanner = find_program('wayland-scanner')
+wayland_scanner = find_program('wayland-scanner', native: true)
 
 wayland_scanner_server = generator(
 	wayland_scanner,
