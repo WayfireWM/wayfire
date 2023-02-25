@@ -388,6 +388,14 @@ void wf::output_impl_t::focus_view(wayfire_view v, uint32_t flags)
         v = v->parent;
     }
 
+    pre_focus_view_signal pre_focus;
+    pre_focus.view = v;
+    emit(&pre_focus);
+    if (!pre_focus.can_focus)
+    {
+        return;
+    }
+
     /* If no keyboard focus surface is set, then we don't want to focus the view */
     if (v->get_keyboard_focus_surface())
     {
