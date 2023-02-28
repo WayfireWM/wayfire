@@ -523,7 +523,7 @@ class wayfire_cube : public wf::per_output_plugin_instance_t, public wf::pointer
         update_view_matrix();
         output->render->schedule_redraw();
 
-        return true;
+        return false;
     }
 
     /* Mouse grab was released */
