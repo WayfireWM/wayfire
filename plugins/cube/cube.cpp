@@ -123,6 +123,7 @@ class wayfire_cube : public wf::per_output_plugin_instance_t, public wf::pointer
                 }
 
                 self->cube->render(target.translated(-wf::origin(self->get_bounding_box())), framebuffers);
+                wf::scene::damage_node(self, self->get_bounding_box());
             }
 
             void compute_visibility(wf::output_t *output, wf::region_t& visible) override
