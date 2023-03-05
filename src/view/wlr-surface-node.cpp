@@ -29,7 +29,7 @@ wf::scene::wlr_surface_node_t::wlr_surface_node_t(wlr_surface *surface) : node_t
 
     this->on_surface_commit.set_callback([=] (void*)
     {
-        if (this->visibility.empty())
+        if (!wlr_surface_has_buffer(this->surface) && this->visibility.empty())
         {
             send_frame_done();
         }
