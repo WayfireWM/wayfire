@@ -1,3 +1,4 @@
+#include "wayfire/debug.hpp"
 #include "wayfire/plugins/common/input-grab.hpp"
 #include "wayfire/scene-input.hpp"
 #include "wayfire/signal-provider.hpp"

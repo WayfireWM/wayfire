@@ -1,3 +1,4 @@
+#include "wayfire/geometry.hpp"
 #include "wayfire/plugins/common/input-grab.hpp"
 #include "wayfire/scene-input.hpp"
 #include <cmath>
@@ -269,28 +270,29 @@ class wayfire_resize : public wf::per_output_plugin_instance_t, public wf::point
         auto input = get_input_coords();
         int dx     = input.x - grab_start.x;
         int dy     = input.y - grab_start.y;
-        int width  = grabbed_geometry.width;
-        int height = grabbed_geometry.height;
 
+        wf::geometry_t desired = grabbed_geometry;
         if (edges & WLR_EDGE_LEFT)
         {
-            width -= dx;
+            desired.x     += dx;
+            desired.width -= dx;
         } else if (edges & WLR_EDGE_RIGHT)
         {
-            width += dx;
+            desired.width += dx;
         }
 
         if (edges & WLR_EDGE_TOP)
         {
-            height -= dy;
+            desired.y += dy;
+            desired.height -= dy;
         } else if (edges & WLR_EDGE_BOTTOM)
         {
-            height += dy;
+            desired.height += dy;
         }
 
-        height = std::max(height, 1);
-        width  = std::max(width, 1);
-        view->resize(width, height);
+        desired.width  = std::max(desired.width, 1);
+        desired.height = std::max(desired.height, 1);
+        view->set_geometry(desired);
     }
 
     void fini() override

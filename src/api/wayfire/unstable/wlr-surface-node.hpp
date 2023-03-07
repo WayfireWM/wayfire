@@ -65,6 +65,7 @@ class wlr_surface_node_t : public node_t, public zero_copy_texturable_node_t
 
     wlr_surface *get_surface() const;
     void apply_state(surface_state_t&& state);
+    void send_frame_done();
 
   private:
     std::unique_ptr<pointer_interaction_t> ptr_interaction;
@@ -77,7 +78,6 @@ class wlr_surface_node_t : public node_t, public zero_copy_texturable_node_t
 
     const bool autocommit;
     surface_state_t current_state;
-    void send_frame_done();
     void apply_current_surface_state();
 };
 }

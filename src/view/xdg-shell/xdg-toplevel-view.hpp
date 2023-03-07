@@ -4,6 +4,9 @@
 #include "wayfire/unstable/wlr-surface-node.hpp"
 #include "../surface-impl.hpp"
 
+#include "wayfire/toplevel.hpp"
+#include "xdg-toplevel.hpp"
+
 namespace wf
 {
 /**
@@ -16,6 +19,7 @@ class xdg_toplevel_view_t : public wf::view_interface_t
 
     void move(int x, int y) override;
     void resize(int w, int h) override;
+    void set_geometry(wf::geometry_t g) override;
     void request_native_size() override;
     void close() override;
     void ping() override;
@@ -33,6 +37,9 @@ class xdg_toplevel_view_t : public wf::view_interface_t
     void initialize() override;
 
     void set_decoration_mode(bool use_csd);
+    void set_decoration(std::unique_ptr<decorator_frame_t_t> frame) override;
+
+    void set_resizing(bool resizing, uint32_t edges) override;
 
   private:
     bool has_client_decoration = true;
@@ -50,16 +57,11 @@ class xdg_toplevel_view_t : public wf::view_interface_t
     wf::wl_listener_wrapper on_surface_commit;
     std::shared_ptr<wf::scene::wlr_surface_node_t> main_surface;
 
-    wf::geometry_t wm_geometry = {100, 100, 0, 0};
-    wf::geometry_t base_geometry = {100, 100, 0, 0};
-    wf::point_t wm_offset;
+    std::shared_ptr<wf::xdg_toplevel_t> wtoplevel;
+    wf::signal::connection_t<xdg_toplevel_applied_state_signal> on_toplevel_applied;
+    wf::geometry_t last_bounding_box = {0, 0, 0, 0};
 
-    wf::dimensions_t last_size_request = {0, 0};
     wlr_xdg_toplevel *xdg_toplevel;
-    uint32_t last_configure_serial;
-    bool should_resize_client(wf::dimensions_t old, wf::dimensions_t next);
-    void update_size();
-    void adjust_anchored_edge(wf::dimensions_t new_size);
 
     void map();
     void unmap();
@@ -68,5 +70,6 @@ class xdg_toplevel_view_t : public wf::view_interface_t
 
     void handle_title_changed(std::string new_title);
     void handle_app_id_changed(std::string new_app_id);
+    void handle_toplevel_state_changed(toplevel_state_t old_state);
 };
 }

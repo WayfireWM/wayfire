@@ -10,6 +10,7 @@
 #include "wayfire/geometry.hpp"
 #include <wayfire/output-layout.hpp>
 #include <wayfire/workspace-set.hpp>
+#include <wlr/util/edges.h>
 
 /**
  * When we get a request for setting CSD, the view might not have been
@@ -23,8 +24,23 @@ wf::xdg_toplevel_view_t::xdg_toplevel_view_t(wlr_xdg_toplevel *tlvl)
     this->xdg_toplevel = tlvl;
     this->main_surface = std::make_shared<scene::wlr_surface_node_t>(tlvl->base->surface, false);
 
+    this->on_toplevel_applied = [&] (xdg_toplevel_applied_state_signal *ev)
+    {
+        this->handle_toplevel_state_changed(ev->old_state);
+    };
+    wtoplevel = std::make_shared<xdg_toplevel_t>(tlvl, main_surface);
+    wtoplevel->connect(&on_toplevel_applied);
+
     on_surface_commit.set_callback([&] (void*) { commit(); });
-    on_map.set_callback([&] (void*) { map(); });
+    on_map.set_callback([&] (void*)
+    {
+        wlr_box box;
+        wlr_xdg_surface_get_geometry(xdg_toplevel->base, &box);
+        wtoplevel->pending().mapped = true;
+        wtoplevel->pending().geometry.width  = box.width;
+        wtoplevel->pending().geometry.height = box.height;
+        wf::get_core().tx_manager->schedule_object(wtoplevel);
+    });
     on_unmap.set_callback([&] (void*) { unmap(); });
     on_destroy.set_callback([&] (void*) { destroy(); });
     on_new_popup.set_callback([&] (void *data)
@@ -109,73 +125,27 @@ wf::xdg_toplevel_view_t::xdg_toplevel_view_t(wlr_xdg_toplevel *tlvl)
 
 void wf::xdg_toplevel_view_t::move(int x, int y)
 {
-    this->damage();
-
-    view_geometry_changed_signal geometry_changed;
-    geometry_changed.view = self();
-    geometry_changed.old_geometry = this->wm_geometry;
-
-    this->wm_geometry.x = x;
-    this->wm_geometry.y = y;
-
-    if (priv->frame)
-    {
-        auto expanded    = priv->frame->expand_wm_geometry(this->wm_geometry);
-        auto deco_offset = wf::origin(wm_geometry) - wf::origin(expanded);
-
-        this->base_geometry.x = this->wm_geometry.x - wm_offset.x + deco_offset.x;
-        this->base_geometry.y = this->wm_geometry.y - wm_offset.y + deco_offset.y;
-    } else
-    {
-        this->base_geometry.x = this->wm_geometry.x - wm_offset.x;
-        this->base_geometry.y = this->wm_geometry.y - wm_offset.y;
-    }
-
-    /* Make sure that if we move the view while it is unmapped, its snapshot
-     * is still valid coordinates */
-    priv->offscreen_buffer = priv->offscreen_buffer.translated({
-        x - geometry_changed.old_geometry.x, y - geometry_changed.old_geometry.y,
-    });
-
-    this->damage();
-
-    emit(&geometry_changed);
-    wf::get_core().emit(&geometry_changed);
-    if (get_output())
-    {
-        get_output()->emit(&geometry_changed);
-    }
-
-    scene::update(this->get_surface_root_node(), scene::update_flag::GEOMETRY);
-}
-
-wf::geometry_t get_xdg_geometry(wlr_xdg_toplevel *toplevel)
-{
-    wlr_box xdg_geometry;
-    wlr_xdg_surface_get_geometry(toplevel->base, &xdg_geometry);
-
-    return xdg_geometry;
+    this->wtoplevel->pending().geometry.x = x;
+    this->wtoplevel->pending().geometry.y = y;
+    wf::get_core().tx_manager->schedule_object(wtoplevel);
 }
 
 void wf::xdg_toplevel_view_t::resize(int w, int h)
 {
-    if (priv->frame)
-    {
-        priv->frame->calculate_resize_size(w, h);
-    }
+    this->wtoplevel->pending().geometry.width  = w;
+    this->wtoplevel->pending().geometry.height = h;
+    wf::get_core().tx_manager->schedule_object(wtoplevel);
+}
 
-    auto current_geometry = get_xdg_geometry(xdg_toplevel);
-    wf::dimensions_t current_size{current_geometry.width, current_geometry.height};
-    if (should_resize_client({w, h}, current_size))
-    {
-        this->last_size_request = {w, h};
-        last_configure_serial   = wlr_xdg_toplevel_set_size(xdg_toplevel, w, h);
-    }
+void wf::xdg_toplevel_view_t::set_geometry(wf::geometry_t g)
+{
+    this->wtoplevel->pending().geometry = g;
+    wf::get_core().tx_manager->schedule_object(wtoplevel);
 }
 
 void wf::xdg_toplevel_view_t::request_native_size()
 {
-    last_configure_serial = wlr_xdg_toplevel_set_size(xdg_toplevel, 0, 0);
+    this->wtoplevel->request_native_size();
 }
 
 void wf::xdg_toplevel_view_t::close()
@@ -197,12 +167,13 @@ void wf::xdg_toplevel_view_t::ping()
 
 wf::geometry_t wf::xdg_toplevel_view_t::get_wm_geometry()
 {
-    return wm_geometry;
+    return wf::construct_box(wf::origin(wtoplevel->pending().geometry),
+        wf::dimensions(wtoplevel->current().geometry));
 }
 
 wf::geometry_t wf::xdg_toplevel_view_t::get_output_geometry()
 {
-    return base_geometry;
+    return wtoplevel->calculate_base_geometry();
 }
 
 wlr_surface*wf::xdg_toplevel_view_t::get_keyboard_focus_surface()
@@ -223,22 +194,20 @@ bool wf::xdg_toplevel_view_t::is_focusable() const
 void wf::xdg_toplevel_view_t::set_tiled(uint32_t edges)
 {
     wlr_xdg_toplevel_set_tiled(xdg_toplevel, edges);
-    last_configure_serial = wlr_xdg_toplevel_set_maximized(xdg_toplevel,
-        (edges == wf::TILED_EDGES_ALL));
-
+    wlr_xdg_toplevel_set_maximized(xdg_toplevel, (edges == wf::TILED_EDGES_ALL));
     wf::view_interface_t::set_tiled(edges);
 }
 
 void wf::xdg_toplevel_view_t::set_fullscreen(bool fullscreen)
 {
     view_interface_t::set_fullscreen(fullscreen);
-    last_configure_serial = wlr_xdg_toplevel_set_fullscreen(xdg_toplevel, fullscreen);
+    wlr_xdg_toplevel_set_fullscreen(xdg_toplevel, fullscreen);
 }
 
 void wf::xdg_toplevel_view_t::set_activated(bool active)
 {
     view_interface_t::set_activated(active);
-    last_configure_serial = wlr_xdg_toplevel_set_activated(xdg_toplevel, active);
+    wlr_xdg_toplevel_set_activated(xdg_toplevel, active);
 }
 
 std::string wf::xdg_toplevel_view_t::get_app_id()
@@ -258,7 +227,7 @@ bool wf::xdg_toplevel_view_t::should_be_decorated()
 
 bool wf::xdg_toplevel_view_t::is_mapped() const
 {
-    return priv->wsurface;
+    return wtoplevel->current().mapped && priv->wsurface;
 }
 
 void wf::xdg_toplevel_view_t::initialize()
@@ -291,25 +260,6 @@ void wf::xdg_toplevel_view_t::initialize()
     }
 }
 
-bool wf::xdg_toplevel_view_t::should_resize_client(wf::dimensions_t old, wf::dimensions_t next)
-{
-    /*
-     * Do not send a configure if the client will retain its size.
-     * This is needed if a client starts with one size and immediately resizes
-     * again.
-     *
-     * If we do configure it with the given size, then it will think that we
-     * are requesting the given size, and won't resize itself again.
-     */
-    if (this->last_size_request == wf::dimensions_t{0, 0})
-    {
-        return old != next;
-    } else
-    {
-        return old != last_size_request;
-    }
-}
-
 void wf::xdg_toplevel_view_t::map()
 {
     auto surf = xdg_toplevel->base->surface;
@@ -321,8 +271,6 @@ void wf::xdg_toplevel_view_t::map()
     priv->set_mapped_surface_contents(main_surface);
     priv->set_mapped(true);
     on_surface_commit.connect(&surf->events.commit);
-
-    update_size();
 
     if (role == VIEW_ROLE_TOPLEVEL)
     {
@@ -355,57 +303,23 @@ void wf::xdg_toplevel_view_t::unmap()
     priv->set_mapped(false);
 }
 
-void wf::xdg_toplevel_view_t::update_size()
+void wf::xdg_toplevel_view_t::handle_toplevel_state_changed(wf::toplevel_state_t old_state)
 {
-    if (!priv->wsurface)
+    if (!old_state.mapped && wtoplevel->current().mapped)
     {
-        return;
+        map();
     }
 
-    wf::dimensions_t current_size = {priv->wsurface->current.width, priv->wsurface->current.height};
-    if ((current_size.width == base_geometry.width) &&
-        (current_size.height == base_geometry.height))
-    {
-        return;
-    }
+    view_damage_raw(self(), last_bounding_box);
+    wf::emit_geometry_changed_signal(self(), old_state.geometry);
 
-    /* Damage current size */
-    view_damage_raw(self(), base_geometry);
-    adjust_anchored_edge(current_size);
-
-    view_geometry_changed_signal geometry_changed;
-    geometry_changed.view = self();
-    geometry_changed.old_geometry = get_wm_geometry();
-
-    base_geometry.width  = current_size.width;
-    base_geometry.height = current_size.height;
-
-    auto xdg_g = get_xdg_geometry(this->xdg_toplevel);
-    if (priv->frame)
-    {
-        xdg_g = priv->frame->expand_wm_geometry(xdg_g);
-    }
-
-    wm_geometry.width  = xdg_g.width;
-    wm_geometry.height = xdg_g.height;
-
-    /* Damage new size */
     damage();
-
-    emit(&geometry_changed);
-    wf::get_core().emit(&geometry_changed);
-    if (get_output())
-    {
-        get_output()->emit(&geometry_changed);
-    }
-
+    last_bounding_box = this->get_surface_root_node()->get_bounding_box();
     scene::update(this->get_surface_root_node(), scene::update_flag::GEOMETRY);
 }
 
 void wf::xdg_toplevel_view_t::commit()
 {
-    update_size();
-
     /* Clear the resize edges.
      * This is must be done here because if the user(or plugin) resizes too fast,
      * the shell client might still haven't configured the surface, and in this
@@ -414,25 +328,6 @@ void wf::xdg_toplevel_view_t::commit()
     {
         priv->edges = 0;
     }
-
-    /* On each commit, check whether the window geometry of the xdg_surface
-     * changed. In those cases, we need to adjust the view's output geometry,
-     * so that the apparent wm geometry doesn't change */
-    auto xdg_g = get_xdg_geometry(xdg_toplevel);
-    if (wm_offset != wf::origin(xdg_g))
-    {
-        wm_offset = {xdg_g.x, xdg_g.y};
-        move(wm_geometry.x, wm_geometry.y);
-    }
-
-    if (xdg_toplevel->base->current.configure_serial == this->last_configure_serial)
-    {
-        this->last_size_request = wf::dimensions(xdg_g);
-    }
-
-    scene::surface_state_t cur_state;
-    cur_state.merge_state(xdg_toplevel->base->surface);
-    main_surface->apply_state(std::move(cur_state));
 }
 
 void wf::xdg_toplevel_view_t::destroy()
@@ -473,27 +368,6 @@ void wf::xdg_toplevel_view_t::handle_app_id_changed(std::string new_app_id)
     emit(&data);
 }
 
-void wf::xdg_toplevel_view_t::adjust_anchored_edge(wf::dimensions_t new_size)
-{
-    if (priv->edges)
-    {
-        wf::point_t offset = {0, 0};
-        if (priv->edges & WLR_EDGE_LEFT)
-        {
-            offset.x = base_geometry.width - new_size.width;
-        }
-
-        if (priv->edges & WLR_EDGE_TOP)
-        {
-            offset.y = base_geometry.height - new_size.height;
-        }
-
-        this->base_geometry = this->base_geometry + offset;
-        this->wm_geometry   = this->wm_geometry + offset;
-        priv->offscreen_buffer = priv->offscreen_buffer.translated(offset);
-    }
-}
-
 void wf::xdg_toplevel_view_t::set_decoration_mode(bool use_csd)
 {
     bool was_decorated = should_be_decorated();
@@ -505,6 +379,43 @@ void wf::xdg_toplevel_view_t::set_decoration_mode(bool use_csd)
 
         this->emit(&data);
         wf::get_core().emit(&data);
+    }
+}
+
+void wf::xdg_toplevel_view_t::set_decoration(std::unique_ptr<decorator_frame_t_t> frame)
+{
+    wtoplevel->set_decoration(frame.get());
+    wf::view_interface_t::set_decoration(std::move(frame));
+}
+
+void wf::xdg_toplevel_view_t::set_resizing(bool resizing, uint32_t edges)
+{
+    view_interface_t::set_resizing(resizing, edges);
+
+    if (resizing)
+    {
+        // Convert from resizing edges to gravity
+        uint32_t gravity = 0;
+        if (edges & WLR_EDGE_LEFT)
+        {
+            gravity |= WLR_EDGE_RIGHT;
+        } else
+        {
+            gravity |= WLR_EDGE_LEFT;
+        }
+
+        if (edges & WLR_EDGE_TOP)
+        {
+            gravity |= WLR_EDGE_BOTTOM;
+        } else
+        {
+            gravity |= WLR_EDGE_TOP;
+        }
+
+        wtoplevel->pending().gravity = gravity;
+    } else
+    {
+        wtoplevel->pending().gravity = WLR_EDGE_LEFT | WLR_EDGE_TOP;
     }
 }
 
