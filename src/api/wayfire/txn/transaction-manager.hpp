@@ -33,6 +33,16 @@ class transaction_manager_t : public signal::provider_t
      */
     void schedule_transaction(transaction_uptr tx);
 
+    /**
+     * Check whether there is a pending transaction for the given object.
+     */
+    bool is_object_pending(transaction_object_sptr object) const;
+
+    /**
+     * Check whether there is a committed transaction for the given object.
+     */
+    bool is_object_committed(transaction_object_sptr object) const;
+
     struct impl;
     std::unique_ptr<impl> priv;
 };
