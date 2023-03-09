@@ -182,23 +182,23 @@ void parse_extended_debugging(const std::vector<std::string>& categories)
         if (cat == "txn")
         {
             LOGD("Enabling extended debugging for transactions");
-            wf::log::enabled_categories.set(
-                (size_t)wf::log::logging_category::TXN, 1);
+            wf::log::enabled_categories.set((size_t)wf::log::logging_category::TXN, 1);
         } else if (cat == "txni")
         {
             LOGD("Enabling extended debugging for transaction objects");
-            wf::log::enabled_categories.set(
-                (size_t)wf::log::logging_category::TXNI, 1);
+            wf::log::enabled_categories.set((size_t)wf::log::logging_category::TXNI, 1);
+        } else if (cat == "views")
+        {
+            LOGD("Enabling extended debugging for views");
+            wf::log::enabled_categories.set((size_t)wf::log::logging_category::VIEWS, 1);
         } else if (cat == "wlroots")
         {
             LOGD("Enabling extended debugging for wlroots");
-            wf::log::enabled_categories.set(
-                (size_t)wf::log::logging_category::WLR, 1);
+            wf::log::enabled_categories.set((size_t)wf::log::logging_category::WLR, 1);
         } else if (cat == "scanout")
         {
             LOGD("Enabling extended debugging for direct scanout");
-            wf::log::enabled_categories.set(
-                (size_t)wf::log::logging_category::SCANOUT, 1);
+            wf::log::enabled_categories.set((size_t)wf::log::logging_category::SCANOUT, 1);
         } else
         {
             LOGE("Unrecognized debugging category \"", cat, "\"");

@@ -62,10 +62,12 @@ enum class logging_category : size_t
     TXN     = 0,
     // Transactions - individual objects
     TXNI    = 1,
+    // Views - events
+    VIEWS   = 2,
     // Wlroots messages
-    WLR     = 2,
+    WLR     = 3,
     // Direct scanout
-    SCANOUT = 3,
+    SCANOUT = 4,
     TOTAL,
 };
 
