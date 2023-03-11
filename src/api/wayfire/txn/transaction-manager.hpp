@@ -1,6 +1,7 @@
 #pragma once
 
 #include "wayfire/signal-provider.hpp"
+#include "wayfire/txn/transaction-object.hpp"
 #include <wayfire/txn/transaction.hpp>
 
 namespace wf
@@ -32,6 +33,12 @@ class transaction_manager_t : public signal::provider_t
      * event of the event loop.
      */
     void schedule_transaction(transaction_uptr tx);
+
+    /**
+     * A convenience function to create a transaction for a single object and schedule it via
+     * schedule_transaction().
+     */
+    void schedule_object(transaction_object_sptr object);
 
     /**
      * Check whether there is a pending transaction for the given object.

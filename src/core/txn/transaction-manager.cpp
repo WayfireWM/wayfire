@@ -18,6 +18,13 @@ void wf::txn::transaction_manager_t::schedule_transaction(wf::txn::transaction_u
     priv->schedule_transaction(std::move(tx));
 }
 
+void wf::txn::transaction_manager_t::schedule_object(transaction_object_sptr object)
+{
+    auto tx = wf::txn::transaction_t::create();
+    tx->add_object(std::move(object));
+    schedule_transaction(std::move(tx));
+}
+
 template<class T>
 static bool is_contained(const std::vector<T>& objs, const T& object)
 {
