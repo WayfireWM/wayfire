@@ -20,7 +20,7 @@ static int wd_cfg_file;
 static void readd_watch(int fd)
 {
     inotify_add_watch(fd, config_dir.c_str(), IN_CREATE);
-    wd_cfg_file = inotify_add_watch(fd, config_file.c_str(), IN_MODIFY);
+    wd_cfg_file = inotify_add_watch(fd, config_file.c_str(), IN_CLOSE_WRITE);
 }
 
 static void reload_config(int fd)
