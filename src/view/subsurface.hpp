@@ -4,29 +4,24 @@
 #include <memory>
 #include <wayfire/scene.hpp>
 #include <wayfire/nonstd/wlroots-full.hpp>
+#include <wayfire/unstable/translation-node.hpp>
 
 namespace wf
 {
 /**
  * A subsurface root node. It applies a translation to its children equal to the offset of the subsurface.
  */
-class wlr_subsurface_root_node_t : public wf::scene::floating_inner_node_t
+class wlr_subsurface_root_node_t : public wf::scene::translation_node_t
 {
   public:
     wlr_subsurface_root_node_t(wlr_subsurface *subsurface);
-
-    wf::pointf_t to_local(const wf::pointf_t& point) override;
-    wf::pointf_t to_global(const wf::pointf_t& point) override;
-
     std::string stringify() const override;
-    void gen_render_instances(std::vector<scene::render_instance_uptr>& instances,
-        scene::damage_callback damage, wf::output_t *output) override;
-    wf::geometry_t get_bounding_box() override;
-    wf::point_t get_offset();
 
   private:
     wlr_subsurface *subsurface;
     wf::wl_listener_wrapper on_subsurface_destroy;
+    wf::wl_listener_wrapper on_subsurface_commit;
+    void update_offset();
 };
 
 /**

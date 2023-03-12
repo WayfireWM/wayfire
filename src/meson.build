@@ -44,6 +44,7 @@ wayfire_sources = ['geometry.cpp',
                    'view/view-3d.cpp',
                    'view/compositor-view.cpp',
                    'view/wlr-surface-node.cpp',
+                   'view/translation-node.cpp',
 
                    'output/output.cpp',
                    'output/render-manager.cpp',
