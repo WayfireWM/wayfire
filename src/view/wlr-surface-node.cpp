@@ -110,9 +110,7 @@ wf::scene::wlr_surface_node_t::wlr_surface_node_t(wlr_surface *surface, bool aut
 
         if (this->autocommit)
         {
-            surface_state_t state;
-            state.merge_state(surface);
-            this->apply_state(std::move(state));
+            apply_current_surface_state();
         }
 
         for (auto& [wo, _] : visibility)
@@ -124,6 +122,8 @@ wf::scene::wlr_surface_node_t::wlr_surface_node_t(wlr_surface *surface, bool aut
     on_surface_destroyed.connect(&surface->events.destroy);
     on_surface_commit.connect(&surface->events.commit);
     send_frame_done();
+
+    current_state.merge_state(surface);
 }
 
 void wf::scene::wlr_surface_node_t::apply_state(surface_state_t&& state)
@@ -135,6 +135,13 @@ void wf::scene::wlr_surface_node_t::apply_state(surface_state_t&& state)
     {
         scene::update(this->shared_from_this(), scene::update_flag::GEOMETRY);
     }
+}
+
+void wf::scene::wlr_surface_node_t::apply_current_surface_state()
+{
+    surface_state_t state;
+    state.merge_state(surface);
+    this->apply_state(std::move(state));
 }
 
 std::optional<wf::scene::input_node_t> wf::scene::wlr_surface_node_t::find_node_at(const wf::pointf_t& at)
