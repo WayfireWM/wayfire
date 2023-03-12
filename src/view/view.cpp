@@ -958,3 +958,8 @@ std::shared_ptr<wf::workspace_set_t> wf::view_interface_t::get_wset()
 {
     return priv->current_wset.lock();
 }
+
+const std::shared_ptr<wf::toplevel_t>& wf::view_interface_t::toplevel() const
+{
+    return priv->toplevel;
+}

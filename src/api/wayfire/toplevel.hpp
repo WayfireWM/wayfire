@@ -1,6 +1,7 @@
 #pragma once
 
 #include "wayfire/geometry.hpp"
+#include "wayfire/object.hpp"
 #include <wayfire/txn/transaction-object.hpp>
 
 namespace wf
@@ -34,7 +35,7 @@ struct toplevel_state_t
  * Toplevels are a kind of views which can be moved, resized and whose state can change (fullscreen, tiled,
  * etc). Most of the toplevel's attributes are double-buffered and are changed via transactions.
  */
-class toplevel_t : public wf::txn::transaction_object_t
+class toplevel_t : public wf::txn::transaction_object_t, public wf::object_base_t
 {
   public:
     /**

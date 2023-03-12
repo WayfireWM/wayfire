@@ -22,6 +22,7 @@ namespace wf
 class view_interface_t;
 class workspace_set_t;
 class decorator_frame_t_t;
+class toplevel_t;
 }
 
 using wayfire_view = nonstd::observer_ptr<wf::view_interface_t>;
@@ -105,6 +106,11 @@ class view_interface_t : public wf::signal::provider_t, public wf::object_base_t
      * Get the node which contains the main view (+subsurfaces) only.
      */
     const scene::floating_inner_ptr& get_surface_root_node() const;
+
+    /**
+     * Get the toplevel object associated with the view, if it exists.
+     */
+    const std::shared_ptr<toplevel_t>& toplevel() const;
 
     /**
      * The toplevel parent of the view, for ex. the main view of a file chooser

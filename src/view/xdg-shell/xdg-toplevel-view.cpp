@@ -30,6 +30,7 @@ wf::xdg_toplevel_view_t::xdg_toplevel_view_t(wlr_xdg_toplevel *tlvl)
     };
     wtoplevel = std::make_shared<xdg_toplevel_t>(tlvl, main_surface);
     wtoplevel->connect(&on_toplevel_applied);
+    this->priv->toplevel = wtoplevel;
 
     on_surface_commit.set_callback([&] (void*) { commit(); });
     on_map.set_callback([&] (void*)
