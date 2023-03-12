@@ -50,6 +50,8 @@ class transaction_t : public signal::provider_t
      */
     void commit();
 
+    virtual ~transaction_t() = default;
+
   private:
     std::vector<transaction_object_sptr> objects;
     int count_ready_objects = 0;

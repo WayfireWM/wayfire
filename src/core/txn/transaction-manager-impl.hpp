@@ -20,7 +20,7 @@ struct wf::txn::transaction_manager_t::impl
 {
     impl()
     {
-        idle_consider_commit.set_callback([=] () { this->consider_commit(); });
+        idle_clear_done.set_callback([=] () { done.clear(); });
     }
 
     void schedule_transaction(transaction_uptr tx)
@@ -35,7 +35,7 @@ struct wf::txn::transaction_manager_t::impl
 
         // Step 3: schedule tx for execution. At this point, there are no conflicts in all pending txs
         pending.push_back(std::move(tx));
-        idle_consider_commit.run_once();
+        consider_commit();
     }
 
     void coalesce_transactions(const transaction_uptr& tx)
@@ -74,13 +74,14 @@ struct wf::txn::transaction_manager_t::impl
     // Try to commit as many transactions as possible
     void consider_commit()
     {
-        done.clear();
+        idle_clear_done.run_once();
 
         // Implementation note: the merging strategy guarantees no conflicts between pending transactions,
         // so we just need to check conflicts between committed and pending
         for (auto& tx : pending)
         {
-            if (can_commit_transaction(tx))
+            // tx can be null if the transaction is applied immediately and we then commit another transaction
+            if (tx && can_commit_transaction(tx))
             {
                 do_commit(std::move(tx));
                 tx = nullptr;
@@ -110,7 +111,7 @@ struct wf::txn::transaction_manager_t::impl
     std::vector<transaction_uptr> done; // Temporary storage for transactions which are complete
     std::vector<transaction_uptr> committed;
     std::vector<transaction_uptr> pending;
-    wf::wl_idle_call idle_consider_commit;
+    wf::wl_idle_call idle_clear_done;
 
     wf::signal::connection_t<transaction_applied_signal> on_tx_apply = [&] (transaction_applied_signal *ev)
     {
@@ -123,6 +124,6 @@ struct wf::txn::transaction_manager_t::impl
         // They will be freed on next idle.
         done.insert(done.end(), std::make_move_iterator(it), std::make_move_iterator(committed.end()));
         committed.erase(it, committed.end());
-        idle_consider_commit.run_once();
+        consider_commit();
     };
 };

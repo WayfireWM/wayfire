@@ -26,13 +26,6 @@ TEST_CASE("Simple transaction is scheduled and executed")
     tx->add_object(obj);
 
     mgr.schedule_transaction(std::move(tx));
-    REQUIRE(obj->number_committed == 0);
-    REQUIRE(obj->number_applied == 0);
-
-    REQUIRE(mgr.committed.size() == 0);
-    REQUIRE(mgr.pending.size() == 1);
-    wl_event_loop_dispatch_idle(wf::wl_idle_call::loop);
-
     REQUIRE(mgr.committed.size() == 1);
     REQUIRE(mgr.pending.size() == 0);
     REQUIRE(obj->number_committed == 1);
@@ -44,6 +37,7 @@ TEST_CASE("Simple transaction is scheduled and executed")
     REQUIRE(mgr.committed.size() == 0);
     REQUIRE(mgr.pending.size() == 0);
     REQUIRE(mgr.done.size() == 1);
+
     wl_event_loop_dispatch_idle(wf::wl_idle_call::loop);
     REQUIRE(mgr.committed.size() == 0);
     REQUIRE(mgr.pending.size() == 0);
@@ -72,18 +66,20 @@ TEST_CASE("Transactions for the same object wait on each other")
     REQUIRE(mgr.committed.size() == 1);
     REQUIRE(mgr.pending.size() == 1);
 
+    // tx1 is now ready, tx2 is committed
     obj->emit_ready();
-    REQUIRE(mgr.committed.size() == 0);
     REQUIRE(mgr.done.size() == 1);
-    REQUIRE(mgr.pending.size() == 1);
-    REQUIRE(obj->number_committed == 1);
+    REQUIRE(mgr.committed.size() == 1);
+    REQUIRE(mgr.pending.size() == 0);
+    REQUIRE(obj->number_committed == 2);
     REQUIRE(obj->number_applied == 1);
 
     wl_event_loop_dispatch_idle(wf::wl_idle_call::loop);
-    REQUIRE(mgr.committed.size() == 1);
     REQUIRE(mgr.done.size() == 0);
+    REQUIRE(mgr.committed.size() == 1);
     REQUIRE(mgr.pending.size() == 0);
     REQUIRE(obj->number_committed == 2);
+    REQUIRE(obj->number_applied == 1);
 
     obj->emit_ready();
     REQUIRE(mgr.committed.size() == 0);
