@@ -7,7 +7,7 @@
 #include <wayfire/opengl.hpp>
 
 #include "surface-impl.hpp"
-#include "view/wlr-surface-node.hpp"
+#include "wayfire/unstable/wlr-surface-node.hpp"
 #include "wayfire/output.hpp"
 #include "wayfire/scene.hpp"
 #include "wayfire/util.hpp"

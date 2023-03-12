@@ -1,7 +1,7 @@
 #include "wayfire/geometry.hpp"
 #include <wayfire/view.hpp>
 #include <wayfire/nonstd/wlroots-full.hpp>
-#include "../wlr-surface-node.hpp"
+#include "wayfire/unstable/wlr-surface-node.hpp"
 #include "../surface-impl.hpp"
 
 namespace wf

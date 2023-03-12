@@ -2,7 +2,7 @@
 #include "../core/seat/input-manager.hpp"
 #include "../core/core-impl.hpp"
 #include "view-impl.hpp"
-#include "view/wlr-surface-node.hpp"
+#include "wayfire/unstable/wlr-surface-node.hpp"
 #include "wayfire/geometry.hpp"
 
 namespace wf

@@ -1,5 +1,4 @@
 #include "xdg-toplevel-view.hpp"
-#include "view/wlr-surface-node.hpp"
 #include "wayfire/core.hpp"
 #include <wayfire/txn/transaction.hpp>
 #include <wayfire/txn/transaction-manager.hpp>

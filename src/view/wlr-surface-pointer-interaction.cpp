@@ -10,7 +10,7 @@
 #include "wayfire/signal-definitions.hpp"
 #include "wayfire/signal-provider.hpp"
 #include "wayfire/util.hpp"
-#include "wlr-surface-node.hpp"
+#include "wayfire/unstable/wlr-surface-node.hpp"
 
 namespace wf
 {

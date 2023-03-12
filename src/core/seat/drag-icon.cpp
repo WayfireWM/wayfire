@@ -1,6 +1,6 @@
 #include "drag-icon.hpp"
 #include "view/surface-impl.hpp"
-#include "view/wlr-surface-node.hpp"
+#include "wayfire/unstable/wlr-surface-node.hpp"
 #include "wayfire/core.hpp"
 #include "wayfire/geometry.hpp"
 #include "wayfire/object.hpp"

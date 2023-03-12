@@ -6,7 +6,6 @@
 #include "cursor.hpp"
 #include "input-manager.hpp"
 #include "view/view-impl.hpp"
-#include "view/wlr-surface-node.hpp"
 #include "wayfire/core.hpp"
 #include "wayfire/debug.hpp"
 #include "wayfire/scene-input.hpp"

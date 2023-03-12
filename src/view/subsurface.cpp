@@ -4,7 +4,7 @@
 #include "wayfire/scene-operations.hpp"
 #include "wayfire/scene.hpp"
 #include "wayfire/signal-definitions.hpp"
-#include "wlr-surface-node.hpp"
+#include "wayfire/unstable/wlr-surface-node.hpp"
 #include <memory>
 #include <wayfire/debug.hpp>
 #include <cassert>

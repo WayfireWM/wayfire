@@ -1,4 +1,4 @@
-#include "wlr-surface-node.hpp"
+#include "wayfire/unstable/wlr-surface-node.hpp"
 #include "pixman.h"
 #include "view/view-impl.hpp"
 #include "wayfire/geometry.hpp"
