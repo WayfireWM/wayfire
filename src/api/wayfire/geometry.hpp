@@ -72,6 +72,7 @@ geometry_t geometry_intersection(const geometry_t& r1,
 
 std::ostream& operator <<(std::ostream& stream, const wf::point_t& point);
 std::ostream& operator <<(std::ostream& stream, const wf::pointf_t& pointf);
+std::ostream& operator <<(std::ostream& stream, const wf::dimensions_t& dims);
 
 bool operator ==(const wf::dimensions_t& a, const wf::dimensions_t& b);
 bool operator !=(const wf::dimensions_t& a, const wf::dimensions_t& b);

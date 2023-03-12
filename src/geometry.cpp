@@ -19,6 +19,12 @@ std::ostream& wf::operator <<(std::ostream& stream, const wf::point_t& point)
     return stream;
 }
 
+std::ostream& wf::operator <<(std::ostream& stream, const wf::dimensions_t& dims)
+{
+    stream << dims.width << "x" << dims.height;
+    return stream;
+}
+
 std::ostream& wf::operator <<(std::ostream& stream, const wf::pointf_t& pointf)
 {
     stream << std::fixed << std::setprecision(4) <<
