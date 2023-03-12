@@ -10,6 +10,7 @@
 #include "wayfire/output-layout.hpp"
 #include <wayfire/workspace-manager.hpp>
 #include <wayfire/signal-definitions.hpp>
+#include <wayfire/unstable/wlr-view-events.hpp>
 
 #include "xdg-shell/xdg-toplevel-view.hpp"
 
@@ -205,7 +206,10 @@ void wf::init_xdg_shell()
         on_xdg_created.set_callback([&] (void *data)
         {
             auto surf = static_cast<wlr_xdg_surface*>(data);
-            if (surf->role == WLR_XDG_SURFACE_ROLE_TOPLEVEL)
+            wf::new_xdg_surface_signal new_xdg_surf;
+            new_xdg_surf.surface = surf;
+            wf::get_core().emit(&new_xdg_surf);
+            if (new_xdg_surf.use_default_implementation && (surf->role == WLR_XDG_SURFACE_ROLE_TOPLEVEL))
             {
                 wf::get_core().add_view(std::make_unique<wf::xdg_toplevel_view_t>(surf->toplevel));
             }
