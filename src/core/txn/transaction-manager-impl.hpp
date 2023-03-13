@@ -116,15 +116,15 @@ struct wf::txn::transaction_manager_t::impl
 
     wf::signal::connection_t<transaction_applied_signal> on_tx_apply = [&] (transaction_applied_signal *ev)
     {
-        auto it = std::remove_if(committed.begin(), committed.end(), [&] (const transaction_uptr& existing)
+        // Move transactions which are done from committed to done.
+        // They will be freed on next idle.
+        auto it = std::find_if(committed.begin(), committed.end(), [&] (auto& existing)
         {
             return existing.get() == ev->self;
         });
 
-        // Move transactions which are done from committed to done.
-        // They will be freed on next idle.
-        done.insert(done.end(), std::make_move_iterator(it), std::make_move_iterator(committed.end()));
-        committed.erase(it, committed.end());
+        done.push_back(std::move(*it));
+        committed.erase(it);
         consider_commit();
     };
 };

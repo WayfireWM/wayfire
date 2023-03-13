@@ -204,3 +204,41 @@ TEST_CASE("Schedule from apply()")
     REQUIRE(obj_b->number_committed == 1);
     REQUIRE(obj_b->number_applied == 1);
 }
+
+TEST_CASE("Concurrent committed")
+{
+    // This testcase exists to check that the code can handle multiple committed transactions and that
+    // committed transactions are properly moved to the done array.
+    setup_wayfire_debugging_state();
+    wf::txn::transaction_manager_t::impl mgr;
+
+    auto obj_a = std::make_shared<txn_test_object_t>(false);
+    auto obj_b = std::make_shared<txn_test_object_t>(false);
+
+    auto tx1 = new_tx();
+    tx1->add_object(obj_a);
+
+    auto tx2 = new_tx();
+    tx2->add_object(obj_a);
+
+    auto tx3 = new_tx();
+    tx3->add_object(obj_b);
+
+    // Make sure tx3 is before tx2
+    mgr.schedule_transaction(std::move(tx1));
+    mgr.schedule_transaction(std::move(tx3));
+    mgr.schedule_transaction(std::move(tx2));
+    REQUIRE(mgr.committed.size() == 2);
+    REQUIRE(mgr.pending.size() == 1);
+    REQUIRE(mgr.done.size() == 0);
+
+    obj_a->emit_ready();
+    REQUIRE(mgr.committed.size() == 2);
+    REQUIRE(mgr.pending.size() == 0);
+    REQUIRE(mgr.done.size() == 1);
+
+    obj_a->emit_ready();
+    REQUIRE(mgr.committed.size() == 1);
+    REQUIRE(mgr.pending.size() == 0);
+    REQUIRE(mgr.done.size() == 2);
+}
