@@ -97,10 +97,17 @@ TEST_CASE("Transactions are merged correctly")
     auto obj_b = std::make_shared<txn_test_object_t>(false);
     auto obj_c = std::make_shared<txn_test_object_t>(false);
 
+    auto tx0 = new_tx();
     auto tx1 = new_tx();
     auto tx2 = new_tx();
     auto tx3 = new_tx();
     auto tx4 = new_tx();
+
+    // Block the other transactions from happening
+    tx0->add_object(obj_a);
+    tx0->add_object(obj_b);
+    tx0->add_object(obj_c);
+    mgr.schedule_transaction(std::move(tx0));
 
     tx1->add_object(obj_a);
     tx1->add_object(obj_b);
@@ -168,4 +175,32 @@ TEST_CASE("Non-conflicting transactions are scheduled together")
 
     REQUIRE(obj_a->number_committed == 1);
     REQUIRE(obj_b->number_committed == 1);
+}
+
+TEST_CASE("Schedule from apply()")
+{
+    setup_wayfire_debugging_state();
+    wf::txn::transaction_manager_t::impl mgr;
+
+    auto obj_a = std::make_shared<txn_test_object_t>(true);
+    auto obj_b = std::make_shared<txn_test_object_t>(true);
+    auto tx1   = new_tx();
+    tx1->add_object(obj_a);
+
+    auto tx2 = new_tx();
+    tx2->add_object(obj_b);
+
+    obj_a->apply_callback = [&]
+    {
+        REQUIRE(obj_a->number_applied == 1);
+        REQUIRE(obj_a->number_committed == 1);
+        mgr.schedule_transaction(std::move(tx2));
+    };
+
+    mgr.schedule_transaction(std::move(tx1));
+    REQUIRE(mgr.committed.size() == 0);
+    REQUIRE(mgr.pending.size() == 0);
+    REQUIRE(mgr.done.size() == 2);
+    REQUIRE(obj_b->number_committed == 1);
+    REQUIRE(obj_b->number_applied == 1);
 }
