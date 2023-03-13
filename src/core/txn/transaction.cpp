@@ -22,6 +22,7 @@ wf::txn::transaction_t::transaction_t(uint64_t timeout, timer_setter_t timer_set
         LOGC(TXNI, "Transaction ", this, " object ", ev->self->stringify(), " became ready (",
             count_ready_objects, "/", this->objects.size(), ")");
 
+        wf::dassert(count_ready_objects <= (int)this->objects.size(), "object emitted ready multiple times?");
         if (count_ready_objects == (int)this->objects.size())
         {
             apply(false);
@@ -62,6 +63,8 @@ void wf::txn::transaction_t::commit()
 
 void wf::txn::transaction_t::apply(bool did_timeout)
 {
+    on_object_ready.disconnect();
+
     LOGC(TXN, "Applying transaction ", this, " timed_out: ", did_timeout);
     for (auto& obj : this->objects)
     {
