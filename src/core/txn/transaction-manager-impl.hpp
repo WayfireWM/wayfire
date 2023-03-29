@@ -78,17 +78,18 @@ struct wf::txn::transaction_manager_t::impl
 
         // Implementation note: the merging strategy guarantees no conflicts between pending transactions,
         // so we just need to check conflicts between committed and pending
-        auto it = pending.begin();
-        while (it != pending.end())
+        for (size_t idx = 0; idx < pending.size();)
         {
-            if (can_commit_transaction(*it))
+            if (can_commit_transaction(pending[idx]))
             {
-                auto tx = std::move(*it);
-                it = pending.erase(it);
+                auto tx = std::move(pending[idx]);
+                pending.erase(pending.begin() + idx);
                 do_commit(std::move(tx));
+                // Note: the container may change after this operation, because some objects emit ready
+                // directly inside commit().
             } else
             {
-                ++it;
+                ++idx;
             }
         }
     }

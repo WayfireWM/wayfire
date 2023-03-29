@@ -205,6 +205,54 @@ TEST_CASE("Schedule from apply()")
     REQUIRE(obj_b->number_applied == 1);
 }
 
+TEST_CASE("Schedule from apply() with blocking")
+{
+    setup_wayfire_debugging_state();
+    wf::txn::transaction_manager_t::impl mgr;
+
+    auto obj_a = std::make_shared<txn_test_object_t>(false);
+    auto obj_b = std::make_shared<txn_test_object_t>(true);
+
+    auto tx1 = new_tx();
+    tx1->add_object(obj_a);
+
+    auto tx2 = new_tx();
+    tx2->add_object(obj_b);
+
+    bool added = false;
+    obj_b->apply_callback = [&]
+    {
+        if (added)
+        {
+            return;
+        }
+
+        // Avoid infinite recursion, otherwise the second object will continuously be committed.
+        added = true;
+
+        auto tx1_2 = new_tx();
+        tx1_2->add_object(obj_a);
+        auto tx2_2 = new_tx();
+        tx2_2->add_object(obj_b);
+
+        REQUIRE(obj_a->number_applied == 0);
+        REQUIRE(obj_a->number_committed == 1);
+        mgr.schedule_transaction(std::move(tx1_2));
+        mgr.schedule_transaction(std::move(tx2_2));
+    };
+
+    mgr.schedule_transaction(std::move(tx1));
+    mgr.schedule_transaction(std::move(tx2));
+
+    REQUIRE(mgr.committed.size() == 1);
+    REQUIRE(mgr.pending.size() == 1);
+    REQUIRE(mgr.done.size() == 2);
+    REQUIRE(obj_b->number_committed == 2);
+    REQUIRE(obj_b->number_applied == 2);
+    REQUIRE(obj_a->number_committed == 1);
+    REQUIRE(obj_a->number_applied == 0);
+}
+
 TEST_CASE("Concurrent committed")
 {
     // This testcase exists to check that the code can handle multiple committed transactions and that
