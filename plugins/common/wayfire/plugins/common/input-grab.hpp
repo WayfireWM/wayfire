@@ -148,6 +148,9 @@ class input_grab_t
         wf::get_core().transfer_grab(grab_node);
         scene::update(root, scene::update_flag::CHILDREN_LIST);
         output->refocus();
+
+        // Set cursor to default.
+        wf::get_core().set_cursor("default");
     }
 
     /**
