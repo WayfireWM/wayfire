@@ -279,6 +279,9 @@ class wayfire_expo : public wf::per_output_plugin_instance_t, public wf::keyboar
             return false;
         }
 
+        // hack because otherwise the cursor keeps its previous shape
+        wf::get_core().set_cursor("default");
+
         input_grab->grab_input(wf::scene::layer::OVERLAY);
         state.active = true;
         state.button_pressed  = false;

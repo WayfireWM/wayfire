@@ -1316,6 +1316,9 @@ class wayfire_scale : public wf::per_output_plugin_instance_t,
             return false;
         }
 
+        // hack because otherwise the cursor keeps its previous shape
+        wf::get_core().set_cursor("default");
+
         initial_workspace  = output->workspace->get_current_workspace();
         initial_focus_view = output->get_active_view();
         current_focus_view = initial_focus_view ?: views.front();
