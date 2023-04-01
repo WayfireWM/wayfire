@@ -14,65 +14,12 @@
 #include "../core/seat/input-manager.hpp"
 #include "view-impl.hpp"
 #include <wayfire/scene-operations.hpp>
+#include "xwayland/xwayland-helpers.hpp"
 
 #if WF_HAS_XWAYLAND
 
-enum class xwayland_view_type_t
-{
-    NORMAL,
-    UNMANAGED,
-    DND,
-};
-
 class wayfire_xwayland_view_base : public wf::wlr_view_t
 {
-  protected:
-    static xcb_atom_t _NET_WM_WINDOW_TYPE_NORMAL;
-    static xcb_atom_t _NET_WM_WINDOW_TYPE_DIALOG;
-    static xcb_atom_t _NET_WM_WINDOW_TYPE_SPLASH;
-    static xcb_atom_t _NET_WM_WINDOW_TYPE_DND;
-
-    static void load_atom(xcb_connection_t *connection,
-        xcb_atom_t& atom, const std::string& name)
-    {
-        auto cookie = xcb_intern_atom(connection, 0, name.length(), name.c_str());
-
-        xcb_generic_error_t *error = NULL;
-        xcb_intern_atom_reply_t *reply;
-        reply = xcb_intern_atom_reply(connection, cookie, &error);
-
-        bool success = !error && reply;
-        if (success)
-        {
-            atom = reply->atom;
-        }
-
-        free(reply);
-        free(error);
-    }
-
-  public:
-    static bool load_atoms(const char *server_name)
-    {
-        auto connection = xcb_connect(server_name, NULL);
-        if (!connection || xcb_connection_has_error(connection))
-        {
-            return false;
-        }
-
-        load_atom(connection, _NET_WM_WINDOW_TYPE_NORMAL,
-            "_NET_WM_WINDOW_TYPE_NORMAL");
-        load_atom(connection, _NET_WM_WINDOW_TYPE_DIALOG,
-            "_NET_WM_WINDOW_TYPE_DIALOG");
-        load_atom(connection, _NET_WM_WINDOW_TYPE_SPLASH,
-            "_NET_WM_WINDOW_TYPE_SPLASH");
-        load_atom(connection, _NET_WM_WINDOW_TYPE_DND,
-            "_NET_WM_WINDOW_TYPE_DND");
-
-        xcb_disconnect(connection);
-        return true;
-    }
-
   protected:
     wf::wl_listener_wrapper on_destroy, on_unmap, on_map, on_configure,
         on_set_title, on_set_app_id, on_or_changed, on_set_decorations,
@@ -107,7 +54,7 @@ class wayfire_xwayland_view_base : public wf::wlr_view_t
 
     bool is_dialog()
     {
-        if (has_type(_NET_WM_WINDOW_TYPE_DIALOG) ||
+        if (has_type(wf::xw::_NET_WM_WINDOW_TYPE_DIALOG) ||
             (xw->parent && (xw->window_type_len == 0)))
         {
             return true;
@@ -129,7 +76,7 @@ class wayfire_xwayland_view_base : public wf::wlr_view_t
 
         /** Example: Android Studio dialogs */
         if (xw->parent && !this->is_dialog() &&
-            !this->has_type(_NET_WM_WINDOW_TYPE_NORMAL))
+            !this->has_type(wf::xw::_NET_WM_WINDOW_TYPE_NORMAL))
         {
             return true;
         }
@@ -142,13 +89,13 @@ class wayfire_xwayland_view_base : public wf::wlr_view_t
      */
     bool is_dnd()
     {
-        return this->has_type(_NET_WM_WINDOW_TYPE_DND);
+        return this->has_type(wf::xw::_NET_WM_WINDOW_TYPE_DND);
     }
 
     /**
      * Get the current implementation type.
      */
-    virtual xwayland_view_type_t get_current_impl_type() const = 0;
+    virtual wf::xw::view_type get_current_impl_type() const = 0;
 
   public:
     wayfire_xwayland_view_base(wlr_xwayland_surface *xww) :
@@ -207,7 +154,7 @@ class wayfire_xwayland_view_base : public wf::wlr_view_t
              */
             bool enable_custom_position = xw->override_redirect ||
                 (xw->window_type_len > 0 &&
-                    xw->window_type[0] != _NET_WM_WINDOW_TYPE_NORMAL);
+                    xw->window_type[0] != wf::xw::_NET_WM_WINDOW_TYPE_NORMAL);
 
             if ((ev->mask & XCB_CONFIG_WINDOW_X) &&
                 (ev->mask & XCB_CONFIG_WINDOW_Y) &&
@@ -304,7 +251,7 @@ class wayfire_xwayland_view_base : public wf::wlr_view_t
     virtual bool should_be_decorated() override
     {
         return (wf::wlr_view_t::should_be_decorated() &&
-            !has_type(_NET_WM_WINDOW_TYPE_SPLASH));
+            !has_type(wf::xw::_NET_WM_WINDOW_TYPE_SPLASH));
     }
 
     /* Translates geometry from X client configure requests to wayfire
@@ -498,10 +445,10 @@ class wayfire_xwayland_view_base : public wf::wlr_view_t
     }
 };
 
-xcb_atom_t wayfire_xwayland_view_base::_NET_WM_WINDOW_TYPE_NORMAL;
-xcb_atom_t wayfire_xwayland_view_base::_NET_WM_WINDOW_TYPE_DIALOG;
-xcb_atom_t wayfire_xwayland_view_base::_NET_WM_WINDOW_TYPE_SPLASH;
-xcb_atom_t wayfire_xwayland_view_base::_NET_WM_WINDOW_TYPE_DND;
+xcb_atom_t wf::xw::_NET_WM_WINDOW_TYPE_NORMAL;
+xcb_atom_t wf::xw::_NET_WM_WINDOW_TYPE_DIALOG;
+xcb_atom_t wf::xw::_NET_WM_WINDOW_TYPE_SPLASH;
+xcb_atom_t wf::xw::_NET_WM_WINDOW_TYPE_DND;
 
 class wayfire_unmanaged_xwayland_view : public wayfire_xwayland_view_base
 {
@@ -518,9 +465,9 @@ class wayfire_unmanaged_xwayland_view : public wayfire_xwayland_view_base
 
     bool should_be_decorated() override;
 
-    xwayland_view_type_t get_current_impl_type() const override
+    wf::xw::view_type get_current_impl_type() const override
     {
-        return xwayland_view_type_t::UNMANAGED;
+        return wf::xw::view_type::UNMANAGED;
     }
 };
 
@@ -590,7 +537,7 @@ class wayfire_xwayland_view : public wayfire_xwayland_view_base
             if (parent)
             {
                 if (!parent->is_mapped() ||
-                    this->has_type(_NET_WM_WINDOW_TYPE_NORMAL))
+                    this->has_type(wf::xw::_NET_WM_WINDOW_TYPE_NORMAL))
                 {
                     parent = nullptr;
                 }
@@ -778,9 +725,9 @@ class wayfire_xwayland_view : public wayfire_xwayland_view_base
         }
     }
 
-    xwayland_view_type_t get_current_impl_type() const override
+    wf::xw::view_type get_current_impl_type() const override
     {
-        return xwayland_view_type_t::NORMAL;
+        return wf::xw::view_type::NORMAL;
     }
 };
 
@@ -896,9 +843,9 @@ class wayfire_dnd_xwayland_view : public wayfire_unmanaged_xwayland_view
   public:
     using wayfire_unmanaged_xwayland_view::wayfire_unmanaged_xwayland_view;
 
-    xwayland_view_type_t get_current_impl_type() const override
+    wf::xw::view_type get_current_impl_type() const override
     {
-        return xwayland_view_type_t::DND;
+        return wf::xw::view_type::DND;
     }
 
     void destruct() override
@@ -954,13 +901,13 @@ class wayfire_dnd_xwayland_view : public wayfire_unmanaged_xwayland_view
 
 void wayfire_xwayland_view_base::recreate_view()
 {
-    xwayland_view_type_t target_type = xwayland_view_type_t::NORMAL;
+    wf::xw::view_type target_type = wf::xw::view_type::NORMAL;
     if (this->is_dnd())
     {
-        target_type = xwayland_view_type_t::DND;
+        target_type = wf::xw::view_type::DND;
     } else if (this->is_unmanaged())
     {
-        target_type = xwayland_view_type_t::UNMANAGED;
+        target_type = wf::xw::view_type::UNMANAGED;
     }
 
     if (target_type == this->get_current_impl_type())
@@ -989,15 +936,15 @@ void wayfire_xwayland_view_base::recreate_view()
     wayfire_xwayland_view_base *new_view;
     switch (target_type)
     {
-      case xwayland_view_type_t::DND:
+      case wf::xw::view_type::DND:
         new_view = new wayfire_dnd_xwayland_view(xw_surf);
         break;
 
-      case xwayland_view_type_t::UNMANAGED:
+      case wf::xw::view_type::UNMANAGED:
         new_view = new wayfire_unmanaged_xwayland_view(xw_surf);
         break;
 
-      case xwayland_view_type_t::NORMAL:
+      case wf::xw::view_type::NORMAL:
         new_view = new wayfire_xwayland_view(xw_surf);
         break;
     }
@@ -1039,7 +986,7 @@ void wf::init_xwayland()
 
     on_ready.set_callback([&] (void *data)
     {
-        if (!wayfire_xwayland_view_base::load_atoms(xwayland_handle->display_name))
+        if (!wf::xw::load_basic_atoms(xwayland_handle->display_name))
         {
             LOGE("Failed to load Xwayland atoms.");
         } else
