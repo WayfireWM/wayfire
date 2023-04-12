@@ -245,6 +245,8 @@ class tile_plugin_t : public wf::per_output_plugin_instance_t, public wf::pointe
             return;
         }
 
+        input_grab->ungrab_input();
+
         // Deactivate plugin, so that others can react to the events
         output->deactivate_plugin(&grab_interface);
         if (!force_stop)
