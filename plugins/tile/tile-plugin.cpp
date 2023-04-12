@@ -219,23 +219,22 @@ class tile_plugin_t : public wf::per_output_plugin_instance_t, public wf::pointe
     }
 
     template<class Controller>
-    bool start_controller()
+    void start_controller()
     {
         /* No action possible in this case */
         if (has_fullscreen_view() || !has_tiled_focus())
         {
-            return false;
+            return;
         }
 
         if (!output->activate_plugin(&grab_interface))
         {
-            return false;
+            return;
         }
 
-        input_grab->grab_input(wf::scene::layer::OVERLAY);
+        input_grab->grab_input(wf::scene::layer::OVERLAY, true);
         auto vp = output->workspace->get_current_workspace();
         controller = std::make_unique<Controller>(roots[vp.x][vp.y], get_global_input_coordinates());
-        return true;
     }
 
     void stop_controller(bool force_stop)
@@ -524,12 +523,14 @@ class tile_plugin_t : public wf::per_output_plugin_instance_t, public wf::pointe
 
     wf::button_callback on_move_view = [=] (auto)
     {
-        return start_controller<tile::move_view_controller_t>();
+        start_controller<tile::move_view_controller_t>();
+        return false;
     };
 
     wf::button_callback on_resize_view = [=] (auto)
     {
-        return start_controller<tile::resize_view_controller_t>();
+        start_controller<tile::resize_view_controller_t>();
+        return false;
     };
 
     void handle_pointer_button(const wlr_pointer_button_event& event) override
