@@ -103,6 +103,7 @@ class transformer_render_instance_t : public render_instance_t
         int target_height = scale * bbox.height;
 
         OpenGL::render_begin();
+        inner_content.scale = scale;
         if (inner_content.allocate(target_width, target_height))
         {
             cached_damage |= bbox;
