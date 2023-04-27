@@ -37,7 +37,7 @@ class wayfire_unmanaged_xwayland_view : public wayfire_xwayland_view_base
                     geometry.y -= real_output.y;
                 }
 
-                wf::wlr_view_t::move(geometry.x, geometry.y);
+                wayfire_xwayland_view_base::move(geometry.x, geometry.y);
             }
         });
 
@@ -74,8 +74,7 @@ class wayfire_unmanaged_xwayland_view : public wayfire_xwayland_view_base
 
         global_x = xw->x;
         global_y = xw->y;
-        wf::wlr_view_t::move(xw->x - real_output_geometry.x,
-            xw->y - real_output_geometry.y);
+        wayfire_xwayland_view_base::move(xw->x - real_output_geometry.x, xw->y - real_output_geometry.y);
 
         if (wo != get_output())
         {
@@ -97,7 +96,7 @@ class wayfire_unmanaged_xwayland_view : public wayfire_xwayland_view_base
             wlr_xwayland_or_surface_wants_focus(xw));
 
         get_output()->workspace->add_view(self(), wf::LAYER_UNMANAGED);
-        wf::wlr_view_t::map(surface);
+        wayfire_xwayland_view_base::map(surface);
 
         if (priv->keyboard_focus_enabled)
         {

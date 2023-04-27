@@ -164,7 +164,7 @@ class wayfire_xwayland_view : public wayfire_xwayland_view_base
             configure_request({xw->x, xw->y, xw->width, xw->height});
         }
 
-        wf::wlr_view_t::map(surface);
+        wayfire_xwayland_view_base::map(surface);
     }
 
     void commit() override
@@ -176,7 +176,7 @@ class wayfire_xwayland_view : public wayfire_xwayland_view_base
                 0, 0, priv->wsurface->current.width, priv->wsurface->current.height);
         }
 
-        wf::wlr_view_t::commit();
+        wayfire_xwayland_view_base::commit();
 
         /* Avoid loops where the client wants to have a certain size but the
          * compositor keeps trying to resize it */
@@ -185,7 +185,7 @@ class wayfire_xwayland_view : public wayfire_xwayland_view_base
 
     void set_moving(bool moving) override
     {
-        wf::wlr_view_t::set_moving(moving);
+        wayfire_xwayland_view_base::set_moving(moving);
 
         /* We don't send updates while in continuous move, because that means
          * too much configure requests. Instead, we set it at the end */
@@ -234,7 +234,7 @@ class wayfire_xwayland_view : public wayfire_xwayland_view_base
 
     void set_tiled(uint32_t edges) override
     {
-        wf::wlr_view_t::set_tiled(edges);
+        wayfire_xwayland_view_base::set_tiled(edges);
         if (xw)
         {
             wlr_xwayland_surface_set_maximized(xw, !!edges);
@@ -243,7 +243,7 @@ class wayfire_xwayland_view : public wayfire_xwayland_view_base
 
     void set_fullscreen(bool full) override
     {
-        wf::wlr_view_t::set_fullscreen(full);
+        wayfire_xwayland_view_base::set_fullscreen(full);
         if (xw)
         {
             wlr_xwayland_surface_set_fullscreen(xw, full);
@@ -252,7 +252,7 @@ class wayfire_xwayland_view : public wayfire_xwayland_view_base
 
     void set_minimized(bool minimized) override
     {
-        wf::wlr_view_t::set_minimized(minimized);
+        wayfire_xwayland_view_base::set_minimized(minimized);
         if (xw)
         {
             wlr_xwayland_surface_set_minimized(xw, minimized);
