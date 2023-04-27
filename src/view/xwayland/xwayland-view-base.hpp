@@ -56,34 +56,6 @@ class wayfire_xwayland_view_base : public wf::view_interface_t
         return this->title;
     }
 
-    /**
-     * The bounding box of the view the last time it was rendered.
-     *
-     * This is used to damage the view when it is resized, because when a
-     * transformer changes because the view is resized, we can't reliably
-     * calculate the old view region to damage.
-     */
-    wf::geometry_t last_bounding_box{0, 0, 0, 0};
-
-    /** The output geometry of the view */
-    wf::geometry_t geometry{100, 100, 0, 0};
-
-    wf::geometry_t get_output_geometry() override
-    {
-        return geometry;
-    }
-
-    wf::geometry_t get_wm_geometry() override
-    {
-        if (priv->frame)
-        {
-            return priv->frame->expand_wm_geometry(geometry);
-        } else
-        {
-            return geometry;
-        }
-    }
-
     wlr_surface *get_keyboard_focus_surface() override
     {
         if (is_mapped() && priv->keyboard_focus_enabled)
@@ -187,121 +159,12 @@ class wayfire_xwayland_view_base : public wf::view_interface_t
         on_surface_commit.set_callback([&] (void*) { commit(); });
     }
 
-    void adjust_anchored_edge(wf::dimensions_t new_size)
-    {
-        if (priv->edges)
-        {
-            auto wm = get_wm_geometry();
-            if (priv->edges & WLR_EDGE_LEFT)
-            {
-                wm.x += geometry.width - new_size.width;
-            }
-
-            if (priv->edges & WLR_EDGE_TOP)
-            {
-                wm.y += geometry.height - new_size.height;
-            }
-
-            set_position(wm.x, wm.y, get_wm_geometry(), false);
-        }
-    }
-
-    void set_position(int x, int y, wf::geometry_t old_geometry, bool send_signal)
-    {
-        auto obox = get_output_geometry();
-        auto wm   = get_wm_geometry();
-
-        wf::view_geometry_changed_signal data;
-        data.view = self();
-        data.old_geometry = old_geometry;
-
-        view_damage_raw(self(), last_bounding_box);
-        /* obox.x - wm.x is the current difference in the output and wm geometry */
-        geometry.x = x + obox.x - wm.x;
-        geometry.y = y + obox.y - wm.y;
-
-        /* Make sure that if we move the view while it is unmapped, its snapshot
-         * is still valid coordinates */
-        priv->offscreen_buffer = priv->offscreen_buffer.translated({
-            x - data.old_geometry.x, y - data.old_geometry.y,
-        });
-
-        damage();
-
-        if (send_signal)
-        {
-            emit(&data);
-            wf::get_core().emit(&data);
-            if (get_output())
-            {
-                get_output()->emit(&data);
-            }
-        }
-
-        last_bounding_box = get_bounding_box();
-        wf::scene::update(this->get_surface_root_node(), wf::scene::update_flag::GEOMETRY);
-    }
-
-    void update_size()
-    {
-        if (!is_mapped())
-        {
-            return;
-        }
-
-        wf::dimensions_t current_size{
-            priv->wsurface->current.width,
-            priv->wsurface->current.height,
-        };
-
-        if ((current_size.width == geometry.width) &&
-            (current_size.height == geometry.height))
-        {
-            return;
-        }
-
-        /* Damage current size */
-        view_damage_raw(self(), last_bounding_box);
-        adjust_anchored_edge(current_size);
-
-        wf::view_geometry_changed_signal data;
-        data.view = self();
-        data.old_geometry = get_wm_geometry();
-
-        geometry.width  = current_size.width;
-        geometry.height = current_size.height;
-
-        /* Damage new size */
-        last_bounding_box = get_bounding_box();
-        view_damage_raw(self(), last_bounding_box);
-        emit(&data);
-        wf::get_core().emit(&data);
-        if (get_output())
-        {
-            get_output()->emit(&data);
-        }
-
-        wf::scene::update(this->get_surface_root_node(), wf::scene::update_flag::GEOMETRY);
-    }
-
     virtual void commit()
     {
+        // TODO: this shoudl be done by the main node, likely unnecessary to do it here as well.
         wf::region_t dmg;
         wlr_surface_get_effective_damage(priv->wsurface, dmg.to_pixman());
         wf::scene::damage_node(this->get_surface_root_node(), dmg);
-
-        update_size();
-
-        /* Clear the resize edges.
-         * This is must be done here because if the user(or plugin) resizes too fast,
-         * the shell client might still haven't configured the surface, and in this
-         * case the next commit(here) needs to still have access to the gravity */
-        if (!priv->in_continuous_resize)
-        {
-            priv->edges = 0;
-        }
-
-        this->last_bounding_box = get_bounding_box();
     }
 
     virtual void map(wlr_surface *surface)
@@ -314,9 +177,6 @@ class wayfire_xwayland_view_base : public wf::view_interface_t
         wf::scene::update(priv->surface_root_node, wf::scene::update_flag::CHILDREN_LIST);
         surface_controller = std::make_unique<wf::wlr_surface_controller_t>(surface, priv->surface_root_node);
         on_surface_commit.connect(&surface->events.commit);
-
-        update_size();
-
         if (role == wf::VIEW_ROLE_TOPLEVEL)
         {
             if (!parent)
@@ -365,60 +225,7 @@ class wayfire_xwayland_view_base : public wf::view_interface_t
         on_destroy.set_callback([&] (void*) { destroy(); });
         on_configure.set_callback([&] (void *data)
         {
-            auto ev = static_cast<wlr_xwayland_surface_configure_event*>(data);
-            wf::point_t output_origin = {0, 0};
-            if (get_output())
-            {
-                output_origin = {
-                    get_output()->get_relative_geometry().x,
-                    get_output()->get_relative_geometry().y
-                };
-            }
-
-            if (!is_mapped())
-            {
-                /* If the view is not mapped yet, let it be configured as it
-                 * wishes. We will position it properly in ::map() */
-                wlr_xwayland_surface_configure(xw,
-                    ev->x, ev->y, ev->width, ev->height);
-
-                if ((ev->mask & XCB_CONFIG_WINDOW_X) &&
-                    (ev->mask & XCB_CONFIG_WINDOW_Y))
-                {
-                    this->self_positioned = true;
-                    this->geometry.x = ev->x - output_origin.x;
-                    this->geometry.y = ev->y - output_origin.y;
-                }
-
-                return;
-            }
-
-            /**
-             * Regular Xwayland windows are not allowed to change their position
-             * after mapping, in which respect they behave just like Wayland apps.
-             *
-             * However, OR views or special views which do not have NORMAL type
-             * should be allowed to move around the screen.
-             */
-            bool enable_custom_position = xw->override_redirect ||
-                (xw->window_type_len > 0 &&
-                    xw->window_type[0] != wf::xw::_NET_WM_WINDOW_TYPE_NORMAL);
-
-            if ((ev->mask & XCB_CONFIG_WINDOW_X) &&
-                (ev->mask & XCB_CONFIG_WINDOW_Y) &&
-                enable_custom_position)
-            {
-                /* override-redirect views generally have full freedom. */
-                self_positioned = true;
-                configure_request({ev->x, ev->y, ev->width, ev->height});
-
-                return;
-            }
-
-            /* Use old x/y values */
-            ev->x = geometry.x + output_origin.x;
-            ev->y = geometry.y + output_origin.y;
-            configure_request(wlr_box{ev->x, ev->y, ev->width, ev->height});
+            handle_client_configure((wlr_xwayland_surface_configure_event*)data);
         });
         on_set_title.set_callback([&] (void*)
         {
@@ -468,6 +275,9 @@ class wayfire_xwayland_view_base : public wf::view_interface_t
      * No-op if the view already has the correct type.
      */
     virtual void recreate_view();
+
+    virtual void handle_client_configure(wlr_xwayland_surface_configure_event *ev)
+    {}
 
     virtual void destroy()
     {
@@ -647,21 +457,6 @@ class wayfire_xwayland_view_base : public wf::view_interface_t
         }
 
         wf::view_interface_t::set_activated(active);
-    }
-
-    void move(int x, int y) override
-    {
-        set_position(x, y, get_wm_geometry(), true);
-        if (!priv->in_continuous_move)
-        {
-            send_configure();
-        }
-    }
-
-    void set_geometry(wf::geometry_t geometry) override
-    {
-        move(geometry.x, geometry.y);
-        resize(geometry.width, geometry.height);
     }
 
     void send_configure(int width, int height)
