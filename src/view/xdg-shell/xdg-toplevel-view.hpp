@@ -49,7 +49,6 @@ class xdg_toplevel_view_t : public wf::view_interface_t
 
     wf::wl_listener_wrapper on_surface_commit;
     std::shared_ptr<wf::scene::wlr_surface_node_t> main_surface;
-    std::unique_ptr<wlr_surface_controller_t> surface_controller;
 
     wf::geometry_t wm_geometry = {100, 100, 0, 0};
     wf::geometry_t base_geometry = {100, 100, 0, 0};

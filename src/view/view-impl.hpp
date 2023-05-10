@@ -60,8 +60,13 @@ class view_interface_t::view_priv_impl
 
     scene::floating_inner_ptr root_node;
     std::shared_ptr<scene::transform_manager_node_t> transformed_node;
+    std::unique_ptr<wlr_surface_controller_t> surface_controller;
     scene::floating_inner_ptr surface_root_node;
     wf::output_t *output;
+
+    void set_mapped(bool mapped);
+    void set_mapped_surface_contents(std::shared_ptr<scene::wlr_surface_node_t> content);
+    void unset_mapped_surface_contents();
 
   private:
     /** Last geometry the view has had in non-tiled and non-fullscreen state.
@@ -164,8 +169,6 @@ class wlr_view_t : public view_interface_t
     wf::dimensions_t get_size() const;
 
     wlr_buffer *get_buffer();
-
-    std::unique_ptr<wlr_surface_controller_t> surface_controller;
 };
 
 /** Emit the map signal for the given view */

@@ -233,14 +233,10 @@ void wf::wlr_view_t::commit()
 
 void wf::wlr_view_t::map(wlr_surface *surface)
 {
-    scene::set_node_enabled(priv->root_node, true);
-    priv->wsurface = surface;
-
-    this->main_surface = std::make_shared<scene::wlr_surface_node_t>(surface, true);
-    priv->surface_root_node->set_children_list({main_surface});
-    scene::update(priv->surface_root_node, scene::update_flag::CHILDREN_LIST);
-    surface_controller = std::make_unique<wlr_surface_controller_t>(surface, priv->surface_root_node);
     on_surface_commit.connect(&surface->events.commit);
+    this->main_surface = std::make_shared<scene::wlr_surface_node_t>(surface, true);
+    priv->set_mapped_surface_contents(main_surface);
+    priv->set_mapped(true);
 
     update_size();
 
@@ -266,15 +262,12 @@ void wf::wlr_view_t::unmap()
     emit_view_pre_unmap();
     set_decoration(nullptr);
 
-    main_surface   = nullptr;
-    priv->wsurface = nullptr;
+    main_surface = nullptr;
+    priv->unset_mapped_surface_contents();
     on_surface_commit.disconnect();
-    surface_controller = nullptr;
-    priv->surface_root_node->set_children_list({});
-    scene::update(priv->surface_root_node, scene::update_flag::CHILDREN_LIST);
 
     emit_view_unmap();
-    scene::set_node_enabled(priv->root_node, false);
+    priv->set_mapped(false);
 }
 
 void wf::emit_view_map_signal(wayfire_view view, bool has_position)
@@ -413,4 +406,37 @@ wlr_buffer*wf::wlr_view_t::get_buffer()
     }
 
     return nullptr;
+}
+
+void wf::view_interface_t::view_priv_impl::set_mapped_surface_contents(
+    std::shared_ptr<scene::wlr_surface_node_t> content)
+{
+    wsurface = content->get_surface();
+    surface_root_node->set_children_list({content});
+    scene::update(surface_root_node, scene::update_flag::CHILDREN_LIST);
+
+    if (content->get_surface())
+    {
+        surface_controller =
+            std::make_unique<wlr_surface_controller_t>(content->get_surface(), surface_root_node);
+    }
+}
+
+void wf::view_interface_t::view_priv_impl::unset_mapped_surface_contents()
+{
+    wsurface = nullptr;
+    surface_root_node->set_children_list({});
+    scene::update(surface_root_node, scene::update_flag::CHILDREN_LIST);
+    surface_controller.reset();
+}
+
+void wf::view_interface_t::view_priv_impl::set_mapped(bool mapped)
+{
+    if (mapped)
+    {
+        scene::set_node_enabled(root_node, true);
+    } else
+    {
+        scene::set_node_enabled(root_node, false);
+    }
 }

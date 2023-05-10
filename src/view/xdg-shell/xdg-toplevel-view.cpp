@@ -317,12 +317,8 @@ void wf::xdg_toplevel_view_t::map()
         this->has_client_decoration = uses_csd[surf];
     }
 
-    scene::set_node_enabled(priv->root_node, true);
-    priv->wsurface = surf;
-
-    priv->surface_root_node->set_children_list({main_surface});
-    scene::update(priv->surface_root_node, scene::update_flag::CHILDREN_LIST);
-    surface_controller = std::make_unique<wlr_surface_controller_t>(surf, priv->surface_root_node);
+    priv->set_mapped_surface_contents(main_surface);
+    priv->set_mapped(true);
     on_surface_commit.connect(&surf->events.commit);
 
     update_size();
@@ -351,15 +347,12 @@ void wf::xdg_toplevel_view_t::unmap()
     emit_view_pre_unmap();
     set_decoration(nullptr);
 
-    main_surface   = nullptr;
-    priv->wsurface = nullptr;
+    main_surface = nullptr;
+    priv->unset_mapped_surface_contents();
     on_surface_commit.disconnect();
-    surface_controller = nullptr;
-    priv->surface_root_node->set_children_list({});
-    scene::update(priv->surface_root_node, scene::update_flag::CHILDREN_LIST);
 
     emit_view_unmap();
-    scene::set_node_enabled(priv->root_node, false);
+    priv->set_mapped(false);
 }
 
 void wf::xdg_toplevel_view_t::update_size()
