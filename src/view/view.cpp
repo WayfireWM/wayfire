@@ -891,8 +891,6 @@ void wf::view_interface_t::destruct()
 {
     view_destruct_signal ev;
     this->emit(&ev);
-
-    priv->is_alive = false;
     wf::get_core_impl().erase_view(self());
 }
 

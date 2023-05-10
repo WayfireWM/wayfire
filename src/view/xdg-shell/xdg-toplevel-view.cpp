@@ -452,8 +452,7 @@ void wf::xdg_toplevel_view_t::destroy()
     on_show_window_menu.disconnect();
     on_request_fullscreen.disconnect();
 
-    xdg_toplevel   = nullptr;
-    priv->is_alive = false;
+    xdg_toplevel = nullptr;
     /* Drop the internal reference */
     unref();
 }

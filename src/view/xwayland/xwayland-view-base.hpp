@@ -295,7 +295,6 @@ class wayfire_xwayland_view_base : public wf::view_interface_t
         on_set_decorations.disconnect();
         on_set_window_type.disconnect();
 
-        priv->is_alive = false;
         /* Drop the internal reference */
         unref();
     }

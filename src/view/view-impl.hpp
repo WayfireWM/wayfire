@@ -24,12 +24,6 @@ class view_interface_t::view_priv_impl
   public:
     wlr_surface *wsurface = nullptr;
 
-    /**
-     * A view is alive as long as it is possible for it to become mapped in the
-     * future. For wlr views, this means that their role object hasn't been
-     * destroyed and they still have the internal surface reference.
-     */
-    bool is_alive = true;
     /** Reference count to the view */
     int ref_cnt = 0;
 

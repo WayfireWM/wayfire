@@ -341,7 +341,6 @@ void wf::view_interface_t::emit_view_pre_unmap()
 
 void wf::wlr_view_t::destroy()
 {
-    priv->is_alive = false;
     /* Drop the internal reference */
     unref();
 }
