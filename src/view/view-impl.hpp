@@ -174,6 +174,7 @@ class wlr_view_t : public view_interface_t
 /** Emit the map signal for the given view */
 void emit_view_map_signal(wayfire_view view, bool has_position);
 void emit_ping_timeout_signal(wayfire_view view);
+void emit_geometry_changed_signal(wayfire_view view, wf::geometry_t old_geometry);
 
 void init_xdg_shell();
 void init_xwayland();

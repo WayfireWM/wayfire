@@ -288,6 +288,20 @@ void wf::emit_ping_timeout_signal(wayfire_view view)
     view->emit(&data);
 }
 
+void wf::emit_geometry_changed_signal(wayfire_view view, wf::geometry_t old_geometry)
+{
+    wf::view_geometry_changed_signal data;
+    data.view = view;
+    data.old_geometry = old_geometry;
+
+    view->emit(&data);
+    wf::get_core().emit(&data);
+    if (view->get_output())
+    {
+        view->get_output()->emit(&data);
+    }
+}
+
 void wf::view_interface_t::emit_view_map()
 {
     emit_view_map_signal(self(), false);
