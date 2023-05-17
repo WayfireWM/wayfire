@@ -650,16 +650,6 @@ struct view_ping_timeout_signal
 
 /**
  * on: output
- * when: As soon as the view's output is set to the given output. This is the
- *   first point where the view is considered to be part of that output.
- */
-struct view_attached_signal
-{
-    wayfire_view view;
-};
-
-/**
- * on: output
  * when: Emitted when the view is added to a layer in the output's workspace
  *   manager and it was in no layer previously.
  */

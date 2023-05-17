@@ -213,12 +213,6 @@ void wf::view_interface_t::set_output(wf::output_t *new_output)
     data.output = get_output();
 
     this->priv->output = new_output;
-    if ((new_output != data.output) && new_output)
-    {
-        view_attached_signal data;
-        data.view = self();
-        get_output()->emit(&data);
-    }
 
     this->emit(&data);
     wf::get_core().emit(&data);
