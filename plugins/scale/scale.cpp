@@ -1130,8 +1130,8 @@ class wayfire_scale : public wf::per_output_plugin_instance_t,
     }
 
     /* Destroyed view or view moved to another output */
-    wf::signal::connection_t<wf::view_layer_detached_signal> view_detached =
-        [=] (wf::view_layer_detached_signal *ev)
+    wf::signal::connection_t<wf::view_disappeared_signal> view_disappeared =
+        [=] (wf::view_disappeared_signal *ev)
     {
         handle_view_disappeared(ev->view);
     };
@@ -1166,10 +1166,8 @@ class wayfire_scale : public wf::per_output_plugin_instance_t,
     /* View minimized */
     wf::signal::connection_t<wf::view_minimized_signal> view_minimized = [=] (wf::view_minimized_signal *ev)
     {
-        if (ev->view->minimized)
-        {
-            handle_view_disappeared(ev->view);
-        } else if (should_scale_view(ev->view))
+        // Handle view restoration, view minimization is handled by disappeared already.
+        if (!ev->view->minimized)
         {
             layout_slots(get_views());
         }
@@ -1335,7 +1333,7 @@ class wayfire_scale : public wf::per_output_plugin_instance_t,
         output->connect(&on_view_set_output);
         output->connect(&on_view_mapped);
         output->connect(&workspace_changed);
-        output->connect(&view_detached);
+        output->connect(&view_disappeared);
         output->connect(&view_minimized);
         output->connect(&view_unmapped);
         output->connect(&view_focused);
@@ -1405,7 +1403,7 @@ class wayfire_scale : public wf::per_output_plugin_instance_t,
         on_view_mapped.disconnect();
         on_view_set_output.disconnect();
         view_unmapped.disconnect();
-        view_detached.disconnect();
+        view_disappeared.disconnect();
         view_minimized.disconnect();
         workspace_changed.disconnect();
         view_geometry_changed.disconnect();

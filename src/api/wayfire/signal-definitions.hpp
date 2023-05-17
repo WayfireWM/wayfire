@@ -649,22 +649,8 @@ struct view_ping_timeout_signal
  * -------------------------------------------------------------------------- */
 
 /**
- * on: output
- * when: Emitted when the view is removed from a layer but is not added to
- *   another.
- */
-struct view_layer_detached_signal
-{
-    wayfire_view view;
-};
-
-/**
  * on: core
- * when: Immediately before the view is moved to another output. The usual
- *   sequence when moving views to another output is:
- *
- *   pre-moved-to-output -> layer-detach -> detach ->
- *      attach -> layer-attach -> moved-to-output
+ * when: Immediately before the view is moved to another output. view-moved-to-output is emitted afterwards.
  */
 struct view_pre_moved_to_output_signal
 {
@@ -692,9 +678,9 @@ struct view_moved_to_output_signal
 
 /**
  * on: output
- * when: This signal is a combination of the unmapped and set-output signals. In the latter case, the signal
- *   is emitted on the view's previous output. The meaning of this signal is that the view is no longer
- *   available for focus, interaction with the user, etc. on the output where it used to be.
+ * when: This signal is a combination of the unmapped, minimized and set-output signals. In the latter case,
+ *   the signal is emitted on the view's previous output. The meaning of this signal is that the view is no
+ *   longer available for focus, interaction with the user, etc. on the output where it used to be.
  */
 struct view_disappeared_signal
 {

@@ -865,10 +865,6 @@ class workspace_manager::impl
         uint32_t view_layer = layer_manager.get_view_layer(view);
         layer_manager.remove_view(view);
 
-        view_layer_detached_signal data;
-        data.view = view;
-        output->emit(&data);
-
         /* Check if the next focused view is fullscreen. If so, then we need
          * to make sure it is in the fullscreen layer */
         if (view_layer & MIDDLE_LAYERS)
