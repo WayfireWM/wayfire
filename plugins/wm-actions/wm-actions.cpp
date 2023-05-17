@@ -154,8 +154,8 @@ class wayfire_wm_actions_t : public wf::per_output_plugin_instance_t
      * Disables show desktop if the workspace is changed or any view is attached,
      * mapped or unminimized.
      */
-    wf::signal::connection_t<wf::view_layer_attached_signal> view_attached =
-        [=] (wf::view_layer_attached_signal *ev)
+    wf::signal::connection_t<wf::view_set_output_signal> view_set_output =
+        [=] (wf::view_set_output_signal *ev)
     {
         check_disable_showdesktop(ev->view);
     };
@@ -263,7 +263,7 @@ class wayfire_wm_actions_t : public wf::per_output_plugin_instance_t
                 }
             }
 
-            output->connect(&view_attached);
+            output->connect(&view_set_output);
             output->connect(&workspace_changed);
             output->connect(&view_minimized);
             output->connect(&on_view_mapped);
@@ -319,7 +319,7 @@ class wayfire_wm_actions_t : public wf::per_output_plugin_instance_t
 
     void disable_showdesktop()
     {
-        view_attached.disconnect();
+        view_set_output.disconnect();
         workspace_changed.disconnect();
         view_minimized.disconnect();
 

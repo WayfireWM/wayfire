@@ -210,6 +210,11 @@ void wf::view_interface_t::set_output(wf::output_t *new_output)
     this->priv->output = new_output;
 
     this->emit(&data);
+    if (new_output)
+    {
+        new_output->emit(&data);
+    }
+
     wf::get_core().emit(&data);
 
     for (auto& view : this->children)

@@ -385,7 +385,7 @@ struct view_unmapped_signal
 };
 
 /**
- * on: view, core
+ * on: view, new output, core
  * when: Immediately after the view's output changes. Note that child views may still be on the old output.
  */
 struct view_set_output_signal
@@ -647,16 +647,6 @@ struct view_ping_timeout_signal
 /* ----------------------------------------------------------------------------/
  * View <-> output signals
  * -------------------------------------------------------------------------- */
-
-/**
- * on: output
- * when: Emitted when the view is added to a layer in the output's workspace
- *   manager and it was in no layer previously.
- */
-struct view_layer_attached_signal
-{
-    wayfire_view view;
-};
 
 /**
  * on: output

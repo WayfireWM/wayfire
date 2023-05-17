@@ -1101,9 +1101,8 @@ class wayfire_scale : public wf::per_output_plugin_instance_t,
         layout_slots(get_views());
     }
 
-    /* New view or view moved to output with scale active */
-    wf::signal::connection_t<wf::view_layer_attached_signal> view_attached =
-        [=] (wf::view_layer_attached_signal *ev)
+    wf::signal::connection_t<wf::view_set_output_signal> on_view_set_output =
+        [=] (wf::view_set_output_signal *ev)
     {
         handle_new_view(ev->view);
     };
@@ -1333,7 +1332,7 @@ class wayfire_scale : public wf::per_output_plugin_instance_t,
 
         layout_slots(get_views());
 
-        output->connect(&view_attached);
+        output->connect(&on_view_set_output);
         output->connect(&on_view_mapped);
         output->connect(&workspace_changed);
         output->connect(&view_detached);
@@ -1355,8 +1354,8 @@ class wayfire_scale : public wf::per_output_plugin_instance_t,
         set_hook();
         view_focused.disconnect();
         on_view_mapped.disconnect();
+        on_view_set_output.disconnect();
         view_unmapped.disconnect();
-        view_attached.disconnect();
         view_minimized.disconnect();
         workspace_changed.disconnect();
         view_geometry_changed.disconnect();
@@ -1404,8 +1403,8 @@ class wayfire_scale : public wf::per_output_plugin_instance_t,
         grab->ungrab_input();
         view_focused.disconnect();
         on_view_mapped.disconnect();
+        on_view_set_output.disconnect();
         view_unmapped.disconnect();
-        view_attached.disconnect();
         view_detached.disconnect();
         view_minimized.disconnect();
         workspace_changed.disconnect();

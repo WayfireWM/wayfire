@@ -841,24 +841,11 @@ class workspace_manager::impl
         }
     }
 
-    void handle_view_first_add(wayfire_view view)
-    {
-        view_layer_attached_signal data;
-        data.view = view;
-        output->emit(&data);
-    }
-
     void add_view_to_layer(wayfire_view view, layer_t layer)
     {
         assert(view->get_output() == output);
-        bool first_add = layer_manager.get_view_layer(view) == 0;
         layer_manager.add_view_to_layer(view, layer);
         update_promoted_views();
-
-        if (first_add)
-        {
-            handle_view_first_add(view);
-        }
     }
 
     void bring_to_front(wayfire_view view)

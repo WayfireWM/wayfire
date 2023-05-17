@@ -284,10 +284,17 @@ class tile_plugin_t : public wf::per_output_plugin_instance_t, public wf::pointe
         return tile_by_default.matches(view) && can_tile_view(view);
     }
 
-    wf::signal::connection_t<view_layer_attached_signal> on_view_attached =
-        [=] (view_layer_attached_signal *ev)
+    wf::signal::connection_t<view_mapped_signal> on_view_mapped = [=] (view_mapped_signal *ev)
     {
-        if (ev->view->has_data<view_auto_tile_t>() || tile_window_by_default(ev->view))
+        if (tile_window_by_default(ev->view))
+        {
+            attach_view(ev->view);
+        }
+    };
+
+    wf::signal::connection_t<view_set_output_signal> on_view_set_output = [=] (view_set_output_signal *ev)
+    {
+        if (ev->view->has_data<view_auto_tile_t>())
         {
             attach_view(ev->view);
         }
@@ -569,8 +576,9 @@ class tile_plugin_t : public wf::per_output_plugin_instance_t, public wf::pointe
         output->workspace->set_workspace_implementation(
             std::make_unique<tile_workspace_implementation_t>(), true);
 
+        output->connect(&on_view_mapped);
         output->connect(&on_view_unmapped);
-        output->connect(&on_view_attached);
+        output->connect(&on_view_set_output);
         output->connect(&on_workarea_changed);
         output->connect(&on_tile_request);
         output->connect(&on_fullscreen_request);
