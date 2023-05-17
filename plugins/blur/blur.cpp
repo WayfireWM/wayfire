@@ -10,9 +10,9 @@
 #include <wayfire/workspace-stream.hpp>
 #include <wayfire/workspace-manager.hpp>
 #include <wayfire/signal-definitions.hpp>
+#include <wayfire/bindings-repository.hpp>
 
 #include "blur.hpp"
-#include "plugins/common/wayfire/plugins/common/shared-core-data.hpp"
 #include "wayfire/core.hpp"
 #include "wayfire/debug.hpp"
 #include "wayfire/geometry.hpp"
@@ -235,7 +235,7 @@ void blur_node_t::gen_render_instances(std::vector<render_instance_uptr>& instan
 }
 }
 
-class blur_global_data_t
+class wayfire_blur : public wf::plugin_interface_t
 {
     // Before doing a render pass, expand the damage by the blur radius.
     // This is needed, because when blurring, the pixels that changed
@@ -256,35 +256,7 @@ class blur_global_data_t
 
   public:
     blur_algorithm_provider provider;
-    blur_global_data_t()
-    {
-        wf::get_core().connect(&on_render_pass_begin);
-    }
-};
-
-class wayfire_blur : public wf::per_output_plugin_instance_t
-{
     wf::button_callback button_toggle;
-
-    wf::signal::connection_t<wf::view_attached_signal> view_attached = [=] (wf::view_attached_signal *ev)
-    {
-        /* View was just created -> we don't know its layer yet */
-        if (!ev->view->is_mapped())
-        {
-            return;
-        }
-
-        if (blur_by_default.matches(ev->view))
-        {
-            add_transformer(ev->view);
-        }
-    };
-
-    wf::signal::connection_t<wf::view_detached_signal> view_detached = [=] (wf::view_detached_signal *ev)
-    {
-        pop_transformer(ev->view);
-    };
-
     wf::signal::connection_t<wf::view_mapped_signal> on_view_mapped = [=] (wf::view_mapped_signal *ev)
     {
         if (blur_by_default.matches(ev->view))
@@ -324,22 +296,22 @@ class wayfire_blur : public wf::per_output_plugin_instance_t
 
     void remove_transformers()
     {
-        for (auto& view : output->workspace->get_views_in_layer(wf::ALL_LAYERS))
+        for (auto& view : wf::get_core().get_all_views())
         {
             pop_transformer(view);
         }
     }
 
-    wf::shared_data::ref_ptr_t<blur_global_data_t> global_data;
-
   public:
     void init() override
     {
+        wf::get_core().connect(&on_render_pass_begin);
         blur_method_changed = [=] ()
         {
-            blur_algorithm = create_blur_from_name(output, method_opt);
-            output->render->damage_whole();
+            blur_algorithm = create_blur_from_name(method_opt);
+            wf::scene::damage_node(wf::get_core().scene(), wf::get_core().scene()->get_bounding_box());
         };
+
         /* Create initial blur algorithm */
         blur_method_changed();
         method_opt.set_callback(blur_method_changed);
@@ -363,14 +335,12 @@ class wayfire_blur : public wf::per_output_plugin_instance_t
 
             return true;
         };
-        output->add_button(toggle_button, &button_toggle);
-        global_data->provider = [=] () { return this->blur_algorithm.get(); };
 
-        output->connect(&view_attached);
-        output->connect(&view_detached);
-        output->connect(&on_view_mapped);
+        wf::get_core().bindings->add_button(toggle_button, &button_toggle);
+        provider = [=] () { return this->blur_algorithm.get(); };
+        wf::get_core().connect(&on_view_mapped);
 
-        for (auto& view : output->workspace->get_views_in_layer(wf::ALL_LAYERS))
+        for (auto& view : wf::get_core().get_all_views())
         {
             if (blur_by_default.matches(view))
             {
@@ -382,11 +352,11 @@ class wayfire_blur : public wf::per_output_plugin_instance_t
     void fini() override
     {
         remove_transformers();
-        output->rem_binding(&button_toggle);
+        wf::get_core().bindings->rem_binding(&button_toggle);
 
         /* Call blur algorithm destructor */
         blur_algorithm = nullptr;
     }
 };
 
-DECLARE_WAYFIRE_PLUGIN(wf::per_output_plugin_t<wayfire_blur>);
+DECLARE_WAYFIRE_PLUGIN(wayfire_blur);

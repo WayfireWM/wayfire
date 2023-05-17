@@ -70,7 +70,7 @@ void main()
 class wf_gaussian_blur : public wf_blur_base
 {
   public:
-    wf_gaussian_blur(wf::output_t *output) : wf_blur_base(output, "gaussian")
+    wf_gaussian_blur() : wf_blur_base("gaussian")
     {
         OpenGL::render_begin();
         program[0].set_simple(OpenGL::compile_program(
@@ -140,7 +140,7 @@ class wf_gaussian_blur : public wf_blur_base
     }
 };
 
-std::unique_ptr<wf_blur_base> create_gaussian_blur(wf::output_t *output)
+std::unique_ptr<wf_blur_base> create_gaussian_blur()
 {
-    return std::make_unique<wf_gaussian_blur>(output);
+    return std::make_unique<wf_gaussian_blur>();
 }

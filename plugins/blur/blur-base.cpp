@@ -1,4 +1,6 @@
 #include "blur.hpp"
+#include "wayfire/core.hpp"
+#include "wayfire/scene-render.hpp"
 #include <wayfire/output.hpp>
 #include <wayfire/workspace-manager.hpp>
 #include <wayfire/util/log.hpp>
@@ -51,9 +53,8 @@ void main()
     gl_FragColor = wp + (1.0 - wp.a) * c;
 })";
 
-wf_blur_base::wf_blur_base(wf::output_t *output, std::string name)
+wf_blur_base::wf_blur_base(std::string name)
 {
-    this->output = output;
     this->algorithm_name = name;
 
     this->saturation_opt.load_option("blur/saturation");
@@ -61,7 +62,10 @@ wf_blur_base::wf_blur_base(wf::output_t *output, std::string name)
     this->degrade_opt.load_option("blur/" + algorithm_name + "_degrade");
     this->iterations_opt.load_option("blur/" + algorithm_name + "_iterations");
 
-    this->options_changed = [=] () { output->render->damage_whole(); };
+    this->options_changed = [=] ()
+    {
+        wf::scene::damage_node(wf::get_core().scene(), wf::get_core().scene()->get_bounding_box());
+    };
     this->saturation_opt.set_callback(options_changed);
     this->offset_opt.set_callback(options_changed);
     this->degrade_opt.set_callback(options_changed);
@@ -280,31 +284,28 @@ void wf_blur_base::render(wf::texture_t src_tex, wlr_box src_box,
     OpenGL::render_end();
 }
 
-std::unique_ptr<wf_blur_base> create_blur_from_name(wf::output_t *output,
-    std::string algorithm_name)
+std::unique_ptr<wf_blur_base> create_blur_from_name(std::string algorithm_name)
 {
     if (algorithm_name == "box")
     {
-        return create_box_blur(output);
+        return create_box_blur();
     }
 
     if (algorithm_name == "bokeh")
     {
-        return create_bokeh_blur(output);
+        return create_bokeh_blur();
     }
 
     if (algorithm_name == "kawase")
     {
-        return create_kawase_blur(output);
+        return create_kawase_blur();
     }
 
     if (algorithm_name == "gaussian")
     {
-        return create_gaussian_blur(output);
+        return create_gaussian_blur();
     }
 
-    LOGE("Unrecognized blur algorithm %s. Using default kawase blur.",
-        algorithm_name.c_str());
-
-    return create_kawase_blur(output);
+    LOGE("Unrecognized blur algorithm %s. Using default kawase blur.", algorithm_name.c_str());
+    return create_kawase_blur();
 }

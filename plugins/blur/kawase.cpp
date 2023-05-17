@@ -60,8 +60,7 @@ void main()
 class wf_kawase_blur : public wf_blur_base
 {
   public:
-    wf_kawase_blur(wf::output_t *output) :
-        wf_blur_base(output, "kawase")
+    wf_kawase_blur() : wf_blur_base("kawase")
     {
         OpenGL::render_begin();
         program[0].set_simple(OpenGL::compile_program(kawase_vertex_shader,
@@ -144,7 +143,7 @@ class wf_kawase_blur : public wf_blur_base
     }
 };
 
-std::unique_ptr<wf_blur_base> create_kawase_blur(wf::output_t *output)
+std::unique_ptr<wf_blur_base> create_kawase_blur()
 {
-    return std::make_unique<wf_kawase_blur>(output);
+    return std::make_unique<wf_kawase_blur>();
 }

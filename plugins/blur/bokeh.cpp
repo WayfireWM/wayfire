@@ -57,7 +57,7 @@ void main()
 class wf_bokeh_blur : public wf_blur_base
 {
   public:
-    wf_bokeh_blur(wf::output_t *output) : wf_blur_base(output, "bokeh")
+    wf_bokeh_blur() : wf_blur_base("bokeh")
     {
         OpenGL::render_begin();
         program[0].set_simple(OpenGL::compile_program(bokeh_vertex_shader,
@@ -105,7 +105,7 @@ class wf_bokeh_blur : public wf_blur_base
     }
 };
 
-std::unique_ptr<wf_blur_base> create_bokeh_blur(wf::output_t *output)
+std::unique_ptr<wf_blur_base> create_bokeh_blur()
 {
-    return std::make_unique<wf_bokeh_blur>(output);
+    return std::make_unique<wf_bokeh_blur>();
 }

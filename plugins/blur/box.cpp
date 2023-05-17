@@ -74,7 +74,7 @@ class wf_box_blur : public wf_blur_base
     void get_id_locations(int i)
     {}
 
-    wf_box_blur(wf::output_t *output) : wf_blur_base(output, "box")
+    wf_box_blur() : wf_blur_base("box")
     {
         OpenGL::render_begin();
         program[0].set_simple(OpenGL::compile_program(
@@ -144,7 +144,7 @@ class wf_box_blur : public wf_blur_base
     }
 };
 
-std::unique_ptr<wf_blur_base> create_box_blur(wf::output_t *output)
+std::unique_ptr<wf_blur_base> create_box_blur()
 {
-    return std::make_unique<wf_box_blur>(output);
+    return std::make_unique<wf_box_blur>();
 }
