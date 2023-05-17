@@ -310,6 +310,7 @@ class tile_plugin_t : public wf::per_output_plugin_instance_t, public wf::pointe
         if ((ev->new_output == this->output) && node)
         {
             ev->view->store_data(std::make_unique<wf::view_auto_tile_t>());
+            detach_view(node);
         }
     };
 
@@ -335,15 +336,6 @@ class tile_plugin_t : public wf::per_output_plugin_instance_t, public wf::pointe
             output->workspace->add_view(wview, wf::LAYER_WORKSPACE);
         }
     }
-
-    wf::signal::connection_t<view_detached_signal> on_view_detached = [=] (view_detached_signal *ev)
-    {
-        auto view_node = wf::tile::view_node_t::get_node(ev->view);
-        if (view_node)
-        {
-            detach_view(view_node, false);
-        }
-    };
 
     wf::signal::connection_t<workarea_changed_signal> on_workarea_changed = [=] (auto)
     {
@@ -579,7 +571,6 @@ class tile_plugin_t : public wf::per_output_plugin_instance_t, public wf::pointe
 
         output->connect(&on_view_unmapped);
         output->connect(&on_view_attached);
-        output->connect(&on_view_detached);
         output->connect(&on_workarea_changed);
         output->connect(&on_tile_request);
         output->connect(&on_fullscreen_request);

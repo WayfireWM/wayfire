@@ -197,15 +197,10 @@ void wf::view_interface_t::set_output(wf::output_t *new_output)
     {
         /* Emit view-layer-detached first */
         get_output()->workspace->remove_view(self());
-
-        view_detached_signal data_detached;
-        data_detached.view = self();
-
         view_disappeared_signal data_disappeared;
         data_disappeared.view = self();
 
         get_output()->emit(&data_disappeared);
-        get_output()->emit(&data_detached);
     }
 
     view_set_output_signal data;

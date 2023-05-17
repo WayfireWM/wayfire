@@ -70,10 +70,7 @@ wf::output_impl_t::output_impl_t(wlr_output *handle,
     render    = std::make_unique<render_manager>(this);
 
     on_view_disappeared.set_callback([=] (view_disappeared_signal *ev) { handle_view_removed(ev->view); });
-    on_view_detached.set_callback([=] (view_detached_signal *ev) { handle_view_removed(ev->view); });
-
     connect(&on_view_disappeared);
-    connect(&on_view_detached);
 }
 
 std::shared_ptr<wf::scene::output_node_t> wf::output_impl_t::node_for_layer(

@@ -30,7 +30,6 @@ class output_impl_t : public output_t
     std::unordered_multiset<wf::plugin_activation_data_t*> active_plugins;
 
     wf::signal::connection_t<view_disappeared_signal> on_view_disappeared;
-    wf::signal::connection_t<view_detached_signal> on_view_detached;
     void handle_view_removed(wayfire_view view);
 
     bool inhibited = false;

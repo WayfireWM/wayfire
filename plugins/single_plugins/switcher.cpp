@@ -198,7 +198,7 @@ class WayfireSwitcher : public wf::per_output_plugin_instance_t, public wf::keyb
         output->add_key(
             wf::option_wrapper_t<wf::keybinding_t>{"switcher/prev_view"},
             &prev_view_binding);
-        output->connect(&view_removed);
+        output->connect(&view_disappeared);
 
         input_grab = std::make_unique<wf::input_grab_t>("switcher", output, this, nullptr, nullptr);
         grab_interface.cancel = [=] () {deinit_switcher();};
@@ -240,7 +240,8 @@ class WayfireSwitcher : public wf::per_output_plugin_instance_t, public wf::keyb
         }
     };
 
-    wf::signal::connection_t<wf::view_detached_signal> view_removed = [=] (wf::view_detached_signal *ev)
+    wf::signal::connection_t<wf::view_disappeared_signal> view_disappeared =
+        [=] (wf::view_disappeared_signal *ev)
     {
         handle_view_removed(ev->view);
     };

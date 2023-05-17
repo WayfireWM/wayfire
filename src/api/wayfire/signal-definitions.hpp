@@ -660,17 +660,6 @@ struct view_layer_attached_signal
 
 /**
  * on: output
- * when: Emitted when the view's output is about to be changed to another one.
- *   This is the last point where the view is considered to be part of the given
- *   output.
- */
-struct view_detached_signal
-{
-    wayfire_view view;
-};
-
-/**
- * on: output
  * when: Emitted when the view is removed from a layer but is not added to
  *   another.
  */
@@ -713,10 +702,9 @@ struct view_moved_to_output_signal
 
 /**
  * on: output
- * when: This is a signal which combines view-unmapped, view-detached and
- *   view-minimized, and is emitted together with each of these three. Semantic
- *   meaning is that the view is no longer available for focus, interaction with
- *   the user, etc.
+ * when: This signal is a combination of the unmapped and set-output signals. In the latter case, the signal
+ *   is emitted on the view's previous output. The meaning of this signal is that the view is no longer
+ *   available for focus, interaction with the user, etc. on the output where it used to be.
  */
 struct view_disappeared_signal
 {
