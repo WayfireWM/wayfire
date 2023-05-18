@@ -100,21 +100,29 @@ TEST_CASE("Transactions are merged correctly")
     auto tx1 = new_tx();
     auto tx2 = new_tx();
     auto tx3 = new_tx();
+    auto tx4 = new_tx();
 
     tx1->add_object(obj_a);
+    tx1->add_object(obj_b);
 
-    tx2->add_object(obj_b);
-    tx2->add_object(obj_c);
+    tx2->add_object(obj_a);
 
-    tx3->add_object(obj_a);
     tx3->add_object(obj_b);
+    tx3->add_object(obj_c);
 
+    tx4->add_object(obj_a);
+    tx4->add_object(obj_b);
+
+    // tx1 is scheduled and committed immediately
     mgr.schedule_transaction(std::move(tx1));
+
+    // tx2, tx3, and tx4 should be merged together
     mgr.schedule_transaction(std::move(tx2));
     mgr.schedule_transaction(std::move(tx3));
+    mgr.schedule_transaction(std::move(tx4));
 
     REQUIRE(mgr.pending.size() == 1);
-    REQUIRE(mgr.committed.size() == 0);
+    REQUIRE(mgr.committed.size() == 1);
     REQUIRE(mgr.done.size() == 0);
     REQUIRE(mgr.pending.front()->get_objects().size() == 3);
 }
