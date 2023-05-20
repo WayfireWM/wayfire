@@ -249,12 +249,9 @@ std::vector<std::string> wf::get_plugin_paths()
     if (c_xdg_data_dir != NULL)
     {
         xdg_data_dir = c_xdg_data_dir;
-    } else
+    } else if (c_user_home != NULL)
     {
-        if (c_user_home != NULL)
-        {
-            xdg_data_dir = (std::string)c_user_home + "/.local/share/";
-        }
+        xdg_data_dir = (std::string)c_user_home + "/.local/share/";
     }
 
     if (xdg_data_dir != "")
