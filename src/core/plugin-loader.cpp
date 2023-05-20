@@ -244,7 +244,7 @@ std::vector<std::string> wf::get_plugin_paths()
     // also add XDG specific paths
     std::string xdg_data_dir;
     char *c_xdg_data_dir = std::getenv("XDG_DATA_HOME");
-    char *c_user_home = std::getenv("HOME");
+    char *c_user_home    = std::getenv("HOME");
 
     if (c_xdg_data_dir != NULL)
     {
@@ -252,10 +252,15 @@ std::vector<std::string> wf::get_plugin_paths()
     } else
     {
         if (c_user_home != NULL)
-            xdg_data_dir = (std::string) c_user_home + "/.local/share/";
+        {
+            xdg_data_dir = (std::string)c_user_home + "/.local/share/";
+        }
     }
+
     if (xdg_data_dir != "")
+    {
         plugin_prefixes.push_back(xdg_data_dir + "/wayfire/plugins");
+    }
 
     plugin_prefixes.push_back(PLUGIN_PATH);
 

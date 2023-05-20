@@ -58,7 +58,7 @@ std::vector<std::string> wf::config_backend_t::get_xml_dirs() const
     // also add XDG specific paths
     std::string xdg_data_dir;
     char *c_xdg_data_dir = std::getenv("XDG_DATA_HOME");
-    char *c_user_home = std::getenv("HOME");
+    char *c_user_home    = std::getenv("HOME");
 
     if (c_xdg_data_dir != NULL)
     {
@@ -66,10 +66,15 @@ std::vector<std::string> wf::config_backend_t::get_xml_dirs() const
     } else
     {
         if (c_user_home != NULL)
-            xdg_data_dir = (std::string) c_user_home + "/.local/share/";
+        {
+            xdg_data_dir = (std::string)c_user_home + "/.local/share/";
+        }
     }
+
     if (xdg_data_dir != "")
+    {
         xmldirs.push_back(xdg_data_dir + "/wayfire/metadata");
+    }
 
     xmldirs.push_back(PLUGIN_XML_DIR);
     return xmldirs;
