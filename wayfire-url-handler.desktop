@@ -1,0 +1,12 @@
+[Desktop Entry]
+Name=Wayfire - URL Handler
+Comment=Wayfire Plugin Installer
+GenericName=Wayfire Plugin Installer
+Exec=/usr/bin/wf-plugin %U
+Icon=wcm
+Type=Application
+NoDisplay=true
+StartupNotify=true
+Categories=Utility;Development;Graphics;X-Wayfire;
+MimeType=x-scheme-handler/wayfire;
+Keywords=wayfire;

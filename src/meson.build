@@ -97,6 +97,12 @@ executable('wayfire', ['util.cpp', 'main.cpp'],
     install: true,
     cpp_args: debug_arguments)
 
+# Generate wf-plugin executable
+executable('wf-plugin', ['util.cpp', 'wf-plugin.cpp'],
+    dependencies: libwayfire,
+    install: true,
+    cpp_args: debug_arguments)
+
 shared_module('default-config-backend', 'default-config-backend.cpp',
     dependencies: wayfire_dependencies,
     include_directories: [wayfire_conf_inc, wayfire_api_inc],
