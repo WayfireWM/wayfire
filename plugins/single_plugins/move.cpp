@@ -1,5 +1,6 @@
 #include "wayfire/plugins/common/input-grab.hpp"
 #include "wayfire/scene-input.hpp"
+#include "wayfire/view-helpers.hpp"
 #include <wayfire/per-output-plugin.hpp>
 #include <wayfire/output.hpp>
 #include <wayfire/core.hpp>
@@ -202,9 +203,9 @@ class wayfire_move : public wf::per_output_plugin_instance_t,
      */
     uint32_t get_act_flags(wayfire_view view)
     {
-        uint32_t view_layer = output->workspace->get_view_layer(view);
+        auto view_layer = wf::get_view_layer(view).value_or(wf::scene::layer::WORKSPACE);
         /* Allow moving an on-screen keyboard while screen is locked */
-        bool ignore_inhibit = view_layer == wf::LAYER_DESKTOP_WIDGET;
+        bool ignore_inhibit = view_layer == wf::scene::layer::DWIDGET;
         uint32_t act_flags  = 0;
         if (ignore_inhibit)
         {

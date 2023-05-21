@@ -145,11 +145,6 @@ class workspace_manager
     void remove_view(wayfire_view view);
 
     /**
-     * @return The layer in which the view is, or 0 if it can't be found.
-     */
-    uint32_t get_view_layer(wayfire_view view);
-
-    /**
      * Generate a list of views in the given layers ordered in their stacking
      * order. The stacking order is usually determined by the layer and sublayer
      * ordering, however, fullscreen views which are on the top of the workspace

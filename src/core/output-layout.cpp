@@ -1,6 +1,7 @@
 #include "wayfire/output.hpp"
 #include "wayfire/core.hpp"
 #include "wayfire/output-layout.hpp"
+#include "wayfire/view-helpers.hpp"
 #include "wayfire/workspace-manager.hpp"
 #include "wayfire/render-manager.hpp"
 #include "wayfire/signal-definitions.hpp"
@@ -153,10 +154,11 @@ void transfer_views(wf::output_t *from, wf::output_t *to)
         // Also get a list of views which are on that output, but do not have
         // a layer. These are usually unmapped Xwayland views, which are not to
         // be killed, as they are needed for the "real" views.
+        // FIXME: these views should actually not belong to any output.
         for (auto& view : wf::get_core().get_all_views())
         {
             if ((view->get_output() == from) &&
-                (from->workspace->get_view_layer(view) == 0) &&
+                !get_view_layer(view).has_value() &&
                 (view->role != VIEW_ROLE_DESKTOP_ENVIRONMENT))
             {
                 unmapped_views.push_back(view);

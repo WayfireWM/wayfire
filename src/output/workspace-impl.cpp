@@ -58,31 +58,6 @@ class output_layer_manager_t
         return __builtin_ctz(layer_mask);
     }
 
-    uint32_t get_view_layer(wayfire_view view)
-    {
-        // Find layer node
-        wf::scene::node_t *node = view->get_root_node().get();
-        auto root = wf::get_core().scene().get();
-
-        while (node->parent())
-        {
-            if (node->parent() == root)
-            {
-                for (int i = 0; i < (int)wf::scene::layer::ALL_LAYERS; i++)
-                {
-                    if (node == root->layers[i].get())
-                    {
-                        return (1 << i);
-                    }
-                }
-            }
-
-            node = node->parent();
-        }
-
-        return 0;
-    }
-
     void remove_view(wayfire_view view)
     {
         damage_views(view);
@@ -850,27 +825,16 @@ class workspace_manager::impl
 
     void bring_to_front(wayfire_view view)
     {
-        if (layer_manager.get_view_layer(view) == 0)
-        {
-            LOGE("trying to bring_to_front a view without a layer!");
-            return;
-        }
-
         layer_manager.bring_to_front(view);
         update_promoted_views();
     }
 
     void remove_view(wayfire_view view)
     {
-        uint32_t view_layer = layer_manager.get_view_layer(view);
         layer_manager.remove_view(view);
-
         /* Check if the next focused view is fullscreen. If so, then we need
          * to make sure it is in the fullscreen layer */
-        if (view_layer & MIDDLE_LAYERS)
-        {
-            update_promoted_views();
-        }
+        update_promoted_views();
     }
 };
 
@@ -922,11 +886,6 @@ void workspace_manager::remove_view(wayfire_view view)
 {
     pimpl->remove_view(view);
     update_view_scene_node(view);
-}
-
-uint32_t workspace_manager::get_view_layer(wayfire_view view)
-{
-    return pimpl->layer_manager.get_view_layer(view);
 }
 
 std::vector<wayfire_view> workspace_manager::get_views_in_layer(

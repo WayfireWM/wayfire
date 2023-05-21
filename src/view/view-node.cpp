@@ -12,6 +12,7 @@
 #include "wayfire/scene-render.hpp"
 #include "wayfire/scene.hpp"
 #include "wayfire/signal-provider.hpp"
+#include "wayfire/view-helpers.hpp"
 #include "wayfire/view-transform.hpp"
 #include "wayfire/view.hpp"
 #include "wayfire/workspace-manager.hpp"
@@ -79,10 +80,10 @@ std::optional<wf::scene::input_node_t> wf::scene::view_node_t::find_node_at(
     {
         /* We have exclusive focus surface, for ex. a lockscreen.
          * The only kind of things we can focus are OSKs and similar */
-        if (view && view->get_output())
+        if (view)
         {
-            auto layer = view->get_output()->workspace->get_view_layer(view->self());
-            if (layer == wf::LAYER_DESKTOP_WIDGET)
+            auto layer = get_view_layer(view);
+            if (layer.has_value() && (layer.value() == wf::scene::layer::DWIDGET))
             {
                 return floating_inner_node_t::find_node_at(at);
             }
@@ -131,8 +132,8 @@ wf::keyboard_focus_node_t wf::scene::view_node_t::keyboard_refocus(
     auto cur_focus = wf::get_core_impl().seat->priv->keyboard_focus.get();
     bool has_focus = (cur_focus == this) || (our_ts == output_last_ts);
 
-    const auto cur_layer = view->get_output()->workspace->get_view_layer(view);
-    if (cur_layer != LAYER_WORKSPACE)
+    const auto cur_layer = get_view_layer(view).value_or(wf::scene::layer::UNMANAGED);
+    if (cur_layer != wf::scene::layer::WORKSPACE)
     {
         // Non-workspace views are treated differently.
         // Usually, they should not be focused at all. The only case we want to

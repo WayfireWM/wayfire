@@ -1,5 +1,6 @@
 #include "wayfire/condition/access_interface.hpp"
 #include "wayfire/output.hpp"
+#include "wayfire/view-helpers.hpp"
 #include "wayfire/view.hpp"
 #include "wayfire/view-access-interface.hpp"
 #include "wayfire/workspace-manager.hpp"
@@ -124,14 +125,14 @@ variant_t view_access_interface_t::get(const std::string & identifier, bool & er
                 break;
             }
 
-            uint32_t layer = _view->get_output()->workspace->get_view_layer(_view);
-            if ((layer == LAYER_BACKGROUND) || (layer == LAYER_BOTTOM))
+            auto layer = get_view_layer(_view);
+            if ((layer == wf::scene::layer::BACKGROUND) || (layer == wf::scene::layer::BOTTOM))
             {
                 out = std::string("background");
-            } else if (layer == LAYER_TOP)
+            } else if (layer == wf::scene::layer::TOP)
             {
                 out = std::string("panel");
-            } else if (layer == LAYER_LOCK)
+            } else if (layer == wf::scene::layer::OVERLAY)
             {
                 out = std::string("overlay");
             }

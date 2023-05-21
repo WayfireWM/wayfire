@@ -9,6 +9,7 @@
 #include "wayfire/output-layout.hpp"
 #include <memory>
 #include <wayfire/util/log.hpp>
+#include <wayfire/view-helpers.hpp>
 
 #include "xdg-shell.hpp"
 
@@ -452,4 +453,29 @@ void wf::view_interface_t::view_priv_impl::set_mapped(bool mapped)
     {
         scene::set_node_enabled(root_node, false);
     }
+}
+
+// ---------------------------------------------- view helpers -----------------------------------------------
+std::optional<wf::scene::layer> wf::get_view_layer(wayfire_view view)
+{
+    wf::scene::node_t *node = view->get_root_node().get();
+    auto root = wf::get_core().scene().get();
+
+    while (node->parent())
+    {
+        if (node->parent() == root)
+        {
+            for (int i = 0; i < (int)wf::scene::layer::ALL_LAYERS; i++)
+            {
+                if (node == root->layers[i].get())
+                {
+                    return (wf::scene::layer)i;
+                }
+            }
+        }
+
+        node = node->parent();
+    }
+
+    return {};
 }

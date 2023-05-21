@@ -27,6 +27,7 @@
 #include <wayfire/view.hpp>
 #include <wayfire/per-output-plugin.hpp>
 #include <wayfire/output.hpp>
+#include "wayfire/view-helpers.hpp"
 #include "wayfire/view-transform.hpp"
 #include "wayfire/workspace-manager.hpp"
 
@@ -86,9 +87,8 @@ class wayfire_alpha : public wf::per_output_plugin_instance_t
             return false;
         }
 
-        auto layer = output->workspace->get_view_layer(view);
-
-        if (layer == wf::LAYER_BACKGROUND)
+        auto layer = wf::get_view_layer(view).value_or(wf::scene::layer::BACKGROUND);
+        if (layer == wf::scene::layer::BACKGROUND)
         {
             return false;
         }

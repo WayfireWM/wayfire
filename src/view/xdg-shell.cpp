@@ -5,6 +5,8 @@
 #include "surface-impl.hpp"
 #include "wayfire/output.hpp"
 #include "wayfire/decorator.hpp"
+#include "wayfire/scene.hpp"
+#include "wayfire/view-helpers.hpp"
 #include "wayfire/view.hpp"
 #include "xdg-shell.hpp"
 #include "wayfire/output-layout.hpp"
@@ -73,13 +75,11 @@ void wayfire_xdg_popup::initialize()
 
 void wayfire_xdg_popup::map(wlr_surface *surface)
 {
-    uint32_t parent_layer =
-        get_output()->workspace->get_view_layer(popup_parent->self());
-
+    wf::scene::layer parent_layer = wf::get_view_layer(popup_parent).value_or(wf::scene::layer::WORKSPACE);
     wf::layer_t target_layer = wf::LAYER_UNMANAGED;
-    if (parent_layer > wf::LAYER_WORKSPACE)
+    if ((int)parent_layer > (int)wf::scene::layer::WORKSPACE)
     {
-        target_layer = (wf::layer_t)parent_layer;
+        target_layer = (wf::layer_t)(1 << (int)parent_layer);
     }
 
     get_output()->workspace->add_view(self(), target_layer);
