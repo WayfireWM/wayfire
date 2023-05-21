@@ -1,4 +1,4 @@
-name: pipeline
+name: mandoc
 
 on:
   push:
