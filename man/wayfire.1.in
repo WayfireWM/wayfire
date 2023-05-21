@@ -64,6 +64,9 @@ Print the version.
 respects the following environment variables:
 .Pp
 .Bl -tag -width Ds -compact
+.It Ev WAYFIRE_CONFIG_FILE
+The config file to use.
+.Pp
 .It Ev WAYFIRE_PLUGIN_XML_PATH
 .Pp
 A string of paths, separated by : , in which to look for plugin configuration
