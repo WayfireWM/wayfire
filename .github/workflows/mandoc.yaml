@@ -1,0 +1,22 @@
+name: pipeline
+
+on:
+  push:
+    branches:
+      - '*'
+  pull_request:
+    branches:
+      - '*'
+
+jobs:
+  pipeline:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Install dependencies
+      run: |
+        sudo apt update
+        sudo apt-get install -y mandoc
+    - name: Check man pages
+      run: |
+        mandoc -T lint -W warning man/wayfire.1.in
