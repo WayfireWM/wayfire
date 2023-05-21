@@ -1,0 +1,128 @@
+.Dd $Mdocdate: May 21 2023 $
+.Dt WAYFIRE 1
+.Os
+.Sh NAME
+.Nm wayfire
+.Nd modular and extensible wayland compositor
+.Sh SYNOPSIS
+.Nm wayfire
+.Op Fl c , -config Ar config_file
+.Op Fl B , -config-backend Ar config_backend
+.Op Fl d , -debug
+.Op Fl D , -damage-debug
+.Op Fl h , -help
+.Op Fl R , -damage-renderer
+.Op Fl v , -version
+.Sh DESCRIPTION
+.Nm
+is a wayland compositor focusing on modularity and extensibility by providing a
+small core compositor implementation with all major functionality being provided
+by plugins.
+The default plugins provide 3D effects similar to compiz, such as 3D cube,
+wobbly windows, blur, fish eye, etc.
+.Pp
+The optional flags are described as follows:
+.Pp
+.Bl -tag -width Ds -compact
+.It Fl c , -config Ar config_file
+.Pp
+Start
+.Nm
+with an alternative configuration file.
+The default configuration file is searched first in the
+.Ev ${WAYFIRE_CONFIG_FILE}
+environment variable, or paths
+.Pa ${XDG_CONFIG_HOME}/wayfire.ini ,
+.Pa ${HOME}/.config/wayfire.ini .
+.Pp
+.It Fl B , -config-backend Ar config_backend
+.Pp
+Specify config backend to use.
+.Pp
+.It Fl d , -debug
+.Pp
+Enable debug logging.
+.Pp
+.It Fl D , -damage-debug
+.Pp
+Enable additional debug for damaged regions.
+.Pp
+.It Fl h , -help
+.Pp
+Print a short help message.
+.Pp
+.It Fl R , -damage-renderer
+.Pp
+Rerender damaged regions.
+.Pp
+.It Fl v , -version
+.Pp
+Print the version.
+.El
+.Sh ENVIRONMENT VARIABLES
+.Nm
+respects the following environment variables:
+.Pp
+.Bl -tag -width Ds -compact
+.It Ev WAYFIRE_PLUGIN_XML_PATH
+.Pp
+A string of paths, separated by : , in which to look for plugin configuration
+files.
+By default
+.Nm
+looks for configuration files in
+.Pa @PLUGIN_XML_DIR@
+and
+.Pa ${XDG_DATA_HOME}/wayfire/metadata .
+.Pp
+.It Ev WAYFIRE_PLUGIN_PATH
+.Pp
+A string of paths, separated by : , in which to look for plugins.
+By default
+.Nm
+looks for plugins in
+.Pa @PLUGIN_PATH@
+and
+.Pa ${XDG_DATA_HOME}/wayfire/plugins .
+.Pp
+.It Ev _WAYFIRE_SOCKET
+.Pp
+Socket override to use to communicate with a specific
+.Nm
+instance using the IPC.
+Useful incase of multiple running instances of
+.Nm .
+.El
+.Pp
+In addition,
+.Nm
+also sets the following environment variables:
+.Pp
+.Bl -tag -width Ds -compact
+.It Ev WAYFIRE_SOCKET
+.Pp
+Socket to use when communicating with
+.Nm .
+.Pp
+.It Ev WAYLAND_DISPLAY
+.Pp
+Wayland display currently in effect.
+.Pp
+.It Ev CONFIG_FILE_ENV
+.Pp
+Which config file is being used.
+.Pp
+.It Ev _JAVA_AWT_WM_NONREPARENTING
+.Pp
+It is set to 1 .
+.Pp
+.It Ev DISPLAY
+.It Ev XCURSOR_SIZE
+.It Ev XCURSOR_THEME
+.Pp
+Variables for use with legacy
+.Xr xwayland 1
+windows.
+.El
+.Sh SEE ALSO
+.Xr xwayland 1

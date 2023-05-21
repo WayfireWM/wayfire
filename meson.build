@@ -170,6 +170,7 @@ configure_file(input: 'config.h.in',
 
 subdir('proto')
 subdir('src')
+subdir('man')
 subdir('metadata')
 subdir('plugins')
 
