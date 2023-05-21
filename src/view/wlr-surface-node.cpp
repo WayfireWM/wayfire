@@ -51,11 +51,15 @@ void wf::scene::surface_state_t::merge_state(wlr_surface *surface)
     if (surface->buffer)
     {
         wlr_buffer_lock(&surface->buffer->base);
+        this->current_buffer = &surface->buffer->base;
+        this->texture = surface->buffer->texture;
+        this->size    = {surface->current.width, surface->current.height};
+    } else
+    {
+        this->current_buffer = nullptr;
+        this->texture = nullptr;
+        this->size    = {0, 0};
     }
-
-    this->current_buffer = &surface->buffer->base;
-    this->texture = surface->buffer->texture;
-    this->size    = {surface->current.width, surface->current.height};
 
     if (surface->current.viewport.has_src)
     {
