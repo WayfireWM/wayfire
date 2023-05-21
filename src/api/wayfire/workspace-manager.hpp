@@ -226,6 +226,21 @@ class workspace_manager
      */
     bool is_workspace_valid(wf::point_t ws);
 
+    workspace_manager(output_t *output);
+    ~workspace_manager();
+
+  protected:
+    class impl;
+    std::unique_ptr<impl> pimpl;
+};
+
+/**
+ * Each output has a workarea manager which keeps track of the available workarea on that output. The
+ * available area is typically the full output area minus any space reserved for panels, bars, etc.
+ */
+class output_workarea_manager_t
+{
+  public:
     /**
      * Special clients like panels can reserve place from an edge of the output.
      * It is used when calculating the dimensions of maximized/tiled windows and
@@ -282,12 +297,12 @@ class workspace_manager
      */
     wf::geometry_t get_workarea();
 
-    workspace_manager(output_t *output);
-    ~workspace_manager();
+    output_workarea_manager_t(wf::output_t *output);
+    ~output_workarea_manager_t();
 
-  protected:
-    class impl;
-    std::unique_ptr<impl> pimpl;
+  private:
+    struct impl;
+    std::unique_ptr<impl> priv;
 };
 }
 

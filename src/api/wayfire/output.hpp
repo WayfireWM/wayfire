@@ -23,6 +23,7 @@ namespace wf
 {
 class render_manager;
 class workspace_manager;
+class output_workarea_manager_t;
 
 struct plugin_activation_data_t;
 
@@ -62,6 +63,11 @@ class output_t : public wf::object_base_t, public wf::signal::provider_t
      * The workspace manager of this output
      */
     std::unique_ptr<workspace_manager> workspace;
+
+    /**
+     * The manager of the workspace area for this output.
+     */
+    std::unique_ptr<output_workarea_manager_t> workarea;
 
     /**
      * Get a textual representation of the output

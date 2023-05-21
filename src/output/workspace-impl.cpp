@@ -510,117 +510,6 @@ class output_viewport_manager_t
     }
 };
 
-/**
- * output_workarea_manager_t provides workarea-related functionality from the
- * workspace_manager module
- */
-class output_workarea_manager_t
-{
-    wf::geometry_t current_workarea;
-    std::vector<workspace_manager::anchored_area*> anchors;
-
-    output_t *output;
-
-  public:
-    output_workarea_manager_t(output_t *output)
-    {
-        this->output = output;
-        this->current_workarea = output->get_relative_geometry();
-    }
-
-    wf::geometry_t get_workarea()
-    {
-        return current_workarea;
-    }
-
-    wf::geometry_t calculate_anchored_geometry(
-        const workspace_manager::anchored_area& area)
-    {
-        auto wa = get_workarea();
-        wf::geometry_t target;
-
-        if (area.edge <= workspace_manager::ANCHORED_EDGE_BOTTOM)
-        {
-            target.width  = wa.width;
-            target.height = area.real_size;
-        } else
-        {
-            target.height = wa.height;
-            target.width  = area.real_size;
-        }
-
-        target.x = wa.x;
-        target.y = wa.y;
-
-        if (area.edge == workspace_manager::ANCHORED_EDGE_RIGHT)
-        {
-            target.x = wa.x + wa.width - target.width;
-        }
-
-        if (area.edge == workspace_manager::ANCHORED_EDGE_BOTTOM)
-        {
-            target.y = wa.y + wa.height - target.height;
-        }
-
-        return target;
-    }
-
-    void add_reserved_area(workspace_manager::anchored_area *area)
-    {
-        anchors.push_back(area);
-    }
-
-    void remove_reserved_area(workspace_manager::anchored_area *area)
-    {
-        auto it = std::remove(anchors.begin(), anchors.end(), area);
-        anchors.erase(it, anchors.end());
-    }
-
-    void reflow_reserved_areas()
-    {
-        auto old_workarea = current_workarea;
-
-        current_workarea = output->get_relative_geometry();
-        for (auto a : anchors)
-        {
-            auto anchor_area = calculate_anchored_geometry(*a);
-
-            if (a->reflowed)
-            {
-                a->reflowed(anchor_area, current_workarea);
-            }
-
-            switch (a->edge)
-            {
-              case workspace_manager::ANCHORED_EDGE_TOP:
-                current_workarea.y += a->reserved_size;
-
-              // fallthrough
-              case workspace_manager::ANCHORED_EDGE_BOTTOM:
-                current_workarea.height -= a->reserved_size;
-                break;
-
-              case workspace_manager::ANCHORED_EDGE_LEFT:
-                current_workarea.x += a->reserved_size;
-
-              // fallthrough
-              case workspace_manager::ANCHORED_EDGE_RIGHT:
-                current_workarea.width -= a->reserved_size;
-                break;
-            }
-        }
-
-        wf::workarea_changed_signal data;
-        data.old_workarea = old_workarea;
-        data.new_workarea = current_workarea;
-
-        if (data.old_workarea != data.new_workarea)
-        {
-            output->emit(&data);
-        }
-    }
-};
-
 class workspace_manager::impl
 {
     wf::output_t *output;
@@ -674,7 +563,6 @@ class workspace_manager::impl
         }
 
         output_geometry = output->get_relative_geometry();
-        workarea_manager.reflow_reserved_areas();
     };
 
     wf::signal::connection_t<view_change_workspace_signal> view_changed_workspace =
@@ -698,12 +586,8 @@ class workspace_manager::impl
   public:
     output_layer_manager_t layer_manager;
     output_viewport_manager_t viewport_manager;
-    output_workarea_manager_t workarea_manager;
 
-    impl(output_t *o) :
-        layer_manager(o),
-        viewport_manager(o),
-        workarea_manager(o)
+    impl(output_t *o) : layer_manager(o), viewport_manager(o)
     {
         output = o;
         output_geometry = output->get_relative_geometry();
@@ -935,25 +819,5 @@ void workspace_manager::set_workspace_grid_size(wf::dimensions_t dim)
 bool workspace_manager::is_workspace_valid(wf::point_t ws)
 {
     return pimpl->viewport_manager.is_workspace_valid(ws);
-}
-
-void workspace_manager::add_reserved_area(anchored_area *area)
-{
-    return pimpl->workarea_manager.add_reserved_area(area);
-}
-
-void workspace_manager::remove_reserved_area(anchored_area *area)
-{
-    return pimpl->workarea_manager.remove_reserved_area(area);
-}
-
-void workspace_manager::reflow_reserved_areas()
-{
-    return pimpl->workarea_manager.reflow_reserved_areas();
-}
-
-wf::geometry_t workspace_manager::get_workarea()
-{
-    return pimpl->workarea_manager.get_workarea();
 }
 } // namespace wf

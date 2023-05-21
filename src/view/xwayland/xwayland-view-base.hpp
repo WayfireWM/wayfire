@@ -391,7 +391,7 @@ class wayfire_xwayland_view_base : public wf::view_interface_t
         if (o)
         {
             auto view_workarea = (fullscreen ?
-                o->get_relative_geometry() : o->workspace->get_workarea());
+                o->get_relative_geometry() : o->workarea->get_workarea());
             auto og = o->get_layout_geometry();
             configure_geometry.x -= og.x;
             configure_geometry.y -= og.y;

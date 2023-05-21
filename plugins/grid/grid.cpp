@@ -191,7 +191,7 @@ class wayfire_grid : public wf::per_output_plugin_instance_t
      * */
     wf::geometry_t get_slot_dimensions(int n)
     {
-        auto area = output->workspace->get_workarea();
+        auto area = output->workarea->get_workarea();
         int w2    = area.width / 2;
         int h2    = area.height / 2;
 

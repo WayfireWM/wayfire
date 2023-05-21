@@ -341,7 +341,7 @@ class wayfire_move : public wf::per_output_plugin_instance_t,
      * is released at output-local coordinates (x, y) */
     wf::grid::slot_t calc_slot(wf::point_t point)
     {
-        auto g = output->workspace->get_workarea();
+        auto g = output->workarea->get_workarea();
         if (!(output->get_relative_geometry() & point))
         {
             return wf::grid::SLOT_NONE;

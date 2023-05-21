@@ -49,6 +49,7 @@ wayfire_sources = ['geometry.cpp',
                    'view/translation-node.cpp',
 
                    'output/output.cpp',
+                   'output/workarea.cpp',
                    'output/render-manager.cpp',
                    'output/workspace-stream.cpp',
                    'output/workspace-impl.cpp']

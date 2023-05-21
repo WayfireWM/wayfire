@@ -106,7 +106,7 @@ class tile_plugin_t : public wf::per_output_plugin_instance_t, public wf::pointe
             }
         }
 
-        update_root_size(output->workspace->get_workarea());
+        update_root_size(output->workarea->get_workarea());
     }
 
     void update_root_size(wf::geometry_t workarea)
@@ -346,7 +346,7 @@ class tile_plugin_t : public wf::per_output_plugin_instance_t, public wf::pointe
 
     wf::signal::connection_t<workarea_changed_signal> on_workarea_changed = [=] (auto)
     {
-        update_root_size(output->workspace->get_workarea());
+        update_root_size(output->workarea->get_workarea());
     };
 
     wf::signal::connection_t<view_tile_request_signal> on_tile_request = [=] (view_tile_request_signal *ev)
@@ -364,7 +364,7 @@ class tile_plugin_t : public wf::per_output_plugin_instance_t, public wf::pointe
     {
         /* Set fullscreen, and trigger resizing of the views */
         view->set_fullscreen(fullscreen);
-        update_root_size(output->workspace->get_workarea());
+        update_root_size(output->workarea->get_workarea());
     }
 
     wf::signal::connection_t<view_fullscreen_request_signal> on_fullscreen_request =

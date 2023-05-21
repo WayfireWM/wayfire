@@ -467,7 +467,7 @@ void wf::view_interface_t::view_priv_impl::update_windowed_geometry(
     if (self->get_output())
     {
         this->windowed_geometry_workarea =
-            self->get_output()->workspace->get_workarea();
+            self->get_output()->workarea->get_workarea();
     } else
     {
         this->windowed_geometry_workarea = {0, 0, -1, -1};
@@ -484,7 +484,7 @@ wf::geometry_t wf::view_interface_t::view_priv_impl::calculate_windowed_geometry
 
     const auto& geom     = last_windowed_geometry;
     const auto& old_area = windowed_geometry_workarea;
-    const auto& new_area = output->workspace->get_workarea();
+    const auto& new_area = output->workarea->get_workarea();
     return {
         .x = new_area.x + (geom.x - old_area.x) * new_area.width /
             old_area.width,
@@ -506,7 +506,7 @@ void wf::view_interface_t::tile_request(uint32_t edges, wf::point_t workspace)
     data.view  = self();
     data.edges = edges;
     data.workspace    = workspace;
-    data.desired_size = edges ? get_output()->workspace->get_workarea() :
+    data.desired_size = edges ? get_output()->workarea->get_workarea() :
         priv->calculate_windowed_geometry(get_output());
 
     set_tiled(edges);
@@ -589,7 +589,7 @@ void wf::view_interface_t::fullscreen_request(wf::output_t *out, bool state,
     if (!state)
     {
         data.desired_size = this->tiled_edges ?
-            this->get_output()->workspace->get_workarea() :
+            this->get_output()->workarea->get_workarea() :
             this->priv->calculate_windowed_geometry(get_output());
     }
 
@@ -684,7 +684,7 @@ void wf::view_interface_t::set_decoration(
     {
         target_wm_geometry = priv->frame->expand_wm_geometry(wm);
         // make sure that the view doesn't go outside of the screen or such
-        auto wa = get_output()->workspace->get_workarea();
+        auto wa = get_output()->workarea->get_workarea();
         auto visible = wf::geometry_intersection(target_wm_geometry, wa);
         if (visible != target_wm_geometry)
         {
@@ -696,7 +696,7 @@ void wf::view_interface_t::set_decoration(
         target_wm_geometry = get_output()->get_relative_geometry();
     } else if (this->tiled_edges)
     {
-        target_wm_geometry = get_output()->workspace->get_workarea();
+        target_wm_geometry = get_output()->workarea->get_workarea();
     }
 
     set_geometry(target_wm_geometry);

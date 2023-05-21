@@ -577,7 +577,7 @@ void wf::compositor_core_impl_t::move_view_to_output(wayfire_view v,
             v->tile_request(edges);
         } else
         {
-            auto new_g = wf::clamp(view_g, new_output->workspace->get_workarea());
+            auto new_g = wf::clamp(view_g, new_output->workarea->get_workarea());
             v->set_geometry(new_g);
         }
     }

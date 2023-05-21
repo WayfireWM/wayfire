@@ -924,7 +924,7 @@ class wayfire_scale : public wf::per_output_plugin_instance_t,
 
         filter_views(views);
 
-        auto workarea = output->workspace->get_workarea();
+        auto workarea = output->workarea->get_workarea();
 
         auto sorted_rows = view_sort(views);
         size_t cnt_rows  = sorted_rows.size();

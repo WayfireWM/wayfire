@@ -53,7 +53,7 @@ class wayfire_layer_shell_view : public wf::view_interface_t
     wlr_layer_surface_v1 *lsurface;
     wlr_layer_surface_v1_state prev_state;
 
-    std::unique_ptr<wf::workspace_manager::anchored_area> anchored_area;
+    std::unique_ptr<wf::output_workarea_manager_t::anchored_area> anchored_area;
     void remove_anchored(bool reflow);
 
     wayfire_layer_shell_view(wlr_layer_surface_v1 *lsurf);
@@ -124,26 +124,26 @@ class wayfire_layer_shell_view : public wf::view_interface_t
     }
 };
 
-wf::workspace_manager::anchored_edge anchor_to_edge(uint32_t edges)
+wf::output_workarea_manager_t::anchored_edge anchor_to_edge(uint32_t edges)
 {
     if (edges == ZWLR_LAYER_SURFACE_V1_ANCHOR_TOP)
     {
-        return wf::workspace_manager::ANCHORED_EDGE_TOP;
+        return wf::output_workarea_manager_t::ANCHORED_EDGE_TOP;
     }
 
     if (edges == ZWLR_LAYER_SURFACE_V1_ANCHOR_BOTTOM)
     {
-        return wf::workspace_manager::ANCHORED_EDGE_BOTTOM;
+        return wf::output_workarea_manager_t::ANCHORED_EDGE_BOTTOM;
     }
 
     if (edges == ZWLR_LAYER_SURFACE_V1_ANCHOR_LEFT)
     {
-        return wf::workspace_manager::ANCHORED_EDGE_LEFT;
+        return wf::output_workarea_manager_t::ANCHORED_EDGE_LEFT;
     }
 
     if (edges == ZWLR_LAYER_SURFACE_V1_ANCHOR_RIGHT)
     {
-        return wf::workspace_manager::ANCHORED_EDGE_RIGHT;
+        return wf::output_workarea_manager_t::ANCHORED_EDGE_RIGHT;
     }
 
     abort();
@@ -269,20 +269,20 @@ struct wf_layer_shell_manager
         if (!v->anchored_area)
         {
             v->anchored_area =
-                std::make_unique<wf::workspace_manager::anchored_area>();
+                std::make_unique<wf::output_workarea_manager_t::anchored_area>();
             v->anchored_area->reflowed =
                 [v] (wf::geometry_t geometry, wf::geometry_t _)
             { v->configure(geometry); };
             /* Notice that the reflowed areas won't be changed until we call
              * reflow_reserved_areas(). However, by that time the information
              * in anchored_area will have been populated */
-            v->get_output()->workspace->add_reserved_area(v->anchored_area.get());
+            v->get_output()->workarea->add_reserved_area(v->anchored_area.get());
         }
 
         v->anchored_area->edge = anchor_to_edge(edges);
         v->anchored_area->reserved_size = v->lsurface->current.exclusive_zone;
         v->anchored_area->real_size     = v->anchored_area->edge <=
-            wf::workspace_manager::ANCHORED_EDGE_BOTTOM ?
+            wf::output_workarea_manager_t::ANCHORED_EDGE_BOTTOM ?
             v->lsurface->current.desired_height : v->lsurface->current.desired_width;
     }
 
@@ -348,7 +348,7 @@ struct wf_layer_shell_manager
             }
         }
 
-        auto usable_workarea = output->workspace->get_workarea();
+        auto usable_workarea = output->workarea->get_workarea();
         for (auto v : views)
         {
             /* The protocol dictates that the values -1 and 0 for exclusive zone
@@ -364,11 +364,11 @@ struct wf_layer_shell_manager
     {
         if (view->lsurface->pending.exclusive_zone < 1)
         {
-            return pin_view(view, view->get_output()->workspace->get_workarea());
+            return pin_view(view, view->get_output()->workarea->get_workarea());
         }
 
         set_exclusive_zone(view);
-        view->get_output()->workspace->reflow_reserved_areas();
+        view->get_output()->workarea->reflow_reserved_areas();
     }
 
     void arrange_layers(wf::output_t *output)
@@ -379,7 +379,7 @@ struct wf_layer_shell_manager
         arrange_layer(output, ZWLR_LAYER_SHELL_V1_LAYER_TOP);
         arrange_layer(output, ZWLR_LAYER_SHELL_V1_LAYER_BOTTOM);
         arrange_layer(output, ZWLR_LAYER_SHELL_V1_LAYER_BACKGROUND);
-        output->workspace->reflow_reserved_areas();
+        output->workarea->reflow_reserved_areas();
     }
 };
 
@@ -645,12 +645,12 @@ void wayfire_layer_shell_view::remove_anchored(bool reflow)
 {
     if (anchored_area)
     {
-        get_output()->workspace->remove_reserved_area(anchored_area.get());
+        get_output()->workarea->remove_reserved_area(anchored_area.get());
         anchored_area = nullptr;
 
         if (reflow)
         {
-            get_output()->workspace->reflow_reserved_areas();
+            get_output()->workarea->reflow_reserved_areas();
         }
     }
 }
