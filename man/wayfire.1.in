@@ -117,7 +117,7 @@ Which config file is being used.
 .Pp
 .It Ev _JAVA_AWT_WM_NONREPARENTING
 .Pp
-It is set to 1 .
+Needed for java based windows and it is set to 1.
 .Pp
 .It Ev DISPLAY
 .It Ev XCURSOR_SIZE
