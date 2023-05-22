@@ -2,7 +2,7 @@
 #include "wayfire/opengl.hpp"
 #include "wayfire/region.hpp"
 #include <memory>
-#include <wayfire/per-output-plugin.hpp>
+#include <wayfire/plugin.hpp>
 #include <wayfire/signal-definitions.hpp>
 #include <wayfire/core.hpp>
 #include <wayfire/view-transform.hpp>
@@ -51,15 +51,8 @@ void main()
 }
 
 OpenGL::program_t program;
-int times_loaded = 0;
-
 void load_program()
 {
-    if (times_loaded++ > 0)
-    {
-        return;
-    }
-
     OpenGL::render_begin();
     program.compile(vertex_source, frag_source);
     OpenGL::render_end();
@@ -67,12 +60,9 @@ void load_program()
 
 void destroy_program()
 {
-    if (--times_loaded == 0)
-    {
-        OpenGL::render_begin();
-        program.free_resources();
-        OpenGL::render_end();
-    }
+    OpenGL::render_begin();
+    program.free_resources();
+    OpenGL::render_end();
 }
 
 /**
@@ -912,7 +902,7 @@ void wobbly_transformer_node_t::gen_render_instances(
         this, push_damage, shown_on));
 }
 
-class wayfire_wobbly : public wf::per_output_plugin_instance_t
+class wayfire_wobbly : public wf::plugin_interface_t
 {
     wf::signal::connection_t<wobbly_signal> wobbly_changed = [=] (wobbly_signal *ev)
     {
@@ -922,17 +912,12 @@ class wayfire_wobbly : public wf::per_output_plugin_instance_t
   public:
     void init() override
     {
-        output->connect(&wobbly_changed);
+        wf::get_core().connect(&wobbly_changed);
         wobbly_graphics::load_program();
     }
 
     void adjust_wobbly(wobbly_signal *data)
     {
-        if (data->view->get_output() != output)
-        {
-            return;
-        }
-
         auto tr_manager = data->view->get_transformed_node();
         if ((data->events & (WOBBLY_EVENT_GRAB | WOBBLY_EVENT_ACTIVATE)) &&
             !tr_manager->get_transformer<wobbly_transformer_node_t>())
@@ -992,10 +977,9 @@ class wayfire_wobbly : public wf::per_output_plugin_instance_t
 
     void fini() override
     {
-        for (auto& view : output->workspace->get_views_in_layer(wf::ALL_LAYERS))
+        for (auto& view : wf::get_core().get_all_views())
         {
-            auto wobbly = view->get_transformed_node()
-                ->get_transformer<wobbly_transformer_node_t>();
+            auto wobbly = view->get_transformed_node()->get_transformer<wobbly_transformer_node_t>();
             if (wobbly)
             {
                 wobbly->destroy_self();
@@ -1006,4 +990,4 @@ class wayfire_wobbly : public wf::per_output_plugin_instance_t
     }
 };
 
-DECLARE_WAYFIRE_PLUGIN(wf::per_output_plugin_t<wayfire_wobbly>);
+DECLARE_WAYFIRE_PLUGIN(wayfire_wobbly);
