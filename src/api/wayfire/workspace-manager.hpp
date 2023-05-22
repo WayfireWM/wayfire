@@ -158,11 +158,6 @@ class workspace_manager
         bool include_minimized = false);
 
     /**
-     * Get a list of minimized views, which are not shown in any other layer.
-     */
-    std::vector<wayfire_view> get_minimized_views();
-
-    /**
      * @return The current workspace implementation
      */
     workspace_implementation_t *get_workspace_implementation();
