@@ -145,10 +145,7 @@ class wayfire_xwayland_view_base : public wf::view_interface_t
             data.view = self();
 
             this->emit(&data);
-            if (get_output())
-            {
-                get_output()->emit(&data);
-            }
+            wf::get_core().emit(&data);
         }
     }
 

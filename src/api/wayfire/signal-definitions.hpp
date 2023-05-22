@@ -616,7 +616,7 @@ struct view_change_workspace_signal
 };
 
 /**
- * on: view, output(view-)
+ * on: view, core
  * when: Whenever the value of view::should_be_decorated() changes.
  */
 struct view_decoration_state_updated_signal

@@ -205,10 +205,7 @@ void wf::wlr_view_t::set_decoration_mode(bool use_csd)
         data.view = self();
 
         this->emit(&data);
-        if (get_output())
-        {
-            get_output()->emit(&data);
-        }
+        wf::get_core().emit(&data);
     }
 }
 

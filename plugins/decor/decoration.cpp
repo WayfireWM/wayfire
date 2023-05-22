@@ -6,10 +6,11 @@
 #include <wayfire/signal-definitions.hpp>
 
 #include "deco-subsurface.hpp"
+#include "wayfire/core.hpp"
 #include "wayfire/plugin.hpp"
 #include "wayfire/signal-provider.hpp"
 
-class wayfire_decoration : public wf::plugin_interface_t, private wf::per_output_tracker_mixin_t<>
+class wayfire_decoration : public wf::plugin_interface_t
 {
     wf::view_matcher_t ignore_views{"decoration/ignore_views"};
 
@@ -27,30 +28,18 @@ class wayfire_decoration : public wf::plugin_interface_t, private wf::per_output
   public:
     void init() override
     {
-        this->init_output_tracking();
-    }
+        wf::get_core().connect(&on_decoration_state_changed);
+        wf::get_core().connect(&on_view_mapped);
 
-    void fini() override
-    {
-        for (auto view : wf::get_core().get_all_views())
-        {
-            deinit_view(view);
-        }
-    }
-
-    void handle_new_output(wf::output_t *output) override
-    {
-        output->connect(&on_view_mapped);
-        output->connect(&on_decoration_state_changed);
-        for (auto& view : output->workspace->get_views_in_layer(wf::ALL_LAYERS))
+        for (auto& view : wf::get_core().get_all_views())
         {
             update_view_decoration(view);
         }
     }
 
-    void handle_output_removed(wf::output_t *output) override
+    void fini() override
     {
-        for (auto& view : output->workspace->get_views_in_layer(wf::ALL_LAYERS))
+        for (auto view : wf::get_core().get_all_views())
         {
             deinit_view(view);
         }
