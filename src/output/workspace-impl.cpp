@@ -515,26 +515,9 @@ class workspace_manager::impl
     wf::output_t *output;
     wf::geometry_t output_geometry;
 
-    wf::option_wrapper_t<bool> remove_output_limits{
-        "workarounds/remove_output_limits"};
-
-
     wf::signal::connection_t<output_configuration_changed_signal> output_geometry_changed =
         [=] (output_configuration_changed_signal *ev)
     {
-        using namespace wf::scene;
-
-        if (!remove_output_limits)
-        {
-            for (int i = 0; i < (int)wf::scene::layer::ALL_LAYERS; i++)
-            {
-                output->node_for_layer((layer)i)->limit_region =
-                    output->get_layout_geometry();
-            }
-        }
-
-        wf::scene::update(wf::get_core().scene(), update_flag::INPUT_STATE);
-
         auto old_w = output_geometry.width, old_h = output_geometry.height;
         auto new_size = output->get_screen_size();
         if ((old_w == new_size.width) && (old_h == new_size.height))

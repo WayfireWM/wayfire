@@ -42,26 +42,37 @@ void wf::output_impl_t::handle_view_removed(wayfire_view view)
     refocus();
 }
 
+void wf::output_impl_t::update_node_limits()
+{
+    static wf::option_wrapper_t<bool> remove_output_limits{"workarounds/remove_output_limits"};
+    for (int i = 0; i < (int)wf::scene::layer::ALL_LAYERS; i++)
+    {
+        if (remove_output_limits)
+        {
+            node_for_layer((wf::scene::layer)i)->limit_region.reset();
+        } else
+        {
+            node_for_layer((wf::scene::layer)i)->limit_region = get_layout_geometry();
+        }
+    }
+
+    wf::scene::update(wf::get_core().scene(), scene::update_flag::INPUT_STATE);
+}
+
 wf::output_impl_t::output_impl_t(wlr_output *handle,
     const wf::dimensions_t& effective_size)
 {
     this->set_effective_size(effective_size);
     this->handle = handle;
 
-    wf::option_wrapper_t<bool> remove_output_limits{
-        "workarounds/remove_output_limits"};
-
     auto& root = wf::get_core().scene();
     for (size_t layer = 0; layer < (size_t)scene::layer::ALL_LAYERS; layer++)
     {
         nodes[layer] = std::make_shared<scene::output_node_t>(this);
-        if (!remove_output_limits)
-        {
-            nodes[layer]->limit_region = get_layout_geometry();
-        }
-
         scene::add_back(root->layers[layer], nodes[layer]);
     }
+
+    update_node_limits();
 
     wset = std::make_shared<scene::floating_inner_node_t>(true);
     scene::add_front(node_for_layer(scene::layer::WORKSPACE), wset);
@@ -71,7 +82,13 @@ wf::output_impl_t::output_impl_t(wlr_output *handle,
     render    = std::make_unique<render_manager>(this);
 
     on_view_disappeared.set_callback([=] (view_disappeared_signal *ev) { handle_view_removed(ev->view); });
+    on_configuration_changed = [=] (wf::output_configuration_changed_signal *ev)
+    {
+        update_node_limits();
+    };
+
     connect(&on_view_disappeared);
+    connect(&on_configuration_changed);
 }
 
 std::shared_ptr<wf::scene::output_node_t> wf::output_impl_t::node_for_layer(
