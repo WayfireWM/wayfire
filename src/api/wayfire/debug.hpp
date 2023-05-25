@@ -68,6 +68,8 @@ enum class logging_category : size_t
     WLR     = 3,
     // Direct scanout
     SCANOUT = 4,
+    // Pointer events
+    POINTER = 5,
     TOTAL,
 };
 

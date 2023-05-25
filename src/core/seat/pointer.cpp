@@ -98,6 +98,7 @@ void wf::pointer_t::force_release_buttons()
     {
         for (auto button : this->currently_sent_buttons)
         {
+            LOGC(POINTER, "force-release button ", button);
             wlr_pointer_button_event event;
             event.pointer   = NULL;
             event.button    = button;
@@ -114,13 +115,13 @@ void wf::pointer_t::transfer_grab(scene::node_ptr node, bool retain_pressed_stat
 {
     if (node == cursor_focus)
     {
-        LOGD("transfer grab ", cursor_focus.get(), " -> ", node.get(), ": do nothing");
+        LOGC(POINTER, "transfer grab ", cursor_focus.get(), " -> ", node.get(), ": do nothing");
         // Node might already be focused, in case for example there was no input surface when the grab node
         // was added to the scenegraph.
         return;
     }
 
-    LOGD("transfer grab ", cursor_focus.get(), " -> ", node.get());
+    LOGC(POINTER, "transfer grab ", cursor_focus.get(), " -> ", node.get());
     force_release_buttons();
     cursor_focus = node;
 
@@ -148,7 +149,7 @@ void wf::pointer_t::update_cursor_focus(wf::scene::node_ptr new_focus)
     bool focus_change = (cursor_focus != new_focus);
     if (focus_change)
     {
-        LOGD("change cursor focus ", cursor_focus.get(), " -> ", new_focus.get());
+        LOGC(POINTER, "Change cursor focus ", cursor_focus.get(), " -> ", new_focus.get());
     }
 
     // Clear currently sent buttons when switching focus
@@ -262,19 +263,25 @@ void wf::pointer_t::send_button(wlr_pointer_button_event *ev, bool has_binding)
     {
         if ((ev->state == WLR_BUTTON_PRESSED) && cursor_focus)
         {
+            LOGC(POINTER, "normal button press ", ev->button);
             this->currently_sent_buttons.insert(ev->button);
             cursor_focus->pointer_interaction().handle_pointer_button(*ev);
         } else if ((ev->state == WLR_BUTTON_RELEASED) &&
                    currently_sent_buttons.count(ev->button))
         {
+            LOGC(POINTER, "normal button release ", ev->button);
             this->currently_sent_buttons.erase(
                 currently_sent_buttons.find(ev->button));
             cursor_focus->pointer_interaction().handle_pointer_button(*ev);
         } else
         {
+            LOGC(POINTER, "ignoring button event ", ev->button, " ", ev->state);
             // Ignore buttons which the client has not received.
             // These are potentially buttons which were grabbed.
         }
+    } else
+    {
+        LOGC(POINTER, "ignoring button event (null focus) ", ev->button, " ", ev->state);
     }
 }
 
