@@ -1,4 +1,4 @@
-#include "view-keyboard-interaction.cpp"
+#include "view-keyboard-interaction.hpp"
 #include <memory>
 #include <wayfire/debug.hpp>
 #include <wayfire/output.hpp>

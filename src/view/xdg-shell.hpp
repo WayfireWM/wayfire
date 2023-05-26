@@ -3,6 +3,7 @@
 
 #include "view-impl.hpp"
 #include "wayfire/signal-definitions.hpp"
+#include "wayfire/signal-provider.hpp"
 
 /**
  * A class for xdg-shell popups
@@ -16,8 +17,8 @@ class wayfire_xdg_popup : public wf::wlr_view_t
     wf::signal::connection_t<wf::view_geometry_changed_signal> parent_geometry_changed;
     wf::signal::connection_t<wf::view_title_changed_signal> parent_title_changed;
     wf::signal::connection_t<wf::view_app_id_changed_signal> parent_app_id_changed;
+    wf::signal::connection_t<wf::keyboard_focus_changed_signal> on_keyboard_focus_changed;
 
-    wf::wl_idle_call pending_close;
     wlr_xdg_popup *popup;
     void unconstrain();
     void update_position();

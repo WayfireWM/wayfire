@@ -252,29 +252,6 @@ bool wf::output_t::ensure_visible(wayfire_view v)
     return true;
 }
 
-void wf::output_impl_t::close_popups()
-{
-    for (auto& v : workspace->get_views_in_layer(wf::ALL_LAYERS))
-    {
-        auto popup = dynamic_cast<wayfire_xdg_popup*>(v.get());
-        if (!popup || (popup->popup_parent == get_active_view()))
-        {
-            continue;
-        }
-
-        /* Ignore popups which have a popup as their parent. In those cases, we'll
-         * close the topmost popup and this will recursively destroy the others.
-         *
-         * Otherwise we get a race condition with wlroots. */
-        if (dynamic_cast<wayfire_xdg_popup*>(popup->popup_parent.get()))
-        {
-            continue;
-        }
-
-        popup->close();
-    }
-}
-
 static wayfire_view pick_topmost_focusable(wayfire_view view)
 {
     auto all_views = view->enumerate_views();
@@ -378,13 +355,9 @@ void wf::output_impl_t::focus_view(wayfire_view v, uint32_t flags)
         }
     };
 
-    const auto& give_input_focus = [this, flags] (wayfire_view view)
+    const auto& give_input_focus = [this] (wayfire_view view)
     {
         focus_node(view ? view->get_surface_root_node() : nullptr);
-        if (flags & FOCUS_VIEW_CLOSE_POPUPS)
-        {
-            close_popups();
-        }
     };
 
     focus_view_signal data;
@@ -424,7 +397,7 @@ void wf::output_impl_t::focus_view(wayfire_view v, uint32_t flags)
 
 void wf::output_impl_t::focus_view(wayfire_view v, bool raise)
 {
-    uint32_t flags = FOCUS_VIEW_CLOSE_POPUPS;
+    uint32_t flags = 0;
     if (raise)
     {
         flags |= FOCUS_VIEW_RAISE;
