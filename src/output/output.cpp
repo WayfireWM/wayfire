@@ -8,6 +8,7 @@
 #include "wayfire/scene-input.hpp"
 #include "wayfire/scene-operations.hpp"
 #include "wayfire/scene.hpp"
+#include "wayfire/view-helpers.hpp"
 #include "wayfire/view.hpp"
 #include "../core/core-impl.hpp"
 #include "wayfire/signal-definitions.hpp"
@@ -343,7 +344,7 @@ void wf::output_impl_t::focus_view(wayfire_view v, uint32_t flags)
     static wf::option_wrapper_t<bool>
     all_dialogs_modal{"workarounds/all_dialogs_modal"};
 
-    const auto& make_view_visible = [this, flags] (wayfire_view view)
+    const auto& make_view_visible = [flags] (wayfire_view view)
     {
         if (view->minimized)
         {
@@ -357,7 +358,7 @@ void wf::output_impl_t::focus_view(wayfire_view v, uint32_t flags)
                 view = view->parent;
             }
 
-            workspace->bring_to_front(view);
+            view_bring_to_front(view);
         }
     };
 

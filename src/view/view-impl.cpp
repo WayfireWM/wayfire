@@ -3,6 +3,7 @@
 #include "../core/core-impl.hpp"
 #include "view-impl.hpp"
 #include "wayfire/decorator.hpp"
+#include "wayfire/scene-render.hpp"
 #include "wayfire/scene.hpp"
 #include "wayfire/signal-definitions.hpp"
 #include "wayfire/workspace-manager.hpp"
@@ -10,6 +11,7 @@
 #include <memory>
 #include <wayfire/util/log.hpp>
 #include <wayfire/view-helpers.hpp>
+#include <wayfire/scene-operations.hpp>
 
 #include "xdg-shell.hpp"
 
@@ -475,4 +477,25 @@ std::optional<wf::scene::layer> wf::get_view_layer(wayfire_view view)
     }
 
     return {};
+}
+
+void wf::view_bring_to_front(wayfire_view view)
+{
+    wf::scene::node_t *node = view->get_root_node().get();
+    wf::scene::node_t *damage_from = nullptr;
+    while (node->parent())
+    {
+        if (!node->is_structure_node() && dynamic_cast<scene::floating_inner_node_t*>(node->parent()))
+        {
+            damage_from = node->parent();
+            wf::scene::raise_to_front(node->shared_from_this());
+        }
+
+        node = node->parent();
+    }
+
+    if (damage_from)
+    {
+        wf::scene::damage_node(damage_from->shared_from_this(), damage_from->get_bounding_box());
+    }
 }

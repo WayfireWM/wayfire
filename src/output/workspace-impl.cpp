@@ -82,44 +82,6 @@ class output_layer_manager_t
         damage_views(view);
     }
 
-    /** Precondition: view is in some sublayer */
-    void bring_to_front(wayfire_view view)
-    {
-        wf::scene::node_t *node = view->get_root_node().get();
-        wf::scene::node_t *damage_from = nullptr;
-        while (node->parent())
-        {
-            if (!node->is_structure_node() &&
-                dynamic_cast<scene::floating_inner_node_t*>(node->parent()))
-            {
-                damage_from = node->parent();
-                wf::scene::raise_to_front(node->shared_from_this());
-            }
-
-            node = node->parent();
-        }
-
-        std::vector<wayfire_view> all_views;
-        push_views_from_scenegraph(damage_from->shared_from_this(), all_views,
-            false);
-
-        for (auto& view : all_views)
-        {
-            view->damage();
-        }
-    }
-
-    wayfire_view get_front_view(wf::layer_t layer)
-    {
-        auto views = get_views_in_layer(layer, false);
-        if (views.size() == 0)
-        {
-            return nullptr;
-        }
-
-        return views.front();
-    }
-
     void push_views_from_scenegraph(wf::scene::node_ptr root,
         std::vector<wayfire_view>& result, bool target_minimized)
     {
@@ -722,11 +684,6 @@ class workspace_manager::impl
         layer_manager.add_view_to_layer(view, layer);
     }
 
-    void bring_to_front(wayfire_view view)
-    {
-        layer_manager.bring_to_front(view);
-    }
-
     void remove_view(wayfire_view view)
     {
         layer_manager.remove_view(view);
@@ -769,12 +726,6 @@ void workspace_manager::move_to_workspace(wayfire_view view, wf::point_t ws)
 void workspace_manager::add_view(wayfire_view view, layer_t layer)
 {
     pimpl->add_view_to_layer(view, layer);
-}
-
-void workspace_manager::bring_to_front(wayfire_view view)
-{
-    pimpl->bring_to_front(view);
-    update_view_scene_node(view);
 }
 
 void workspace_manager::remove_view(wayfire_view view)

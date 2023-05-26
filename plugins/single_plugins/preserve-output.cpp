@@ -2,6 +2,7 @@
 #include "wayfire/object.hpp"
 #include "wayfire/output.hpp"
 #include "wayfire/util.hpp"
+#include "wayfire/view-helpers.hpp"
 #include <sys/types.h>
 #include <chrono>
 #include <wayfire/per-output-plugin.hpp>
@@ -263,7 +264,7 @@ class wayfire_preserve_output : public wf::per_output_plugin_instance_t
             }
 
             // Z Order
-            output->workspace->bring_to_front(view);
+            wf::view_bring_to_front(view);
 
             // Remove all last output info from views
             view_erase_data(view);

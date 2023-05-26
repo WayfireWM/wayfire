@@ -1,5 +1,6 @@
 #include "wm.hpp"
 #include "wayfire/output.hpp"
+#include "wayfire/view-helpers.hpp"
 #include "wayfire/view.hpp"
 #include "wayfire/core.hpp"
 #include "wayfire/workspace-manager.hpp"
@@ -134,7 +135,7 @@ bool wayfire_focus::check_focus_surface(wayfire_view view)
         target_wo->focus_view(view->self(), true);
     } else
     {
-        target_wo->workspace->bring_to_front(view);
+        wf::view_bring_to_front(view);
     }
 
     return target_wo->get_active_view() != old_focus;

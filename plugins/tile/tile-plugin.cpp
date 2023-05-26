@@ -13,6 +13,7 @@
 #include "wayfire/scene-operations.hpp"
 #include "wayfire/scene.hpp"
 #include "wayfire/signal-provider.hpp"
+#include "wayfire/view-helpers.hpp"
 
 namespace wf
 {
@@ -276,7 +277,7 @@ class tile_plugin_t : public wf::per_output_plugin_instance_t, public wf::pointe
         auto node = view->get_root_node();
         wf::scene::remove_child(node);
         wf::scene::add_front(tiled_sublayer[vp.x][vp.y], node);
-        output->workspace->bring_to_front(view); // bring that layer to the front
+        view_bring_to_front(view);
     }
 
     bool tile_window_by_default(wayfire_view view)

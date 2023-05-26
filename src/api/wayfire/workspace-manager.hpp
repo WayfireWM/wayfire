@@ -131,14 +131,6 @@ class workspace_manager
     void add_view(wayfire_view view, layer_t layer);
 
     /**
-     * Bring the sublayer of the view to the top if possible, and then bring
-     * the view to the top of its sublayer.
-     *
-     * No-op if the view isn't in any layer.
-     */
-    void bring_to_front(wayfire_view view);
-
-    /**
      * Remove the view from its (sub)layer. This effectively means that the view is
      * now invisible on the output.
      */

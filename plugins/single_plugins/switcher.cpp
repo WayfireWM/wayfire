@@ -4,6 +4,7 @@
 #include "wayfire/scene-operations.hpp"
 #include "wayfire/scene-render.hpp"
 #include "wayfire/scene.hpp"
+#include "wayfire/view-helpers.hpp"
 #include <memory>
 #include <wayfire/per-output-plugin.hpp>
 #include <wayfire/opengl.hpp>
@@ -521,8 +522,7 @@ class WayfireSwitcher : public wf::per_output_plugin_instance_t, public wf::keyb
         // calculate focus index & focus it
         int focused_view_index = (size + dir) % size;
         auto focused_view = ws_views[focused_view_index];
-
-        output->workspace->bring_to_front(focused_view);
+        wf::view_bring_to_front(focused_view);
     }
 
     /* Create the initial arrangement on the screen
@@ -827,7 +827,7 @@ class WayfireSwitcher : public wf::per_output_plugin_instance_t, public wf::keyb
         }
 
         rebuild_view_list();
-        output->workspace->bring_to_front(views.front().view);
+        wf::view_bring_to_front(views.front().view);
         duration.start();
     }
 

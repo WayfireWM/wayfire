@@ -2,6 +2,7 @@
 #include "wayfire/plugins/common/input-grab.hpp"
 #include "wayfire/plugins/common/util.hpp"
 #include "wayfire/scene-input.hpp"
+#include "wayfire/view-helpers.hpp"
 #include <wayfire/per-output-plugin.hpp>
 #include <wayfire/signal-definitions.hpp>
 #include <wayfire/view-transform.hpp>
@@ -62,12 +63,12 @@ class wayfire_fast_switcher : public wf::per_output_plugin_instance_t, public wf
         set_view_alpha(views[i], 1.0);
         for (int i = (int)views.size() - 1; i >= 0; i--)
         {
-            output->workspace->bring_to_front(views[i]);
+            wf::view_bring_to_front(views[i]);
         }
 
         if (reorder_only)
         {
-            output->workspace->bring_to_front(views[i]);
+            wf::view_bring_to_front(views[i]);
         } else
         {
             output->focus_view(views[i], true);
