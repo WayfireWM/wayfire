@@ -510,6 +510,118 @@ class output_viewport_manager_t
     }
 };
 
+/**
+ * This class encapsulates functionality related to handling fullscreen views on a given workspace set.
+ * When a fullscreen view is at the top of the stack, it should be 'promoted' above the top layer, where
+ * panels reside. This is done by temporarily disabling the top layer, and then re-enabling it when the
+ * fullscreen view is no longer fullscreen or no longer on top of all other views.
+ *
+ * Note that only views from the workspace layer are promoted, and views in the layers above do not affect
+ * the view promotion algorithm.
+ */
+class promotion_manager_t
+{
+  public:
+    promotion_manager_t(wf::output_t *output)
+    {
+        this->output = output;
+        wf::get_core().scene()->connect(&on_root_node_updated);
+        output->connect(&on_view_fullscreen);
+        output->connect(&on_view_unmap);
+    }
+
+  private:
+    wf::output_t *output;
+
+    wf::signal::connection_t<wf::scene::root_node_update_signal> on_root_node_updated = [=] (auto)
+    {
+        update_promotion_state();
+    };
+
+    signal::connection_t<view_unmapped_signal> on_view_unmap = [=] (view_unmapped_signal *ev)
+    {
+        update_promotion_state();
+    };
+
+    wf::signal::connection_t<wf::view_fullscreen_signal> on_view_fullscreen = [=] (auto)
+    {
+        update_promotion_state();
+    };
+
+    wayfire_view find_top_visible_view(wf::scene::node_ptr root)
+    {
+        if (auto view = wf::node_to_view(root))
+        {
+            if (view->is_mapped() &&
+                output->workspace->view_visible_on(view, output->workspace->get_current_workspace()))
+            {
+                return view;
+            }
+        }
+
+        for (auto& ch : root->get_children())
+        {
+            if (ch->is_enabled())
+            {
+                if (auto result = find_top_visible_view(ch))
+                {
+                    return result;
+                }
+            }
+        }
+
+        return nullptr;
+    }
+
+    void update_promotion_state()
+    {
+        wayfire_view candidate = find_top_visible_view(output->get_wset());
+        if (candidate && candidate->fullscreen)
+        {
+            start_promotion();
+        } else
+        {
+            stop_promotion();
+        }
+    }
+
+    bool promotion_active = false;
+
+    // When a fullscreen view is on top of the stack, it should be displayed above
+    // nodes in the TOP layer. To achieve this effect, we hide the TOP layer.
+    void start_promotion()
+    {
+        if (promotion_active)
+        {
+            return;
+        }
+
+        promotion_active = true;
+        scene::set_node_enabled(output->node_for_layer(scene::layer::TOP), false);
+
+        wf::fullscreen_layer_focused_signal ev;
+        ev.has_promoted = true;
+        output->emit(&ev);
+        LOGD("autohide panels");
+    }
+
+    void stop_promotion()
+    {
+        if (!promotion_active)
+        {
+            return;
+        }
+
+        promotion_active = false;
+        scene::set_node_enabled(output->node_for_layer(scene::layer::TOP), true);
+
+        wf::fullscreen_layer_focused_signal ev;
+        ev.has_promoted = false;
+        output->emit(&ev);
+        LOGD("restore panels");
+    }
+};
+
 class workspace_manager::impl
 {
     wf::output_t *output;
@@ -548,37 +660,18 @@ class workspace_manager::impl
         output_geometry = output->get_relative_geometry();
     };
 
-    wf::signal::connection_t<view_change_workspace_signal> view_changed_workspace =
-        [=] (view_change_workspace_signal *ev)
-    {
-        update_promoted_views();
-    };
-
-    wf::signal::connection_t<view_fullscreen_signal> on_view_fullscreen = [=] (view_fullscreen_signal *ev)
-    {
-        update_promoted_views();
-    };
-
-    signal::connection_t<view_unmapped_signal> on_view_unmap = [=] (view_unmapped_signal *ev)
-    {
-        update_promoted_views();
-    };
-
     std::unique_ptr<workspace_implementation_t> workspace_impl;
 
   public:
     output_layer_manager_t layer_manager;
     output_viewport_manager_t viewport_manager;
+    promotion_manager_t promotion_manager;
 
-    impl(output_t *o) : layer_manager(o), viewport_manager(o)
+    impl(output_t *o) : layer_manager(o), viewport_manager(o), promotion_manager(o)
     {
         output = o;
         output_geometry = output->get_relative_geometry();
-
-        o->connect(&view_changed_workspace);
         o->connect(&output_geometry_changed);
-        o->connect(&on_view_fullscreen);
-        o->connect(&on_view_unmap);
     }
 
     workspace_implementation_t *get_implementation()
@@ -604,7 +697,6 @@ class workspace_manager::impl
     void set_workspace(wf::point_t ws, const std::vector<wayfire_view>& fixed)
     {
         viewport_manager.set_workspace(ws, fixed);
-        update_promoted_views();
     }
 
     void request_workspace(wf::point_t ws,
@@ -624,84 +716,20 @@ class workspace_manager::impl
         }
     }
 
-    bool promotion_active = false;
-
-    // When a fullscreen view is on top of the stack, it should be displayed above
-    // nodes in the TOP layer. To achieve this effect, we hide the TOP layer.
-    void allow_promotion()
-    {
-        if (promotion_active)
-        {
-            return;
-        }
-
-        promotion_active = true;
-        scene::set_node_enabled(output->node_for_layer(scene::layer::TOP), false);
-
-        wf::fullscreen_layer_focused_signal ev;
-        ev.has_promoted = true;
-        output->emit(&ev);
-        LOGD("autohide panels");
-    }
-
-    void remove_promotion()
-    {
-        if (!promotion_active)
-        {
-            return;
-        }
-
-        promotion_active = false;
-        scene::set_node_enabled(output->node_for_layer(scene::layer::TOP), true);
-
-        wf::fullscreen_layer_focused_signal ev;
-        ev.has_promoted = false;
-        output->emit(&ev);
-        LOGD("restore panels");
-    }
-
-    void update_promoted_views()
-    {
-        auto vp    = viewport_manager.get_current_workspace();
-        auto views = viewport_manager.get_views_on_workspace(
-            vp, LAYER_WORKSPACE, false);
-
-        /* Do not consider unmapped views */
-        auto it = std::remove_if(views.begin(), views.end(),
-            [] (wayfire_view view) -> bool
-        {
-            return !view->is_mapped();
-        });
-        views.erase(it, views.end());
-
-        if (!views.empty() && views.front()->fullscreen)
-        {
-            allow_promotion();
-        } else
-        {
-            remove_promotion();
-        }
-    }
-
     void add_view_to_layer(wayfire_view view, layer_t layer)
     {
         assert(view->get_output() == output);
         layer_manager.add_view_to_layer(view, layer);
-        update_promoted_views();
     }
 
     void bring_to_front(wayfire_view view)
     {
         layer_manager.bring_to_front(view);
-        update_promoted_views();
     }
 
     void remove_view(wayfire_view view)
     {
         layer_manager.remove_view(view);
-        /* Check if the next focused view is fullscreen. If so, then we need
-         * to make sure it is in the fullscreen layer */
-        update_promoted_views();
     }
 };
 
