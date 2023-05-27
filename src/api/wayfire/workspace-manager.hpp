@@ -21,49 +21,22 @@ struct workspace_implementation_t
 };
 
 /**
- * Wayfire organizes views into several layers, in order to simplify z ordering.
+ * A set of flags that can be ORed and used as flags for the workspace set's get_view() function.
  */
-enum layer_t
+enum wset_view_flags
 {
-    /* The lowest layer, typical clients here are backgrounds */
-    LAYER_BACKGROUND     = (1 << 0),
-    /* The bottom layer */
-    LAYER_BOTTOM         = (1 << 1),
-    /* The workspace layer is where regular views are placed */
-    LAYER_WORKSPACE      = (1 << 2),
-    /* The top layer. Typical clients here are non-autohiding panels */
-    LAYER_TOP            = (1 << 3),
-    /* The unmanaged layer contains views like Xwayland OR windows and xdg-popups */
-    LAYER_UNMANAGED      = (1 << 4),
-    /* The lockscreen layer, typically lockscreens or autohiding panels */
-    LAYER_LOCK           = (1 << 5),
-    /* The layer where "desktop widgets" are positioned, for example an OSK
-     * or a sound control popup */
-    LAYER_DESKTOP_WIDGET = (1 << 6),
+    // Include mapped views only.
+    WSET_MAPPED_ONLY       = (1 << 0),
+    // Exclude minimized views, they are included by default.
+    WSET_EXCLUDE_MINIMIZED = (1 << 1),
+    // Views on the current workspace only, a shorthand for requesting the current workspace and supplying it
+    // as the second filter of get_views().
+    WSET_CURRENT_WORKSPACE = (1 << 2),
+    // Sort the resulting array in the same order as the scenegraph nodes of the corresponding views.
+    // Views not attached to the scenegraph (wf::get_core().scene()) are not included in the answer.
+    // This operation may be slow, so it should not be used on hot paths.
+    WSET_SORT_STACKING     = (1 << 3),
 };
-
-constexpr int TOTAL_LAYERS = 7;
-
-/* The layers where regular views are placed */
-constexpr int WM_LAYERS = (wf::LAYER_WORKSPACE);
-/* All layers which are used for regular clients */
-constexpr int MIDDLE_LAYERS = (wf::WM_LAYERS | wf::LAYER_UNMANAGED);
-/* All layers which typically sit on top of other layers */
-constexpr int ABOVE_LAYERS = (wf::LAYER_TOP | wf::LAYER_LOCK |
-    wf::LAYER_DESKTOP_WIDGET);
-/* All layers which typically sit below other layers */
-constexpr int BELOW_LAYERS = (wf::LAYER_BACKGROUND | wf::LAYER_BOTTOM);
-
-/* All visible layers */
-constexpr int VISIBLE_LAYERS = (wf::MIDDLE_LAYERS | wf::ABOVE_LAYERS |
-    wf::BELOW_LAYERS);
-/* All layers */
-constexpr int ALL_LAYERS = wf::VISIBLE_LAYERS;
-
-/**
- * @return A bitmask consisting of all layers which are not below the given layer
- */
-uint32_t all_layers_not_below(uint32_t layer);
 
 /**
  * Workspace manager is responsible for managing the layers, the workspaces and
@@ -79,22 +52,44 @@ class workspace_manager
 {
   public:
     /**
-     * Calculate a list of workspaces the view is visible on.
+     * Add the given view to the workspace set.
+     * Until the view is removed, it will be counted as part of the workspace set.
+     * This means that it will be moved when the workspace changes, and it will be part of the view list
+     * returned by @get_views().
      *
-     * @param threshold How much of the view's area needs to overlap a workspace to
-     *   be counted as visible on it. 1.0 for 100% visible, 0.1 for 10%.
+     * The workspace set is also responsible for associating the view with an output, in case the workspace
+     * set is moved to a different output.
      *
-     * @return a vector of all the workspaces
+     * Note that adding a view to the workspace set does not automatically add the view to the scenegraph.
+     * The stacking order, layer information, etc. is all determined by the scenegraph and managed separately
+     * from the workspace set, which serves an organizational purpose.
      */
-    std::vector<wf::point_t> get_view_workspaces(wayfire_view view,
-        double threshold);
+    void add_view(wayfire_view view);
+
+    /**
+     * Remove the view from the workspace set.
+     * Note that the view will remain associated with the last output the workspace set was on.
+     */
+    void remove_view(wayfire_view view);
+
+    /**
+     * Get a list of all views currently in the workspace set.
+     *
+     * Note that the list is not sorted by default (use WSET_SORT_STACKING if sorting is needed), and may
+     * contain views from different scenegraph layers.
+     *
+     * @param flags A bit mask of wset_view_flags. See the individual enum values for detailed description.
+     * @param workspace An optional workspace to filter views for (i.e. only views from that workspace will be
+     *   included in the return value. WSET_CURRENT_WORKSPACE takes higher precedence than this value if
+     *   specified.
+     */
+    std::vector<wayfire_view> get_views(uint32_t flags = 0, std::optional<wf::point_t> workspace = {});
 
     /**
      * Get the main workspace for a view.
      * The main workspace is the one which contains the view's center.
      *
-     * If the center is on an invalid workspace, the closest workspace will
-     * be returned.
+     * If the center is on an invalid workspace, the closest workspace will be returned.
      */
     wf::point_t get_view_main_workspace(wayfire_view view);
 
@@ -104,50 +99,10 @@ class workspace_manager
     bool view_visible_on(wayfire_view view, wf::point_t ws);
 
     /**
-     * Get a list of all views visible on the given workspace.
-     * The views are returned from the topmost to the bottomost in the stacking
-     * order. The stacking order is the same as in get_views_in_layer().
-     *
-     * @param layer_mask - The layers whose views should be included
-     */
-    std::vector<wayfire_view> get_views_on_workspace(wf::point_t ws,
-        uint32_t layer_mask, bool include_minimized = false);
-
-    /**
      * Ensure that the view's wm_geometry is visible on the workspace ws. This
      * involves moving the view as appropriate.
      */
     void move_to_workspace(wayfire_view view, wf::point_t ws);
-
-    /**
-     * Add the given view to the given layer. If the view was already added to
-     * a (sub)layer, it will be first removed from the old one.
-     *
-     * Note: the view will also get its own mini-sublayer internally, because
-     * each view needs to be in a sublayer.
-     *
-     * Preconditions: the view must have the same output as the current one
-     */
-    void add_view(wayfire_view view, layer_t layer);
-
-    /**
-     * Remove the view from its (sub)layer. This effectively means that the view is
-     * now invisible on the output.
-     */
-    void remove_view(wayfire_view view);
-
-    /**
-     * Generate a list of views in the given layers ordered in their stacking
-     * order. The stacking order is usually determined by the layer and sublayer
-     * ordering, however, fullscreen views which are on the top of the workspace
-     * floating layer or are docked above it are reodered to be on top of the
-     * panel layer (but still below the unmanaged layer).
-     *
-     * Whenever the aforementioned reordering happens, the
-     * fullscreen-layer-focused is emitted.
-     */
-    std::vector<wayfire_view> get_views_in_layer(uint32_t layers_mask,
-        bool include_minimized = false);
 
     /**
      * @return The current workspace implementation

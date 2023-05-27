@@ -48,7 +48,7 @@ class wf_wrot : public wf::per_output_plugin_instance_t, public wf::pointer_inte
 
     void reset_all()
     {
-        for (auto v : output->workspace->get_views_in_layer(wf::LAYER_WORKSPACE))
+        for (auto v : wf::get_core().get_all_views())
         {
             v->get_transformed_node()->rem_transformer(transformer_2d);
             v->get_transformed_node()->rem_transformer(transformer_3d);

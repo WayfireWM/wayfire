@@ -2,7 +2,9 @@
 #include "wayfire/plugins/common/util.hpp"
 #include "wayfire/render-manager.hpp"
 #include "wayfire/scene-input.hpp"
+#include "wayfire/scene.hpp"
 #include "wayfire/signal-definitions.hpp"
+#include "wayfire/view.hpp"
 #include <memory>
 #include <wayfire/per-output-plugin.hpp>
 #include <wayfire/output.hpp>
@@ -617,40 +619,28 @@ class wayfire_expo : public wf::per_output_plugin_instance_t, public wf::keyboar
         };
     }
 
-    /**
-     * If the view is sticky, return the pos relative to the current workspace.
-     * Otherwise, it stays the same.
-     */
-    wf::point_t view_local_coordinates(wayfire_view view, wf::point_t pos)
-    {
-        auto ssize = output->get_screen_size();
-        if (view->sticky)
-        {
-            return {
-                (pos.x % ssize.width + ssize.width) % ssize.width,
-                (pos.y % ssize.height + ssize.height) % ssize.height
-            };
-        } else
-        {
-            return pos;
-        }
-    }
-
     wayfire_view find_view_at_coordinates(int gx, int gy)
     {
         auto local = input_coordinates_to_output_local_coordinates({gx, gy});
-        /* TODO: adjust to delimiter offset */
-        for (auto& view : output->workspace->get_views_in_layer(wf::WM_LAYERS))
+        wf::pointf_t localf = {1.0 * local.x, 1.0 * local.y};
+
+        for (int i = int(wf::scene::layer::ALL_LAYERS) - 1; i >= 0; i--)
         {
-            if (!view->is_mapped())
+            auto isec = output->node_for_layer((wf::scene::layer)i)->find_node_at(localf);
+            auto node = isec ? isec->node.get() : nullptr;
+
+            if (auto view = wf::node_to_view(node))
             {
-                continue;
+                auto all_views = output->workspace->get_views();
+                if (std::find(all_views.begin(), all_views.end(), view) != all_views.end())
+                {
+                    return view;
+                }
             }
 
-            auto view_local = view_local_coordinates(view, local);
-            if (view->get_root_node()->find_node_at(wf::pointf_t{view_local}))
+            if (node)
             {
-                return view;
+                return nullptr;
             }
         }
 

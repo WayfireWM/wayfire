@@ -135,17 +135,15 @@ void wf::view_interface_t::set_toplevel_parent(wayfire_view new_parent)
             reposition_relative_to_parent(self());
         }
 
-        wf::scene::add_front(parent->get_root_node(),
-            this->get_root_node());
+        wf::scene::readd_front(parent->get_root_node(), this->get_root_node());
         check_refocus_parent(parent);
     } else if (old_parent)
     {
         /* At this point, we are a regular view. */
         if (this->get_output())
         {
-            this->get_output()->workspace->add_view(
-                self(), wf::LAYER_WORKSPACE);
-
+            wf::scene::readd_front(get_output()->get_wset(), get_root_node());
+            get_output()->workspace->add_view(self());
             check_refocus_parent(old_parent);
         }
     }
@@ -195,11 +193,8 @@ void wf::view_interface_t::set_output(wf::output_t *new_output)
     /* Make sure the view doesn't stay on the old output */
     if (get_output() && (get_output() != new_output))
     {
-        /* Emit view-layer-detached first */
-        get_output()->workspace->remove_view(self());
         view_disappeared_signal data_disappeared;
         data_disappeared.view = self();
-
         get_output()->emit(&data_disappeared);
     }
 
@@ -756,7 +751,7 @@ wf::view_interface_t::view_interface_t()
     take_ref();
 }
 
-wf::view_interface_t::view_interface_t(scene::floating_inner_ptr surface_root_node) : view_interface_t()
+void wf::view_interface_t::set_surface_root_node(scene::floating_inner_ptr surface_root_node)
 {
     this->priv->surface_root_node = surface_root_node;
 }
@@ -890,6 +885,7 @@ void wf::view_damage_raw(wayfire_view view, const wlr_box& box)
 void wf::view_interface_t::destruct()
 {
     view_destruct_signal ev;
+    ev.view = self();
     this->emit(&ev);
     wf::get_core_impl().erase_view(self());
 }

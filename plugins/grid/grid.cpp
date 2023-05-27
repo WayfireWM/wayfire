@@ -219,13 +219,8 @@ class wayfire_grid : public wf::per_output_plugin_instance_t
     wf::signal::connection_t<wf::workarea_changed_signal> on_workarea_changed =
         [=] (wf::workarea_changed_signal *ev)
     {
-        for (auto& view : output->workspace->get_views_in_layer(wf::LAYER_WORKSPACE))
+        for (auto& view : output->workspace->get_views(wf::WSET_MAPPED_ONLY))
         {
-            if (!view->is_mapped())
-            {
-                continue;
-            }
-
             auto data = view->get_data_safe<wf_grid_slot_data>();
 
             /* Detect if the view was maximized outside of the grid plugin */

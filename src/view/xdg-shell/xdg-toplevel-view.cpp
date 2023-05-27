@@ -1,4 +1,5 @@
 #include "xdg-toplevel-view.hpp"
+#include <wayfire/scene-operations.hpp>
 #include "wayfire/core.hpp"
 #include <wayfire/txn/transaction.hpp>
 #include <wayfire/txn/transaction-manager.hpp>
@@ -327,7 +328,8 @@ void wf::xdg_toplevel_view_t::map()
     {
         if (!parent)
         {
-            get_output()->workspace->add_view(self(), wf::LAYER_WORKSPACE);
+            wf::scene::readd_front(get_output()->get_wset(), get_root_node());
+            get_output()->workspace->add_view(self());
         }
 
         get_output()->focus_view(self(), true);

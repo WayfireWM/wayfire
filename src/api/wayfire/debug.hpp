@@ -70,6 +70,8 @@ enum class logging_category : size_t
     SCANOUT = 4,
     // Pointer events
     POINTER = 5,
+    // Workspace set events
+    WSET    = 6,
     TOTAL,
 };
 

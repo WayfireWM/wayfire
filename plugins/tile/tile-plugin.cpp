@@ -275,8 +275,7 @@ class tile_plugin_t : public wf::per_output_plugin_instance_t, public wf::pointe
         roots[vp.x][vp.y]->as_split_node()->add_child(std::move(view_node));
 
         auto node = view->get_root_node();
-        wf::scene::remove_child(node);
-        wf::scene::add_front(tiled_sublayer[vp.x][vp.y], node);
+        wf::scene::readd_front(tiled_sublayer[vp.x][vp.y], node);
         view_bring_to_front(view);
     }
 
@@ -341,7 +340,7 @@ class tile_plugin_t : public wf::per_output_plugin_instance_t, public wf::pointe
         /* Remove from special sublayer */
         if (reinsert)
         {
-            output->workspace->add_view(wview, wf::LAYER_WORKSPACE);
+            wf::scene::readd_front(wview->get_output()->get_wset(), wview->get_root_node());
         }
     }
 

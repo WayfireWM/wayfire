@@ -39,12 +39,24 @@ inline void add_front(floating_inner_ptr parent, node_ptr child)
     update(parent, update_flag::CHILDREN_LIST);
 }
 
+inline void readd_front(floating_inner_ptr parent, node_ptr child)
+{
+    remove_child(child);
+    add_front(parent, child);
+}
+
 inline void add_back(floating_inner_ptr parent, node_ptr child)
 {
     auto children = parent->get_children();
     children.push_back(child);
     parent->set_children_list(children);
     update(parent, update_flag::CHILDREN_LIST);
+}
+
+inline void readd_back(floating_inner_ptr parent, node_ptr child)
+{
+    remove_child(child);
+    add_back(parent, child);
 }
 
 inline void raise_to_front(node_ptr child)

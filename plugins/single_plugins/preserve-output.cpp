@@ -167,7 +167,7 @@ class wayfire_preserve_output : public wf::per_output_plugin_instance_t
         core_data->output_saved_workspace[identifier] =
             output->workspace->get_current_workspace();
 
-        auto views = output->workspace->get_views_in_layer(wf::LAYER_WORKSPACE);
+        auto views = output->workspace->get_views();
         for (size_t i = 0; i < views.size(); i++)
         {
             auto view = views[i];

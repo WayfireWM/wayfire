@@ -406,15 +406,6 @@ void wf::output_impl_t::focus_view(wayfire_view v, bool raise)
     focus_view(v, flags);
 }
 
-wayfire_view wf::output_t::get_top_view() const
-{
-    auto views = workspace->get_views_on_workspace(
-        workspace->get_current_workspace(),
-        LAYER_WORKSPACE);
-
-    return views.empty() ? nullptr : views[0];
-}
-
 wayfire_view wf::output_impl_t::get_active_view() const
 {
     return this->active_view;
@@ -630,19 +621,5 @@ void wf::output_impl_t::rem_binding(void *callback)
     remove_binding(button_map, (button_callback*)callback);
     remove_binding(axis_map, (axis_callback*)callback);
     remove_binding(activator_map, (activator_callback*)callback);
-}
-
-uint32_t all_layers_not_below(uint32_t layer)
-{
-    uint32_t mask = 0;
-    for (int i = 0; i < wf::TOTAL_LAYERS; i++)
-    {
-        if ((1u << i) >= layer)
-        {
-            mask |= (1 << i);
-        }
-    }
-
-    return mask;
 }
 } // namespace wf

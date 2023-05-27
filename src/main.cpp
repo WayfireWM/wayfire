@@ -203,6 +203,10 @@ void parse_extended_debugging(const std::vector<std::string>& categories)
         {
             LOGD("Enabling extended debugging for pointer events");
             wf::log::enabled_categories.set((size_t)wf::log::logging_category::POINTER, 1);
+        } else if (cat == "wset")
+        {
+            LOGD("Enabling extended debugging for workspace set events");
+            wf::log::enabled_categories.set((size_t)wf::log::logging_category::WSET, 1);
         } else
         {
             LOGE("Unrecognized debugging category \"", cat, "\"");

@@ -4,6 +4,7 @@
 #include <wayfire/compositor-view.hpp>
 
 #include "geometry-animation.hpp"
+#include "wayfire/scene-operations.hpp"
 #include "wayfire/view.hpp"
 #include <wayfire/option-wrapper.hpp>
 #include <wayfire/util/duration.hpp>
@@ -67,7 +68,7 @@ class preview_indication_view_t : public wf::color_rect_view_t
         {
             pre_paint = [=] () { update_animation(); };
             output->render->add_effect(&pre_paint, wf::OUTPUT_EFFECT_PRE);
-            output->workspace->add_view(self(), wf::LAYER_TOP);
+            wf::scene::readd_front(output->node_for_layer(wf::scene::layer::TOP), get_root_node());
         }
     }
 
@@ -114,6 +115,7 @@ class preview_indication_view_t : public wf::color_rect_view_t
 
     virtual ~preview_indication_view_t()
     {
+        wf::scene::remove_child(get_root_node());
         if (this->output)
         {
             this->output->render->rem_effect(&pre_paint);

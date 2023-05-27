@@ -165,11 +165,6 @@ class output_t : public wf::object_base_t, public wf::signal::provider_t
     virtual bool is_plugin_active(std::string owner_name) const = 0;
 
     /**
-     * @return The topmost view in the workspace layer
-     */
-    wayfire_view get_top_view() const;
-
-    /**
      * Get the most recently focused view on this output.
      *
      * Note that the view might not be actually focused, as focus can be overridden

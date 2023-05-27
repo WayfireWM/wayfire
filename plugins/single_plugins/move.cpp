@@ -461,8 +461,7 @@ class wayfire_move : public wf::per_output_plugin_instance_t,
         if (slot.preview)
         {
             auto input = get_input_coords();
-            slot.preview->set_target_geometry(
-                {input.x, input.y, 1, 1}, 0, true);
+            slot.preview->set_target_geometry({input.x, input.y, 1, 1}, 0, true);
             slot.preview = nullptr;
         }
 

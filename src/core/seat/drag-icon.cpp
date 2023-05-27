@@ -159,7 +159,7 @@ wf::drag_icon_t::drag_icon_t(wlr_drag_icon *ic) : icon(ic)
     new wlr_surface_controller_t(icon->surface, root_node);
 
     // Connect to the scenegraph
-    wf::scene::add_front(wf::get_core().scene(), root_node);
+    wf::scene::readd_front(wf::get_core().scene(), root_node);
 }
 
 wf::drag_icon_t::~drag_icon_t()

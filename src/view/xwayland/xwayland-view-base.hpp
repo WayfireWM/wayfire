@@ -9,6 +9,7 @@
 #include "wayfire/geometry.hpp"
 #include "wayfire/view.hpp"
 #include "xwayland-helpers.hpp"
+#include <wayfire/scene-operations.hpp>
 
 #if WF_HAS_XWAYLAND
 
@@ -178,7 +179,8 @@ class wayfire_xwayland_view_base : public wf::view_interface_t
         {
             if (!parent)
             {
-                get_output()->workspace->add_view(self(), wf::LAYER_WORKSPACE);
+                wf::scene::readd_front(get_output()->get_wset(), get_root_node());
+                get_output()->workspace->add_view(self());
             }
 
             get_output()->focus_view(self(), true);

@@ -27,6 +27,7 @@
 #include "wayfire/core.hpp"
 #include "wayfire/debug.hpp"
 #include "wayfire/plugin.hpp"
+#include "wayfire/plugins/common/util.hpp"
 #include "wayfire/scene-input.hpp"
 #include "wayfire/scene.hpp"
 #include "wayfire/signal-provider.hpp"
@@ -731,35 +732,15 @@ class wayfire_scale : public wf::per_output_plugin_instance_t,
     /* Returns a list of views for all workspaces */
     std::vector<wayfire_view> get_all_workspace_views()
     {
-        std::vector<wayfire_view> views;
-
-        for (auto& view :
-             output->workspace->get_views_in_layer(wf::LAYER_WORKSPACE))
-        {
-            if ((view->role != wf::VIEW_ROLE_TOPLEVEL) || !view->is_mapped())
-            {
-                continue;
-            }
-
-            views.push_back(view);
-        }
-
-        return views;
+        return output->workspace->get_views(wf::WSET_EXCLUDE_MINIMIZED | wf::WSET_MAPPED_ONLY);
     }
 
     /* Returns a list of views for the current workspace */
     std::vector<wayfire_view> get_current_workspace_views()
     {
         std::vector<wayfire_view> views;
-
-        for (auto& view :
-             output->workspace->get_views_in_layer(wf::LAYER_WORKSPACE))
+        for (auto& view : get_all_workspace_views())
         {
-            if ((view->role != wf::VIEW_ROLE_TOPLEVEL) || !view->is_mapped())
-            {
-                continue;
-            }
-
             auto vg = view->get_wm_geometry();
             auto og = output->get_relative_geometry();
             wf::region_t wr{og};
@@ -902,6 +883,11 @@ class wayfire_scale : public wf::per_output_plugin_instance_t,
 
         if (!current_focus_view)
         {
+            std::sort(views.begin(), views.end(), [=] (wayfire_view a, wayfire_view b)
+            {
+                return wf::get_focus_timestamp(a) > wf::get_focus_timestamp(b);
+            });
+
             current_focus_view = views.empty() ? nullptr : views.front();
             output->focus_view(current_focus_view, true);
         }

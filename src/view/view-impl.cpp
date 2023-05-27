@@ -3,9 +3,11 @@
 #include "../core/core-impl.hpp"
 #include "view-impl.hpp"
 #include "wayfire/decorator.hpp"
+#include "wayfire/scene-input.hpp"
 #include "wayfire/scene-render.hpp"
 #include "wayfire/scene.hpp"
 #include "wayfire/signal-definitions.hpp"
+#include "wayfire/view.hpp"
 #include "wayfire/workspace-manager.hpp"
 #include "wayfire/output-layout.hpp"
 #include <memory>
@@ -244,7 +246,8 @@ void wf::wlr_view_t::map(wlr_surface *surface)
     {
         if (!parent)
         {
-            get_output()->workspace->add_view(self(), wf::LAYER_WORKSPACE);
+            wf::scene::readd_front(get_output()->get_wset(), get_root_node());
+            get_output()->workspace->add_view(self());
         }
 
         get_output()->focus_view(self(), true);
@@ -498,4 +501,42 @@ void wf::view_bring_to_front(wayfire_view view)
     {
         wf::scene::damage_node(damage_from->shared_from_this(), damage_from->get_bounding_box());
     }
+}
+
+static void gather_views(wf::scene::node_ptr root, std::vector<wayfire_view>& views)
+{
+    if (!root->is_enabled())
+    {
+        return;
+    }
+
+    if (auto view = wf::node_to_view(root))
+    {
+        views.push_back(view);
+        return;
+    }
+
+    for (auto& ch : root->get_children())
+    {
+        gather_views(ch, views);
+    }
+}
+
+std::vector<wayfire_view> wf::collect_views_from_scenegraph(wf::scene::node_ptr root)
+{
+    std::vector<wayfire_view> views;
+    gather_views(root, views);
+    return views;
+}
+
+std::vector<wayfire_view> wf::collect_views_from_output(wf::output_t *output,
+    std::initializer_list<wf::scene::layer> layers)
+{
+    std::vector<wayfire_view> views;
+    for (auto layer : layers)
+    {
+        gather_views(output->node_for_layer(layer), views);
+    }
+
+    return views;
 }

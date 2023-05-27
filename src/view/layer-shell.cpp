@@ -4,6 +4,7 @@
 
 #include <wayfire/signal-definitions.hpp>
 #include "wayfire/geometry.hpp"
+#include "wayfire/scene-operations.hpp"
 #include "wayfire/util.hpp"
 #include "wayfire/view.hpp"
 #include "xdg-shell.hpp"
@@ -71,7 +72,7 @@ class wayfire_layer_shell_view : public wf::view_interface_t
     void set_output(wf::output_t *output) override;
 
     /** Calculate the target layer for this layer surface */
-    wf::layer_t get_layer();
+    wf::scene::layer get_layer();
 
     /* Just pass to the default wlr surface implementation */
     bool is_mapped() const override
@@ -462,7 +463,7 @@ void wayfire_layer_shell_view::destroy()
     unref();
 }
 
-wf::layer_t wayfire_layer_shell_view::get_layer()
+wf::scene::layer wayfire_layer_shell_view::get_layer()
 {
     static const std::vector<std::string> desktop_widget_ids = {
         "keyboard",
@@ -477,19 +478,19 @@ wf::layer_t wayfire_layer_shell_view::get_layer()
       case ZWLR_LAYER_SHELL_V1_LAYER_OVERLAY:
         if (it != desktop_widget_ids.end())
         {
-            return wf::LAYER_DESKTOP_WIDGET;
+            return wf::scene::layer::DWIDGET;
         }
 
-        return wf::LAYER_LOCK;
+        return wf::scene::layer::OVERLAY;
 
       case ZWLR_LAYER_SHELL_V1_LAYER_TOP:
-        return wf::LAYER_TOP;
+        return wf::scene::layer::TOP;
 
       case ZWLR_LAYER_SHELL_V1_LAYER_BOTTOM:
-        return wf::LAYER_BOTTOM;
+        return wf::scene::layer::BOTTOM;
 
       case ZWLR_LAYER_SHELL_V1_LAYER_BACKGROUND:
-        return wf::LAYER_BACKGROUND;
+        return wf::scene::layer::BACKGROUND;
 
       default:
         throw std::domain_error("Invalid layer for layer surface!");
@@ -515,7 +516,7 @@ void wayfire_layer_shell_view::map()
     /* Read initial data */
     priv->keyboard_focus_enabled = lsurface->current.keyboard_interactive;
 
-    get_output()->workspace->add_view(self(), get_layer());
+    wf::scene::add_front(get_output()->node_for_layer(get_layer()), get_root_node());
     wf_layer_shell_manager::get_instance().handle_map(this);
     if (lsurface->current.keyboard_interactive == 1)
     {
@@ -560,7 +561,7 @@ void wayfire_layer_shell_view::commit()
         /* Update layer manually */
         if (prev_state.layer != state->layer)
         {
-            get_output()->workspace->add_view(self(), get_layer());
+            wf::scene::readd_front(get_output()->node_for_layer(get_layer()), get_root_node());
             /* Will also trigger reflowing */
             wf_layer_shell_manager::get_instance().handle_move_layer(this);
         } else

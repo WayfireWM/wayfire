@@ -35,7 +35,9 @@ class view_node_t;
 
 // A signal emitted when the view is destroyed and its memory will be freed.
 struct view_destruct_signal
-{};
+{
+    wayfire_view view;
+};
 
 /* abstraction for desktop-apis, no real need for plugins
  * This is a base class to all "drawables" - desktop views, subsurfaces, popups */
@@ -385,7 +387,7 @@ class view_interface_t : public wf::signal::provider_t, public wf::object_base_t
 
   protected:
     view_interface_t();
-    view_interface_t(scene::floating_inner_ptr surface_root_node);
+    void set_surface_root_node(scene::floating_inner_ptr surface_root_node);
 
     friend class compositor_core_impl_t;
     /**

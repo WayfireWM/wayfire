@@ -5,7 +5,7 @@
 #include <wayfire/render-manager.hpp>
 #include <wayfire/signal-definitions.hpp>
 #include <wayfire/opengl.hpp>
-#include <list>
+#include <set>
 #include <algorithm>
 #include <wayfire/nonstd/reverse.hpp>
 #include <wayfire/util/log.hpp>
@@ -15,6 +15,7 @@
 #include "../view/view-impl.hpp"
 #include "output-impl.hpp"
 #include "wayfire/debug.hpp"
+#include "wayfire/geometry.hpp"
 #include "wayfire/option-wrapper.hpp"
 #include "wayfire/scene-input.hpp"
 #include "wayfire/scene.hpp"
@@ -22,115 +23,6 @@
 
 namespace wf
 {
-static void update_view_scene_node(wayfire_view view)
-{
-    using wf::scene::update_flag::update_flag;
-    wf::scene::update(view->get_root_node(),
-        update_flag::INPUT_STATE | update_flag::CHILDREN_LIST);
-}
-
-/** Damage the entire view tree including the view itself. */
-void damage_views(wayfire_view view)
-{
-    for (auto view : view->enumerate_views(false))
-    {
-        view->damage();
-    }
-}
-
-/**
- * output_layer_manager_t is a part of the workspace_manager module. It provides
- * the functionality related to layers and sublayers.
- */
-class output_layer_manager_t
-{
-    // A hierarchical representation of the view stack order
-    wf::output_t *output;
-
-  public:
-    output_layer_manager_t(wf::output_t *output)
-    {
-        this->output = output;
-    }
-
-    constexpr int layer_index_from_mask(uint32_t layer_mask) const
-    {
-        return __builtin_ctz(layer_mask);
-    }
-
-    void remove_view(wayfire_view view)
-    {
-        damage_views(view);
-        scene::remove_child(view->get_root_node());
-    }
-
-    /** Add or move the view to the given layer */
-    void add_view_to_layer(wayfire_view view, layer_t layer)
-    {
-        damage_views(view);
-        auto idx = (wf::scene::layer)layer_index_from_mask(layer);
-        scene::remove_child(view->get_root_node());
-
-        if (layer == LAYER_WORKSPACE)
-        {
-            scene::add_front(output->get_wset(), view->get_root_node());
-        } else
-        {
-            scene::add_front(output->node_for_layer(idx), view->get_root_node());
-        }
-
-        damage_views(view);
-    }
-
-    void push_views_from_scenegraph(wf::scene::node_ptr root,
-        std::vector<wayfire_view>& result, bool target_minimized)
-    {
-        if (auto view = node_to_view(root))
-        {
-            if (view->minimized == target_minimized)
-            {
-                result.push_back(view);
-            }
-        } else
-        {
-            for (auto& ch : root->get_children())
-            {
-                push_views_from_scenegraph(ch, result, target_minimized);
-            }
-        }
-    }
-
-    std::vector<wayfire_view> get_views_in_layer(uint32_t layers_mask,
-        bool include_minimized)
-    {
-        std::vector<wayfire_view> views;
-        auto try_push = [&] (scene::layer layer)
-        {
-            if (!((1u << (int)layer) & layers_mask))
-            {
-                return;
-            }
-
-            push_views_from_scenegraph(output->node_for_layer(layer), views, false);
-        };
-
-        /* Above fullscreen views */
-        for (int layer = 0; layer < (int)scene::layer::ALL_LAYERS; layer++)
-        {
-            try_push((scene::layer)layer);
-        }
-
-        if (include_minimized)
-        {
-            push_views_from_scenegraph(
-                output->node_for_layer(wf::scene::layer::WORKSPACE),
-                views, true);
-        }
-
-        return views;
-    }
-};
-
 struct default_workspace_implementation_t : public workspace_implementation_t
 {
     bool view_movable(wayfire_view view)
@@ -141,334 +33,6 @@ struct default_workspace_implementation_t : public workspace_implementation_t
     bool view_resizable(wayfire_view view)
     {
         return true;
-    }
-
-    default_workspace_implementation_t() = default;
-    virtual ~default_workspace_implementation_t() = default;
-    default_workspace_implementation_t(const default_workspace_implementation_t &) =
-    default;
-    default_workspace_implementation_t(default_workspace_implementation_t &&) =
-    default;
-    default_workspace_implementation_t& operator =(
-        const default_workspace_implementation_t&) = default;
-    default_workspace_implementation_t& operator =(
-        default_workspace_implementation_t&&) = default;
-};
-
-/**
- * The output_viewport_manager_t provides viewport-related functionality in
- * workspace_manager
- */
-class output_viewport_manager_t
-{
-  private:
-    wf::option_wrapper_t<int> vwidth_opt{"core/vwidth"};
-    wf::option_wrapper_t<int> vheight_opt{"core/vheight"};
-
-    int current_vx = 0;
-    int current_vy = 0;
-
-    output_t *output;
-
-    // Grid size was set by a plugin?
-    bool has_custom_grid_size = false;
-
-    // Current dimensions of the grid
-    wf::dimensions_t grid = {0, 0};
-
-    std::function<void()> update_cfg_grid_size = [=] ()
-    {
-        if (has_custom_grid_size)
-        {
-            return;
-        }
-
-        auto old_grid = grid;
-        grid = {vwidth_opt, vheight_opt};
-        handle_grid_changed(old_grid);
-    };
-
-    wf::point_t closest_valid_ws(wf::point_t workspace)
-    {
-        workspace.x = wf::clamp(workspace.x, 0, grid.width - 1);
-        workspace.y = wf::clamp(workspace.y, 0, grid.height - 1);
-        return workspace;
-    }
-
-    /**
-     * Handle a change in the workspace grid size.
-     *
-     * When it happens, we need to ensure that each view is at least partly
-     * visible on the remaining workspaces.
-     */
-    void handle_grid_changed(wf::dimensions_t old_size)
-    {
-        if (!is_workspace_valid({current_vx, current_vy}))
-        {
-            set_workspace(closest_valid_ws({current_vx, current_vy}), {});
-        }
-
-        for (auto view : output->workspace->get_views_in_layer(
-            wf::WM_LAYERS, true))
-        {
-            // XXX: we use the magic value 0.333, maybe something else would be
-            // better?
-            auto workspaces = get_view_workspaces(view, 0.333);
-
-            bool is_visible = std::any_of(workspaces.begin(), workspaces.end(),
-                [=] (auto ws) { return is_workspace_valid(ws); });
-
-            if (!is_visible)
-            {
-                move_to_workspace(view, get_view_main_workspace(view));
-            }
-        }
-
-        wf::workspace_grid_changed_signal data;
-        data.old_grid_size = old_size;
-        data.new_grid_size = grid;
-        output->emit(&data);
-    }
-
-  public:
-    output_viewport_manager_t(output_t *output)
-    {
-        this->output = output;
-
-        vwidth_opt.set_callback(update_cfg_grid_size);
-        vheight_opt.set_callback(update_cfg_grid_size);
-        this->grid = {vwidth_opt, vheight_opt};
-    }
-
-    /**
-     * @param threshold Threshold of the view to be counted
-     *        on that workspace. 1.0 for 100% visible, 0.1 for 10%
-     *
-     * @return a vector of all the workspaces
-     */
-    std::vector<wf::point_t> get_view_workspaces(wayfire_view view, double threshold)
-    {
-        assert(view->get_output() == this->output);
-        std::vector<wf::point_t> view_workspaces;
-        wf::geometry_t workspace_relative_geometry;
-        wlr_box view_bbox = view->get_bounding_box();
-
-        for (int horizontal = 0; horizontal < grid.width; horizontal++)
-        {
-            for (int vertical = 0; vertical < grid.height; vertical++)
-            {
-                wf::point_t ws = {horizontal, vertical};
-                if (output->workspace->view_visible_on(view, ws))
-                {
-                    workspace_relative_geometry = output->render->get_ws_box(ws);
-                    auto intersection = wf::geometry_intersection(
-                        view_bbox, workspace_relative_geometry);
-                    double area = 1.0 * intersection.width * intersection.height;
-                    area /= 1.0 * view_bbox.width * view_bbox.height;
-
-                    if (area < threshold)
-                    {
-                        continue;
-                    }
-
-                    view_workspaces.push_back(ws);
-                }
-            }
-        }
-
-        return view_workspaces;
-    }
-
-    wf::point_t get_view_main_workspace(wayfire_view view)
-    {
-        auto og = output->get_screen_size();
-
-        auto wm = view->get_wm_geometry();
-        wf::point_t workspace = {
-            current_vx + (int)std::floor((wm.x + wm.width / 2.0) / og.width),
-            current_vy + (int)std::floor((wm.y + wm.height / 2.0) / og.height)
-        };
-
-        return closest_valid_ws(workspace);
-    }
-
-    /**
-     * @param use_bbox When considering view visibility, whether to use the
-     *        bounding box or the wm geometry.
-     *
-     * @return true if the view is visible on the workspace vp
-     */
-    bool view_visible_on(wayfire_view view, wf::point_t vp)
-    {
-        auto g = output->get_relative_geometry();
-        if (!view->sticky)
-        {
-            g.x += (vp.x - current_vx) * g.width;
-            g.y += (vp.y - current_vy) * g.height;
-        }
-
-        return g & view->get_wm_geometry();
-    }
-
-    /**
-     * Moves view geometry so that it is visible on the given workspace
-     */
-    void move_to_workspace(wayfire_view view, wf::point_t ws)
-    {
-        if (view->get_output() != output)
-        {
-            LOGE("Cannot ensure view visibility for a view from a different output!");
-            return;
-        }
-
-        // Sticky views are visible on all workspaces, so we just have to make
-        // it visible on the current workspace
-        if (view->sticky)
-        {
-            ws = {current_vx, current_vy};
-        }
-
-        auto box     = view->get_wm_geometry();
-        auto visible = output->get_relative_geometry();
-        visible.x += (ws.x - current_vx) * visible.width;
-        visible.y += (ws.y - current_vy) * visible.height;
-
-        if (!(box & visible))
-        {
-            /* center of the view */
-            int cx = box.x + box.width / 2;
-            int cy = box.y + box.height / 2;
-
-            int width = visible.width, height = visible.height;
-            /* compute center coordinates when moved to the current workspace */
-            int local_cx = (cx % width + width) % width;
-            int local_cy = (cy % height + height) % height;
-
-            /* finally, calculate center coordinates in the target workspace */
-            int target_cx = local_cx + visible.x;
-            int target_cy = local_cy + visible.y;
-
-            view->move(box.x + target_cx - cx, box.y + target_cy - cy);
-        }
-    }
-
-    std::vector<wayfire_view> get_views_on_workspace(wf::point_t vp,
-        uint32_t layers_mask, bool include_minimized)
-    {
-        /* get all views in the given layers */
-        std::vector<wayfire_view> views =
-            output->workspace->get_views_in_layer(layers_mask, include_minimized);
-
-        /* remove those which aren't visible on the workspace */
-        auto it = std::remove_if(views.begin(), views.end(), [&] (wayfire_view view)
-        {
-            return !view_visible_on(view, vp);
-        });
-
-        views.erase(it, views.end());
-
-        return views;
-    }
-
-    wf::point_t get_current_workspace()
-    {
-        return {current_vx, current_vy};
-    }
-
-    wf::dimensions_t get_workspace_grid_size()
-    {
-        return grid;
-    }
-
-    void set_workspace_grid_size(wf::dimensions_t new_grid)
-    {
-        auto old = this->grid;
-        this->grid = new_grid;
-        this->has_custom_grid_size = true;
-        handle_grid_changed(old);
-    }
-
-    bool is_workspace_valid(wf::point_t ws)
-    {
-        if ((ws.x >= grid.width) || (ws.y >= grid.height) || (ws.x < 0) ||
-            (ws.y < 0))
-        {
-            return false;
-        } else
-        {
-            return true;
-        }
-    }
-
-    void set_workspace(wf::point_t nws,
-        const std::vector<wayfire_view>& fixed_views)
-    {
-        if (!is_workspace_valid(nws))
-        {
-            LOGE("Attempt to set invalid workspace: ", nws,
-                " workspace grid size is ", grid.width, "x", grid.height);
-
-            return;
-        }
-
-        wf::workspace_changed_signal data;
-        data.old_viewport = {current_vx, current_vy};
-        data.new_viewport = {nws.x, nws.y};
-        data.output = output;
-
-        /* The part below is tricky, because with the current architecture
-         * we cannot make the viewport change look atomic, i.e the workspace
-         * is changed first, and then all views are moved.
-         *
-         * We first change the viewport, and then adjust the position of the
-         * views. */
-        current_vx = nws.x;
-        current_vy = nws.y;
-
-        auto screen = output->get_screen_size();
-        auto dx     = (data.old_viewport.x - nws.x) * screen.width;
-        auto dy     = (data.old_viewport.y - nws.y) * screen.height;
-
-        std::vector<std::pair<wayfire_view, wf::point_t>>
-        old_fixed_view_workspaces;
-        old_fixed_view_workspaces.reserve(fixed_views.size());
-
-        for (auto& view : output->workspace->get_views_in_layer(
-            MIDDLE_LAYERS, true))
-        {
-            const auto is_fixed = std::find(fixed_views.cbegin(),
-                fixed_views.cend(), view) != fixed_views.end();
-
-            if (is_fixed)
-            {
-                old_fixed_view_workspaces.push_back({view,
-                    get_view_main_workspace(view)});
-            } else if (!view->sticky)
-            {
-                for (auto v : view->enumerate_views())
-                {
-                    v->move(v->get_wm_geometry().x + dx,
-                        v->get_wm_geometry().y + dy);
-                }
-            }
-        }
-
-        for (auto& [v, old_workspace] : old_fixed_view_workspaces)
-        {
-            wf::view_change_workspace_signal vdata;
-            vdata.view = v;
-            vdata.from = old_workspace;
-            vdata.to   = get_view_main_workspace(v);
-            output->emit(&vdata);
-            output->focus_view(v, true);
-        }
-
-        // Finally, do a refocus to update the keyboard focus
-        output->refocus();
-        output->emit(&data);
-
-        // Don't forget to update the geometry of the wset, as the geometry of it has changed now.
-        wf::scene::update(output->get_wset(), wf::scene::update_flag::GEOMETRY);
     }
 };
 
@@ -584,9 +148,141 @@ class promotion_manager_t
     }
 };
 
+/**
+ * This class encapsulates functionality related to the management of the workspace grid size.
+ */
+struct grid_size_manager_t
+{
+    wf::option_wrapper_t<int> vwidth_opt{"core/vwidth"};
+    wf::option_wrapper_t<int> vheight_opt{"core/vheight"};
+    wf::output_t *output;
+
+    grid_size_manager_t(wf::output_t *o) : output(o)
+    {
+        vwidth_opt.set_callback(update_cfg_grid_size);
+        vheight_opt.set_callback(update_cfg_grid_size);
+        this->grid = {vwidth_opt, vheight_opt};
+    }
+
+    // Grid size was set by a plugin?
+    bool has_custom_grid_size = false;
+
+    // Current dimensions of the grid
+    wf::dimensions_t grid = {0, 0};
+
+    std::function<void()> update_cfg_grid_size = [=] ()
+    {
+        if (has_custom_grid_size)
+        {
+            return;
+        }
+
+        auto old_grid = grid;
+        grid = {vwidth_opt, vheight_opt};
+        handle_grid_changed(old_grid);
+    };
+
+    wf::point_t closest_valid_ws(wf::point_t workspace)
+    {
+        workspace.x = wf::clamp(workspace.x, 0, grid.width - 1);
+        workspace.y = wf::clamp(workspace.y, 0, grid.height - 1);
+        return workspace;
+    }
+
+    /**
+     * Handle a change in the workspace grid size.
+     *
+     * When it happens, we need to ensure that each view is at least partly
+     * visible on the remaining workspaces.
+     */
+    void handle_grid_changed(wf::dimensions_t old_size)
+    {
+        wf::workspace_grid_changed_signal data;
+        data.old_grid_size = old_size;
+        data.new_grid_size = grid;
+        output->emit(&data);
+    }
+
+    wf::dimensions_t get_workspace_grid_size()
+    {
+        return grid;
+    }
+
+    void set_workspace_grid_size(wf::dimensions_t new_grid)
+    {
+        auto old = this->grid;
+        this->grid = new_grid;
+        this->has_custom_grid_size = true;
+        handle_grid_changed(old);
+    }
+
+    bool is_workspace_valid(wf::point_t ws)
+    {
+        if ((ws.x >= grid.width) || (ws.y >= grid.height) || (ws.x < 0) ||
+            (ws.y < 0))
+        {
+            return false;
+        } else
+        {
+            return true;
+        }
+    }
+};
+
+static wf::scene::node_t *find_lca(wf::scene::node_t *a, wf::scene::node_t *b)
+{
+    wf::scene::node_t *iter = a;
+    std::set<wf::scene::node_t*> a_ancestors;
+    while (iter)
+    {
+        a_ancestors.insert(iter);
+        iter = iter->parent();
+    }
+
+    iter = b;
+    while (iter)
+    {
+        if (a_ancestors.count(iter))
+        {
+            return iter;
+        }
+
+        iter = iter->parent();
+    }
+
+    return nullptr;
+}
+
+static bool is_attached_to_scenegraph(wf::scene::node_t *a)
+{
+    auto root = wf::get_core().scene().get();
+    while (a)
+    {
+        if (a == root)
+        {
+            return true;
+        }
+
+        a = a->parent();
+    }
+
+    return false;
+}
+
+static size_t find_index_in_parent(wf::scene::node_t *x, wf::scene::node_t *parent)
+{
+    while (x->parent() != parent)
+    {
+        x = x->parent();
+    }
+
+    auto& children = parent->get_children();
+    auto it = std::find_if(children.begin(), children.end(), [&] (auto child) { return child.get() == x; });
+    return it - children.begin();
+}
+
 class workspace_manager::impl
 {
-    wf::output_t *output;
     wf::geometry_t output_geometry;
 
     wf::signal::connection_t<output_configuration_changed_signal> output_geometry_changed =
@@ -600,13 +296,8 @@ class workspace_manager::impl
             return;
         }
 
-        for (auto& view : layer_manager.get_views_in_layer(MIDDLE_LAYERS, false))
+        for (auto& view : get_views(WSET_MAPPED_ONLY))
         {
-            if (!view->is_mapped())
-            {
-                continue;
-            }
-
             auto wm  = view->get_wm_geometry();
             float px = 1. * wm.x / old_w;
             float py = 1. * wm.y / old_h;
@@ -622,18 +313,47 @@ class workspace_manager::impl
         output_geometry = output->get_relative_geometry();
     };
 
+    wf::signal::connection_t<workspace_grid_changed_signal> on_grid_changed =
+        [=] (workspace_grid_changed_signal *ev)
+    {
+        if (!grid.is_workspace_valid({current_vx, current_vy}))
+        {
+            set_workspace(grid.closest_valid_ws({current_vx, current_vy}), {});
+        }
+
+        auto size = output->get_relative_geometry();
+        wf::geometry_t full_grid = {
+            -current_vx * size.width, -current_vy * size.height,
+            grid.grid.width * size.width, grid.grid.height * size.height
+        };
+
+        for (auto view : get_views(WSET_MAPPED_ONLY))
+        {
+            if (!(view->get_wm_geometry() & full_grid))
+            {
+                move_to_workspace(view, get_view_main_workspace(view));
+            }
+        }
+    };
+
+    wf::signal::connection_t<view_destruct_signal> on_view_destruct = [=] (view_destruct_signal *ev)
+    {
+        remove_view(ev->view);
+    };
+
     std::unique_ptr<workspace_implementation_t> workspace_impl;
 
   public:
-    output_layer_manager_t layer_manager;
-    output_viewport_manager_t viewport_manager;
+    wf::output_t *output;
     promotion_manager_t promotion_manager;
+    grid_size_manager_t grid;
 
-    impl(output_t *o) : layer_manager(o), viewport_manager(o), promotion_manager(o)
+    impl(output_t *o) : promotion_manager(o), grid(o)
     {
         output = o;
         output_geometry = output->get_relative_geometry();
         o->connect(&output_geometry_changed);
+        o->connect(&on_grid_changed);
     }
 
     workspace_implementation_t *get_implementation()
@@ -656,37 +376,242 @@ class workspace_manager::impl
         return replace;
     }
 
-    void set_workspace(wf::point_t ws, const std::vector<wayfire_view>& fixed)
+    void add_view(wayfire_view view)
     {
-        viewport_manager.set_workspace(ws, fixed);
-    }
-
-    void request_workspace(wf::point_t ws,
-        const std::vector<wayfire_view>& fixed_views)
-    {
-        wf::workspace_change_request_signal data;
-        data.carried_out  = false;
-        data.old_viewport = viewport_manager.get_current_workspace();
-        data.new_viewport = ws;
-        data.output = output;
-        data.fixed_views = fixed_views;
-        output->emit(&data);
-
-        if (!data.carried_out)
+        if (std::find(wset_views.begin(), wset_views.end(), view) != wset_views.end())
         {
-            set_workspace(ws, fixed_views);
+            return;
         }
-    }
 
-    void add_view_to_layer(wayfire_view view, layer_t layer)
-    {
-        assert(view->get_output() == output);
-        layer_manager.add_view_to_layer(view, layer);
+        LOGC(WSET, "Adding view ", view, " to wset ", this);
+        wset_views.push_back(view);
+        view->connect(&on_view_destruct);
     }
 
     void remove_view(wayfire_view view)
     {
-        layer_manager.remove_view(view);
+        auto it = std::find(wset_views.begin(), wset_views.end(), view);
+        if (it == wset_views.end())
+        {
+            LOGW("Removing view ", view, " from wset ", this, " but the view is not there!");
+            return;
+        }
+
+        LOGC(WSET, "Removing view ", view, " to from ", this);
+        wset_views.erase(it);
+        view->disconnect(&on_view_destruct);
+    }
+
+    std::vector<wayfire_view> get_views(uint32_t flags = 0, std::optional<wf::point_t> workspace = {})
+    {
+        if (!flags && !workspace)
+        {
+            return wset_views;
+        }
+
+        if (flags & WSET_CURRENT_WORKSPACE)
+        {
+            workspace = get_current_workspace();
+        }
+
+        auto views = wset_views;
+        auto it    = std::remove_if(views.begin(), views.end(), [&] (wayfire_view view)
+        {
+            if ((flags & WSET_MAPPED_ONLY) && !view->is_mapped())
+            {
+                return true;
+            }
+
+            if ((flags & WSET_EXCLUDE_MINIMIZED) && view->minimized)
+            {
+                return true;
+            }
+
+            if ((flags & WSET_SORT_STACKING) && !is_attached_to_scenegraph(view->get_root_node().get()))
+            {
+                return true;
+            }
+
+            if (workspace && !view_visible_on(view, *workspace))
+            {
+                return true;
+            }
+
+            return false;
+        });
+        views.erase(it, views.end());
+
+        if (flags & WSET_SORT_STACKING)
+        {
+            std::sort(views.begin(), views.end(), [] (wayfire_view a, wayfire_view b)
+            {
+                wf::scene::node_t *x   = a->get_root_node().get();
+                wf::scene::node_t *y   = b->get_root_node().get();
+                wf::scene::node_t *lca = find_lca(x, y);
+                wf::dassert(lca != nullptr,
+                    "LCA should always exist when the two nodes are in the scenegraph!");
+                wf::dassert((lca != x) && (lca != y), "LCA should not be equal to one of the nodes, this"
+                                                      "means nested views/dialogs have been added to the wset!");
+
+                const size_t idx_x = find_index_in_parent(x, lca);
+                const size_t idx_y = find_index_in_parent(y, lca);
+                return idx_x < idx_y;
+            });
+        }
+
+        return views;
+    }
+
+  private:
+    std::vector<wayfire_view> wset_views;
+
+    int current_vx = 0;
+    int current_vy = 0;
+
+  public:
+    wf::point_t get_view_main_workspace(wayfire_view view)
+    {
+        auto og = output->get_screen_size();
+
+        auto wm = view->get_wm_geometry();
+        wf::point_t workspace = {
+            current_vx + (int)std::floor((wm.x + wm.width / 2.0) / og.width),
+            current_vy + (int)std::floor((wm.y + wm.height / 2.0) / og.height)
+        };
+
+        return grid.closest_valid_ws(workspace);
+    }
+
+    /**
+     * @param use_bbox When considering view visibility, whether to use the
+     *        bounding box or the wm geometry.
+     *
+     * @return true if the view is visible on the workspace vp
+     */
+    bool view_visible_on(wayfire_view view, wf::point_t vp)
+    {
+        auto g = output->get_relative_geometry();
+        if (!view->sticky)
+        {
+            g.x += (vp.x - current_vx) * g.width;
+            g.y += (vp.y - current_vy) * g.height;
+        }
+
+        return g & view->get_wm_geometry();
+    }
+
+    /**
+     * Moves view geometry so that it is visible on the given workspace
+     */
+    void move_to_workspace(wayfire_view view, wf::point_t ws)
+    {
+        if (view->get_output() != output)
+        {
+            LOGE("Cannot ensure view visibility for a view from a different output!");
+            return;
+        }
+
+        // Sticky views are visible on all workspaces, so we just have to make
+        // it visible on the current workspace
+        if (view->sticky)
+        {
+            ws = {current_vx, current_vy};
+        }
+
+        auto box     = view->get_wm_geometry();
+        auto visible = output->get_relative_geometry();
+        visible.x += (ws.x - current_vx) * visible.width;
+        visible.y += (ws.y - current_vy) * visible.height;
+
+        if (!(box & visible))
+        {
+            /* center of the view */
+            int cx = box.x + box.width / 2;
+            int cy = box.y + box.height / 2;
+
+            int width = visible.width, height = visible.height;
+            /* compute center coordinates when moved to the current workspace */
+            int local_cx = (cx % width + width) % width;
+            int local_cy = (cy % height + height) % height;
+
+            /* finally, calculate center coordinates in the target workspace */
+            int target_cx = local_cx + visible.x;
+            int target_cy = local_cy + visible.y;
+
+            view->move(box.x + target_cx - cx, box.y + target_cy - cy);
+        }
+    }
+
+    wf::point_t get_current_workspace()
+    {
+        return {current_vx, current_vy};
+    }
+
+    void set_workspace(wf::point_t nws,
+        const std::vector<wayfire_view>& fixed_views)
+    {
+        if (!grid.is_workspace_valid(nws))
+        {
+            LOGE("Attempt to set invalid workspace: ", nws,
+                " workspace grid size is ", grid.grid.width, "x", grid.grid.height);
+            return;
+        }
+
+        wf::workspace_changed_signal data;
+        data.old_viewport = {current_vx, current_vy};
+        data.new_viewport = {nws.x, nws.y};
+        data.output = output;
+
+        /* The part below is tricky, because with the current architecture
+         * we cannot make the viewport change look atomic, i.e the workspace
+         * is changed first, and then all views are moved.
+         *
+         * We first change the viewport, and then adjust the position of the
+         * views. */
+        current_vx = nws.x;
+        current_vy = nws.y;
+
+        auto screen = output->get_screen_size();
+        auto dx     = (data.old_viewport.x - nws.x) * screen.width;
+        auto dy     = (data.old_viewport.y - nws.y) * screen.height;
+
+        std::vector<std::pair<wayfire_view, wf::point_t>>
+        old_fixed_view_workspaces;
+        old_fixed_view_workspaces.reserve(fixed_views.size());
+
+        for (auto& view : wset_views)
+        {
+            const auto is_fixed = std::find(fixed_views.cbegin(),
+                fixed_views.cend(), view) != fixed_views.end();
+
+            if (is_fixed)
+            {
+                old_fixed_view_workspaces.push_back({view, get_view_main_workspace(view)});
+            } else if (!view->sticky)
+            {
+                for (auto v : view->enumerate_views())
+                {
+                    v->move(v->get_wm_geometry().x + dx, v->get_wm_geometry().y + dy);
+                }
+            }
+        }
+
+        for (auto& [v, old_workspace] : old_fixed_view_workspaces)
+        {
+            wf::view_change_workspace_signal vdata;
+            vdata.view = v;
+            vdata.from = old_workspace;
+            vdata.to   = get_view_main_workspace(v);
+            output->emit(&vdata);
+            output->focus_view(v, true);
+        }
+
+        // Finally, do a refocus to update the keyboard focus
+        output->refocus();
+        output->emit(&data);
+
+        // Don't forget to update the geometry of the wset, as the geometry of it has changed now.
+        wf::scene::update(output->get_wset(), wf::scene::update_flag::GEOMETRY);
     }
 };
 
@@ -695,49 +620,34 @@ workspace_manager::workspace_manager(output_t *wo) : pimpl(new impl(wo))
 workspace_manager::~workspace_manager() = default;
 
 /* Just pass to the appropriate function from above */
-std::vector<wf::point_t> workspace_manager::get_view_workspaces(wayfire_view view,
-    double threshold)
-{
-    return pimpl->viewport_manager.get_view_workspaces(view, threshold);
-}
-
 wf::point_t workspace_manager::get_view_main_workspace(wayfire_view view)
 {
-    return pimpl->viewport_manager.get_view_main_workspace(view);
+    return pimpl->get_view_main_workspace(view);
 }
 
 bool workspace_manager::view_visible_on(wayfire_view view, wf::point_t ws)
 {
-    return pimpl->viewport_manager.view_visible_on(view, ws);
-}
-
-std::vector<wayfire_view> workspace_manager::get_views_on_workspace(wf::point_t ws,
-    uint32_t layer_mask, bool include_minimized)
-{
-    return pimpl->viewport_manager.get_views_on_workspace(
-        ws, layer_mask, include_minimized);
+    return pimpl->view_visible_on(view, ws);
 }
 
 void workspace_manager::move_to_workspace(wayfire_view view, wf::point_t ws)
 {
-    return pimpl->viewport_manager.move_to_workspace(view, ws);
+    return pimpl->move_to_workspace(view, ws);
 }
 
-void workspace_manager::add_view(wayfire_view view, layer_t layer)
+void workspace_manager::add_view(wayfire_view view)
 {
-    pimpl->add_view_to_layer(view, layer);
+    pimpl->add_view(view);
+}
+
+std::vector<wayfire_view> workspace_manager::get_views(uint32_t flags, std::optional<wf::point_t> ws)
+{
+    return pimpl->get_views(flags, ws);
 }
 
 void workspace_manager::remove_view(wayfire_view view)
 {
     pimpl->remove_view(view);
-    update_view_scene_node(view);
-}
-
-std::vector<wayfire_view> workspace_manager::get_views_in_layer(
-    uint32_t layers_mask, bool include_minimized)
-{
-    return pimpl->layer_manager.get_views_in_layer(layers_mask, include_minimized);
 }
 
 workspace_implementation_t*workspace_manager::get_workspace_implementation()
@@ -757,29 +667,39 @@ void workspace_manager::set_workspace(wf::point_t ws,
     return pimpl->set_workspace(ws, fixed_views);
 }
 
-void workspace_manager::request_workspace(wf::point_t ws,
-    const std::vector<wayfire_view>& views)
+void workspace_manager::request_workspace(wf::point_t ws, const std::vector<wayfire_view>& views)
 {
-    return pimpl->request_workspace(ws, views);
+    wf::workspace_change_request_signal data;
+    data.carried_out  = false;
+    data.old_viewport = pimpl->get_current_workspace();
+    data.new_viewport = ws;
+    data.output = pimpl->output;
+    data.fixed_views = views;
+    pimpl->output->emit(&data);
+
+    if (!data.carried_out)
+    {
+        pimpl->set_workspace(ws, views);
+    }
 }
 
 wf::point_t workspace_manager::get_current_workspace()
 {
-    return pimpl->viewport_manager.get_current_workspace();
+    return pimpl->get_current_workspace();
 }
 
 wf::dimensions_t workspace_manager::get_workspace_grid_size()
 {
-    return pimpl->viewport_manager.get_workspace_grid_size();
+    return pimpl->grid.get_workspace_grid_size();
 }
 
 void workspace_manager::set_workspace_grid_size(wf::dimensions_t dim)
 {
-    return pimpl->viewport_manager.set_workspace_grid_size(dim);
+    return pimpl->grid.set_workspace_grid_size(dim);
 }
 
 bool workspace_manager::is_workspace_valid(wf::point_t ws)
 {
-    return pimpl->viewport_manager.is_workspace_valid(ws);
+    return pimpl->grid.is_workspace_valid(ws);
 }
 } // namespace wf

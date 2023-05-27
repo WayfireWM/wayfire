@@ -213,11 +213,6 @@ class wayfire_unmanaged_xwayland_view : public wayfire_xwayland_view_base
 
         if (wo != get_output())
         {
-            if (get_output())
-            {
-                get_output()->workspace->remove_view(self());
-            }
-
             set_output(wo);
         }
 
@@ -230,7 +225,7 @@ class wayfire_unmanaged_xwayland_view : public wayfire_xwayland_view_base
         priv->keyboard_focus_enabled = (!xw->override_redirect ||
             wlr_xwayland_or_surface_wants_focus(xw));
 
-        get_output()->workspace->add_view(self(), wf::LAYER_UNMANAGED);
+        wf::scene::readd_front(get_output()->node_for_layer(wf::scene::layer::UNMANAGED), get_root_node());
         wayfire_xwayland_view_base::map(surface);
 
         if (priv->keyboard_focus_enabled)
@@ -360,7 +355,7 @@ class wayfire_dnd_xwayland_view : public wayfire_unmanaged_xwayland_view
         wayfire_xwayland_view_base::map(surface);
         this->damage();
 
-        wf::scene::add_front(wf::get_core().scene(), this->get_root_node());
+        wf::scene::readd_front(wf::get_core().scene(), this->get_root_node());
     }
 
     void unmap() override

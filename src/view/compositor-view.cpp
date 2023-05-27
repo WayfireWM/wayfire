@@ -1,5 +1,6 @@
 #include "wayfire/scene-render.hpp"
 #include "wayfire/scene.hpp"
+#include "wayfire/view.hpp"
 #include <wayfire/core.hpp>
 #include <wayfire/output.hpp>
 #include <wayfire/opengl.hpp>
@@ -31,6 +32,11 @@ class wf::color_rect_view_t::color_rect_node_t : public wf::scene::floating_inne
         using simple_render_instance_t::simple_render_instance_t;
         void render(const wf::render_target_t& target, const wf::region_t& region) override
         {
+            if (!self->view)
+            {
+                return;
+            }
+
             auto geometry = self->get_bounding_box();
             auto border   = self->view->border;
             auto _border_color = self->view->_border_color;
@@ -66,11 +72,16 @@ class wf::color_rect_view_t::color_rect_node_t : public wf::scene::floating_inne
     };
 
     color_rect_view_t *view;
+    wf::signal::connection_t<view_destruct_signal> on_view_destroy = [=] (view_destruct_signal*)
+    {
+        view = nullptr;
+    };
 
   public:
     color_rect_node_t(color_rect_view_t *view) : scene::floating_inner_node_t(false)
     {
         this->view = view;
+        view->connect(&on_view_destroy);
     }
 
     void gen_render_instances(std::vector<scene::render_instance_uptr>& instances,
@@ -81,13 +92,20 @@ class wf::color_rect_view_t::color_rect_node_t : public wf::scene::floating_inne
 
     wf::geometry_t get_bounding_box() override
     {
-        return view->get_output_geometry();
+        if (view)
+        {
+            return view->get_output_geometry();
+        } else
+        {
+            return {0, 0, 0, 0};
+        }
     }
 };
 
 /* Implementation of color_rect_view_t */
-wf::color_rect_view_t::color_rect_view_t() : wf::view_interface_t(std::make_shared<color_rect_node_t>(this))
+wf::color_rect_view_t::color_rect_view_t() : wf::view_interface_t()
 {
+    set_surface_root_node(std::make_shared<color_rect_node_t>(this));
     this->geometry   = {0, 0, 1, 1};
     this->_color     = {0, 0, 0, 1};
     this->border     = 0;

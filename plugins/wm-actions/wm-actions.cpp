@@ -41,17 +41,16 @@ class wayfire_wm_actions_t : public wf::per_output_plugin_instance_t
             return false;
         }
 
-        wf::scene::remove_child(view->get_root_node());
         if (above)
         {
-            wf::scene::add_front(always_above, view->get_root_node());
+            wf::scene::readd_front(always_above, view->get_root_node());
             view->store_data(std::make_unique<wf::custom_data_t>(),
                 "wm-actions-above");
         } else
         {
+            wf::scene::readd_front(output->get_wset(), view->get_root_node());
             if (view->has_data("wm-actions-above"))
             {
-                output->workspace->add_view(view, wf::LAYER_WORKSPACE);
                 view->erase_data("wm-actions-above");
             }
         }
@@ -116,8 +115,7 @@ class wayfire_wm_actions_t : public wf::per_output_plugin_instance_t
 
         if (view->has_data("wm-actions-above"))
         {
-            wf::scene::remove_child(view->get_root_node());
-            wf::scene::add_front(always_above, view->get_root_node());
+            wf::scene::readd_front(always_above, view->get_root_node());
         }
     };
 
@@ -135,8 +133,7 @@ class wayfire_wm_actions_t : public wf::per_output_plugin_instance_t
 
         if (ev->view->has_data("wm-actions-above") && !ev->view->minimized)
         {
-            wf::scene::remove_child(ev->view->get_root_node());
-            wf::scene::add_front(always_above, ev->view->get_root_node());
+            wf::scene::readd_front(always_above, ev->view->get_root_node());
         }
     };
 
@@ -252,7 +249,7 @@ class wayfire_wm_actions_t : public wf::per_output_plugin_instance_t
 
         if (showdesktop_active)
         {
-            for (auto& view : output->workspace->get_views_in_layer(wf::WM_LAYERS))
+            for (auto& view : output->workspace->get_views())
             {
                 if (!view->minimized)
                 {
@@ -298,18 +295,21 @@ class wayfire_wm_actions_t : public wf::per_output_plugin_instance_t
     {
         return execute_for_selected_view(ev.source, [this] (wayfire_view view)
         {
-            auto ws    = view->get_output()->workspace->get_current_workspace();
-            auto views =
-                view->get_output()->workspace->get_views_on_workspace(ws,
-                    wf::LAYER_WORKSPACE);
+            auto views = view->get_output()->workspace->get_views(
+                wf::WSET_CURRENT_WORKSPACE | wf::WSET_MAPPED_ONLY |
+                wf::WSET_EXCLUDE_MINIMIZED | wf::WSET_SORT_STACKING);
+
             wayfire_view bottom_view = views[views.size() - 1];
             if (view != bottom_view)
             {
                 do_send_to_back(view);
                 // Change focus to the last focused view on this workspace
-                views =
-                    view->get_output()->workspace->get_views_on_workspace(ws,
-                        wf::LAYER_WORKSPACE);
+
+                // Update the list after restacking.
+                views = view->get_output()->workspace->get_views(
+                    wf::WSET_CURRENT_WORKSPACE | wf::WSET_MAPPED_ONLY |
+                    wf::WSET_EXCLUDE_MINIMIZED | wf::WSET_SORT_STACKING);
+
                 view->get_output()->focus_view(views[0], false);
             }
 
@@ -323,8 +323,7 @@ class wayfire_wm_actions_t : public wf::per_output_plugin_instance_t
         workspace_changed.disconnect();
         view_minimized.disconnect();
 
-        for (auto& view : output->workspace->get_views_in_layer(
-            wf::ALL_LAYERS, true))
+        for (auto& view : output->workspace->get_views())
         {
             if (view->has_data("wm-actions-showdesktop"))
             {
@@ -358,7 +357,7 @@ class wayfire_wm_actions_t : public wf::per_output_plugin_instance_t
 
     void fini() override
     {
-        for (auto view : output->workspace->get_views_in_layer(wf::ALL_LAYERS, true))
+        for (auto view : output->workspace->get_views())
         {
             if (view->has_data("wm-actions-above"))
             {

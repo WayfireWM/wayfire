@@ -17,7 +17,7 @@ namespace wf
 class output_impl_t : public output_t
 {
   private:
-    std::shared_ptr<scene::output_node_t> nodes[TOTAL_LAYERS];
+    std::shared_ptr<scene::output_node_t> nodes[(size_t)wf::scene::layer::ALL_LAYERS];
     scene::floating_inner_ptr wset;
     uint64_t last_timestamp = 0;
 
