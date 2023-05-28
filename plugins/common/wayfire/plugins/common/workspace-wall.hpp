@@ -18,7 +18,7 @@
 #include "wayfire/signal-definitions.hpp"
 #include "wayfire/signal-provider.hpp"
 #include "wayfire/workspace-stream.hpp"
-#include "workspace-stream-sharing.hpp"
+#include "wayfire/workspace-set.hpp"
 
 namespace wf
 {
