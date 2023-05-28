@@ -20,7 +20,7 @@ class workspace_stream_node_t::workspace_stream_instance_t : public scene::
     wf::point_t get_offset()
     {
         auto g   = self->output->get_relative_geometry();
-        auto cws = self->output->workspace->get_current_workspace();
+        auto cws = self->output->wset()->get_current_workspace();
         return wf::point_t{
             (self->ws.x - cws.x) * g.width,
             (self->ws.y - cws.y) * g.height,
@@ -210,7 +210,7 @@ void workspace_stream_t::render_frame()
     scene::render_pass_params_t params;
 
     auto g   = current_output->get_relative_geometry();
-    auto cws = current_output->workspace->get_current_workspace();
+    auto cws = current_output->wset()->get_current_workspace();
     params.target = current_output->render->get_target_framebuffer()
         .translated({(ws.x - cws.x) * g.width, (ws.y - cws.y) * g.height});
 

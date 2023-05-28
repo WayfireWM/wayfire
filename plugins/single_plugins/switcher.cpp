@@ -344,7 +344,7 @@ class WayfireSwitcher : public wf::per_output_plugin_instance_t, public wf::keyb
         wf::scene::remove_child(render_node);
         render_node = nullptr;
 
-        for (auto& view : output->workspace->get_views())
+        for (auto& view : output->wset()->get_views())
         {
             if (view->has_data("switcher-minimized-showed"))
             {
@@ -495,7 +495,7 @@ class WayfireSwitcher : public wf::per_output_plugin_instance_t, public wf::keyb
     // returns a list of mapped views
     std::vector<wayfire_view> get_workspace_views() const
     {
-        return output->workspace->get_views(wf::WSET_MAPPED_ONLY | wf::WSET_CURRENT_WORKSPACE);
+        return output->wset()->get_views(wf::WSET_MAPPED_ONLY | wf::WSET_CURRENT_WORKSPACE);
     }
 
     /* Change the current focus to the next or the previous view */

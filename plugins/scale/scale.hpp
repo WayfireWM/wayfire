@@ -9,7 +9,7 @@ inline wayfire_view scale_find_view_at(wf::pointf_t at, wf::output_t *output)
     at.x -= offset.x;
     at.y -= offset.y;
 
-    auto node = output->workspace->get_node()->find_node_at(at);
+    auto node = output->wset()->get_node()->find_node_at(at);
     if (node)
     {
         return wf::node_to_view(node->node->shared_from_this());

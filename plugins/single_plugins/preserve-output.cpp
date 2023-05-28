@@ -165,9 +165,9 @@ class wayfire_preserve_output : public wf::per_output_plugin_instance_t
         }
 
         core_data->output_saved_workspace[identifier] =
-            output->workspace->get_current_workspace();
+            output->wset()->get_current_workspace();
 
-        auto views = output->workspace->get_views();
+        auto views = output->wset()->get_views();
         for (size_t i = 0; i < views.size(); i++)
         {
             auto view = views[i];
@@ -199,7 +199,7 @@ class wayfire_preserve_output : public wf::per_output_plugin_instance_t
         // directly on the correct workspace.
         if (core_data->output_saved_workspace.count(identifier))
         {
-            output->workspace->set_workspace(
+            output->wset()->set_workspace(
                 core_data->output_saved_workspace[identifier]);
         }
 

@@ -226,7 +226,7 @@ struct output_damage_t
      */
     wlr_box get_ws_box(wf::point_t ws) const
     {
-        auto current = wo->workspace->get_current_workspace();
+        auto current = wo->wset()->get_current_workspace();
 
         wlr_box box = wo->get_relative_geometry();
         box.x = (ws.x - current.x) * box.width;
@@ -251,8 +251,8 @@ struct output_damage_t
      */
     void damage_whole()
     {
-        auto vsize = wo->workspace->get_workspace_grid_size();
-        auto vp    = wo->workspace->get_current_workspace();
+        auto vsize = wo->wset()->get_workspace_grid_size();
+        auto vp    = wo->wset()->get_current_workspace();
         auto res   = wo->get_screen_size();
 
         damage(wf::geometry_t{
@@ -881,7 +881,7 @@ class wf::render_manager::impl
         scene::render_pass_params_t params;
         params.instances = &output_damage->render_instances;
         params.damage    = output_damage->get_ws_damage(
-            output->workspace->get_current_workspace());
+            output->wset()->get_current_workspace());
         params.damage += wf::origin(output->get_layout_geometry());
 
         params.target = postprocessing->get_target_framebuffer().translated(

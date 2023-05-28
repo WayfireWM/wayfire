@@ -452,7 +452,7 @@ std::tuple<bool, wf::point_t> view_action_interface_t::_validate_ws(
         return {false, {}};
     }
 
-    auto wsize = _view->get_output()->workspace->get_workspace_grid_size();
+    auto wsize = _view->get_output()->wset()->get_workspace_grid_size();
     if (((0 <= x) && (x < wsize.width)) && ((0 <= y) && (y < wsize.height)))
     {
         return {true, {x, y}};
@@ -465,8 +465,8 @@ std::tuple<bool, wf::point_t> view_action_interface_t::_validate_ws(
 wf::geometry_t view_action_interface_t::_get_workspace_grid_geometry(
     wf::output_t *output) const
 {
-    auto vsize = output->workspace->get_workspace_grid_size();
-    auto vp    = output->workspace->get_current_workspace();
+    auto vsize = output->wset()->get_workspace_grid_size();
+    auto vp    = output->wset()->get_current_workspace();
     auto res   = output->get_screen_size();
 
     return wf::geometry_t{
@@ -513,7 +513,7 @@ void view_action_interface_t::_assign_ws(wf::point_t point)
 {
     auto output = _view->get_output();
 
-    auto delta = point - output->workspace->get_current_workspace();
+    auto delta = point - output->wset()->get_current_workspace();
     auto size  = output->get_screen_size();
 
     auto wm = _view->get_wm_geometry();

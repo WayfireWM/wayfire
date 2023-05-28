@@ -149,7 +149,7 @@ void transfer_views(wf::output_t *from, wf::output_t *to)
     {
         /* If we aren't moving to another output, then there is no need to
          * enumerate views either */
-        views = from->workspace->get_views();
+        views = from->wset()->get_views();
 
         // Also get a list of views which are on that output, but do not have
         // a layer. These are usually unmapped Xwayland views, which are not to
@@ -170,7 +170,7 @@ void transfer_views(wf::output_t *from, wf::output_t *to)
 
     for (auto& view : views)
     {
-        from->workspace->remove_view(view);
+        from->wset()->remove_view(view);
     }
 
     /* views would be empty if !to, but clang-analyzer detects null deref */

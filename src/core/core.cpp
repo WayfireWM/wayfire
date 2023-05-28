@@ -570,13 +570,13 @@ void wf::compositor_core_impl_t::move_view_to_output(wayfire_view v,
 
     if (old_output)
     {
-        old_output->workspace->remove_view(v);
+        old_output->wset()->remove_view(v);
         wf::scene::remove_child(v->get_root_node());
     }
 
     v->set_output(new_output);
-    wf::scene::add_front(new_output->workspace->get_node(), v->get_root_node());
-    new_output->workspace->add_view(v);
+    wf::scene::add_front(new_output->wset()->get_node(), v->get_root_node());
+    new_output->wset()->add_view(v);
     new_output->focus_view(v);
 
     if (reconfigure)

@@ -186,8 +186,8 @@ class vswipe : public wf::per_output_plugin_instance_t
         // We switch the actual workspace before the finishing animation,
         // so the rendering of the animation cannot dynamically query current
         // workspace again, so it's stored here
-        auto grid = output->workspace->get_workspace_grid_size();
-        auto ws   = output->workspace->get_current_workspace();
+        auto grid = output->wset()->get_workspace_grid_size();
+        auto ws   = output->wset()->get_current_workspace();
         state.vw = grid.width;
         state.vh = grid.height;
         state.vx = ws.x;
@@ -207,7 +207,7 @@ class vswipe : public wf::per_output_plugin_instance_t
         input_grab->grab_input(wf::scene::layer::OVERLAY);
         wf::get_core().focus_output(output);
 
-        auto ws = output->workspace->get_current_workspace();
+        auto ws = output->wset()->get_current_workspace();
         wall->set_background_color(background_color);
         wall->set_gap_size(gap);
         wall->set_viewport(wall->get_workspace_rectangle(ws));
@@ -234,7 +234,7 @@ class vswipe : public wf::per_output_plugin_instance_t
 
     swipe_direction_t calculate_direction(wf::pointf_t deltas)
     {
-        auto grid = output->workspace->get_workspace_grid_size();
+        auto grid = output->wset()->get_workspace_grid_size();
 
         bool horizontal = deltas.x > initial_direction_threshold;
         bool vertical   = deltas.y > initial_direction_threshold;
@@ -354,7 +354,7 @@ class vswipe : public wf::per_output_plugin_instance_t
         smooth_delta.dx.restart_with_end(target_delta.x);
         smooth_delta.dy.restart_with_end(target_delta.y);
         smooth_delta.start();
-        output->workspace->set_workspace(target_workspace);
+        output->wset()->set_workspace(target_workspace);
         state.animating = true;
     };
 

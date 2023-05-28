@@ -701,14 +701,14 @@ inline void adjust_view_on_output(drag_done_signal *ev)
     auto grab = ev->grab_position + output_delta;
 
     auto output_geometry = ev->focused_output->get_relative_geometry();
-    auto current_ws = ev->focused_output->workspace->get_current_workspace();
+    auto current_ws = ev->focused_output->wset()->get_current_workspace();
     wf::point_t target_ws{
         (int)std::floor(1.0 * grab.x / output_geometry.width),
         (int)std::floor(1.0 * grab.y / output_geometry.height),
     };
     target_ws = target_ws + current_ws;
 
-    auto gsize = ev->focused_output->workspace->get_workspace_grid_size();
+    auto gsize = ev->focused_output->wset()->get_workspace_grid_size();
     target_ws.x = wf::clamp(target_ws.x, 0, gsize.width - 1);
     target_ws.y = wf::clamp(target_ws.y, 0, gsize.height - 1);
 
@@ -750,7 +750,7 @@ inline void adjust_view_on_output(drag_done_signal *ev)
     // Ensure that every view is visible on parent's main workspace
     for (auto& v : parent->enumerate_views())
     {
-        ev->focused_output->workspace->move_to_workspace(v, target_ws);
+        ev->focused_output->wset()->move_to_workspace(v, target_ws);
     }
 
     ev->focused_output->focus_view(focus_view, true);

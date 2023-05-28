@@ -41,7 +41,7 @@ static void reposition_relative_to_parent(wayfire_view view)
     };
 
     auto workarea = view->get_output()->render->get_ws_box(
-        view->get_output()->workspace->get_current_workspace() + parent_ws);
+        view->get_output()->wset()->get_current_workspace() + parent_ws);
     if (view->parent->is_mapped())
     {
         auto parent_g = view->parent->get_wm_geometry();
@@ -126,7 +126,7 @@ void wf::view_interface_t::set_toplevel_parent(wayfire_view new_parent)
         /* Make sure the view is available only as a child */
         if (this->get_output())
         {
-            this->get_output()->workspace->remove_view(self());
+            this->get_output()->wset()->remove_view(self());
         }
 
         this->set_output(parent->get_output());
@@ -143,8 +143,8 @@ void wf::view_interface_t::set_toplevel_parent(wayfire_view new_parent)
         /* At this point, we are a regular view. */
         if (this->get_output())
         {
-            wf::scene::readd_front(get_output()->workspace->get_node(), get_root_node());
-            get_output()->workspace->add_view(self());
+            wf::scene::readd_front(get_output()->wset()->get_node(), get_root_node());
+            get_output()->wset()->add_view(self());
             check_refocus_parent(old_parent);
         }
     }
@@ -431,7 +431,7 @@ void wf::view_interface_t::tile_request(uint32_t edges)
 {
     if (get_output())
     {
-        tile_request(edges, get_output()->workspace->get_current_workspace());
+        tile_request(edges, get_output()->wset()->get_current_workspace());
     }
 }
 
@@ -442,7 +442,7 @@ static void move_to_workspace(wf::view_interface_t *view, wf::point_t workspace)
 {
     auto output = view->get_output();
     auto wm_geometry = view->get_wm_geometry();
-    auto delta    = workspace - output->workspace->get_current_workspace();
+    auto delta    = workspace - output->wset()->get_current_workspace();
     auto scr_size = output->get_screen_size();
 
     wm_geometry.x += scr_size.width * delta.x;
@@ -559,7 +559,7 @@ void wf::view_interface_t::fullscreen_request(wf::output_t *out, bool state)
     if (wo)
     {
         fullscreen_request(wo, state,
-            wo->workspace->get_current_workspace());
+            wo->wset()->get_current_workspace());
     }
 }
 
@@ -856,8 +856,8 @@ void wf::view_damage_raw(wayfire_view view, const wlr_box& box)
     /* Sticky views are visible on all workspaces. */
     if (view->sticky)
     {
-        auto wsize = output->workspace->get_workspace_grid_size();
-        auto cws   = output->workspace->get_current_workspace();
+        auto wsize = output->wset()->get_workspace_grid_size();
+        auto cws   = output->wset()->get_current_workspace();
 
         /* Damage only the visible region of the shell view.
          * This prevents hidden panels from spilling damage onto other workspaces */

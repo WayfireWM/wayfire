@@ -155,7 +155,7 @@ void wf_cube_background_skydome::render_frame(const wf::render_target_t& fb,
     program.attrib_pointer("position", 3, 0, vertices.data());
     program.attrib_pointer("uvPosition", 2, 0, coords.data());
 
-    auto cws   = output->workspace->get_current_workspace();
+    auto cws   = output->wset()->get_current_workspace();
     auto model = glm::rotate(glm::mat4(1.0),
         float(attribs.cube_animation.rotation) - cws.x * attribs.side_angle,
         glm::vec3(0, 1, 0));

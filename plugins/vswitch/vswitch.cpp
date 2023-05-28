@@ -83,7 +83,7 @@ class vswitch : public wf::per_output_plugin_instance_t
 
                     wf::view_change_workspace_signal data;
                     data.view = view;
-                    data.from = output->workspace->get_current_workspace();
+                    data.from = output->wset()->get_current_workspace();
                     data.to   = data.from + delta;
                     output->emit(&data);
                     output->refocus();
@@ -161,7 +161,7 @@ class vswitch : public wf::per_output_plugin_instance_t
 
         algorithm->set_overlay_view(view);
         algorithm->set_target_workspace(
-            output->workspace->get_current_workspace() + delta);
+            output->wset()->get_current_workspace() + delta);
 
         return true;
     }

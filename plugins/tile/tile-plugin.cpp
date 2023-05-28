@@ -74,7 +74,7 @@ class tile_plugin_t : public wf::per_output_plugin_instance_t, public wf::pointe
 
     wf::signal::connection_t<wf::workspace_grid_changed_signal> on_workspace_grid_changed = [=] (auto)
     {
-        resize_roots(output->workspace->get_workspace_grid_size());
+        resize_roots(output->wset()->get_workspace_grid_size());
     };
 
     void resize_roots(wf::dimensions_t wsize)
@@ -83,7 +83,7 @@ class tile_plugin_t : public wf::per_output_plugin_instance_t, public wf::pointe
         {
             for (size_t j = 0; j < tiled_sublayer[i].size(); j++)
             {
-                if (!output->workspace->is_workspace_valid({(int)i, (int)j}))
+                if (!output->wset()->is_workspace_valid({(int)i, (int)j}))
                 {
                     destroy_sublayer(tiled_sublayer[i][j]);
                 }
@@ -104,7 +104,7 @@ class tile_plugin_t : public wf::per_output_plugin_instance_t, public wf::pointe
                 tiled_sublayer[i][j] =
                     std::make_shared<wf::scene::floating_inner_node_t>(false);
 
-                wf::scene::add_front(output->workspace->get_node(), tiled_sublayer[i][j]);
+                wf::scene::add_front(output->wset()->get_node(), tiled_sublayer[i][j]);
             }
         }
 
@@ -114,7 +114,7 @@ class tile_plugin_t : public wf::per_output_plugin_instance_t, public wf::pointe
     void update_root_size(wf::geometry_t workarea)
     {
         auto output_geometry = output->get_relative_geometry();
-        auto wsize = output->workspace->get_workspace_grid_size();
+        auto wsize = output->wset()->get_workspace_grid_size();
         for (int i = 0; i < wsize.width; i++)
         {
             for (int j = 0; j < wsize.height; j++)
@@ -190,7 +190,7 @@ class tile_plugin_t : public wf::per_output_plugin_instance_t, public wf::pointe
     {
         wf::pointf_t local = output->get_cursor_position();
 
-        auto vp   = output->workspace->get_current_workspace();
+        auto vp   = output->wset()->get_current_workspace();
         auto size = output->get_screen_size();
         local.x += size.width * vp.x;
         local.y += size.height * vp.y;
@@ -201,7 +201,7 @@ class tile_plugin_t : public wf::per_output_plugin_instance_t, public wf::pointe
     /** Check whether we currently have a fullscreen tiled view */
     bool has_fullscreen_view()
     {
-        auto vp = output->workspace->get_current_workspace();
+        auto vp = output->wset()->get_current_workspace();
 
         int count_fullscreen = 0;
         for_each_view(roots[vp.x][vp.y], [&] (wayfire_view view)
@@ -235,7 +235,7 @@ class tile_plugin_t : public wf::per_output_plugin_instance_t, public wf::pointe
         }
 
         input_grab->grab_input(wf::scene::layer::OVERLAY, true);
-        auto vp = output->workspace->get_current_workspace();
+        auto vp = output->wset()->get_current_workspace();
         controller = std::make_unique<Controller>(roots[vp.x][vp.y], get_global_input_coordinates());
     }
 
@@ -269,7 +269,7 @@ class tile_plugin_t : public wf::per_output_plugin_instance_t, public wf::pointe
 
         if (vp == wf::point_t{-1, -1})
         {
-            vp = output->workspace->get_current_workspace();
+            vp = output->wset()->get_current_workspace();
         }
 
         auto view_node = std::make_unique<wf::tile::view_node_t>(view);
@@ -341,7 +341,7 @@ class tile_plugin_t : public wf::per_output_plugin_instance_t, public wf::pointe
         /* Remove from special sublayer */
         if (reinsert)
         {
-            wf::scene::readd_front(wview->get_output()->workspace->get_node(), wview->get_root_node());
+            wf::scene::readd_front(wview->get_output()->wset()->get_node(), wview->get_root_node());
         }
     }
 
@@ -384,7 +384,7 @@ class tile_plugin_t : public wf::per_output_plugin_instance_t, public wf::pointe
     {
         if (ev->view && tile::view_node_t::get_node(ev->view) && !ev->view->fullscreen)
         {
-            auto vp = output->workspace->get_current_workspace();
+            auto vp = output->wset()->get_current_workspace();
             for_each_view(roots[vp.x][vp.y], [&] (wayfire_view view)
             {
                 if (view->fullscreen)
@@ -572,9 +572,9 @@ class tile_plugin_t : public wf::per_output_plugin_instance_t, public wf::pointe
     void init() override
     {
         input_grab = std::make_unique<wf::input_grab_t>("simple-tile", output, nullptr, this, nullptr);
-        resize_roots(output->workspace->get_workspace_grid_size());
+        resize_roots(output->wset()->get_workspace_grid_size());
         // TODO: check whether this was successful
-        output->workspace->set_workspace_implementation(
+        output->wset()->set_workspace_implementation(
             std::make_unique<tile_workspace_implementation_t>(), true);
 
         output->connect(&on_view_mapped);
@@ -595,7 +595,7 @@ class tile_plugin_t : public wf::per_output_plugin_instance_t, public wf::pointe
     void destroy_sublayer(wf::scene::floating_inner_ptr sublayer)
     {
         // Transfer views to the top
-        auto root     = output->workspace->get_node();
+        auto root     = output->wset()->get_node();
         auto children = root->get_children();
         auto sublayer_children = sublayer->get_children();
         sublayer->set_children_list({});
@@ -610,7 +610,7 @@ class tile_plugin_t : public wf::per_output_plugin_instance_t, public wf::pointe
 
     void fini() override
     {
-        output->workspace->set_workspace_implementation(nullptr, true);
+        output->wset()->set_workspace_implementation(nullptr, true);
 
         for (auto& row : tiled_sublayer)
         {

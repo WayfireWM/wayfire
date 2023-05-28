@@ -100,7 +100,7 @@ class workspace_stream_pool_t : public wf::custom_data_t
     {
         this->output = output;
         output->connect(&on_workspace_grid_changed);
-        resize_pool(this->output->workspace->get_workspace_grid_size());
+        resize_pool(this->output->wset()->get_workspace_grid_size());
     }
 
     void resize_pool(wf::dimensions_t size)
@@ -138,7 +138,7 @@ class workspace_stream_pool_t : public wf::custom_data_t
 
     wf::signal::connection_t<workspace_grid_changed_signal> on_workspace_grid_changed = [=] (auto)
     {
-        resize_pool(this->output->workspace->get_workspace_grid_size());
+        resize_pool(this->output->wset()->get_workspace_grid_size());
     };
 };
 }

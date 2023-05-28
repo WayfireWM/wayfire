@@ -328,8 +328,8 @@ void wf::xdg_toplevel_view_t::map()
     {
         if (!parent)
         {
-            wf::scene::readd_front(get_output()->workspace->get_node(), get_root_node());
-            get_output()->workspace->add_view(self());
+            wf::scene::readd_front(get_output()->wset()->get_node(), get_root_node());
+            get_output()->wset()->add_view(self());
         }
 
         get_output()->focus_view(self(), true);

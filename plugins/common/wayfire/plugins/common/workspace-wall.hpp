@@ -173,7 +173,7 @@ class workspace_wall_t : public wf::signal::provider_t
     wf::geometry_t get_wall_rectangle() const
     {
         auto size = this->output->get_screen_size();
-        auto workspace_size = this->output->workspace->get_workspace_grid_size();
+        auto workspace_size = this->output->wset()->get_workspace_grid_size();
 
         return {
             -gap_size,
@@ -210,7 +210,7 @@ class workspace_wall_t : public wf::signal::provider_t
     std::vector<wf::point_t> get_visible_workspaces(wf::geometry_t viewport) const
     {
         std::vector<wf::point_t> visible;
-        auto wsize = output->workspace->get_workspace_grid_size();
+        auto wsize = output->wset()->get_workspace_grid_size();
         for (int i = 0; i < wsize.width; i++)
         {
             for (int j = 0; j < wsize.height; j++)
@@ -227,7 +227,7 @@ class workspace_wall_t : public wf::signal::provider_t
 
     void resize_colors()
     {
-        auto size = this->output->workspace->get_workspace_grid_size();
+        auto size = this->output->wset()->get_workspace_grid_size();
         render_colors.resize(size.width);
         for (auto& v : render_colors)
         {
@@ -436,7 +436,7 @@ class workspace_wall_t : public wf::signal::provider_t
         workspace_wall_node_t(workspace_wall_t *wall) : node_t(false)
         {
             this->wall  = wall;
-            auto [w, h] = wall->output->workspace->get_workspace_grid_size();
+            auto [w, h] = wall->output->wset()->get_workspace_grid_size();
             workspaces.resize(w);
             for (int i = 0; i < w; i++)
             {

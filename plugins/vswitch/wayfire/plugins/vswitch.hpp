@@ -62,7 +62,7 @@ class workspace_switch_t
         /* Setup wall */
         wall->set_gap_size(gap);
         wall->set_viewport(wall->get_workspace_rectangle(
-            output->workspace->get_current_workspace()));
+            output->wset()->get_current_workspace()));
         wall->set_background_color(background_color);
         wall->start_output_renderer();
         output->render->add_effect(&post_render, OUTPUT_EFFECT_POST);
@@ -83,7 +83,7 @@ class workspace_switch_t
      */
     virtual void set_target_workspace(point_t workspace)
     {
-        point_t cws = output->workspace->get_current_workspace();
+        point_t cws = output->wset()->get_current_workspace();
 
         animation.dx.set(animation.dx + cws.x - workspace.x, 0);
         animation.dy.set(animation.dy + cws.y - workspace.y, 0);
@@ -95,7 +95,7 @@ class workspace_switch_t
             fixed_views.push_back(overlay_view);
         }
 
-        output->workspace->set_workspace(workspace, fixed_views);
+        output->wset()->set_workspace(workspace, fixed_views);
     }
 
     /**
@@ -154,7 +154,7 @@ class workspace_switch_t
     {
         if (normal_exit)
         {
-            auto old_ws = output->workspace->get_current_workspace();
+            auto old_ws = output->wset()->get_current_workspace();
             adjust_overlay_view_switch_done(old_ws);
         }
 
@@ -237,7 +237,7 @@ class workspace_switch_t
     virtual void render_frame(const render_target_t& fb)
     {
         auto start = wall->get_workspace_rectangle(
-            output->workspace->get_current_workspace());
+            output->wset()->get_current_workspace());
         auto size = output->get_screen_size();
         geometry_t viewport = {
             (int)std::round(animation.dx * (size.width + gap) + start.x),
@@ -273,7 +273,7 @@ class workspace_switch_t
         wf::view_change_workspace_signal data;
         data.view = overlay_view;
         data.from = old_workspace;
-        data.to   = output->workspace->get_current_workspace();
+        data.to   = output->wset()->get_current_workspace();
         output->emit(&data);
 
         set_overlay_view(nullptr);
@@ -395,7 +395,7 @@ class control_bindings_t
             activator_cbs.push_back(std::make_unique<activator_callback>());
             *activator_cbs.back() = [=] (const wf::activator_data_t&)
             {
-                auto [wsize, hsize] = output->workspace->get_workspace_grid_size();
+                auto [wsize, hsize] = output->wset()->get_workspace_grid_size();
 
                 // Calculate target x,y each time.
                 // Workspace grid size might change at runtime, so we cannot
@@ -404,7 +404,7 @@ class control_bindings_t
                     nr % wsize,
                     nr / wsize,
                 };
-                wf::point_t current = output->workspace->get_current_workspace();
+                wf::point_t current = output->wset()->get_current_workspace();
 
                 auto view = (grab_view ? get_target_view() : nullptr);
                 return handle_dir(target - current, view, only_view, callback);
@@ -511,13 +511,13 @@ class control_bindings_t
             return false;
         }
 
-        auto ws = output->workspace->get_current_workspace();
+        auto ws = output->wset()->get_current_workspace();
         auto target_ws = ws + dir;
-        if (!output->workspace->is_workspace_valid(target_ws))
+        if (!output->wset()->is_workspace_valid(target_ws))
         {
             if (wraparound)
             {
-                auto grid_size = output->workspace->get_workspace_grid_size();
+                auto grid_size = output->wset()->get_workspace_grid_size();
                 target_ws.x = (target_ws.x + grid_size.width) % grid_size.width;
                 target_ws.y = (target_ws.y + grid_size.height) % grid_size.height;
             } else

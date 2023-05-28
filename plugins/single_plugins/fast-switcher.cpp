@@ -115,7 +115,7 @@ class wayfire_fast_switcher : public wf::per_output_plugin_instance_t, public wf
 
     void update_views()
     {
-        views = output->workspace->get_views(
+        views = output->wset()->get_views(
             wf::WSET_CURRENT_WORKSPACE | wf::WSET_MAPPED_ONLY | wf::WSET_EXCLUDE_MINIMIZED);
         std::sort(views.begin(), views.end(), [] (wayfire_view& a, wayfire_view& b)
         {

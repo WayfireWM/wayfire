@@ -105,7 +105,7 @@ class wayfire_move : public wf::per_output_plugin_instance_t,
 
             wf::view_change_workspace_signal data;
             data.view = ev->main_view;
-            data.to   = output->workspace->get_current_workspace();
+            data.to   = output->wset()->get_current_workspace();
             data.old_workspace_valid = false;
             output->emit(&data);
         }
@@ -242,7 +242,7 @@ class wayfire_move : public wf::per_output_plugin_instance_t,
         view = get_target_view(view);
 
         auto current_ws_impl =
-            output->workspace->get_workspace_implementation();
+            output->wset()->get_workspace_implementation();
         if (!current_ws_impl->view_movable(view))
         {
             return false;
@@ -428,9 +428,9 @@ class wayfire_move : public wf::per_output_plugin_instance_t,
             return;
         }
 
-        wf::point_t cws = output->workspace->get_current_workspace();
+        wf::point_t cws = output->wset()->get_current_workspace();
         wf::point_t tws = {cws.x + dx, cws.y + dy};
-        wf::dimensions_t ws_dim = output->workspace->get_workspace_grid_size();
+        wf::dimensions_t ws_dim = output->wset()->get_workspace_grid_size();
         wf::geometry_t possible = {
             0, 0, ws_dim.width, ws_dim.height
         };
@@ -445,7 +445,7 @@ class wayfire_move : public wf::per_output_plugin_instance_t,
 
         workspace_switch_timer.set_timeout(workspace_switch_after, [this, tws] ()
         {
-            output->workspace->request_workspace(tws);
+            output->wset()->request_workspace(tws);
             return false;
         });
     }

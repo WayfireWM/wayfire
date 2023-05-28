@@ -166,7 +166,7 @@ class wayfire_grid : public wf::per_output_plugin_instance_t
     bool can_adjust_view(wayfire_view view)
     {
         auto workspace_impl =
-            output->workspace->get_workspace_implementation();
+            output->wset()->get_workspace_implementation();
 
         return workspace_impl->view_movable(view) &&
                workspace_impl->view_resizable(view);
@@ -220,7 +220,7 @@ class wayfire_grid : public wf::per_output_plugin_instance_t
     wf::signal::connection_t<wf::workarea_changed_signal> on_workarea_changed =
         [=] (wf::workarea_changed_signal *ev)
     {
-        for (auto& view : output->workspace->get_views(wf::WSET_MAPPED_ONLY))
+        for (auto& view : output->wset()->get_views(wf::WSET_MAPPED_ONLY))
         {
             auto data = view->get_data_safe<wf_grid_slot_data>();
 
@@ -265,7 +265,7 @@ class wayfire_grid : public wf::per_output_plugin_instance_t
     wf::geometry_t adjust_for_workspace(wf::geometry_t geometry,
         wf::point_t workspace)
     {
-        auto delta_ws = workspace - output->workspace->get_current_workspace();
+        auto delta_ws = workspace - output->wset()->get_current_workspace();
         auto scr_size = output->get_screen_size();
         geometry.x += delta_ws.x * scr_size.width;
         geometry.y += delta_ws.y * scr_size.height;

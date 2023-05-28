@@ -30,7 +30,7 @@ nonstd::observer_ptr<view_node_t> tree_node_t::as_view_node()
 
 wf::point_t get_output_local_coordinates(wf::output_t *output, wf::point_t p)
 {
-    auto vp   = output->workspace->get_current_workspace();
+    auto vp   = output->wset()->get_current_workspace();
     auto size = output->get_screen_size();
     p.x -= vp.x * size.width;
     p.y -= vp.y * size.height;
@@ -384,7 +384,7 @@ wf::geometry_t view_node_t::calculate_target_geometry()
     /* If view is maximized, we want to use the full available geometry */
     if (view->fullscreen)
     {
-        auto vp = output->workspace->get_current_workspace();
+        auto vp = output->wset()->get_current_workspace();
 
         int view_vp_x = std::floor(1.0 * geometry.x / size.width);
         int view_vp_y = std::floor(1.0 * geometry.y / size.height);

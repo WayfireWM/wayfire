@@ -191,7 +191,7 @@ class wayfire_resize : public wf::per_output_plugin_instance_t, public wf::point
         }
 
         auto current_ws_impl =
-            output->workspace->get_workspace_implementation();
+            output->wset()->get_workspace_implementation();
         if (!current_ws_impl->view_resizable(view))
         {
             return false;
@@ -263,7 +263,7 @@ class wayfire_resize : public wf::per_output_plugin_instance_t, public wf::point
 
             wf::view_change_workspace_signal workspace_may_changed;
             workspace_may_changed.view = this->view;
-            workspace_may_changed.to   = output->workspace->get_current_workspace();
+            workspace_may_changed.to   = output->wset()->get_current_workspace();
             workspace_may_changed.old_workspace_valid = false;
             output->emit(&workspace_may_changed);
         }

@@ -174,7 +174,7 @@ class wayfire_scale : public wf::per_output_plugin_instance_t,
                 return false;
             }
 
-            auto ws = output->workspace->get_current_workspace() + delta;
+            auto ws = output->wset()->get_current_workspace() + delta;
 
             // vswitch picks the top view, we want the focused one
             std::vector<wayfire_view> fixed_views;
@@ -183,7 +183,7 @@ class wayfire_scale : public wf::per_output_plugin_instance_t,
                 fixed_views.push_back(current_focus_view);
             }
 
-            output->workspace->request_workspace(ws, fixed_views);
+            output->wset()->request_workspace(ws, fixed_views);
 
             return true;
         });
@@ -421,7 +421,7 @@ class wayfire_scale : public wf::per_output_plugin_instance_t,
         }
 
         auto ws = get_view_main_workspace(view);
-        output->workspace->request_workspace(ws);
+        output->wset()->request_workspace(ws);
     }
 
     /* Updates current and initial view focus variables accordingly */
@@ -556,7 +556,7 @@ class wayfire_scale : public wf::per_output_plugin_instance_t,
             view = view->parent;
         }
 
-        auto ws     = output->workspace->get_current_workspace();
+        auto ws     = output->wset()->get_current_workspace();
         auto og     = output->get_layout_geometry();
         auto vg     = view->get_wm_geometry();
         auto center = wf::point_t{vg.x + vg.width / 2, vg.y + vg.height / 2};
@@ -644,7 +644,7 @@ class wayfire_scale : public wf::per_output_plugin_instance_t,
 
           case KEY_ESC:
             deactivate();
-            output->workspace->request_workspace(initial_workspace);
+            output->wset()->request_workspace(initial_workspace);
             output->focus_view(initial_focus_view, true);
             initial_focus_view = nullptr;
 
@@ -733,7 +733,7 @@ class wayfire_scale : public wf::per_output_plugin_instance_t,
     /* Returns a list of views for all workspaces */
     std::vector<wayfire_view> get_all_workspace_views()
     {
-        return output->workspace->get_views(wf::WSET_EXCLUDE_MINIMIZED | wf::WSET_MAPPED_ONLY);
+        return output->wset()->get_views(wf::WSET_EXCLUDE_MINIMIZED | wf::WSET_MAPPED_ONLY);
     }
 
     /* Returns a list of views for the current workspace */
@@ -1300,7 +1300,7 @@ class wayfire_scale : public wf::per_output_plugin_instance_t,
             return false;
         }
 
-        initial_workspace  = output->workspace->get_current_workspace();
+        initial_workspace  = output->wset()->get_current_workspace();
         initial_focus_view = output->get_active_view();
         current_focus_view = initial_focus_view ?: views.front();
         // Make sure no leftover events from the activation binding

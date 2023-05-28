@@ -19,6 +19,8 @@ class output_impl_t : public output_t
 {
   private:
     std::shared_ptr<scene::output_node_t> nodes[(size_t)wf::scene::layer::ALL_LAYERS];
+
+    std::shared_ptr<workspace_manager> current_wset;
     std::unique_ptr<promotion_manager_t> promotion_manager;
     uint64_t last_timestamp = 0;
 
@@ -65,6 +67,7 @@ class output_impl_t : public output_t
     /**
      * Implementations of the public APIs
      */
+    std::shared_ptr<workspace_manager> wset() override;
     std::shared_ptr<wf::scene::output_node_t> node_for_layer(
         wf::scene::layer layer) const override;
     bool can_activate_plugin(wf::plugin_activation_data_t *owner, uint32_t flags = 0) override;

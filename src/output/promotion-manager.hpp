@@ -50,7 +50,7 @@ class promotion_manager_t
         if (auto view = wf::node_to_view(root))
         {
             if (view->is_mapped() &&
-                output->workspace->view_visible_on(view, output->workspace->get_current_workspace()))
+                output->wset()->view_visible_on(view, output->wset()->get_current_workspace()))
             {
                 return view;
             }
@@ -72,7 +72,7 @@ class promotion_manager_t
 
     void update_promotion_state()
     {
-        wayfire_view candidate = find_top_visible_view(output->workspace->get_node());
+        wayfire_view candidate = find_top_visible_view(output->wset()->get_node());
         if (candidate && candidate->fullscreen)
         {
             start_promotion();

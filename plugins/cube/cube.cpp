@@ -143,8 +143,8 @@ class wayfire_cube : public wf::per_output_plugin_instance_t, public wf::pointer
         cube_render_node_t(wayfire_cube *cube) : node_t(false)
         {
             this->cube = cube;
-            auto w = cube->output->workspace->get_workspace_grid_size().width;
-            auto y = cube->output->workspace->get_current_workspace().y;
+            auto w = cube->output->wset()->get_workspace_grid_size().width;
+            auto y = cube->output->wset()->get_current_workspace().y;
             for (int i = 0; i < w; i++)
             {
                 auto node = std::make_shared<wf::workspace_stream_node_t>(cube->output, wf::point_t{i, y});
@@ -234,7 +234,7 @@ class wayfire_cube : public wf::per_output_plugin_instance_t, public wf::pointer
 
     int get_num_faces()
     {
-        return output->workspace->get_workspace_grid_size().width;
+        return output->wset()->get_workspace_grid_size().width;
     }
 
     wf::plugin_activation_data_t grab_interface{
@@ -402,7 +402,7 @@ class wayfire_cube : public wf::per_output_plugin_instance_t, public wf::pointer
         wf::get_core().hide_cursor();
         input_grab->grab_input(wf::scene::layer::OVERLAY);
 
-        auto wsize = output->workspace->get_workspace_grid_size();
+        auto wsize = output->wset()->get_workspace_grid_size();
         animation.side_angle = 2 * M_PI / float(wsize.width);
         identity_z_offset    = 0.5 / std::tan(animation.side_angle / 2);
         if (wsize.width == 1)
@@ -444,9 +444,9 @@ class wayfire_cube : public wf::per_output_plugin_instance_t, public wf::pointer
         int size = get_num_faces();
         int dvx  = calculate_viewport_dx_from_rotation();
 
-        auto cws = output->workspace->get_current_workspace();
+        auto cws = output->wset()->get_current_workspace();
         int nvx  = (cws.x + (dvx % size) + size) % size;
-        output->workspace->set_workspace({nvx, cws.y});
+        output->wset()->set_workspace({nvx, cws.y});
 
         /* We are finished with rotation, make sure the next time cube is used
          * it is properly reset */
@@ -602,7 +602,7 @@ class wayfire_cube : public wf::per_output_plugin_instance_t, public wf::pointer
         GL_CALL(glFrontFace(front_face));
         static const GLuint indexData[] = {0, 1, 2, 0, 2, 3};
 
-        auto cws = output->workspace->get_current_workspace();
+        auto cws = output->wset()->get_current_workspace();
         for (int i = 0; i < get_num_faces(); i++)
         {
             int index = (cws.x + i) % get_num_faces();

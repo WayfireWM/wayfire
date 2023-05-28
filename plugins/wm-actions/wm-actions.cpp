@@ -48,7 +48,7 @@ class wayfire_wm_actions_t : public wf::per_output_plugin_instance_t
                 "wm-actions-above");
         } else
         {
-            wf::scene::readd_front(output->workspace->get_node(), view->get_root_node());
+            wf::scene::readd_front(output->wset()->get_node(), view->get_root_node());
             if (view->has_data("wm-actions-above"))
             {
                 view->erase_data("wm-actions-above");
@@ -249,7 +249,7 @@ class wayfire_wm_actions_t : public wf::per_output_plugin_instance_t
 
         if (showdesktop_active)
         {
-            for (auto& view : output->workspace->get_views())
+            for (auto& view : output->wset()->get_views())
             {
                 if (!view->minimized)
                 {
@@ -295,7 +295,7 @@ class wayfire_wm_actions_t : public wf::per_output_plugin_instance_t
     {
         return execute_for_selected_view(ev.source, [this] (wayfire_view view)
         {
-            auto views = view->get_output()->workspace->get_views(
+            auto views = view->get_output()->wset()->get_views(
                 wf::WSET_CURRENT_WORKSPACE | wf::WSET_MAPPED_ONLY |
                 wf::WSET_EXCLUDE_MINIMIZED | wf::WSET_SORT_STACKING);
 
@@ -306,7 +306,7 @@ class wayfire_wm_actions_t : public wf::per_output_plugin_instance_t
                 // Change focus to the last focused view on this workspace
 
                 // Update the list after restacking.
-                views = view->get_output()->workspace->get_views(
+                views = view->get_output()->wset()->get_views(
                     wf::WSET_CURRENT_WORKSPACE | wf::WSET_MAPPED_ONLY |
                     wf::WSET_EXCLUDE_MINIMIZED | wf::WSET_SORT_STACKING);
 
@@ -323,7 +323,7 @@ class wayfire_wm_actions_t : public wf::per_output_plugin_instance_t
         workspace_changed.disconnect();
         view_minimized.disconnect();
 
-        for (auto& view : output->workspace->get_views())
+        for (auto& view : output->wset()->get_views())
         {
             if (view->has_data("wm-actions-showdesktop"))
             {
@@ -357,7 +357,7 @@ class wayfire_wm_actions_t : public wf::per_output_plugin_instance_t
 
     void fini() override
     {
-        for (auto view : output->workspace->get_views())
+        for (auto view : output->wset()->get_views())
         {
             if (view->has_data("wm-actions-above"))
             {
