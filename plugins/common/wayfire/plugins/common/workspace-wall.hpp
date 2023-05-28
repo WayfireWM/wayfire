@@ -48,7 +48,7 @@ class workspace_wall_t : public wf::signal::provider_t
     {
         this->viewport = get_wall_rectangle();
         resize_colors();
-        output->connect(&on_workspace_grid_changed);
+        output->wset()->connect(&on_workspace_grid_changed);
     }
 
     ~workspace_wall_t()

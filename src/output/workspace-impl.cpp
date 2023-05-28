@@ -1,3 +1,4 @@
+#include <string>
 #include <wayfire/view.hpp>
 #include <wayfire/output.hpp>
 #include <wayfire/core.hpp>
@@ -42,10 +43,11 @@ struct grid_size_manager_t
 {
     wf::option_wrapper_t<int> vwidth_opt{"core/vwidth"};
     wf::option_wrapper_t<int> vheight_opt{"core/vheight"};
-    wf::output_t *output;
+    workspace_set_t *set;
 
-    grid_size_manager_t(wf::output_t *o) : output(o)
+    grid_size_manager_t(workspace_set_t *wset)
     {
+        this->set = wset;
         vwidth_opt.set_callback(update_cfg_grid_size);
         vheight_opt.set_callback(update_cfg_grid_size);
         this->grid = {vwidth_opt, vheight_opt};
@@ -87,7 +89,7 @@ struct grid_size_manager_t
         wf::workspace_grid_changed_signal data;
         data.old_grid_size = old_size;
         data.new_grid_size = grid;
-        output->emit(&data);
+        set->emit(&data);
     }
 
     wf::dimensions_t get_workspace_grid_size()
@@ -168,16 +170,49 @@ static size_t find_index_in_parent(wf::scene::node_t *x, wf::scene::node_t *pare
     return it - children.begin();
 }
 
-class workspace_set_t::impl
+class workspace_set_root_node_t : public wf::scene::floating_inner_node_t
 {
-    wf::geometry_t output_geometry;
+    uint64_t index;
+
+  public:
+    workspace_set_root_node_t(uint64_t index) : floating_inner_node_t(true)
+    {
+        this->index = index;
+    }
+
+    std::string stringify() const override
+    {
+        return "workspace-set id=" + std::to_string(index) + " " + stringify_flags();
+    }
+};
+
+static std::set<uint64_t> wset_used_indices;
+
+struct workspace_set_t::impl
+{
+    uint64_t index;
+
+    /**
+     * The geometry of the last output the workspace output was active on.
+     */
+    std::optional<wf::geometry_t> workspace_geometry;
 
     wf::signal::connection_t<output_configuration_changed_signal> output_geometry_changed =
         [=] (output_configuration_changed_signal *ev)
     {
-        auto old_w = output_geometry.width, old_h = output_geometry.height;
-        auto new_size = output->get_screen_size();
-        if ((old_w == new_size.width) && (old_h == new_size.height))
+        change_output_geometry(output->get_relative_geometry());
+    };
+
+    void change_output_geometry(wf::geometry_t new_geometry)
+    {
+        if (!workspace_geometry)
+        {
+            workspace_geometry = new_geometry;
+            return;
+        }
+
+        auto old_w = workspace_geometry->width, old_h = workspace_geometry->height;
+        if (wf::dimensions(*workspace_geometry) == wf::dimensions(new_geometry))
         {
             // No actual change, stop here
             return;
@@ -192,26 +227,30 @@ class workspace_set_t::impl
             float ph = 1. * wm.height / old_h;
 
             view->set_geometry({
-                    int(px * new_size.width), int(py * new_size.height),
-                    int(pw * new_size.width), int(ph * new_size.height)
+                    int(px * new_geometry.width), int(py * new_geometry.height),
+                    int(pw * new_geometry.width), int(ph * new_geometry.height)
                 });
         }
 
-        output_geometry = output->get_relative_geometry();
-    };
+        workspace_geometry = new_geometry;
+    }
 
     wf::signal::connection_t<workspace_grid_changed_signal> on_grid_changed =
         [=] (workspace_grid_changed_signal *ev)
     {
+        if (!workspace_geometry)
+        {
+            return;
+        }
+
         if (!grid.is_workspace_valid({current_vx, current_vy}))
         {
             set_workspace(grid.closest_valid_ws({current_vx, current_vy}), {});
         }
 
-        auto size = output->get_relative_geometry();
         wf::geometry_t full_grid = {
-            -current_vx * size.width, -current_vy * size.height,
-            grid.grid.width * size.width, grid.grid.height * size.height
+            -current_vx * workspace_geometry->width, -current_vy * workspace_geometry->height,
+            grid.grid.width * workspace_geometry->width, grid.grid.height * workspace_geometry->height
         };
 
         for (auto view : get_views(WSET_MAPPED_ONLY))
@@ -231,19 +270,61 @@ class workspace_set_t::impl
     std::unique_ptr<workspace_implementation_t> workspace_impl;
 
   public:
-    wf::output_t *output;
+    wf::output_t *output = nullptr;
+    workspace_set_t *self;
     grid_size_manager_t grid;
     scene::floating_inner_ptr wnode;
 
-    impl(output_t *o) : grid(o)
+    impl(workspace_set_t *self) : grid(self)
     {
-        output = o;
-        output_geometry = output->get_relative_geometry();
-        o->connect(&output_geometry_changed);
-        o->connect(&on_grid_changed);
+        this->self = self;
 
-        wnode = std::make_shared<scene::floating_inner_node_t>(true);
-        scene::add_front(o->node_for_layer(scene::layer::WORKSPACE), wnode);
+        // Select lowest unused ID.
+        for (index = 0; wset_used_indices.count(index); index++)
+        {}
+
+        wset_used_indices.insert(index);
+        LOGC(WSET, "Creating new workspace set with id=", index);
+
+        wnode = std::make_shared<workspace_set_root_node_t>(index);
+        self->connect(&on_grid_changed);
+    }
+
+    ~impl()
+    {
+        LOGC(WSET, "Destroying workspace set with id=", index);
+        wset_used_indices.erase(index);
+    }
+
+    void attach_to_output(wf::output_t *new_output)
+    {
+        if (new_output == output)
+        {
+            return;
+        }
+
+        LOGC(WSET, "Attaching workspace set id=", index, " to output ",
+            (new_output ? new_output->to_string() : "null"));
+
+        if (output)
+        {
+            output->disconnect(&output_geometry_changed);
+            wf::scene::remove_child(wnode);
+        }
+
+        output = new_output;
+
+        if (new_output)
+        {
+            change_output_geometry(new_output->get_relative_geometry());
+            new_output->connect(&output_geometry_changed);
+            scene::add_front(new_output->node_for_layer(scene::layer::WORKSPACE), wnode);
+        }
+
+        for (auto view : this->wset_views)
+        {
+            view->set_output(new_output);
+        }
     }
 
     workspace_implementation_t *get_implementation()
@@ -361,12 +442,16 @@ class workspace_set_t::impl
   public:
     wf::point_t get_view_main_workspace(wayfire_view view)
     {
-        auto og = output->get_screen_size();
+        if (!workspace_geometry)
+        {
+            LOGW("Workspace-set id=", index, " does not have any output/geometry yet!");
+            return {0, 0};
+        }
 
         auto wm = view->get_wm_geometry();
         wf::point_t workspace = {
-            current_vx + (int)std::floor((wm.x + wm.width / 2.0) / og.width),
-            current_vy + (int)std::floor((wm.y + wm.height / 2.0) / og.height)
+            current_vx + (int)std::floor((wm.x + wm.width / 2.0) / workspace_geometry->width),
+            current_vy + (int)std::floor((wm.y + wm.height / 2.0) / workspace_geometry->height)
         };
 
         return grid.closest_valid_ws(workspace);
@@ -380,7 +465,13 @@ class workspace_set_t::impl
      */
     bool view_visible_on(wayfire_view view, wf::point_t vp)
     {
-        auto g = output->get_relative_geometry();
+        if (!workspace_geometry)
+        {
+            LOGW("Workspace-set id=", index, " does not have any output/geometry yet!");
+            return false;
+        }
+
+        auto g = *workspace_geometry;
         if (!view->sticky)
         {
             g.x += (vp.x - current_vx) * g.width;
@@ -395,9 +486,9 @@ class workspace_set_t::impl
      */
     void move_to_workspace(wayfire_view view, wf::point_t ws)
     {
-        if (view->get_output() != output)
+        if (!workspace_geometry)
         {
-            LOGE("Cannot ensure view visibility for a view from a different output!");
+            LOGW("Workspace-set id=", index, " does not have any output/geometry yet!");
             return;
         }
 
@@ -408,8 +499,8 @@ class workspace_set_t::impl
             ws = {current_vx, current_vy};
         }
 
-        auto box     = view->get_wm_geometry();
-        auto visible = output->get_relative_geometry();
+        auto box = view->get_wm_geometry();
+        wf::geometry_t visible = *workspace_geometry;
         visible.x += (ws.x - current_vx) * visible.width;
         visible.y += (ws.y - current_vy) * visible.height;
 
@@ -447,6 +538,12 @@ class workspace_set_t::impl
             return;
         }
 
+        if (!workspace_geometry)
+        {
+            LOGW("Workspace-set id=", index, " does not have any output/geometry yet!");
+            return;
+        }
+
         wf::workspace_changed_signal data;
         data.old_viewport = {current_vx, current_vy};
         data.new_viewport = {nws.x, nws.y};
@@ -461,7 +558,7 @@ class workspace_set_t::impl
         current_vx = nws.x;
         current_vy = nws.y;
 
-        auto screen = output->get_screen_size();
+        auto screen = wf::dimensions(*workspace_geometry);
         auto dx     = (data.old_viewport.x - nws.x) * screen.width;
         auto dy     = (data.old_viewport.y - nws.y) * screen.height;
 
@@ -492,13 +589,23 @@ class workspace_set_t::impl
             vdata.view = v;
             vdata.from = old_workspace;
             vdata.to   = get_view_main_workspace(v);
-            output->emit(&vdata);
-            output->focus_view(v, true);
+
+            self->emit(&vdata);
+
+            if (output)
+            {
+                output->emit(&vdata);
+                output->focus_view(v, true);
+            }
         }
 
-        // Finally, do a refocus to update the keyboard focus
-        output->refocus();
-        output->emit(&data);
+        self->emit(&data);
+        if (output)
+        {
+            // Finally, do a refocus to update the keyboard focus
+            output->refocus();
+            output->emit(&data);
+        }
 
         // Don't forget to update the geometry of the wset, as the geometry of it has changed now.
         // FIXME: in theory this isn't enough, as there may be views outside, but in practice, nobody cares ..
@@ -506,9 +613,14 @@ class workspace_set_t::impl
     }
 };
 
-workspace_set_t::workspace_set_t(output_t *wo) : pimpl(new impl(wo))
+workspace_set_t::workspace_set_t() : pimpl(new impl(this))
 {}
 workspace_set_t::~workspace_set_t() = default;
+
+void workspace_set_t::attach_to_output(wf::output_t* output)
+{
+    pimpl->attach_to_output(output);
+}
 
 /* Just pass to the appropriate function from above */
 wf::point_t workspace_set_t::get_view_main_workspace(wayfire_view view)
@@ -560,6 +672,12 @@ void workspace_set_t::set_workspace(wf::point_t ws,
 
 void workspace_set_t::request_workspace(wf::point_t ws, const std::vector<wayfire_view>& views)
 {
+    if (!pimpl->output)
+    {
+        pimpl->set_workspace(ws, views);
+        return;
+    }
+
     wf::workspace_change_request_signal data;
     data.carried_out  = false;
     data.old_viewport = pimpl->get_current_workspace();

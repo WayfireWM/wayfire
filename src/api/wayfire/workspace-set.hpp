@@ -1,6 +1,8 @@
 #ifndef WORKSPACE_MANAGER_HPP
 #define WORKSPACE_MANAGER_HPP
 
+#include "wayfire/object.hpp"
+#include "wayfire/signal-provider.hpp"
 #include <functional>
 #include <vector>
 #include <wayfire/view.hpp>
@@ -48,9 +50,25 @@ enum wset_view_flags
  * Each output also has a set of workspaces, arranged in a 2D grid. A view may
  * overlap multiple workspaces.
  */
-class workspace_set_t
+class workspace_set_t : public wf::signal::provider_t, public wf::object_base_t
 {
   public:
+    /**
+     * Create a new empty workspace set. By default, the workspace set uses the core/{vwidth,vheight} options
+     * to determine the workspace grid dimensions and is not attached to any outputs.
+     */
+    workspace_set_t();
+    ~workspace_set_t();
+
+    /**
+     * Attach the workspace set to the given output.
+     * Note that this does not automatically make the workspace set visible on the output, it also needs to be
+     * set as the current workspace set on it.
+     *
+     * @param output The new output to attach to, or nullptr.
+     */
+    void attach_to_output(wf::output_t *output);
+
     /**
      * Get the scenegraph node belonging to the workspace set.
      * Each workspace set has one scenegraph node which is put in the workspace layer and contains most of
@@ -125,8 +143,7 @@ class workspace_set_t
      *
      * @return true iff the implementation has been set.
      */
-    bool set_workspace_implementation(
-        std::unique_ptr<workspace_implementation_t> impl,
+    bool set_workspace_implementation(std::unique_ptr<workspace_implementation_t> impl,
         bool overwrite = false);
 
     /**
@@ -176,11 +193,8 @@ class workspace_set_t
      */
     bool is_workspace_valid(wf::point_t ws);
 
-    workspace_set_t(output_t *output);
-    ~workspace_set_t();
-
   protected:
-    class impl;
+    struct impl;
     std::unique_ptr<impl> pimpl;
 };
 }

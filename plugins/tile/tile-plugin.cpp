@@ -586,7 +586,7 @@ class tile_plugin_t : public wf::per_output_plugin_instance_t, public wf::pointe
         output->connect(&on_focus_changed);
         output->connect(&on_view_change_workspace);
         output->connect(&on_view_minimized);
-        output->connect(&on_workspace_grid_changed);
+        output->wset()->connect(&on_workspace_grid_changed);
         wf::get_core().connect(&on_view_pre_moved_to_output);
 
         setup_callbacks();

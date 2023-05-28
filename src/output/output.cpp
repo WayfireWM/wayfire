@@ -77,7 +77,9 @@ wf::output_impl_t::output_impl_t(wlr_output *handle,
     update_node_limits();
 
     workarea = std::make_unique<output_workarea_manager_t>(this);
-    this->current_wset = std::make_shared<workspace_set_t>(this);
+    this->current_wset = std::make_shared<workspace_set_t>();
+    this->current_wset->attach_to_output(this);
+
     render = std::make_unique<render_manager>(this);
     promotion_manager = std::make_unique<promotion_manager_t>(this);
 

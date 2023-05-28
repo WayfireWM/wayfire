@@ -261,7 +261,7 @@ struct output_start_rendering_signal
  * -------------------------------------------------------------------------- */
 
 /**
- * on: output
+ * on: workspace set, output
  * when: Whenever the current workspace on the output has changed.
  */
 struct workspace_changed_signal
@@ -308,7 +308,7 @@ struct workspace_change_request_signal
 };
 
 /**
- * on: output
+ * on: workspace set
  * when: Whenever the workspace grid size changes.
  */
 struct workspace_grid_changed_signal
