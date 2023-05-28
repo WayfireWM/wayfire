@@ -6,7 +6,7 @@
 #include <wayfire/core.hpp>
 #include <wayfire/view.hpp>
 #include <wayfire/util/duration.hpp>
-#include <wayfire/workspace-manager.hpp>
+#include <wayfire/workspace-set.hpp>
 #include <wayfire/render-manager.hpp>
 #include <wayfire/compositor-view.hpp>
 #include <wayfire/output-layout.hpp>

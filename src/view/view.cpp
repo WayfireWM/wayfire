@@ -10,7 +10,7 @@
 #include "wayfire/scene.hpp"
 #include "wayfire/view.hpp"
 #include "wayfire/view-transform.hpp"
-#include "wayfire/workspace-manager.hpp"
+#include "wayfire/workspace-set.hpp"
 #include "wayfire/render-manager.hpp"
 #include "xdg-shell.hpp"
 #include "../core/seat/input-manager.hpp"

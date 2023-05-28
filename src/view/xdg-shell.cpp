@@ -11,7 +11,7 @@
 #include "wayfire/view.hpp"
 #include "xdg-shell.hpp"
 #include "wayfire/output-layout.hpp"
-#include <wayfire/workspace-manager.hpp>
+#include <wayfire/workspace-set.hpp>
 #include <wayfire/signal-definitions.hpp>
 #include <wayfire/unstable/wlr-view-events.hpp>
 

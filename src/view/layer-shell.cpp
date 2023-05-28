@@ -14,7 +14,7 @@
 #include <wayfire/util/log.hpp>
 #include <wayfire/nonstd/wlroots-full.hpp>
 #include "wayfire/output.hpp"
-#include "wayfire/workspace-manager.hpp"
+#include "wayfire/workspace-set.hpp"
 #include "wayfire/output-layout.hpp"
 #include "view-impl.hpp"
 

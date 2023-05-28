@@ -19,7 +19,7 @@
 #include <wayfire/signal-definitions.hpp>
 
 #include <wayfire/render-manager.hpp>
-#include <wayfire/workspace-manager.hpp>
+#include <wayfire/workspace-set.hpp>
 
 #include <wayfire/util/duration.hpp>
 #include <wayfire/nonstd/reverse.hpp>

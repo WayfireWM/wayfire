@@ -8,7 +8,7 @@
 #include "wayfire/scene.hpp"
 #include "wayfire/signal-definitions.hpp"
 #include "wayfire/view.hpp"
-#include "wayfire/workspace-manager.hpp"
+#include "wayfire/workspace-set.hpp"
 #include "wayfire/output-layout.hpp"
 #include <memory>
 #include <wayfire/util/log.hpp>

@@ -6,7 +6,7 @@
 #include <wayfire/signal-definitions.hpp>
 #include <wayfire/core.hpp>
 #include <wayfire/view-transform.hpp>
-#include <wayfire/workspace-manager.hpp>
+#include <wayfire/workspace-set.hpp>
 #include <wayfire/render-manager.hpp>
 #include <wayfire/plugins/common/util.hpp>
 

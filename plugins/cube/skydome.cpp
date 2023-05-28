@@ -3,7 +3,7 @@
 #include <wayfire/img.hpp>
 
 #include <wayfire/output.hpp>
-#include <wayfire/workspace-manager.hpp>
+#include <wayfire/workspace-set.hpp>
 
 
 #include <glm/gtc/matrix_transform.hpp>

@@ -2,7 +2,7 @@
 
 #include "wayfire/output.hpp"
 #include "wayfire/view.hpp"
-#include "wayfire/workspace-manager.hpp"
+#include "wayfire/workspace-set.hpp"
 #include "wayfire/plugins/grid.hpp"
 #include "wayfire/util/log.hpp"
 #include "wayfire/view-transform.hpp"

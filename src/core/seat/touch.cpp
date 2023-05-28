@@ -10,7 +10,7 @@
 #include "wayfire/core.hpp"
 #include "wayfire/output.hpp"
 #include "wayfire/util.hpp"
-#include "wayfire/workspace-manager.hpp"
+#include "wayfire/workspace-set.hpp"
 #include "wayfire/output-layout.hpp"
 
 wf::touch_interface_t::touch_interface_t(wlr_cursor *cursor, wlr_seat *seat,

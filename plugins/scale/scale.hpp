@@ -1,7 +1,7 @@
 #include <wayfire/plugin.hpp>
 #include <wayfire/output.hpp>
 #include <wayfire/view.hpp>
-#include <wayfire/workspace-manager.hpp>
+#include <wayfire/workspace-set.hpp>
 
 inline wayfire_view scale_find_view_at(wf::pointf_t at, wf::output_t *output)
 {

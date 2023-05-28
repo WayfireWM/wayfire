@@ -4,7 +4,7 @@
 #include <algorithm>
 #include <wayfire/core.hpp>
 #include <wayfire/output.hpp>
-#include <wayfire/workspace-manager.hpp>
+#include <wayfire/workspace-set.hpp>
 #include <wayfire/util.hpp>
 #include <wayfire/nonstd/reverse.hpp>
 #include <wayfire/plugins/common/preview-indication.hpp>

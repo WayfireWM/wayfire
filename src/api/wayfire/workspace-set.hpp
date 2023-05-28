@@ -48,7 +48,7 @@ enum wset_view_flags
  * Each output also has a set of workspaces, arranged in a 2D grid. A view may
  * overlap multiple workspaces.
  */
-class workspace_manager
+class workspace_set_t
 {
   public:
     /**
@@ -176,8 +176,8 @@ class workspace_manager
      */
     bool is_workspace_valid(wf::point_t ws);
 
-    workspace_manager(output_t *output);
-    ~workspace_manager();
+    workspace_set_t(output_t *output);
+    ~workspace_set_t();
 
   protected:
     class impl;

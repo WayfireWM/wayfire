@@ -19,7 +19,7 @@
 #include <wayfire/nonstd/observer_ptr.h>
 #include <wayfire/render-manager.hpp>
 #include <wayfire/signal-provider.hpp>
-#include <wayfire/workspace-manager.hpp>
+#include <wayfire/workspace-set.hpp>
 #include <wayfire/view-transform.hpp>
 #include <wayfire/util/duration.hpp>
 #include <wayfire/util/log.hpp>

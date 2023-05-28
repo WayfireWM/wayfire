@@ -6,7 +6,7 @@
 #include <wayfire/core.hpp>
 #include <wayfire/workspace-stream.hpp>
 #include <wayfire/render-manager.hpp>
-#include <wayfire/workspace-manager.hpp>
+#include <wayfire/workspace-set.hpp>
 #include <wayfire/scene-operations.hpp>
 #include <wayfire/plugins/common/input-grab.hpp>
 

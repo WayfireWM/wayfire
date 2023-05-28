@@ -6,7 +6,7 @@
 #include "wayfire/view-transform.hpp"
 #include "wayfire/output.hpp"
 #include "wayfire/core.hpp"
-#include <wayfire/workspace-manager.hpp>
+#include <wayfire/workspace-set.hpp>
 #include <wayfire/signal-definitions.hpp>
 #include <wayfire/plugins/common/util.hpp>
 #include <linux/input.h>

@@ -3,7 +3,7 @@
 #include <wayfire/core.hpp>
 #include <wayfire/output.hpp>
 #include <wayfire/signal-definitions.hpp>
-#include <wayfire/workspace-manager.hpp>
+#include <wayfire/workspace-set.hpp>
 
 namespace wf
 {

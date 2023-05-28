@@ -9,7 +9,7 @@
 #include "wayfire/debug.hpp"
 #include "wayfire/geometry.hpp"
 #include <wayfire/output-layout.hpp>
-#include <wayfire/workspace-manager.hpp>
+#include <wayfire/workspace-set.hpp>
 
 /**
  * When we get a request for setting CSD, the view might not have been

@@ -11,7 +11,7 @@
 #include "input-manager.hpp"
 #include "wayfire/output-layout.hpp"
 #include "wayfire/view.hpp"
-#include "wayfire/workspace-manager.hpp"
+#include "wayfire/workspace-set.hpp"
 #include <wayfire/util/log.hpp>
 #include <wayfire/debug.hpp>
 

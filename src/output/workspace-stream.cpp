@@ -7,7 +7,7 @@
 #include <wayfire/workspace-stream.hpp>
 #include <wayfire/output.hpp>
 #include <wayfire/render-manager.hpp>
-#include <wayfire/workspace-manager.hpp>
+#include <wayfire/workspace-set.hpp>
 
 namespace wf
 {

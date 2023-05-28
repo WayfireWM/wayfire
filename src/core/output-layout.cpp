@@ -2,7 +2,7 @@
 #include "wayfire/core.hpp"
 #include "wayfire/output-layout.hpp"
 #include "wayfire/view-helpers.hpp"
-#include "wayfire/workspace-manager.hpp"
+#include "wayfire/workspace-set.hpp"
 #include "wayfire/render-manager.hpp"
 #include "wayfire/signal-definitions.hpp"
 #include "wayfire/util.hpp"

@@ -1,7 +1,7 @@
 #include <wayfire/view.hpp>
 #include <wayfire/output.hpp>
 #include <wayfire/core.hpp>
-#include <wayfire/workspace-manager.hpp>
+#include <wayfire/workspace-set.hpp>
 #include <wayfire/render-manager.hpp>
 #include <wayfire/signal-definitions.hpp>
 #include <wayfire/opengl.hpp>
@@ -168,7 +168,7 @@ static size_t find_index_in_parent(wf::scene::node_t *x, wf::scene::node_t *pare
     return it - children.begin();
 }
 
-class workspace_manager::impl
+class workspace_set_t::impl
 {
     wf::geometry_t output_geometry;
 
@@ -506,59 +506,59 @@ class workspace_manager::impl
     }
 };
 
-workspace_manager::workspace_manager(output_t *wo) : pimpl(new impl(wo))
+workspace_set_t::workspace_set_t(output_t *wo) : pimpl(new impl(wo))
 {}
-workspace_manager::~workspace_manager() = default;
+workspace_set_t::~workspace_set_t() = default;
 
 /* Just pass to the appropriate function from above */
-wf::point_t workspace_manager::get_view_main_workspace(wayfire_view view)
+wf::point_t workspace_set_t::get_view_main_workspace(wayfire_view view)
 {
     return pimpl->get_view_main_workspace(view);
 }
 
-bool workspace_manager::view_visible_on(wayfire_view view, wf::point_t ws)
+bool workspace_set_t::view_visible_on(wayfire_view view, wf::point_t ws)
 {
     return pimpl->view_visible_on(view, ws);
 }
 
-void workspace_manager::move_to_workspace(wayfire_view view, wf::point_t ws)
+void workspace_set_t::move_to_workspace(wayfire_view view, wf::point_t ws)
 {
     return pimpl->move_to_workspace(view, ws);
 }
 
-void workspace_manager::add_view(wayfire_view view)
+void workspace_set_t::add_view(wayfire_view view)
 {
     pimpl->add_view(view);
 }
 
-std::vector<wayfire_view> workspace_manager::get_views(uint32_t flags, std::optional<wf::point_t> ws)
+std::vector<wayfire_view> workspace_set_t::get_views(uint32_t flags, std::optional<wf::point_t> ws)
 {
     return pimpl->get_views(flags, ws);
 }
 
-void workspace_manager::remove_view(wayfire_view view)
+void workspace_set_t::remove_view(wayfire_view view)
 {
     pimpl->remove_view(view);
 }
 
-workspace_implementation_t*workspace_manager::get_workspace_implementation()
+workspace_implementation_t*workspace_set_t::get_workspace_implementation()
 {
     return pimpl->get_implementation();
 }
 
-bool workspace_manager::set_workspace_implementation(
+bool workspace_set_t::set_workspace_implementation(
     std::unique_ptr<workspace_implementation_t> impl, bool overwrite)
 {
     return pimpl->set_implementation(std::move(impl), overwrite);
 }
 
-void workspace_manager::set_workspace(wf::point_t ws,
+void workspace_set_t::set_workspace(wf::point_t ws,
     const std::vector<wayfire_view>& fixed_views)
 {
     return pimpl->set_workspace(ws, fixed_views);
 }
 
-void workspace_manager::request_workspace(wf::point_t ws, const std::vector<wayfire_view>& views)
+void workspace_set_t::request_workspace(wf::point_t ws, const std::vector<wayfire_view>& views)
 {
     wf::workspace_change_request_signal data;
     data.carried_out  = false;
@@ -574,27 +574,27 @@ void workspace_manager::request_workspace(wf::point_t ws, const std::vector<wayf
     }
 }
 
-wf::point_t workspace_manager::get_current_workspace()
+wf::point_t workspace_set_t::get_current_workspace()
 {
     return pimpl->get_current_workspace();
 }
 
-wf::dimensions_t workspace_manager::get_workspace_grid_size()
+wf::dimensions_t workspace_set_t::get_workspace_grid_size()
 {
     return pimpl->grid.get_workspace_grid_size();
 }
 
-void workspace_manager::set_workspace_grid_size(wf::dimensions_t dim)
+void workspace_set_t::set_workspace_grid_size(wf::dimensions_t dim)
 {
     return pimpl->grid.set_workspace_grid_size(dim);
 }
 
-bool workspace_manager::is_workspace_valid(wf::point_t ws)
+bool workspace_set_t::is_workspace_valid(wf::point_t ws)
 {
     return pimpl->grid.is_workspace_valid(ws);
 }
 
-scene::floating_inner_ptr workspace_manager::get_node() const
+scene::floating_inner_ptr workspace_set_t::get_node() const
 {
     return pimpl->wnode;
 }

@@ -22,7 +22,7 @@ using wayfire_view = nonstd::observer_ptr<wf::view_interface_t>;
 namespace wf
 {
 class render_manager;
-class workspace_manager;
+class workspace_set_t;
 class output_workarea_manager_t;
 
 struct plugin_activation_data_t;
@@ -67,7 +67,7 @@ class output_t : public wf::object_base_t, public wf::signal::provider_t
     /**
      * Get the current workspace set of the output.
      */
-    virtual std::shared_ptr<workspace_manager> wset() = 0;
+    virtual std::shared_ptr<workspace_set_t> wset() = 0;
 
     /**
      * Get a textual representation of the output

@@ -5,7 +5,7 @@
 #include "wayfire/view-helpers.hpp"
 #include <wayfire/view.hpp>
 #include <wayfire/output.hpp>
-#include <wayfire/workspace-manager.hpp>
+#include <wayfire/workspace-set.hpp>
 #include <wayfire/output-layout.hpp>
 #include <getopt.h>
 #include <wayland-server-core.h>

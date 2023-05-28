@@ -7,7 +7,7 @@
 #include <wayfire/view-transform.hpp>
 #include <wayfire/render-manager.hpp>
 #include <wayfire/workspace-stream.hpp>
-#include <wayfire/workspace-manager.hpp>
+#include <wayfire/workspace-set.hpp>
 #include <wayfire/signal-definitions.hpp>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>

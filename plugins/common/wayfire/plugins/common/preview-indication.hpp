@@ -1,6 +1,6 @@
 #include <wayfire/geometry.hpp>
 #include <wayfire/render-manager.hpp>
-#include <wayfire/workspace-manager.hpp>
+#include <wayfire/workspace-set.hpp>
 #include <wayfire/compositor-view.hpp>
 
 #include "geometry-animation.hpp"

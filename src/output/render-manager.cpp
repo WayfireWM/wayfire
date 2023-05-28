@@ -13,7 +13,7 @@
 #include "wayfire/output.hpp"
 #include "../core/core-impl.hpp"
 #include "wayfire/util.hpp"
-#include "wayfire/workspace-manager.hpp"
+#include "wayfire/workspace-set.hpp"
 #include "../core/opengl-priv.hpp"
 #include "../main.hpp"
 #include <algorithm>

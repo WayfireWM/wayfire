@@ -5,7 +5,7 @@
 #include <wayfire/output.hpp>
 #include <wayfire/view.hpp>
 #include <wayfire/core.hpp>
-#include <wayfire/workspace-manager.hpp>
+#include <wayfire/workspace-set.hpp>
 #include <linux/input.h>
 #include <wayfire/signal-definitions.hpp>
 #include <wayfire/plugins/wobbly/wobbly-signal.hpp>

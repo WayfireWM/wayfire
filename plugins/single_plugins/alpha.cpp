@@ -31,7 +31,7 @@
 #include <wayfire/bindings-repository.hpp>
 #include "wayfire/view-helpers.hpp"
 #include "wayfire/view-transform.hpp"
-#include "wayfire/workspace-manager.hpp"
+#include "wayfire/workspace-set.hpp"
 
 class wayfire_alpha : public wf::plugin_interface_t
 {

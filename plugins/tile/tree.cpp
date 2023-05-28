@@ -3,7 +3,7 @@
 #include <wayfire/util/log.hpp>
 
 #include <wayfire/output.hpp>
-#include <wayfire/workspace-manager.hpp>
+#include <wayfire/workspace-set.hpp>
 #include <wayfire/view-transform.hpp>
 #include <algorithm>
 #include <wayfire/plugins/crossfade.hpp>

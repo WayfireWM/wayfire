@@ -1,7 +1,7 @@
 #include <wayfire/view.hpp>
 #include <wayfire/per-output-plugin.hpp>
 #include <wayfire/output.hpp>
-#include <wayfire/workspace-manager.hpp>
+#include <wayfire/workspace-set.hpp>
 #include <wayfire/util/log.hpp>
 #include "wayfire/scene-operations.hpp"
 #include "wayfire/scene.hpp"
