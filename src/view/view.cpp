@@ -143,7 +143,7 @@ void wf::view_interface_t::set_toplevel_parent(wayfire_view new_parent)
         /* At this point, we are a regular view. */
         if (this->get_output())
         {
-            wf::scene::readd_front(get_output()->get_wset(), get_root_node());
+            wf::scene::readd_front(get_output()->workspace->get_node(), get_root_node());
             get_output()->workspace->add_view(self());
             check_refocus_parent(old_parent);
         }

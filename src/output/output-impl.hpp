@@ -1,3 +1,4 @@
+#include "output/promotion-manager.hpp"
 #include "wayfire/bindings.hpp"
 #include "wayfire/output.hpp"
 #include "wayfire/plugin.hpp"
@@ -18,7 +19,7 @@ class output_impl_t : public output_t
 {
   private:
     std::shared_ptr<scene::output_node_t> nodes[(size_t)wf::scene::layer::ALL_LAYERS];
-    scene::floating_inner_ptr wset;
+    std::unique_ptr<promotion_manager_t> promotion_manager;
     uint64_t last_timestamp = 0;
 
     std::map<key_callback*, key_callback> key_map;
@@ -66,7 +67,6 @@ class output_impl_t : public output_t
      */
     std::shared_ptr<wf::scene::output_node_t> node_for_layer(
         wf::scene::layer layer) const override;
-    scene::floating_inner_ptr get_wset() const override;
     bool can_activate_plugin(wf::plugin_activation_data_t *owner, uint32_t flags = 0) override;
     bool can_activate_plugin(uint32_t caps, uint32_t flags = 0) override;
     bool activate_plugin(wf::plugin_activation_data_t *owner, uint32_t flags = 0) override;

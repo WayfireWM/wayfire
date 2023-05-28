@@ -48,7 +48,7 @@ class wayfire_wm_actions_t : public wf::per_output_plugin_instance_t
                 "wm-actions-above");
         } else
         {
-            wf::scene::readd_front(output->get_wset(), view->get_root_node());
+            wf::scene::readd_front(output->workspace->get_node(), view->get_root_node());
             if (view->has_data("wm-actions-above"))
             {
                 view->erase_data("wm-actions-above");

@@ -575,7 +575,7 @@ void wf::compositor_core_impl_t::move_view_to_output(wayfire_view v,
     }
 
     v->set_output(new_output);
-    wf::scene::add_front(new_output->get_wset(), v->get_root_node());
+    wf::scene::add_front(new_output->workspace->get_node(), v->get_root_node());
     new_output->workspace->add_view(v);
     new_output->focus_view(v);
 

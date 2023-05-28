@@ -109,12 +109,6 @@ class output_t : public wf::object_base_t, public wf::signal::provider_t
         wf::scene::layer layer) const = 0;
 
     /**
-     * Get the workspace set of the output. This is a floating node which contains
-     * all the regular views of an output in the WORKSPACE layer.
-     */
-    virtual scene::floating_inner_ptr get_wset() const = 0;
-
-    /**
      * Checks if a plugin can activate. This may not succeed if a plugin
      * with the same abilities is already active or if input is inhibited.
      *

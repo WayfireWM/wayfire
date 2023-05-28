@@ -52,6 +52,14 @@ class workspace_manager
 {
   public:
     /**
+     * Get the scenegraph node belonging to the workspace set.
+     * Each workspace set has one scenegraph node which is put in the workspace layer and contains most of
+     * the views from the workspace set. It is nonetheless possible to add views which are placed elsewhere
+     * in the scenegraph (for example, on a different layer).
+     */
+    scene::floating_inner_ptr get_node() const;
+
+    /**
      * Add the given view to the workspace set.
      * Until the view is removed, it will be counted as part of the workspace set.
      * This means that it will be moved when the workspace changes, and it will be part of the view list

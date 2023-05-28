@@ -104,7 +104,7 @@ class tile_plugin_t : public wf::per_output_plugin_instance_t, public wf::pointe
                 tiled_sublayer[i][j] =
                     std::make_shared<wf::scene::floating_inner_node_t>(false);
 
-                wf::scene::add_front(output->get_wset(), tiled_sublayer[i][j]);
+                wf::scene::add_front(output->workspace->get_node(), tiled_sublayer[i][j]);
             }
         }
 
@@ -341,7 +341,7 @@ class tile_plugin_t : public wf::per_output_plugin_instance_t, public wf::pointe
         /* Remove from special sublayer */
         if (reinsert)
         {
-            wf::scene::readd_front(wview->get_output()->get_wset(), wview->get_root_node());
+            wf::scene::readd_front(wview->get_output()->workspace->get_node(), wview->get_root_node());
         }
     }
 
@@ -595,7 +595,7 @@ class tile_plugin_t : public wf::per_output_plugin_instance_t, public wf::pointe
     void destroy_sublayer(wf::scene::floating_inner_ptr sublayer)
     {
         // Transfer views to the top
-        auto root     = output->get_wset();
+        auto root     = output->workspace->get_node();
         auto children = root->get_children();
         auto sublayer_children = sublayer->get_children();
         sublayer->set_children_list({});

@@ -180,7 +180,7 @@ class wayfire_xwayland_view_base : public wf::view_interface_t
         {
             if (!parent)
             {
-                wf::scene::readd_front(get_output()->get_wset(), get_root_node());
+                wf::scene::readd_front(get_output()->workspace->get_node(), get_root_node());
                 get_output()->workspace->add_view(self());
             }
 

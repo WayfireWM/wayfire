@@ -76,12 +76,10 @@ wf::output_impl_t::output_impl_t(wlr_output *handle,
 
     update_node_limits();
 
-    wset = std::make_shared<scene::floating_inner_node_t>(true);
-    scene::add_front(node_for_layer(scene::layer::WORKSPACE), wset);
-
     workarea  = std::make_unique<output_workarea_manager_t>(this);
     workspace = std::make_unique<workspace_manager>(this);
     render    = std::make_unique<render_manager>(this);
+    promotion_manager = std::make_unique<promotion_manager_t>(this);
 
     on_view_disappeared.set_callback([=] (view_disappeared_signal *ev) { handle_view_removed(ev->view); });
     on_configuration_changed = [=] (wf::output_configuration_changed_signal *ev)
@@ -97,11 +95,6 @@ std::shared_ptr<wf::scene::output_node_t> wf::output_impl_t::node_for_layer(
     wf::scene::layer layer) const
 {
     return nodes[(int)layer];
-}
-
-wf::scene::floating_inner_ptr wf::output_impl_t::get_wset() const
-{
-    return this->wset;
 }
 
 std::string wf::output_t::to_string() const
