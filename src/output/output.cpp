@@ -22,6 +22,7 @@
 #include <wayfire/config/types.hpp>
 #include <wayfire/util/log.hpp>
 #include <wayfire/nonstd/wlroots-full.hpp>
+#include <wayfire/workarea.hpp>
 
 #include <algorithm>
 #include <assert.h>

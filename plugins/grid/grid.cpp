@@ -2,6 +2,7 @@
 #include <wayfire/output.hpp>
 #include <wayfire/core.hpp>
 #include <wayfire/view.hpp>
+#include <wayfire/workarea.hpp>
 #include <wayfire/workspace-manager.hpp>
 #include <wayfire/render-manager.hpp>
 #include <algorithm>

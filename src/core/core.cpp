@@ -4,6 +4,7 @@
     #include "wayfire/scene.hpp"
 #endif
 
+#include <wayfire/workarea.hpp>
 #include "wayfire/scene-operations.hpp"
 #include "wayfire/txn/transaction-manager.hpp"
 #include "wayfire/bindings-repository.hpp"

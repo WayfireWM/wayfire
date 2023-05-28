@@ -3,6 +3,7 @@
 #include "config.h"
 #include "wayfire/geometry.hpp"
 #include "xwayland-view-base.hpp"
+#include <wayfire/workarea.hpp>
 
 #if WF_HAS_XWAYLAND
 

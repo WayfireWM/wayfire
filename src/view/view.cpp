@@ -1,5 +1,6 @@
 #include <memory>
 #include <wayfire/util/log.hpp>
+#include <wayfire/workarea.hpp>
 #include "../core/core-impl.hpp"
 #include "view-impl.hpp"
 #include "wayfire/geometry.hpp"

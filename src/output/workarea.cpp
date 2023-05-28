@@ -1,7 +1,7 @@
+#include <wayfire/workarea.hpp>
 #include "wayfire/geometry.hpp"
 #include "wayfire/signal-provider.hpp"
 #include <wayfire/output.hpp>
-#include <wayfire/workspace-manager.hpp>
 #include <wayfire/signal-definitions.hpp>
 
 struct wf::output_workarea_manager_t::impl

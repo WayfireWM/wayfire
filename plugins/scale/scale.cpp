@@ -3,6 +3,7 @@
  */
 #include <map>
 #include <memory>
+#include <wayfire/workarea.hpp>
 #include <wayfire/seat.hpp>
 #include <wayfire/per-output-plugin.hpp>
 #include <wayfire/output.hpp>

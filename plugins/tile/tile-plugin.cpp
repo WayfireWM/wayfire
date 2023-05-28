@@ -1,5 +1,6 @@
 #include <memory>
 #include <wayfire/per-output-plugin.hpp>
+#include <wayfire/workarea.hpp>
 #include <wayfire/output.hpp>
 #include <wayfire/core.hpp>
 #include <wayfire/matcher.hpp>

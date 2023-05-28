@@ -12,6 +12,7 @@
 #include <wayfire/output-layout.hpp>
 #include <wayfire/touch/touch.hpp>
 #include <wayfire/plugins/vswitch.hpp>
+#include <wayfire/workarea.hpp>
 
 #include <cmath>
 #include <linux/input.h>

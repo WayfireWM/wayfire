@@ -2,7 +2,7 @@
 #include <wayfire/per-output-plugin.hpp>
 #include <wayfire/view.hpp>
 #include <wayfire/core.hpp>
-#include <wayfire/workspace-manager.hpp>
+#include <wayfire/workarea.hpp>
 #include <wayfire/signal-definitions.hpp>
 
 class wayfire_place_window : public wf::per_output_plugin_instance_t

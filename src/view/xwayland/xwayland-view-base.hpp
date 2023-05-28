@@ -3,6 +3,7 @@
 #include "config.h"
 #include <wayfire/output-layout.hpp>
 #include <wayfire/workspace-manager.hpp>
+#include <wayfire/workarea.hpp>
 #include <wayfire/signal-definitions.hpp>
 
 #include "../view-impl.hpp"

@@ -2,6 +2,7 @@
 #include <cstring>
 #include <cstdlib>
 
+#include <wayfire/workarea.hpp>
 #include <wayfire/signal-definitions.hpp>
 #include "wayfire/geometry.hpp"
 #include "wayfire/scene-operations.hpp"
