@@ -147,6 +147,7 @@ void wf::output_impl_t::do_update_focus(wf::scene::node_t *new_focus)
 void wf::output_impl_t::refocus()
 {
     auto new_focus = wf::get_core().scene()->keyboard_refocus(this);
+    LOGC(KBD, "Output ", this->to_string(), " refocusing: choosing node ", new_focus.node);
     if (auto view = node_to_view(new_focus.node))
     {
         update_active_view(view);
@@ -321,6 +322,7 @@ void wf::output_impl_t::focus_node(wf::scene::node_ptr new_focus)
 
 void wf::output_impl_t::update_active_view(wayfire_view v)
 {
+    LOGC(KBD, "Output ", this->to_string(), ": active view becomes ", v);
     if ((v == nullptr) || (v->role == wf::VIEW_ROLE_TOPLEVEL))
     {
         if (last_active_toplevel != v)
