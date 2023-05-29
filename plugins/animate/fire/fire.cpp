@@ -148,7 +148,10 @@ class fire_render_instance_t : public wf::scene::render_instance_t
 
         for (auto& ch : self->get_children())
         {
-            ch->gen_render_instances(children, child_damage, output);
+            if (ch->is_enabled())
+            {
+                ch->gen_render_instances(children, child_damage, output);
+            }
         }
     }
 

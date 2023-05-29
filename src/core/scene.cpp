@@ -95,6 +95,11 @@ wf::keyboard_focus_node_t node_t::keyboard_refocus(wf::output_t *output)
 
     for (auto& ch : this->get_children())
     {
+        if (!ch->is_enabled())
+        {
+            continue;
+        }
+
         auto ch_focus = ch->keyboard_refocus(output);
         result = std::max(result, ch_focus);
 
