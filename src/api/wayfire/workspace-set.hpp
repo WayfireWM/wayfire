@@ -2,6 +2,7 @@
 #define WORKSPACE_MANAGER_HPP
 
 #include "wayfire/object.hpp"
+#include "wayfire/output.hpp"
 #include "wayfire/signal-provider.hpp"
 #include <functional>
 #include <vector>
@@ -9,6 +10,18 @@
 
 namespace wf
 {
+class workspace_set_t;
+
+/**
+ * on: workspace set
+ * when: Whenever the workspace set is attached to a new (including nullptr) output.
+ */
+struct workspace_set_attached_signal
+{
+    wf::workspace_set_t *set;
+    wf::output_t *old_output;
+};
+
 /**
  * A set of flags that can be ORed and used as flags for the workspace set's get_view() function.
  */

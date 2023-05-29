@@ -323,7 +323,10 @@ struct workspace_set_t::impl
             wf::scene::remove_child(wnode);
         }
 
-        output = new_output;
+        workspace_set_attached_signal data;
+        data.old_output = output;
+        data.set = self;
+        output   = new_output;
 
         if (new_output)
         {
@@ -336,6 +339,8 @@ struct workspace_set_t::impl
         {
             view->set_output(new_output);
         }
+
+        self->emit<workspace_set_attached_signal>(&data);
     }
 
     void set_visible(bool visible)
