@@ -3,11 +3,23 @@
 #include <wayfire/output.hpp>
 #include <wayfire/workspace-set.hpp>
 #include <wayfire/util/log.hpp>
+#include "wayfire/core.hpp"
 #include "wayfire/scene-operations.hpp"
 #include "wayfire/scene.hpp"
 #include "wayfire/signal-definitions.hpp"
 #include "wayfire/signal-provider.hpp"
 #include "wm-actions-signals.hpp"
+
+class always_on_top_root_node_t : public wf::scene::output_node_t
+{
+  public:
+    using output_node_t::output_node_t;
+
+    std::string stringify() const override
+    {
+        return "always-on-top for output " + get_output()->to_string() + " " + stringify_flags();
+    }
+};
 
 class wayfire_wm_actions_t : public wf::per_output_plugin_instance_t
 {
@@ -338,11 +350,8 @@ class wayfire_wm_actions_t : public wf::per_output_plugin_instance_t
   public:
     void init() override
     {
-        always_above = std::make_shared<wf::scene::floating_inner_node_t>(true);
-        wf::scene::add_front(
-            output->node_for_layer(wf::scene::layer::WORKSPACE),
-            always_above);
-
+        always_above = std::make_shared<always_on_top_root_node_t>(output);
+        wf::scene::add_front(wf::get_core().scene()->layers[(int)wf::scene::layer::WORKSPACE], always_above);
         output->add_activator(toggle_showdesktop, &on_toggle_showdesktop);
         output->add_activator(minimize, &on_minimize);
         output->add_activator(toggle_maximize, &on_toggle_maximize);
