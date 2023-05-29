@@ -1,6 +1,7 @@
 #include "wayfire/bindings.hpp"
 #include "wayfire/geometry.hpp"
 #include "wayfire/object.hpp"
+#include "wayfire/option-wrapper.hpp"
 #include "wayfire/scene-operations.hpp"
 #include "wayfire/signal-provider.hpp"
 #include "wayfire/util.hpp"
@@ -97,6 +98,8 @@ class wayfire_wsets_plugin_t : public wf::plugin_interface_t
   private:
     wf::option_wrapper_t<wf::config::compound_list_t<wf::activatorbinding_t>>
     workspace_bindings{"wsets/workspace_bindings"};
+    wf::option_wrapper_t<int> label_duration{"wsets/label_duration"};
+
     std::list<wf::activator_callback> select_callback;
     std::map<int, std::shared_ptr<wf::workspace_set_t>> available_sets;
 
@@ -168,7 +171,7 @@ class wayfire_wsets_plugin_t : public wf::plugin_interface_t
         wf::scene::readd_front(wo->node_for_layer(wf::scene::layer::DWIDGET), overlay->node);
         wf::scene::damage_node(overlay->node, overlay->node->get_bounding_box());
 
-        overlay->timer.set_timeout(2000, [wo] ()
+        overlay->timer.set_timeout(label_duration, [wo] ()
         {
             wo->erase_data<output_overlay_data_t>();
         });

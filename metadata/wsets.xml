@@ -9,5 +9,10 @@
 			<_long>A binding to select the workspace set #N on the current output.</_long>
 			<entry prefix="wset_" type="activator"/>
 		</option>
+		<option name="label_duration" type="int">
+			<_short>Label duration</_short>
+			<_long>Sets the duration in milliseconds for which the workspace set label is shown.</_long>
+			<default>2000</default>
+		</option>
 	</plugin>
 </wayfire>
