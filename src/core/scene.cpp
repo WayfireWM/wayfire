@@ -281,9 +281,7 @@ wf::geometry_t node_t::get_bounding_box()
 }
 
 // ------------------------------ output_node_t --------------------------------
-// FIXME: output nodes are actually structure nodes, but we need to add and
-// remove them dynamically ...
-output_node_t::output_node_t(wf::output_t *output) : floating_inner_node_t(false)
+output_node_t::output_node_t(wf::output_t *output) : floating_inner_node_t(true)
 {
     this->output = output;
 }
