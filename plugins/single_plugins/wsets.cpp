@@ -133,6 +133,7 @@ class wayfire_wsets_plugin_t : public wf::plugin_interface_t
         wf::wl_timer<false> timer;
         ~output_overlay_data_t()
         {
+            wf::scene::damage_node(node, node->get_bounding_box());
             wf::scene::remove_child(node);
             timer.disconnect();
         }
@@ -165,6 +166,7 @@ class wayfire_wsets_plugin_t : public wf::plugin_interface_t
 
         overlay->node->set_text("Workspace set " + std::to_string(wo->wset()->get_index()));
         wf::scene::readd_front(wo->node_for_layer(wf::scene::layer::DWIDGET), overlay->node);
+        wf::scene::damage_node(overlay->node, overlay->node->get_bounding_box());
 
         overlay->timer.set_timeout(2000, [wo] ()
         {
