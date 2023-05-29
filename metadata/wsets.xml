@@ -1,0 +1,13 @@
+<?xml version="1.0"?>
+<wayfire>
+	<plugin name="wsets">
+		<_short>Workspace Sets</_short>
+		<_long>A plugin which allows manipulation of workspace sets.</_long>
+		<category>Desktop</category>
+		<option name="workspace_bindings" type="dynamic-list" type-hint="dict">
+			<_short>Select workspace set</_short>
+			<_long>A binding to select the workspace set #N on the current output.</_long>
+			<entry prefix="wset_" type="activator"/>
+		</option>
+	</plugin>
+</wayfire>
