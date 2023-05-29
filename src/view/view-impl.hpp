@@ -44,6 +44,8 @@ class view_interface_t::view_priv_impl
 
     std::unique_ptr<wf::decorator_frame_t_t> frame = nullptr;
 
+    uint32_t allowed_actions = VIEW_ALLOW_ALL;
+
     uint32_t edges = 0;
     int in_continuous_move   = 0;
     int in_continuous_resize = 0;

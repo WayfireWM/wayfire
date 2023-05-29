@@ -10,19 +10,6 @@
 namespace wf
 {
 /**
- * The workspace implementation is a way for plugins to request more detailed
- * control over what happens on the given workspace. For example a tiling
- * plugin would disable move and/or resize operations for some views.
- */
-struct workspace_implementation_t
-{
-    virtual bool view_movable(wayfire_view view)   = 0;
-    virtual bool view_resizable(wayfire_view view) = 0;
-    virtual ~workspace_implementation_t()
-    {}
-};
-
-/**
  * A set of flags that can be ORed and used as flags for the workspace set's get_view() function.
  */
 enum wset_view_flags
@@ -150,22 +137,6 @@ class workspace_set_t : public wf::signal::provider_t, public wf::object_base_t
      * involves moving the view as appropriate.
      */
     void move_to_workspace(wayfire_view view, wf::point_t ws);
-
-    /**
-     * @return The current workspace implementation
-     */
-    workspace_implementation_t *get_workspace_implementation();
-
-    /**
-     * Set the active workspace implementation
-     * @param impl - The workspace implementation, or null if default
-     * @param overwrite - Whether to set the implementation even if another
-     *        non-default implementation has already been set.
-     *
-     * @return true iff the implementation has been set.
-     */
-    bool set_workspace_implementation(std::unique_ptr<workspace_implementation_t> impl,
-        bool overwrite = false);
 
     /**
      * Directly change the active workspace.

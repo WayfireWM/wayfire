@@ -390,9 +390,7 @@ class wayfire_expo : public wf::per_output_plugin_instance_t, public wf::keyboar
 
     void start_moving(wayfire_view view, wf::point_t grab)
     {
-        auto workspace_impl =
-            output->wset()->get_workspace_implementation();
-        if (!workspace_impl->view_movable(view))
+        if (!(view->get_allowed_actions() & (wf::VIEW_ALLOW_WS_CHANGE | wf::VIEW_ALLOW_MOVE)))
         {
             return;
         }

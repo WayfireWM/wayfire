@@ -943,3 +943,13 @@ wlr_surface*wf::view_interface_t::get_wlr_surface()
 {
     return priv->wsurface;
 }
+
+void wf::view_interface_t::set_allowed_actions(uint32_t actions) const
+{
+    priv->allowed_actions = actions;
+}
+
+uint32_t wf::view_interface_t::get_allowed_actions() const
+{
+    return priv->allowed_actions;
+}

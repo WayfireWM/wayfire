@@ -55,6 +55,23 @@ enum view_role_t
 };
 
 /**
+ * A list of standard actions which may be allowed on a view.
+ */
+enum view_allowed_actions_t
+{
+    // None of the actions below are allowed.
+    VIEW_ALLOW_NONE      = 0,
+    // It is allowed to move the view anywhere on the screen.
+    VIEW_ALLOW_MOVE      = (1 << 0),
+    // It is allowed to resize the view arbitrarily.
+    VIEW_ALLOW_RESIZE    = (1 << 1),
+    // It is allowed to move the view to another workspace.
+    VIEW_ALLOW_WS_CHANGE = (1 << 2),
+    // All of the actions above are allowed.
+    VIEW_ALLOW_ALL       = VIEW_ALLOW_MOVE | VIEW_ALLOW_RESIZE | VIEW_ALLOW_WS_CHANGE,
+};
+
+/**
  * A bitmask consisting of all tiled edges.
  * This corresponds to a maximized state.
  */
@@ -182,6 +199,21 @@ class view_interface_t : public wf::signal::provider_t, public wf::object_base_t
 
     /** Request that the view closes. */
     virtual void close();
+
+    /**
+     * Get the allowed actions for this view. By default, all actions are allowed, but plugins may disable
+     * individual actions.
+     *
+     * The allowed actions are a bitmask of @view_allowed_actions_t.
+     */
+    uint32_t get_allowed_actions() const;
+
+    /**
+     * Set the allowed actions for the view.
+     *
+     * @param actions The allowed actions, a bitmask of @view_allowed_actions_t.
+     */
+    void set_allowed_actions(uint32_t actions) const;
 
     /**
      * Ping the view's client.

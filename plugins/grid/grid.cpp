@@ -165,11 +165,8 @@ class wayfire_grid : public wf::per_output_plugin_instance_t
 
     bool can_adjust_view(wayfire_view view)
     {
-        auto workspace_impl =
-            output->wset()->get_workspace_implementation();
-
-        return workspace_impl->view_movable(view) &&
-               workspace_impl->view_resizable(view);
+        uint32_t req_actions = wf::VIEW_ALLOW_MOVE | wf::VIEW_ALLOW_RESIZE;
+        return (view->get_allowed_actions() & req_actions) == req_actions;
     }
 
     void handle_slot(wayfire_view view, int slot, wf::point_t delta = {0, 0})

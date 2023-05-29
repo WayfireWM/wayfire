@@ -24,19 +24,6 @@
 
 namespace wf
 {
-struct default_workspace_implementation_t : public workspace_implementation_t
-{
-    bool view_movable(wayfire_view view)
-    {
-        return true;
-    }
-
-    bool view_resizable(wayfire_view view)
-    {
-        return true;
-    }
-};
-
 /**
  * This class encapsulates functionality related to the management of the workspace grid size.
  */
@@ -281,7 +268,6 @@ struct workspace_set_t::impl
     };
 
     bool visible = false;
-    std::unique_ptr<workspace_implementation_t> workspace_impl;
 
   public:
     wf::output_t *output = nullptr;
@@ -372,26 +358,6 @@ struct workspace_set_t::impl
 
             wf::scene::set_node_enabled(view->get_root_node(), visible);
         }
-    }
-
-    workspace_implementation_t *get_implementation()
-    {
-        static default_workspace_implementation_t default_impl;
-
-        return workspace_impl ? workspace_impl.get() : &default_impl;
-    }
-
-    bool set_implementation(std::unique_ptr<workspace_implementation_t> impl,
-        bool overwrite)
-    {
-        bool replace = overwrite || !workspace_impl;
-
-        if (replace)
-        {
-            workspace_impl = std::move(impl);
-        }
-
-        return replace;
     }
 
     void add_view(wayfire_view view)
@@ -708,17 +674,6 @@ std::vector<wayfire_view> workspace_set_t::get_views(uint32_t flags, std::option
 void workspace_set_t::remove_view(wayfire_view view)
 {
     pimpl->remove_view(view);
-}
-
-workspace_implementation_t*workspace_set_t::get_workspace_implementation()
-{
-    return pimpl->get_implementation();
-}
-
-bool workspace_set_t::set_workspace_implementation(
-    std::unique_ptr<workspace_implementation_t> impl, bool overwrite)
-{
-    return pimpl->set_implementation(std::move(impl), overwrite);
 }
 
 void workspace_set_t::set_workspace(wf::point_t ws,

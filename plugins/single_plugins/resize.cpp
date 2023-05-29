@@ -185,14 +185,7 @@ class wayfire_resize : public wf::per_output_plugin_instance_t, public wf::point
         this->edges = forced_edges ?: calculate_edges(view->get_bounding_box(),
             get_input_coords().x, get_input_coords().y);
 
-        if (edges == 0)
-        {
-            return false;
-        }
-
-        auto current_ws_impl =
-            output->wset()->get_workspace_implementation();
-        if (!current_ws_impl->view_resizable(view))
+        if ((edges == 0) || !(view->get_allowed_actions() & wf::VIEW_ALLOW_RESIZE))
         {
             return false;
         }

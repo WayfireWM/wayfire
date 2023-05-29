@@ -18,20 +18,6 @@
 
 namespace wf
 {
-class tile_workspace_implementation_t : public wf::workspace_implementation_t
-{
-  public:
-    bool view_movable(wayfire_view view) override
-    {
-        return wf::tile::view_node_t::get_node(view) == nullptr;
-    }
-
-    bool view_resizable(wayfire_view view) override
-    {
-        return wf::tile::view_node_t::get_node(view) == nullptr;
-    }
-};
-
 /**
  * When a view is moved from one output to the other, we want to keep its tiled
  * status. To achieve this, we do the following:
@@ -266,6 +252,7 @@ class tile_plugin_t : public wf::per_output_plugin_instance_t, public wf::pointe
         }
 
         stop_controller(true);
+        view->set_allowed_actions(VIEW_ALLOW_WS_CHANGE);
 
         if (vp == wf::point_t{-1, -1})
         {
@@ -328,7 +315,7 @@ class tile_plugin_t : public wf::per_output_plugin_instance_t, public wf::pointe
     {
         stop_controller(true);
         auto wview = view->view;
-
+        wview->set_allowed_actions(VIEW_ALLOW_ALL);
         view->parent->remove_child(view);
         /* View node is invalid now */
         flatten_roots();
@@ -573,9 +560,6 @@ class tile_plugin_t : public wf::per_output_plugin_instance_t, public wf::pointe
     {
         input_grab = std::make_unique<wf::input_grab_t>("simple-tile", output, nullptr, this, nullptr);
         resize_roots(output->wset()->get_workspace_grid_size());
-        // TODO: check whether this was successful
-        output->wset()->set_workspace_implementation(
-            std::make_unique<tile_workspace_implementation_t>(), true);
 
         output->connect(&on_view_mapped);
         output->connect(&on_view_unmapped);
@@ -610,8 +594,6 @@ class tile_plugin_t : public wf::per_output_plugin_instance_t, public wf::pointe
 
     void fini() override
     {
-        output->wset()->set_workspace_implementation(nullptr, true);
-
         for (auto& row : tiled_sublayer)
         {
             for (auto& sublayer : row)

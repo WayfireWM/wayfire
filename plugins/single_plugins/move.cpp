@@ -234,20 +234,12 @@ class wayfire_move : public wf::per_output_plugin_instance_t,
 
     bool can_move_view(wayfire_view view)
     {
-        if (!view || !view->is_mapped())
+        if (!view || !view->is_mapped() || !(view->get_allowed_actions() & wf::VIEW_ALLOW_MOVE))
         {
             return false;
         }
 
         view = get_target_view(view);
-
-        auto current_ws_impl =
-            output->wset()->get_workspace_implementation();
-        if (!current_ws_impl->view_movable(view))
-        {
-            return false;
-        }
-
         return output->can_activate_plugin(&grab_interface, get_act_flags(view));
     }
 
