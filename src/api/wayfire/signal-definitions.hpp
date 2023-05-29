@@ -261,6 +261,16 @@ struct output_start_rendering_signal
  * -------------------------------------------------------------------------- */
 
 /**
+ * on: output
+ * when: Whenever the current workspace set of the output changes.
+ */
+struct workspace_set_changed_signal
+{
+    std::shared_ptr<workspace_set_t> new_wset;
+    wf::output_t *output;
+};
+
+/**
  * on: workspace set, output
  * when: Whenever the current workspace on the output has changed.
  */

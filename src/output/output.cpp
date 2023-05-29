@@ -77,8 +77,7 @@ wf::output_impl_t::output_impl_t(wlr_output *handle,
     update_node_limits();
 
     workarea = std::make_unique<output_workarea_manager_t>(this);
-    this->current_wset = std::make_shared<workspace_set_t>();
-    this->current_wset->attach_to_output(this);
+    this->set_workspace_set(std::make_shared<workspace_set_t>());
 
     render = std::make_unique<render_manager>(this);
     promotion_manager = std::make_unique<promotion_manager_t>(this);
@@ -102,6 +101,32 @@ std::shared_ptr<wf::scene::output_node_t> wf::output_impl_t::node_for_layer(
 std::shared_ptr<wf::workspace_set_t> wf::output_impl_t::wset()
 {
     return current_wset;
+}
+
+void wf::output_impl_t::set_workspace_set(std::shared_ptr<workspace_set_t> wset)
+{
+    if (current_wset == wset)
+    {
+        return;
+    }
+
+    wf::dassert(wset != nullptr, "Workspace set should not be null!");
+
+    if (this->current_wset)
+    {
+        this->current_wset->set_visible(false);
+    }
+
+    wset->attach_to_output(this);
+    wset->set_visible(true);
+    this->current_wset = wset;
+
+    workspace_set_changed_signal data;
+    data.new_wset = wset;
+    data.output   = this;
+    this->emit(&data);
+
+    refocus();
 }
 
 std::string wf::output_t::to_string() const

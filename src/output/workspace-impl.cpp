@@ -2,6 +2,7 @@
 #include <wayfire/view.hpp>
 #include <wayfire/output.hpp>
 #include <wayfire/core.hpp>
+#include <wayfire/output-layout.hpp>
 #include <wayfire/workspace-set.hpp>
 #include <wayfire/render-manager.hpp>
 #include <wayfire/signal-definitions.hpp>
@@ -142,9 +143,8 @@ static wf::scene::node_t *find_lca(wf::scene::node_t *a, wf::scene::node_t *b)
     return nullptr;
 }
 
-static bool is_attached_to_scenegraph(wf::scene::node_t *a)
+static bool is_attached_to(wf::scene::node_t *a, wf::scene::node_t *root)
 {
-    auto root = wf::get_core().scene().get();
     while (a)
     {
         if (a == root)
@@ -156,6 +156,11 @@ static bool is_attached_to_scenegraph(wf::scene::node_t *a)
     }
 
     return false;
+}
+
+static bool is_attached_to_scenegraph(wf::scene::node_t *a)
+{
+    return is_attached_to(a, wf::get_core().scene().get());
 }
 
 static size_t find_index_in_parent(wf::scene::node_t *x, wf::scene::node_t *parent)
@@ -201,6 +206,14 @@ struct workspace_set_t::impl
         [=] (output_configuration_changed_signal *ev)
     {
         change_output_geometry(output->get_relative_geometry());
+    };
+
+    wf::signal::connection_t<output_removed_signal> on_output_removed = [=] (output_removed_signal *ev)
+    {
+        if (ev->output == this->output)
+        {
+            attach_to_output(nullptr);
+        }
     };
 
     void change_output_geometry(wf::geometry_t new_geometry)
@@ -267,6 +280,7 @@ struct workspace_set_t::impl
         remove_view(ev->view);
     };
 
+    bool visible = false;
     std::unique_ptr<workspace_implementation_t> workspace_impl;
 
   public:
@@ -287,7 +301,9 @@ struct workspace_set_t::impl
         LOGC(WSET, "Creating new workspace set with id=", index);
 
         wnode = std::make_shared<workspace_set_root_node_t>(index);
+        wnode->set_enabled(false);
         self->connect(&on_grid_changed);
+        wf::get_core().output_layout->connect(&on_output_removed);
     }
 
     ~impl()
@@ -308,6 +324,8 @@ struct workspace_set_t::impl
 
         if (output)
         {
+            wf::dassert(output->wset().get() != self,
+                "Cannot attach active workspace set to another output!");
             output->disconnect(&output_geometry_changed);
             wf::scene::remove_child(wnode);
         }
@@ -324,6 +342,28 @@ struct workspace_set_t::impl
         for (auto view : this->wset_views)
         {
             view->set_output(new_output);
+        }
+    }
+
+    void set_visible(bool visible)
+    {
+        if (visible == this->visible)
+        {
+            return;
+        }
+
+        LOGC(WSET, "Changing visibility of workspace set id=", index, " visible=", visible);
+        this->visible = visible;
+        wf::scene::set_node_enabled(wnode, visible);
+        for (auto& view : wset_views)
+        {
+            if (is_attached_to(view->get_root_node().get(), wnode.get()))
+            {
+                // Attached/detached state same as wnode
+                continue;
+            }
+
+            wf::scene::set_node_enabled(view->get_root_node(), visible);
         }
     }
 
@@ -617,9 +657,14 @@ workspace_set_t::workspace_set_t() : pimpl(new impl(this))
 {}
 workspace_set_t::~workspace_set_t() = default;
 
-void workspace_set_t::attach_to_output(wf::output_t* output)
+void workspace_set_t::attach_to_output(wf::output_t *output)
 {
     pimpl->attach_to_output(output);
+}
+
+void workspace_set_t::set_visible(bool visible)
+{
+    pimpl->set_visible(visible);
 }
 
 /* Just pass to the appropriate function from above */
@@ -715,5 +760,10 @@ bool workspace_set_t::is_workspace_valid(wf::point_t ws)
 scene::floating_inner_ptr workspace_set_t::get_node() const
 {
     return pimpl->wnode;
+}
+
+uint64_t workspace_set_t::get_index() const
+{
+    return pimpl->index;
 }
 } // namespace wf

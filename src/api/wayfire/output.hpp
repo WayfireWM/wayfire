@@ -70,6 +70,14 @@ class output_t : public wf::object_base_t, public wf::signal::provider_t
     virtual std::shared_ptr<workspace_set_t> wset() = 0;
 
     /**
+     * Set the current workspace set.
+     *
+     * The old workspace set will become invisible (that is, necessary scenegraph nodes will be disabled), but
+     * it will remain attached to the output.
+     */
+    virtual void set_workspace_set(std::shared_ptr<workspace_set_t> wset) = 0;
+
+    /**
      * Get a textual representation of the output
      */
     std::string to_string() const;

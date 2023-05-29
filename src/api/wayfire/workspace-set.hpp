@@ -56,9 +56,18 @@ class workspace_set_t : public wf::signal::provider_t, public wf::object_base_t
     /**
      * Create a new empty workspace set. By default, the workspace set uses the core/{vwidth,vheight} options
      * to determine the workspace grid dimensions and is not attached to any outputs.
+     *
+     * When first created, the workspace set is invisible. It may become visible when it is set as the current
+     * workspace set on an output.
      */
     workspace_set_t();
     ~workspace_set_t();
+
+    /**
+     * Get the index of the workspace set. The index is assigned on creation and always the lowest unused
+     * index is assigned to the new set.
+     */
+    uint64_t get_index() const;
 
     /**
      * Attach the workspace set to the given output.
@@ -89,6 +98,10 @@ class workspace_set_t : public wf::signal::provider_t, public wf::object_base_t
      * Note that adding a view to the workspace set does not automatically add the view to the scenegraph.
      * The stacking order, layer information, etc. is all determined by the scenegraph and managed separately
      * from the workspace set, which serves an organizational purpose.
+     *
+     * Note 2: Special care should be taken when adding views that are not part of the default scenegraph
+     * node of the workspace set (i.e. @get_node()). Plugins adding these views have to ensure that the views
+     * are disabled if the workspace set is not active on any output.
      */
     void add_view(wayfire_view view);
 
@@ -193,9 +206,17 @@ class workspace_set_t : public wf::signal::provider_t, public wf::object_base_t
      */
     bool is_workspace_valid(wf::point_t ws);
 
-  protected:
+  private:
     struct impl;
     std::unique_ptr<impl> pimpl;
+    friend class output_impl_t;
+
+    /**
+     * Change the visibility of the workspace set. On each output, only one workspace set will be visible
+     * (the current workspace set). When a workspace set is invisible, views in it will be disabled in the
+     * scenegraph.
+     */
+    void set_visible(bool visible);
 };
 }
 
