@@ -346,7 +346,7 @@ using floating_inner_ptr = std::shared_ptr<floating_inner_node_t>;
  * position in the output layout, e.g. each output has a position 0,0 in its
  * coordinate system.
  */
-class output_node_t final : public floating_inner_node_t
+class output_node_t : public floating_inner_node_t
 {
   public:
     output_node_t(wf::output_t *output);
@@ -370,7 +370,7 @@ class output_node_t final : public floating_inner_node_t
     /**
      * Get the output this node is responsible for.
      */
-    wf::output_t *get_output()
+    wf::output_t *get_output() const
     {
         return output;
     }
