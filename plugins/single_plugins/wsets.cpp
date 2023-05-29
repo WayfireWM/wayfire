@@ -5,6 +5,7 @@
 #include "wayfire/scene-operations.hpp"
 #include "wayfire/signal-provider.hpp"
 #include "wayfire/util.hpp"
+#include "wayfire/view.hpp"
 #include <wayfire/signal-definitions.hpp>
 #include <wayfire/config/option-types.hpp>
 #include <wayfire/output.hpp>
@@ -93,14 +94,22 @@ class wayfire_wsets_plugin_t : public wf::plugin_interface_t
         {
             wf::get_core().bindings->rem_binding(&binding);
         }
+
+        for (auto& binding : send_callback)
+        {
+            wf::get_core().bindings->rem_binding(&binding);
+        }
     }
 
   private:
     wf::option_wrapper_t<wf::config::compound_list_t<wf::activatorbinding_t>>
     workspace_bindings{"wsets/workspace_bindings"};
+    wf::option_wrapper_t<wf::config::compound_list_t<wf::activatorbinding_t>>
+    send_to_bindings{"wsets/send_window_bindings"};
     wf::option_wrapper_t<int> label_duration{"wsets/label_duration"};
 
     std::list<wf::activator_callback> select_callback;
+    std::list<wf::activator_callback> send_callback;
     std::map<int, std::shared_ptr<wf::workspace_set_t>> available_sets;
 
     void setup_bindings()
@@ -127,6 +136,30 @@ class wayfire_wsets_plugin_t : public wf::plugin_interface_t
             });
 
             wf::get_core().bindings->add_activator(wf::create_option(binding), &select_callback.back());
+        }
+
+        for (const auto& [workspace, binding] : send_to_bindings.value())
+        {
+            int index = wf::option_type::from_string<int>(workspace.c_str()).value_or(-1);
+            if (index < 0)
+            {
+                LOGE("[WSETS] Invalid workspace set ", index, " in configuration!");
+                continue;
+            }
+
+            send_callback.push_back([=] (auto)
+            {
+                auto wo = wf::get_core().get_active_output();
+                if (!wo->can_activate_plugin(wf::CAPABILITY_MANAGE_COMPOSITOR))
+                {
+                    return false;
+                }
+
+                send_window_to(index);
+                return true;
+            });
+
+            wf::get_core().bindings->add_activator(wf::create_option(binding), &send_callback.back());
         }
     }
 
@@ -211,6 +244,58 @@ class wayfire_wsets_plugin_t : public wf::plugin_interface_t
         // We want to show the overlay even if we remain on the same workspace set
         show_workspace_set_overlay(wo);
         cleanup_wsets();
+    }
+
+    void send_window_to(int index)
+    {
+        auto wo = wf::get_core().get_active_output();
+        if (!wo || !wo->get_active_view())
+        {
+            return;
+        }
+
+        auto view = wo->get_active_view();
+        if (view->role != wf::VIEW_ROLE_TOPLEVEL)
+        {
+            return;
+        }
+
+        if (!available_sets.count(index))
+        {
+            available_sets[index] = std::make_shared<wf::workspace_set_t>(index);
+        }
+
+        auto target_wset = available_sets[index];
+        wo->wset()->remove_view(view);
+        wf::scene::remove_child(view->get_root_node());
+
+        const bool output_change = view->get_output() != target_wset->get_attached_output();
+        if (output_change)
+        {
+            wf::view_pre_moved_to_output_signal data1;
+            data1.old_output = view->get_output();
+            data1.new_output = target_wset->get_attached_output();
+            data1.view = view;
+            wf::get_core().emit(&data1);
+            view->set_output(target_wset->get_attached_output());
+        }
+
+        wf::scene::readd_front(target_wset->get_node(), view->get_root_node());
+        target_wset->add_view(view);
+
+        if (output_change)
+        {
+            wf::view_moved_to_output_signal data2;
+            data2.old_output = view->get_output();
+            data2.new_output = target_wset->get_attached_output();
+            data2.view = view;
+            wf::get_core().emit(&data2);
+
+            if (target_wset->get_attached_output())
+            {
+                target_wset->get_attached_output()->refocus();
+            }
+        }
     }
 
     wf::signal::connection_t<wf::output_added_signal> on_new_output = [=] (wf::output_added_signal *ev)
