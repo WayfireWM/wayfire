@@ -12,9 +12,10 @@
 static void run_transaction_test(bool timeout, bool autoready)
 {
     setup_wayfire_debugging_state();
-    wf::wl_timer::callback_t tx_timeout_callback;
+    wf::wl_timer<false>::callback_t tx_timeout_callback;
 
-    wf::txn::transaction_t::timer_setter_t timer_setter = [&] (uint64_t time, wf::wl_timer::callback_t cb)
+    wf::txn::transaction_t::timer_setter_t timer_setter =
+        [&] (uint64_t time, wf::wl_timer<false>::callback_t cb)
     {
         REQUIRE(time == 1234);
         tx_timeout_callback = cb;

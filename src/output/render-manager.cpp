@@ -725,7 +725,7 @@ class wf::render_manager::impl
 {
   public:
     wf::wl_listener_wrapper on_frame;
-    wf::wl_timer repaint_timer;
+    wf::wl_timer<false> repaint_timer;
 
     output_t *output;
     wf::region_t swap_damage;
@@ -763,7 +763,6 @@ class wf::render_manager::impl
                 {
                     output->handle->frame_pending = false;
                     paint();
-                    return false;
                 });
             }
 

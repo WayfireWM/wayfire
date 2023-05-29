@@ -15,7 +15,7 @@ namespace txn
 class transaction_t : public signal::provider_t
 {
   public:
-    using timer_setter_t = std::function<void (uint64_t, wf::wl_timer::callback_t)>;
+    using timer_setter_t = std::function<void (uint64_t, wf::wl_timer<false>::callback_t)>;
 
     /**
      * Create a new transaction.

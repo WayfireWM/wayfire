@@ -10,8 +10,8 @@ struct key_repeat_t
     wf::option_wrapper_t<int> delay{"input/kb_repeat_delay"};
     wf::option_wrapper_t<int> rate{"input/kb_repeat_rate"};
 
-    wf::wl_timer timer_delay;
-    wf::wl_timer timer_rate;
+    wf::wl_timer<false> timer_delay;
+    wf::wl_timer<true> timer_rate;
 
     using callback_t = std::function<bool (uint32_t)>;
 
@@ -32,8 +32,6 @@ struct key_repeat_t
                 // handle can determine if key should be repeated
                 return handler(key);
             });
-
-            return false; // no more repeat
         });
     }
 

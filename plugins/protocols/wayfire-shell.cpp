@@ -29,7 +29,7 @@ class wfs_hotspot
 
     bool hotspot_triggered = false;
     wf::wl_idle_call idle_check_input;
-    wf::wl_timer timer;
+    wf::wl_timer<false> timer;
 
     uint32_t timeout_ms;
     wl_resource *hotspot_resource;
@@ -97,7 +97,6 @@ class wfs_hotspot
             {
                 hotspot_triggered = true;
                 zwf_hotspot_v2_send_enter(hotspot_resource);
-                return false;
             });
         }
     }

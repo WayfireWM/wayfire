@@ -29,9 +29,7 @@ static void handle_idle_listener(void *data)
 
 static int handle_timeout(void *data)
 {
-    auto timer = (wf::wl_timer*)(data);
-    timer->execute();
-
+    (*((std::function<void()>*)data))();
     return 0;
 }
 
@@ -93,7 +91,8 @@ void wl_idle_call::execute()
     }
 }
 
-wl_timer::~wl_timer()
+template<bool Repeat>
+wl_timer<Repeat>::~wl_timer()
 {
     if (source)
     {
@@ -101,7 +100,8 @@ wl_timer::~wl_timer()
     }
 }
 
-void wl_timer::set_timeout(uint32_t timeout_ms, callback_t call)
+template<bool Repeat>
+void wl_timer<Repeat>::set_timeout(uint32_t timeout_ms, callback_t call)
 {
     if (timeout_ms == 0)
     {
@@ -110,17 +110,36 @@ void wl_timer::set_timeout(uint32_t timeout_ms, callback_t call)
         return;
     }
 
-    this->call    = call;
+    this->execute = [=] ()
+    {
+        if constexpr (Repeat)
+        {
+            if (call())
+            {
+                wl_event_source_timer_update(source, this->timeout);
+            } else
+            {
+                disconnect();
+            }
+        } else
+        {
+            // Disconnect first, ensuring that if `this` is destroyed, we don't use it anymore.
+            disconnect();
+            call();
+        }
+    };
+
     this->timeout = timeout_ms;
     if (!source)
     {
-        source = wl_event_loop_add_timer(get_core().ev_loop, handle_timeout, this);
+        source = wl_event_loop_add_timer(get_core().ev_loop, handle_timeout, &execute);
     }
 
     wl_event_source_timer_update(source, timeout_ms);
 }
 
-void wl_timer::disconnect()
+template<bool Repeat>
+void wl_timer<Repeat>::disconnect()
 {
     if (source)
     {
@@ -130,25 +149,15 @@ void wl_timer::disconnect()
     source = NULL;
 }
 
-bool wl_timer::is_connected()
+template<bool Repeat>
+bool wl_timer<Repeat>::is_connected()
 {
     return source != NULL;
 }
 
-void wl_timer::execute()
-{
-    if (call)
-    {
-        bool repeat = call();
-        if (repeat)
-        {
-            wl_event_source_timer_update(source, this->timeout);
-        } else
-        {
-            disconnect();
-        }
-    }
-}
+template class wl_timer<false>;
+
+template class wl_timer<true>;
 } // namespace wf
 
 // Implementation of Wayfire core.

@@ -892,7 +892,7 @@ class output_layout_t::impl
     wl_listener_wrapper on_backend_destroy;
 
     wl_idle_call idle_update_configuration;
-    wl_timer timer_remove_noop;
+    wl_timer<false> timer_remove_noop;
 
     wlr_backend *noop_backend;
     /* Wayfire generally assumes that an enabled output is always available.
@@ -1458,7 +1458,6 @@ class output_layout_t::impl
             timer_remove_noop.set_timeout(1000, [=] ()
             {
                 remove_noop_output();
-                return false; // disconnect
             });
         }
 

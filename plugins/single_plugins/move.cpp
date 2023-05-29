@@ -48,7 +48,7 @@ class wayfire_move : public wf::per_output_plugin_instance_t,
     } slot;
 
 
-    wf::wl_timer workspace_switch_timer;
+    wf::wl_timer<false> workspace_switch_timer;
 
     wf::shared_data::ref_ptr_t<wf::move_drag::core_drag_t> drag_helper;
 
@@ -446,7 +446,6 @@ class wayfire_move : public wf::per_output_plugin_instance_t,
         workspace_switch_timer.set_timeout(workspace_switch_after, [this, tws] ()
         {
             output->wset()->request_workspace(tws);
-            return false;
         });
     }
 

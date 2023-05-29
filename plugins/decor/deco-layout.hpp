@@ -155,7 +155,7 @@ class decoration_layout_t
     /* Last position of the input */
     wf::point_t current_input;
     /* double-click timer */
-    wf::wl_timer timer;
+    wf::wl_timer<false> timer;
     bool double_click_at_release = false;
 
     /** Create buttons in the layout, and return their total geometry */

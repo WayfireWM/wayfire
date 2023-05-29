@@ -87,10 +87,10 @@ class wayfire_default_transaction_t : public wf::txn::transaction_t
     {}
 
   private:
-    wf::wl_timer timer;
+    wf::wl_timer<false> timer;
     timer_setter_t get_timer_setter()
     {
-        return [this] (uint64_t timeout, wf::wl_timer::callback_t cb)
+        return [this] (uint64_t timeout, wf::wl_timer<false>::callback_t cb)
         {
             timer.set_timeout(timeout, cb);
         };

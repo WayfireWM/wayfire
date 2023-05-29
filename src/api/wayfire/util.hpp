@@ -98,12 +98,17 @@ class wl_idle_call
 
 /**
  * A wrapper for wl_event_loop_add_timer / wl_event_loop_timer_update
+ *
+ * @param repeatable If repeatable is true, then the callback's return value indicates whether to repeat the
+ *   timer or not. In those cases, it is not possible to destroy the timer from within the callback.
  */
+template<bool repeatable>
 class wl_timer
 {
   public:
-    // Return true if the timer should be fired again after the same amount of time
-    using callback_t = std::function<bool ()>;
+    // If @repeatable is true, then the return value indicates whether the timer should repeat after the same
+    // amount of time.
+    using callback_t = std::function<std::conditional_t<repeatable, bool, void>()>;
 
     wl_timer() = default;
 
@@ -125,14 +130,10 @@ class wl_timer
     /** @return true if the event source is active */
     bool is_connected();
 
-    /* Run the stored call now, regardless of the timeout. No-op if not
-     * connected */
-    void execute();
-
   private:
-    callback_t call;
     wl_event_source *source = NULL;
     uint32_t timeout = -1;
+    std::function<void()> execute;
 };
 }
 

@@ -42,7 +42,7 @@ class hotspot_instance_t
     int32_t along, away;
 
     /** Timer for hotspot activation */
-    wf::wl_timer timer;
+    wf::wl_timer<false> timer;
 
     /**
      * Only one event should be triggered once the cursor enters the hotspot area.
