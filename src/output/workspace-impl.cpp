@@ -289,13 +289,19 @@ struct workspace_set_t::impl
     grid_size_manager_t grid;
     scene::floating_inner_ptr wnode;
 
-    impl(workspace_set_t *self) : grid(self)
+    impl(workspace_set_t *self, int64_t hint_index) : grid(self)
     {
         this->self = self;
 
-        // Select lowest unused ID.
-        for (index = 0; wset_used_indices.count(index); index++)
-        {}
+        if ((hint_index < 0) || wset_used_indices.count(hint_index))
+        {
+            // Select lowest unused ID.
+            for (index = 0; wset_used_indices.count(index); index++)
+            {}
+        } else
+        {
+            index = hint_index;
+        }
 
         wset_used_indices.insert(index);
         LOGC(WSET, "Creating new workspace set with id=", index);
@@ -653,7 +659,7 @@ struct workspace_set_t::impl
     }
 };
 
-workspace_set_t::workspace_set_t() : pimpl(new impl(this))
+workspace_set_t::workspace_set_t(int64_t index) : pimpl(new impl(this, index))
 {}
 workspace_set_t::~workspace_set_t() = default;
 

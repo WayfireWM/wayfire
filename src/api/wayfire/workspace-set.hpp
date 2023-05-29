@@ -59,8 +59,11 @@ class workspace_set_t : public wf::signal::provider_t, public wf::object_base_t
      *
      * When first created, the workspace set is invisible. It may become visible when it is set as the current
      * workspace set on an output.
+     *
+     * @param index The index of the new workspace set. It will be used if available, otherwise, a the lowest
+     *   available index will be selected.
      */
-    workspace_set_t();
+    workspace_set_t(int64_t index = -1);
     ~workspace_set_t();
 
     /**
