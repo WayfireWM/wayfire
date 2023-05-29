@@ -82,6 +82,11 @@ class workspace_set_t : public wf::signal::provider_t, public wf::object_base_t
     void attach_to_output(wf::output_t *output);
 
     /**
+     * Get the currently attached output, or null.
+     */
+    wf::output_t *get_attached_output();
+
+    /**
      * Get the scenegraph node belonging to the workspace set.
      * Each workspace set has one scenegraph node which is put in the workspace layer and contains most of
      * the views from the workspace set. It is nonetheless possible to add views which are placed elsewhere

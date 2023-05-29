@@ -668,6 +668,11 @@ void workspace_set_t::attach_to_output(wf::output_t *output)
     pimpl->attach_to_output(output);
 }
 
+wf::output_t*workspace_set_t::get_attached_output()
+{
+    return pimpl->output;
+}
+
 void workspace_set_t::set_visible(bool visible)
 {
     pimpl->set_visible(visible);
