@@ -293,10 +293,10 @@ struct workspace_set_t::impl
     {
         this->self = self;
 
-        if ((hint_index < 0) || wset_used_indices.count(hint_index))
+        if ((hint_index <= 0) || wset_used_indices.count(hint_index))
         {
             // Select lowest unused ID.
-            for (index = 0; wset_used_indices.count(index); index++)
+            for (index = 1; wset_used_indices.count(index); index++)
             {}
         } else
         {
