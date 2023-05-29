@@ -316,6 +316,7 @@ struct workspace_set_t::impl
     {
         LOGC(WSET, "Destroying workspace set with id=", index);
         wset_used_indices.erase(index);
+        attach_to_output(nullptr);
     }
 
     void attach_to_output(wf::output_t *new_output)
@@ -400,7 +401,7 @@ struct workspace_set_t::impl
             return;
         }
 
-        LOGC(WSET, "Adding view ", view, " to wset ", this);
+        LOGC(WSET, "Adding view ", view, " to wset ", index);
         wset_views.push_back(view);
         view->connect(&on_view_destruct);
     }
@@ -410,11 +411,11 @@ struct workspace_set_t::impl
         auto it = std::find(wset_views.begin(), wset_views.end(), view);
         if (it == wset_views.end())
         {
-            LOGW("Removing view ", view, " from wset ", this, " but the view is not there!");
+            LOGW("Removing view ", view, " from wset id=", index, " but the view is not there!");
             return;
         }
 
-        LOGC(WSET, "Removing view ", view, " to from ", this);
+        LOGC(WSET, "Removing view ", view, " from id=", index);
         wset_views.erase(it);
         view->disconnect(&on_view_destruct);
     }
