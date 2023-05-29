@@ -178,7 +178,18 @@ class workspace_set_root_node_t : public wf::scene::floating_inner_node_t
     }
 };
 
-static std::set<uint64_t> wset_used_indices;
+static std::map<uint64_t, workspace_set_t*> allocated_wsets;
+
+std::vector<workspace_set_t*> workspace_set_t::get_all()
+{
+    std::vector<workspace_set_t*> result;
+    for (auto& [_, set] : allocated_wsets)
+    {
+        result.push_back(set);
+    }
+
+    return result;
+}
 
 struct workspace_set_t::impl
 {
@@ -279,17 +290,17 @@ struct workspace_set_t::impl
     {
         this->self = self;
 
-        if ((hint_index <= 0) || wset_used_indices.count(hint_index))
+        if ((hint_index <= 0) || allocated_wsets.count(hint_index))
         {
             // Select lowest unused ID.
-            for (index = 1; wset_used_indices.count(index); index++)
+            for (index = 1; allocated_wsets.count(index); index++)
             {}
         } else
         {
             index = hint_index;
         }
 
-        wset_used_indices.insert(index);
+        allocated_wsets[index] = self;
         LOGC(WSET, "Creating new workspace set with id=", index);
 
         wnode = std::make_shared<workspace_set_root_node_t>(index);
@@ -301,7 +312,7 @@ struct workspace_set_t::impl
     ~impl()
     {
         LOGC(WSET, "Destroying workspace set with id=", index);
-        wset_used_indices.erase(index);
+        allocated_wsets.erase(index);
         attach_to_output(nullptr);
     }
 

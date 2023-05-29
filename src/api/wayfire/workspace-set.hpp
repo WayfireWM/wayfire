@@ -67,6 +67,11 @@ class workspace_set_t : public wf::signal::provider_t, public wf::object_base_t
     ~workspace_set_t();
 
     /**
+     * Generate a list of all workspace sets currently allocated.
+     */
+    static std::vector<workspace_set_t*> get_all();
+
+    /**
      * Get the index of the workspace set. The index is assigned on creation and always the lowest unused
      * index is assigned to the new set.
      */
