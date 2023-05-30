@@ -339,8 +339,6 @@ void wf::xdg_toplevel_view_t::map()
     emit_view_map();
     /* Might trigger repositioning */
     set_toplevel_parent(this->parent);
-
-    wf::dump_scene();
 }
 
 void wf::xdg_toplevel_view_t::unmap()
