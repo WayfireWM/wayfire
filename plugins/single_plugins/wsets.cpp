@@ -265,36 +265,25 @@ class wayfire_wsets_plugin_t : public wf::plugin_interface_t
             available_sets[index] = std::make_shared<wf::workspace_set_t>(index);
         }
 
-        auto target_wset = available_sets[index];
-        wo->wset()->remove_view(view);
-        wf::scene::remove_child(view->get_root_node());
+        auto target_wset     = available_sets[index];
+        const auto& old_wset = view->get_wset();
 
-        const bool output_change = view->get_output() != target_wset->get_attached_output();
-        if (output_change)
+        old_wset->remove_view(view);
+        wf::scene::remove_child(view->get_root_node());
+        wf::emit_view_pre_moved_to_wset_pre(view, old_wset, target_wset);
+
+        if (view->get_output() != target_wset->get_attached_output())
         {
-            wf::view_pre_moved_to_output_signal data1;
-            data1.old_output = view->get_output();
-            data1.new_output = target_wset->get_attached_output();
-            data1.view = view;
-            wf::get_core().emit(&data1);
             view->set_output(target_wset->get_attached_output());
         }
 
         wf::scene::readd_front(target_wset->get_node(), view->get_root_node());
         target_wset->add_view(view);
+        wf::emit_view_moved_to_wset(view, old_wset, target_wset);
 
-        if (output_change)
+        if (target_wset->get_attached_output())
         {
-            wf::view_moved_to_output_signal data2;
-            data2.old_output = view->get_output();
-            data2.new_output = target_wset->get_attached_output();
-            data2.view = view;
-            wf::get_core().emit(&data2);
-
-            if (target_wset->get_attached_output())
-            {
-                target_wset->get_attached_output()->refocus();
-            }
+            target_wset->get_attached_output()->refocus();
         }
     }
 

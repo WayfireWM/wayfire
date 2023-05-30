@@ -185,7 +185,7 @@ void transfer_views(wf::output_t *from, wf::output_t *to)
 
         for (auto& view : views)
         {
-            wf::get_core().move_view_to_output(view, to, true);
+            move_view_to_output(view, to, true);
         }
     }
 

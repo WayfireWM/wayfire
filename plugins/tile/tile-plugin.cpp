@@ -24,6 +24,21 @@
 
 namespace wf
 {
+static bool can_tile_view(wayfire_view view)
+{
+    if (view->role != wf::VIEW_ROLE_TOPLEVEL)
+    {
+        return false;
+    }
+
+    if (view->parent)
+    {
+        return false;
+    }
+
+    return true;
+}
+
 /**
  * When a view is moved from one output to the other, we want to keep its tiled
  * status. To achieve this, we do the following:
@@ -178,15 +193,19 @@ class tile_workspace_set_data_t : public wf::custom_data_t
         }
     }
 
-    static tile_workspace_set_data_t& get(wf::output_t *output)
+    static tile_workspace_set_data_t& get(std::shared_ptr<workspace_set_t> set)
     {
-        auto set = output->wset();
         if (!set->has_data<tile_workspace_set_data_t>())
         {
             set->store_data(std::make_unique<tile_workspace_set_data_t>(set));
         }
 
         return *set->get_data<tile_workspace_set_data_t>();
+    }
+
+    static tile_workspace_set_data_t& get(wf::output_t *output)
+    {
+        return get(output->wset());
     }
 
     static std::unique_ptr<tile::tree_node_t>& get_current_root(wf::output_t *output)
@@ -206,6 +225,45 @@ class tile_workspace_set_data_t : public wf::custom_data_t
     }
 
     std::weak_ptr<workspace_set_t> wset;
+
+    void attach_view(wayfire_view view, wf::point_t vp = {-1, -1})
+    {
+        view->set_allowed_actions(VIEW_ALLOW_WS_CHANGE);
+
+        if (vp == wf::point_t{-1, -1})
+        {
+            vp = wset.lock()->get_current_workspace();
+        }
+
+        auto view_node = std::make_unique<wf::tile::view_node_t>(view);
+        roots[vp.x][vp.y]->as_split_node()->add_child(std::move(view_node));
+
+        auto node = view->get_root_node();
+        wf::scene::readd_front(tiled_sublayer[vp.x][vp.y], node);
+        view_bring_to_front(view);
+    }
+
+    /** Remove the given view from its tiling container */
+    void detach_view(nonstd::observer_ptr<tile::view_node_t> view,
+        bool reinsert = true)
+    {
+        auto wview = view->view;
+        wview->set_allowed_actions(VIEW_ALLOW_ALL);
+        view->parent->remove_child(view);
+        /* View node is invalid now */
+        flatten_roots();
+
+        if (wview->fullscreen && wview->is_mapped())
+        {
+            wview->fullscreen_request(nullptr, false);
+        }
+
+        /* Remove from special sublayer */
+        if (reinsert)
+        {
+            wf::scene::readd_front(wview->get_output()->wset()->get_node(), wview->get_root_node());
+        }
+    }
 };
 
 class tile_output_plugin_t : public wf::pointer_interaction_t, public wf::custom_data_t
@@ -223,22 +281,8 @@ class tile_output_plugin_t : public wf::pointer_interaction_t, public wf::custom
     wf::option_wrapper_t<wf::keybinding_t> key_focus_below{"simple-tile/key_focus_below"};
     wf::output_t *output;
 
-  private:
+  public:
     std::unique_ptr<wf::input_grab_t> input_grab;
-    bool can_tile_view(wayfire_view view)
-    {
-        if (view->role != wf::VIEW_ROLE_TOPLEVEL)
-        {
-            return false;
-        }
-
-        if (view->parent)
-        {
-            return false;
-        }
-
-        return true;
-    }
 
     static std::unique_ptr<wf::tile::tile_controller_t> get_default_controller()
     {
@@ -322,48 +366,34 @@ class tile_output_plugin_t : public wf::pointer_interaction_t, public wf::custom
         controller = get_default_controller();
     }
 
+    bool tile_window_by_default(wayfire_view view)
+    {
+        return tile_by_default.matches(view) && can_tile_view(view);
+    }
+
     void attach_view(wayfire_view view, wf::point_t vp = {-1, -1})
     {
-        if (!can_tile_view(view))
+        if (!view->get_wset())
         {
             return;
         }
 
         stop_controller(true);
-        view->set_allowed_actions(VIEW_ALLOW_WS_CHANGE);
-
-        if (vp == wf::point_t{-1, -1})
-        {
-            vp = output->wset()->get_current_workspace();
-        }
-
-        auto view_node = std::make_unique<wf::tile::view_node_t>(view);
-        tile_workspace_set_data_t::get_current_root(output)
-        ->as_split_node()->add_child(std::move(view_node));
-
-        auto node = view->get_root_node();
-        wf::scene::readd_front(tile_workspace_set_data_t::get_current_sublayer(output), node);
-        view_bring_to_front(view);
+        tile_workspace_set_data_t::get(view->get_wset()).attach_view(view, vp);
     }
 
-    bool tile_window_by_default(wayfire_view view)
+    void detach_view(nonstd::observer_ptr<tile::view_node_t> view, bool reinsert = true)
     {
-        return tile_by_default.matches(view) && can_tile_view(view);
+        stop_controller(true);
+        tile_workspace_set_data_t::get(view->view->get_wset()).detach_view(view, reinsert);
     }
 
     wf::signal::connection_t<view_mapped_signal> on_view_mapped = [=] (view_mapped_signal *ev)
     {
         if (tile_window_by_default(ev->view))
         {
-            attach_view(ev->view);
-        }
-    };
-
-    wf::signal::connection_t<view_set_output_signal> on_view_set_output = [=] (view_set_output_signal *ev)
-    {
-        if (ev->view->has_data<view_auto_tile_t>())
-        {
-            attach_view(ev->view);
+            stop_controller(true);
+            tile_workspace_set_data_t::get(output).attach_view(ev->view);
         }
     };
 
@@ -376,40 +406,6 @@ class tile_output_plugin_t : public wf::pointer_interaction_t, public wf::custom
             detach_view(node);
         }
     };
-
-    wf::signal::connection_t<view_pre_moved_to_output_signal> on_view_pre_moved_to_output =
-        [=] (view_pre_moved_to_output_signal *ev)
-    {
-        auto node = wf::tile::view_node_t::get_node(ev->view);
-        if ((ev->new_output == this->output) && node)
-        {
-            ev->view->store_data(std::make_unique<wf::view_auto_tile_t>());
-            detach_view(node);
-        }
-    };
-
-    /** Remove the given view from its tiling container */
-    void detach_view(nonstd::observer_ptr<tile::view_node_t> view,
-        bool reinsert = true)
-    {
-        stop_controller(true);
-        auto wview = view->view;
-        wview->set_allowed_actions(VIEW_ALLOW_ALL);
-        view->parent->remove_child(view);
-        /* View node is invalid now */
-        tile_workspace_set_data_t::get(output).flatten_roots();
-
-        if (wview->fullscreen && wview->is_mapped())
-        {
-            wview->fullscreen_request(nullptr, false);
-        }
-
-        /* Remove from special sublayer */
-        if (reinsert)
-        {
-            wf::scene::readd_front(wview->get_output()->wset()->get_node(), wview->get_root_node());
-        }
-    }
 
     wf::signal::connection_t<view_tile_request_signal> on_tile_request = [=] (view_tile_request_signal *ev)
     {
@@ -630,13 +626,11 @@ class tile_output_plugin_t : public wf::pointer_interaction_t, public wf::custom
         input_grab   = std::make_unique<wf::input_grab_t>("simple-tile", output, nullptr, this, nullptr);
         output->connect(&on_view_mapped);
         output->connect(&on_view_unmapped);
-        output->connect(&on_view_set_output);
         output->connect(&on_tile_request);
         output->connect(&on_fullscreen_request);
         output->connect(&on_focus_changed);
         output->connect(&on_view_change_workspace);
         output->connect(&on_view_minimized);
-        wf::get_core().connect(&on_view_pre_moved_to_output);
         setup_callbacks();
     }
 
@@ -655,6 +649,8 @@ class tile_plugin_t : public wf::plugin_interface_t, wf::per_output_tracker_mixi
     void init() override
     {
         init_output_tracking();
+        wf::get_core().connect(&on_view_pre_moved_to_wset);
+        wf::get_core().connect(&on_view_moved_to_wset);
     }
 
     void fini() override
@@ -665,6 +661,39 @@ class tile_plugin_t : public wf::plugin_interface_t, wf::per_output_tracker_mixi
             wset->erase_data<tile_workspace_set_data_t>();
         }
     }
+
+    wf::signal::connection_t<view_pre_moved_to_wset_signal> on_view_pre_moved_to_wset =
+        [=] (view_pre_moved_to_wset_signal *ev)
+    {
+        auto node = wf::tile::view_node_t::get_node(ev->view);
+        if (node)
+        {
+            ev->view->store_data(std::make_unique<wf::view_auto_tile_t>());
+            if (ev->old_wset)
+            {
+                if (auto wo = ev->old_wset->get_attached_output())
+                {
+                    wo->get_data<tile_output_plugin_t>()->stop_controller(true);
+                }
+
+                tile_workspace_set_data_t::get(ev->old_wset).detach_view(node);
+            }
+        }
+    };
+
+    wf::signal::connection_t<view_moved_to_wset_signal> on_view_moved_to_wset =
+        [=] (view_moved_to_wset_signal *ev)
+    {
+        if (ev->view->has_data<view_auto_tile_t>() && ev->new_wset)
+        {
+            if (auto wo = ev->new_wset->get_attached_output())
+            {
+                wo->get_data<tile_output_plugin_t>()->stop_controller(true);
+            }
+
+            tile_workspace_set_data_t::get(ev->new_wset).attach_view(ev->view);
+        }
+    };
 
     void handle_new_output(wf::output_t *output) override
     {

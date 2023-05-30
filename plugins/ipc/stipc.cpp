@@ -407,7 +407,7 @@ class stipc_plugin_t : public wf::plugin_interface_t
                     return wf::ipc::json_error("Unknown output " + (std::string)v["output"]);
                 }
 
-                wf::get_core().move_view_to_output(*it, wo, false);
+                move_view_to_output(*it, wo, false);
             }
 
             wf::geometry_t g{v["x"], v["y"], v["width"], v["height"]};

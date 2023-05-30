@@ -314,6 +314,10 @@ struct workspace_set_t::impl
         LOGC(WSET, "Destroying workspace set with id=", index);
         allocated_wsets.erase(index);
         attach_to_output(nullptr);
+        for (auto view : wset_views)
+        {
+            view->priv->current_wset.reset();
+        }
     }
 
     void attach_to_output(wf::output_t *new_output)
@@ -386,6 +390,7 @@ struct workspace_set_t::impl
         LOGC(WSET, "Adding view ", view, " to wset ", index);
         wset_views.push_back(view);
         view->connect(&on_view_destruct);
+        view->priv->current_wset = self->weak_from_this();
     }
 
     void remove_view(wayfire_view view)
@@ -400,6 +405,7 @@ struct workspace_set_t::impl
         LOGC(WSET, "Removing view ", view, " from id=", index);
         wset_views.erase(it);
         view->disconnect(&on_view_destruct);
+        view->priv->current_wset.reset();
     }
 
     std::vector<wayfire_view> get_views(uint32_t flags = 0, std::optional<wf::point_t> workspace = {})
@@ -753,5 +759,25 @@ uint64_t workspace_set_t::get_index() const
 std::optional<wf::geometry_t> workspace_set_t::get_last_output_geometry()
 {
     return pimpl->workspace_geometry;
+}
+
+void emit_view_pre_moved_to_wset_pre(wayfire_view view,
+    std::shared_ptr<workspace_set_t> old_wset, std::shared_ptr<workspace_set_t> new_wset)
+{
+    view_pre_moved_to_wset_signal data;
+    data.view     = view;
+    data.old_wset = old_wset;
+    data.new_wset = new_wset;
+    wf::get_core().emit(&data);
+}
+
+void emit_view_moved_to_wset(wayfire_view view,
+    std::shared_ptr<workspace_set_t> old_wset, std::shared_ptr<workspace_set_t> new_wset)
+{
+    view_moved_to_wset_signal data;
+    data.view     = view;
+    data.old_wset = old_wset;
+    data.new_wset = new_wset;
+    wf::get_core().emit(&data);
 }
 } // namespace wf

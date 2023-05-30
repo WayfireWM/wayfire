@@ -6,6 +6,7 @@
 #include "wayfire/output.hpp"
 #include "wayfire/signal-provider.hpp"
 #include <functional>
+#include <memory>
 #include <vector>
 #include <wayfire/view.hpp>
 
@@ -51,7 +52,8 @@ enum wset_view_flags
  * Each output also has a set of workspaces, arranged in a 2D grid. A view may
  * overlap multiple workspaces.
  */
-class workspace_set_t : public wf::signal::provider_t, public wf::object_base_t
+class workspace_set_t : public wf::signal::provider_t, public wf::object_base_t,
+    public std::enable_shared_from_this<workspace_set_t>
 {
   public:
     /**
@@ -221,6 +223,13 @@ class workspace_set_t : public wf::signal::provider_t, public wf::object_base_t
      */
     void set_visible(bool visible);
 };
+
+// A helper function to emit view-pre-moved-to-wset
+void emit_view_pre_moved_to_wset_pre(wayfire_view view,
+    std::shared_ptr<workspace_set_t> old_wset, std::shared_ptr<workspace_set_t> new_wset);
+// A helper function to emit view-moved-to-wset
+void emit_view_moved_to_wset(wayfire_view view,
+    std::shared_ptr<workspace_set_t> old_wset, std::shared_ptr<workspace_set_t> new_wset);
 }
 
 #endif /* end of include guard: WORKSPACE_MANAGER_HPP */

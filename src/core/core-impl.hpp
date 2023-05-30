@@ -77,10 +77,6 @@ class compositor_core_impl_t : public compositor_core_t
 
     void add_view(std::unique_ptr<wf::view_interface_t> view) override;
     std::vector<wayfire_view> get_all_views() override;
-    void focus_view(wayfire_view win) override;
-    void move_view_to_output(wayfire_view v, wf::output_t *new_output,
-        bool reconfigure) override;
-
     void focus_output(wf::output_t *o) override;
     wf::output_t *get_active_output() override;
     std::string get_xwayland_display() override;

@@ -20,6 +20,7 @@
 namespace wf
 {
 class view_interface_t;
+class workspace_set_t;
 class decorator_frame_t_t;
 }
 
@@ -157,6 +158,11 @@ class view_interface_t : public wf::signal::provider_t, public wf::object_base_t
      * Get the view's main output.
      */
     virtual wf::output_t *get_output();
+
+    /**
+     * Get the workspace set the view is attached to, if any.
+     */
+    std::shared_ptr<workspace_set_t> get_wset();
 
     /** Move the view to the given output-local coordinates.  */
     virtual void move(int x, int y) = 0;

@@ -36,7 +36,7 @@ class wayfire_oswitch : public wf::plugin_interface_t
             return true;
         }
 
-        wf::get_core().move_view_to_output(view, next, true);
+        move_view_to_output(view, next, true);
         idle_next_output.run_once([=] ()
         {
             wf::get_core().focus_output(next);

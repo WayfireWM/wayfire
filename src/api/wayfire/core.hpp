@@ -258,12 +258,6 @@ class compositor_core_t : public wf::object_base_t, public signal::provider_t
     virtual std::vector<wayfire_view> get_all_views() = 0;
 
     /**
-     * Focus the given view and its output (if necessary).
-     * Will also bring the view to the top of the stack.
-     */
-    virtual void focus_view(wayfire_view win) = 0;
-
-    /**
      * Focus the given output. The currently focused output is used to determine
      * which plugins receive various events (including bindings)
      */
@@ -273,14 +267,6 @@ class compositor_core_t : public wf::object_base_t, public signal::provider_t
      * Get the currently focused "active" output
      */
     virtual wf::output_t *get_active_output() = 0;
-
-    /**
-     * Change the view's output to new_output. If the reconfigure flag is
-     * set, it will adjust the view geometry for the new output and clamp
-     * it to the output geometry so it is at an expected size and position.
-     */
-    virtual void move_view_to_output(wayfire_view v,
-        wf::output_t *new_output, bool reconfigure) = 0;
 
     /** The wayland socket name of Wayfire */
     std::string wayland_display;
@@ -329,6 +315,13 @@ class compositor_core_t : public wf::object_base_t, public signal::provider_t
     compositor_core_t();
     virtual ~compositor_core_t();
 };
+
+/**
+ * Change the view's output to new_output. If the reconfigure flag is
+ * set, it will adjust the view geometry for the new output and clamp
+ * it to the output geometry so it is at an expected size and position.
+ */
+void move_view_to_output(wayfire_view v, wf::output_t *new_output, bool reconfigure);
 
 /**
  * Simply a convenience function to call wf::compositor_core_t::get()

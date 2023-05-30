@@ -660,30 +660,31 @@ struct view_ping_timeout_signal
 
 /**
  * on: core
- * when: Immediately before the view is moved to another output. view-moved-to-output is emitted afterwards.
+ * when: Immediately before the view is moved to a different workspace set.
+ *   view-moved-to-set is emitted afterwards.
  */
-struct view_pre_moved_to_output_signal
+struct view_pre_moved_to_wset_signal
 {
     /* The view being moved */
     wayfire_view view;
-    /* The output the view was on, may be NULL. */
-    wf::output_t *old_output;
-    /* The output the view is being moved to. */
-    wf::output_t *new_output;
+    /* The old wset the view was on, may be NULL. */
+    std::shared_ptr<wf::workspace_set_t> old_wset;
+    /* The new wset the view is being moved to. */
+    std::shared_ptr<wf::workspace_set_t> new_wset;
 };
 
 /**
  * on: core
- * when: After the view has been moved to a new output.
+ * when: After the view has been moved to a new wset.
  */
-struct view_moved_to_output_signal
+struct view_moved_to_wset_signal
 {
     /* The view being moved */
     wayfire_view view;
-    /* The output the view was on, may be NULL. */
-    wf::output_t *old_output;
-    /* The output the view is being moved to. */
-    wf::output_t *new_output;
+    /* The old wset the view was on, may be NULL. */
+    std::shared_ptr<wf::workspace_set_t> old_wset;
+    /* The new wset the view is being moved to. */
+    std::shared_ptr<wf::workspace_set_t> new_wset;
 };
 
 /**

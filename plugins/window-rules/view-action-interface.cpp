@@ -428,7 +428,7 @@ void view_action_interface_t::_start_on_output(std::string name)
         return;
     }
 
-    wf::get_core().move_view_to_output(_view, output, true);
+    move_view_to_output(_view, output, true);
 }
 
 std::tuple<bool, wf::point_t> view_action_interface_t::_validate_ws(

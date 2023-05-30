@@ -246,7 +246,7 @@ class wayfire_preserve_output : public wf::per_output_plugin_instance_t
             LOGD("Restoring view: ",
                 view->get_title(), " to: ", output->to_string());
 
-            wf::get_core().move_view_to_output(view, output, false);
+            move_view_to_output(view, output, false);
             view->set_fullscreen(last_output_info->fullscreen);
             view->set_minimized(last_output_info->minimized);
             if (last_output_info->tiled_edges != 0)

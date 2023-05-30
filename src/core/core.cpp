@@ -425,21 +425,6 @@ std::vector<wayfire_view> wf::compositor_core_impl_t::get_all_views()
     return result;
 }
 
-void wf::compositor_core_impl_t::focus_view(wayfire_view v)
-{
-    if (!v)
-    {
-        return;
-    }
-
-    if (v->get_output() != active_output)
-    {
-        focus_output(v->get_output());
-    }
-
-    active_output->focus_view(v, true);
-}
-
 void wf::compositor_core_impl_t::erase_view(wayfire_view v)
 {
     if (!v)
@@ -535,15 +520,11 @@ std::string wf::compositor_core_impl_t::get_xwayland_display()
     return xwayland_get_display();
 }
 
-void wf::compositor_core_impl_t::move_view_to_output(wayfire_view v,
-    wf::output_t *new_output, bool reconfigure)
+void wf::move_view_to_output(wayfire_view v, wf::output_t *new_output, bool reconfigure)
 {
     auto old_output = v->get_output();
-    wf::view_pre_moved_to_output_signal data;
-    data.view = v;
-    data.old_output = old_output;
-    data.new_output = new_output;
-    this->emit(&data);
+    auto old_wset   = v->get_wset();
+    emit_view_pre_moved_to_wset_pre(v, old_wset, new_output->wset());
 
     uint32_t edges;
     bool fullscreen;
@@ -594,11 +575,7 @@ void wf::compositor_core_impl_t::move_view_to_output(wayfire_view v,
         }
     }
 
-    wf::view_moved_to_output_signal moved_data;
-    moved_data.view = v;
-    moved_data.old_output = old_output;
-    moved_data.new_output = new_output;
-    this->emit(&moved_data);
+    emit_view_moved_to_wset(v, old_wset, new_output->wset());
 }
 
 const std::shared_ptr<wf::scene::root_node_t>& wf::compositor_core_impl_t::scene()

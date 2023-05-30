@@ -110,10 +110,10 @@ class wayfire_wm_actions_t : public wf::per_output_plugin_instance_t
     /**
      * Ensures views marked as above are still above if their output changes.
      */
-    wf::signal::connection_t<wf::view_moved_to_output_signal> on_view_output_changed =
-        [=] (wf::view_moved_to_output_signal *signal)
+    wf::signal::connection_t<wf::view_moved_to_wset_signal> on_view_output_changed =
+        [=] (wf::view_moved_to_wset_signal *signal)
     {
-        if (signal->new_output != output)
+        if (!signal->new_wset || (signal->new_wset->get_attached_output() != output))
         {
             return;
         }

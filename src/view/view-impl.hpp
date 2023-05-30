@@ -63,6 +63,7 @@ class view_interface_t::view_priv_impl
     void set_mapped(bool mapped);
     void set_mapped_surface_contents(std::shared_ptr<scene::wlr_surface_node_t> content);
     void unset_mapped_surface_contents();
+    std::weak_ptr<wf::workspace_set_t> current_wset;
 
   private:
     /** Last geometry the view has had in non-tiled and non-fullscreen state.

@@ -276,9 +276,8 @@ class wayfire_move : public wf::per_output_plugin_instance_t,
             auto offset = wf::origin(view->get_output()->get_layout_geometry()) +
                 -wf::origin(target_output->get_layout_geometry());
 
-            wf::get_core().move_view_to_output(view, target_output, false);
-            view->move(view->get_wm_geometry().x + offset.x,
-                view->get_wm_geometry().y + offset.y);
+            move_view_to_output(view, target_output, false);
+            view->move(view->get_wm_geometry().x + offset.x, view->get_wm_geometry().y + offset.y);
 
             // On the new output
             view->move_request();

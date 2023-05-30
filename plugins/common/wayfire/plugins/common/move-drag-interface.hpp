@@ -693,7 +693,7 @@ inline void adjust_view_on_output(drag_done_signal *ev)
 
     if (parent->get_output() != ev->focused_output)
     {
-        wf::get_core().move_view_to_output(parent, ev->focused_output, false);
+        move_view_to_output(parent, ev->focused_output, false);
     }
 
     // Calculate the position we're leaving the view on

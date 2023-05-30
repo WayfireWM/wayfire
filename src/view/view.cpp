@@ -573,7 +573,7 @@ void wf::view_interface_t::fullscreen_request(wf::output_t *out, bool state,
      * fullscreened? We should make sure that it stays visible there */
     if (get_output() != wo)
     {
-        wf::get_core().move_view_to_output(self(), wo, false);
+        wf::move_view_to_output(self(), wo, false);
     }
 
     view_fullscreen_request_signal data;
@@ -952,4 +952,9 @@ void wf::view_interface_t::set_allowed_actions(uint32_t actions) const
 uint32_t wf::view_interface_t::get_allowed_actions() const
 {
     return priv->allowed_actions;
+}
+
+std::shared_ptr<wf::workspace_set_t> wf::view_interface_t::get_wset()
+{
+    return priv->current_wset.lock();
 }
