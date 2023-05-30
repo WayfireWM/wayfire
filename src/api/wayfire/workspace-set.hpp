@@ -1,6 +1,7 @@
 #ifndef WORKSPACE_MANAGER_HPP
 #define WORKSPACE_MANAGER_HPP
 
+#include "wayfire/geometry.hpp"
 #include "wayfire/object.hpp"
 #include "wayfire/output.hpp"
 #include "wayfire/signal-provider.hpp"
@@ -90,6 +91,11 @@ class workspace_set_t : public wf::signal::provider_t, public wf::object_base_t
      * Get the currently attached output, or null.
      */
     wf::output_t *get_attached_output();
+
+    /**
+     * Get the output geometry of the last attached output.
+     */
+    std::optional<wf::geometry_t> get_last_output_geometry();
 
     /**
      * Get the scenegraph node belonging to the workspace set.

@@ -749,4 +749,9 @@ uint64_t workspace_set_t::get_index() const
 {
     return pimpl->index;
 }
+
+std::optional<wf::geometry_t> workspace_set_t::get_last_output_geometry()
+{
+    return pimpl->workspace_geometry;
+}
 } // namespace wf
