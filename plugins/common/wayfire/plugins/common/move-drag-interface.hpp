@@ -654,11 +654,15 @@ class core_drag_t : public signal::provider_t
     void update_current_output(wf::point_t grab)
     {
         wf::pointf_t origin = {1.0 * grab.x, 1.0 * grab.y};
-        auto output =
-            wf::get_core().output_layout->get_output_coords_at(origin, origin);
+        auto output = wf::get_core().output_layout->get_output_coords_at(origin, origin);
 
         if (output != current_output)
         {
+            if (current_output)
+            {
+                current_output->render->rem_effect(&on_pre_frame);
+            }
+
             drag_focus_output_signal data;
             data.previous_focus_output = current_output;
 
@@ -666,8 +670,24 @@ class core_drag_t : public signal::provider_t
             data.focus_output = output;
             wf::get_core().focus_output(output);
             emit(&data);
+
+            if (output)
+            {
+                current_output->render->add_effect(&on_pre_frame, OUTPUT_EFFECT_PRE);
+            }
         }
     }
+
+    wf::effect_hook_t on_pre_frame = [=] ()
+    {
+        for (auto& v : this->all_views)
+        {
+            if (v.transformer->scale_factor.running())
+            {
+                v.view->damage();
+            }
+        }
+    };
 
     wf::signal::connection_t<view_unmapped_signal> on_view_unmap = [=] (auto *ev)
     {
