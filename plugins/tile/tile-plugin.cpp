@@ -72,7 +72,6 @@ class tile_workspace_set_data_t : public wf::custom_data_t
         inner_gaps.set_callback(update_gaps);
         outer_horiz_gaps.set_callback(update_gaps);
         outer_vert_gaps.set_callback(update_gaps);
-        update_gaps();
     }
 
     wf::signal::connection_t<workarea_changed_signal> on_workarea_changed = [=] (auto)
@@ -124,6 +123,7 @@ class tile_workspace_set_data_t : public wf::custom_data_t
         }
 
         update_root_size();
+        update_gaps();
     }
 
     void update_root_size()
