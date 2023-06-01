@@ -27,7 +27,6 @@ class xdg_toplevel_t : public toplevel_t, public std::enable_shared_from_this<xd
     void apply() override;
     void set_decoration(decorator_frame_t_t *frame);
     wf::geometry_t calculate_base_geometry();
-
     void request_native_size();
 
   private:

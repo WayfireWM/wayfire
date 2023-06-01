@@ -17,13 +17,12 @@
 class wayfire_xwayland_view_base : public wf::view_interface_t
 {
   protected:
-    wf::wl_listener_wrapper on_destroy, on_unmap, on_map, on_configure,
+    wf::wl_listener_wrapper on_destroy, on_configure,
         on_set_title, on_set_app_id, on_or_changed, on_set_decorations,
         on_ping_timeout, on_set_window_type;
 
     wf::wl_listener_wrapper on_surface_commit;
     std::shared_ptr<wf::scene::wlr_surface_node_t> main_surface;
-    std::unique_ptr<wf::wlr_surface_controller_t> surface_controller;
 
     wlr_xwayland_surface *xw;
     /** The geometry requested by the client */
@@ -67,16 +66,6 @@ class wayfire_xwayland_view_base : public wf::view_interface_t
 
         return NULL;
     }
-
-    wf::signal::connection_t<wf::output_configuration_changed_signal> output_geometry_changed =
-        [=] (wf::output_configuration_changed_signal *ev)
-    {
-        if (is_mapped())
-        {
-            auto wm_geometry = get_wm_geometry();
-            move(wm_geometry.x, wm_geometry.y);
-        }
-    };
 
     bool has_type(xcb_atom_t type)
     {
@@ -166,15 +155,19 @@ class wayfire_xwayland_view_base : public wf::view_interface_t
         wf::scene::damage_node(this->get_surface_root_node(), dmg);
     }
 
+    void check_create_main_surface(wlr_surface *surface, bool autocommit)
+    {
+        if (!this->main_surface)
+        {
+            this->main_surface = std::make_shared<wf::scene::wlr_surface_node_t>(surface, autocommit);
+            priv->set_mapped_surface_contents(main_surface);
+        }
+    }
+
     virtual void map(wlr_surface *surface)
     {
-        wf::scene::set_node_enabled(priv->root_node, true);
-        priv->wsurface = surface;
-
-        this->main_surface = std::make_shared<wf::scene::wlr_surface_node_t>(surface, true);
-        priv->surface_root_node->set_children_list({main_surface});
-        wf::scene::update(priv->surface_root_node, wf::scene::update_flag::CHILDREN_LIST);
-        surface_controller = std::make_unique<wf::wlr_surface_controller_t>(surface, priv->surface_root_node);
+        priv->set_mapped(true);
+        check_create_main_surface(surface, true);
         on_surface_commit.connect(&surface->events.commit);
         if (role == wf::VIEW_ROLE_TOPLEVEL)
         {
@@ -199,15 +192,12 @@ class wayfire_xwayland_view_base : public wf::view_interface_t
         emit_view_pre_unmap();
         set_decoration(nullptr);
 
-        main_surface   = nullptr;
-        priv->wsurface = nullptr;
+        main_surface = nullptr;
+        priv->unset_mapped_surface_contents();
         on_surface_commit.disconnect();
-        surface_controller = nullptr;
-        priv->surface_root_node->set_children_list({});
-        wf::scene::update(priv->surface_root_node, wf::scene::update_flag::CHILDREN_LIST);
 
         emit_view_unmap();
-        wf::scene::set_node_enabled(priv->root_node, false);
+        priv->set_mapped(false);
     }
 
     virtual void initialize() override
@@ -220,8 +210,6 @@ class wayfire_xwayland_view_base : public wf::view_interface_t
             set_output(wf::get_core().get_active_output());
         }
 
-        on_map.set_callback([&] (void*) { map(xw->surface); });
-        on_unmap.set_callback([&] (void*) { unmap(); });
         on_destroy.set_callback([&] (void*) { destroy(); });
         on_configure.set_callback([&] (void *data)
         {
@@ -256,8 +244,6 @@ class wayfire_xwayland_view_base : public wf::view_interface_t
         handle_app_id_changed(nonull(xw->class_t));
         update_decorated();
 
-        on_map.connect(&xw->events.map);
-        on_unmap.connect(&xw->events.unmap);
         on_destroy.connect(&xw->events.destroy);
         on_configure.connect(&xw->events.request_configure);
         on_set_title.connect(&xw->events.set_title);
@@ -282,10 +268,7 @@ class wayfire_xwayland_view_base : public wf::view_interface_t
     virtual void destroy()
     {
         this->xw = nullptr;
-        output_geometry_changed.disconnect();
 
-        on_map.disconnect();
-        on_unmap.disconnect();
         on_destroy.disconnect();
         on_configure.disconnect();
         on_set_title.disconnect();
@@ -311,25 +294,6 @@ class wayfire_xwayland_view_base : public wf::view_interface_t
     {
         return role == wf::VIEW_ROLE_TOPLEVEL && !has_client_decoration &&
                !has_type(wf::xw::_NET_WM_WINDOW_TYPE_SPLASH);
-    }
-
-    bool should_resize_client(wf::dimensions_t request, wf::dimensions_t current_geometry)
-    {
-        /*
-         * Do not send a configure if the client will retain its size.
-         * This is needed if a client starts with one size and immediately resizes
-         * again.
-         *
-         * If we do configure it with the given size, then it will think that we
-         * are requesting the given size, and won't resize itself again.
-         */
-        if (this->last_size_request == wf::dimensions_t{0, 0})
-        {
-            return request != current_geometry;
-        } else
-        {
-            return request != last_size_request;
-        }
     }
 
     bool is_mapped() const override
@@ -456,61 +420,6 @@ class wayfire_xwayland_view_base : public wf::view_interface_t
         }
 
         wf::view_interface_t::set_activated(active);
-    }
-
-    void send_configure(int width, int height)
-    {
-        if (!xw)
-        {
-            return;
-        }
-
-        if ((width < 0) || (height < 0))
-        {
-            /* such a configure request would freeze xwayland.
-             * This is most probably a bug somewhere in the compositor. */
-            LOGE("Configuring a xwayland surface with width/height <0");
-
-            return;
-        }
-
-        auto output_geometry = get_output_geometry();
-
-        int configure_x = output_geometry.x;
-        int configure_y = output_geometry.y;
-
-        if (get_output())
-        {
-            auto real_output = get_output()->get_layout_geometry();
-            configure_x += real_output.x;
-            configure_y += real_output.y;
-        }
-
-        wlr_xwayland_surface_configure(xw,
-            configure_x, configure_y, width, height);
-    }
-
-    wf::dimensions_t last_size_request = {0, 0};
-    void send_configure()
-    {
-        send_configure(last_size_request.width, last_size_request.height);
-    }
-
-    virtual void set_output(wf::output_t *wo) override
-    {
-        output_geometry_changed.disconnect();
-        wf::view_interface_t::set_output(wo);
-
-        if (wo)
-        {
-            wo->connect(&output_geometry_changed);
-        }
-
-        /* Update the real position */
-        if (is_mapped())
-        {
-            send_configure();
-        }
     }
 };
 

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "config.h"
+#include "wayfire/util.hpp"
 #include "xwayland-view-base.hpp"
 #include <wayfire/render-manager.hpp>
 #include <wayfire/scene-operations.hpp>
@@ -11,6 +12,8 @@ class wayfire_unmanaged_xwayland_view : public wayfire_xwayland_view_base
 {
   protected:
     wf::wl_listener_wrapper on_set_geometry;
+    wf::wl_listener_wrapper on_map;
+    wf::wl_listener_wrapper on_unmap;
 
     /**
      * The bounding box of the view the last time it was rendered.
@@ -175,7 +178,11 @@ class wayfire_unmanaged_xwayland_view : public wayfire_xwayland_view_base
                 move(geometry.x, geometry.y);
             }
         });
+        on_map.set_callback([&] (void*) { map(xw->surface); });
+        on_unmap.set_callback([&] (void*) { unmap(); });
 
+        on_map.connect(&xw->events.map);
+        on_unmap.connect(&xw->events.unmap);
         on_set_geometry.connect(&xw->events.set_geometry);
     }
 
@@ -253,6 +260,8 @@ class wayfire_unmanaged_xwayland_view : public wayfire_xwayland_view_base
 
     void destroy() override
     {
+        on_map.disconnect();
+        on_unmap.disconnect();
         on_set_geometry.disconnect();
         wayfire_xwayland_view_base::destroy();
     }
@@ -261,6 +270,8 @@ class wayfire_unmanaged_xwayland_view : public wayfire_xwayland_view_base
     {
         return (!xw->override_redirect && !this->has_client_decoration);
     }
+
+    wf::dimensions_t last_size_request = {0, 0};
 
     void move(int x, int y) override
     {
@@ -286,6 +297,57 @@ class wayfire_unmanaged_xwayland_view : public wayfire_xwayland_view_base
 
         this->last_size_request = {w, h};
         send_configure(w, h);
+    }
+
+    bool should_resize_client(wf::dimensions_t request, wf::dimensions_t current_geometry)
+    {
+        /*
+         * Do not send a configure if the client will retain its size.
+         * This is needed if a client starts with one size and immediately resizes
+         * again.
+         *
+         * If we do configure it with the given size, then it will think that we
+         * are requesting the given size, and won't resize itself again.
+         */
+        if (this->last_size_request == wf::dimensions_t{0, 0})
+        {
+            return request != current_geometry;
+        } else
+        {
+            return request != last_size_request;
+        }
+    }
+
+    void send_configure(int width, int height)
+    {
+        if (!xw)
+        {
+            return;
+        }
+
+        if ((width < 0) || (height < 0))
+        {
+            /* such a configure request would freeze xwayland.
+             * This is most probably a bug somewhere in the compositor. */
+            LOGE("Configuring a xwayland surface with width/height <0");
+
+            return;
+        }
+
+        auto output_geometry = get_output_geometry();
+
+        int configure_x = output_geometry.x;
+        int configure_y = output_geometry.y;
+
+        if (get_output())
+        {
+            auto real_output = get_output()->get_layout_geometry();
+            configure_x += real_output.x;
+            configure_y += real_output.y;
+        }
+
+        wlr_xwayland_surface_configure(xw,
+            configure_x, configure_y, width, height);
     }
 
     void set_geometry(wf::geometry_t geometry) override

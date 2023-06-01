@@ -540,3 +540,19 @@ std::vector<wayfire_view> wf::collect_views_from_output(wf::output_t *output,
 
     return views;
 }
+
+void wf::adjust_geometry_for_gravity(wf::toplevel_state_t& desired_state, wf::dimensions_t actual_size)
+{
+    if (desired_state.gravity & WLR_EDGE_RIGHT)
+    {
+        desired_state.geometry.x += desired_state.geometry.width - actual_size.width;
+    }
+
+    if (desired_state.gravity & WLR_EDGE_BOTTOM)
+    {
+        desired_state.geometry.y += desired_state.geometry.height - actual_size.height;
+    }
+
+    desired_state.geometry.width  = actual_size.width;
+    desired_state.geometry.height = actual_size.height;
+}

@@ -5,6 +5,7 @@
 #include <wayfire/nonstd/safe-list.hpp>
 #include <wayfire/view.hpp>
 #include <wayfire/opengl.hpp>
+#include <wayfire/toplevel.hpp>
 
 #include "surface-impl.hpp"
 #include "wayfire/unstable/wlr-surface-node.hpp"
@@ -90,6 +91,11 @@ class view_interface_t::view_priv_impl
  * views.
  */
 void view_damage_raw(wayfire_view view, const wlr_box& box);
+
+/**
+ * Adjust the position of the view according to the new size of its buffer and the geometry.
+ */
+void adjust_geometry_for_gravity(wf::toplevel_state_t& desired_state, wf::dimensions_t actual_size);
 
 /**
  * Implementation of a view backed by a wlr_* shell struct.

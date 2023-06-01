@@ -6,6 +6,7 @@
 #include "wayfire/decorator.hpp"
 #include "wayfire/geometry.hpp"
 #include "wayfire/txn/transaction-object.hpp"
+#include "../view-impl.hpp"
 
 wf::xdg_toplevel_t::xdg_toplevel_t(wlr_xdg_toplevel *toplevel,
     std::shared_ptr<wf::scene::wlr_surface_node_t> main_surface)
@@ -71,22 +72,6 @@ void wf::xdg_toplevel_t::commit()
     main_surface->send_frame_done();
 }
 
-void adjust_geometry_for_gravity(wf::toplevel_state_t& desired_state, wf::dimensions_t actual_size)
-{
-    if (desired_state.gravity & WLR_EDGE_RIGHT)
-    {
-        desired_state.geometry.x += desired_state.geometry.width - actual_size.width;
-    }
-
-    if (desired_state.gravity & WLR_EDGE_BOTTOM)
-    {
-        desired_state.geometry.y += desired_state.geometry.height - actual_size.height;
-    }
-
-    desired_state.geometry.width  = actual_size.width;
-    desired_state.geometry.height = actual_size.height;
-}
-
 void wf::xdg_toplevel_t::apply()
 {
     xdg_toplevel_applied_state_signal event_applied;
@@ -121,7 +106,7 @@ void wf::xdg_toplevel_t::handle_surface_commit()
             return;
         }
 
-        adjust_geometry_for_gravity(_committed, this->get_current_wlr_toplevel_size());
+        wf::adjust_geometry_for_gravity(_committed, this->get_current_wlr_toplevel_size());
         emit_ready();
         return;
     }
