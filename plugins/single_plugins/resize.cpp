@@ -195,7 +195,9 @@ class wayfire_resize : public wf::per_output_plugin_instance_t, public wf::point
             return false;
         }
 
-        input_grab->grab_input(wf::scene::layer::OVERLAY, true);
+        input_grab->set_wants_raw_input(true);
+        input_grab->grab_input(wf::scene::layer::OVERLAY);
+
         grab_start = get_input_coords();
         grabbed_geometry = view->get_wm_geometry();
 

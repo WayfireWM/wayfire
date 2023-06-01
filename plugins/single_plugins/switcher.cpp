@@ -298,7 +298,7 @@ class WayfireSwitcher : public wf::per_output_plugin_instance_t, public wf::keyb
         if (!active)
         {
             active = true;
-            input_grab->grab_input(wf::scene::layer::OVERLAY, true);
+            input_grab->grab_input(wf::scene::layer::OVERLAY);
 
             focus_next(dir);
             arrange();

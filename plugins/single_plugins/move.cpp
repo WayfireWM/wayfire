@@ -256,7 +256,7 @@ class wayfire_move : public wf::per_output_plugin_instance_t,
             return false;
         }
 
-        this->input_grab->grab_input(wf::scene::layer::OVERLAY, true);
+        this->input_grab->grab_input(wf::scene::layer::OVERLAY);
 
         auto touch = wf::get_core().get_touch_state();
         is_using_touch = !touch.fingers.empty();

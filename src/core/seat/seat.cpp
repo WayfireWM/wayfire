@@ -272,7 +272,7 @@ void wf::seat_t::impl::force_release_keys()
     }
 }
 
-void wf::seat_t::impl::transfer_grab(wf::scene::node_ptr grab_node, bool retain_pressed_state)
+void wf::seat_t::impl::transfer_grab(wf::scene::node_ptr grab_node)
 {
     if (this->keyboard_focus == grab_node)
     {

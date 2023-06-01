@@ -153,7 +153,7 @@ class wayfire_fast_switcher : public wf::per_output_plugin_instance_t, public wf
             set_view_alpha(view, inactive_alpha);
         }
 
-        input_grab->grab_input(wf::scene::layer::OVERLAY, true);
+        input_grab->grab_input(wf::scene::layer::OVERLAY);
         activating_modifiers = wf::get_core().seat->get_keyboard_modifiers();
         switch_next(forward);
 

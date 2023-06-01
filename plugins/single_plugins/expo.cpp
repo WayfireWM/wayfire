@@ -227,6 +227,7 @@ class wayfire_expo : public wf::per_output_plugin_instance_t, public wf::keyboar
             state.button_pressed = true;
             auto [vw, vh] = output->wset()->get_workspace_grid_size();
             drag_helper->set_scale(std::max(vw, vh));
+            input_grab->set_wants_raw_input(true);
         }
     };
 
@@ -271,6 +272,7 @@ class wayfire_expo : public wf::per_output_plugin_instance_t, public wf::keyboar
             move_started_ws = offscreen_point;
         }
 
+        input_grab->set_wants_raw_input(false);
         this->state.button_pressed = false;
     };
 
@@ -414,6 +416,7 @@ class wayfire_expo : public wf::per_output_plugin_instance_t, public wf::keyboar
         drag_helper->start_drag(view, grab + output_offset,
             wf::move_drag::find_relative_grab(bbox, ws_coords), opts);
         move_started_ws = target_ws;
+        input_grab->set_wants_raw_input(true);
     }
 
     const wf::point_t offscreen_point = {-10, -10};

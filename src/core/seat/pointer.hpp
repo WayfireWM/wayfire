@@ -87,7 +87,7 @@ class pointer_t
     /**
      * Transfer focus and pressed buttons to the given grab.
      */
-    void transfer_grab(scene::node_ptr node, bool retain_pressed_state);
+    void transfer_grab(scene::node_ptr node);
 
   private:
     nonstd::observer_ptr<wf::input_manager_t> input;

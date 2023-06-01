@@ -96,22 +96,25 @@ void wf::pointer_t::force_release_buttons()
 {
     if (cursor_focus)
     {
-        for (auto button : this->currently_sent_buttons)
+        if (!cursor_focus->wants_raw_input())
         {
-            LOGC(POINTER, "force-release button ", button);
-            wlr_pointer_button_event event;
-            event.pointer   = NULL;
-            event.button    = button;
-            event.state     = WLR_BUTTON_RELEASED;
-            event.time_msec = wf::get_current_time();
-            cursor_focus->pointer_interaction().handle_pointer_button(event);
+            for (auto button : this->currently_sent_buttons)
+            {
+                LOGC(POINTER, "force-release button ", button);
+                wlr_pointer_button_event event;
+                event.pointer   = NULL;
+                event.button    = button;
+                event.state     = WLR_BUTTON_RELEASED;
+                event.time_msec = wf::get_current_time();
+                cursor_focus->pointer_interaction().handle_pointer_button(event);
+            }
         }
 
         cursor_focus->pointer_interaction().handle_pointer_leave();
     }
 }
 
-void wf::pointer_t::transfer_grab(scene::node_ptr node, bool retain_pressed_state)
+void wf::pointer_t::transfer_grab(scene::node_ptr node)
 {
     if (node == cursor_focus)
     {
@@ -130,7 +133,7 @@ void wf::pointer_t::transfer_grab(scene::node_ptr node, bool retain_pressed_stat
     auto local = get_node_local_coords(node.get(), gc);
     node->pointer_interaction().handle_pointer_enter(local);
 
-    if (!retain_pressed_state)
+    if (!node->wants_raw_input())
     {
         currently_sent_buttons.clear();
     }
@@ -267,11 +270,14 @@ void wf::pointer_t::send_button(wlr_pointer_button_event *ev, bool has_binding)
             this->currently_sent_buttons.insert(ev->button);
             cursor_focus->pointer_interaction().handle_pointer_button(*ev);
         } else if ((ev->state == WLR_BUTTON_RELEASED) &&
-                   currently_sent_buttons.count(ev->button))
+                   (currently_sent_buttons.count(ev->button) || cursor_focus->wants_raw_input()))
         {
             LOGC(POINTER, "normal button release ", ev->button);
-            this->currently_sent_buttons.erase(
-                currently_sent_buttons.find(ev->button));
+            if (currently_sent_buttons.count(ev->button))
+            {
+                this->currently_sent_buttons.erase(currently_sent_buttons.find(ev->button));
+            }
+
             cursor_focus->pointer_interaction().handle_pointer_button(*ev);
         } else
         {

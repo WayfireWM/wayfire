@@ -254,11 +254,11 @@ void wf::compositor_core_impl_t::warp_cursor(wf::pointf_t pos)
     seat->priv->cursor->warp_cursor(pos);
 }
 
-void wf::compositor_core_impl_t::transfer_grab(wf::scene::node_ptr node, bool retain_pressed_state)
+void wf::compositor_core_impl_t::transfer_grab(wf::scene::node_ptr node)
 {
-    seat->priv->transfer_grab(node, retain_pressed_state);
-    seat->priv->lpointer->transfer_grab(node, retain_pressed_state);
-    seat->priv->touch->transfer_grab(node, retain_pressed_state);
+    seat->priv->transfer_grab(node);
+    seat->priv->lpointer->transfer_grab(node);
+    seat->priv->touch->transfer_grab(node);
 
     for (auto dev : this->get_input_devices())
     {

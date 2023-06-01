@@ -342,7 +342,7 @@ class tile_output_plugin_t : public wf::pointer_interaction_t, public wf::custom
             return;
         }
 
-        input_grab->grab_input(wf::scene::layer::OVERLAY, true);
+        input_grab->grab_input(wf::scene::layer::OVERLAY);
         controller = std::make_unique<Controller>(tile_workspace_set_data_t::get_current_root(output),
             get_global_input_coordinates());
     }
@@ -580,13 +580,13 @@ class tile_output_plugin_t : public wf::pointer_interaction_t, public wf::custom
     wf::button_callback on_move_view = [=] (auto)
     {
         start_controller<tile::move_view_controller_t>();
-        return false;
+        return false; // pass button to the grab node
     };
 
     wf::button_callback on_resize_view = [=] (auto)
     {
         start_controller<tile::resize_view_controller_t>();
-        return false;
+        return false; // pass button to the grab node
     };
 
     void handle_pointer_button(const wlr_pointer_button_event& event) override

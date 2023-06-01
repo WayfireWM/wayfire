@@ -21,7 +21,8 @@ class grab_node_t : public node_t
     wf::output_t *output;
     keyboard_interaction_t *keyboard = nullptr;
     pointer_interaction_t *pointer   = nullptr;
-    touch_interaction_t *touch = nullptr;
+    touch_interaction_t *touch   = nullptr;
+    node_flags_bitmask_t m_flags = 0;
 
   public:
     grab_node_t(std::string name, wf::output_t *output,
@@ -31,6 +32,16 @@ class grab_node_t : public node_t
         node_t(false), name(name), output(output),
         keyboard(keyboard), pointer(pointer), touch(touch)
     {}
+
+    node_flags_bitmask_t flags() const override
+    {
+        return node_t::flags() | m_flags;
+    }
+
+    void set_additional_flags(node_flags_bitmask_t add_flags)
+    {
+        this->m_flags = add_flags;
+    }
 
     std::optional<input_node_t> find_node_at(const wf::pointf_t& at) override
     {
@@ -104,6 +115,14 @@ class input_grab_t
         grab_node    = std::make_shared<scene::grab_node_t>(name, output, keyboard, pointer, touch);
     }
 
+    /**
+     * Set/unset the RAW_INPUT flag on the grab node.
+     */
+    void set_wants_raw_input(bool wants_raw)
+    {
+        grab_node->set_additional_flags(wants_raw ? (uint64_t)wf::scene::node_flags::RAW_INPUT : 0);
+    }
+
     bool is_grabbed() const
     {
         return grab_node->parent() != nullptr;
@@ -112,7 +131,7 @@ class input_grab_t
     /**
      * Grab input from all layers from background to @layer_below.
      */
-    void grab_input(wf::scene::layer layer_below, bool retain_pressed_state = false)
+    void grab_input(wf::scene::layer layer_below)
     {
         wf::dassert(grab_node->parent() == nullptr, "Trying to grab twice!");
 
@@ -126,7 +145,7 @@ class input_grab_t
             std::to_string((int)layer_below));
         children.insert(idx, grab_node);
         root->set_children_list(children);
-        wf::get_core().transfer_grab(grab_node, retain_pressed_state);
+        wf::get_core().transfer_grab(grab_node);
         scene::update(root, scene::update_flag::CHILDREN_LIST);
         output->refocus();
     }

@@ -66,6 +66,11 @@ std::string node_t::stringify_flags() const
         fl += "d";
     }
 
+    if (flags() & ((int)node_flags::RAW_INPUT))
+    {
+        fl += "R";
+    }
+
     return "(" + fl + ")";
 }
 

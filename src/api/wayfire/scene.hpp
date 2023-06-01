@@ -84,8 +84,15 @@ enum class node_flags : int
      * Note that plugins might still force those nodes to receive input and be
      * rendered by calling the corresponding methods directly.
      */
-    DISABLED = (1 << 0),
+    DISABLED  = (1 << 0),
+    /**
+     * If set, the node indicates that it wishes to receive raw input events, that is, it may receive
+     * unmatched pointer press/release events, unmatched touch up/down events, etc.
+     */
+    RAW_INPUT = (1 << 1),
 };
+
+using node_flags_bitmask_t = uint64_t;
 
 /**
  * Used as a result of an intersection of the scenegraph with the user input.
@@ -165,10 +172,9 @@ class node_t : public std::enable_shared_from_this<node_t>,
     /**
      * Get the current flags of the node.
      */
-    virtual int flags() const
+    virtual node_flags_bitmask_t flags() const
     {
-        return enabled_counter > 0 ?
-               0 : (int)node_flags::DISABLED;
+        return enabled_counter > 0 ? 0 : (int)node_flags::DISABLED;
     }
 
     /**
@@ -264,6 +270,14 @@ class node_t : public std::enable_shared_from_this<node_t>,
     inline bool is_enabled() const
     {
         return !(flags() & (int)node_flags::DISABLED);
+    }
+
+    /**
+     * A helper function to get the status of the RAW_INPUT flag.
+     */
+    inline bool wants_raw_input() const
+    {
+        return (flags() & (int)node_flags::RAW_INPUT);
     }
 
     /**

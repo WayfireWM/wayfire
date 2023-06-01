@@ -48,7 +48,7 @@ class touch_interface_t
     /**
      * Transfer input focus to the given grab.
      */
-    void transfer_grab(scene::node_ptr grab_node, bool retain_pressed_state);
+    void transfer_grab(scene::node_ptr grab_node);
 
   private:
     wlr_seat *seat;

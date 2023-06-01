@@ -533,6 +533,9 @@ class wayfire_scale : public wf::per_output_plugin_instance_t,
             opts.enable_snap_off    = true;
             opts.snap_off_threshold = 200;
 
+            // We want to receive raw inputs (e.g. no fake pointer releases) in case the view is moved to
+            // another output.
+            grab->set_wants_raw_input(true);
             drag_helper->start_drag(last_selected_view, to, opts);
         } else if (drag_helper->view)
         {
@@ -1250,6 +1253,7 @@ class wayfire_scale : public wf::per_output_plugin_instance_t,
     {
         if ((ev->focus_output == output) && can_handle_drag())
         {
+            grab->set_wants_raw_input(true);
             drag_helper->set_scale(1.0);
         }
     };
@@ -1273,6 +1277,8 @@ class wayfire_scale : public wf::per_output_plugin_instance_t,
 
             wf::move_drag::adjust_view_on_output(ev);
         }
+
+        grab->set_wants_raw_input(false);
     };
 
     wf::signal::connection_t<wf::move_drag::snap_off_signal> on_drag_snap_off = [=] (auto)

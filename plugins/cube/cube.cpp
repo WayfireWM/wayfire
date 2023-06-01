@@ -247,6 +247,7 @@ class wayfire_cube : public wf::per_output_plugin_instance_t, public wf::pointer
     void init() override
     {
         input_grab = std::make_unique<wf::input_grab_t>("cube", output, nullptr, this, nullptr);
+        input_grab->set_wants_raw_input(true);
 
         animation.cube_animation.offset_y.set(0, 0);
         animation.cube_animation.offset_z.set(0, 0);
@@ -523,6 +524,7 @@ class wayfire_cube : public wf::per_output_plugin_instance_t, public wf::pointer
         update_view_matrix();
         output->render->schedule_redraw();
 
+        // Let the button go to the input grab
         return false;
     }
 

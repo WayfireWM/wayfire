@@ -54,7 +54,7 @@ class compositor_core_impl_t : public compositor_core_t
 
     wlr_seat *get_current_seat() override;
     void warp_cursor(wf::pointf_t pos) override;
-    void transfer_grab(wf::scene::node_ptr node, bool retain_pressed_state) override;
+    void transfer_grab(wf::scene::node_ptr node) override;
     void set_cursor(std::string name) override;
     void unhide_cursor() override;
     void hide_cursor() override;

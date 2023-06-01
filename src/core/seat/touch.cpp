@@ -154,12 +154,12 @@ void wf::touch_interface_t::set_touch_focus(wf::scene::node_ptr node,
     }
 }
 
-void wf::touch_interface_t::transfer_grab(scene::node_ptr grab_node, bool retain_pressed_state)
+void wf::touch_interface_t::transfer_grab(scene::node_ptr grab_node)
 {
-    auto new_focus = retain_pressed_state ? grab_node : nullptr;
+    auto new_focus = grab_node->wants_raw_input() ? grab_node : nullptr;
     for (auto& [id, focused_node] : this->focus)
     {
-        if (focused_node && (focused_node != new_focus))
+        if (focused_node && (focused_node != new_focus) && !focused_node->wants_raw_input())
         {
             const auto lift_off_position = finger_state.fingers[id].current;
             focused_node->touch_interaction().handle_touch_up(get_current_time(), id,

@@ -135,10 +135,10 @@ class pointer_interaction_t
     /**
      * Handle a button press or release event.
      *
-     * When a node consumes a button event, core starts an *implicit grab* for it.
-     * This has the effect that all subsequent input events are forwarded to that
-     * node, until all buttons are released. Thus, a node is guaranteed to always
-     * receive matching press and release events.
+     * When a node consumes a button event, core starts an *implicit grab* for it. This has the effect that
+     * all subsequent input events are forwarded to that node, until all buttons are released. Thus, a node is
+     * guaranteed to always receive matching press and release events, except when it explicitly opts out via
+     * the RAW_INPUT node flag.
      *
      * @param pointer_position The position where the pointer is currently at.
      * @param button The wlr event describing the event.
