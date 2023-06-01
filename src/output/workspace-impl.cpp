@@ -391,6 +391,7 @@ struct workspace_set_t::impl
         wset_views.push_back(view);
         view->connect(&on_view_destruct);
         view->priv->current_wset = self->weak_from_this();
+        view->set_output(this->output);
     }
 
     void remove_view(wayfire_view view)

@@ -555,7 +555,6 @@ void wf::move_view_to_output(wayfire_view v, wf::output_t *new_output, bool reco
         wf::scene::remove_child(v->get_root_node());
     }
 
-    v->set_output(new_output);
     wf::scene::add_front(new_output->wset()->get_node(), v->get_root_node());
     new_output->wset()->add_view(v);
     new_output->focus_view(v);
