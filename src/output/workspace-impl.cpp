@@ -313,14 +313,14 @@ struct workspace_set_t::impl
     {
         LOGC(WSET, "Destroying workspace set with id=", index);
         allocated_wsets.erase(index);
-        attach_to_output(nullptr);
+        attach_to_output(nullptr, false);
         for (auto view : wset_views)
         {
             view->priv->current_wset.reset();
         }
     }
 
-    void attach_to_output(wf::output_t *new_output)
+    void attach_to_output(wf::output_t *new_output, bool emit_signal = true)
     {
         if (new_output == output)
         {
@@ -355,7 +355,10 @@ struct workspace_set_t::impl
             view->set_output(new_output);
         }
 
-        self->emit<workspace_set_attached_signal>(&data);
+        if (emit_signal)
+        {
+            self->emit<workspace_set_attached_signal>(&data);
+        }
     }
 
     void set_visible(bool visible)
