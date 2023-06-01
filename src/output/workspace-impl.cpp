@@ -210,7 +210,7 @@ struct workspace_set_t::impl
     {
         if (ev->output == this->output)
         {
-            attach_to_output(nullptr);
+            attach_to_output(nullptr, OLD_OUTPUT_DESTROY);
         }
     };
 
@@ -313,14 +313,22 @@ struct workspace_set_t::impl
     {
         LOGC(WSET, "Destroying workspace set with id=", index);
         allocated_wsets.erase(index);
-        attach_to_output(nullptr, false);
+        attach_to_output(nullptr, SELF_DESTROY);
         for (auto view : wset_views)
         {
             view->priv->current_wset.reset();
         }
     }
 
-    void attach_to_output(wf::output_t *new_output, bool emit_signal = true)
+    enum attach_flags
+    {
+        // The current output is being destroyed
+        OLD_OUTPUT_DESTROY = (1 << 0),
+        // `this` is being freed.
+        SELF_DESTROY       = (1 << 1),
+    };
+
+    void attach_to_output(wf::output_t *new_output, uint32_t flags)
     {
         if (new_output == output)
         {
@@ -332,8 +340,9 @@ struct workspace_set_t::impl
 
         if (output)
         {
-            wf::dassert(output->wset().get() != self,
+            wf::dassert((flags & OLD_OUTPUT_DESTROY) || output->wset().get() != self,
                 "Cannot attach active workspace set to another output!");
+
             output->disconnect(&output_geometry_changed);
             wf::scene::remove_child(wnode);
         }
@@ -355,7 +364,7 @@ struct workspace_set_t::impl
             view->set_output(new_output);
         }
 
-        if (emit_signal)
+        if (!(flags & SELF_DESTROY))
         {
             self->emit<workspace_set_attached_signal>(&data);
         }
@@ -658,7 +667,7 @@ workspace_set_t::~workspace_set_t() = default;
 
 void workspace_set_t::attach_to_output(wf::output_t *output)
 {
-    pimpl->attach_to_output(output);
+    pimpl->attach_to_output(output, 0);
 }
 
 wf::output_t*workspace_set_t::get_attached_output()
