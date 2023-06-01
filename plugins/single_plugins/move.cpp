@@ -1,5 +1,6 @@
 #include "wayfire/plugins/common/input-grab.hpp"
 #include "wayfire/scene-input.hpp"
+#include "wayfire/signal-provider.hpp"
 #include "wayfire/view-helpers.hpp"
 #include <wayfire/per-output-plugin.hpp>
 #include <wayfire/output.hpp>
@@ -38,9 +39,6 @@ class wayfire_move : public wf::per_output_plugin_instance_t,
     wf::option_wrapper_t<bool> move_enable_snap_off{"move/enable_snap_off"};
     wf::option_wrapper_t<int> move_snap_off_threshold{"move/snap_off_threshold"};
 
-    bool is_using_touch;
-    bool was_client_request;
-
     struct
     {
         nonstd::observer_ptr<wf::preview_indication_view_t> preview;
@@ -68,7 +66,7 @@ class wayfire_move : public wf::per_output_plugin_instance_t,
 
             if (!output->is_plugin_active(grab_interface.name))
             {
-                grab_input(nullptr);
+                grab_input(drag_helper->view);
             }
         } else
         {
@@ -113,6 +111,33 @@ class wayfire_move : public wf::per_output_plugin_instance_t,
         deactivate();
     };
 
+    // We listen for raw pointer button events independently of the active/inactive state of move.
+    // We need this to determine the grab point for client-initiated move (i.e. when the user clicks and drags
+    // the titlebar). Usually, there is a bit of delay in the signal, for example, GTK tells the compositor to
+    // start interactive move after the pointer has moved ~5 pixels (but it can be much worse for programmed
+    // tests). So, here we store the mouse position for every button press, and use that in client-initiated
+    // move.
+    //
+    // We do the same for touch events.
+    wf::point_t last_input_press_position = {0, 0};
+    wf::signal::connection_t<wf::input_event_signal<wlr_pointer_button_event>> on_raw_pointer_button =
+        [=] (wf::input_event_signal<wlr_pointer_button_event> *ev)
+    {
+        if (ev->event->state == WLR_BUTTON_PRESSED)
+        {
+            last_input_press_position = get_global_input_coords();
+        }
+    };
+
+    wf::signal::connection_t<wf::input_event_signal<wlr_touch_down_event>> on_raw_touch_down =
+        [=] (wf::input_event_signal<wlr_touch_down_event> *ev)
+    {
+        if (ev->event->touch_id == 0)
+        {
+            last_input_press_position = get_global_input_coords();
+        }
+    };
+
     std::unique_ptr<wf::input_grab_t> input_grab;
     wf::plugin_activation_data_t grab_interface = {
         .name = "move",
@@ -122,18 +147,21 @@ class wayfire_move : public wf::per_output_plugin_instance_t,
   public:
     void init() override
     {
+        wf::get_core().connect(&on_raw_pointer_button);
+        wf::get_core().connect(&on_raw_touch_down);
+
         input_grab = std::make_unique<wf::input_grab_t>("move", output, nullptr, this, this);
+        input_grab->set_wants_raw_input(true);
+
         activate_binding = [=] (auto)
         {
-            is_using_touch     = false;
-            was_client_request = false;
             auto view = wf::get_core().get_cursor_focus_view();
-
             if (view && (view->role != wf::VIEW_ROLE_DESKTOP_ENVIRONMENT))
             {
-                initiate(view);
+                initiate(view, get_global_input_coords());
             }
 
+            // Even if we initiated, we want the button press to go to the grab node
             return false;
         };
 
@@ -156,13 +184,6 @@ class wayfire_move : public wf::per_output_plugin_instance_t,
     void handle_pointer_button(const wlr_pointer_button_event& event) override
     {
         if (event.state != WLR_BUTTON_RELEASED)
-        {
-            return;
-        }
-
-        uint32_t target_button =
-            was_client_request ? BTN_LEFT : (wf::buttonbinding_t(activate_button)).get_button();
-        if (target_button != event.button)
         {
             return;
         }
@@ -192,8 +213,7 @@ class wayfire_move : public wf::per_output_plugin_instance_t,
     wf::signal::connection_t<wf::view_move_request_signal> move_request =
         [=] (wf::view_move_request_signal *ev)
     {
-        was_client_request = true;
-        initiate(ev->view);
+        initiate(ev->view, last_input_press_position);
     };
 
     /**
@@ -257,20 +277,14 @@ class wayfire_move : public wf::per_output_plugin_instance_t,
         }
 
         this->input_grab->grab_input(wf::scene::layer::OVERLAY);
-
-        auto touch = wf::get_core().get_touch_state();
-        is_using_touch = !touch.fingers.empty();
-        slot.slot_id   = wf::grid::SLOT_NONE;
+        slot.slot_id = wf::grid::SLOT_NONE;
         return true;
     }
 
-    bool initiate(wayfire_view view)
+    bool initiate(wayfire_view view, wf::point_t grab_position)
     {
         // First, make sure that the view is on the output the input is.
-        auto pos = get_global_input_coords();
-        auto target_output =
-            wf::get_core().output_layout->get_output_at(pos.x, pos.y);
-
+        auto target_output = wf::get_core().output_layout->get_output_at(grab_position.x, grab_position.y);
         if (target_output && (view->get_output() != target_output))
         {
             auto offset = wf::origin(view->get_output()->get_layout_geometry()) +
@@ -308,7 +322,8 @@ class wayfire_move : public wf::per_output_plugin_instance_t,
             output->focus_view(grabbed_view);
         }
 
-        drag_helper->start_drag(view, get_global_input_coords(), opts);
+        drag_helper->start_drag(view, grab_position, opts);
+        drag_helper->handle_motion(get_global_input_coords());
         slot.slot_id = wf::grid::SLOT_NONE;
         return true;
     }
@@ -490,13 +505,13 @@ class wayfire_move : public wf::per_output_plugin_instance_t,
     wf::point_t get_global_input_coords()
     {
         wf::pointf_t input;
-        if (is_using_touch)
+        if (wf::get_core().get_touch_state().fingers.empty())
+        {
+            input = wf::get_core().get_cursor_position();
+        } else
         {
             auto center = wf::get_core().get_touch_state().get_center().current;
             input = {center.x, center.y};
-        } else
-        {
-            input = wf::get_core().get_cursor_position();
         }
 
         return {(int)input.x, (int)input.y};
