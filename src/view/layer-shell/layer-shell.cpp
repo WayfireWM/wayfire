@@ -8,7 +8,7 @@
 #include "wayfire/scene-operations.hpp"
 #include "wayfire/util.hpp"
 #include "wayfire/view.hpp"
-#include "xdg-shell.hpp"
+#include "../xdg-shell.hpp"
 #include "wayfire/core.hpp"
 #include "wayfire/debug.hpp"
 #include <wayfire/util/log.hpp>
@@ -16,7 +16,7 @@
 #include "wayfire/output.hpp"
 #include "wayfire/workspace-set.hpp"
 #include "wayfire/output-layout.hpp"
-#include "view-impl.hpp"
+#include "../view-impl.hpp"
 
 static const uint32_t both_vert =
     ZWLR_LAYER_SURFACE_V1_ANCHOR_TOP | ZWLR_LAYER_SURFACE_V1_ANCHOR_BOTTOM;
