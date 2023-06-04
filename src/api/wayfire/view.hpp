@@ -388,12 +388,9 @@ class view_interface_t : public wf::signal::provider_t, public wf::object_base_t
     bool has_transformer();
 
     /**
-     * A snapshot of the view is a copy of the view's contents into a
-     * framebuffer. It is used to get an image of the view while it is mapped,
-     * and continue displaying it afterwards. Additionally, return the captured
-     * framebuffter
+     * A snapshot of the view is a copy of the view's contents into a framebuffer.
      */
-    virtual const wf::render_target_t& take_snapshot();
+    virtual void take_snapshot(wf::render_target_t& target);
 
     /**
      * View lifetime is managed by reference counting. To take a reference,

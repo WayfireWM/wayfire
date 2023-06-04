@@ -714,24 +714,18 @@ wf::geometry_t wf::view_interface_t::get_untransformed_bounding_box()
     return get_surface_root_node()->get_bounding_box();
 }
 
-const wf::render_target_t& wf::view_interface_t::take_snapshot()
+void wf::view_interface_t::take_snapshot(wf::render_target_t& target)
 {
-    if (!is_mapped())
-    {
-        return priv->offscreen_buffer;
-    }
-
-    wf::render_target_t& offscreen_buffer = priv->offscreen_buffer;
     auto root_node = get_surface_root_node();
     const wf::geometry_t bbox = root_node->get_bounding_box();
     float scale = get_output()->handle->scale;
 
     OpenGL::render_begin();
-    offscreen_buffer.allocate(bbox.width * scale, bbox.height * scale);
+    target.allocate(bbox.width * scale, bbox.height * scale);
     OpenGL::render_end();
 
-    offscreen_buffer.geometry = root_node->get_bounding_box();
-    offscreen_buffer.scale    = scale;
+    target.geometry = root_node->get_bounding_box();
+    target.scale    = scale;
 
     std::vector<scene::render_instance_uptr> instances;
     root_node->gen_render_instances(instances, [] (auto) {}, get_output());
@@ -739,11 +733,9 @@ const wf::render_target_t& wf::view_interface_t::take_snapshot()
     scene::render_pass_params_t params;
     params.background_color = {0, 0, 0, 0};
     params.damage    = bbox;
-    params.target    = offscreen_buffer;
+    params.target    = target;
     params.instances = &instances;
-
     scene::run_render_pass(params, scene::RPASS_CLEAR_BACKGROUND);
-    return offscreen_buffer;
 }
 
 wf::view_interface_t::view_interface_t()
@@ -831,10 +823,6 @@ void wf::view_interface_t::deinitialize()
 
     set_decoration(nullptr);
     this->_clear_data();
-
-    OpenGL::render_begin();
-    this->priv->offscreen_buffer.release();
-    OpenGL::render_end();
 }
 
 wf::view_interface_t::~view_interface_t()

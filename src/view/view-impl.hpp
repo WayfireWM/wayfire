@@ -50,10 +50,7 @@ class view_interface_t::view_priv_impl
     uint32_t edges = 0;
     int in_continuous_move   = 0;
     int in_continuous_resize = 0;
-    int visibility_counter   = 1;
-
-    wf::render_target_t offscreen_buffer;
-    wlr_box minimize_hint = {0, 0, 0, 0};
+    wlr_box minimize_hint    = {0, 0, 0, 0};
 
     scene::floating_inner_ptr root_node;
     std::shared_ptr<scene::transform_manager_node_t> transformed_node;

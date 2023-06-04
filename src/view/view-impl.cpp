@@ -63,12 +63,6 @@ void wf::wlr_view_t::set_position(int x, int y,
     geometry.x = x + obox.x - wm.x;
     geometry.y = y + obox.y - wm.y;
 
-    /* Make sure that if we move the view while it is unmapped, its snapshot
-     * is still valid coordinates */
-    priv->offscreen_buffer = priv->offscreen_buffer.translated({
-        x - data.old_geometry.x, y - data.old_geometry.y,
-    });
-
     damage();
 
     if (send_signal)

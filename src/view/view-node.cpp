@@ -274,26 +274,16 @@ class view_render_instance_t : public render_instance_t
         wf::region_t our_damage = damage & bbox;
         if (!our_damage.empty())
         {
-            if (!view->is_mapped())
-            {
-                instructions.push_back(render_instruction_t{
-                            .instance = this,
-                            .target   = our_target,
-                            .damage   = std::move(our_damage),
-                        });
-            } else
-            {
-                auto surface_offset = wf::origin(view->get_output_geometry());
-                damage += -surface_offset;
+            auto surface_offset = wf::origin(view->get_output_geometry());
+            damage += -surface_offset;
 
-                our_target = our_target.translated(-surface_offset);
-                for (auto& ch : this->children)
-                {
-                    ch->schedule_instructions(instructions, our_target, damage);
-                }
-
-                damage += surface_offset;
+            our_target = our_target.translated(-surface_offset);
+            for (auto& ch : this->children)
+            {
+                ch->schedule_instructions(instructions, our_target, damage);
             }
+
+            damage += surface_offset;
         }
 
         damage += -offset;
@@ -302,17 +292,7 @@ class view_render_instance_t : public render_instance_t
     void render(const wf::render_target_t& target,
         const wf::region_t& region) override
     {
-        OpenGL::render_begin(target);
-        for (auto& box : region)
-        {
-            target.logic_scissor(wlr_box_from_pixman_box(box));
-            OpenGL::render_transformed_texture(
-                view->priv->offscreen_buffer.tex,
-                view->priv->offscreen_buffer.geometry,
-                target.get_orthographic_projection());
-        }
-
-        OpenGL::render_end();
+        wf::dassert(false, "view-node should not be rendered!");
     }
 
     void presentation_feedback(wf::output_t *output) override
@@ -407,11 +387,6 @@ wf::geometry_t wf::scene::view_node_t::get_bounding_box()
     if (!view)
     {
         return {0, 0, 0, 0};
-    }
-
-    if (!view->is_mapped())
-    {
-        return view->priv->offscreen_buffer.geometry;
     }
 
     return get_children_bounding_box() + wf::origin(view->get_output_geometry());

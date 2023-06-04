@@ -53,12 +53,6 @@ class wayfire_unmanaged_xwayland_view : public wayfire_xwayland_view_base
         geometry.x = x;
         geometry.y = y;
 
-        /* Make sure that if we move the view while it is unmapped, its snapshot
-         * is still valid coordinates */
-        priv->offscreen_buffer = priv->offscreen_buffer.translated({
-            x - data.old_geometry.x, y - data.old_geometry.y,
-        });
-
         damage();
 
         if (send_signal)
