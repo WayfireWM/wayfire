@@ -2,6 +2,7 @@
 #include "seat-impl.hpp"
 #include "wayfire/util.hpp"
 #include "wayfire/signal-definitions.hpp"
+#include "wayfire/view.hpp"
 #include <wayfire/nonstd/wlroots-full.hpp>
 
 #include <vector>
@@ -24,9 +25,9 @@ class input_method_relay
     wf::signal::connection_t<wf::keyboard_focus_changed_signal> keyboard_focus_changed =
         [=] (wf::keyboard_focus_changed_signal *ev)
     {
-        if (auto vnode = dynamic_cast<wf::scene::view_node_t*>(ev->new_focus.get()))
+        if (auto view = wf::node_to_view(ev->new_focus))
         {
-            set_focus(vnode->get_view()->get_wlr_surface());
+            set_focus(view->get_wlr_surface());
         } else
         {
             set_focus(nullptr);
