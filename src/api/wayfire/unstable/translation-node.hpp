@@ -38,5 +38,26 @@ class translation_node_t : public wf::scene::floating_inner_node_t
   protected:
     wf::point_t offset = {0, 0};
 };
+
+class translation_node_instance_t : public render_instance_t
+{
+  protected:
+    std::vector<render_instance_uptr> children;
+    damage_callback push_damage;
+    translation_node_t *self;
+    wf::signal::connection_t<wf::scene::node_damage_signal> on_node_damage;
+
+  public:
+    translation_node_instance_t(translation_node_t *self,
+        damage_callback push_damage, wf::output_t *shown_on);
+
+    // Implementation of render_instance_t
+    void schedule_instructions(std::vector<wf::scene::render_instruction_t>& instructions,
+        const wf::render_target_t& target, wf::region_t& damage) override;
+    void render(const wf::render_target_t& target, const wf::region_t& region) override;
+    void presentation_feedback(wf::output_t *output) override;
+    wf::scene::direct_scanout try_scanout(wf::output_t *output) override;
+    void compute_visibility(wf::output_t *output, wf::region_t& visible) override;
+};
 }
 }
