@@ -523,6 +523,8 @@ void wayfire_layer_shell_view::map()
     {
         get_output()->refocus();
     }
+
+    emit_view_map();
 }
 
 void wayfire_layer_shell_view::unmap()
