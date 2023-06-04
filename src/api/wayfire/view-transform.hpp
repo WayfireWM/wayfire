@@ -28,6 +28,20 @@ class zero_copy_texturable_node_t
     }
 };
 
+class opaque_region_node_t
+{
+  public:
+    virtual ~opaque_region_node_t() = default;
+
+    /**
+     * Get the opaque region of the node in its parent's coordinate system (same as get_bounding_box()).
+     */
+    virtual wf::region_t get_opaque_region() const
+    {
+        return {};
+    }
+};
+
 /**
  * A helper class for implementing transformer nodes.
  * Transformer nodes usually operate on views and implement special effects, like

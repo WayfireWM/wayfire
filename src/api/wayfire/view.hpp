@@ -542,7 +542,9 @@ namespace scene
  * corner of the view's main surface.
  */
 class view_node_t : public scene::floating_inner_node_t,
-    public zero_copy_texturable_node_t, public view_node_tag_t
+    public zero_copy_texturable_node_t,
+    public opaque_region_node_t,
+    public view_node_tag_t
 {
   public:
     view_node_t(wayfire_view view);
@@ -558,8 +560,7 @@ class view_node_t : public scene::floating_inner_node_t,
         return view;
     }
 
-    wf::region_t get_opaque_region() const;
-
+    wf::region_t get_opaque_region() const override;
     keyboard_interaction_t& keyboard_interaction() override;
 
     /**

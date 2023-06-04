@@ -80,9 +80,9 @@ class blur_render_instance_t : public transformer_render_instance_t<blur_node_t>
     {
         if (self->get_children().size() == 1)
         {
-            if (auto vnode = dynamic_cast<view_node_t*>(self->get_children().front().get()))
+            if (auto opaque = dynamic_cast<opaque_region_node_t*>(self->get_children().front().get()))
             {
-                return (damage ^ vnode->get_opaque_region()).empty();
+                return (damage ^ opaque->get_opaque_region()).empty();
             }
         }
 
@@ -93,11 +93,11 @@ class blur_render_instance_t : public transformer_render_instance_t<blur_node_t>
     {
         if (self->get_children().size() == 1)
         {
-            if (auto vnode = dynamic_cast<view_node_t*>(self->get_children().front().get()))
+            if (auto opaque = dynamic_cast<opaque_region_node_t*>(self->get_children().front().get()))
             {
                 const int padding =
                     calculate_damage_padding(target, self->provider()->calculate_blur_radius());
-                auto opaque_region = vnode->get_opaque_region();
+                auto opaque_region = opaque->get_opaque_region();
                 opaque_region.expand_edges(-padding);
 
                 wf::region_t translucent_region = damage ^ opaque_region;
