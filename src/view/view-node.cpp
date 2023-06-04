@@ -20,7 +20,7 @@
 #include "view-impl.hpp"
 
 wf::scene::view_node_t::view_node_t(wayfire_view _view) :
-    floating_inner_node_t(false), view(_view)
+    floating_inner_node_t(false), view_node_tag_t(_view), view(_view)
 {
     this->kb_interaction = std::make_unique<view_keyboard_interaction_t>(view);
     on_view_destroy = [=] (view_destruct_signal *ev)
@@ -31,9 +31,6 @@ wf::scene::view_node_t::view_node_t(wayfire_view _view) :
 
     view->connect(&on_view_destroy);
 }
-
-wf::scene::view_node_t::view_node_t() : floating_inner_node_t(false)
-{}
 
 std::string wf::scene::view_node_t::stringify() const
 {

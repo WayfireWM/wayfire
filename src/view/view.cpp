@@ -766,14 +766,10 @@ void wf::view_interface_t::unref()
 class view_root_node_t : public wf::scene::floating_inner_node_t, public wf::view_node_tag_t
 {
   public:
-    view_root_node_t(wf::view_interface_t *_view) : floating_inner_node_t(false), view(_view)
+    view_root_node_t(wf::view_interface_t *_view) : floating_inner_node_t(false),
+        view_node_tag_t(_view), view(_view)
     {
         view->connect(&on_destruct);
-    }
-
-    wayfire_view get_view() const override
-    {
-        return view;
     }
 
     std::string stringify() const override

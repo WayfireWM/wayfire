@@ -506,8 +506,20 @@ wayfire_view node_to_view(wf::scene::node_t *node);
 class view_node_tag_t
 {
   public:
+    view_node_tag_t(wayfire_view view)
+    {
+        this->view = view;
+    }
+
     virtual ~view_node_tag_t() = default;
-    virtual wayfire_view get_view() const = 0;
+
+    wayfire_view get_view() const
+    {
+        return view;
+    }
+
+  private:
+    wayfire_view view;
 };
 
 namespace scene
@@ -554,12 +566,6 @@ class view_node_t : public scene::floating_inner_node_t,
 
     wf::pointf_t to_local(const wf::pointf_t& point) override;
     wf::pointf_t to_global(const wf::pointf_t& point) override;
-
-    wayfire_view get_view() const override
-    {
-        return view;
-    }
-
     wf::region_t get_opaque_region() const override;
     keyboard_interaction_t& keyboard_interaction() override;
 
@@ -576,7 +582,6 @@ class view_node_t : public scene::floating_inner_node_t,
     wf::geometry_t get_bounding_box() override;
 
   protected:
-    view_node_t();
     wayfire_view view;
     std::unique_ptr<keyboard_interaction_t> kb_interaction;
     wf::signal::connection_t<view_destruct_signal> on_view_destroy;
