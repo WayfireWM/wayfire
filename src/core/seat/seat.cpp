@@ -17,6 +17,8 @@
 #include <wayfire/nonstd/wlroots.hpp>
 #include <wayfire/seat.hpp>
 #include <string>
+#include "../../view/view-keyboard-interaction.hpp"
+#include "../../view/wlr-surface-pointer-interaction.hpp"
 
 
 #include "drag-icon.hpp"
@@ -102,20 +104,39 @@ wf::seat_t::seat_t(wl_display *display, std::string name) : seat(wlr_seat_create
     priv->request_set_selection.set_callback([&] (void *data)
     {
         auto ev = static_cast<wlr_seat_request_set_selection_event*>(data);
-        wlr_seat_set_selection(wf::get_core().get_current_seat(),
-            ev->source, ev->serial);
+        wlr_seat_set_selection(wf::get_core().get_current_seat(), ev->source, ev->serial);
     });
     priv->request_set_selection.connect(&seat->events.request_set_selection);
 
     priv->request_set_primary_selection.set_callback([&] (void *data)
     {
-        auto ev =
-            static_cast<wlr_seat_request_set_primary_selection_event*>(data);
-        wlr_seat_set_primary_selection(wf::get_core().get_current_seat(),
-            ev->source, ev->serial);
+        auto ev = static_cast<wlr_seat_request_set_primary_selection_event*>(data);
+        wlr_seat_set_primary_selection(wf::get_core().get_current_seat(), ev->source, ev->serial);
     });
-    priv->request_set_primary_selection.connect(
-        &seat->events.request_set_primary_selection);
+    priv->request_set_primary_selection.connect(&seat->events.request_set_primary_selection);
+
+    priv->on_wlr_keyboard_grab_end.set_callback([&] (void*)
+    {
+        if (priv->keyboard_focus &&
+            dynamic_cast<view_keyboard_interaction_t*>(&priv->keyboard_focus->keyboard_interaction()))
+        {
+            priv->keyboard_focus->keyboard_interaction().handle_keyboard_enter(this);
+        }
+    });
+    priv->on_wlr_keyboard_grab_end.connect(&seat->events.keyboard_grab_end);
+
+    priv->on_wlr_pointer_grab_end.set_callback([&] (void*)
+    {
+        if (auto focus = priv->lpointer->get_focus())
+        {
+            if (dynamic_cast<wlr_surface_pointer_interaction_t*>(&focus->pointer_interaction()))
+            {
+                wf::pointf_t local = get_node_local_coords(focus.get(), priv->cursor->get_cursor_position());
+                focus->pointer_interaction().handle_pointer_enter(local);
+            }
+        }
+    });
+    priv->on_wlr_pointer_grab_end.connect(&seat->events.pointer_grab_end);
 
     priv->on_new_device = [&] (wf::input_device_added_signal *ev)
     {

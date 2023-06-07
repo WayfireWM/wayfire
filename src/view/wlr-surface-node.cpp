@@ -5,7 +5,7 @@
 #include "wayfire/render-manager.hpp"
 #include "wayfire/scene-render.hpp"
 #include "wayfire/scene.hpp"
-#include "wlr-surface-pointer-interaction.cpp"
+#include "wlr-surface-pointer-interaction.hpp"
 #include "wlr-surface-touch-interaction.cpp"
 #include <memory>
 #include <sstream>

@@ -9,6 +9,7 @@
 #include "wayfire/output.hpp"
 #include "wayfire/input-device.hpp"
 #include "wayfire/scene-input.hpp"
+#include "wayfire/util.hpp"
 
 namespace wf
 {
@@ -95,6 +96,9 @@ struct seat_t::impl
     void update_capabilities();
 
     void force_release_keys();
+
+    wf::wl_listener_wrapper on_wlr_keyboard_grab_end;
+    wf::wl_listener_wrapper on_wlr_pointer_grab_end;
 };
 }
 

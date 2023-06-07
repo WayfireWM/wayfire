@@ -36,17 +36,6 @@ wayfire_xdg_popup::wayfire_xdg_popup(wlr_xdg_popup *popup) :
             if (ev->new_focus != popup_parent->get_surface_root_node())
             {
                 this->close();
-
-                // FIXME: hack to get focus working immediately after the popup is closed. The problem is that
-                // the focus was given over to the node, but wlroots has an underlying grab for popups, so the
-                // new surface has not received focus yet.
-                // When the popup is closed, we need to re-enter the new node, however, we can only safely do
-                // that for wlroots surfaces. Other nodes are not affected by wlroots grabs anyway.
-                if (ev->new_focus &&
-                    dynamic_cast<view_keyboard_interaction_t*>(&ev->new_focus->keyboard_interaction()))
-                {
-                    ev->new_focus->keyboard_interaction().handle_keyboard_enter(wf::get_core().seat.get());
-                }
             }
         };
 
