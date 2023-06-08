@@ -1,3 +1,4 @@
+#include "view/toplevel-node.hpp"
 #include "wayfire/geometry.hpp"
 #include <wayfire/view.hpp>
 #include <wayfire/nonstd/wlroots-full.hpp>
@@ -56,6 +57,7 @@ class xdg_toplevel_view_t : public wf::view_interface_t
 
     wf::wl_listener_wrapper on_surface_commit;
     std::shared_ptr<wf::scene::wlr_surface_node_t> main_surface;
+    std::shared_ptr<wf::toplevel_view_node_t> surface_root_node;
 
     std::shared_ptr<wf::xdg_toplevel_t> wtoplevel;
     wf::signal::connection_t<xdg_toplevel_applied_state_signal> on_toplevel_applied;

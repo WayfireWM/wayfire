@@ -7,6 +7,7 @@
 #include <wayfire/signal-definitions.hpp>
 
 #include "../view-impl.hpp"
+#include "../toplevel-node.hpp"
 #include "wayfire/geometry.hpp"
 #include "wayfire/view.hpp"
 #include "xwayland-helpers.hpp"
@@ -140,11 +141,16 @@ class wayfire_xwayland_view_base : public wf::view_interface_t
         }
     }
 
+    std::shared_ptr<wf::toplevel_view_node_t> surface_root_node;
+
   public:
     wayfire_xwayland_view_base(wlr_xwayland_surface *xww) :
         view_interface_t(), xw(xww)
     {
         on_surface_commit.set_callback([&] (void*) { commit(); });
+        surface_root_node = std::make_shared<wf::toplevel_view_node_t>(this);
+
+        this->set_surface_root_node(std::make_shared<wf::toplevel_view_node_t>(this));
     }
 
     virtual void commit()

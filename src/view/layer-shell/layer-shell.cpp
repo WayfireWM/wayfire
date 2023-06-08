@@ -4,6 +4,7 @@
 
 #include <wayfire/workarea.hpp>
 #include <wayfire/signal-definitions.hpp>
+#include "view/layer-shell/layer-shell-node.hpp"
 #include "wayfire/geometry.hpp"
 #include "wayfire/scene-operations.hpp"
 #include "wayfire/util.hpp"
@@ -33,6 +34,7 @@ class wayfire_layer_shell_view : public wf::view_interface_t
 
     wf::wl_listener_wrapper on_surface_commit;
     std::shared_ptr<wf::scene::wlr_surface_node_t> main_surface;
+    std::shared_ptr<wf::layer_shell_node_t> surface_root_node;
     std::unique_ptr<wf::wlr_surface_controller_t> surface_controller;
 
     /**
@@ -94,6 +96,7 @@ class wayfire_layer_shell_view : public wf::view_interface_t
     /* Functions which are further specialized for the different shells */
     void move(int x, int y) override
     {
+        surface_root_node->set_offset({x, y});
         auto old_geometry = geometry;
         this->geometry.x = x;
         this->geometry.y = y;
@@ -390,9 +393,10 @@ wayfire_layer_shell_view::wayfire_layer_shell_view(wlr_layer_surface_v1 *lsurf) 
 {
     on_surface_commit.set_callback([&] (void*) { commit(); });
     this->main_surface = std::make_shared<wf::scene::wlr_surface_node_t>(lsurf->surface, true);
+    this->surface_root_node = std::make_shared<wf::layer_shell_node_t>(self());
+    this->set_surface_root_node(surface_root_node);
 
-    LOGD("Create a layer surface: namespace ", lsurf->namespace_t,
-        " layer ", lsurf->current.layer);
+    LOGD("Create a layer surface: namespace ", lsurf->namespace_t, " layer ", lsurf->current.layer);
 
     role = wf::VIEW_ROLE_DESKTOP_ENVIRONMENT;
     std::memset(&this->prev_state, 0, sizeof(prev_state));

@@ -1,5 +1,6 @@
 #include "xdg-toplevel-view.hpp"
 #include <wayfire/scene-operations.hpp>
+#include "view/toplevel-node.hpp"
 #include "wayfire/core.hpp"
 #include <wayfire/txn/transaction.hpp>
 #include <wayfire/txn/transaction-manager.hpp>
@@ -23,6 +24,8 @@ wf::xdg_toplevel_view_t::xdg_toplevel_view_t(wlr_xdg_toplevel *tlvl)
 {
     this->xdg_toplevel = tlvl;
     this->main_surface = std::make_shared<scene::wlr_surface_node_t>(tlvl->base->surface, false);
+    surface_root_node  = std::make_shared<toplevel_view_node_t>(this);
+    this->set_surface_root_node(surface_root_node);
 
     this->on_toplevel_applied = [&] (xdg_toplevel_applied_state_signal *ev)
     {
@@ -306,6 +309,7 @@ void wf::xdg_toplevel_view_t::unmap()
 
 void wf::xdg_toplevel_view_t::handle_toplevel_state_changed(wf::toplevel_state_t old_state)
 {
+    surface_root_node->set_offset(wf::origin(wtoplevel->calculate_base_geometry()));
     if (!old_state.mapped && wtoplevel->current().mapped)
     {
         map();

@@ -50,6 +50,7 @@ class wayfire_unmanaged_xwayland_view : public wayfire_xwayland_view_base
         data.old_geometry = old_geometry;
 
         view_damage_raw(self(), last_bounding_box);
+        surface_root_node->set_offset({x, y});
         geometry.x = x;
         geometry.y = y;
 

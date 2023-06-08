@@ -839,24 +839,7 @@ void wf::view_damage_raw(wayfire_view view, const wlr_box& box)
 
     /* Sticky views are visible on all workspaces. */
     if (view->sticky)
-    {
-        auto wsize = output->wset()->get_workspace_grid_size();
-        auto cws   = output->wset()->get_current_workspace();
-
-        /* Damage only the visible region of the shell view.
-         * This prevents hidden panels from spilling damage onto other workspaces */
-        wlr_box ws_box = output->get_relative_geometry();
-        wlr_box visible_damage = geometry_intersection(box, ws_box);
-        for (int i = 0; i < wsize.width; i++)
-        {
-            for (int j = 0; j < wsize.height; j++)
-            {
-                const int dx = (i - cws.x) * ws_box.width;
-                const int dy = (j - cws.y) * ws_box.height;
-                data.region |= visible_damage + wf::point_t{dx, dy};
-            }
-        }
-    } else
+    {} else
     {
         data.region |= box;
     }
