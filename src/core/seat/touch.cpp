@@ -25,13 +25,16 @@ wf::touch_interface_t::touch_interface_t(wlr_cursor *cursor, wlr_seat *seat,
     {
         auto ev   = static_cast<wlr_touch_down_event*>(data);
         auto mode = emit_device_event_signal(ev);
+        if (mode != input_event_processing_mode_t::IGNORE)
+        {
+            double lx, ly;
+            wlr_cursor_absolute_to_layout_coords(cursor, &ev->touch->base, ev->x, ev->y, &lx, &ly);
 
-        double lx, ly;
-        wlr_cursor_absolute_to_layout_coords(cursor, &ev->touch->base, ev->x, ev->y, &lx, &ly);
+            wf::pointf_t point;
+            wf::get_core().output_layout->get_output_coords_at({lx, ly}, point);
+            handle_touch_down(ev->touch_id, ev->time_msec, point, mode);
+        }
 
-        wf::pointf_t point;
-        wf::get_core().output_layout->get_output_coords_at({lx, ly}, point);
-        handle_touch_down(ev->touch_id, ev->time_msec, point, mode);
         wlr_idle_notify_activity(wf::get_core().protocols.idle, wf::get_core().get_current_seat());
         emit_device_post_event_signal(ev);
     });
@@ -40,7 +43,11 @@ wf::touch_interface_t::touch_interface_t(wlr_cursor *cursor, wlr_seat *seat,
     {
         auto ev   = static_cast<wlr_touch_up_event*>(data);
         auto mode = emit_device_event_signal(ev);
-        handle_touch_up(ev->touch_id, ev->time_msec, mode);
+        if (mode != input_event_processing_mode_t::IGNORE)
+        {
+            handle_touch_up(ev->touch_id, ev->time_msec, mode);
+        }
+
         wlr_idle_notify_activity(wf::get_core().protocols.idle,
             wf::get_core().get_current_seat());
         emit_device_post_event_signal(ev);
@@ -51,14 +58,18 @@ wf::touch_interface_t::touch_interface_t(wlr_cursor *cursor, wlr_seat *seat,
         auto ev   = static_cast<wlr_touch_motion_event*>(data);
         auto mode = emit_device_event_signal(ev);
 
-        double lx, ly;
-        wlr_cursor_absolute_to_layout_coords(
-            wf::get_core_impl().seat->priv->cursor->cursor, &ev->touch->base,
-            ev->x, ev->y, &lx, &ly);
+        if (mode != input_event_processing_mode_t::IGNORE)
+        {
+            double lx, ly;
+            wlr_cursor_absolute_to_layout_coords(
+                wf::get_core_impl().seat->priv->cursor->cursor, &ev->touch->base,
+                ev->x, ev->y, &lx, &ly);
 
-        wf::pointf_t point;
-        wf::get_core().output_layout->get_output_coords_at({lx, ly}, point);
-        handle_touch_motion(ev->touch_id, ev->time_msec, point, true, mode);
+            wf::pointf_t point;
+            wf::get_core().output_layout->get_output_coords_at({lx, ly}, point);
+            handle_touch_motion(ev->touch_id, ev->time_msec, point, true, mode);
+        }
+
         wlr_idle_notify_activity(wf::get_core().protocols.idle, wf::get_core().get_current_seat());
         emit_device_post_event_signal(ev);
     });

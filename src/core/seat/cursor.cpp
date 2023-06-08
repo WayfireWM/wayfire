@@ -61,8 +61,11 @@ void wf::cursor_t::setup_listeners()
         set_touchscreen_mode(false); \
         auto ev   = static_cast<wlr_pointer_ ## evname ## _event*>(data); \
         auto mode = emit_device_event_signal(ev); \
-        seat->priv->lpointer->handle_pointer_ ## evname(ev, mode); \
-        wlr_idle_notify_activity(core.protocols.idle, core.get_current_seat()); \
+        if (mode != wf::input_event_processing_mode_t::IGNORE) \
+        { \
+            seat->priv->lpointer->handle_pointer_ ## evname(ev, mode); \
+            wlr_idle_notify_activity(core.protocols.idle, core.get_current_seat()); \
+        } \
         emit_device_post_event_signal(ev); \
     }); \
     on_ ## evname.connect(&cursor->events.evname);

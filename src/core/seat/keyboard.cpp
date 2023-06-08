@@ -25,14 +25,19 @@ void wf::keyboard_t::setup_listeners()
 
     on_key.set_callback([&] (void *data)
     {
-        auto ev   = static_cast<wlr_keyboard_key_event*>(data);
-        auto mode = emit_device_event_signal(ev);
-
+        auto ev    = static_cast<wlr_keyboard_key_event*>(data);
+        auto mode  = emit_device_event_signal(ev);
         auto& seat = wf::get_core_impl().seat;
-        seat->priv->set_keyboard(this);
 
-        if (!handle_keyboard_key(ev->keycode, ev->state) &&
-            (mode != input_event_processing_mode_t::NO_CLIENT))
+        if (mode == input_event_processing_mode_t::IGNORE)
+        {
+            wlr_idle_notify_activity(wf::get_core().protocols.idle, seat->seat);
+            emit_device_post_event_signal(ev);
+            return;
+        }
+
+        seat->priv->set_keyboard(this);
+        if (!handle_keyboard_key(ev->keycode, ev->state) && (mode == input_event_processing_mode_t::FULL))
         {
             if (ev->state == WL_KEYBOARD_KEY_STATE_PRESSED)
             {

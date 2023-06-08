@@ -82,7 +82,8 @@ void wayfire_focus::init()
 
     on_pointer_button = [=] (wf::input_event_signal<wlr_pointer_button_event> *ev)
     {
-        if (ev->event->state != WLR_BUTTON_PRESSED)
+        if ((ev->mode == wf::input_event_processing_mode_t::IGNORE) ||
+            (ev->event->state != WLR_BUTTON_PRESSED))
         {
             return;
         }

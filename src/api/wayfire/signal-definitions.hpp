@@ -75,6 +75,7 @@ struct switch_signal
     bool state;
 };
 
+
 /**
  * Describes the various ways in which core should handle an input event.
  */
@@ -90,6 +91,10 @@ enum class input_event_processing_mode_t
      * the event to the client.
      */
     NO_CLIENT,
+    /**
+     * Core should not process this event at all.
+     */
+    IGNORE,
 };
 
 /**
