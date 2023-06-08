@@ -6,6 +6,8 @@
 #include "wayfire/signal-provider.hpp"
 #include "wayfire/view.hpp"
 
+class wayfire_xdg_popup_node;
+
 /**
  * A class for xdg-shell popups
  */
@@ -26,6 +28,8 @@ class wayfire_xdg_popup : public wf::view_interface_t
 
   public:
     wayfire_xdg_popup(wlr_xdg_popup *popup);
+    ~wayfire_xdg_popup();
+
     void initialize() override;
 
     wayfire_view popup_parent;
@@ -62,6 +66,7 @@ class wayfire_xdg_popup : public wf::view_interface_t
 
     wf::wl_listener_wrapper on_surface_commit;
     std::shared_ptr<wf::scene::wlr_surface_node_t> main_surface;
+    std::shared_ptr<wayfire_xdg_popup_node> surface_root_node;
 
     std::string title, app_id;
     void handle_app_id_changed(std::string new_app_id);

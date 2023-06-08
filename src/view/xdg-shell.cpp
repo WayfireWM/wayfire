@@ -1,3 +1,4 @@
+#include <string>
 #include <wayfire/util/log.hpp>
 #include <wayfire/debug.hpp>
 #include "view/view-impl.hpp"
@@ -20,13 +21,31 @@
 #include "xdg-shell/xdg-toplevel-view.hpp"
 #include "view-keyboard-interaction.hpp"
 
+class wayfire_xdg_popup_node : public wf::scene::translation_node_t
+{
+  public:
+    wayfire_xdg_popup_node(uint64_t view_id) : id(view_id)
+    {}
+
+    std::string stringify() const override
+    {
+        return "xdg-popup view id=" + std::to_string(id) + " " + stringify_flags();
+    }
+
+  private:
+    uint64_t id = 0;
+};
+
 wayfire_xdg_popup::wayfire_xdg_popup(wlr_xdg_popup *popup) : wf::view_interface_t()
 {
     this->popup_parent = wf::wl_surface_to_wayfire_view(popup->parent->resource).get();
     this->popup = popup;
     this->role  = wf::VIEW_ROLE_UNMANAGED;
     this->priv->keyboard_focus_enabled = false;
+    this->surface_root_node = std::make_shared<wayfire_xdg_popup_node>(this->get_id());
+    this->set_surface_root_node(surface_root_node);
     this->set_output(popup_parent->get_output());
+
 
     if (!dynamic_cast<wayfire_xdg_popup*>(popup_parent.get()))
     {
@@ -45,6 +64,8 @@ wayfire_xdg_popup::wayfire_xdg_popup(wlr_xdg_popup *popup) : wf::view_interface_
 
     on_surface_commit.set_callback([&] (void*) { commit(); });
 }
+
+wayfire_xdg_popup::~wayfire_xdg_popup() = default;
 
 void wayfire_xdg_popup::initialize()
 {
@@ -281,6 +302,7 @@ void wayfire_xdg_popup::move(int x, int y)
 {
     wf::geometry_t old_geometry = geometry;
     view_damage_raw(self(), last_bounding_box);
+    surface_root_node->set_offset({x, y});
     geometry.x = x;
     geometry.y = y;
     damage();

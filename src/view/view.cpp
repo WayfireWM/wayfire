@@ -3,6 +3,7 @@
 #include <wayfire/workarea.hpp>
 #include "../core/core-impl.hpp"
 #include "view-impl.hpp"
+#include "wayfire/debug.hpp"
 #include "wayfire/geometry.hpp"
 #include "wayfire/opengl.hpp"
 #include "wayfire/output.hpp"
@@ -795,13 +796,11 @@ class view_root_node_t : public wf::scene::floating_inner_node_t, public wf::vie
 
 void wf::view_interface_t::initialize()
 {
+    wf::dassert(priv->surface_root_node != nullptr,
+        "View implementations should set the surface root node immediately after creating the view!");
+
     priv->root_node = std::make_shared<view_root_node_t>(this);
     priv->transformed_node = std::make_shared<scene::transform_manager_node_t>();
-
-    if (!priv->surface_root_node)
-    {
-        priv->surface_root_node = std::make_shared<scene::view_node_t>(this);
-    }
 
     // Set up view content to scene.
     priv->transformed_node->set_children_list({priv->surface_root_node});
@@ -892,9 +891,6 @@ wayfire_view wf::node_to_view(wf::scene::node_ptr node)
 {
     return node_to_view(node.get());
 }
-
-// FIXME: Consider splitting to header + source file
-#include "view-node.cpp"
 
 wl_client*wf::view_interface_t::get_client()
 {
