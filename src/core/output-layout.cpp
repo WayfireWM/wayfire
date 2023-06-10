@@ -160,7 +160,7 @@ void transfer_views(wf::output_t *from, wf::output_t *to)
     std::vector<wayfire_view> non_ws_views;
     for (auto& view : wf::get_core().get_all_views())
     {
-        if ((view->get_output() == from) && !view->get_wset())
+        if ((view->get_output() == from) && (!toplevel_cast(view) || !toplevel_cast(view)->get_wset()))
         {
             non_ws_views.push_back(view);
             // Take a ref, so that the view doesn't get destroyed while we're doing operations on the views

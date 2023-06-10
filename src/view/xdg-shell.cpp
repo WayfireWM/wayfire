@@ -137,7 +137,6 @@ void wayfire_xdg_popup::unmap()
 {
     damage();
     emit_view_pre_unmap();
-    set_decoration(nullptr);
 
     main_surface = nullptr;
     priv->unset_mapped_surface_contents();
@@ -160,6 +159,7 @@ void wayfire_xdg_popup::update_position()
         return;
     }
 
+    // Offset relative to the parent surface
     wf::pointf_t popup_offset = {1.0 * popup->current.geometry.x, 1.0 * popup->current.geometry.y};
     if (wlr_surface_is_xdg_surface(popup->parent))
     {
@@ -169,9 +169,12 @@ void wayfire_xdg_popup::update_position()
         popup_offset.y += box.y;
     }
 
-    auto parent_geometry = popup_parent->get_output_geometry();
-    popup_offset.x += parent_geometry.x - popup->base->current.geometry.x;
-    popup_offset.y += parent_geometry.y - popup->base->current.geometry.y;
+    // Get the {0, 0} of the parent view in output coordinates
+    popup_offset += popup_parent->get_surface_root_node()->to_global({0, 0});
+
+    // Subtract shadows, etc.
+    popup_offset.x -= popup->base->current.geometry.x;
+    popup_offset.y -= popup->base->current.geometry.y;
 
     // Apply transformers to the popup position
     auto node = popup_parent->get_surface_root_node()->parent();
@@ -205,10 +208,9 @@ void wayfire_xdg_popup::unconstrain()
     }
 
     auto box = get_output()->get_relative_geometry();
-    auto wm  = toplevel_parent->get_output_geometry();
-    box.x -= wm.x;
-    box.y -= wm.y;
-
+    auto parent_offset = toplevel_parent->get_surface_root_node()->to_global({0, 0});
+    box.x -= parent_offset.x;
+    box.y -= parent_offset.y;
     wlr_xdg_popup_unconstrain_from_box(popup, &box);
 }
 
@@ -253,17 +255,13 @@ void wayfire_xdg_popup::update_size()
     }
 
     /* Damage current size */
-    view_damage_raw(self(), last_bounding_box);
-
-    wf::geometry_t old_geometry = geometry;
+    wf::scene::damage_node(get_root_node(), last_bounding_box);
     geometry.width  = current_size.width;
     geometry.height = current_size.height;
 
     /* Damage new size */
     last_bounding_box = get_bounding_box();
-    view_damage_raw(self(), last_bounding_box);
-
-    wf::emit_geometry_changed_signal(self(), old_geometry);
+    wf::scene::damage_node(get_root_node(), last_bounding_box);
     wf::scene::update(this->get_surface_root_node(), wf::scene::update_flag::GEOMETRY);
 }
 
@@ -300,24 +298,16 @@ std::string wayfire_xdg_popup::get_title()
 
 void wayfire_xdg_popup::move(int x, int y)
 {
-    wf::geometry_t old_geometry = geometry;
-    view_damage_raw(self(), last_bounding_box);
+    wf::scene::damage_node(get_root_node(), last_bounding_box);
     surface_root_node->set_offset({x, y});
     geometry.x = x;
     geometry.y = y;
     damage();
-
-    wf::emit_geometry_changed_signal(self(), old_geometry);
     last_bounding_box = get_bounding_box();
     wf::scene::update(this->get_surface_root_node(), wf::scene::update_flag::GEOMETRY);
 }
 
-wf::geometry_t wayfire_xdg_popup::get_wm_geometry()
-{
-    return geometry;
-}
-
-wf::geometry_t wayfire_xdg_popup::get_output_geometry()
+wf::geometry_t wayfire_xdg_popup::get_geometry()
 {
     return geometry;
 }
@@ -325,11 +315,6 @@ wf::geometry_t wayfire_xdg_popup::get_output_geometry()
 wlr_surface*wayfire_xdg_popup::get_keyboard_focus_surface()
 {
     return nullptr;
-}
-
-bool wayfire_xdg_popup::should_be_decorated()
-{
-    return false;
 }
 
 void create_xdg_popup(wlr_xdg_popup *popup)

@@ -15,6 +15,7 @@
 #include <wayfire/rule/rule.hpp>
 #include <wayfire/util/log.hpp>
 #include <wayfire/option-wrapper.hpp>
+#include <wayfire/toplevel-view.hpp>
 
 #include "lambda-rules-registration.hpp"
 #include "view-action-interface.hpp"
@@ -25,7 +26,7 @@ class wayfire_window_rules_t : public wf::per_output_plugin_instance_t
   public:
     void init() override;
     void fini() override;
-    void apply(const std::string & signal, wayfire_view view);
+    void apply(const std::string & signal, wayfire_toplevel_view view);
 
   private:
     void setup_rules_from_config();
@@ -34,7 +35,7 @@ class wayfire_window_rules_t : public wf::per_output_plugin_instance_t
     // Created rule handler.
     wf::signal::connection_t<wf::view_mapped_signal> on_view_mapped = [=] (wf::view_mapped_signal *ev)
     {
-        apply("created", ev->view);
+        apply("created", toplevel_cast(ev->view));
     };
 
     // Maximized rule handler.
@@ -94,12 +95,10 @@ void wayfire_window_rules_t::fini()
     }
 }
 
-void wayfire_window_rules_t::apply(const std::string & signal, wayfire_view view)
+void wayfire_window_rules_t::apply(const std::string & signal, wayfire_toplevel_view view)
 {
     if (view == nullptr)
     {
-        LOGE("View is null.");
-
         return;
     }
 

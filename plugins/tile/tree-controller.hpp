@@ -14,7 +14,7 @@ namespace tile
  * Run callback for each view in the tree
  */
 void for_each_view(nonstd::observer_ptr<tree_node_t> root,
-    std::function<void(wayfire_view)> callback);
+    std::function<void(wayfire_toplevel_view)> callback);
 
 enum split_insertion_t
 {

@@ -1,4 +1,5 @@
 #include "wayfire/plugin.hpp"
+#include "wayfire/toplevel-view.hpp"
 #include <wayfire/output.hpp>
 #include <wayfire/core.hpp>
 #include <wayfire/view.hpp>
@@ -28,7 +29,7 @@ class wayfire_oswitch : public wf::plugin_interface_t
     {
         auto current_output = wf::get_core().get_active_output();
         auto next = wf::get_core().output_layout->get_next_output(current_output);
-        auto view = current_output->get_active_view();
+        auto view = wf::toplevel_cast(current_output->get_active_view());
         if (!view)
         {
             switch_output(wf::activator_data_t{});

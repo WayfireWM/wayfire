@@ -1,5 +1,6 @@
 #include "scale.hpp"
 #include "scale-title-overlay.hpp"
+#include "wayfire/core.hpp"
 #include "wayfire/debug.hpp"
 #include "wayfire/geometry.hpp"
 #include "wayfire/output.hpp"
@@ -21,7 +22,7 @@
 /**
  * Get the topmost parent of a view.
  */
-static wayfire_view find_toplevel_parent(wayfire_view view)
+static wayfire_toplevel_view find_toplevel_parent(wayfire_toplevel_view view)
 {
     while (view->parent)
     {
@@ -36,11 +37,11 @@ static wayfire_view find_toplevel_parent(wayfire_view view)
  */
 struct view_title_texture_t : public wf::custom_data_t
 {
-    wayfire_view view;
+    wayfire_toplevel_view view;
     wf::cairo_text_t overlay;
     wf::cairo_text_t::params par;
     bool overflow = false;
-    wayfire_view dialog; /* the texture should be rendered on top of this dialog */
+    wayfire_toplevel_view dialog; /* the texture should be rendered on top of this dialog */
 
     /**
      * Render the overlay text in our texture, cropping it to the size by
@@ -67,7 +68,7 @@ struct view_title_texture_t : public wf::custom_data_t
         }
     };
 
-    view_title_texture_t(wayfire_view v, int font_size, const wf::color_t& bg_color,
+    view_title_texture_t(wayfire_toplevel_view v, int font_size, const wf::color_t& bg_color,
         const wf::color_t& text_color, float output_scale) : view(v)
     {
         par.font_size    = font_size;
@@ -95,7 +96,7 @@ class title_overlay_node_t : public node_t
     };
 
     /* save the transformed view, since we need it in the destructor */
-    wayfire_view view;
+    wayfire_toplevel_view view;
     /* the position on the screen we currently render to */
     wf::geometry_t geometry{0, 0, 0, 0};
     scale_show_title_t& parent;
@@ -109,7 +110,7 @@ class title_overlay_node_t : public node_t
     /**
      * Gets the overlay texture stored with the given view.
      */
-    view_title_texture_t& get_overlay_texture(wayfire_view view)
+    view_title_texture_t& get_overlay_texture(wayfire_toplevel_view view)
     {
         auto data = view->get_data<view_title_texture_t>();
         if (!data)
@@ -124,7 +125,7 @@ class title_overlay_node_t : public node_t
         return *data.get();
     }
 
-    wf::geometry_t get_scaled_bbox(wayfire_view v)
+    wf::geometry_t get_scaled_bbox(wayfire_toplevel_view v)
     {
         auto tr = v->get_transformed_node()->
             get_transformer<wf::scene::view_2d_transformer_t>("scale");
@@ -245,7 +246,7 @@ class title_overlay_node_t : public node_t
 
   public:
     title_overlay_node_t(
-        wayfire_view view_, position pos_, scale_show_title_t& parent_) :
+        wayfire_toplevel_view view_, position pos_, scale_show_title_t& parent_) :
         node_t(false), view(view_), parent(parent_), pos(pos_)
     {
         auto parent = find_toplevel_parent(view);
@@ -491,9 +492,7 @@ void scale_show_title_t::update_title_overlay_opt()
 
 void scale_show_title_t::update_title_overlay_mouse()
 {
-    wayfire_view v =
-        scale_find_view_at(wf::get_core().get_cursor_position(), output);
-
+    wayfire_toplevel_view v = scale_find_view_at(wf::get_core().get_cursor_position(), output);
     if (v)
     {
         v = find_toplevel_parent(v);

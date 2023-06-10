@@ -63,7 +63,7 @@ static constexpr bool view_expired(int view_position)
 
 struct SwitcherView
 {
-    wayfire_view view;
+    wayfire_toplevel_view view;
     SwitcherPaintAttribs attribs;
 
     int position;
@@ -244,10 +244,13 @@ class WayfireSwitcher : public wf::per_output_plugin_instance_t, public wf::keyb
     wf::signal::connection_t<wf::view_disappeared_signal> view_disappeared =
         [=] (wf::view_disappeared_signal *ev)
     {
-        handle_view_removed(ev->view);
+        if (auto toplevel = toplevel_cast(ev->view))
+        {
+            handle_view_removed(toplevel);
+        }
     };
 
-    void handle_view_removed(wayfire_view view)
+    void handle_view_removed(wayfire_toplevel_view view)
     {
         // not running at all, don't care
         if (!output->is_plugin_active(grab_interface.name))
@@ -448,7 +451,7 @@ class WayfireSwitcher : public wf::per_output_plugin_instance_t, public wf::keyb
     }
 
     /* Calculate alpha for the view when switcher is inactive. */
-    float get_view_normal_alpha(wayfire_view view)
+    float get_view_normal_alpha(wayfire_toplevel_view view)
     {
         /* Usually views are visible, but if they were minimized,
          * and we aren't restoring the view, it has target alpha 0.0 */
@@ -493,7 +496,7 @@ class WayfireSwitcher : public wf::per_output_plugin_instance_t, public wf::keyb
     }
 
     // returns a list of mapped views
-    std::vector<wayfire_view> get_workspace_views() const
+    std::vector<wayfire_toplevel_view> get_workspace_views() const
     {
         return output->wset()->get_views(wf::WSET_MAPPED_ONLY | wf::WSET_CURRENT_WORKSPACE);
     }
@@ -554,7 +557,7 @@ class WayfireSwitcher : public wf::per_output_plugin_instance_t, public wf::keyb
          * of the unfocused view. When dearranging those copies, they overlap.
          * If the view is translucent, this means that the view gets darker than
          * it really is.  * To circumvent this, we just fade out one of the copies */
-        wayfire_view fading_view = nullptr;
+        wayfire_toplevel_view fading_view = nullptr;
         if (count_different_active_views() == 2)
         {
             fading_view = get_unfocused_view();
@@ -624,7 +627,7 @@ class WayfireSwitcher : public wf::per_output_plugin_instance_t, public wf::keyb
         }
     }
 
-    SwitcherView create_switcher_view(wayfire_view view)
+    SwitcherView create_switcher_view(wayfire_toplevel_view view)
     {
         /* we add a view transform if there isn't any.
          *
@@ -655,8 +658,7 @@ class WayfireSwitcher : public wf::per_output_plugin_instance_t, public wf::keyb
     void render_view_scene(wayfire_view view, const wf::render_target_t& buffer)
     {
         std::vector<wf::scene::render_instance_uptr> instances;
-        view->get_transformed_node()->gen_render_instances(
-            instances, [] (auto) {});
+        view->get_transformed_node()->gen_render_instances(instances, [] (auto) {});
 
         wf::scene::render_pass_params_t params;
         params.instances = &instances;
@@ -819,7 +821,7 @@ class WayfireSwitcher : public wf::per_output_plugin_instance_t, public wf::keyb
 
     int count_different_active_views()
     {
-        std::set<wayfire_view> active_views;
+        std::set<wayfire_toplevel_view> active_views;
         for (auto& sv : views)
         {
             active_views.insert(sv.view);
@@ -829,7 +831,7 @@ class WayfireSwitcher : public wf::per_output_plugin_instance_t, public wf::keyb
     }
 
 /* Move the last view in the given slot so that it becomes invalid */
-    wayfire_view invalidate_last_in_slot(int slot)
+    wayfire_toplevel_view invalidate_last_in_slot(int slot)
     {
         for (int i = views.size() - 1; i >= 0; i--)
         {
@@ -845,7 +847,7 @@ class WayfireSwitcher : public wf::per_output_plugin_instance_t, public wf::keyb
     }
 
 /* Returns the non-focused view in the case where there is only 1 view */
-    wayfire_view get_unfocused_view()
+    wayfire_toplevel_view get_unfocused_view()
     {
         for (auto& sv : views)
         {

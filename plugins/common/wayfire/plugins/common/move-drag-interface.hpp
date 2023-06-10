@@ -94,7 +94,7 @@ struct drag_done_signal
     struct view_t
     {
         /** Dragged view. */
-        wayfire_view view;
+        wayfire_toplevel_view view;
 
         /**
          * The position relative to the view where the grab was.
@@ -107,7 +107,7 @@ struct drag_done_signal
     std::vector<view_t> all_views;
 
     /** The main view which was dragged. */
-    wayfire_view main_view;
+    wayfire_toplevel_view main_view;
 
     /**
      * The position of the input when the view was dropped.
@@ -256,7 +256,7 @@ static const std::string move_drag_transformer = "move-drag-transformer";
 struct dragged_view_t
 {
     // The view being dragged
-    wayfire_view view;
+    wayfire_toplevel_view view;
 
     // Its transformer
     std::shared_ptr<scale_around_grab_t> transformer;
@@ -267,7 +267,7 @@ struct dragged_view_t
     wf::geometry_t last_bbox;
 };
 
-inline wayfire_view get_toplevel(wayfire_view view)
+inline wayfire_toplevel_view get_toplevel(wayfire_toplevel_view view)
 {
     while (view->parent)
     {
@@ -277,10 +277,10 @@ inline wayfire_view get_toplevel(wayfire_view view)
     return view;
 }
 
-inline std::vector<wayfire_view> get_target_views(wayfire_view grabbed,
+inline std::vector<wayfire_toplevel_view> get_target_views(wayfire_toplevel_view grabbed,
     bool join_views)
 {
-    std::vector<wayfire_view> r = {grabbed};
+    std::vector<wayfire_toplevel_view> r = {grabbed};
     if (join_views)
     {
         r = grabbed->enumerate_views();
@@ -419,7 +419,7 @@ class core_drag_t : public signal::provider_t
      * Rebuild the wobbly model after a change in the scaling, so that the wobbly
      * model does not try to animate the scaling change itself.
      */
-    void rebuild_wobbly(wayfire_view view, wf::point_t grab, wf::pointf_t relative)
+    void rebuild_wobbly(wayfire_toplevel_view view, wf::point_t grab, wf::pointf_t relative)
     {
         auto dim = wf::dimensions(wf::view_bounding_box_up_to(view, "wobbly"));
         modify_wobbly(view, find_geometry_around(dim, grab, relative));
@@ -433,7 +433,7 @@ class core_drag_t : public signal::provider_t
      * @param grab_position The position of the input, in output-layout coordinates.
      * @param relative The position of the grab_position relative to view.
      */
-    void start_drag(wayfire_view grab_view, wf::point_t grab_position,
+    void start_drag(wayfire_toplevel_view grab_view, wf::point_t grab_position,
         wf::pointf_t relative,
         const drag_options_t& options)
     {
@@ -501,8 +501,7 @@ class core_drag_t : public signal::provider_t
         }
     }
 
-    void start_drag(wayfire_view view, wf::point_t grab_position,
-        const drag_options_t& options)
+    void start_drag(wayfire_toplevel_view view, wf::point_t grab_position, const drag_options_t& options)
     {
         if (options.join_views)
         {
@@ -511,8 +510,7 @@ class core_drag_t : public signal::provider_t
 
         auto bbox = view->get_transformed_node()->get_bounding_box() +
             wf::origin(view->get_output()->get_layout_geometry());
-        start_drag(view, grab_position,
-            find_relative_grab(bbox, grab_position), options);
+        start_drag(view, grab_position, find_relative_grab(bbox, grab_position), options);
     }
 
     void handle_motion(wf::point_t to)
@@ -631,7 +629,7 @@ class core_drag_t : public signal::provider_t
     }
 
     // View currently being moved.
-    wayfire_view view;
+    wayfire_toplevel_view view;
 
     // Output where the action is happening.
     wf::output_t *current_output = NULL;
@@ -779,7 +777,7 @@ inline void adjust_view_on_output(drag_done_signal *ev)
 /**
  * Adjust the view's state after snap-off.
  */
-inline void adjust_view_on_snap_off(wayfire_view view)
+inline void adjust_view_on_snap_off(wayfire_toplevel_view view)
 {
     if (view->tiled_edges && !view->fullscreen)
     {

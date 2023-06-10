@@ -3,6 +3,7 @@
 #include "config.h"
 #include "wayfire/core.hpp"
 #include "wayfire/geometry.hpp"
+#include "wayfire/scene-render.hpp"
 #include "wayfire/signal-provider.hpp"
 #include "wayfire/util.hpp"
 #include "xwayland-view-base.hpp"
@@ -168,7 +169,7 @@ class wayfire_xwayland_view : public wayfire_xwayland_view_base
                 }
             }
 
-            set_toplevel_parent(parent);
+            set_toplevel_parent(toplevel_cast(parent));
         });
 
         on_set_hints.set_callback([&] (void*)
@@ -244,7 +245,7 @@ class wayfire_xwayland_view : public wayfire_xwayland_view_base
                 /* Make sure geometry is properly visible on the view output */
                 save_geometry = wf::clamp(save_geometry,
                     get_output()->workarea->get_workarea());
-                priv->update_windowed_geometry(self(), save_geometry);
+                priv->update_windowed_geometry({this}, save_geometry);
             }
 
             tile_request(wf::TILED_EDGES_ALL);
@@ -362,10 +363,10 @@ class wayfire_xwayland_view : public wayfire_xwayland_view_base
             unmap();
         }
 
-        view_damage_raw(self(), last_bounding_box);
+        wf::scene::damage_node(get_root_node(), last_bounding_box);
 
         wf::view_geometry_changed_signal geometry_changed;
-        geometry_changed.view = self();
+        geometry_changed.view = {this};
         geometry_changed.old_geometry = old_state.geometry;
         emit(&geometry_changed);
 

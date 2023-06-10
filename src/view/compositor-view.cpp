@@ -1,3 +1,5 @@
+#include "view/view-impl.hpp"
+#include "wayfire/geometry.hpp"
 #include "wayfire/scene-render.hpp"
 #include "wayfire/scene.hpp"
 #include "wayfire/view.hpp"
@@ -14,14 +16,8 @@
 static void render_colored_rect(const wf::render_target_t& fb,
     int x, int y, int w, int h, const wf::color_t& color)
 {
-    wf::color_t premultiply{
-        color.r * color.a,
-        color.g * color.a,
-        color.b * color.a,
-        color.a};
-
-    OpenGL::render_rectangle({x, y, w, h}, premultiply,
-        fb.get_orthographic_projection());
+    wf::color_t premultiply{color.r * color.a, color.g * color.a, color.b * color.a, color.a};
+    OpenGL::render_rectangle({x, y, w, h}, premultiply, fb.get_orthographic_projection());
 }
 
 class wf::color_rect_view_t::color_rect_node_t : public wf::scene::floating_inner_node_t
@@ -94,7 +90,7 @@ class wf::color_rect_view_t::color_rect_node_t : public wf::scene::floating_inne
     {
         if (view)
         {
-            return view->get_output_geometry();
+            return view->get_geometry();
         } else
         {
             return {0, 0, 0, 0};
@@ -143,35 +139,16 @@ bool wf::color_rect_view_t::is_mapped() const
     return _is_mapped;
 }
 
-void wf::color_rect_view_t::move(int x, int y)
+void wf::color_rect_view_t::set_geometry(wf::geometry_t g)
 {
     damage();
-    view_geometry_changed_signal data;
-    data.old_geometry = get_wm_geometry();
-
-    this->geometry.x = x;
-    this->geometry.y = y;
-
+    this->geometry = g;
     damage();
-    emit(&data);
 }
 
-void wf::color_rect_view_t::resize(int w, int h)
+wf::geometry_t wf::color_rect_view_t::get_geometry()
 {
-    damage();
-    view_geometry_changed_signal data;
-    data.old_geometry = get_wm_geometry();
-
-    this->geometry.width  = w;
-    this->geometry.height = h;
-
-    damage();
-    emit(&data);
-}
-
-wf::geometry_t wf::color_rect_view_t::get_output_geometry()
-{
-    return geometry;
+    return this->geometry;
 }
 
 wlr_surface*wf::color_rect_view_t::get_keyboard_focus_surface()
@@ -180,11 +157,6 @@ wlr_surface*wf::color_rect_view_t::get_keyboard_focus_surface()
 }
 
 bool wf::color_rect_view_t::is_focusable() const
-{
-    return false;
-}
-
-bool wf::color_rect_view_t::should_be_decorated()
 {
     return false;
 }

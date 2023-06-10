@@ -1,6 +1,7 @@
 #include "ipc-method-repository.hpp"
 #include "wayfire/plugin.hpp"
 #include "wayfire/plugins/common/shared-core-data.hpp"
+#include "wayfire/toplevel-view.hpp"
 #include "wayfire/util.hpp"
 #include "wayfire/view-helpers.hpp"
 #include <wayfire/view.hpp>
@@ -359,16 +360,21 @@ class stipc_plugin_t : public wf::plugin_interface_t
             v["id"]     = view->get_id();
             v["title"]  = view->get_title();
             v["app-id"] = view->get_app_id();
-            v["geometry"] = wf::ipc::geometry_to_json(view->get_wm_geometry());
-            v["base-geometry"] = wf::ipc::geometry_to_json(view->get_output_geometry());
-            v["state"] = {
-                {"tiled", view->tiled_edges},
-                {"fullscreen", view->fullscreen},
-                {"minimized", view->minimized},
-            };
+            v["base-geometry"] = wf::ipc::geometry_to_json(view->get_bounding_box());
+            v["state"] = {};
+
+            if (auto toplevel = toplevel_cast(view))
+            {
+                v["geometry"] = wf::ipc::geometry_to_json(toplevel->get_wm_geometry());
+                v["state"]["tiled"] = toplevel->tiled_edges;
+                v["state"]["fullscreen"] = toplevel->fullscreen;
+                v["state"]["minimized"]  = toplevel->minimized;
+            } else
+            {
+                v["geometry"] = wf::ipc::geometry_to_json(view->get_bounding_box());
+            }
 
             v["layer"] = layer_to_string(get_view_layer(view));
-
             response.push_back(v);
         }
 
@@ -398,6 +404,13 @@ class stipc_plugin_t : public wf::plugin_interface_t
                     std::to_string((int)v["id"]));
             }
 
+            auto toplevel = toplevel_cast(*it);
+            if (!toplevel)
+            {
+                return wf::ipc::json_error("View is not toplevel view id " +
+                    std::to_string((int)v["id"]));
+            }
+
             if (v.contains("output"))
             {
                 WFJSON_EXPECT_FIELD(v, "output", string);
@@ -407,11 +420,11 @@ class stipc_plugin_t : public wf::plugin_interface_t
                     return wf::ipc::json_error("Unknown output " + (std::string)v["output"]);
                 }
 
-                move_view_to_output(*it, wo, false);
+                move_view_to_output(toplevel, wo, false);
             }
 
             wf::geometry_t g{v["x"], v["y"], v["width"], v["height"]};
-            (*it)->set_geometry(g);
+            toplevel->set_geometry(g);
         }
 
         return wf::ipc::json_ok();

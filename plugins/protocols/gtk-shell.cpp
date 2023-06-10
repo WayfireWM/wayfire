@@ -8,6 +8,7 @@
 #include <wayfire/signal-definitions.hpp>
 #include <wayfire/nonstd/wlroots-full.hpp>
 #include <wayfire/plugin.hpp>
+#include <wayfire/toplevel-view.hpp>
 
 #include "gtk-shell.hpp"
 
@@ -138,7 +139,7 @@ static void append_to_array(wl_array *array, uint32_t value)
  * Tells the client about the window state in more detail than xdg_surface.
  * This currently only includes which edges are tiled.
  */
-static void send_gtk_surface_configure(wf_gtk_surface *surface, wayfire_view view)
+static void send_gtk_surface_configure(wf_gtk_surface *surface, wayfire_toplevel_view view)
 {
     int version = wl_resource_get_version(surface->resource);
     wl_array states;
@@ -180,8 +181,7 @@ static void send_gtk_surface_configure(wf_gtk_surface *surface, wayfire_view vie
 /**
  * Tells gtk which edges should be resizable.
  */
-static void send_gtk_surface_configure_edges(wf_gtk_surface *surface,
-    wayfire_view view)
+static void send_gtk_surface_configure_edges(wf_gtk_surface *surface, wayfire_toplevel_view view)
 {
     wl_array edges;
     wl_array_init(&edges);
@@ -203,7 +203,7 @@ static void send_gtk_surface_configure_edges(wf_gtk_surface *surface,
  */
 static void handle_xdg_surface_on_configure(wf_gtk_surface *surface)
 {
-    wayfire_view view = wf::wl_surface_to_wayfire_view(surface->wl_surface);
+    wayfire_toplevel_view view = wf::toplevel_cast(wf::wl_surface_to_wayfire_view(surface->wl_surface));
     if (view)
     {
         send_gtk_surface_configure(surface, view);

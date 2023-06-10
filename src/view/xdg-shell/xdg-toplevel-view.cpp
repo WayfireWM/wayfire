@@ -82,7 +82,7 @@ wf::xdg_toplevel_view_t::xdg_toplevel_view_t(wlr_xdg_toplevel *tlvl)
     {
         auto parent =
             xdg_toplevel->parent ? (wf::view_interface_t*)(xdg_toplevel->parent->base->data) : nullptr;
-        set_toplevel_parent(parent);
+        set_toplevel_parent(toplevel_cast(parent));
     });
     on_ping_timeout.set_callback([&] (void*)
     {
@@ -199,18 +199,18 @@ void wf::xdg_toplevel_view_t::set_tiled(uint32_t edges)
 {
     wlr_xdg_toplevel_set_tiled(xdg_toplevel, edges);
     wlr_xdg_toplevel_set_maximized(xdg_toplevel, (edges == wf::TILED_EDGES_ALL));
-    wf::view_interface_t::set_tiled(edges);
+    wf::toplevel_view_interface_t::set_tiled(edges);
 }
 
 void wf::xdg_toplevel_view_t::set_fullscreen(bool fullscreen)
 {
-    view_interface_t::set_fullscreen(fullscreen);
+    toplevel_view_interface_t::set_fullscreen(fullscreen);
     wlr_xdg_toplevel_set_fullscreen(xdg_toplevel, fullscreen);
 }
 
 void wf::xdg_toplevel_view_t::set_activated(bool active)
 {
-    view_interface_t::set_activated(active);
+    toplevel_view_interface_t::set_activated(active);
     wlr_xdg_toplevel_set_activated(xdg_toplevel, active);
 }
 
@@ -281,7 +281,7 @@ void wf::xdg_toplevel_view_t::map()
         if (!parent)
         {
             wf::scene::readd_front(get_output()->wset()->get_node(), get_root_node());
-            get_output()->wset()->add_view(self());
+            get_output()->wset()->add_view({this});
         }
 
         get_output()->focus_view(self(), true);
@@ -315,8 +315,8 @@ void wf::xdg_toplevel_view_t::handle_toplevel_state_changed(wf::toplevel_state_t
         map();
     }
 
-    view_damage_raw(self(), last_bounding_box);
-    wf::emit_geometry_changed_signal(self(), old_state.geometry);
+    wf::scene::damage_node(get_root_node(), last_bounding_box);
+    wf::emit_geometry_changed_signal({this}, old_state.geometry);
 
     damage();
     last_bounding_box = this->get_surface_root_node()->get_bounding_box();
@@ -380,7 +380,7 @@ void wf::xdg_toplevel_view_t::set_decoration_mode(bool use_csd)
     if ((was_decorated != should_be_decorated()) && is_mapped())
     {
         wf::view_decoration_state_updated_signal data;
-        data.view = self();
+        data.view = {this};
 
         this->emit(&data);
         wf::get_core().emit(&data);
@@ -390,12 +390,12 @@ void wf::xdg_toplevel_view_t::set_decoration_mode(bool use_csd)
 void wf::xdg_toplevel_view_t::set_decoration(std::unique_ptr<decorator_frame_t_t> frame)
 {
     wtoplevel->set_decoration(frame.get());
-    wf::view_interface_t::set_decoration(std::move(frame));
+    wf::toplevel_view_interface_t::set_decoration(std::move(frame));
 }
 
 void wf::xdg_toplevel_view_t::set_resizing(bool resizing, uint32_t edges)
 {
-    view_interface_t::set_resizing(resizing, edges);
+    toplevel_view_interface_t::set_resizing(resizing, edges);
 
     if (resizing)
     {

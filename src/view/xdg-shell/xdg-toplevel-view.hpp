@@ -5,6 +5,7 @@
 #include "wayfire/unstable/wlr-surface-node.hpp"
 #include "../surface-impl.hpp"
 
+#include <wayfire/toplevel-view.hpp>
 #include "wayfire/toplevel.hpp"
 #include "xdg-toplevel.hpp"
 
@@ -13,7 +14,7 @@ namespace wf
 /**
  * An implementation of view_interface_t for xdg-shell toplevels.
  */
-class xdg_toplevel_view_t : public wf::view_interface_t
+class xdg_toplevel_view_t : public wf::toplevel_view_interface_t
 {
   public:
     xdg_toplevel_view_t(wlr_xdg_toplevel *tlvl);

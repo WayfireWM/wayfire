@@ -22,7 +22,7 @@ enum wobbly_event
  */
 struct wobbly_signal
 {
-    wayfire_view view;
+    wayfire_toplevel_view view;
 
     wobbly_event events;
 
@@ -41,7 +41,7 @@ struct wobbly_signal
 /**
  * Start wobblying when the view is being grabbed, for ex. when moving it
  */
-inline void start_wobbly(wayfire_view view, int grab_x, int grab_y)
+inline void start_wobbly(wayfire_toplevel_view view, int grab_x, int grab_y)
 {
     wobbly_signal sig;
     sig.view   = view;
@@ -55,7 +55,7 @@ inline void start_wobbly(wayfire_view view, int grab_x, int grab_y)
  * Start wobblying when the view is being grabbed, for ex. when moving it.
  * The position is relative to the view, i.e [0.5, 0.5] is the midpoint.
  */
-inline void start_wobbly_rel(wayfire_view view, wf::pointf_t rel_grab)
+inline void start_wobbly_rel(wayfire_toplevel_view view, wf::pointf_t rel_grab)
 {
     wobbly_signal sig;
     sig.view   = view;
@@ -71,7 +71,7 @@ inline void start_wobbly_rel(wayfire_view view, wf::pointf_t rel_grab)
 /**
  * Release the wobbly grab
  */
-inline void end_wobbly(wayfire_view view)
+inline void end_wobbly(wayfire_toplevel_view view)
 {
     wobbly_signal sig;
     sig.view   = view;
@@ -82,7 +82,7 @@ inline void end_wobbly(wayfire_view view)
 /**
  * Indicate that the grab has moved (i.e cursor moved, touch moved, etc.)
  */
-inline void move_wobbly(wayfire_view view, int grab_x, int grab_y)
+inline void move_wobbly(wayfire_toplevel_view view, int grab_x, int grab_y)
 {
     wobbly_signal sig;
     sig.view   = view;
@@ -95,7 +95,7 @@ inline void move_wobbly(wayfire_view view, int grab_x, int grab_y)
  * Temporarily activate wobbly on the view.
  * This is useful when animating some transition like fullscreening, tiling, etc.
  */
-inline void activate_wobbly(wayfire_view view)
+inline void activate_wobbly(wayfire_toplevel_view view)
 {
     if (!view->get_transformed_node()->get_transformer("wobbly"))
     {
@@ -109,7 +109,7 @@ inline void activate_wobbly(wayfire_view view)
 /**
  * Translate the wobbly model (and its grab point, if any).
  */
-inline void translate_wobbly(wayfire_view view, wf::point_t delta)
+inline void translate_wobbly(wayfire_toplevel_view view, wf::point_t delta)
 {
     wobbly_signal sig;
     sig.view   = view;
@@ -123,7 +123,7 @@ inline void translate_wobbly(wayfire_view view, wf::point_t delta)
  * This means that its four corners will be held in place, until the model is
  * untiled.
  */
-inline void set_tiled_wobbly(wayfire_view view, bool tiled)
+inline void set_tiled_wobbly(wayfire_toplevel_view view, bool tiled)
 {
     wobbly_signal sig;
     sig.view   = view;
@@ -134,7 +134,7 @@ inline void set_tiled_wobbly(wayfire_view view, bool tiled)
 /**
  * Change the wobbly model geometry, without re-activating the springs.
  */
-inline void modify_wobbly(wayfire_view view, wf::geometry_t target)
+inline void modify_wobbly(wayfire_toplevel_view view, wf::geometry_t target)
 {
     wobbly_signal sig;
     sig.view     = view;

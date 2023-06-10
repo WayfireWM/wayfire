@@ -249,13 +249,13 @@ class wayfire_wsets_plugin_t : public wf::plugin_interface_t
     void send_window_to(int index)
     {
         auto wo = wf::get_core().get_active_output();
-        if (!wo || !wo->get_active_view())
+        if (!wo)
         {
             return;
         }
 
-        auto view = wo->get_active_view();
-        if (view->role != wf::VIEW_ROLE_TOPLEVEL)
+        auto view = toplevel_cast(wo->get_active_view());
+        if (!view)
         {
             return;
         }

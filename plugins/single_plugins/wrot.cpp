@@ -41,7 +41,7 @@ class wf_wrot : public wf::per_output_plugin_instance_t, public wf::pointer_inte
     wf::option_wrapper_t<bool> invert{"wrot/invert"};
 
     wf::pointf_t last_position;
-    wayfire_view current_view = nullptr;
+    wayfire_toplevel_view current_view = nullptr;
     std::unique_ptr<wf::input_grab_t> input_grab;
 
     mode current_mode = mode::NONE;
@@ -67,7 +67,7 @@ class wf_wrot : public wf::per_output_plugin_instance_t, public wf::pointer_inte
             return false;
         }
 
-        current_view = wf::get_core().get_cursor_focus_view();
+        current_view = toplevel_cast(wf::get_core().get_cursor_focus_view());
         if (!current_view || (current_view->role != wf::VIEW_ROLE_TOPLEVEL))
         {
             output->deactivate_plugin(&grab_interface);
@@ -183,7 +183,7 @@ class wf_wrot : public wf::per_output_plugin_instance_t, public wf::pointer_inte
                 return false;
             }
 
-            current_view = wf::get_core().get_cursor_focus_view();
+            current_view = toplevel_cast(wf::get_core().get_cursor_focus_view());
             if (!current_view || (current_view->role != wf::VIEW_ROLE_TOPLEVEL))
             {
                 output->deactivate_plugin(&grab_interface);

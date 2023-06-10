@@ -62,7 +62,7 @@ class output_impl_t : public output_t
 
     virtual ~output_impl_t();
     wayfire_view active_view = nullptr;
-    wayfire_view last_active_toplevel = nullptr;
+    wayfire_toplevel_view last_active_toplevel = nullptr;
 
     /**
      * Implementations of the public APIs

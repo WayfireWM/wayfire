@@ -3,6 +3,7 @@
 #include "wayfire/region.hpp"
 #include "wayfire/scene-input.hpp"
 #include "wayfire/scene.hpp"
+#include "wayfire/toplevel-view.hpp"
 #include "wayfire/view-transform.hpp"
 #include "wayfire/opengl.hpp"
 #include "wayfire/core.hpp"
@@ -104,6 +105,17 @@ static wf::pointf_t get_center(wf::geometry_t view)
     };
 }
 
+static wf::pointf_t get_center(wayfire_view view)
+{
+    if (auto toplevel = toplevel_cast(view))
+    {
+        return get_center(toplevel->get_wm_geometry());
+    } else
+    {
+        return get_center(view->get_surface_root_node()->get_bounding_box());
+    }
+}
+
 static void rotate_xy(double& x, double& y, double angle)
 {
     const auto cs = std::cos(angle);
@@ -113,7 +125,7 @@ static void rotate_xy(double& x, double& y, double angle)
 
 wf::pointf_t view_2d_transformer_t::to_local(const wf::pointf_t& point)
 {
-    auto midpoint = get_center(view->get_wm_geometry());
+    auto midpoint = get_center(view);
     auto result   = point - midpoint;
     result.x -= translation_x;
     result.y -= translation_y;
@@ -126,7 +138,7 @@ wf::pointf_t view_2d_transformer_t::to_local(const wf::pointf_t& point)
 
 wf::pointf_t view_2d_transformer_t::to_global(const wf::pointf_t& point)
 {
-    auto midpoint = get_center(view->get_wm_geometry());
+    auto midpoint = get_center(view);
     auto result   = point - midpoint;
 
     result.x *= scale_x;
@@ -177,7 +189,7 @@ class view_2d_render_instance_t :
         auto bbox = self->get_children_bounding_box();
         auto tex  = this->get_texture(target.scale);
 
-        auto midpoint  = get_center(self->view->get_wm_geometry());
+        auto midpoint  = get_center(self->view);
         auto center_at = glm::translate(glm::mat4(1.0),
             {-midpoint.x, -midpoint.y, 0.0});
         auto scale = glm::scale(glm::mat4(1.0),

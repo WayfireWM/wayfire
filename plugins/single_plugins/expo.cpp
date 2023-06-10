@@ -390,7 +390,7 @@ class wayfire_expo : public wf::per_output_plugin_instance_t, public wf::keyboar
         }
     }
 
-    void start_moving(wayfire_view view, wf::point_t grab)
+    void start_moving(wayfire_toplevel_view view, wf::point_t grab)
     {
         if (!(view->get_allowed_actions() & (wf::VIEW_ALLOW_WS_CHANGE | wf::VIEW_ALLOW_MOVE)))
         {
@@ -620,7 +620,7 @@ class wayfire_expo : public wf::per_output_plugin_instance_t, public wf::keyboar
         };
     }
 
-    wayfire_view find_view_at_coordinates(int gx, int gy)
+    wayfire_toplevel_view find_view_at_coordinates(int gx, int gy)
     {
         auto local = input_coordinates_to_output_local_coordinates({gx, gy});
         wf::pointf_t localf = {1.0 * local.x, 1.0 * local.y};
@@ -630,7 +630,7 @@ class wayfire_expo : public wf::per_output_plugin_instance_t, public wf::keyboar
             auto isec = output->node_for_layer((wf::scene::layer)i)->find_node_at(localf);
             auto node = isec ? isec->node.get() : nullptr;
 
-            if (auto view = wf::node_to_view(node))
+            if (auto view = wf::toplevel_cast(wf::node_to_view(node)))
             {
                 auto all_views = output->wset()->get_views();
                 if (std::find(all_views.begin(), all_views.end(), view) != all_views.end())

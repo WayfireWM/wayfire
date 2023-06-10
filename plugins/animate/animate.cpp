@@ -142,7 +142,7 @@ struct animation_hook : public animation_hook_base
         /* We don't want to change the state of the view if it was detached */
         if ((type == ANIMATION_TYPE_MINIMIZE) && !detached)
         {
-            view->set_minimized(true);
+            toplevel_cast(view)->set_minimized(true);
         }
 
         view->erase_data(name);

@@ -1,6 +1,7 @@
 #ifndef COMPOSITOR_VIEW_HPP
 #define COMPOSITOR_VIEW_HPP
 
+#include "wayfire/geometry.hpp"
 #include "wayfire/view.hpp"
 #include <wayfire/config/types.hpp>
 
@@ -42,15 +43,15 @@ class color_rect_view_t : public wf::view_interface_t
     /** Set the border width. */
     virtual void set_border(int width);
 
+    /** Set the view geometry. */
+    virtual void set_geometry(wf::geometry_t geometry);
+    virtual wf::geometry_t get_geometry();
+
     /* required for view_interface_t */
-    virtual void move(int x, int y) override;
-    virtual void resize(int w, int h) override;
-    virtual wf::geometry_t get_output_geometry() override;
     virtual bool is_mapped() const override;
 
     virtual wlr_surface *get_keyboard_focus_surface() override;
     virtual bool is_focusable() const override;
-    virtual bool should_be_decorated() override;
 };
 }
 

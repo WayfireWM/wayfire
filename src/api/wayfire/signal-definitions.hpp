@@ -319,7 +319,7 @@ struct workspace_change_request_signal
      * Note that the views might still be moved if a previous workspace change
      * request is being serviced.
      */
-    std::vector<wayfire_view> fixed_views;
+    std::vector<wayfire_toplevel_view> fixed_views;
 };
 
 /**
@@ -426,7 +426,7 @@ struct view_parent_changed_signal
  */
 struct view_minimized_signal
 {
-    wayfire_view view;
+    wayfire_toplevel_view view;
 };
 
 /**
@@ -437,7 +437,7 @@ struct view_minimized_signal
  */
 struct view_minimize_request_signal
 {
-    wayfire_view view;
+    wayfire_toplevel_view view;
 
     /** true is minimized, false is restored */
     bool state;
@@ -462,7 +462,7 @@ struct view_activated_state_signal
  */
 struct view_tiled_signal
 {
-    wayfire_view view;
+    wayfire_toplevel_view view;
 
     /** Previously tiled edges */
     uint32_t old_edges;
@@ -478,7 +478,7 @@ struct view_tiled_signal
  */
 struct view_tile_request_signal
 {
-    wayfire_view view;
+    wayfire_toplevel_view view;
 
     /** The desired edges */
     uint32_t edges;
@@ -508,7 +508,7 @@ struct view_tile_request_signal
  */
 struct view_fullscreen_signal
 {
-    wayfire_view view;
+    wayfire_toplevel_view view;
     bool state;
 };
 
@@ -520,7 +520,7 @@ struct view_fullscreen_signal
  */
 struct view_fullscreen_request_signal
 {
-    wayfire_view view;
+    wayfire_toplevel_view view;
 
     /** The desired fullscreen state */
     bool state;
@@ -567,7 +567,7 @@ struct view_focus_request_signal
  */
 struct view_set_sticky_signal
 {
-    wayfire_view view;
+    wayfire_toplevel_view view;
 };
 
 /**
@@ -606,7 +606,7 @@ struct view_show_window_menu_signal
  */
 struct view_geometry_changed_signal
 {
-    wayfire_view view;
+    wayfire_toplevel_view view;
 
     /** The old wm geometry */
     wf::geometry_t old_geometry;
@@ -619,7 +619,7 @@ struct view_geometry_changed_signal
  */
 struct view_change_workspace_signal
 {
-    wayfire_view view;
+    wayfire_toplevel_view view;
 
     wf::point_t from, to;
 
@@ -636,7 +636,7 @@ struct view_change_workspace_signal
  */
 struct view_decoration_state_updated_signal
 {
-    wayfire_view view;
+    wayfire_toplevel_view view;
 };
 
 /**
@@ -671,7 +671,7 @@ struct view_ping_timeout_signal
 struct view_pre_moved_to_wset_signal
 {
     /* The view being moved */
-    wayfire_view view;
+    wayfire_toplevel_view view;
     /* The old wset the view was on, may be NULL. */
     std::shared_ptr<wf::workspace_set_t> old_wset;
     /* The new wset the view is being moved to. */
@@ -685,7 +685,7 @@ struct view_pre_moved_to_wset_signal
 struct view_moved_to_wset_signal
 {
     /* The view being moved */
-    wayfire_view view;
+    wayfire_toplevel_view view;
     /* The old wset the view was on, may be NULL. */
     std::shared_ptr<wf::workspace_set_t> old_wset;
     /* The new wset the view is being moved to. */
@@ -731,7 +731,7 @@ struct focus_view_signal
  */
 struct view_move_request_signal
 {
-    wayfire_view view;
+    wayfire_toplevel_view view;
 };
 
 /**
@@ -741,7 +741,7 @@ struct view_move_request_signal
  */
 struct view_resize_request_signal
 {
-    wayfire_view view;
+    wayfire_toplevel_view view;
 
     /** The requested resize edges */
     uint32_t edges;

@@ -147,10 +147,10 @@ struct tile_adjust_transformer_signal
  */
 struct view_node_t : public tree_node_t
 {
-    view_node_t(wayfire_view view);
+    view_node_t(wayfire_toplevel_view view);
     ~view_node_t();
 
-    wayfire_view view;
+    wayfire_toplevel_view view;
     /**
      * Set the geometry of the node and the contained view.
      *

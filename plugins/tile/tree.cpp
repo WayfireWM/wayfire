@@ -1,4 +1,5 @@
 #include "tree.hpp"
+#include "wayfire/toplevel-view.hpp"
 #include <wayfire/util.hpp>
 #include <wayfire/util/log.hpp>
 
@@ -269,7 +270,7 @@ struct view_node_t::scale_transformer_t : public wf::scene::view_2d_transformer_
 {
     wf::geometry_t box;
 
-    scale_transformer_t(wayfire_view view, wf::geometry_t box) :
+    scale_transformer_t(wayfire_toplevel_view view, wf::geometry_t box) :
         wf::scene::view_2d_transformer_t(view)
     {
         set_box(box);
@@ -281,7 +282,7 @@ struct view_node_t::scale_transformer_t : public wf::scene::view_2d_transformer_
 
         this->view->damage();
 
-        auto current = this->view->get_wm_geometry();
+        auto current = toplevel_cast(this->view)->get_wm_geometry();
         if ((current.width <= 0) || (current.height <= 0))
         {
             /* view possibly unmapped?? */
@@ -327,7 +328,7 @@ class tile_view_animation_t : public wf::grid::grid_animation_t
     tile_view_animation_t& operator =(tile_view_animation_t&&) = delete;
 };
 
-view_node_t::view_node_t(wayfire_view view)
+view_node_t::view_node_t(wayfire_toplevel_view view)
 {
     this->view = view;
     view->store_data(std::make_unique<view_node_custom_data_t>(this));
@@ -430,7 +431,7 @@ bool view_node_t::needs_crossfade()
 }
 
 static nonstd::observer_ptr<wf::grid::grid_animation_t> ensure_animation(
-    wayfire_view view, wf::option_sptr_t<int> duration)
+    wayfire_toplevel_view view, wf::option_sptr_t<int> duration)
 {
     if (!view->has_data<wf::grid::grid_animation_t>())
     {

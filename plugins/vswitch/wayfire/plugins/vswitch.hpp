@@ -3,6 +3,7 @@
 #include "wayfire/render-manager.hpp"
 #include "wayfire/scene-render.hpp"
 #include "wayfire/scene.hpp"
+#include "wayfire/toplevel-view.hpp"
 #include <memory>
 #include <wayfire/signal-definitions.hpp>
 #include <wayfire/plugins/common/geometry-animation.hpp>
@@ -89,7 +90,7 @@ class workspace_switch_t
         animation.dy.set(animation.dy + cws.y - workspace.y, 0);
         animation.start();
 
-        std::vector<wayfire_view> fixed_views;
+        std::vector<wayfire_toplevel_view> fixed_views;
         if (overlay_view)
         {
             fixed_views.push_back(overlay_view);
@@ -109,7 +110,7 @@ class workspace_switch_t
      * @param view The desired overlay view, or NULL if the overlay view needs
      *   to be unset.
      */
-    virtual void set_overlay_view(wayfire_view view)
+    virtual void set_overlay_view(wayfire_toplevel_view view)
     {
         if (this->overlay_view == view)
         {
@@ -180,7 +181,7 @@ class workspace_switch_t
     std::unique_ptr<workspace_wall_t> wall;
 
     const std::string vswitch_view_transformer_name = "vswitch-transformer";
-    wayfire_view overlay_view;
+    wayfire_toplevel_view overlay_view;
 
     bool running = false;
     wf::signal::connection_t<wall_frame_event_t> on_frame = [=] (wall_frame_event_t *ev)
@@ -315,7 +316,7 @@ class control_bindings_t
      *   guaranteed that @view will not be nullptr if this is true.
      */
     using binding_callback_t = std::function<bool (
-        wf::point_t delta, wayfire_view view, bool window_only)>;
+        wf::point_t delta, wayfire_toplevel_view view, bool window_only)>;
 
     /**
      * Connect bindings on the output.
@@ -476,9 +477,9 @@ class control_bindings_t
     wf::output_t *output;
 
     /** Find the view to switch workspace with */
-    virtual wayfire_view get_target_view()
+    virtual wayfire_toplevel_view get_target_view()
     {
-        auto view = output->get_active_view();
+        auto view = toplevel_cast(output->get_active_view());
         while (view && view->parent)
         {
             view = view->parent;
@@ -502,7 +503,7 @@ class control_bindings_t
      * determined by the current workspace, target direction and wraparound
      * mode.
      */
-    virtual bool handle_dir(wf::point_t dir, wayfire_view view, bool window_only,
+    virtual bool handle_dir(wf::point_t dir, wayfire_toplevel_view view, bool window_only,
         binding_callback_t callback)
     {
         if (!view && window_only)

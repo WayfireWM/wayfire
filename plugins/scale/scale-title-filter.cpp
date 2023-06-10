@@ -8,6 +8,7 @@
 #include <wayfire/util/log.hpp>
 #include <wayfire/plugins/scale-signal.hpp>
 #include <wayfire/nonstd/wlroots-full.hpp>
+#include <wayfire/toplevel-view.hpp>
 
 #include <linux/input-event-codes.h>
 
@@ -155,7 +156,7 @@ class scale_title_filter : public wf::per_output_plugin_instance_t
             update_overlay();
         }
 
-        scale_filter_views(ev, [this] (wayfire_view v)
+        scale_filter_views(ev, [this] (wayfire_toplevel_view v)
         {
             return !should_show_view(v);
         });

@@ -21,6 +21,7 @@
 #include "wayfire/scene-input.hpp"
 #include "wayfire/scene.hpp"
 #include "wayfire/signal-provider.hpp"
+#include "wayfire/toplevel-view.hpp"
 
 namespace wf
 {
@@ -275,7 +276,7 @@ struct workspace_set_t::impl
 
     wf::signal::connection_t<view_destruct_signal> on_view_destruct = [=] (view_destruct_signal *ev)
     {
-        remove_view(ev->view);
+        remove_view(toplevel_cast(ev->view));
     };
 
     bool visible = false;
@@ -392,7 +393,7 @@ struct workspace_set_t::impl
         }
     }
 
-    void add_view(wayfire_view view)
+    void add_view(wayfire_toplevel_view view)
     {
         if (std::find(wset_views.begin(), wset_views.end(), view) != wset_views.end())
         {
@@ -406,7 +407,7 @@ struct workspace_set_t::impl
         view->set_output(this->output);
     }
 
-    void remove_view(wayfire_view view)
+    void remove_view(wayfire_toplevel_view view)
     {
         auto it = std::find(wset_views.begin(), wset_views.end(), view);
         if (it == wset_views.end())
@@ -421,7 +422,8 @@ struct workspace_set_t::impl
         view->priv->current_wset.reset();
     }
 
-    std::vector<wayfire_view> get_views(uint32_t flags = 0, std::optional<wf::point_t> workspace = {})
+    std::vector<wayfire_toplevel_view> get_views(uint32_t flags = 0,
+        std::optional<wf::point_t> workspace = {})
     {
         if (!flags && !workspace)
         {
@@ -434,7 +436,7 @@ struct workspace_set_t::impl
         }
 
         auto views = wset_views;
-        auto it    = std::remove_if(views.begin(), views.end(), [&] (wayfire_view view)
+        auto it    = std::remove_if(views.begin(), views.end(), [&] (wayfire_toplevel_view view)
         {
             if ((flags & WSET_MAPPED_ONLY) && !view->is_mapped())
             {
@@ -462,7 +464,7 @@ struct workspace_set_t::impl
 
         if (flags & WSET_SORT_STACKING)
         {
-            std::sort(views.begin(), views.end(), [] (wayfire_view a, wayfire_view b)
+            std::sort(views.begin(), views.end(), [] (wayfire_toplevel_view a, wayfire_view b)
             {
                 wf::scene::node_t *x   = a->get_root_node().get();
                 wf::scene::node_t *y   = b->get_root_node().get();
@@ -482,13 +484,13 @@ struct workspace_set_t::impl
     }
 
   private:
-    std::vector<wayfire_view> wset_views;
+    std::vector<wayfire_toplevel_view> wset_views;
 
     int current_vx = 0;
     int current_vy = 0;
 
   public:
-    wf::point_t get_view_main_workspace(wayfire_view view)
+    wf::point_t get_view_main_workspace(wayfire_toplevel_view view)
     {
         if (!workspace_geometry)
         {
@@ -511,7 +513,7 @@ struct workspace_set_t::impl
      *
      * @return true if the view is visible on the workspace vp
      */
-    bool view_visible_on(wayfire_view view, wf::point_t vp)
+    bool view_visible_on(wayfire_toplevel_view view, wf::point_t vp)
     {
         if (!workspace_geometry)
         {
@@ -532,7 +534,7 @@ struct workspace_set_t::impl
     /**
      * Moves view geometry so that it is visible on the given workspace
      */
-    void move_to_workspace(wayfire_view view, wf::point_t ws)
+    void move_to_workspace(wayfire_toplevel_view view, wf::point_t ws)
     {
         if (!workspace_geometry)
         {
@@ -577,7 +579,7 @@ struct workspace_set_t::impl
     }
 
     void set_workspace(wf::point_t nws,
-        const std::vector<wayfire_view>& fixed_views)
+        const std::vector<wayfire_toplevel_view>& fixed_views)
     {
         if (!grid.is_workspace_valid(nws))
         {
@@ -610,7 +612,7 @@ struct workspace_set_t::impl
         auto dx     = (data.old_viewport.x - nws.x) * screen.width;
         auto dy     = (data.old_viewport.y - nws.y) * screen.height;
 
-        std::vector<std::pair<wayfire_view, wf::point_t>>
+        std::vector<std::pair<wayfire_toplevel_view, wf::point_t>>
         old_fixed_view_workspaces;
         old_fixed_view_workspaces.reserve(fixed_views.size());
 
@@ -681,43 +683,43 @@ void workspace_set_t::set_visible(bool visible)
 }
 
 /* Just pass to the appropriate function from above */
-wf::point_t workspace_set_t::get_view_main_workspace(wayfire_view view)
+wf::point_t workspace_set_t::get_view_main_workspace(wayfire_toplevel_view view)
 {
     return pimpl->get_view_main_workspace(view);
 }
 
-bool workspace_set_t::view_visible_on(wayfire_view view, wf::point_t ws)
+bool workspace_set_t::view_visible_on(wayfire_toplevel_view view, wf::point_t ws)
 {
     return pimpl->view_visible_on(view, ws);
 }
 
-void workspace_set_t::move_to_workspace(wayfire_view view, wf::point_t ws)
+void workspace_set_t::move_to_workspace(wayfire_toplevel_view view, wf::point_t ws)
 {
     return pimpl->move_to_workspace(view, ws);
 }
 
-void workspace_set_t::add_view(wayfire_view view)
+void workspace_set_t::add_view(wayfire_toplevel_view view)
 {
     pimpl->add_view(view);
 }
 
-std::vector<wayfire_view> workspace_set_t::get_views(uint32_t flags, std::optional<wf::point_t> ws)
+std::vector<wayfire_toplevel_view> workspace_set_t::get_views(uint32_t flags, std::optional<wf::point_t> ws)
 {
     return pimpl->get_views(flags, ws);
 }
 
-void workspace_set_t::remove_view(wayfire_view view)
+void workspace_set_t::remove_view(wayfire_toplevel_view view)
 {
     pimpl->remove_view(view);
 }
 
 void workspace_set_t::set_workspace(wf::point_t ws,
-    const std::vector<wayfire_view>& fixed_views)
+    const std::vector<wayfire_toplevel_view>& fixed_views)
 {
     return pimpl->set_workspace(ws, fixed_views);
 }
 
-void workspace_set_t::request_workspace(wf::point_t ws, const std::vector<wayfire_view>& views)
+void workspace_set_t::request_workspace(wf::point_t ws, const std::vector<wayfire_toplevel_view>& views)
 {
     if (!pimpl->output)
     {
@@ -774,7 +776,7 @@ std::optional<wf::geometry_t> workspace_set_t::get_last_output_geometry()
     return pimpl->workspace_geometry;
 }
 
-void emit_view_pre_moved_to_wset_pre(wayfire_view view,
+void emit_view_pre_moved_to_wset_pre(wayfire_toplevel_view view,
     std::shared_ptr<workspace_set_t> old_wset, std::shared_ptr<workspace_set_t> new_wset)
 {
     view_pre_moved_to_wset_signal data;
@@ -784,7 +786,7 @@ void emit_view_pre_moved_to_wset_pre(wayfire_view view,
     wf::get_core().emit(&data);
 }
 
-void emit_view_moved_to_wset(wayfire_view view,
+void emit_view_moved_to_wset(wayfire_toplevel_view view,
     std::shared_ptr<workspace_set_t> old_wset, std::shared_ptr<workspace_set_t> new_wset)
 {
     view_moved_to_wset_signal data;

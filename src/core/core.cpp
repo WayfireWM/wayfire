@@ -520,7 +520,7 @@ std::string wf::compositor_core_impl_t::get_xwayland_display()
     return xwayland_get_display();
 }
 
-void wf::move_view_to_output(wayfire_view v, wf::output_t *new_output, bool reconfigure)
+void wf::move_view_to_output(wayfire_toplevel_view v, wf::output_t *new_output, bool reconfigure)
 {
     auto old_output = v->get_output();
     auto old_wset   = v->get_wset();

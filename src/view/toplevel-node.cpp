@@ -3,7 +3,7 @@
 #include <wayfire/output.hpp>
 #include "view-keyboard-interaction.hpp"
 
-wf::toplevel_view_node_t::toplevel_view_node_t(wayfire_view view) : view_node_tag_t(view)
+wf::toplevel_view_node_t::toplevel_view_node_t(wayfire_toplevel_view view) : view_node_tag_t(view)
 {
     this->kb_interaction = std::make_unique<view_keyboard_interaction_t>(view);
     on_view_destroy = [=] (view_destruct_signal *ev)

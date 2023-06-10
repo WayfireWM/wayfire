@@ -46,10 +46,10 @@ class wayfire_unmanaged_xwayland_view : public wayfire_xwayland_view_base
     void set_position(int x, int y, wf::geometry_t old_geometry, bool send_signal)
     {
         wf::view_geometry_changed_signal data;
-        data.view = self();
+        data.view = {this};
         data.old_geometry = old_geometry;
 
-        view_damage_raw(self(), last_bounding_box);
+        wf::scene::damage_node(get_root_node(), last_bounding_box);
         surface_root_node->set_offset({x, y});
         geometry.x = x;
         geometry.y = y;
@@ -123,10 +123,10 @@ class wayfire_unmanaged_xwayland_view : public wayfire_xwayland_view_base
         }
 
         /* Damage current size */
-        view_damage_raw(self(), last_bounding_box);
+        wf::scene::damage_node(get_root_node(), last_bounding_box);
 
         wf::view_geometry_changed_signal data;
-        data.view = self();
+        data.view = {this};
         data.old_geometry = get_wm_geometry();
 
         geometry.width  = current_size.width;
@@ -134,7 +134,7 @@ class wayfire_unmanaged_xwayland_view : public wayfire_xwayland_view_base
 
         /* Damage new size */
         last_bounding_box = get_bounding_box();
-        view_damage_raw(self(), last_bounding_box);
+        wf::scene::damage_node(get_root_node(), last_bounding_box);
         emit(&data);
         wf::get_core().emit(&data);
         if (get_output())

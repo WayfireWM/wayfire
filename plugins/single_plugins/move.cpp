@@ -156,7 +156,7 @@ class wayfire_move : public wf::per_output_plugin_instance_t,
 
         activate_binding = [=] (auto)
         {
-            auto view = wf::get_core().get_cursor_focus_view();
+            auto view = toplevel_cast(wf::get_core().get_cursor_focus_view());
             if (view && (view->role != wf::VIEW_ROLE_DESKTOP_ENVIRONMENT))
             {
                 initiate(view, get_global_input_coords());
@@ -223,7 +223,7 @@ class wayfire_move : public wf::per_output_plugin_instance_t,
      * Activation flags ignore input inhibitors if the view is in the desktop
      * widget layer (i.e OSKs)
      */
-    uint32_t get_act_flags(wayfire_view view)
+    uint32_t get_act_flags(wayfire_toplevel_view view)
     {
         auto view_layer = wf::get_view_layer(view).value_or(wf::scene::layer::WORKSPACE);
         /* Allow moving an on-screen keyboard while screen is locked */
@@ -243,7 +243,7 @@ class wayfire_move : public wf::per_output_plugin_instance_t,
      * Usually, this is the view itself or its topmost parent if the join_views
      * option is set.
      */
-    wayfire_view get_target_view(wayfire_view view)
+    wayfire_toplevel_view get_target_view(wayfire_toplevel_view view)
     {
         while (view && view->parent && join_views)
         {
@@ -253,7 +253,7 @@ class wayfire_move : public wf::per_output_plugin_instance_t,
         return view;
     }
 
-    bool can_move_view(wayfire_view view)
+    bool can_move_view(wayfire_toplevel_view view)
     {
         if (!view || !view->is_mapped() || !(view->get_allowed_actions() & wf::VIEW_ALLOW_MOVE))
         {
@@ -264,7 +264,7 @@ class wayfire_move : public wf::per_output_plugin_instance_t,
         return output->can_activate_plugin(&grab_interface, get_act_flags(view));
     }
 
-    bool grab_input(wayfire_view view)
+    bool grab_input(wayfire_toplevel_view view)
     {
         view = view ?: drag_helper->view;
         if (!view)
@@ -282,7 +282,7 @@ class wayfire_move : public wf::per_output_plugin_instance_t,
         return true;
     }
 
-    bool initiate(wayfire_view view, wf::point_t grab_position)
+    bool initiate(wayfire_toplevel_view view, wf::point_t grab_position)
     {
         // First, make sure that the view is on the output the input is.
         auto target_output = wf::get_core().output_layout->get_output_at(grab_position.x, grab_position.y);
@@ -299,7 +299,7 @@ class wayfire_move : public wf::per_output_plugin_instance_t,
             return false;
         }
 
-        wayfire_view grabbed_view = view;
+        wayfire_toplevel_view grabbed_view = view;
         view = get_target_view(view);
         if (!can_move_view(view))
         {

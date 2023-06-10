@@ -216,7 +216,7 @@ bool view_action_interface_t::execute(const std::string & name,
     return true;
 }
 
-void view_action_interface_t::set_view(wayfire_view view)
+void view_action_interface_t::set_view(wayfire_toplevel_view view)
 {
     _view = view;
 }

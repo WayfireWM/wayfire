@@ -47,7 +47,7 @@ struct grid_query_geometry_signal
  */
 struct grid_snap_view_signal
 {
-    wayfire_view view;
+    wayfire_toplevel_view view;
     slot_t slot;
 };
 }

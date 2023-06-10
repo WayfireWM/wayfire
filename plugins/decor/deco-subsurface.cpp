@@ -17,6 +17,7 @@
 #include <wayfire/decorator.hpp>
 #include <wayfire/view-transform.hpp>
 #include <wayfire/signal-definitions.hpp>
+#include <wayfire/toplevel-view.hpp>
 #include "deco-subsurface.hpp"
 #include "deco-layout.hpp"
 #include "deco-theme.hpp"
@@ -28,7 +29,7 @@
 class simple_decoration_node_t : public wf::scene::node_t, public wf::pointer_interaction_t,
     public wf::touch_interaction_t
 {
-    wayfire_view view;
+    wayfire_toplevel_view view;
     wf::signal::connection_t<wf::view_title_changed_signal> title_set =
         [=] (wf::view_title_changed_signal *ev)
     {
@@ -68,7 +69,7 @@ class simple_decoration_node_t : public wf::scene::node_t, public wf::pointer_in
     int current_thickness;
     int current_titlebar;
 
-    simple_decoration_node_t(wayfire_view view) :
+    simple_decoration_node_t(wayfire_toplevel_view view) :
         node_t(false),
         theme{},
         layout{theme, [=] (wlr_box box) { wf::scene::damage_node(shared_from_this(), box + get_offset()); }}
@@ -314,7 +315,7 @@ class simple_decoration_node_t : public wf::scene::node_t, public wf::pointer_in
 
 class simple_decorator_t : public wf::decorator_frame_t_t
 {
-    wayfire_view view;
+    wayfire_toplevel_view view;
     std::shared_ptr<simple_decoration_node_t> deco;
 
     wf::signal::connection_t<wf::view_activated_state_signal> on_view_activated = [&] (auto)
@@ -337,7 +338,7 @@ class simple_decorator_t : public wf::decorator_frame_t_t
     };
 
   public:
-    simple_decorator_t(wayfire_view view)
+    simple_decorator_t(wayfire_toplevel_view view)
     {
         this->view = view;
         deco = std::make_shared<simple_decoration_node_t>(view);
@@ -365,13 +366,13 @@ class simple_decorator_t : public wf::decorator_frame_t_t
     }
 };
 
-void init_view(wayfire_view view)
+void init_view(wayfire_toplevel_view view)
 {
     auto decor = std::make_unique<simple_decorator_t>(view);
     view->set_decoration(std::move(decor));
 }
 
-void deinit_view(wayfire_view view)
+void deinit_view(wayfire_toplevel_view view)
 {
     view->set_decoration(nullptr);
 }

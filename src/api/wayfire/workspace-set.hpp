@@ -8,7 +8,7 @@
 #include <functional>
 #include <memory>
 #include <vector>
-#include <wayfire/view.hpp>
+#include <wayfire/toplevel-view.hpp>
 
 namespace wf
 {
@@ -124,13 +124,13 @@ class workspace_set_t : public wf::signal::provider_t, public wf::object_base_t,
      * node of the workspace set (i.e. @get_node()). Plugins adding these views have to ensure that the views
      * are disabled if the workspace set is not active on any output.
      */
-    void add_view(wayfire_view view);
+    void add_view(wayfire_toplevel_view view);
 
     /**
      * Remove the view from the workspace set.
      * Note that the view will remain associated with the last output the workspace set was on.
      */
-    void remove_view(wayfire_view view);
+    void remove_view(wayfire_toplevel_view view);
 
     /**
      * Get a list of all views currently in the workspace set.
@@ -143,7 +143,8 @@ class workspace_set_t : public wf::signal::provider_t, public wf::object_base_t,
      *   included in the return value. WSET_CURRENT_WORKSPACE takes higher precedence than this value if
      *   specified.
      */
-    std::vector<wayfire_view> get_views(uint32_t flags = 0, std::optional<wf::point_t> workspace = {});
+    std::vector<wayfire_toplevel_view> get_views(uint32_t flags = 0,
+        std::optional<wf::point_t> workspace = {});
 
     /**
      * Get the main workspace for a view.
@@ -151,18 +152,18 @@ class workspace_set_t : public wf::signal::provider_t, public wf::object_base_t,
      *
      * If the center is on an invalid workspace, the closest workspace will be returned.
      */
-    wf::point_t get_view_main_workspace(wayfire_view view);
+    wf::point_t get_view_main_workspace(wayfire_toplevel_view view);
 
     /**
      * Check if the given view is visible on the given workspace
      */
-    bool view_visible_on(wayfire_view view, wf::point_t ws);
+    bool view_visible_on(wayfire_toplevel_view view, wf::point_t ws);
 
     /**
      * Ensure that the view's wm_geometry is visible on the workspace ws. This
      * involves moving the view as appropriate.
      */
-    void move_to_workspace(wayfire_view view, wf::point_t ws);
+    void move_to_workspace(wayfire_toplevel_view view, wf::point_t ws);
 
     /**
      * Directly change the active workspace.
@@ -174,7 +175,7 @@ class workspace_set_t : public wf::signal::provider_t, public wf::object_base_t,
      *   current workspace.
      */
     void set_workspace(wf::point_t ws,
-        const std::vector<wayfire_view>& fixed_views = {});
+        const std::vector<wayfire_toplevel_view>& fixed_views = {});
 
     /**
      * Switch to the given workspace.
@@ -186,7 +187,7 @@ class workspace_set_t : public wf::signal::provider_t, public wf::object_base_t,
      *   workspace-change-request-signal.
      */
     void request_workspace(wf::point_t ws,
-        const std::vector<wayfire_view>& fixed_views = {});
+        const std::vector<wayfire_toplevel_view>& fixed_views = {});
 
     /**
      * @return The given workspace
@@ -225,10 +226,10 @@ class workspace_set_t : public wf::signal::provider_t, public wf::object_base_t,
 };
 
 // A helper function to emit view-pre-moved-to-wset
-void emit_view_pre_moved_to_wset_pre(wayfire_view view,
+void emit_view_pre_moved_to_wset_pre(wayfire_toplevel_view view,
     std::shared_ptr<workspace_set_t> old_wset, std::shared_ptr<workspace_set_t> new_wset);
 // A helper function to emit view-moved-to-wset
-void emit_view_moved_to_wset(wayfire_view view,
+void emit_view_moved_to_wset(wayfire_toplevel_view view,
     std::shared_ptr<workspace_set_t> old_wset, std::shared_ptr<workspace_set_t> new_wset);
 }
 

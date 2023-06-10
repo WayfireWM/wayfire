@@ -14,7 +14,7 @@ namespace wf
 namespace tile
 {
 void for_each_view(nonstd::observer_ptr<tree_node_t> root,
-    std::function<void(wayfire_view)> callback)
+    std::function<void(wayfire_toplevel_view)> callback)
 {
     if (root->as_view_node())
     {

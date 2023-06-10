@@ -28,10 +28,10 @@
  */
 struct scale_filter_signal
 {
-    std::vector<wayfire_view>& views_shown;
-    std::vector<wayfire_view>& views_hidden;
-    scale_filter_signal(std::vector<wayfire_view>& shown,
-        std::vector<wayfire_view>& hidden) : views_shown(shown), views_hidden(hidden)
+    std::vector<wayfire_toplevel_view>& views_shown;
+    std::vector<wayfire_toplevel_view>& views_hidden;
+    scale_filter_signal(std::vector<wayfire_toplevel_view>& shown,
+        std::vector<wayfire_toplevel_view>& hidden) : views_shown(shown), views_hidden(hidden)
     {}
 };
 
@@ -42,7 +42,7 @@ template<class pred>
 void scale_filter_views(scale_filter_signal *signal, pred&& p)
 {
     auto it = std::remove_if(signal->views_shown.begin(), signal->views_shown.end(),
-        [signal, &p] (wayfire_view v)
+        [signal, &p] (wayfire_toplevel_view v)
     {
         bool r = p(v);
         if (r)
@@ -86,12 +86,12 @@ struct scale_update_signal
  */
 struct scale_transformer_added_signal
 {
-    wayfire_view view;
+    wayfire_toplevel_view view;
 };
 
 struct scale_transformer_removed_signal
 {
-    wayfire_view view;
+    wayfire_toplevel_view view;
 };
 
 #endif

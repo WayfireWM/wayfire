@@ -15,6 +15,7 @@
 #include "wayfire/view-transform.hpp"
 #include <wayfire/nonstd/wlroots-full.hpp>
 #include <wayfire/compositor-view.hpp>
+#include <wayfire/toplevel-view.hpp>
 
 struct wlr_seat;
 namespace wf
@@ -41,7 +42,7 @@ class view_interface_t::view_priv_impl
      * Update the stored window geometry and workarea, if the current view
      * state is not-tiled and not-moving.
      */
-    void update_windowed_geometry(wayfire_view self, wf::geometry_t geometry);
+    void update_windowed_geometry(wayfire_toplevel_view self, wf::geometry_t geometry);
 
     std::unique_ptr<wf::decorator_frame_t_t> frame = nullptr;
 
@@ -79,17 +80,6 @@ class view_interface_t::view_priv_impl
 };
 
 /**
- * Damage the given box, assuming the damage belongs to the given view.
- * The given box is assumed to have been transformed with the view's
- * transformers.
- *
- * The main difference with directly damaging the output is that this will
- * add the damage to all workspaces the view is visible on, in case of shell
- * views.
- */
-void view_damage_raw(wayfire_view view, const wlr_box& box);
-
-/**
  * Adjust the position of the view according to the new size of its buffer and the geometry.
  */
 void adjust_geometry_for_gravity(wf::toplevel_state_t& desired_state, wf::dimensions_t actual_size);
@@ -97,7 +87,7 @@ void adjust_geometry_for_gravity(wf::toplevel_state_t& desired_state, wf::dimens
 /** Emit the map signal for the given view */
 void emit_view_map_signal(wayfire_view view, bool has_position);
 void emit_ping_timeout_signal(wayfire_view view);
-void emit_geometry_changed_signal(wayfire_view view, wf::geometry_t old_geometry);
+void emit_geometry_changed_signal(wayfire_toplevel_view view, wf::geometry_t old_geometry);
 
 void init_xdg_shell();
 void init_xwayland();

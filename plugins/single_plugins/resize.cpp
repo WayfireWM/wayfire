@@ -48,7 +48,7 @@ class wayfire_resize : public wf::per_output_plugin_instance_t, public wf::point
 
     wf::button_callback activate_binding;
 
-    wayfire_view view;
+    wayfire_toplevel_view view;
 
     bool was_client_request, is_using_touch;
     wf::point_t grab_start;
@@ -69,7 +69,7 @@ class wayfire_resize : public wf::per_output_plugin_instance_t, public wf::point
 
         activate_binding = [=] (auto)
         {
-            auto view = wf::get_core().get_cursor_focus_view();
+            auto view = toplevel_cast(wf::get_core().get_cursor_focus_view());
             if (view)
             {
                 is_using_touch     = false;
@@ -175,7 +175,7 @@ class wayfire_resize : public wf::per_output_plugin_instance_t, public wf::point
         return edges;
     }
 
-    bool initiate(wayfire_view view, uint32_t forced_edges = 0)
+    bool initiate(wayfire_toplevel_view view, uint32_t forced_edges = 0)
     {
         if (!view || (view->role == wf::VIEW_ROLE_DESKTOP_ENVIRONMENT) ||
             !view->is_mapped() || view->fullscreen)

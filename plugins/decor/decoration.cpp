@@ -9,6 +9,7 @@
 #include "wayfire/core.hpp"
 #include "wayfire/plugin.hpp"
 #include "wayfire/signal-provider.hpp"
+#include "wayfire/toplevel-view.hpp"
 
 class wayfire_decoration : public wf::plugin_interface_t
 {
@@ -41,7 +42,10 @@ class wayfire_decoration : public wf::plugin_interface_t
     {
         for (auto view : wf::get_core().get_all_views())
         {
-            deinit_view(view);
+            if (auto toplevel = wf::toplevel_cast(view))
+            {
+                deinit_view(toplevel);
+            }
         }
     }
 
@@ -59,12 +63,15 @@ class wayfire_decoration : public wf::plugin_interface_t
 
     void update_view_decoration(wayfire_view view)
     {
-        if (view->should_be_decorated() && !ignore_decoration_of_view(view))
+        if (auto toplevel = wf::toplevel_cast(view))
         {
-            init_view(view);
-        } else
-        {
-            deinit_view(view);
+            if (toplevel->should_be_decorated() && !ignore_decoration_of_view(view))
+            {
+                init_view(toplevel);
+            } else
+            {
+                deinit_view(toplevel);
+            }
         }
     }
 };

@@ -8,6 +8,7 @@
 #include "wayfire/scene-input.hpp"
 #include "wayfire/scene-operations.hpp"
 #include "wayfire/scene.hpp"
+#include "wayfire/toplevel-view.hpp"
 #include "wayfire/view-helpers.hpp"
 #include "wayfire/view.hpp"
 #include "../core/core-impl.hpp"
@@ -281,7 +282,17 @@ bool wf::output_t::ensure_visible(wayfire_view v)
 
 static wayfire_view pick_topmost_focusable(wayfire_view view)
 {
-    auto all_views = view->enumerate_views();
+    if (!wf::toplevel_cast(view))
+    {
+        if (view->get_keyboard_focus_surface())
+        {
+            return view;
+        }
+
+        return nullptr;
+    }
+
+    auto all_views = toplevel_cast(view)->enumerate_views();
     auto it = std::find_if(all_views.begin(), all_views.end(),
         [] (wayfire_view v) { return v->get_keyboard_focus_surface() != NULL; });
 
@@ -323,7 +334,7 @@ void wf::output_impl_t::focus_node(wf::scene::node_ptr new_focus)
 void wf::output_impl_t::update_active_view(wayfire_view v)
 {
     LOGC(KBD, "Output ", this->to_string(), ": active view becomes ", v);
-    if ((v == nullptr) || (v->role == wf::VIEW_ROLE_TOPLEVEL))
+    if ((v == nullptr) || toplevel_cast(v))
     {
         if (last_active_toplevel != v)
         {
@@ -332,16 +343,31 @@ void wf::output_impl_t::update_active_view(wayfire_view v)
                 last_active_toplevel->set_activated(false);
             }
 
-            if (v)
+            last_active_toplevel = nullptr;
+            if (auto toplevel = toplevel_cast(v))
             {
-                v->set_activated(true);
+                toplevel->set_activated(true);
+                last_active_toplevel = toplevel;
             }
-
-            last_active_toplevel = v;
         }
     }
 
     this->active_view = v;
+}
+
+wayfire_view find_topmost_parent(wayfire_view v)
+{
+    if (auto toplevel = wf::toplevel_cast(v))
+    {
+        while (toplevel->parent)
+        {
+            toplevel = toplevel->parent;
+        }
+
+        return toplevel;
+    }
+
+    return v;
 }
 
 void wf::output_impl_t::focus_view(wayfire_view v, uint32_t flags)
@@ -351,18 +377,17 @@ void wf::output_impl_t::focus_view(wayfire_view v, uint32_t flags)
 
     const auto& make_view_visible = [flags] (wayfire_view view)
     {
-        if (view->minimized)
+        view = find_topmost_parent(view);
+        if (auto toplevel = toplevel_cast(view))
         {
-            view->minimize_request(false);
+            if (toplevel->minimized)
+            {
+                toplevel->minimize_request(false);
+            }
         }
 
         if (flags & FOCUS_VIEW_RAISE)
         {
-            while (view->parent)
-            {
-                view = view->parent;
-            }
-
             view_bring_to_front(view);
         }
     };
@@ -399,9 +424,9 @@ void wf::output_impl_t::focus_view(wayfire_view v, uint32_t flags)
         return;
     }
 
-    while (all_dialogs_modal && v->parent && v->parent->is_mapped())
+    if (all_dialogs_modal)
     {
-        v = v->parent;
+        v = find_topmost_parent(v);
     }
 
     pre_focus_view_signal pre_focus;

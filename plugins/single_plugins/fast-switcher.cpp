@@ -10,6 +10,7 @@
 #include <wayfire/workspace-set.hpp>
 #include <wayfire/util/log.hpp>
 #include <wayfire/seat.hpp>
+#include <wayfire/toplevel-view.hpp>
 
 /*
  * This plugin provides abilities to switch between views.
@@ -22,7 +23,7 @@ class wayfire_fast_switcher : public wf::per_output_plugin_instance_t, public wf
     wf::option_wrapper_t<wf::keybinding_t> activate_key_backward{
         "fast-switcher/activate_backward"};
     wf::option_wrapper_t<double> inactive_alpha{"fast-switcher/inactive_alpha"};
-    std::vector<wayfire_view> views; // all views on current viewport
+    std::vector<wayfire_toplevel_view> views; // all views on current viewport
     size_t current_view_index = 0;
     // the modifiers which were used to activate switcher
     uint32_t activating_modifiers = 0;
@@ -117,7 +118,7 @@ class wayfire_fast_switcher : public wf::per_output_plugin_instance_t, public wf
     {
         views = output->wset()->get_views(
             wf::WSET_CURRENT_WORKSPACE | wf::WSET_MAPPED_ONLY | wf::WSET_EXCLUDE_MINIMIZED);
-        std::sort(views.begin(), views.end(), [] (wayfire_view& a, wayfire_view& b)
+        std::sort(views.begin(), views.end(), [] (wayfire_toplevel_view& a, wayfire_toplevel_view& b)
         {
             return wf::get_focus_timestamp(a) > wf::get_focus_timestamp(b);
         });

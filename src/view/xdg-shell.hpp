@@ -2,6 +2,7 @@
 #define XDG_SHELL_HPP
 
 #include "view-impl.hpp"
+#include "wayfire/geometry.hpp"
 #include "wayfire/signal-definitions.hpp"
 #include "wayfire/signal-provider.hpp"
 #include "wayfire/view.hpp"
@@ -45,11 +46,10 @@ class wayfire_xdg_popup : public wf::view_interface_t
 
     std::string get_app_id() override final;
     std::string get_title() override final;
-    virtual void move(int x, int y) override;
-    virtual wf::geometry_t get_wm_geometry() override;
-    virtual wf::geometry_t get_output_geometry() override;
+
+    void move(int x, int y);
+    wf::geometry_t get_geometry();
     virtual wlr_surface *get_keyboard_focus_surface() override;
-    virtual bool should_be_decorated() override;
 
   private:
     /**

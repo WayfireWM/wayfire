@@ -1,4 +1,5 @@
 #include "animate.hpp"
+#include "wayfire/toplevel-view.hpp"
 #include <memory>
 #include <wayfire/plugin.hpp>
 #include <wayfire/opengl.hpp>
@@ -96,13 +97,15 @@ class zoom_animation : public animation_base
 
         if (type & MINIMIZE_STATE_ANIMATION)
         {
-            auto hint = view->get_minimize_hint();
+            auto toplevel = wf::toplevel_cast(view);
+            wf::dassert(toplevel != nullptr, "We cannot minimize non-toplevel views!");
+            auto hint = toplevel->get_minimize_hint();
             if ((hint.width > 0) && (hint.height > 0))
             {
                 int hint_cx = hint.x + hint.width / 2;
                 int hint_cy = hint.y + hint.height / 2;
 
-                auto bbox   = view->get_wm_geometry();
+                auto bbox   = toplevel->get_wm_geometry();
                 int view_cx = bbox.x + bbox.width / 2;
                 int view_cy = bbox.y + bbox.height / 2;
 

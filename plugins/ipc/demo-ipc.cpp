@@ -2,6 +2,7 @@
 #include <wayfire/per-output-plugin.hpp>
 #include <wayfire/view.hpp>
 #include <wayfire/output.hpp>
+#include <wayfire/toplevel-view.hpp>
 #include <set>
 
 #include "ipc-helpers.hpp"
@@ -81,8 +82,13 @@ class wayfire_demo_ipc : public wf::plugin_interface_t
         {
             if (auto geometry = wf::ipc::geometry_from_json(data["geometry"]))
             {
-                view->set_geometry(geometry.value());
-                return wf::ipc::json_ok();
+                if (auto toplevel = toplevel_cast(view))
+                {
+                    toplevel->set_geometry(geometry.value());
+                    return wf::ipc::json_ok();
+                }
+
+                return wf::ipc::json_error("view is not toplevel");
             }
 
             return wf::ipc::json_error("geometry incorrect");
@@ -119,8 +125,10 @@ class wayfire_demo_ipc : public wf::plugin_interface_t
         description["id"]     = view->get_id();
         description["app-id"] = view->get_app_id();
         description["title"]  = view->get_title();
-        description["geometry"] = wf::ipc::geometry_to_json(view->get_wm_geometry());
-        description["output"]   = view->get_output() ? view->get_output()->get_id() : -1;
+        auto toplevel = wf::toplevel_cast(view);
+        description["geometry"] =
+            wf::ipc::geometry_to_json(toplevel ? toplevel->get_wm_geometry() : view->get_bounding_box());
+        description["output"] = view->get_output() ? view->get_output()->get_id() : -1;
         return description;
     }
 };

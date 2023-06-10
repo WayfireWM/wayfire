@@ -8,6 +8,7 @@
 
 #include "../view-impl.hpp"
 #include "../toplevel-node.hpp"
+#include "wayfire/core.hpp"
 #include "wayfire/geometry.hpp"
 #include "wayfire/view.hpp"
 #include "xwayland-helpers.hpp"
@@ -15,7 +16,7 @@
 
 #if WF_HAS_XWAYLAND
 
-class wayfire_xwayland_view_base : public wf::view_interface_t
+class wayfire_xwayland_view_base : public wf::toplevel_view_interface_t
 {
   protected:
     wf::wl_listener_wrapper on_destroy, on_configure,
@@ -134,7 +135,7 @@ class wayfire_xwayland_view_base : public wf::view_interface_t
         if ((was_decorated != should_be_decorated()) && is_mapped())
         {
             wf::view_decoration_state_updated_signal data;
-            data.view = self();
+            data.view = {this};
 
             this->emit(&data);
             wf::get_core().emit(&data);
@@ -144,8 +145,7 @@ class wayfire_xwayland_view_base : public wf::view_interface_t
     std::shared_ptr<wf::toplevel_view_node_t> surface_root_node;
 
   public:
-    wayfire_xwayland_view_base(wlr_xwayland_surface *xww) :
-        view_interface_t(), xw(xww)
+    wayfire_xwayland_view_base(wlr_xwayland_surface *xww) : toplevel_view_interface_t(), xw(xww)
     {
         on_surface_commit.set_callback([&] (void*) { commit(); });
         surface_root_node = std::make_shared<wf::toplevel_view_node_t>(this);
@@ -180,7 +180,7 @@ class wayfire_xwayland_view_base : public wf::view_interface_t
             if (!parent)
             {
                 wf::scene::readd_front(get_output()->wset()->get_node(), get_root_node());
-                get_output()->wset()->add_view(self());
+                get_output()->wset()->add_view({this});
             }
 
             get_output()->focus_view(self(), true);
@@ -366,7 +366,7 @@ class wayfire_xwayland_view_base : public wf::view_interface_t
             configure_geometry.x -= og.x;
             configure_geometry.y -= og.y;
 
-            auto view = this->self();
+            wayfire_toplevel_view view = {this};
             while (view->parent)
             {
                 view = view->parent;
@@ -425,7 +425,7 @@ class wayfire_xwayland_view_base : public wf::view_interface_t
             wlr_xwayland_surface_activate(xw, active);
         }
 
-        wf::view_interface_t::set_activated(active);
+        wf::toplevel_view_interface_t::set_activated(active);
     }
 };
 

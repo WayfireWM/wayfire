@@ -357,18 +357,9 @@ class wfs_surface
     }
 
     ~wfs_surface() = default;
-
-    wfs_surface(const wfs_surface &) = delete;
-    wfs_surface(wfs_surface &&) = delete;
-    wfs_surface& operator =(const wfs_surface&) = delete;
-    wfs_surface& operator =(wfs_surface&&) = delete;
-
     void interactive_move()
     {
-        if (view)
-        {
-            view->move_request();
-        }
+        LOGE("Interactive move no longer supported!");
     }
 };
 

@@ -1,4 +1,5 @@
 #include "wayfire/signal-provider.hpp"
+#include "wayfire/toplevel-view.hpp"
 #include <wayfire/per-output-plugin.hpp>
 #include <wayfire/view.hpp>
 #include <wayfire/core.hpp>
@@ -9,8 +10,10 @@ class wayfire_place_window : public wf::per_output_plugin_instance_t
 {
     wf::signal::connection_t<wf::view_mapped_signal> on_view_mapped = [=] (wf::view_mapped_signal *ev)
     {
-        if ((ev->view->role != wf::VIEW_ROLE_TOPLEVEL) || ev->view->parent ||
-            ev->view->fullscreen || ev->view->tiled_edges || ev->is_positioned)
+        auto toplevel = wf::toplevel_cast(ev->view);
+
+        if (!toplevel || toplevel->parent || toplevel->fullscreen || toplevel->tiled_edges ||
+            ev->is_positioned)
         {
             return;
         }
@@ -21,16 +24,16 @@ class wayfire_place_window : public wf::per_output_plugin_instance_t
         std::string mode = placement_mode;
         if (mode == "cascade")
         {
-            cascade(ev->view, workarea);
+            cascade(toplevel, workarea);
         } else if (mode == "maximize")
         {
-            maximize(ev->view, workarea);
+            maximize(toplevel, workarea);
         } else if (mode == "random")
         {
-            random(ev->view, workarea);
+            random(toplevel, workarea);
         } else
         {
-            center(ev->view, workarea);
+            center(toplevel, workarea);
         }
     };
 
@@ -65,7 +68,7 @@ class wayfire_place_window : public wf::per_output_plugin_instance_t
         output->connect(&on_view_mapped);
     }
 
-    void cascade(wayfire_view & view, wf::geometry_t workarea)
+    void cascade(wayfire_toplevel_view & view, wf::geometry_t workarea)
     {
         wf::geometry_t window = view->get_wm_geometry();
 
@@ -82,7 +85,7 @@ class wayfire_place_window : public wf::per_output_plugin_instance_t
         cascade_y += workarea.height * .03;
     }
 
-    void random(wayfire_view & view, wf::geometry_t workarea)
+    void random(wayfire_toplevel_view & view, wf::geometry_t workarea)
     {
         wf::geometry_t window = view->get_wm_geometry();
         wf::geometry_t area;
@@ -106,7 +109,7 @@ class wayfire_place_window : public wf::per_output_plugin_instance_t
         view->move(pos_x, pos_y);
     }
 
-    void center(wayfire_view & view, wf::geometry_t workarea)
+    void center(wayfire_toplevel_view & view, wf::geometry_t workarea)
     {
         wf::geometry_t window = view->get_wm_geometry();
         window.x = workarea.x + (workarea.width / 2) - (window.width / 2);
@@ -114,7 +117,7 @@ class wayfire_place_window : public wf::per_output_plugin_instance_t
         view->move(window.x, window.y);
     }
 
-    void maximize(wayfire_view & view, wf::geometry_t workarea)
+    void maximize(wayfire_toplevel_view & view, wf::geometry_t workarea)
     {
         view->tile_request(wf::TILED_EDGES_ALL);
     }

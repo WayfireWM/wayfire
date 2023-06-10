@@ -2,6 +2,7 @@
 
 #include "wayfire/geometry.hpp"
 #include "wayfire/signal-provider.hpp"
+#include "wayfire/toplevel-view.hpp"
 #include <wayfire/view.hpp>
 #include <memory>
 #include <wayfire/unstable/translation-node.hpp>
@@ -16,7 +17,7 @@ class toplevel_view_node_t : public wf::scene::translation_node_t,
     public scene::zero_copy_texturable_node_t, public scene::opaque_region_node_t, public view_node_tag_t
 {
   public:
-    toplevel_view_node_t(wayfire_view view);
+    toplevel_view_node_t(wayfire_toplevel_view view);
 
     wf::keyboard_focus_node_t keyboard_refocus(wf::output_t *output) override;
     keyboard_interaction_t& keyboard_interaction() override;
@@ -29,7 +30,7 @@ class toplevel_view_node_t : public wf::scene::translation_node_t,
     wf::region_t get_opaque_region() const override;
 
   protected:
-    wayfire_view view;
+    wayfire_toplevel_view view;
     std::unique_ptr<keyboard_interaction_t> kb_interaction;
     wf::signal::connection_t<view_destruct_signal> on_view_destroy;
 };

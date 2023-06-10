@@ -10,6 +10,7 @@
 #include "wayfire/signal-provider.hpp"
 #include <memory>
 #include <wayfire/view-transform.hpp>
+#include <wayfire/toplevel-view.hpp>
 #include <wayfire/output.hpp>
 #include <wayfire/nonstd/wlroots.hpp>
 #include <wayfire/plugins/common/geometry-animation.hpp>
@@ -37,7 +38,7 @@ class crossfade_node_t : public scene::view_2d_transformer_t
     wf::geometry_t displayed_geometry;
     double overlay_alpha;
 
-    crossfade_node_t(wayfire_view view) : view_2d_transformer_t(view)
+    crossfade_node_t(wayfire_toplevel_view view) : view_2d_transformer_t(view)
     {
         displayed_geometry = view->get_wm_geometry();
         this->view = view;
@@ -173,7 +174,7 @@ class grid_animation_t : public wf::custom_data_t
      * @param type Indicates which animation method to use.
      * @param duration Indicates the duration of the animation (only for crossfade)
      */
-    grid_animation_t(wayfire_view view, type_t type,
+    grid_animation_t(wayfire_toplevel_view view, type_t type,
         wf::option_sptr_t<int> duration)
     {
         this->view   = view;
@@ -284,7 +285,7 @@ class grid_animation_t : public wf::custom_data_t
     }
 
     wf::geometry_t original;
-    wayfire_view view;
+    wayfire_toplevel_view view;
     wf::output_t *output;
     wf::signal::connection_t<view_disappeared_signal> on_disappear = [=] (view_disappeared_signal *ev)
     {

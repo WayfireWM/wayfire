@@ -7,6 +7,7 @@
 #include <wayfire/matcher.hpp>
 #include <wayfire/workspace-set.hpp>
 #include <wayfire/signal-definitions.hpp>
+#include <wayfire/toplevel-view.hpp>
 
 #include "tree-controller.hpp"
 #include "tree.hpp"
@@ -20,17 +21,13 @@
 #include "wayfire/scene-operations.hpp"
 #include "wayfire/scene.hpp"
 #include "wayfire/signal-provider.hpp"
+#include "wayfire/toplevel-view.hpp"
 #include "wayfire/view-helpers.hpp"
 
 namespace wf
 {
-static bool can_tile_view(wayfire_view view)
+static bool can_tile_view(wayfire_toplevel_view view)
 {
-    if (view->role != wf::VIEW_ROLE_TOPLEVEL)
-    {
-        return false;
-    }
-
     if (view->parent)
     {
         return false;
@@ -226,7 +223,7 @@ class tile_workspace_set_data_t : public wf::custom_data_t
 
     std::weak_ptr<workspace_set_t> wset;
 
-    void attach_view(wayfire_view view, wf::point_t vp = {-1, -1})
+    void attach_view(wayfire_toplevel_view view, wf::point_t vp = {-1, -1})
     {
         view->set_allowed_actions(VIEW_ALLOW_WS_CHANGE);
 
@@ -312,7 +309,7 @@ class tile_output_plugin_t : public wf::pointer_interaction_t, public wf::custom
     bool has_fullscreen_view()
     {
         int count_fullscreen = 0;
-        for_each_view(tile_workspace_set_data_t::get_current_root(output), [&] (wayfire_view view)
+        for_each_view(tile_workspace_set_data_t::get_current_root(output), [&] (wayfire_toplevel_view view)
         {
             count_fullscreen += view->fullscreen;
         });
@@ -366,12 +363,12 @@ class tile_output_plugin_t : public wf::pointer_interaction_t, public wf::custom
         controller = get_default_controller();
     }
 
-    bool tile_window_by_default(wayfire_view view)
+    bool tile_window_by_default(wayfire_toplevel_view view)
     {
         return tile_by_default.matches(view) && can_tile_view(view);
     }
 
-    void attach_view(wayfire_view view, wf::point_t vp = {-1, -1})
+    void attach_view(wayfire_toplevel_view view, wf::point_t vp = {-1, -1})
     {
         if (!view->get_wset())
         {
@@ -390,10 +387,13 @@ class tile_output_plugin_t : public wf::pointer_interaction_t, public wf::custom
 
     wf::signal::connection_t<view_mapped_signal> on_view_mapped = [=] (view_mapped_signal *ev)
     {
-        if (tile_window_by_default(ev->view))
+        if (auto toplevel = toplevel_cast(ev->view))
         {
-            stop_controller(true);
-            tile_workspace_set_data_t::get(output).attach_view(ev->view);
+            if (tile_window_by_default(toplevel))
+            {
+                stop_controller(true);
+                tile_workspace_set_data_t::get(output).attach_view(toplevel);
+            }
         }
     };
 
@@ -418,7 +418,7 @@ class tile_output_plugin_t : public wf::pointer_interaction_t, public wf::custom
         ev->carried_out = true;
     };
 
-    void set_view_fullscreen(wayfire_view view, bool fullscreen)
+    void set_view_fullscreen(wayfire_toplevel_view view, bool fullscreen)
     {
         /* Set fullscreen, and trigger resizing of the views */
         view->set_fullscreen(fullscreen);
@@ -439,9 +439,16 @@ class tile_output_plugin_t : public wf::pointer_interaction_t, public wf::custom
 
     wf::signal::connection_t<focus_view_signal> on_focus_changed = [=] (focus_view_signal *ev)
     {
-        if (ev->view && tile::view_node_t::get_node(ev->view) && !ev->view->fullscreen)
+        if (!toplevel_cast(ev->view))
         {
-            for_each_view(tile_workspace_set_data_t::get_current_root(output), [&] (wayfire_view view)
+            return;
+        }
+
+        auto toplevel = toplevel_cast(ev->view);
+        if (tile::view_node_t::get_node(ev->view) && !toplevel->fullscreen)
+        {
+            for_each_view(tile_workspace_set_data_t::get_current_root(output), [&] (
+                wayfire_toplevel_view view)
             {
                 if (view->fullscreen)
                 {
@@ -451,7 +458,7 @@ class tile_output_plugin_t : public wf::pointer_interaction_t, public wf::custom
         }
     };
 
-    void change_view_workspace(wayfire_view view, wf::point_t vp = {-1, -1})
+    void change_view_workspace(wayfire_toplevel_view view, wf::point_t vp = {-1, -1})
     {
         auto existing_node = wf::tile::view_node_t::get_node(view);
         if (existing_node)
@@ -493,10 +500,10 @@ class tile_output_plugin_t : public wf::pointer_interaction_t, public wf::custom
      * @param need_tiled Whether the view needs to be tiled
      */
     bool conditioned_view_execute(bool need_tiled,
-        std::function<void(wayfire_view)> func)
+        std::function<void(wayfire_toplevel_view)> func)
     {
         auto view = output->get_active_view();
-        if (!view)
+        if (!toplevel_cast(view))
         {
             return false;
         }
@@ -508,7 +515,7 @@ class tile_output_plugin_t : public wf::pointer_interaction_t, public wf::custom
 
         if (output->can_activate_plugin(&grab_interface))
         {
-            func(view);
+            func(toplevel_cast(view));
             return true;
         }
 
@@ -517,7 +524,7 @@ class tile_output_plugin_t : public wf::pointer_interaction_t, public wf::custom
 
     wf::key_callback on_toggle_tiled_state = [=] (auto)
     {
-        return conditioned_view_execute(false, [=] (wayfire_view view)
+        return conditioned_view_execute(false, [=] (wayfire_toplevel_view view)
         {
             auto existing_node = tile::view_node_t::get_node(view);
             if (existing_node)
@@ -533,7 +540,7 @@ class tile_output_plugin_t : public wf::pointer_interaction_t, public wf::custom
 
     bool focus_adjacent(tile::split_insertion_t direction)
     {
-        return conditioned_view_execute(true, [=] (wayfire_view view)
+        return conditioned_view_execute(true, [=] (wayfire_toplevel_view view)
         {
             auto adjacent = tile::find_first_view_in_direction(
                 tile::view_node_t::get_node(view), direction);

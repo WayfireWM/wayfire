@@ -1,5 +1,6 @@
 #pragma once
 
+#include "wayfire/toplevel-view.hpp"
 #include <wayfire/core.hpp>
 #include <wayfire/output.hpp>
 #include <wayfire/signal-definitions.hpp>
@@ -45,14 +46,18 @@ class promotion_manager_t
         update_promotion_state();
     };
 
-    wayfire_view find_top_visible_view(wf::scene::node_ptr root)
+    wayfire_toplevel_view find_top_visible_view(wf::scene::node_ptr root)
     {
         if (auto view = wf::node_to_view(root))
         {
-            if (view->is_mapped() &&
-                output->wset()->view_visible_on(view, output->wset()->get_current_workspace()))
+            if (!view->is_mapped() || !toplevel_cast(view))
             {
-                return view;
+                return nullptr;
+            }
+
+            if (output->wset()->view_visible_on(toplevel_cast(view), output->wset()->get_current_workspace()))
+            {
+                return toplevel_cast(view);
             }
         }
 
@@ -72,7 +77,7 @@ class promotion_manager_t
 
     void update_promotion_state()
     {
-        wayfire_view candidate = find_top_visible_view(output->wset()->get_node());
+        wayfire_toplevel_view candidate = find_top_visible_view(output->wset()->get_node());
         if (candidate && candidate->fullscreen)
         {
             start_promotion();

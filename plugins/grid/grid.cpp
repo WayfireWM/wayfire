@@ -25,7 +25,7 @@ class wf_grid_slot_data : public wf::custom_data_t
     int slot;
 };
 
-nonstd::observer_ptr<wf::grid::grid_animation_t> ensure_grid_view(wayfire_view view)
+nonstd::observer_ptr<wf::grid::grid_animation_t> ensure_grid_view(wayfire_toplevel_view view)
 {
     if (!view->has_data<wf::grid::grid_animation_t>())
     {
@@ -117,14 +117,13 @@ class wayfire_grid : public wf::per_output_plugin_instance_t
             return false;
         }
 
-        auto view = output->get_active_view();
-        if (!view || (view->role != wf::VIEW_ROLE_TOPLEVEL))
+        auto view = toplevel_cast(output->get_active_view());
+        if (!view)
         {
             return false;
         }
 
         view->tile_request(0);
-
         return true;
     };
 
@@ -136,7 +135,7 @@ class wayfire_grid : public wf::per_output_plugin_instance_t
             keys[i].load_option("grid/slot_" + slots[i]);
             bindings[i] = [=] (auto)
             {
-                auto view = output->get_active_view();
+                auto view = toplevel_cast(output->get_active_view());
                 if (!view || (view->role != wf::VIEW_ROLE_TOPLEVEL))
                 {
                     return false;
@@ -163,13 +162,13 @@ class wayfire_grid : public wf::per_output_plugin_instance_t
         output->connect(&on_fullscreen_signal);
     }
 
-    bool can_adjust_view(wayfire_view view)
+    bool can_adjust_view(wayfire_toplevel_view view)
     {
         uint32_t req_actions = wf::VIEW_ALLOW_MOVE | wf::VIEW_ALLOW_RESIZE;
         return (view->get_allowed_actions() & req_actions) == req_actions;
     }
 
-    void handle_slot(wayfire_view view, int slot, wf::point_t delta = {0, 0})
+    void handle_slot(wayfire_toplevel_view view, int slot, wf::point_t delta = {0, 0})
     {
         if (!can_adjust_view(view))
         {

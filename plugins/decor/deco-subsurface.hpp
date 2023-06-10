@@ -3,7 +3,7 @@
 
 #include <wayfire/view.hpp>
 
-void init_view(wayfire_view view);
-void deinit_view(wayfire_view view);
+void init_view(wayfire_toplevel_view view);
+void deinit_view(wayfire_toplevel_view view);
 
 #endif /* end of include guard: DECO_SUBSURFACE_HPP */

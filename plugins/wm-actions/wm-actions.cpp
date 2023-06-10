@@ -8,6 +8,7 @@
 #include "wayfire/scene.hpp"
 #include "wayfire/signal-definitions.hpp"
 #include "wayfire/signal-provider.hpp"
+#include "wayfire/toplevel-view.hpp"
 #include "wm-actions-signals.hpp"
 
 class always_on_top_root_node_t : public wf::scene::output_node_t
@@ -77,22 +78,18 @@ class wayfire_wm_actions_t : public wf::per_output_plugin_instance_t
      * Find the selected toplevel view, or nullptr if the selected view is not
      * toplevel.
      */
-    wayfire_view choose_view(wf::activator_source_t source)
+    wayfire_toplevel_view choose_view(wf::activator_source_t source)
     {
         wayfire_view view;
         if (source == wf::activator_source_t::BUTTONBINDING)
         {
             view = wf::get_core().get_cursor_focus_view();
-        }
-
-        view = output->get_active_view();
-        if (!view || (view->role != wf::VIEW_ROLE_TOPLEVEL))
-        {
-            return nullptr;
         } else
         {
-            return view;
+            view = output->get_active_view();
         }
+
+        return wf::toplevel_cast(view);
     }
 
     /**
@@ -197,7 +194,7 @@ class wayfire_wm_actions_t : public wf::per_output_plugin_instance_t
      * Execute for_view on the selected view, if available.
      */
     bool execute_for_selected_view(wf::activator_source_t source,
-        std::function<bool(wayfire_view)> for_view)
+        std::function<bool(wayfire_toplevel_view)> for_view)
     {
         auto view = choose_view(source);
         if (!view || !output->can_activate_plugin(&grab_interface))
@@ -220,7 +217,7 @@ class wayfire_wm_actions_t : public wf::per_output_plugin_instance_t
 
     wf::activator_callback on_minimize = [=] (auto ev) -> bool
     {
-        return execute_for_selected_view(ev.source, [] (wayfire_view view)
+        return execute_for_selected_view(ev.source, [] (wayfire_toplevel_view view)
         {
             view->minimize_request(!view->minimized);
             return true;
@@ -229,17 +226,16 @@ class wayfire_wm_actions_t : public wf::per_output_plugin_instance_t
 
     wf::activator_callback on_toggle_maximize = [=] (auto ev) -> bool
     {
-        return execute_for_selected_view(ev.source, [] (wayfire_view view)
+        return execute_for_selected_view(ev.source, [] (wayfire_toplevel_view view)
         {
-            view->tile_request(view->tiled_edges ==
-                wf::TILED_EDGES_ALL ? 0 : wf::TILED_EDGES_ALL);
+            view->tile_request(view->tiled_edges == wf::TILED_EDGES_ALL ? 0 : wf::TILED_EDGES_ALL);
             return true;
         });
     };
 
     wf::activator_callback on_toggle_fullscreen = [=] (auto ev) -> bool
     {
-        return execute_for_selected_view(ev.source, [] (wayfire_view view)
+        return execute_for_selected_view(ev.source, [] (wayfire_toplevel_view view)
         {
             view->fullscreen_request(view->get_output(), !view->fullscreen);
             return true;
@@ -248,7 +244,7 @@ class wayfire_wm_actions_t : public wf::per_output_plugin_instance_t
 
     wf::activator_callback on_toggle_sticky = [=] (auto ev) -> bool
     {
-        return execute_for_selected_view(ev.source, [] (wayfire_view view)
+        return execute_for_selected_view(ev.source, [] (wayfire_toplevel_view view)
         {
             view->set_sticky(view->sticky ^ 1);
             return true;

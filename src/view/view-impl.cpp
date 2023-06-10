@@ -35,7 +35,7 @@ void wf::emit_ping_timeout_signal(wayfire_view view)
     view->emit(&data);
 }
 
-void wf::emit_geometry_changed_signal(wayfire_view view, wf::geometry_t old_geometry)
+void wf::emit_geometry_changed_signal(wayfire_toplevel_view view, wf::geometry_t old_geometry)
 {
     wf::view_geometry_changed_signal data;
     data.view = view;

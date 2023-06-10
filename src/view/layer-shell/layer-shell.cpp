@@ -94,23 +94,11 @@ class wayfire_layer_shell_view : public wf::view_interface_t
     }
 
     /* Functions which are further specialized for the different shells */
-    void move(int x, int y) override
+    void move(int x, int y)
     {
         surface_root_node->set_offset({x, y});
-        auto old_geometry = geometry;
         this->geometry.x = x;
         this->geometry.y = y;
-        wf::emit_geometry_changed_signal(self(), old_geometry);
-    }
-
-    wf::geometry_t get_wm_geometry() override
-    {
-        return geometry;
-    }
-
-    wf::geometry_t get_output_geometry() override
-    {
-        return geometry;
     }
 
     wlr_surface *get_keyboard_focus_surface() override
@@ -121,11 +109,6 @@ class wayfire_layer_shell_view : public wf::view_interface_t
         }
 
         return NULL;
-    }
-
-    bool should_be_decorated() override
-    {
-        return false;
     }
 };
 
@@ -400,7 +383,6 @@ wayfire_layer_shell_view::wayfire_layer_shell_view(wlr_layer_surface_v1 *lsurf) 
 
     role = wf::VIEW_ROLE_DESKTOP_ENVIRONMENT;
     std::memset(&this->prev_state, 0, sizeof(prev_state));
-    sticky = true;
 
     /* If we already have an output set, then assign it before core assigns us
      * an output */
@@ -549,11 +531,9 @@ void wayfire_layer_shell_view::commit()
     wf::dimensions_t new_size{lsurface->surface->current.width, lsurface->surface->current.height};
     if (new_size != wf::dimensions(geometry))
     {
-        auto old_geometry = geometry;
         this->geometry.width  = new_size.width;
         this->geometry.height = new_size.height;
-        wf::emit_geometry_changed_signal(self(), old_geometry);
-        view_damage_raw(self(), last_bounding_box);
+        wf::scene::damage_node(get_root_node(), last_bounding_box);
     }
 
     this->last_bounding_box = get_bounding_box();

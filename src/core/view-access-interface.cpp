@@ -1,5 +1,6 @@
 #include "wayfire/condition/access_interface.hpp"
 #include "wayfire/output.hpp"
+#include "wayfire/toplevel-view.hpp"
 #include "wayfire/view-helpers.hpp"
 #include "wayfire/view.hpp"
 #include "wayfire/view-access-interface.hpp"
@@ -8,6 +9,7 @@
 #include <algorithm>
 #include <iostream>
 #include <string>
+#include <wlr/util/edges.h>
 
 namespace wf
 {
@@ -64,13 +66,13 @@ variant_t view_access_interface_t::get(const std::string & identifier, bool & er
         }
     } else if (identifier == "fullscreen")
     {
-        out = _view->fullscreen;
+        out = toplevel_cast(_view) ? toplevel_cast(_view)->fullscreen : false;
     } else if (identifier == "activated")
     {
-        out = _view->activated;
+        out = toplevel_cast(_view) ? toplevel_cast(_view)->activated : false;
     } else if (identifier == "minimized")
     {
-        out = _view->minimized;
+        out = toplevel_cast(_view) ? toplevel_cast(_view)->minimized : false;
     } else if (identifier == "focusable")
     {
         out = _view->is_focusable();
@@ -79,22 +81,22 @@ variant_t view_access_interface_t::get(const std::string & identifier, bool & er
         out = _view->is_mapped();
     } else if (identifier == "tiled-left")
     {
-        out = (_view->tiled_edges & WLR_EDGE_LEFT) > 0;
+        out = toplevel_cast(_view) ? ((toplevel_cast(_view)->tiled_edges & WLR_EDGE_LEFT) > 0) : false;
     } else if (identifier == "tiled-right")
     {
-        out = (_view->tiled_edges & WLR_EDGE_RIGHT) > 0;
+        out = toplevel_cast(_view) ? ((toplevel_cast(_view)->tiled_edges & WLR_EDGE_RIGHT) > 0) : false;
     } else if (identifier == "tiled-top")
     {
-        out = (_view->tiled_edges & WLR_EDGE_TOP) > 0;
+        out = toplevel_cast(_view) ? ((toplevel_cast(_view)->tiled_edges & WLR_EDGE_TOP) > 0) : false;
     } else if (identifier == "tiled-bottom")
     {
-        out = (_view->tiled_edges & WLR_EDGE_BOTTOM) > 0;
+        out = toplevel_cast(_view) ? ((toplevel_cast(_view)->tiled_edges & WLR_EDGE_BOTTOM) > 0) : false;
     } else if (identifier == "maximized")
     {
-        out = _view->tiled_edges == TILED_EDGES_ALL;
+        out = toplevel_cast(_view) ? (toplevel_cast(_view)->tiled_edges == TILED_EDGES_ALL) : false;
     } else if (identifier == "floating")
     {
-        out = _view->tiled_edges == 0;
+        out = toplevel_cast(_view) ? (toplevel_cast(_view)->tiled_edges == 0) : false;
     } else if (identifier == "type")
     {
         do {
