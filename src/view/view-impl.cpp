@@ -86,6 +86,20 @@ void wf::view_interface_t::emit_view_pre_unmap()
     wf::get_core().emit(&data);
 }
 
+void wf::emit_title_changed_signal(wayfire_view view)
+{
+    view_title_changed_signal data;
+    data.view = view;
+    view->emit(&data);
+}
+
+void wf::emit_app_id_changed_signal(wayfire_view view)
+{
+    view_app_id_changed_signal data;
+    data.view = view;
+    view->emit(&data);
+}
+
 void wf::init_desktop_apis()
 {
     init_xdg_shell();

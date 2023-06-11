@@ -8,6 +8,7 @@
 #include <wayfire/toplevel.hpp>
 
 #include "surface-impl.hpp"
+#include "wayfire/signal-provider.hpp"
 #include "wayfire/unstable/wlr-surface-node.hpp"
 #include "wayfire/output.hpp"
 #include "wayfire/scene.hpp"
@@ -88,6 +89,9 @@ void adjust_geometry_for_gravity(wf::toplevel_state_t& desired_state, wf::dimens
 void emit_view_map_signal(wayfire_view view, bool has_position);
 void emit_ping_timeout_signal(wayfire_view view);
 void emit_geometry_changed_signal(wayfire_toplevel_view view, wf::geometry_t old_geometry);
+
+void emit_title_changed_signal(wayfire_view view);
+void emit_app_id_changed_signal(wayfire_view view);
 
 void init_xdg_shell();
 void init_xwayland();

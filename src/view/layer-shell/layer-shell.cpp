@@ -488,9 +488,7 @@ void wayfire_layer_shell_view::map()
 {
     {
         this->app_id = nonull(lsurface->namespace_t);
-        wf::view_app_id_changed_signal data;
-        data.view = self();
-        emit(&data);
+        wf::emit_app_id_changed_signal(self());
     }
 
     // Disconnect, from now on regular commits will work

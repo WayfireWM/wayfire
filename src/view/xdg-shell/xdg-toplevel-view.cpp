@@ -355,17 +355,12 @@ void wf::xdg_toplevel_view_t::destroy()
 void wf::xdg_toplevel_view_t::handle_title_changed(std::string new_title)
 {
     this->title = new_title;
-    view_title_changed_signal data;
-    data.view = self();
-    emit(&data);
 }
 
 void wf::xdg_toplevel_view_t::handle_app_id_changed(std::string new_app_id)
 {
     this->app_id = new_app_id;
-    view_app_id_changed_signal data;
-    data.view = self();
-    emit(&data);
+    emit_app_id_changed_signal(self());
 }
 
 void wf::xdg_toplevel_view_t::set_decoration_mode(bool use_csd)

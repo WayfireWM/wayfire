@@ -273,17 +273,13 @@ bool wayfire_xdg_popup::is_mapped() const
 void wayfire_xdg_popup::handle_app_id_changed(std::string new_app_id)
 {
     this->app_id = new_app_id;
-    wf::view_app_id_changed_signal data;
-    data.view = self();
-    emit(&data);
+    wf::emit_app_id_changed_signal(self());
 }
 
 void wayfire_xdg_popup::handle_title_changed(std::string new_title)
 {
     this->title = new_title;
-    wf::view_title_changed_signal data;
-    data.view = self();
-    emit(&data);
+    wf::emit_title_changed_signal(self());
 }
 
 std::string wayfire_xdg_popup::get_app_id()

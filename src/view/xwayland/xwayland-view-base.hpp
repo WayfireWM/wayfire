@@ -35,9 +35,7 @@ class wayfire_xwayland_view_base : public wf::toplevel_view_interface_t
     void handle_app_id_changed(std::string new_app_id)
     {
         this->app_id = new_app_id;
-        wf::view_app_id_changed_signal data;
-        data.view = self();
-        emit(&data);
+        wf::emit_app_id_changed_signal(self());
     }
 
     std::string get_app_id() override
@@ -49,9 +47,7 @@ class wayfire_xwayland_view_base : public wf::toplevel_view_interface_t
     void handle_title_changed(std::string new_title)
     {
         this->title = new_title;
-        wf::view_title_changed_signal data;
-        data.view = self();
-        emit(&data);
+        wf::emit_title_changed_signal(self());
     }
 
     std::string get_title() override
