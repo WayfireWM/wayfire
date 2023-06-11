@@ -146,7 +146,7 @@ wf::region_t wf::toplevel_view_node_t::get_opaque_region() const
         auto surf = view->get_wlr_surface();
 
         wf::region_t region{&surf->opaque_region};
-        region += wf::origin(view->get_output_geometry());
+        region += get_offset();
         return region;
     }
 

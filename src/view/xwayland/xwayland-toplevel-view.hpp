@@ -33,11 +33,6 @@ class wayfire_xwayland_view : public wayfire_xwayland_view_base
      */
     wf::geometry_t last_bounding_box{0, 0, 0, 0};
 
-    wf::geometry_t get_output_geometry() override
-    {
-        return toplevel->calculate_base_geometry();
-    }
-
     wf::geometry_t get_wm_geometry() override
     {
         return toplevel->current().geometry;

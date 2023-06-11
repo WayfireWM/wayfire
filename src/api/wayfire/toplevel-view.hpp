@@ -125,13 +125,6 @@ class toplevel_view_interface_t : public wf::view_interface_t
      */
     virtual wf::geometry_t get_wm_geometry();
 
-    /**
-     * @return the geometry of the view. Coordinates are relative to the current
-     * workspace of the view's output, or with undefined origin if the view is
-     * not on any output. This doesn't take into account the view's transformers.
-     */
-    virtual wf::geometry_t get_output_geometry() = 0;
-
     /** Whether the view is in fullscreen state, usually you want to use either
      * set_fullscreen() or fullscreen_request() */
     bool fullscreen = false;

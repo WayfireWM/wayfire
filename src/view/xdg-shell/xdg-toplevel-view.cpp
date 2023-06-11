@@ -175,11 +175,6 @@ wf::geometry_t wf::xdg_toplevel_view_t::get_wm_geometry()
         wf::dimensions(wtoplevel->current().geometry));
 }
 
-wf::geometry_t wf::xdg_toplevel_view_t::get_output_geometry()
-{
-    return wtoplevel->calculate_base_geometry();
-}
-
 wlr_surface*wf::xdg_toplevel_view_t::get_keyboard_focus_surface()
 {
     if (is_mapped())

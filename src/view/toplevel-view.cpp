@@ -215,7 +215,7 @@ void wf::toplevel_view_interface_t::request_native_size()
 
 wf::geometry_t wf::toplevel_view_interface_t::get_wm_geometry()
 {
-    return get_output_geometry();
+    return toplevel()->current().geometry;
 }
 
 void wf::toplevel_view_interface_t::set_minimized(bool minim)

@@ -27,11 +27,6 @@ class wayfire_unmanaged_xwayland_view : public wayfire_xwayland_view_base
     /** The output geometry of the view */
     wf::geometry_t geometry{100, 100, 0, 0};
 
-    wf::geometry_t get_output_geometry() override
-    {
-        return geometry;
-    }
-
     wf::geometry_t get_wm_geometry() override
     {
         if (priv->frame)
@@ -281,8 +276,8 @@ class wayfire_unmanaged_xwayland_view : public wayfire_xwayland_view_base
         }
 
         wf::dimensions_t current_size = {
-            get_output_geometry().width,
-            get_output_geometry().height
+            get_wm_geometry().width,
+            get_wm_geometry().height
         };
 
         if (!should_resize_client({w, h}, current_size))
@@ -329,7 +324,7 @@ class wayfire_unmanaged_xwayland_view : public wayfire_xwayland_view_base
             return;
         }
 
-        auto output_geometry = get_output_geometry();
+        auto output_geometry = get_wm_geometry();
 
         int configure_x = output_geometry.x;
         int configure_y = output_geometry.y;
