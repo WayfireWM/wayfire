@@ -1,14 +1,80 @@
 #pragma once
 
 #include "config.h"
+#include "wayfire/output.hpp"
+#include "wayfire/unstable/translation-node.hpp"
 #include "wayfire/util.hpp"
+#include "wayfire/view.hpp"
 #include "xwayland-view-base.hpp"
 #include <wayfire/render-manager.hpp>
 #include <wayfire/scene-operations.hpp>
+#include "../core/core-impl.hpp"
+#include "../core/seat/seat-impl.hpp"
+#include "../view-keyboard-interaction.hpp"
 
 #if WF_HAS_XWAYLAND
 
-class wayfire_unmanaged_xwayland_view : public wayfire_xwayland_view_base
+namespace wf
+{
+class xwayland_unmanaged_view_node_t : public wf::scene::translation_node_t, public view_node_tag_t
+{
+  public:
+    xwayland_unmanaged_view_node_t(wayfire_view view) : view_node_tag_t(view)
+    {
+        this->kb_interaction = std::make_unique<view_keyboard_interaction_t>(view);
+        on_view_destroy = [=] (view_destruct_signal *ev)
+        {
+            this->view = nullptr;
+            this->kb_interaction = std::make_unique<keyboard_interaction_t>();
+        };
+
+        view->connect(&on_view_destroy);
+    }
+
+    wf::keyboard_focus_node_t keyboard_refocus(wf::output_t *output) override
+    {
+        if (!view || !view->get_keyboard_focus_surface())
+        {
+            return wf::keyboard_focus_node_t{};
+        }
+
+        if (output != view->get_output())
+        {
+            return wf::keyboard_focus_node_t{};
+        }
+
+        const uint64_t output_last_ts = view->get_output()->get_last_focus_timestamp();
+        const uint64_t our_ts = keyboard_interaction().last_focus_timestamp;
+        auto cur_focus = wf::get_core_impl().seat->priv->keyboard_focus.get();
+        bool has_focus = (cur_focus == this) || (our_ts == output_last_ts);
+        if (has_focus)
+        {
+            return wf::keyboard_focus_node_t{this, focus_importance::REGULAR};
+        }
+
+        return wf::keyboard_focus_node_t{};
+    }
+
+    keyboard_interaction_t& keyboard_interaction() override
+    {
+        return *kb_interaction;
+    }
+
+    std::string stringify() const override
+    {
+        std::ostringstream out;
+        out << this->view;
+        return "unmanaged " + out.str() + " " + stringify_flags();
+    }
+
+  protected:
+    wayfire_toplevel_view view;
+    std::unique_ptr<keyboard_interaction_t> kb_interaction;
+    wf::signal::connection_t<view_destruct_signal> on_view_destroy;
+};
+}
+
+class wayfire_unmanaged_xwayland_view : public wf::view_interface_t, public wayfire_xwayland_view_base
 {
   protected:
     wf::wl_listener_wrapper on_set_geometry;
@@ -24,121 +90,53 @@ class wayfire_unmanaged_xwayland_view : public wayfire_xwayland_view_base
      */
     wf::geometry_t last_bounding_box{0, 0, 0, 0};
 
-    /** The output geometry of the view */
+    // The geometry of the view in output-layout coordinates (same as Xwayland).
     wf::geometry_t geometry{100, 100, 0, 0};
 
-    wf::geometry_t get_wm_geometry() override
-    {
-        if (priv->frame)
-        {
-            return priv->frame->expand_wm_geometry(geometry);
-        } else
-        {
-            return geometry;
-        }
-    }
-
-    void set_position(int x, int y, wf::geometry_t old_geometry, bool send_signal)
-    {
-        wf::view_geometry_changed_signal data;
-        data.view = {this};
-        data.old_geometry = old_geometry;
-
-        wf::scene::damage_node(get_root_node(), last_bounding_box);
-        surface_root_node->set_offset({x, y});
-        geometry.x = x;
-        geometry.y = y;
-
-        damage();
-
-        if (send_signal)
-        {
-            emit(&data);
-            wf::get_core().emit(&data);
-            if (get_output())
-            {
-                get_output()->emit(&data);
-            }
-        }
-
-        last_bounding_box = get_bounding_box();
-        wf::scene::update(this->get_surface_root_node(), wf::scene::update_flag::GEOMETRY);
-    }
 
     void handle_client_configure(wlr_xwayland_surface_configure_event *ev) override
     {
-        wf::point_t output_origin = {0, 0};
-        if (get_output())
-        {
-            output_origin = wf::origin(get_output()->get_layout_geometry());
-        }
-
-        if ((ev->mask & XCB_CONFIG_WINDOW_X) && (ev->mask & XCB_CONFIG_WINDOW_Y))
-        {
-            this->self_positioned = true;
-        } else
-        {
-            /* Use old x/y values */
-            ev->x = geometry.x + output_origin.x;
-            ev->y = geometry.y + output_origin.y;
-        }
-
-        if (!is_mapped())
-        {
-            /* If the view is not mapped yet, let it be configured as it
-             * wishes. We will position it properly in ::map() */
-            wlr_xwayland_surface_configure(xw, ev->x, ev->y, ev->width, ev->height);
-            if ((ev->mask & XCB_CONFIG_WINDOW_X) && (ev->mask & XCB_CONFIG_WINDOW_Y))
-            {
-                this->geometry.x = ev->x - output_origin.x;
-                this->geometry.y = ev->y - output_origin.y;
-            }
-        } else
-        {
-            configure_request({ev->x, ev->y, ev->width, ev->height});
-        }
+        // We accept the client requests without any modification when it comes to unmanaged views.
+        wlr_xwayland_surface_configure(xw, ev->x, ev->y, ev->width, ev->height);
+        update_geometry_from_xsurface();
     }
 
-    void update_size()
+    void update_geometry_from_xsurface()
     {
-        if (!is_mapped())
-        {
-            return;
-        }
-
-        wf::dimensions_t current_size{
-            priv->wsurface->current.width,
-            priv->wsurface->current.height,
-        };
-
-        if ((current_size.width == geometry.width) &&
-            (current_size.height == geometry.height))
-        {
-            return;
-        }
-
-        /* Damage current size */
         wf::scene::damage_node(get_root_node(), last_bounding_box);
 
-        wf::view_geometry_changed_signal data;
-        data.view = {this};
-        data.old_geometry = get_wm_geometry();
+        geometry.x     = xw->x;
+        geometry.y     = xw->y;
+        geometry.width = xw->width;
+        geometry.height = xw->height;
 
-        geometry.width  = current_size.width;
-        geometry.height = current_size.height;
+        wf::point_t new_position = wf::origin(geometry);
 
-        /* Damage new size */
+        // Move to the correct output, if the xsurface has changed geometry
+        wf::pointf_t midpoint = {geometry.x + geometry.width / 2.0, geometry.y + geometry.height / 2.0};
+        wf::output_t *wo = wf::get_core().output_layout->get_output_coords_at(midpoint, midpoint);
+        if (wo != get_output())
+        {
+            set_output(wo);
+            if (wo && (get_current_impl_type() != wf::xw::view_type::DND))
+            {
+                new_position = new_position - wf::origin(wo->get_layout_geometry());
+                wf::scene::readd_front(wo->node_for_layer(wf::scene::layer::UNMANAGED), get_root_node());
+            }
+        }
+
+        surface_root_node->set_offset(new_position);
         last_bounding_box = get_bounding_box();
         wf::scene::damage_node(get_root_node(), last_bounding_box);
-        emit(&data);
-        wf::get_core().emit(&data);
-        if (get_output())
-        {
-            get_output()->emit(&data);
-        }
-
-        wf::scene::update(this->get_surface_root_node(), wf::scene::update_flag::GEOMETRY);
+        wf::scene::update(surface_root_node, wf::scene::update_flag::GEOMETRY);
     }
+
+    bool is_mapped() const override
+    {
+        return priv->wsurface != nullptr;
+    }
+
+    std::shared_ptr<wf::xwayland_unmanaged_view_node_t> surface_root_node;
 
   public:
     wayfire_unmanaged_xwayland_view(wlr_xwayland_surface *xww) : wayfire_xwayland_view_base(xww)
@@ -146,28 +144,13 @@ class wayfire_unmanaged_xwayland_view : public wayfire_xwayland_view_base
         LOGE("new unmanaged xwayland surface ", xw->title, " class: ", xw->class_t,
             " instance: ", xw->instance);
 
+        surface_root_node = std::make_shared<wf::xwayland_unmanaged_view_node_t>(this);
+        this->set_surface_root_node(surface_root_node);
+
         xw->data = this;
         role     = wf::VIEW_ROLE_UNMANAGED;
 
-        on_set_geometry.set_callback([&] (void*)
-        {
-            /* Xwayland O-R views manage their position on their own. So we need to
-             * update their position on each commit, if the position changed. */
-            if ((global_x != xw->x) || (global_y != xw->y))
-            {
-                geometry.x = global_x = xw->x;
-                geometry.y = global_y = xw->y;
-
-                if (get_output())
-                {
-                    auto real_output = get_output()->get_layout_geometry();
-                    geometry.x -= real_output.x;
-                    geometry.y -= real_output.y;
-                }
-
-                move(geometry.x, geometry.y);
-            }
-        });
+        on_set_geometry.set_callback([&] (void*) { update_geometry_from_xsurface(); });
         on_map.set_callback([&] (void*) { map(xw->surface); });
         on_unmap.set_callback([&] (void*) { unmap(); });
 
@@ -176,44 +159,19 @@ class wayfire_unmanaged_xwayland_view : public wayfire_xwayland_view_base
         on_set_geometry.connect(&xw->events.set_geometry);
     }
 
-    int global_x, global_y;
+    virtual void initialize() override
+    {
+        _initialize();
+        wf::view_interface_t::initialize();
+    }
+
     void map(wlr_surface *surface) override
     {
-        /* move to the output where our center is
-         * FIXME: this is a bad idea, because a dropdown menu might get sent to
-         * an incorrect output. However, no matter how we calculate the real
-         * output, we just can't be 100% compatible because in X all windows are
-         * positioned in a global coordinate space */
-        auto wo = wf::get_core().output_layout->get_output_at(
-            xw->x + surface->current.width / 2, xw->y + surface->current.height / 2);
+        update_geometry_from_xsurface();
 
-        if (!wo)
-        {
-            /* if surface center is outside of anything, try to check the output
-             * where the pointer is */
-            auto gc = wf::get_core().get_cursor_position();
-            wo = wf::get_core().output_layout->get_output_at(gc.x, gc.y);
-        }
-
-        if (!wo)
-        {
-            wo = wf::get_core().get_active_output();
-        }
-
-        assert(wo);
-
-        auto real_output_geometry = wo->get_layout_geometry();
-
-        global_x = xw->x;
-        global_y = xw->y;
-        move(xw->x - real_output_geometry.x, xw->y - real_output_geometry.y);
-
-        if (wo != get_output())
-        {
-            set_output(wo);
-        }
-
-        damage();
+        priv->set_mapped(true);
+        this->main_surface = std::make_shared<wf::scene::wlr_surface_node_t>(surface, true);
+        priv->set_mapped_surface_contents(main_surface);
 
         /* We update the keyboard focus before emitting the map event, so that
          * plugins can detect that this view can have keyboard focus.
@@ -223,29 +181,27 @@ class wayfire_unmanaged_xwayland_view : public wayfire_xwayland_view_base
             wlr_xwayland_or_surface_wants_focus(xw));
 
         wf::scene::readd_front(get_output()->node_for_layer(wf::scene::layer::UNMANAGED), get_root_node());
-        wayfire_xwayland_view_base::map(surface);
 
         if (priv->keyboard_focus_enabled)
         {
             get_output()->focus_view(self(), true);
         }
+
+        damage();
+        emit_view_map();
     }
 
-    void commit() override
+    void unmap() override
     {
-        wayfire_xwayland_view_base::commit();
-        update_size();
+        damage();
+        emit_view_pre_unmap();
 
-        /* Clear the resize edges.
-         * This is must be done here because if the user(or plugin) resizes too fast,
-         * the shell client might still haven't configured the surface, and in this
-         * case the next commit(here) needs to still have access to the gravity */
-        if (!priv->in_continuous_resize)
-        {
-            priv->edges = 0;
-        }
+        main_surface = nullptr;
+        priv->unset_mapped_surface_contents();
+        on_surface_commit.disconnect();
 
-        this->last_bounding_box = get_bounding_box();
+        emit_view_unmap();
+        priv->set_mapped(false);
     }
 
     void destroy() override
@@ -254,109 +210,48 @@ class wayfire_unmanaged_xwayland_view : public wayfire_xwayland_view_base
         on_unmap.disconnect();
         on_set_geometry.disconnect();
         wayfire_xwayland_view_base::destroy();
-    }
-
-    bool should_be_decorated() override
-    {
-        return (!xw->override_redirect && !this->has_client_decoration);
-    }
-
-    wf::dimensions_t last_size_request = {0, 0};
-
-    void move(int x, int y) override
-    {
-        set_position(x, y, get_wm_geometry(), true);
-    }
-
-    void resize(int w, int h) override
-    {
-        if (priv->frame)
-        {
-            priv->frame->calculate_resize_size(w, h);
-        }
-
-        wf::dimensions_t current_size = {
-            get_wm_geometry().width,
-            get_wm_geometry().height
-        };
-
-        if (!should_resize_client({w, h}, current_size))
-        {
-            return;
-        }
-
-        this->last_size_request = {w, h};
-        send_configure(w, h);
-    }
-
-    bool should_resize_client(wf::dimensions_t request, wf::dimensions_t current_geometry)
-    {
-        /*
-         * Do not send a configure if the client will retain its size.
-         * This is needed if a client starts with one size and immediately resizes
-         * again.
-         *
-         * If we do configure it with the given size, then it will think that we
-         * are requesting the given size, and won't resize itself again.
-         */
-        if (this->last_size_request == wf::dimensions_t{0, 0})
-        {
-            return request != current_geometry;
-        } else
-        {
-            return request != last_size_request;
-        }
-    }
-
-    void send_configure(int width, int height)
-    {
-        if (!xw)
-        {
-            return;
-        }
-
-        if ((width < 0) || (height < 0))
-        {
-            /* such a configure request would freeze xwayland.
-             * This is most probably a bug somewhere in the compositor. */
-            LOGE("Configuring a xwayland surface with width/height <0");
-
-            return;
-        }
-
-        auto output_geometry = get_wm_geometry();
-
-        int configure_x = output_geometry.x;
-        int configure_y = output_geometry.y;
-
-        if (get_output())
-        {
-            auto real_output = get_output()->get_layout_geometry();
-            configure_x += real_output.x;
-            configure_y += real_output.y;
-        }
-
-        wlr_xwayland_surface_configure(xw,
-            configure_x, configure_y, width, height);
-    }
-
-    void set_geometry(wf::geometry_t geometry) override
-    {
-        move(geometry.x, geometry.y);
-        resize(geometry.width, geometry.height);
+        /* Drop the internal reference */
+        unref();
     }
 
     wf::xw::view_type get_current_impl_type() const override
     {
         return wf::xw::view_type::UNMANAGED;
     }
+
+    std::string get_app_id() override
+    {
+        return this->app_id;
+    }
+
+    std::string get_title() override
+    {
+        return this->title;
+    }
+
+    wlr_surface *get_keyboard_focus_surface() override
+    {
+        if (is_mapped() && priv->keyboard_focus_enabled)
+        {
+            return priv->wsurface;
+        }
+
+        return NULL;
+    }
+
+    void ping() override
+    {
+        wayfire_xwayland_view_base::_ping();
+    }
+
+    void close() override
+    {
+        wayfire_xwayland_view_base::_close();
+    }
 };
 
 class wayfire_dnd_xwayland_view : public wayfire_unmanaged_xwayland_view
 {
-  protected:
-    wf::wl_listener_wrapper on_set_geometry;
-
   public:
     using wayfire_unmanaged_xwayland_view::wayfire_unmanaged_xwayland_view;
 
@@ -376,42 +271,16 @@ class wayfire_dnd_xwayland_view : public wayfire_unmanaged_xwayland_view
         wayfire_unmanaged_xwayland_view::deinitialize();
     }
 
-    wf::geometry_t last_global_bbox = {0, 0, 0, 0};
-
-    void damage() override
-    {
-        if (!get_output())
-        {
-            return;
-        }
-
-        auto bbox = get_bounding_box() +
-            wf::origin(this->get_output()->get_layout_geometry());
-
-        for (auto& output : wf::get_core().output_layout->get_outputs())
-        {
-            auto local_bbox = bbox + -wf::origin(output->get_layout_geometry());
-            output->render->damage(local_bbox);
-            local_bbox = last_global_bbox +
-                -wf::origin(output->get_layout_geometry());
-            output->render->damage(local_bbox);
-        }
-
-        last_global_bbox = bbox;
-    }
-
     void map(wlr_surface *surface) override
     {
         LOGD("Mapping a Xwayland drag icon");
-        this->set_output(wf::get_core().get_active_output());
-        wayfire_xwayland_view_base::map(surface);
-        this->damage();
-
+        wayfire_unmanaged_xwayland_view::map(surface);
         wf::scene::readd_front(wf::get_core().scene(), this->get_root_node());
     }
 
     void unmap() override
     {
+        wayfire_unmanaged_xwayland_view::unmap();
         wf::scene::remove_child(this->get_root_node());
     }
 };

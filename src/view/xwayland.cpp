@@ -3,6 +3,7 @@
 #include "wayfire/core.hpp"
 #include "../core/core-impl.hpp"
 #include "../core/seat/cursor.hpp"
+#include <wayfire/view.hpp>
 
 #include "xwayland/xwayland-helpers.hpp"
 #include "xwayland/xwayland-view-base.hpp"
@@ -38,7 +39,7 @@ void wayfire_xwayland_view_base::recreate_view()
      * at some point of this function.
      */
     auto xw_surf    = this->xw;
-    bool was_mapped = is_mapped();
+    bool was_mapped = xw->mapped;
 
     // destroy the view (unmap + destroy)
     if (was_mapped)
@@ -66,7 +67,8 @@ void wayfire_xwayland_view_base::recreate_view()
         break;
     }
 
-    wf::get_core().add_view(std::unique_ptr<view_interface_t>(new_view));
+    wf::get_core().add_view(std::unique_ptr<wf::view_interface_t>(
+        dynamic_cast<wf::view_interface_t*>(new_view)));
     if (was_mapped)
     {
         new_view->map(xw_surf->surface);
