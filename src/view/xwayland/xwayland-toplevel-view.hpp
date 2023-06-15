@@ -9,6 +9,7 @@
 #include "wayfire/util.hpp"
 #include "xwayland-view-base.hpp"
 #include <wayfire/workarea.hpp>
+#include <wayfire/window-manager.hpp>
 #include "xwayland-toplevel.hpp"
 #include <wayfire/txn/transaction-manager.hpp>
 
@@ -377,7 +378,9 @@ class wayfire_xwayland_view : public wf::toplevel_view_interface_t, public wayfi
                 /* Make sure geometry is properly visible on the view output */
                 save_geometry = wf::clamp(save_geometry,
                     get_output()->workarea->get_workarea());
-                priv->update_windowed_geometry({this}, save_geometry);
+
+                toplevel->pending().geometry = save_geometry;
+                wf::get_core().default_wm->update_last_windowed_geometry({this});
             }
 
             tile_request(wf::TILED_EDGES_ALL);

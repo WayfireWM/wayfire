@@ -7,6 +7,7 @@ namespace wf
 {
 class toplevel_t;
 class toplevel_view_interface_t;
+class window_manager_t;
 }
 
 using wayfire_toplevel_view = nonstd::observer_ptr<wf::toplevel_view_interface_t>;

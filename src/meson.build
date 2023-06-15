@@ -3,6 +3,7 @@ wayfire_sources = ['geometry.cpp',
                    'debug.cpp',
                    'util.cpp',
 
+                   'core/window-manager.cpp',
                    'core/output-layout.cpp',
                    'core/plugin-loader.cpp',
                    'core/matcher.cpp',

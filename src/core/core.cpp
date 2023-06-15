@@ -1,9 +1,9 @@
 /* Needed for pipe2 */
 #ifndef _GNU_SOURCE
     #define _GNU_SOURCE
-    #include "wayfire/scene.hpp"
 #endif
 
+#include "wayfire/scene.hpp"
 #include <wayfire/workarea.hpp>
 #include "wayfire/scene-operations.hpp"
 #include "wayfire/txn/transaction-manager.hpp"
@@ -43,6 +43,7 @@
 #include "../output/output-impl.hpp"
 #include "main.hpp"
 #include "seat/drag-icon.hpp"
+#include <wayfire/window-manager.hpp>
 
 #include "core-impl.hpp"
 
@@ -81,6 +82,7 @@ void wf::compositor_core_impl_t::init()
 {
     this->scene_root = std::make_shared<scene::root_node_t>();
     this->tx_manager = std::make_unique<txn::transaction_manager_t>();
+    this->default_wm = std::make_unique<wf::window_manager_t>();
 
     wlr_renderer_init_wl_display(renderer, display);
 

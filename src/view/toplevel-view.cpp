@@ -5,7 +5,9 @@
 #include <wayfire/scene-operations.hpp>
 #include <wayfire/signal-definitions.hpp>
 #include <wayfire/workarea.hpp>
+#include <wayfire/window-manager.hpp>
 #include "view-impl.hpp"
+#include "wayfire/core.hpp"
 #include "wayfire/view.hpp"
 
 static void reposition_relative_to_parent(wayfire_toplevel_view view)
@@ -241,7 +243,7 @@ void wf::toplevel_view_interface_t::set_tiled(uint32_t edges)
 {
     if (edges)
     {
-        priv->update_windowed_geometry({this}, get_wm_geometry());
+        wf::get_core().default_wm->update_last_windowed_geometry({this});
     }
 
     wf::view_tiled_signal data;
@@ -263,7 +265,7 @@ void wf::toplevel_view_interface_t::set_fullscreen(bool full)
      * before getting fullscreen so that we can restore to it */
     if (full && !fullscreen)
     {
-        priv->update_windowed_geometry({this}, get_wm_geometry());
+        wf::get_core().default_wm->update_last_windowed_geometry({this});
     }
 
     fullscreen = full;
@@ -343,47 +345,6 @@ static void move_to_workspace(wf::toplevel_view_interface_t *view, wf::point_t w
     view->move(wm_geometry.x, wm_geometry.y);
 }
 
-void wf::toplevel_view_interface_t::view_priv_impl::update_windowed_geometry(
-    wayfire_toplevel_view self, wf::geometry_t geometry)
-{
-    if (!self->is_mapped() || self->tiled_edges || this->in_continuous_move ||
-        this->in_continuous_resize)
-    {
-        return;
-    }
-
-    this->last_windowed_geometry = geometry;
-    if (self->get_output())
-    {
-        this->windowed_geometry_workarea =
-            self->get_output()->workarea->get_workarea();
-    } else
-    {
-        this->windowed_geometry_workarea = {0, 0, -1, -1};
-    }
-}
-
-wf::geometry_t wf::toplevel_view_interface_t::view_priv_impl::calculate_windowed_geometry(
-    wf::output_t *output)
-{
-    if (!output || (windowed_geometry_workarea.width <= 0))
-    {
-        return last_windowed_geometry;
-    }
-
-    const auto& geom     = last_windowed_geometry;
-    const auto& old_area = windowed_geometry_workarea;
-    const auto& new_area = output->workarea->get_workarea();
-    return {
-        .x = new_area.x + (geom.x - old_area.x) * new_area.width /
-            old_area.width,
-        .y = new_area.y + (geom.y - old_area.y) * new_area.height /
-            old_area.height,
-        .width  = geom.width * new_area.width / old_area.width,
-        .height = geom.height * new_area.height / old_area.height
-    };
-}
-
 void wf::toplevel_view_interface_t::tile_request(uint32_t edges, wf::point_t workspace)
 {
     if (fullscreen || !get_output())
@@ -396,7 +357,7 @@ void wf::toplevel_view_interface_t::tile_request(uint32_t edges, wf::point_t wor
     data.edges = edges;
     data.workspace    = workspace;
     data.desired_size = edges ? get_output()->workarea->get_workarea() :
-        priv->calculate_windowed_geometry(get_output());
+        wf::get_core().default_wm->get_last_windowed_geometry({this}).value_or(wf::geometry_t{0, 0, -1, -1});
 
     set_tiled(edges);
     if (is_mapped())
@@ -479,7 +440,8 @@ void wf::toplevel_view_interface_t::fullscreen_request(wf::output_t *out, bool s
     {
         data.desired_size = this->tiled_edges ?
             this->get_output()->workarea->get_workarea() :
-            this->priv->calculate_windowed_geometry(get_output());
+            wf::get_core().default_wm->get_last_windowed_geometry({this}).value_or(
+            wf::geometry_t{0, 0, -1, -1});
     }
 
     set_fullscreen(state);

@@ -22,6 +22,7 @@ namespace wf
 {
 class view_interface_t;
 class toplevel_view_interface_t;
+class window_manager_t;
 
 namespace scene
 {
@@ -108,6 +109,7 @@ class compositor_core_t : public wf::object_base_t, public signal::provider_t
     std::unique_ptr<wf::bindings_repository_t> bindings;
     std::unique_ptr<wf::seat_t> seat;
     std::unique_ptr<wf::txn::transaction_manager_t> tx_manager;
+    std::unique_ptr<wf::window_manager_t> default_wm;
 
     /**
      * Various protocols supported by wlroots

@@ -33,26 +33,12 @@ class view_interface_t::view_priv_impl
     size_t last_view_cnt = 0;
 
     bool keyboard_focus_enabled = true;
-
-    /**
-     * Calculate the windowed geometry relative to the output's workarea.
-     */
-    wf::geometry_t calculate_windowed_geometry(wf::output_t *output);
-
-    /**
-     * Update the stored window geometry and workarea, if the current view
-     * state is not-tiled and not-moving.
-     */
-    void update_windowed_geometry(wayfire_toplevel_view self, wf::geometry_t geometry);
-
     std::unique_ptr<wf::decorator_frame_t_t> frame = nullptr;
 
     uint32_t allowed_actions = VIEW_ALLOW_ALL;
 
     uint32_t edges = 0;
-    int in_continuous_move   = 0;
-    int in_continuous_resize = 0;
-    wlr_box minimize_hint    = {0, 0, 0, 0};
+    wlr_box minimize_hint = {0, 0, 0, 0};
 
     scene::floating_inner_ptr root_node;
     std::shared_ptr<scene::transform_manager_node_t> transformed_node;
@@ -66,18 +52,6 @@ class view_interface_t::view_priv_impl
     std::weak_ptr<wf::workspace_set_t> current_wset;
 
     std::shared_ptr<toplevel_t> toplevel;
-
-  private:
-    /** Last geometry the view has had in non-tiled and non-fullscreen state.
-     * -1 as width/height means that no such geometry has been stored. */
-    wf::geometry_t last_windowed_geometry = {0, 0, -1, -1};
-
-    /**
-     * The workarea when last_windowed_geometry was stored. This is used
-     * for ex. when untiling a view to determine its geometry relative to the
-     * (potentially changed) workarea of its output.
-     */
-    wf::geometry_t windowed_geometry_workarea = {0, 0, -1, -1};
 };
 
 /**

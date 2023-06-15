@@ -53,7 +53,6 @@ class xdg_toplevel_view_t : public wf::toplevel_view_interface_t
     std::string app_id;
     std::string title;
 
-    wf::wl_listener_wrapper on_surface_commit;
     std::shared_ptr<wf::scene::wlr_surface_node_t> main_surface;
     std::shared_ptr<wf::toplevel_view_node_t> surface_root_node;
 
@@ -65,7 +64,6 @@ class xdg_toplevel_view_t : public wf::toplevel_view_interface_t
 
     void map();
     void unmap();
-    void commit();
     void destroy();
 
     void handle_title_changed(std::string new_title);

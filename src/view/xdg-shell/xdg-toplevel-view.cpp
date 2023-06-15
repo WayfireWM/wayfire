@@ -35,7 +35,6 @@ wf::xdg_toplevel_view_t::xdg_toplevel_view_t(wlr_xdg_toplevel *tlvl)
     wtoplevel->connect(&on_toplevel_applied);
     this->priv->toplevel = wtoplevel;
 
-    on_surface_commit.set_callback([&] (void*) { commit(); });
     on_map.set_callback([&] (void*)
     {
         wlr_box box;
@@ -269,7 +268,6 @@ void wf::xdg_toplevel_view_t::map()
 
     priv->set_mapped_surface_contents(main_surface);
     priv->set_mapped(true);
-    on_surface_commit.connect(&surf->events.commit);
 
     if (role == VIEW_ROLE_TOPLEVEL)
     {
@@ -296,7 +294,6 @@ void wf::xdg_toplevel_view_t::unmap()
 
     main_surface = nullptr;
     priv->unset_mapped_surface_contents();
-    on_surface_commit.disconnect();
 
     emit_view_unmap();
     priv->set_mapped(false);
@@ -316,18 +313,6 @@ void wf::xdg_toplevel_view_t::handle_toplevel_state_changed(wf::toplevel_state_t
     damage();
     last_bounding_box = this->get_surface_root_node()->get_bounding_box();
     scene::update(this->get_surface_root_node(), scene::update_flag::GEOMETRY);
-}
-
-void wf::xdg_toplevel_view_t::commit()
-{
-    /* Clear the resize edges.
-     * This is must be done here because if the user(or plugin) resizes too fast,
-     * the shell client might still haven't configured the surface, and in this
-     * case the next commit(here) needs to still have access to the gravity */
-    if (!priv->in_continuous_resize)
-    {
-        priv->edges = 0;
-    }
 }
 
 void wf::xdg_toplevel_view_t::destroy()
