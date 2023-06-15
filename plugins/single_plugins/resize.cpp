@@ -1,6 +1,8 @@
 #include "wayfire/geometry.hpp"
 #include "wayfire/plugins/common/input-grab.hpp"
 #include "wayfire/scene-input.hpp"
+#include "wayfire/txn/transaction-manager.hpp"
+#include <wayfire/toplevel.hpp>
 #include <cmath>
 #include <wayfire/per-output-plugin.hpp>
 #include <wayfire/output.hpp>
@@ -11,6 +13,7 @@
 #include <wayfire/signal-definitions.hpp>
 #include <wayfire/plugins/wobbly/wobbly-signal.hpp>
 #include <wayfire/nonstd/wlroots-full.hpp>
+#include <wlr/util/edges.h>
 
 class wayfire_resize : public wf::per_output_plugin_instance_t, public wf::pointer_interaction_t,
     public wf::touch_interaction_t
@@ -201,14 +204,6 @@ class wayfire_resize : public wf::per_output_plugin_instance_t, public wf::point
 
         grab_start = get_input_coords();
         grabbed_geometry = view->get_wm_geometry();
-
-        if ((edges & WLR_EDGE_LEFT) || (edges & WLR_EDGE_TOP))
-        {
-            view->set_moving(true);
-        }
-
-        view->set_resizing(true, edges);
-
         if (view->tiled_edges)
         {
             view->set_tiled(0);
@@ -248,13 +243,6 @@ class wayfire_resize : public wf::per_output_plugin_instance_t, public wf::point
 
         if (view)
         {
-            if ((edges & WLR_EDGE_LEFT) ||
-                (edges & WLR_EDGE_TOP))
-            {
-                view->set_moving(false);
-            }
-
-            view->set_resizing(false);
             end_wobbly(view);
 
             wf::view_change_workspace_signal workspace_may_changed;
@@ -263,6 +251,33 @@ class wayfire_resize : public wf::per_output_plugin_instance_t, public wf::point
             workspace_may_changed.old_workspace_valid = false;
             output->emit(&workspace_may_changed);
         }
+    }
+
+    // Convert resize edges to gravity
+    uint32_t calculate_gravity()
+    {
+        uint32_t gravity = 0;
+        if (edges & WLR_EDGE_LEFT)
+        {
+            gravity |= WLR_EDGE_RIGHT;
+        }
+
+        if (edges & WLR_EDGE_RIGHT)
+        {
+            gravity |= WLR_EDGE_LEFT;
+        }
+
+        if (edges & WLR_EDGE_TOP)
+        {
+            gravity |= WLR_EDGE_BOTTOM;
+        }
+
+        if (edges & WLR_EDGE_BOTTOM)
+        {
+            gravity |= WLR_EDGE_TOP;
+        }
+
+        return gravity;
     }
 
     void input_motion()
@@ -292,7 +307,10 @@ class wayfire_resize : public wf::per_output_plugin_instance_t, public wf::point
 
         desired.width  = std::max(desired.width, 1);
         desired.height = std::max(desired.height, 1);
-        view->set_geometry(desired);
+
+        view->toplevel()->pending().gravity  = calculate_gravity();
+        view->toplevel()->pending().geometry = desired;
+        wf::get_core().tx_manager->schedule_object(view->toplevel());
     }
 
     void fini() override

@@ -178,36 +178,6 @@ void wf::toplevel_view_interface_t::set_geometry(wf::geometry_t g)
     resize(g.width, g.height);
 }
 
-void wf::toplevel_view_interface_t::set_resizing(bool resizing, uint32_t edges)
-{
-    priv->update_windowed_geometry({this}, get_wm_geometry());
-    /* edges are reset on the next commit */
-    if (resizing)
-    {
-        this->priv->edges = edges;
-    }
-
-    auto& in_resize = this->priv->in_continuous_resize;
-    in_resize += resizing ? 1 : -1;
-
-    if (in_resize < 0)
-    {
-        LOGE("in_continuous_resize counter dropped below 0!");
-    }
-}
-
-void wf::toplevel_view_interface_t::set_moving(bool moving)
-{
-    priv->update_windowed_geometry({this}, get_wm_geometry());
-    auto& in_move = this->priv->in_continuous_move;
-
-    in_move += moving ? 1 : -1;
-    if (in_move < 0)
-    {
-        LOGE("in_continuous_move counter dropped below 0!");
-    }
-}
-
 void wf::toplevel_view_interface_t::request_native_size()
 {
     /* no-op */

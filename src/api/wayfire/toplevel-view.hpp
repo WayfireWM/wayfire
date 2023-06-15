@@ -37,7 +37,6 @@ enum view_allowed_actions_t
 constexpr uint32_t TILED_EDGES_ALL =
     WLR_EDGE_TOP | WLR_EDGE_BOTTOM | WLR_EDGE_LEFT | WLR_EDGE_RIGHT;
 
-
 /**
  * Toplevel views are a subtype of views which have an associated toplevel object. As such, they may be moved,
  * resized, etc. freely by plugins and have many additional operations when compared to other view types.
@@ -94,23 +93,6 @@ class toplevel_view_interface_t : public wf::view_interface_t
      * atomically.
      */
     virtual void set_geometry(wf::geometry_t g);
-
-    /**
-     * Start a resizing mode for this view. While a view is resizing, one edge
-     * or corner of the view is made immobile (exactly the edge/corner opposite
-     * to the edges which are set as resizing)
-     *
-     * @param resizing whether to enable or disable resizing mode
-     * @param edges the edges which are being resized
-     */
-    virtual void set_resizing(bool resizing, uint32_t edges = 0);
-
-    /**
-     * Set the view in moving mode.
-     *
-     * @param moving whether to enable or disable moving mode
-     */
-    virtual void set_moving(bool moving);
 
     /**
      * Request that the view resizes to its native size.

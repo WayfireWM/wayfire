@@ -383,37 +383,6 @@ void wf::xdg_toplevel_view_t::set_decoration(std::unique_ptr<decorator_frame_t_t
     wf::toplevel_view_interface_t::set_decoration(std::move(frame));
 }
 
-void wf::xdg_toplevel_view_t::set_resizing(bool resizing, uint32_t edges)
-{
-    toplevel_view_interface_t::set_resizing(resizing, edges);
-
-    if (resizing)
-    {
-        // Convert from resizing edges to gravity
-        uint32_t gravity = 0;
-        if (edges & WLR_EDGE_LEFT)
-        {
-            gravity |= WLR_EDGE_RIGHT;
-        } else
-        {
-            gravity |= WLR_EDGE_LEFT;
-        }
-
-        if (edges & WLR_EDGE_TOP)
-        {
-            gravity |= WLR_EDGE_BOTTOM;
-        } else
-        {
-            gravity |= WLR_EDGE_TOP;
-        }
-
-        wtoplevel->pending().gravity = gravity;
-    } else
-    {
-        wtoplevel->pending().gravity = WLR_EDGE_LEFT | WLR_EDGE_TOP;
-    }
-}
-
 /* decorations impl */
 struct wf_server_decoration_t
 {
