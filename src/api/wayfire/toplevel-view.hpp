@@ -136,39 +136,6 @@ class toplevel_view_interface_t : public wf::view_interface_t
     /** Set the view's sticky state. */
     virtual void set_sticky(bool sticky);
 
-    /** Request that an interactive move starts for this view */
-    virtual void move_request();
-    /** Request that the view is focused on its output */
-    virtual void focus_request();
-    /** Request that an interactive resize starts for this view */
-    virtual void resize_request(uint32_t edges = 0);
-    /** Request that the view is (un)minimized */
-    virtual void minimize_request(bool minimized);
-    /**
-     * Request that the view is (un)tiled.
-     *
-     * If the view is being tiled, the caller should ensure thaat the view is on
-     * the correct workspace.
-     *
-     * Note: by default, any tiled edges means that the view gets the full
-     * workarea.
-     */
-    virtual void tile_request(uint32_t tiled_edges);
-
-    /**
-     * Request that the view is (un)tiled on the given workspace.
-     */
-    virtual void tile_request(uint32_t tiled_edges, wf::point_t ws);
-
-    /** Request that the view is (un)fullscreened on the given output */
-    virtual void fullscreen_request(wf::output_t *output, bool state);
-
-    /**
-     * Request that the view is (un)fullscreened on the given output
-     * and workspace.
-     */
-    virtual void fullscreen_request(wf::output_t *output, bool state, wf::point_t ws);
-
     /**
      * Get the allowed actions for this view. By default, all actions are allowed, but plugins may disable
      * individual actions.

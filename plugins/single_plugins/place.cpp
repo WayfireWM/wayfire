@@ -4,6 +4,7 @@
 #include <wayfire/view.hpp>
 #include <wayfire/core.hpp>
 #include <wayfire/workarea.hpp>
+#include <wayfire/window-manager.hpp>
 #include <wayfire/signal-definitions.hpp>
 
 class wayfire_place_window : public wf::per_output_plugin_instance_t
@@ -119,7 +120,7 @@ class wayfire_place_window : public wf::per_output_plugin_instance_t
 
     void maximize(wayfire_toplevel_view & view, wf::geometry_t workarea)
     {
-        view->tile_request(wf::TILED_EDGES_ALL);
+        wf::get_core().default_wm->tile_request(view, wf::TILED_EDGES_ALL);
     }
 };
 

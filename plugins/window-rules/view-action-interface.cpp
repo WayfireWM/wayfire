@@ -1,6 +1,7 @@
 #include "view-action-interface.hpp"
 
 #include "wayfire/output.hpp"
+#include "wayfire/toplevel-view.hpp"
 #include "wayfire/view.hpp"
 #include "wayfire/workspace-set.hpp"
 #include "wayfire/plugins/grid.hpp"
@@ -9,6 +10,7 @@
 #include "wayfire/output-layout.hpp"
 #include "../wm-actions/wm-actions-signals.hpp"
 #include <wayfire/plugins/common/util.hpp>
+#include <wayfire/window-manager.hpp>
 
 #include <algorithm>
 #include <cfloat>
@@ -223,12 +225,12 @@ void view_action_interface_t::set_view(wayfire_toplevel_view view)
 
 void view_action_interface_t::_maximize()
 {
-    _view->tile_request(wf::TILED_EDGES_ALL);
+    wf::get_core().default_wm->tile_request(_view, wf::TILED_EDGES_ALL);
 }
 
 void view_action_interface_t::_unmaximize()
 {
-    _view->tile_request(0);
+    wf::get_core().default_wm->tile_request(_view, 0);
 }
 
 void view_action_interface_t::_minimize()

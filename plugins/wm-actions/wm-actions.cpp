@@ -9,6 +9,7 @@
 #include "wayfire/signal-definitions.hpp"
 #include "wayfire/signal-provider.hpp"
 #include "wayfire/toplevel-view.hpp"
+#include "wayfire/window-manager.hpp"
 #include "wm-actions-signals.hpp"
 
 class always_on_top_root_node_t : public wf::scene::output_node_t
@@ -219,7 +220,7 @@ class wayfire_wm_actions_t : public wf::per_output_plugin_instance_t
     {
         return execute_for_selected_view(ev.source, [] (wayfire_toplevel_view view)
         {
-            view->minimize_request(!view->minimized);
+            wf::get_core().default_wm->minimize_request(view, !view->minimized);
             return true;
         });
     };
@@ -228,7 +229,8 @@ class wayfire_wm_actions_t : public wf::per_output_plugin_instance_t
     {
         return execute_for_selected_view(ev.source, [] (wayfire_toplevel_view view)
         {
-            view->tile_request(view->tiled_edges == wf::TILED_EDGES_ALL ? 0 : wf::TILED_EDGES_ALL);
+            wf::get_core().default_wm->tile_request(view,
+                view->tiled_edges == wf::TILED_EDGES_ALL ? 0 : wf::TILED_EDGES_ALL);
             return true;
         });
     };
@@ -237,7 +239,7 @@ class wayfire_wm_actions_t : public wf::per_output_plugin_instance_t
     {
         return execute_for_selected_view(ev.source, [] (wayfire_toplevel_view view)
         {
-            view->fullscreen_request(view->get_output(), !view->fullscreen);
+            wf::get_core().default_wm->fullscreen_request(view, view->get_output(), !view->fullscreen);
             return true;
         });
     };
@@ -261,10 +263,8 @@ class wayfire_wm_actions_t : public wf::per_output_plugin_instance_t
             {
                 if (!view->minimized)
                 {
-                    view->minimize_request(true);
-                    view->store_data(
-                        std::make_unique<wf::custom_data_t>(),
-                        "wm-actions-showdesktop");
+                    wf::get_core().default_wm->minimize_request(view, true);
+                    view->store_data(std::make_unique<wf::custom_data_t>(), "wm-actions-showdesktop");
                 }
             }
 
@@ -336,7 +336,7 @@ class wayfire_wm_actions_t : public wf::per_output_plugin_instance_t
             if (view->has_data("wm-actions-showdesktop"))
             {
                 view->erase_data("wm-actions-showdesktop");
-                view->minimize_request(false);
+                wf::get_core().default_wm->minimize_request(view, false);
             }
         }
 

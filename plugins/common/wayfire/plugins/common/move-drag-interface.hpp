@@ -25,6 +25,7 @@
 #include <wayfire/util/log.hpp>
 #include <cmath>
 #include <wayfire/nonstd/wlroots-full.hpp>
+#include <wayfire/window-manager.hpp>
 
 
 namespace wf
@@ -752,10 +753,10 @@ inline void adjust_view_on_output(drag_done_signal *ev)
         v.view->move(target.x, target.y);
         if (v.view->fullscreen)
         {
-            v.view->fullscreen_request(ev->focused_output, true, target_ws);
+            wf::get_core().default_wm->fullscreen_request(v.view, ev->focused_output, true, target_ws);
         } else if (v.view->tiled_edges)
         {
-            v.view->tile_request(v.view->tiled_edges, target_ws);
+            wf::get_core().default_wm->tile_request(v.view, v.view->tiled_edges, target_ws);
         }
 
         // check focus timestamp and select the last focused view to (re)focus
@@ -781,7 +782,7 @@ inline void adjust_view_on_snap_off(wayfire_toplevel_view view)
 {
     if (view->tiled_edges && !view->fullscreen)
     {
-        view->tile_request(0);
+        wf::get_core().default_wm->tile_request(view, 0);
     }
 }
 }

@@ -24,6 +24,7 @@
 #include <wayfire/util/log.hpp>
 #include <wayfire/nonstd/wlroots-full.hpp>
 #include <wayfire/workarea.hpp>
+#include <wayfire/window-manager.hpp>
 
 #include <algorithm>
 #include <assert.h>
@@ -382,7 +383,7 @@ void wf::output_impl_t::focus_view(wayfire_view v, uint32_t flags)
         {
             if (toplevel->minimized)
             {
-                toplevel->minimize_request(false);
+                wf::get_core().default_wm->minimize_request(toplevel, false);
             }
         }
 

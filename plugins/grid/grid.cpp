@@ -13,6 +13,7 @@
 #include <wayfire/plugins/common/geometry-animation.hpp>
 #include "wayfire/plugins/grid.hpp"
 #include "wayfire/plugins/crossfade.hpp"
+#include <wayfire/window-manager.hpp>
 
 #include <wayfire/plugins/wobbly/wobbly-signal.hpp>
 #include <wayfire/view-transform.hpp>
@@ -123,7 +124,7 @@ class wayfire_grid : public wf::per_output_plugin_instance_t
             return false;
         }
 
-        view->tile_request(0);
+        wf::get_core().default_wm->tile_request(view, 0);
         return true;
     };
 

@@ -15,6 +15,7 @@
 #include <wayfire/nonstd/wlroots-full.hpp>
 #include <wayfire/util/log.hpp>
 #include <wlr/util/edges.h>
+#include <wayfire/window-manager.hpp>
 
 #include <wayfire/plugins/common/shared-core-data.hpp>
 
@@ -252,7 +253,7 @@ class wayfire_preserve_output : public wf::per_output_plugin_instance_t
             view->set_minimized(last_output_info->minimized);
             if (last_output_info->tiled_edges != 0)
             {
-                view->tile_request(last_output_info->tiled_edges);
+                wf::get_core().default_wm->tile_request(view, last_output_info->tiled_edges);
             }
 
             view->set_geometry(last_output_info->geometry);

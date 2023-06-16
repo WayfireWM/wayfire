@@ -15,6 +15,7 @@
 #include <wayfire/touch/touch.hpp>
 #include <wayfire/plugins/vswitch.hpp>
 #include <wayfire/workarea.hpp>
+#include <wayfire/window-manager.hpp>
 
 #include <cmath>
 #include <linux/input.h>
@@ -295,7 +296,7 @@ class wayfire_move : public wf::per_output_plugin_instance_t,
             view->move(view->get_wm_geometry().x + offset.x, view->get_wm_geometry().y + offset.y);
 
             // On the new output
-            view->move_request();
+            wf::get_core().default_wm->move_request(view);
             return false;
         }
 

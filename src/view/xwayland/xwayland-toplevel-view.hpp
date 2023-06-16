@@ -234,11 +234,14 @@ class wayfire_xwayland_view : public wf::toplevel_view_interface_t, public wayfi
             wf::get_core().tx_manager->schedule_object(toplevel);
         });
 
-        on_request_move.set_callback([&] (void*) { move_request(); });
+        on_request_move.set_callback([&] (void*)
+        {
+            wf::get_core().default_wm->move_request({this});
+        });
         on_request_resize.set_callback([&] (auto data)
         {
             auto ev = static_cast<wlr_xwayland_resize_event*>(data);
-            resize_request(ev->edges);
+            wf::get_core().default_wm->resize_request({this}, ev->edges);
         });
         on_request_activate.set_callback([&] (void*)
         {
@@ -254,17 +257,17 @@ class wayfire_xwayland_view : public wf::toplevel_view_interface_t, public wayfi
 
         on_request_maximize.set_callback([&] (void*)
         {
-            tile_request((xw->maximized_horz && xw->maximized_vert) ?
-                wf::TILED_EDGES_ALL : 0);
+            wf::get_core().default_wm->tile_request({this},
+                (xw->maximized_horz && xw->maximized_vert) ? wf::TILED_EDGES_ALL : 0);
         });
         on_request_fullscreen.set_callback([&] (void*)
         {
-            fullscreen_request(get_output(), xw->fullscreen);
+            wf::get_core().default_wm->fullscreen_request({this}, get_output(), xw->fullscreen);
         });
         on_request_minimize.set_callback([&] (void *data)
         {
             auto ev = (wlr_xwayland_minimize_event*)data;
-            minimize_request(ev->minimize);
+            wf::get_core().default_wm->minimize_request({this}, ev->minimize);
         });
 
         on_set_parent.set_callback([&] (void*)
@@ -383,12 +386,12 @@ class wayfire_xwayland_view : public wf::toplevel_view_interface_t, public wayfi
                 wf::get_core().default_wm->update_last_windowed_geometry({this});
             }
 
-            tile_request(wf::TILED_EDGES_ALL);
+            wf::get_core().default_wm->tile_request({this}, wf::TILED_EDGES_ALL);
         }
 
         if (xw->fullscreen)
         {
-            fullscreen_request(get_output(), true);
+            wf::get_core().default_wm->fullscreen_request({this}, get_output(), true);
         }
 
         if (!this->tiled_edges && !xw->fullscreen)

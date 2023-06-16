@@ -1,6 +1,7 @@
 /* Needed for pipe2 */
 #ifndef _GNU_SOURCE
     #define _GNU_SOURCE
+    #include "wayfire/core.hpp"
 #endif
 
 #include "wayfire/scene.hpp"
@@ -565,10 +566,10 @@ void wf::move_view_to_output(wayfire_toplevel_view v, wf::output_t *new_output, 
     {
         if (fullscreen)
         {
-            v->fullscreen_request(new_output, true);
+            wf::get_core().default_wm->fullscreen_request(v, new_output, true);
         } else if (edges)
         {
-            v->tile_request(edges);
+            wf::get_core().default_wm->tile_request(v, edges);
         } else
         {
             auto new_g = wf::clamp(view_g, new_output->workarea->get_workarea());

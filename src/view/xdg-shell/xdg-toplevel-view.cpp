@@ -12,6 +12,7 @@
 #include <wayfire/output-layout.hpp>
 #include <wayfire/workspace-set.hpp>
 #include <wlr/util/edges.h>
+#include <wayfire/window-manager.hpp>
 
 /**
  * When we get a request for setting CSD, the view might not have been
@@ -88,23 +89,29 @@ wf::xdg_toplevel_view_t::xdg_toplevel_view_t(wlr_xdg_toplevel *tlvl)
         wf::emit_ping_timeout_signal(self());
     });
 
-    on_request_move.set_callback([&] (void*) { move_request(); });
+    on_request_move.set_callback([&] (void*)
+    {
+        wf::get_core().default_wm->move_request({this});
+    });
     on_request_resize.set_callback([&] (auto data)
     {
         auto ev = static_cast<wlr_xdg_toplevel_resize_event*>(data);
-        resize_request(ev->edges);
+        wf::get_core().default_wm->resize_request({this}, ev->edges);
     });
-    on_request_minimize.set_callback([&] (void*) { minimize_request(true); });
+    on_request_minimize.set_callback([&] (void*)
+    {
+        wf::get_core().default_wm->minimize_request({this}, true);
+    });
     on_request_maximize.set_callback([&] (void *data)
     {
-        tile_request(xdg_toplevel->requested.maximized ?
-            wf::TILED_EDGES_ALL : 0);
+        wf::get_core().default_wm->tile_request({this},
+            xdg_toplevel->requested.maximized ? wf::TILED_EDGES_ALL : 0);
     });
     on_request_fullscreen.set_callback([&] (void *data)
     {
         wlr_xdg_toplevel_requested *req = &xdg_toplevel->requested;
         auto wo = wf::get_core().output_layout->find_output(req->fullscreen_output);
-        fullscreen_request(wo, req->fullscreen);
+        wf::get_core().default_wm->fullscreen_request({this}, wo, req->fullscreen);
     });
 
     on_map.connect(&xdg_toplevel->base->events.map);
@@ -249,12 +256,12 @@ void wf::xdg_toplevel_view_t::initialize()
 
     if (xdg_toplevel->requested.fullscreen)
     {
-        fullscreen_request(get_output(), true);
+        wf::get_core().default_wm->fullscreen_request({this}, get_output(), true);
     }
 
     if (xdg_toplevel->requested.maximized)
     {
-        tile_request(wf::TILED_EDGES_ALL);
+        wf::get_core().default_wm->tile_request({this}, TILED_EDGES_ALL);
     }
 }
 

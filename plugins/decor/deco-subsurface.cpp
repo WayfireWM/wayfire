@@ -21,6 +21,7 @@
 #include "deco-subsurface.hpp"
 #include "deco-layout.hpp"
 #include "deco-theme.hpp"
+#include <wayfire/window-manager.hpp>
 
 #include <wayfire/plugins/common/cairo-util.hpp>
 
@@ -237,10 +238,10 @@ class simple_decoration_node_t : public wf::scene::node_t, public wf::pointer_in
         switch (action.action)
         {
           case wf::decor::DECORATION_ACTION_MOVE:
-            return view->move_request();
+            return wf::get_core().default_wm->move_request(view);
 
           case wf::decor::DECORATION_ACTION_RESIZE:
-            return view->resize_request(action.edges);
+            return wf::get_core().default_wm->resize_request(view, action.edges);
 
           case wf::decor::DECORATION_ACTION_CLOSE:
             return view->close();
@@ -248,16 +249,16 @@ class simple_decoration_node_t : public wf::scene::node_t, public wf::pointer_in
           case wf::decor::DECORATION_ACTION_TOGGLE_MAXIMIZE:
             if (view->tiled_edges)
             {
-                view->tile_request(0);
+                return wf::get_core().default_wm->tile_request(view, 0);
             } else
             {
-                view->tile_request(wf::TILED_EDGES_ALL);
+                return wf::get_core().default_wm->tile_request(view, wf::TILED_EDGES_ALL);
             }
 
             break;
 
           case wf::decor::DECORATION_ACTION_MINIMIZE:
-            view->minimize_request(true);
+            return wf::get_core().default_wm->minimize_request(view, true);
             break;
 
           default:

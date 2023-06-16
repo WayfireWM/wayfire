@@ -6,6 +6,7 @@
 #include <wayfire/plugin.hpp>
 #include <wayfire/nonstd/wlroots-full.hpp>
 #include <wayfire/toplevel-view.hpp>
+#include <wayfire/window-manager.hpp>
 #include "gtk-shell.hpp"
 #include "config.h"
 
@@ -179,18 +180,18 @@ class wayfire_foreign_toplevel
         toplevel_handle_v1_maximize_request.set_callback([&] (void *data)
         {
             auto ev = static_cast<wlr_foreign_toplevel_handle_v1_maximized_event*>(data);
-            view->tile_request(ev->maximized ? wf::TILED_EDGES_ALL : 0);
+            wf::get_core().default_wm->tile_request(view, ev->maximized ? wf::TILED_EDGES_ALL : 0);
         });
 
         toplevel_handle_v1_minimize_request.set_callback([&] (void *data)
         {
             auto ev = static_cast<wlr_foreign_toplevel_handle_v1_minimized_event*>(data);
-            view->minimize_request(ev->minimized);
+            wf::get_core().default_wm->minimize_request(view, ev->minimized);
         });
 
         toplevel_handle_v1_activate_request.set_callback([&] (auto)
         {
-            view->focus_request();
+            wf::get_core().default_wm->focus_request(view);
         });
 
         toplevel_handle_v1_close_request.set_callback([&] (auto)
@@ -217,7 +218,7 @@ class wayfire_foreign_toplevel
         {
             auto ev = static_cast<wlr_foreign_toplevel_handle_v1_fullscreen_event*>(data);
             auto wo = wf::get_core().output_layout->find_output(ev->output);
-            view->fullscreen_request(wo, ev->fullscreen);
+            wf::get_core().default_wm->fullscreen_request(view, wo, ev->fullscreen);
         });
     }
 

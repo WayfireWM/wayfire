@@ -8,6 +8,7 @@
 #include <wayfire/workspace-set.hpp>
 #include <wayfire/signal-definitions.hpp>
 #include <wayfire/toplevel-view.hpp>
+#include <wayfire/window-manager.hpp>
 
 #include "tree-controller.hpp"
 #include "tree.hpp"
@@ -252,7 +253,7 @@ class tile_workspace_set_data_t : public wf::custom_data_t
 
         if (wview->fullscreen && wview->is_mapped())
         {
-            wview->fullscreen_request(nullptr, false);
+            wf::get_core().default_wm->fullscreen_request(wview, nullptr, false);
         }
 
         /* Remove from special sublayer */
@@ -530,7 +531,7 @@ class tile_output_plugin_t : public wf::pointer_interaction_t, public wf::custom
             if (existing_node)
             {
                 detach_view(existing_node);
-                view->tile_request(0);
+                wf::get_core().default_wm->tile_request(view, 0);
             } else
             {
                 attach_view(view);
@@ -553,7 +554,7 @@ class tile_output_plugin_t : public wf::pointer_interaction_t, public wf::custom
 
                 if (was_fullscreen && keep_fullscreen_on_adjacent)
                 {
-                    adjacent->view->fullscreen_request(output, true);
+                    wf::get_core().default_wm->fullscreen_request(adjacent->view, output, true);
                 }
             }
         });
