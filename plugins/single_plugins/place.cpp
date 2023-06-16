@@ -13,7 +13,7 @@ class wayfire_place_window : public wf::per_output_plugin_instance_t
     {
         auto toplevel = wf::toplevel_cast(ev->view);
 
-        if (!toplevel || toplevel->parent || toplevel->fullscreen || toplevel->tiled_edges ||
+        if (!toplevel || toplevel->parent || toplevel->fullscreen || toplevel->pending_tiled_edges() ||
             ev->is_positioned)
         {
             return;

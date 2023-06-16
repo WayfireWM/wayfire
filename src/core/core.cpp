@@ -537,7 +537,7 @@ void wf::move_view_to_output(wayfire_toplevel_view v, wf::output_t *new_output, 
 
     if (reconfigure)
     {
-        edges = v->tiled_edges;
+        edges = v->pending_tiled_edges();
         fullscreen = v->fullscreen;
         view_g     = v->get_wm_geometry();
         old_output_g = old_output->get_relative_geometry();

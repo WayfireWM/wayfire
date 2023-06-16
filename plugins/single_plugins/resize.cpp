@@ -204,9 +204,9 @@ class wayfire_resize : public wf::per_output_plugin_instance_t, public wf::point
 
         grab_start = get_input_coords();
         grabbed_geometry = view->get_wm_geometry();
-        if (view->tiled_edges)
+        if (view->pending_tiled_edges())
         {
-            view->set_tiled(0);
+            view->toplevel()->pending().tiled_edges = 0;
         }
 
         this->view = view;

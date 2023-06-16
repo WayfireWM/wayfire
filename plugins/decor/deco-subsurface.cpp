@@ -247,7 +247,7 @@ class simple_decoration_node_t : public wf::scene::node_t, public wf::pointer_in
             return view->close();
 
           case wf::decor::DECORATION_ACTION_TOGGLE_MAXIMIZE:
-            if (view->tiled_edges)
+            if (view->pending_tiled_edges())
             {
                 return wf::get_core().default_wm->tile_request(view, 0);
             } else

@@ -230,7 +230,7 @@ class wayfire_wm_actions_t : public wf::per_output_plugin_instance_t
         return execute_for_selected_view(ev.source, [] (wayfire_toplevel_view view)
         {
             wf::get_core().default_wm->tile_request(view,
-                view->tiled_edges == wf::TILED_EDGES_ALL ? 0 : wf::TILED_EDGES_ALL);
+                view->pending_tiled_edges() == wf::TILED_EDGES_ALL ? 0 : wf::TILED_EDGES_ALL);
             return true;
         });
     };

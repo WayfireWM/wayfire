@@ -38,13 +38,7 @@ void wf::xdg_toplevel_t::commit()
     this->pending_ready = true;
     _committed = _pending;
     LOGC(TXNI, this, ": committing toplevel state mapped=", _pending.mapped,
-        " geometry=", _pending.geometry);
-
-    if (wf::dimensions(_pending.geometry) == wf::dimensions(_current.geometry))
-    {
-        emit_ready();
-        return;
-    }
+        " geometry=", _pending.geometry, " tiled=", _pending.tiled_edges);
 
     if (!this->toplevel)
     {
@@ -57,19 +51,38 @@ void wf::xdg_toplevel_t::commit()
     {
         // We are trying to map the toplevel => check whether we should wait until it sets the proper
         // geometry, or whether we are 'only' mapping without resizing.
-        if (get_current_wlr_toplevel_size() == wf::dimensions(_pending.geometry))
-        {
-            emit_ready();
-            return;
-        }
+        auto cur_size = get_current_wlr_toplevel_size();
+        _current.geometry.width  = cur_size.width;
+        _current.geometry.height = cur_size.height;
     }
 
-    auto margins = get_margins();
-    const int configure_width  = std::max(1, _pending.geometry.width - margins.left - margins.right);
-    const int configure_height = std::max(1, _pending.geometry.height - margins.top - margins.bottom);
-    this->target_configure = wlr_xdg_toplevel_set_size(this->toplevel, configure_width, configure_height);
-    // Send frame done to let the client know it can resize
-    main_surface->send_frame_done();
+    bool wait_for_client = false;
+
+    if (wf::dimensions(_pending.geometry) != wf::dimensions(_current.geometry))
+    {
+        wait_for_client = true;
+        auto margins = get_margins();
+        const int configure_width  = std::max(1, _pending.geometry.width - margins.left - margins.right);
+        const int configure_height = std::max(1, _pending.geometry.height - margins.top - margins.bottom);
+        this->target_configure = wlr_xdg_toplevel_set_size(this->toplevel, configure_width, configure_height);
+    }
+
+    if (_current.tiled_edges != _pending.tiled_edges)
+    {
+        wait_for_client = true;
+        wlr_xdg_toplevel_set_tiled(this->toplevel, _pending.tiled_edges);
+        this->target_configure =
+            wlr_xdg_toplevel_set_maximized(this->toplevel, (_pending.tiled_edges == wf::TILED_EDGES_ALL));
+    }
+
+    if (wait_for_client)
+    {
+        // Send frame done to let the client know it update its state as fast as possible.
+        main_surface->send_frame_done();
+    } else
+    {
+        emit_ready();
+    }
 }
 
 void wf::xdg_toplevel_t::apply()

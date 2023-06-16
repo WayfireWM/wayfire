@@ -2,6 +2,7 @@
 
 #include "wayfire/nonstd/observer_ptr.h"
 #include <wayfire/view.hpp>
+#include <wayfire/toplevel.hpp>
 
 namespace wf
 {
@@ -121,20 +122,20 @@ class toplevel_view_interface_t : public wf::view_interface_t
     /** Whether the view is sticky. If a view is sticky it will not be affected
      * by changes of the current workspace. */
     bool sticky = false;
-    /** The tiled edges of the view, usually you want to use set_tiled().
-     * If the view is tiled to all edges, it is considered maximized. */
-    uint32_t tiled_edges = 0;
 
     /** Set the minimized state of the view. */
     virtual void set_minimized(bool minimized);
-    /** Set the tiled edges of the view */
-    virtual void set_tiled(uint32_t edges);
     /** Set the fullscreen state of the view */
     virtual void set_fullscreen(bool fullscreen);
     /** Set the view's activated state.  */
     virtual void set_activated(bool active);
     /** Set the view's sticky state. */
     virtual void set_sticky(bool sticky);
+
+    inline uint32_t pending_tiled_edges()
+    {
+        return toplevel()->pending().tiled_edges;
+    }
 
     /**
      * Get the allowed actions for this view. By default, all actions are allowed, but plugins may disable

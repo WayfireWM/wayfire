@@ -102,12 +102,12 @@ void wayfire_window_rules_t::apply(const std::string & signal, wayfire_toplevel_
         return;
     }
 
-    if ((signal == "maximized") && (view->tiled_edges != wf::TILED_EDGES_ALL))
+    if ((signal == "maximized") && (view->pending_tiled_edges() != wf::TILED_EDGES_ALL))
     {
         return;
     }
 
-    if ((signal == "unmaximized") && (view->tiled_edges == wf::TILED_EDGES_ALL))
+    if ((signal == "unmaximized") && (view->pending_tiled_edges() == wf::TILED_EDGES_ALL))
     {
         return;
     }

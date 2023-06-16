@@ -314,7 +314,7 @@ class wayfire_move : public wf::per_output_plugin_instance_t,
 
         wf::move_drag::drag_options_t opts;
         opts.enable_snap_off = move_enable_snap_off &&
-            (view->fullscreen || view->tiled_edges);
+            (view->fullscreen || view->pending_tiled_edges());
         opts.snap_off_threshold = move_snap_off_threshold;
         opts.join_views = join_views;
 

@@ -100,6 +100,28 @@ void wf::emit_app_id_changed_signal(wayfire_view view)
     view->emit(&data);
 }
 
+void wf::emit_toplevel_state_change_signals(wayfire_toplevel_view view, const wf::toplevel_state_t& old_state)
+{
+    if (view->toplevel()->current().geometry != old_state.geometry)
+    {
+        emit_geometry_changed_signal(view, old_state.geometry);
+    }
+
+    if (view->toplevel()->current().tiled_edges != old_state.tiled_edges)
+    {
+        wf::view_tiled_signal data;
+        data.view = view;
+        data.old_edges = old_state.tiled_edges;
+        data.new_edges = view->toplevel()->current().tiled_edges;
+
+        view->emit(&data);
+        if (view->get_output())
+        {
+            view->get_output()->emit(&data);
+        }
+    }
+}
+
 void wf::init_desktop_apis()
 {
     init_xdg_shell();

@@ -73,13 +73,8 @@ void wf::xw::xwayland_toplevel_t::commit()
 {
     this->pending_ready = true;
     _committed = _pending;
-    LOGC(TXNI, this, ": committing xwayland state mapped=", _pending.mapped, " geometry=", _pending.geometry);
-
-    if (wf::dimensions(_pending.geometry) == wf::dimensions(_current.geometry))
-    {
-        emit_ready();
-        return;
-    }
+    LOGC(TXNI, this, ": committing xwayland state mapped=", _pending.mapped, " geometry=", _pending.geometry,
+        " tiled=", _pending.tiled_edges);
 
     if (!this->xw)
     {
@@ -92,18 +87,30 @@ void wf::xw::xwayland_toplevel_t::commit()
     {
         // We are trying to map the toplevel => check whether we should wait until it sets the proper
         // geometry, or whether we are 'only' mapping without resizing.
-        if (get_current_xw_size() == wf::dimensions(_pending.geometry))
-        {
-            emit_ready();
-            return;
-        }
+        auto cur_size = get_current_xw_size();
+        _pending.geometry.width  = cur_size.width;
+        _pending.geometry.height = cur_size.height;
     }
 
-    reconfigure_xwayland_surface();
-    if (main_surface)
+    bool wait_for_client = false;
+    if (wf::dimensions(_pending.geometry) != wf::dimensions(_current.geometry))
+    {
+        wait_for_client = true;
+        reconfigure_xwayland_surface();
+    }
+
+    if (_pending.tiled_edges != _current.tiled_edges)
+    {
+        wlr_xwayland_surface_set_maximized(xw, !!_pending.tiled_edges);
+    }
+
+    if (wait_for_client && main_surface)
     {
         // Send frame done to let the client know it can resize
         main_surface->send_frame_done();
+    } else
+    {
+        emit_ready();
     }
 }
 

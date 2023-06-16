@@ -8,6 +8,7 @@
 #include <wayfire/workarea.hpp>
 #include <wayfire/signal-definitions.hpp>
 #include <wayfire/workspace-set.hpp>
+#include <wayfire/txn/transaction-manager.hpp>
 
 namespace wf
 {
@@ -28,14 +29,14 @@ class windowed_geometry_data_t : public wf::custom_data_t
 
 void wf::window_manager_t::update_last_windowed_geometry(wayfire_toplevel_view view)
 {
-    if (!view->is_mapped() || view->tiled_edges || view->fullscreen)
+    if (!view->is_mapped() || view->pending_tiled_edges() || view->fullscreen)
     {
         return;
     }
 
     auto windowed = view->get_data_safe<windowed_geometry_data_t>();
 
-    windowed->last_windowed_geometry = view->get_wm_geometry();
+    windowed->last_windowed_geometry = view->toplevel()->pending().geometry;
     if (view->get_output())
     {
         windowed->windowed_geometry_workarea = view->get_output()->workarea->get_workarea();
@@ -174,7 +175,8 @@ void window_manager_t::tile_request(wayfire_toplevel_view view,
     data.desired_size = tiled_edges ? view->get_output()->workarea->get_workarea() :
         get_last_windowed_geometry(view).value_or(wf::geometry_t{0, 0, -1, -1});
 
-    view->set_tiled(tiled_edges);
+    update_last_windowed_geometry(view);
+    view->toplevel()->pending().tiled_edges = tiled_edges;
     if (view->is_mapped())
     {
         view->get_output()->emit(&data);
@@ -190,6 +192,7 @@ void window_manager_t::tile_request(wayfire_toplevel_view view,
             view->request_native_size();
         }
 
+        wf::get_core().tx_manager->schedule_object(view->toplevel());
         move_to_workspace(view, workspace);
     }
 }
@@ -217,7 +220,7 @@ void window_manager_t::fullscreen_request(wayfire_toplevel_view view,
 
     if (!state)
     {
-        data.desired_size = view->tiled_edges ? wo->workarea->get_workarea() :
+        data.desired_size = view->pending_tiled_edges() ? wo->workarea->get_workarea() :
             get_last_windowed_geometry(view).value_or(wf::geometry_t{0, 0, -1, -1});
     }
 

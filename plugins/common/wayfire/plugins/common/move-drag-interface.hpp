@@ -754,9 +754,9 @@ inline void adjust_view_on_output(drag_done_signal *ev)
         if (v.view->fullscreen)
         {
             wf::get_core().default_wm->fullscreen_request(v.view, ev->focused_output, true, target_ws);
-        } else if (v.view->tiled_edges)
+        } else if (v.view->pending_tiled_edges())
         {
-            wf::get_core().default_wm->tile_request(v.view, v.view->tiled_edges, target_ws);
+            wf::get_core().default_wm->tile_request(v.view, v.view->pending_tiled_edges(), target_ws);
         }
 
         // check focus timestamp and select the last focused view to (re)focus
@@ -780,7 +780,7 @@ inline void adjust_view_on_output(drag_done_signal *ev)
  */
 inline void adjust_view_on_snap_off(wayfire_toplevel_view view)
 {
-    if (view->tiled_edges && !view->fullscreen)
+    if (view->pending_tiled_edges() && !view->fullscreen)
     {
         wf::get_core().default_wm->tile_request(view, 0);
     }

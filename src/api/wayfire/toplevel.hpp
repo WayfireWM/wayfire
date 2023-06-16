@@ -30,6 +30,15 @@ struct toplevel_state_t
      * itself or does not obey a resize request sent by the compositor.
      */
     uint32_t gravity = WLR_EDGE_LEFT | WLR_EDGE_TOP;
+
+    /**
+     * The tiled edges of the toplevel.
+     * Tiled edges are edges of the toplevel that are aligned to other objects (output edge, other toplevels,
+     * etc.). Clients usually draw no shadows, rounded corners and similar decorations on tiled edges.
+     *
+     * Usually, when all edges are tiled, the toplevel is considered maximized.
+     */
+    uint32_t tiled_edges = 0;
 };
 
 /**

@@ -366,7 +366,7 @@ class stipc_plugin_t : public wf::plugin_interface_t
             if (auto toplevel = toplevel_cast(view))
             {
                 v["geometry"] = wf::ipc::geometry_to_json(toplevel->get_wm_geometry());
-                v["state"]["tiled"] = toplevel->tiled_edges;
+                v["state"]["tiled"] = toplevel->pending_tiled_edges();
                 v["state"]["fullscreen"] = toplevel->fullscreen;
                 v["state"]["minimized"]  = toplevel->minimized;
             } else

@@ -1,4 +1,5 @@
 #include "tree.hpp"
+#include "wayfire/core.hpp"
 #include "wayfire/toplevel-view.hpp"
 #include <wayfire/util.hpp>
 #include <wayfire/util/log.hpp>
@@ -9,6 +10,9 @@
 #include <algorithm>
 #include <wayfire/plugins/crossfade.hpp>
 #include <wayfire/plugins/common/util.hpp>
+#include <wayfire/toplevel.hpp>
+#include <wayfire/txn/transaction-manager.hpp>
+#include <wayfire/window-manager.hpp>
 
 namespace wf
 {
@@ -452,7 +456,9 @@ void view_node_t::set_geometry(wf::geometry_t geometry)
         return;
     }
 
-    view->set_tiled(TILED_EDGES_ALL);
+    wf::get_core().default_wm->update_last_windowed_geometry(view);
+    view->toplevel()->pending().tiled_edges = TILED_EDGES_ALL;
+    wf::get_core().tx_manager->schedule_object(view->toplevel());
 
     auto target = calculate_target_geometry();
     if (this->needs_crossfade() && (target != view->get_wm_geometry()))

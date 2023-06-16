@@ -8,6 +8,7 @@
 #include <wayfire/toplevel.hpp>
 
 #include "surface-impl.hpp"
+#include "wayfire/core.hpp"
 #include "wayfire/signal-provider.hpp"
 #include "wayfire/unstable/wlr-surface-node.hpp"
 #include "wayfire/output.hpp"
@@ -70,6 +71,8 @@ void emit_app_id_changed_signal(wayfire_view view);
 void init_xdg_shell();
 void init_xwayland();
 void init_layer_shell();
+void emit_toplevel_state_change_signals(
+    wayfire_toplevel_view view, const wf::toplevel_state_t& old_state);
 
 std::string xwayland_get_display();
 void xwayland_update_default_cursor();

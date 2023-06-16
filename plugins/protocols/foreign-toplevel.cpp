@@ -98,7 +98,8 @@ class wayfire_foreign_toplevel
 
     void toplevel_send_state()
     {
-        wlr_foreign_toplevel_handle_v1_set_maximized(handle, view->tiled_edges == wf::TILED_EDGES_ALL);
+        wlr_foreign_toplevel_handle_v1_set_maximized(handle,
+            view->pending_tiled_edges() == wf::TILED_EDGES_ALL);
         wlr_foreign_toplevel_handle_v1_set_activated(handle, view->activated);
         wlr_foreign_toplevel_handle_v1_set_minimized(handle, view->minimized);
         wlr_foreign_toplevel_handle_v1_set_fullscreen(handle, view->fullscreen);

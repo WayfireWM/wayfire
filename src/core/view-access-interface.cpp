@@ -35,6 +35,7 @@ variant_t view_access_interface_t::get(const std::string & identifier, bool & er
         return out;
     }
 
+    uint32_t view_tiled_edges = toplevel_cast(_view) ? toplevel_cast(_view)->pending_tiled_edges() : 0;
     if (identifier == "app_id")
     {
         out = _view->get_app_id();
@@ -81,22 +82,22 @@ variant_t view_access_interface_t::get(const std::string & identifier, bool & er
         out = _view->is_mapped();
     } else if (identifier == "tiled-left")
     {
-        out = toplevel_cast(_view) ? ((toplevel_cast(_view)->tiled_edges & WLR_EDGE_LEFT) > 0) : false;
+        out = ((view_tiled_edges & WLR_EDGE_LEFT) > 0);
     } else if (identifier == "tiled-right")
     {
-        out = toplevel_cast(_view) ? ((toplevel_cast(_view)->tiled_edges & WLR_EDGE_RIGHT) > 0) : false;
+        out = ((view_tiled_edges & WLR_EDGE_RIGHT) > 0);
     } else if (identifier == "tiled-top")
     {
-        out = toplevel_cast(_view) ? ((toplevel_cast(_view)->tiled_edges & WLR_EDGE_TOP) > 0) : false;
+        out = ((view_tiled_edges & WLR_EDGE_TOP) > 0);
     } else if (identifier == "tiled-bottom")
     {
-        out = toplevel_cast(_view) ? ((toplevel_cast(_view)->tiled_edges & WLR_EDGE_BOTTOM) > 0) : false;
+        out = ((view_tiled_edges & WLR_EDGE_BOTTOM) > 0);
     } else if (identifier == "maximized")
     {
-        out = toplevel_cast(_view) ? (toplevel_cast(_view)->tiled_edges == TILED_EDGES_ALL) : false;
+        out = (view_tiled_edges == TILED_EDGES_ALL);
     } else if (identifier == "floating")
     {
-        out = toplevel_cast(_view) ? (toplevel_cast(_view)->tiled_edges == 0) : false;
+        out = toplevel_cast(_view) ? (toplevel_cast(_view)->pending_tiled_edges() == 0) : false;
     } else if (identifier == "type")
     {
         do {

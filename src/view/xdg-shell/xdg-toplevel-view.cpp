@@ -196,13 +196,6 @@ bool wf::xdg_toplevel_view_t::is_focusable() const
     return true;
 }
 
-void wf::xdg_toplevel_view_t::set_tiled(uint32_t edges)
-{
-    wlr_xdg_toplevel_set_tiled(xdg_toplevel, edges);
-    wlr_xdg_toplevel_set_maximized(xdg_toplevel, (edges == wf::TILED_EDGES_ALL));
-    wf::toplevel_view_interface_t::set_tiled(edges);
-}
-
 void wf::xdg_toplevel_view_t::set_fullscreen(bool fullscreen)
 {
     toplevel_view_interface_t::set_fullscreen(fullscreen);
@@ -315,7 +308,7 @@ void wf::xdg_toplevel_view_t::handle_toplevel_state_changed(wf::toplevel_state_t
     }
 
     wf::scene::damage_node(get_root_node(), last_bounding_box);
-    wf::emit_geometry_changed_signal({this}, old_state.geometry);
+    emit_toplevel_state_change_signals({this}, old_state);
 
     damage();
     last_bounding_box = this->get_surface_root_node()->get_bounding_box();

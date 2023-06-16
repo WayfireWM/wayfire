@@ -28,7 +28,6 @@ class xdg_toplevel_view_t : public wf::toplevel_view_interface_t
     wf::geometry_t get_wm_geometry() override;
     wlr_surface *get_keyboard_focus_surface() override;
     bool is_focusable() const override;
-    void set_tiled(uint32_t edges) override;
     void set_fullscreen(bool fullscreen) override;
     void set_activated(bool active) override;
     std::string get_app_id() override;

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "config.h"
+#include "view/view-impl.hpp"
 #include "wayfire/core.hpp"
 #include "wayfire/geometry.hpp"
 #include "wayfire/scene-render.hpp"
@@ -394,7 +395,7 @@ class wayfire_xwayland_view : public wf::toplevel_view_interface_t, public wayfi
             wf::get_core().default_wm->fullscreen_request({this}, get_output(), true);
         }
 
-        if (!this->tiled_edges && !xw->fullscreen)
+        if (!this->pending_tiled_edges() && !xw->fullscreen)
         {
             configure_request({xw->x, xw->y, xw->width, xw->height});
         }
@@ -467,14 +468,6 @@ class wayfire_xwayland_view : public wf::toplevel_view_interface_t, public wayfi
         toplevel->request_native_size();
     }
 
-    void set_tiled(uint32_t edges) override
-    {
-        if (xw)
-        {
-            wlr_xwayland_surface_set_maximized(xw, !!edges);
-        }
-    }
-
     void set_fullscreen(bool full) override
     {
         if (xw)
@@ -526,11 +519,7 @@ class wayfire_xwayland_view : public wf::toplevel_view_interface_t, public wayfi
         }
 
         wf::scene::damage_node(get_root_node(), last_bounding_box);
-
-        wf::view_geometry_changed_signal geometry_changed;
-        geometry_changed.view = {this};
-        geometry_changed.old_geometry = old_state.geometry;
-        emit(&geometry_changed);
+        wf::emit_toplevel_state_change_signals({this}, old_state);
 
         damage();
         last_bounding_box = this->get_surface_root_node()->get_bounding_box();

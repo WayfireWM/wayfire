@@ -1,6 +1,7 @@
 #pragma once
 
 #include <wayfire/plugins/common/util.hpp>
+#include "wayfire/core.hpp"
 #include "wayfire/geometry.hpp"
 #include "wayfire/opengl.hpp"
 #include "wayfire/region.hpp"
@@ -16,6 +17,9 @@
 #include <wayfire/plugins/common/geometry-animation.hpp>
 #include <wayfire/render-manager.hpp>
 #include <wayfire/plugins/wobbly/wobbly-signal.hpp>
+#include <wayfire/toplevel.hpp>
+#include <wayfire/txn/transaction-manager.hpp>
+#include <wayfire/window-manager.hpp>
 
 namespace wf
 {
@@ -202,11 +206,13 @@ class grid_animation_t : public wf::custom_data_t
         {
             if (target_edges >= 0)
             {
+                wf::get_core().default_wm->update_last_windowed_geometry(view);
                 view->set_fullscreen(false);
-                view->set_tiled(target_edges);
+                view->toplevel()->pending().tiled_edges = target_edges;
             }
 
-            view->set_geometry(geometry);
+            view->toplevel()->pending().geometry = geometry;
+            wf::get_core().tx_manager->schedule_object(view->toplevel());
         };
 
         if (type != CROSSFADE)
