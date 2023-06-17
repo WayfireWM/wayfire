@@ -50,7 +50,7 @@ void view_store_data(wayfire_toplevel_view view, wf::output_t *output, int z_ord
 {
     auto view_data = view->get_data_safe<last_output_info_t>();
     view_data->output_identifier = make_output_identifier(output);
-    view_data->geometry    = view->get_wm_geometry();
+    view_data->geometry    = view->get_pending_geometry();
     view_data->fullscreen  = view->pending_fullscreen();
     view_data->minimized   = view->minimized;
     view_data->tiled_edges = view->pending_tiled_edges();
@@ -283,7 +283,7 @@ class wayfire_preserve_output : public wf::per_output_plugin_instance_t
         auto view = signal_data->view;
 
         // Ignore event if geometry didn't actually change
-        if (signal_data->old_geometry == view->get_wm_geometry())
+        if (signal_data->old_geometry == view->get_geometry())
         {
             return;
         }

@@ -132,7 +132,7 @@ class title_overlay_node_t : public node_t
 
         if (tr)
         {
-            auto wm_geometry = v->get_wm_geometry();
+            auto wm_geometry = v->get_geometry();
             return get_bbox_for_node(tr, wm_geometry);
         }
 

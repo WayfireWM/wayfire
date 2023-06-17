@@ -50,8 +50,7 @@ wf::keyboard_focus_node_t wf::toplevel_view_node_t::keyboard_refocus(wf::output_
     //
     // These views request a LOW focus_importance.
     auto output_box = output->get_layout_geometry();
-    auto view_box   = view->get_wm_geometry() +
-        wf::origin(view->get_output()->get_layout_geometry());
+    auto view_box   = view->get_geometry() + wf::origin(view->get_output()->get_layout_geometry());
 
     auto intersection = wf::geometry_intersection(output_box, view_box);
     double area = 1.0 * intersection.width * intersection.height;

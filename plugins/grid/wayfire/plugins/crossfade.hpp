@@ -44,13 +44,13 @@ class crossfade_node_t : public scene::view_2d_transformer_t
 
     crossfade_node_t(wayfire_toplevel_view view) : view_2d_transformer_t(view)
     {
-        displayed_geometry = view->get_wm_geometry();
+        displayed_geometry = view->get_geometry();
         this->view = view;
 
         auto root_node = view->get_surface_root_node();
         const wf::geometry_t bbox = root_node->get_bounding_box();
 
-        original_buffer.geometry = view->get_wm_geometry();
+        original_buffer.geometry = view->get_geometry();
         original_buffer.scale    = view->get_output()->handle->scale;
 
         OpenGL::render_begin();
@@ -230,7 +230,7 @@ class grid_animation_t : public wf::custom_data_t
         }
 
         // Crossfade animation
-        original = view->get_wm_geometry();
+        original = view->get_geometry();
         animation.set_start(original);
         animation.set_end(geometry);
         animation.start();
@@ -262,9 +262,9 @@ class grid_animation_t : public wf::custom_data_t
             return destroy();
         }
 
-        if (view->get_wm_geometry() != original)
+        if (view->get_geometry() != original)
         {
-            original = view->get_wm_geometry();
+            original = view->get_geometry();
             animation.set_end(original);
         }
 
@@ -272,7 +272,7 @@ class grid_animation_t : public wf::custom_data_t
         view->damage();
         tr->displayed_geometry = animation;
 
-        auto geometry = view->get_wm_geometry();
+        auto geometry = view->get_geometry();
         tr->scale_x = animation.width / geometry.width;
         tr->scale_y = animation.height / geometry.height;
 

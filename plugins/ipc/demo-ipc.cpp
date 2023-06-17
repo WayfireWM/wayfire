@@ -127,7 +127,7 @@ class wayfire_demo_ipc : public wf::plugin_interface_t
         description["title"]  = view->get_title();
         auto toplevel = wf::toplevel_cast(view);
         description["geometry"] =
-            wf::ipc::geometry_to_json(toplevel ? toplevel->get_wm_geometry() : view->get_bounding_box());
+            wf::ipc::geometry_to_json(toplevel ? toplevel->get_geometry() : view->get_bounding_box());
         description["output"] = view->get_output() ? view->get_output()->get_id() : -1;
         return description;
     }

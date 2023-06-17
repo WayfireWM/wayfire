@@ -71,7 +71,7 @@ class wayfire_place_window : public wf::per_output_plugin_instance_t
 
     void cascade(wayfire_toplevel_view & view, wf::geometry_t workarea)
     {
-        wf::geometry_t window = view->get_wm_geometry();
+        wf::geometry_t window = view->get_pending_geometry();
 
         if ((cascade_x + window.width > workarea.x + workarea.width) ||
             (cascade_y + window.height > workarea.y + workarea.height))
@@ -88,7 +88,7 @@ class wayfire_place_window : public wf::per_output_plugin_instance_t
 
     void random(wayfire_toplevel_view & view, wf::geometry_t workarea)
     {
-        wf::geometry_t window = view->get_wm_geometry();
+        wf::geometry_t window = view->get_pending_geometry();
         wf::geometry_t area;
         int pos_x, pos_y;
 
@@ -112,7 +112,7 @@ class wayfire_place_window : public wf::per_output_plugin_instance_t
 
     void center(wayfire_toplevel_view & view, wf::geometry_t workarea)
     {
-        wf::geometry_t window = view->get_wm_geometry();
+        wf::geometry_t window = view->get_pending_geometry();
         window.x = workarea.x + (workarea.width / 2) - (window.width / 2);
         window.y = workarea.y + (workarea.height / 2) - (window.height / 2);
         view->move(window.x, window.y);

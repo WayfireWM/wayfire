@@ -539,7 +539,7 @@ void wf::move_view_to_output(wayfire_toplevel_view v, wf::output_t *new_output, 
     {
         edges = v->pending_tiled_edges();
         fullscreen = v->pending_fullscreen();
-        view_g     = v->get_wm_geometry();
+        view_g     = v->get_pending_geometry();
         old_output_g = old_output->get_relative_geometry();
         new_output_g = new_output->get_relative_geometry();
         auto ratio_x = (double)new_output_g.width / old_output_g.width;

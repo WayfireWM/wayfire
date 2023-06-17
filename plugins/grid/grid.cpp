@@ -222,7 +222,7 @@ class wayfire_grid : public wf::per_output_plugin_instance_t
             auto data = view->get_data_safe<wf_grid_slot_data>();
 
             /* Detect if the view was maximized outside of the grid plugin */
-            auto wm = view->get_wm_geometry();
+            auto wm = view->get_pending_geometry();
             if (view->pending_tiled_edges() && (wm.width == ev->old_workarea.width) &&
                 (wm.height == ev->old_workarea.height))
             {

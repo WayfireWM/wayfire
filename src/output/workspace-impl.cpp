@@ -232,7 +232,7 @@ struct workspace_set_t::impl
 
         for (auto& view : get_views(WSET_MAPPED_ONLY))
         {
-            auto wm  = view->get_wm_geometry();
+            auto wm  = view->get_geometry();
             float px = 1. * wm.x / old_w;
             float py = 1. * wm.y / old_h;
             float pw = 1. * wm.width / old_w;
@@ -267,7 +267,7 @@ struct workspace_set_t::impl
 
         for (auto view : get_views(WSET_MAPPED_ONLY))
         {
-            if (!(view->get_wm_geometry() & full_grid))
+            if (!(view->get_geometry() & full_grid))
             {
                 move_to_workspace(view, get_view_main_workspace(view));
             }
@@ -498,7 +498,7 @@ struct workspace_set_t::impl
             return {0, 0};
         }
 
-        auto wm = view->get_wm_geometry();
+        auto wm = view->get_geometry();
         wf::point_t workspace = {
             current_vx + (int)std::floor((wm.x + wm.width / 2.0) / workspace_geometry->width),
             current_vy + (int)std::floor((wm.y + wm.height / 2.0) / workspace_geometry->height)
@@ -528,7 +528,7 @@ struct workspace_set_t::impl
             g.y += (vp.y - current_vy) * g.height;
         }
 
-        return g & view->get_wm_geometry();
+        return g & view->get_geometry();
     }
 
     /**
@@ -549,7 +549,7 @@ struct workspace_set_t::impl
             ws = {current_vx, current_vy};
         }
 
-        auto box = view->get_wm_geometry();
+        auto box = view->get_pending_geometry();
         wf::geometry_t visible = *workspace_geometry;
         visible.x += (ws.x - current_vx) * visible.width;
         visible.y += (ws.y - current_vy) * visible.height;
@@ -628,7 +628,7 @@ struct workspace_set_t::impl
             {
                 for (auto v : view->enumerate_views())
                 {
-                    v->move(v->get_wm_geometry().x + dx, v->get_wm_geometry().y + dy);
+                    v->move(v->get_pending_geometry().x + dx, v->get_pending_geometry().y + dy);
                 }
             }
         }

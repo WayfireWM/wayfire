@@ -149,7 +149,7 @@ void window_manager_t::minimize_request(wayfire_toplevel_view view, bool minimiz
 static void move_to_workspace(wayfire_toplevel_view view, wf::point_t workspace)
 {
     auto output = view->get_output();
-    auto wm_geometry = view->get_wm_geometry();
+    auto wm_geometry = view->get_pending_geometry();
     auto delta    = workspace - output->wset()->get_current_workspace();
     auto scr_size = output->get_screen_size();
 

@@ -743,7 +743,7 @@ inline void adjust_view_on_output(drag_done_signal *ev)
         }
 
         auto bbox = wf::view_bounding_box_up_to(v.view, "wobbly");
-        auto wm   = v.view->get_wm_geometry();
+        auto wm   = v.view->get_geometry();
 
         wf::point_t wm_offset = wf::origin(wm) + -wf::origin(bbox);
         bbox = wf::move_drag::find_geometry_around(

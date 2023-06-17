@@ -203,7 +203,7 @@ class wayfire_resize : public wf::per_output_plugin_instance_t, public wf::point
         input_grab->grab_input(wf::scene::layer::OVERLAY);
 
         grab_start = get_input_coords();
-        grabbed_geometry = view->get_wm_geometry();
+        grabbed_geometry = view->get_geometry();
         if (view->pending_tiled_edges())
         {
             view->toplevel()->pending().tiled_edges = 0;

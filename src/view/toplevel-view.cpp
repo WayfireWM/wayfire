@@ -18,8 +18,8 @@ static void reposition_relative_to_parent(wayfire_toplevel_view view)
         return;
     }
 
-    auto parent_geometry = view->parent->get_wm_geometry();
-    auto wm_geometry     = view->get_wm_geometry();
+    auto parent_geometry = view->parent->get_pending_geometry();
+    auto wm_geometry     = view->get_pending_geometry();
     auto scr_size = view->get_output()->get_screen_size();
     // Guess which workspace the parent is on
     wf::point_t center = {
@@ -35,7 +35,7 @@ static void reposition_relative_to_parent(wayfire_toplevel_view view)
         view->get_output()->wset()->get_current_workspace() + parent_ws);
     if (view->parent->is_mapped())
     {
-        auto parent_g = view->parent->get_wm_geometry();
+        auto parent_g = view->parent->get_pending_geometry();
         wm_geometry.x = parent_g.x + (parent_g.width - wm_geometry.width) / 2;
         wm_geometry.y = parent_g.y + (parent_g.height - wm_geometry.height) / 2;
     } else
@@ -49,8 +49,8 @@ static void reposition_relative_to_parent(wayfire_toplevel_view view)
     /* make sure view is visible afterwards */
     wm_geometry = wf::clamp(wm_geometry, workarea);
     view->move(wm_geometry.x, wm_geometry.y);
-    if ((wm_geometry.width != view->get_wm_geometry().width) ||
-        (wm_geometry.height != view->get_wm_geometry().height))
+    if ((wm_geometry.width != view->get_pending_geometry().width) ||
+        (wm_geometry.height != view->get_pending_geometry().height))
     {
         view->resize(wm_geometry.width, wm_geometry.height);
     }
@@ -195,11 +195,6 @@ void wf::toplevel_view_interface_t::request_native_size()
     /* no-op */
 }
 
-wf::geometry_t wf::toplevel_view_interface_t::get_wm_geometry()
-{
-    return toplevel()->current().geometry;
-}
-
 void wf::toplevel_view_interface_t::set_minimized(bool minim)
 {
     this->minimized = minim;
@@ -271,22 +266,21 @@ bool wf::toplevel_view_interface_t::should_be_decorated()
     return false;
 }
 
-void wf::toplevel_view_interface_t::set_decoration(
-    std::unique_ptr<wf::decorator_frame_t_t> frame)
+void wf::toplevel_view_interface_t::set_decoration(std::unique_ptr<wf::decorator_frame_t_t> frame)
 {
     if (!frame)
     {
         damage();
 
         // Take wm geometry as it was with the decoration.
-        const auto wm = get_wm_geometry();
+        const auto wm = get_pending_geometry();
 
         // Drop the owned frame.
         priv->frame = nullptr;
 
         // Grow the tiled view to fill its old expanded geometry that included
         // the decoration.
-        if (!pending_fullscreen() && this->pending_tiled_edges() && (wm != get_wm_geometry()))
+        if (!pending_fullscreen() && this->pending_tiled_edges())
         {
             set_geometry(wm);
         }
@@ -298,7 +292,7 @@ void wf::toplevel_view_interface_t::set_decoration(
     }
 
     // Take wm geometry as it was before adding the frame */
-    auto wm = get_wm_geometry();
+    auto wm = get_pending_geometry();
 
     damage();
     // Drop the old frame if any and assign the new one.

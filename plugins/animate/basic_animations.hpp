@@ -105,7 +105,7 @@ class zoom_animation : public animation_base
                 int hint_cx = hint.x + hint.width / 2;
                 int hint_cy = hint.y + hint.height / 2;
 
-                auto bbox   = toplevel->get_wm_geometry();
+                auto bbox   = toplevel->get_geometry();
                 int view_cx = bbox.x + bbox.width / 2;
                 int view_cy = bbox.y + bbox.height / 2;
 

@@ -38,11 +38,6 @@ class wayfire_xwayland_view : public wf::toplevel_view_interface_t, public wayfi
      */
     wf::geometry_t last_bounding_box{0, 0, 0, 0};
 
-    wf::geometry_t get_wm_geometry() override
-    {
-        return toplevel->current().geometry;
-    }
-
     wf::signal::connection_t<wf::output_configuration_changed_signal> output_geometry_changed =
         [=] (wf::output_configuration_changed_signal *ev)
     {
@@ -73,8 +68,8 @@ class wayfire_xwayland_view : public wf::toplevel_view_interface_t, public wayfi
         }
 
         /* Use old x/y values */
-        ev->x = get_wm_geometry().x + output_origin.x;
-        ev->y = get_wm_geometry().y + output_origin.y;
+        ev->x = get_pending_geometry().x + output_origin.x;
+        ev->y = get_pending_geometry().y + output_origin.y;
         configure_request(wlr_box{ev->x, ev->y, ev->width, ev->height});
     }
 
@@ -148,7 +143,7 @@ class wayfire_xwayland_view : public wf::toplevel_view_interface_t, public wayfi
                 view = view->parent;
             }
 
-            auto vg = view->get_wm_geometry();
+            auto vg = view->get_pending_geometry();
 
             // View workspace relative to current workspace
             wf::point_t view_ws = {0, 0};

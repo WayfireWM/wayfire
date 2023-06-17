@@ -486,7 +486,7 @@ void view_action_interface_t::_move(int x, int y)
     if (output != nullptr)
     {
         auto grid = this->_get_workspace_grid_geometry(output);
-        auto view_geometry = _view->get_wm_geometry();
+        auto view_geometry = _view->get_pending_geometry();
         view_geometry.x = x;
         view_geometry.y = y;
 
@@ -518,7 +518,7 @@ void view_action_interface_t::_assign_ws(wf::point_t point)
     auto delta = point - output->wset()->get_current_workspace();
     auto size  = output->get_screen_size();
 
-    auto wm = _view->get_wm_geometry();
+    auto wm = _view->get_pending_geometry();
     _view->move(wm.x + delta.x * size.width, wm.y + delta.y * size.height);
 }
 } // End namespace wf.

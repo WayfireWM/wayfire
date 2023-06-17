@@ -286,7 +286,7 @@ struct view_node_t::scale_transformer_t : public wf::scene::view_2d_transformer_
 
         this->view->damage();
 
-        auto current = toplevel_cast(this->view)->get_wm_geometry();
+        auto current = toplevel_cast(this->view)->get_geometry();
         if ((current.width <= 0) || (current.height <= 0))
         {
             /* view possibly unmapped?? */
@@ -461,7 +461,7 @@ void view_node_t::set_geometry(wf::geometry_t geometry)
     wf::get_core().tx_manager->schedule_object(view->toplevel());
 
     auto target = calculate_target_geometry();
-    if (this->needs_crossfade() && (target != view->get_wm_geometry()))
+    if (this->needs_crossfade() && (target != view->get_geometry()))
     {
         view->get_transformed_node()->rem_transformer(scale_transformer_name);
         ensure_animation(view, animation_duration)
@@ -486,7 +486,7 @@ void view_node_t::update_transformer()
         return;
     }
 
-    auto wm = view->get_wm_geometry();
+    auto wm = view->get_geometry();
     if (wm != target_geometry)
     {
         auto tr = ensure_named_transformer<scale_transformer_t>(view,

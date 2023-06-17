@@ -560,7 +560,7 @@ class wayfire_scale : public wf::per_output_plugin_instance_t,
 
         auto ws     = output->wset()->get_current_workspace();
         auto og     = output->get_layout_geometry();
-        auto vg     = view->get_wm_geometry();
+        auto vg     = view->get_geometry();
         auto center = wf::point_t{vg.x + vg.width / 2, vg.y + vg.height / 2};
 
         return wf::point_t{
@@ -744,7 +744,7 @@ class wayfire_scale : public wf::per_output_plugin_instance_t,
         std::vector<wayfire_toplevel_view> views;
         for (auto& view : get_all_workspace_views())
         {
-            auto vg = view->get_wm_geometry();
+            auto vg = view->get_geometry();
             auto og = output->get_relative_geometry();
             wf::region_t wr{og};
             wf::point_t center{vg.x + vg.width / 2, vg.y + vg.height / 2};
@@ -810,18 +810,18 @@ class wayfire_scale : public wf::per_output_plugin_instance_t,
 
     static bool view_compare_x(const wayfire_toplevel_view& a, const wayfire_toplevel_view& b)
     {
-        auto vg_a = a->get_wm_geometry();
+        auto vg_a = a->get_geometry();
         std::vector<int> a_coords = {vg_a.x, vg_a.width, vg_a.y, vg_a.height};
-        auto vg_b = b->get_wm_geometry();
+        auto vg_b = b->get_geometry();
         std::vector<int> b_coords = {vg_b.x, vg_b.width, vg_b.y, vg_b.height};
         return a_coords < b_coords;
     }
 
     static bool view_compare_y(const wayfire_toplevel_view& a, const wayfire_toplevel_view& b)
     {
-        auto vg_a = a->get_wm_geometry();
+        auto vg_a = a->get_geometry();
         std::vector<int> a_coords = {vg_a.y, vg_a.height, vg_a.x, vg_a.width};
-        auto vg_b = b->get_wm_geometry();
+        auto vg_b = b->get_geometry();
         std::vector<int> b_coords = {vg_b.y, vg_b.height, vg_b.x, vg_b.width};
         return a_coords < b_coords;
     }
@@ -969,7 +969,7 @@ class wayfire_scale : public wf::per_output_plugin_instance_t,
                 };
 
                 add_transformer(view);
-                auto geom = view->get_wm_geometry();
+                auto geom = view->get_geometry();
                 double view_scale = calculate_scale({geom.width, geom.height});
                 for (auto& child : view->enumerate_views(false))
                 {
@@ -1006,9 +1006,8 @@ class wayfire_scale : public wf::per_output_plugin_instance_t,
                         continue;
                     }
 
-                    auto vg = child->get_wm_geometry();
-                    wf::pointf_t center = {vg.x + vg.width / 2.0,
-                        vg.y + vg.height / 2.0};
+                    auto vg = child->get_geometry();
+                    wf::pointf_t center = {vg.x + vg.width / 2.0, vg.y + vg.height / 2.0};
 
                     // Take padding into account
                     double scale = calculate_scale({vg.width, vg.height});

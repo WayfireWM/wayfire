@@ -76,9 +76,8 @@ class vswitch : public wf::per_output_plugin_instance_t
 
                     for (auto& v : view->enumerate_views(false))
                     {
-                        auto origin = wf::origin(v->get_wm_geometry());
-                        v->move(origin.x + delta.x * size.width,
-                            origin.y + delta.y * size.height);
+                        auto origin = wf::origin(v->get_pending_geometry());
+                        v->move(origin.x + delta.x * size.width, origin.y + delta.y * size.height);
                     }
 
                     wf::view_change_workspace_signal data;

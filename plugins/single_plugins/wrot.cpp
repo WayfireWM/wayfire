@@ -116,7 +116,7 @@ class wf_wrot : public wf::per_output_plugin_instance_t, public wf::pointer_inte
             current_view, wf::TRANSFORMER_2D, transformer_2d, current_view);
         current_view->damage();
 
-        auto g = current_view->get_wm_geometry();
+        auto g = current_view->get_geometry();
 
         double cx = g.x + g.width / 2.0;
         double cy = g.y + g.height / 2.0;

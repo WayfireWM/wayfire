@@ -471,7 +471,7 @@ class wobbly_state_floating_t : public iwobbly_state_t
         /* Synchronize view position with the model */
         auto new_bbox = view->get_transformed_node()->get_transformer("wobbly")
             ->get_children_bounding_box();
-        auto wm = view->get_wm_geometry();
+        auto wm = view->get_geometry();
 
         int target_x = model->x + wm.x - new_bbox.x;
         int target_y = model->y + wm.y - new_bbox.y;

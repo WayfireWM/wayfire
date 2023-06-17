@@ -198,7 +198,7 @@ class simple_decoration_node_t : public wf::scene::node_t, public wf::pointer_in
     {
         if (view->pending_fullscreen())
         {
-            return view->get_wm_geometry();
+            return view->get_geometry();
         } else
         {
             return wf::construct_box(get_offset(), size);
@@ -326,7 +326,7 @@ class simple_decorator_t : public wf::decorator_frame_t_t
 
     wf::signal::connection_t<wf::view_geometry_changed_signal> on_view_geometry_changed = [&] (auto)
     {
-        deco->resize(wf::dimensions(view->get_wm_geometry()));
+        deco->resize(wf::dimensions(view->get_geometry()));
     };
 
     wf::signal::connection_t<wf::view_fullscreen_signal> on_view_fullscreen = [&] (auto)
@@ -334,7 +334,7 @@ class simple_decorator_t : public wf::decorator_frame_t_t
         deco->update_decoration_size();
         if (!view->toplevel()->current().fullscreen)
         {
-            deco->resize(wf::dimensions(view->get_wm_geometry()));
+            deco->resize(wf::dimensions(view->get_geometry()));
         }
     };
 

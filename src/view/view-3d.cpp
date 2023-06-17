@@ -109,7 +109,7 @@ static wf::pointf_t get_center(wayfire_view view)
 {
     if (auto toplevel = toplevel_cast(view))
     {
-        return get_center(toplevel->get_wm_geometry());
+        return get_center(toplevel->get_geometry());
     } else
     {
         return get_center(view->get_surface_root_node()->get_bounding_box());

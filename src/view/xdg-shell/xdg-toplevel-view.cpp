@@ -155,12 +155,6 @@ void wf::xdg_toplevel_view_t::ping()
     }
 }
 
-wf::geometry_t wf::xdg_toplevel_view_t::get_wm_geometry()
-{
-    return wf::construct_box(wf::origin(wtoplevel->pending().geometry),
-        wf::dimensions(wtoplevel->current().geometry));
-}
-
 wlr_surface*wf::xdg_toplevel_view_t::get_keyboard_focus_surface()
 {
     if (is_mapped())

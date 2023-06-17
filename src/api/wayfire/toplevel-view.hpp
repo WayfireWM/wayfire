@@ -102,14 +102,6 @@ class toplevel_view_interface_t : public wf::view_interface_t
      */
     virtual void request_native_size();
 
-    /**
-     * The wm geometry of the view is the portion of the view surface that
-     * contains the actual contents, for example, without the view shadows, etc.
-     *
-     * @return The wm geometry of the view.
-     */
-    virtual wf::geometry_t get_wm_geometry();
-
     /** Whether the view is in activated state, usually you want to use either
      * set_activated() or focus_request() */
     bool activated = false;
@@ -128,14 +120,24 @@ class toplevel_view_interface_t : public wf::view_interface_t
     /** Set the view's sticky state. */
     virtual void set_sticky(bool sticky);
 
-    inline uint32_t pending_tiled_edges()
+    inline uint32_t pending_tiled_edges() const
     {
         return toplevel()->pending().tiled_edges;
     }
 
-    inline bool pending_fullscreen()
+    inline bool pending_fullscreen() const
     {
         return toplevel()->pending().fullscreen;
+    }
+
+    inline wf::geometry_t get_geometry() const
+    {
+        return toplevel()->current().geometry;
+    }
+
+    inline wf::geometry_t get_pending_geometry() const
+    {
+        return toplevel()->pending().geometry;
     }
 
     /**
