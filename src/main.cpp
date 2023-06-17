@@ -211,6 +211,10 @@ void parse_extended_debugging(const std::vector<std::string>& categories)
         {
             LOGD("Enabling extended debugging for keyboard events");
             wf::log::enabled_categories.set((size_t)wf::log::logging_category::KBD, 1);
+        } else if (cat == "xwayland")
+        {
+            LOGD("Enabling extended debugging for xwayland events");
+            wf::log::enabled_categories.set((size_t)wf::log::logging_category::XWL, 1);
         } else
         {
             LOGE("Unrecognized debugging category \"", cat, "\"");
