@@ -67,7 +67,7 @@ variant_t view_access_interface_t::get(const std::string & identifier, bool & er
         }
     } else if (identifier == "fullscreen")
     {
-        out = toplevel_cast(_view) ? toplevel_cast(_view)->fullscreen : false;
+        out = toplevel_cast(_view) ? toplevel_cast(_view)->pending_fullscreen() : false;
     } else if (identifier == "activated")
     {
         out = toplevel_cast(_view) ? toplevel_cast(_view)->activated : false;

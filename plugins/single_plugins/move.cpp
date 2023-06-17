@@ -314,7 +314,7 @@ class wayfire_move : public wf::per_output_plugin_instance_t,
 
         wf::move_drag::drag_options_t opts;
         opts.enable_snap_off = move_enable_snap_off &&
-            (view->fullscreen || view->pending_tiled_edges());
+            (view->pending_fullscreen() || view->pending_tiled_edges());
         opts.snap_off_threshold = move_snap_off_threshold;
         opts.join_views = join_views;
 
@@ -539,7 +539,7 @@ class wayfire_move : public wf::per_output_plugin_instance_t,
         // retain their fullscreen state (but they can be moved to other
         // workspaces). Unsetting the fullscreen state can break some
         // Xwayland games.
-        if (drag_helper->view->fullscreen)
+        if (drag_helper->view->pending_fullscreen())
         {
             return false;
         }

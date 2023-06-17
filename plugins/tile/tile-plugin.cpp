@@ -251,7 +251,7 @@ class tile_workspace_set_data_t : public wf::custom_data_t
         /* View node is invalid now */
         flatten_roots();
 
-        if (wview->fullscreen && wview->is_mapped())
+        if (wview->pending_fullscreen() && wview->is_mapped())
         {
             wf::get_core().default_wm->fullscreen_request(wview, nullptr, false);
         }
@@ -312,7 +312,7 @@ class tile_output_plugin_t : public wf::pointer_interaction_t, public wf::custom
         int count_fullscreen = 0;
         for_each_view(tile_workspace_set_data_t::get_current_root(output), [&] (wayfire_toplevel_view view)
         {
-            count_fullscreen += view->fullscreen;
+            count_fullscreen += view->pending_fullscreen();
         });
 
         return count_fullscreen > 0;
@@ -421,8 +421,8 @@ class tile_output_plugin_t : public wf::pointer_interaction_t, public wf::custom
 
     void set_view_fullscreen(wayfire_toplevel_view view, bool fullscreen)
     {
-        /* Set fullscreen, and trigger resizing of the views */
-        view->set_fullscreen(fullscreen);
+        /* Set fullscreen, and trigger resizing of the views (which will commit the view) */
+        view->toplevel()->pending().fullscreen = fullscreen;
         tile_workspace_set_data_t::get(output).update_root_size();
     }
 
@@ -446,12 +446,12 @@ class tile_output_plugin_t : public wf::pointer_interaction_t, public wf::custom
         }
 
         auto toplevel = toplevel_cast(ev->view);
-        if (tile::view_node_t::get_node(ev->view) && !toplevel->fullscreen)
+        if (tile::view_node_t::get_node(ev->view) && !toplevel->pending_fullscreen())
         {
             for_each_view(tile_workspace_set_data_t::get_current_root(output), [&] (
                 wayfire_toplevel_view view)
             {
-                if (view->fullscreen)
+                if (view->pending_fullscreen())
                 {
                     set_view_fullscreen(view, false);
                 }
@@ -546,7 +546,7 @@ class tile_output_plugin_t : public wf::pointer_interaction_t, public wf::custom
             auto adjacent = tile::find_first_view_in_direction(
                 tile::view_node_t::get_node(view), direction);
 
-            bool was_fullscreen = view->fullscreen;
+            bool was_fullscreen = view->pending_fullscreen();
             if (adjacent)
             {
                 /* This will lower the fullscreen status of the view */

@@ -196,7 +196,7 @@ class simple_decoration_node_t : public wf::scene::node_t, public wf::pointer_in
 
     wf::geometry_t get_bounding_box() override
     {
-        if (view->fullscreen)
+        if (view->pending_fullscreen())
         {
             return view->get_wm_geometry();
         } else
@@ -289,7 +289,7 @@ class simple_decoration_node_t : public wf::scene::node_t, public wf::pointer_in
         view->damage();
         size = dims;
         layout.resize(size.width, size.height);
-        if (!view->fullscreen)
+        if (!view->toplevel()->current().fullscreen)
         {
             this->cached_region = layout.calculate_region();
         }
@@ -299,7 +299,7 @@ class simple_decoration_node_t : public wf::scene::node_t, public wf::pointer_in
 
     void update_decoration_size()
     {
-        if (view->fullscreen)
+        if (view->toplevel()->current().fullscreen)
         {
             current_thickness = 0;
             current_titlebar  = 0;
@@ -332,7 +332,7 @@ class simple_decorator_t : public wf::decorator_frame_t_t
     wf::signal::connection_t<wf::view_fullscreen_signal> on_view_fullscreen = [&] (auto)
     {
         deco->update_decoration_size();
-        if (!view->fullscreen)
+        if (!view->toplevel()->current().fullscreen)
         {
             deco->resize(wf::dimensions(view->get_wm_geometry()));
         }

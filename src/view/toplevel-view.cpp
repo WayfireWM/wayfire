@@ -249,28 +249,6 @@ void wf::toplevel_view_interface_t::set_sticky(bool sticky)
     }
 }
 
-void wf::toplevel_view_interface_t::set_fullscreen(bool full)
-{
-    /* When fullscreening a view, we want to store the last geometry it had
-     * before getting fullscreen so that we can restore to it */
-    if (full && !fullscreen)
-    {
-        wf::get_core().default_wm->update_last_windowed_geometry({this});
-    }
-
-    fullscreen = full;
-
-    view_fullscreen_signal data;
-    data.view  = {this};
-    data.state = full;
-    if (get_output())
-    {
-        get_output()->emit(&data);
-    }
-
-    this->emit(&data);
-}
-
 void wf::toplevel_view_interface_t::set_activated(bool active)
 {
     activated = active;
@@ -308,7 +286,7 @@ void wf::toplevel_view_interface_t::set_decoration(
 
         // Grow the tiled view to fill its old expanded geometry that included
         // the decoration.
-        if (!fullscreen && this->pending_tiled_edges() && (wm != get_wm_geometry()))
+        if (!pending_fullscreen() && this->pending_tiled_edges() && (wm != get_wm_geometry()))
         {
             set_geometry(wm);
         }
@@ -334,7 +312,7 @@ void wf::toplevel_view_interface_t::set_decoration(
      * For fullscreen and maximized views we want to "shrink" the view contents
      * so that the total wm geometry remains the same as before. */
     wf::geometry_t target_wm_geometry;
-    if (!fullscreen && !this->pending_tiled_edges())
+    if (!pending_fullscreen() && !this->pending_tiled_edges())
     {
         target_wm_geometry = priv->frame->expand_wm_geometry(wm);
         // make sure that the view doesn't go outside of the screen or such
@@ -345,7 +323,7 @@ void wf::toplevel_view_interface_t::set_decoration(
             target_wm_geometry.x = wm.x;
             target_wm_geometry.y = wm.y;
         }
-    } else if (fullscreen)
+    } else if (pending_fullscreen())
     {
         target_wm_geometry = get_output()->get_relative_geometry();
     } else if (this->pending_tiled_edges())

@@ -181,7 +181,7 @@ class wayfire_resize : public wf::per_output_plugin_instance_t, public wf::point
     bool initiate(wayfire_toplevel_view view, uint32_t forced_edges = 0)
     {
         if (!view || (view->role == wf::VIEW_ROLE_DESKTOP_ENVIRONMENT) ||
-            !view->is_mapped() || view->fullscreen)
+            !view->is_mapped() || view->pending_fullscreen())
         {
             return false;
         }

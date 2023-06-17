@@ -110,9 +110,6 @@ class toplevel_view_interface_t : public wf::view_interface_t
      */
     virtual wf::geometry_t get_wm_geometry();
 
-    /** Whether the view is in fullscreen state, usually you want to use either
-     * set_fullscreen() or fullscreen_request() */
-    bool fullscreen = false;
     /** Whether the view is in activated state, usually you want to use either
      * set_activated() or focus_request() */
     bool activated = false;
@@ -126,8 +123,6 @@ class toplevel_view_interface_t : public wf::view_interface_t
 
     /** Set the minimized state of the view. */
     virtual void set_minimized(bool minimized);
-    /** Set the fullscreen state of the view */
-    virtual void set_fullscreen(bool fullscreen);
     /** Set the view's activated state.  */
     virtual void set_activated(bool active);
     /** Set the view's sticky state. */
@@ -136,6 +131,11 @@ class toplevel_view_interface_t : public wf::view_interface_t
     inline uint32_t pending_tiled_edges()
     {
         return toplevel()->pending().tiled_edges;
+    }
+
+    inline bool pending_fullscreen()
+    {
+        return toplevel()->pending().fullscreen;
     }
 
     /**

@@ -78,7 +78,7 @@ class promotion_manager_t
     void update_promotion_state()
     {
         wayfire_toplevel_view candidate = find_top_visible_view(output->wset()->get_node());
-        if (candidate && candidate->fullscreen)
+        if (candidate && candidate->toplevel()->current().fullscreen)
         {
             start_promotion();
         } else

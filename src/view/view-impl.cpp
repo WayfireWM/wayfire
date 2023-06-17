@@ -120,6 +120,18 @@ void wf::emit_toplevel_state_change_signals(wayfire_toplevel_view view, const wf
             view->get_output()->emit(&data);
         }
     }
+
+    if (view->toplevel()->current().fullscreen != old_state.fullscreen)
+    {
+        view_fullscreen_signal data;
+        data.view  = view;
+        data.state = view->toplevel()->current().fullscreen;
+        view->emit(&data);
+        if (view->get_output())
+        {
+            view->get_output()->emit(&data);
+        }
+    }
 }
 
 void wf::init_desktop_apis()

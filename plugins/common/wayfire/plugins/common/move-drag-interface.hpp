@@ -751,7 +751,7 @@ inline void adjust_view_on_output(drag_done_signal *ev)
 
         wf::point_t target = wf::origin(bbox) + wm_offset;
         v.view->move(target.x, target.y);
-        if (v.view->fullscreen)
+        if (v.view->pending_fullscreen())
         {
             wf::get_core().default_wm->fullscreen_request(v.view, ev->focused_output, true, target_ws);
         } else if (v.view->pending_tiled_edges())
@@ -780,7 +780,7 @@ inline void adjust_view_on_output(drag_done_signal *ev)
  */
 inline void adjust_view_on_snap_off(wayfire_toplevel_view view)
 {
-    if (view->pending_tiled_edges() && !view->fullscreen)
+    if (view->pending_tiled_edges() && !view->pending_fullscreen())
     {
         wf::get_core().default_wm->tile_request(view, 0);
     }

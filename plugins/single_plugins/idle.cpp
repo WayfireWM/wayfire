@@ -200,7 +200,7 @@ class wayfire_idle_plugin : public wf::per_output_plugin_instance_t
              * since fullscreen-layer-focused is only emitted on changes between 0
              * and 1
              **/
-            has_fullscreen = toplevel->fullscreen;
+            has_fullscreen = toplevel->pending_fullscreen();
         }
 
         update_fullscreen();

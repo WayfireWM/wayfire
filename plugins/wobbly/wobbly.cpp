@@ -740,7 +740,7 @@ class wobbly_transformer_node_t : public wf::scene::floating_inner_node_t
             tiled = force_tile;
         } else
         {
-            tiled = (force_tile || view->pending_tiled_edges()) || view->fullscreen;
+            tiled = (force_tile || view->pending_tiled_edges()) || view->pending_fullscreen();
         }
 
         uint32_t next_state_mask = 0;

@@ -29,7 +29,7 @@ class windowed_geometry_data_t : public wf::custom_data_t
 
 void wf::window_manager_t::update_last_windowed_geometry(wayfire_toplevel_view view)
 {
-    if (!view->is_mapped() || view->pending_tiled_edges() || view->fullscreen)
+    if (!view->is_mapped() || view->pending_tiled_edges() || view->pending_fullscreen())
     {
         return;
     }
@@ -161,7 +161,7 @@ static void move_to_workspace(wayfire_toplevel_view view, wf::point_t workspace)
 void window_manager_t::tile_request(wayfire_toplevel_view view,
     uint32_t tiled_edges, std::optional<wf::point_t> ws)
 {
-    if (view->fullscreen || !view->get_output())
+    if (view->pending_fullscreen() || !view->get_output())
     {
         return;
     }
@@ -186,13 +186,14 @@ void window_manager_t::tile_request(wayfire_toplevel_view view,
     {
         if (data.desired_size.width > 0)
         {
+            // set geometry will commit the state
             view->set_geometry(data.desired_size);
         } else
         {
             view->request_native_size();
+            wf::get_core().tx_manager->schedule_object(view->toplevel());
         }
 
-        wf::get_core().tx_manager->schedule_object(view->toplevel());
         move_to_workspace(view, workspace);
     }
 }
@@ -222,9 +223,12 @@ void window_manager_t::fullscreen_request(wayfire_toplevel_view view,
     {
         data.desired_size = view->pending_tiled_edges() ? wo->workarea->get_workarea() :
             get_last_windowed_geometry(view).value_or(wf::geometry_t{0, 0, -1, -1});
+    } else
+    {
+        update_last_windowed_geometry(view);
     }
 
-    view->set_fullscreen(state);
+    view->toplevel()->pending().fullscreen = state;
     if (view->is_mapped())
     {
         wo->emit(&data);
@@ -234,10 +238,12 @@ void window_manager_t::fullscreen_request(wayfire_toplevel_view view,
     {
         if (data.desired_size.width > 0)
         {
+            // set geometry will commit the state
             view->set_geometry(data.desired_size);
         } else
         {
             view->request_native_size();
+            wf::get_core().tx_manager->schedule_object(view->toplevel());
         }
 
         move_to_workspace(view, workspace);

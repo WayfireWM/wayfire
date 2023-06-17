@@ -136,7 +136,7 @@ class wayfire_xwayland_view : public wf::toplevel_view_interface_t, public wayfi
         wf::output_t *o = get_output();
         if (o)
         {
-            auto view_workarea = (fullscreen ?
+            auto view_workarea = (pending_fullscreen() ?
                 o->get_relative_geometry() : o->workarea->get_workarea());
             auto og = o->get_layout_geometry();
             configure_geometry.x -= og.x;
@@ -446,14 +446,6 @@ class wayfire_xwayland_view : public wf::toplevel_view_interface_t, public wayfi
     virtual void request_native_size() override
     {
         toplevel->request_native_size();
-    }
-
-    void set_fullscreen(bool full) override
-    {
-        if (xw)
-        {
-            wlr_xwayland_surface_set_fullscreen(xw, full);
-        }
     }
 
     void set_minimized(bool minimized) override

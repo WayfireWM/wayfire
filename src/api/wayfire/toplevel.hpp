@@ -39,6 +39,12 @@ struct toplevel_state_t
      * Usually, when all edges are tiled, the toplevel is considered maximized.
      */
     uint32_t tiled_edges = 0;
+
+    /**
+     * The fullscreen state of the view. Fullscreen clients are typically shown above panels and take up the
+     * full size of their primary output.
+     */
+    bool fullscreen = false;
 };
 
 /**

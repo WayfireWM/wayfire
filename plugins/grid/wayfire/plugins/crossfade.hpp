@@ -207,7 +207,7 @@ class grid_animation_t : public wf::custom_data_t
             if (target_edges >= 0)
             {
                 wf::get_core().default_wm->update_last_windowed_geometry(view);
-                view->set_fullscreen(false);
+                view->toplevel()->pending().fullscreen  = false;
                 view->toplevel()->pending().tiled_edges = target_edges;
             }
 

@@ -74,7 +74,7 @@ void wf::xw::xwayland_toplevel_t::commit()
     this->pending_ready = true;
     _committed = _pending;
     LOGC(TXNI, this, ": committing xwayland state mapped=", _pending.mapped, " geometry=", _pending.geometry,
-        " tiled=", _pending.tiled_edges);
+        " tiled=", _pending.tiled_edges, " fs=", _pending.fullscreen);
 
     if (!this->xw)
     {
@@ -101,7 +101,14 @@ void wf::xw::xwayland_toplevel_t::commit()
 
     if (_pending.tiled_edges != _current.tiled_edges)
     {
+        wait_for_client = true;
         wlr_xwayland_surface_set_maximized(xw, !!_pending.tiled_edges);
+    }
+
+    if (_pending.fullscreen != _current.fullscreen)
+    {
+        wait_for_client = true;
+        wlr_xwayland_surface_set_fullscreen(xw, _pending.fullscreen);
     }
 
     if (wait_for_client && main_surface)

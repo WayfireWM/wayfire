@@ -51,7 +51,7 @@ void view_store_data(wayfire_toplevel_view view, wf::output_t *output, int z_ord
     auto view_data = view->get_data_safe<last_output_info_t>();
     view_data->output_identifier = make_output_identifier(output);
     view_data->geometry    = view->get_wm_geometry();
-    view_data->fullscreen  = view->fullscreen;
+    view_data->fullscreen  = view->pending_fullscreen();
     view_data->minimized   = view->minimized;
     view_data->tiled_edges = view->pending_tiled_edges();
     view_data->z_order     = z_order;
@@ -249,7 +249,7 @@ class wayfire_preserve_output : public wf::per_output_plugin_instance_t
                 view->get_title(), " to: ", output->to_string());
 
             move_view_to_output(view, output, false);
-            view->set_fullscreen(last_output_info->fullscreen);
+            view->toplevel()->pending().fullscreen = last_output_info->fullscreen;
             view->set_minimized(last_output_info->minimized);
             if (last_output_info->tiled_edges != 0)
             {

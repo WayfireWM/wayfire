@@ -176,12 +176,6 @@ bool wf::xdg_toplevel_view_t::is_focusable() const
     return true;
 }
 
-void wf::xdg_toplevel_view_t::set_fullscreen(bool fullscreen)
-{
-    toplevel_view_interface_t::set_fullscreen(fullscreen);
-    wlr_xdg_toplevel_set_fullscreen(xdg_toplevel, fullscreen);
-}
-
 void wf::xdg_toplevel_view_t::set_activated(bool active)
 {
     toplevel_view_interface_t::set_activated(active);

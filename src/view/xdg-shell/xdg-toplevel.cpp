@@ -38,7 +38,7 @@ void wf::xdg_toplevel_t::commit()
     this->pending_ready = true;
     _committed = _pending;
     LOGC(TXNI, this, ": committing toplevel state mapped=", _pending.mapped,
-        " geometry=", _pending.geometry, " tiled=", _pending.tiled_edges);
+        " geometry=", _pending.geometry, " tiled=", _pending.tiled_edges, " fs=", _pending.fullscreen);
 
     if (!this->toplevel)
     {
@@ -73,6 +73,12 @@ void wf::xdg_toplevel_t::commit()
         wlr_xdg_toplevel_set_tiled(this->toplevel, _pending.tiled_edges);
         this->target_configure =
             wlr_xdg_toplevel_set_maximized(this->toplevel, (_pending.tiled_edges == wf::TILED_EDGES_ALL));
+    }
+
+    if (_current.fullscreen != _pending.fullscreen)
+    {
+        wait_for_client = true;
+        this->target_configure = wlr_xdg_toplevel_set_fullscreen(toplevel, _pending.fullscreen);
     }
 
     if (wait_for_client)

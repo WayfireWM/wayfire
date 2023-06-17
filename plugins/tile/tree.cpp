@@ -387,7 +387,7 @@ wf::geometry_t view_node_t::calculate_target_geometry()
 
     auto size = output->get_screen_size();
     /* If view is maximized, we want to use the full available geometry */
-    if (view->fullscreen)
+    if (view->pending_fullscreen())
     {
         auto vp = output->wset()->get_current_workspace();
 
