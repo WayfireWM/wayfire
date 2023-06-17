@@ -199,10 +199,10 @@ class grid_animation_t : public wf::custom_data_t
      *   animation. If target_edges are -1, then the tiled edges of the view will
      *   not be changed.
      */
-    void adjust_target_geometry(wf::geometry_t geometry, int32_t target_edges)
+    void adjust_target_geometry(wf::geometry_t geometry, int32_t target_edges, wf::txn::transaction_uptr& tx)
     {
         // Apply the desired attributes to the view
-        const auto& set_state = [=] ()
+        const auto& set_state = [&] ()
         {
             if (target_edges >= 0)
             {
@@ -212,7 +212,7 @@ class grid_animation_t : public wf::custom_data_t
             }
 
             view->toplevel()->pending().geometry = geometry;
-            wf::get_core().tx_manager->schedule_object(view->toplevel());
+            tx->add_object(view->toplevel());
         };
 
         if (type != CROSSFADE)
@@ -241,6 +241,13 @@ class grid_animation_t : public wf::custom_data_t
 
         // Start the transition
         set_state();
+    }
+
+    void adjust_target_geometry(wf::geometry_t geometry, int32_t target_edges)
+    {
+        auto tx = wf::txn::transaction_t::create();
+        adjust_target_geometry(geometry, target_edges, tx);
+        wf::get_core().tx_manager->schedule_transaction(std::move(tx));
     }
 
     ~grid_animation_t()

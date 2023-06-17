@@ -18,7 +18,7 @@ namespace wf
 {
 namespace tile
 {
-void tree_node_t::set_geometry(wf::geometry_t geometry)
+void tree_node_t::set_geometry(wf::geometry_t geometry, wf::txn::transaction_uptr&)
 {
     this->geometry = geometry;
 }
@@ -92,7 +92,7 @@ int32_t split_node_t::calculate_splittable() const
     return calculate_splittable(this->geometry);
 }
 
-void split_node_t::recalculate_children(wf::geometry_t available)
+void split_node_t::recalculate_children(wf::geometry_t available, wf::txn::transaction_uptr& tx)
 {
     if (this->children.empty())
     {
@@ -115,7 +115,7 @@ void split_node_t::recalculate_children(wf::geometry_t available)
         return (current / old_child_sum) * total_splittable;
     };
 
-    set_gaps(this->gaps);
+    set_gaps(this->gaps, tx);
 
     /* For each child, assign its percentage of the whole. */
     for (auto& child : this->children)
@@ -128,11 +128,11 @@ void split_node_t::recalculate_children(wf::geometry_t available)
 
         /* Set new size */
         int32_t child_size = child_end - child_start;
-        child->set_geometry(get_child_geometry(child_start, child_size));
+        child->set_geometry(get_child_geometry(child_start, child_size), tx);
     }
 }
 
-void split_node_t::add_child(std::unique_ptr<tree_node_t> child, int index)
+void split_node_t::add_child(std::unique_ptr<tree_node_t> child, wf::txn::transaction_uptr& tx, int index)
 {
     /*
      * Strategy:
@@ -165,14 +165,14 @@ void split_node_t::add_child(std::unique_ptr<tree_node_t> child, int index)
 
     this->children.emplace(this->children.begin() + index, std::move(child));
 
-    set_gaps(this->gaps);
+    set_gaps(this->gaps, tx);
 
     /* Recalculate geometry */
-    recalculate_children(geometry);
+    recalculate_children(geometry, tx);
 }
 
 std::unique_ptr<tree_node_t> split_node_t::remove_child(
-    nonstd::observer_ptr<tree_node_t> child)
+    nonstd::observer_ptr<tree_node_t> child, wf::txn::transaction_uptr& tx)
 {
     /* Remove child */
     std::unique_ptr<tree_node_t> result;
@@ -191,19 +191,19 @@ std::unique_ptr<tree_node_t> split_node_t::remove_child(
     }
 
     /* Remaining children have the full geometry */
-    recalculate_children(this->geometry);
+    recalculate_children(this->geometry, tx);
     result->parent = nullptr;
 
     return result;
 }
 
-void split_node_t::set_geometry(wf::geometry_t geometry)
+void split_node_t::set_geometry(wf::geometry_t geometry, wf::txn::transaction_uptr& tx)
 {
-    tree_node_t::set_geometry(geometry);
-    recalculate_children(geometry);
+    tree_node_t::set_geometry(geometry, tx);
+    recalculate_children(geometry, tx);
 }
 
-void split_node_t::set_gaps(const gap_size_t& gaps)
+void split_node_t::set_gaps(const gap_size_t& gaps, wf::txn::transaction_uptr& tx)
 {
     this->gaps = gaps;
     for (const auto& child : this->children)
@@ -239,7 +239,7 @@ void split_node_t::set_gaps(const gap_size_t& gaps)
             *second_edge = gaps.internal;
         }
 
-        child->set_gaps(child_gaps);
+        child->set_gaps(child_gaps, tx);
     }
 }
 
@@ -343,7 +343,9 @@ view_node_t::view_node_t(wayfire_toplevel_view view)
     });
     this->on_decoration_changed.set_callback([=] (auto)
     {
-        set_geometry(geometry);
+        auto tx = wf::txn::transaction_t::create();
+        set_geometry(geometry, tx);
+        wf::get_core().tx_manager->schedule_transaction(std::move(tx));
     });
     on_adjust_transformer.set_callback([=] (auto)
     {
@@ -361,7 +363,7 @@ view_node_t::~view_node_t()
     view->erase_data<view_node_custom_data_t>();
 }
 
-void view_node_t::set_gaps(const gap_size_t& size)
+void view_node_t::set_gaps(const gap_size_t& size, wf::txn::transaction_uptr& tx)
 {
     if ((this->gaps.top != size.top) ||
         (this->gaps.bottom != size.bottom) ||
@@ -447,9 +449,9 @@ static nonstd::observer_ptr<wf::grid::grid_animation_t> ensure_animation(
     return view->get_data<wf::grid::grid_animation_t>();
 }
 
-void view_node_t::set_geometry(wf::geometry_t geometry)
+void view_node_t::set_geometry(wf::geometry_t geometry, wf::txn::transaction_uptr& tx)
 {
-    tree_node_t::set_geometry(geometry);
+    tree_node_t::set_geometry(geometry, tx);
 
     if (!view->is_mapped())
     {
@@ -458,17 +460,18 @@ void view_node_t::set_geometry(wf::geometry_t geometry)
 
     wf::get_core().default_wm->update_last_windowed_geometry(view);
     view->toplevel()->pending().tiled_edges = TILED_EDGES_ALL;
-    wf::get_core().tx_manager->schedule_object(view->toplevel());
+    tx->add_object(view->toplevel());
 
     auto target = calculate_target_geometry();
     if (this->needs_crossfade() && (target != view->get_geometry()))
     {
         view->get_transformed_node()->rem_transformer(scale_transformer_name);
         ensure_animation(view, animation_duration)
-        ->adjust_target_geometry(target, -1);
+        ->adjust_target_geometry(target, -1, tx);
     } else
     {
-        view->set_geometry(target);
+        view->toplevel()->pending().geometry = target;
+        tx->add_object(view->toplevel());
     }
 }
 
@@ -509,7 +512,7 @@ nonstd::observer_ptr<view_node_t> view_node_t::get_node(wayfire_view view)
 }
 
 /* ----------------- Generic tree operations implementation ----------------- */
-void flatten_tree(std::unique_ptr<tree_node_t>& root)
+void flatten_tree(std::unique_ptr<tree_node_t>& root, txn::transaction_uptr& tx)
 {
     /* Cannot flatten a view node */
     if (root->as_view_node())
@@ -522,7 +525,7 @@ void flatten_tree(std::unique_ptr<tree_node_t>& root)
     {
         for (auto& child : root->children)
         {
-            flatten_tree(child);
+            flatten_tree(child, tx);
         }
 
         return;
@@ -548,8 +551,7 @@ void flatten_tree(std::unique_ptr<tree_node_t>& root)
     }
 
     /* Rewire the tree, skipping the current root */
-    auto child = root->as_split_node()->remove_child(child_ptr);
-
+    auto child = root->as_split_node()->remove_child(child_ptr, tx);
     child->parent = root->parent;
     root = std::move(child); // overwrite root with the child
 }

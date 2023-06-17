@@ -8,6 +8,7 @@
 #include <wayfire/util.hpp>
 #include <wayfire/nonstd/reverse.hpp>
 #include <wayfire/plugins/common/preview-indication.hpp>
+#include <wayfire/txn/transaction-manager.hpp>
 
 namespace wf
 {
@@ -302,6 +303,8 @@ void move_view_controller_t::input_released()
         return;
     }
 
+    auto tx = wf::txn::transaction_t::create();
+
     if (split == INSERT_SWAP)
     {
         std::swap(grabbed_view->geometry, dropped_at->geometry);
@@ -318,8 +321,8 @@ void move_view_controller_t::input_released()
 
         std::swap(*it1, *it2);
 
-        p1->set_geometry(p1->geometry);
-        p2->set_geometry(p2->geometry);
+        p1->set_geometry(p1->geometry, tx);
+        p2->set_geometry(p2->geometry, tx);
         return;
     }
 
@@ -329,7 +332,7 @@ void move_view_controller_t::input_released()
     if (dropped_at->parent->get_split_direction() == split_type)
     {
         /* We can simply add the dragged view as a sibling of the target view */
-        auto view = grabbed_view->parent->remove_child(grabbed_view);
+        auto view = grabbed_view->parent->remove_child(grabbed_view, tx);
 
         int idx = find_idx(dropped_at);
         if ((split == INSERT_RIGHT) || (split == INSERT_BELOW))
@@ -337,7 +340,7 @@ void move_view_controller_t::input_released()
             ++idx;
         }
 
-        dropped_at->parent->add_child(std::move(view), idx);
+        dropped_at->parent->add_child(std::move(view), tx, idx);
     } else
     {
         /* Case 2: we need a new split just for the dropped on and the dragged
@@ -345,32 +348,33 @@ void move_view_controller_t::input_released()
         auto new_split = std::make_unique<split_node_t>(split_type);
         /* The size will be autodetermined by the tree structure, but we set
          * some valid size here to avoid UB */
-        new_split->set_geometry(dropped_at->geometry);
+        new_split->set_geometry(dropped_at->geometry, tx);
 
         /* Find the position of the dropped view and its parent */
         int idx = find_idx(dropped_at);
         auto dropped_parent = dropped_at->parent;
 
         /* Remove both views */
-        auto dropped_view = dropped_at->parent->remove_child(dropped_at);
-        auto dragged_view = grabbed_view->parent->remove_child(grabbed_view);
+        auto dropped_view = dropped_at->parent->remove_child(dropped_at, tx);
+        auto dragged_view = grabbed_view->parent->remove_child(grabbed_view, tx);
 
         if ((split == INSERT_ABOVE) || (split == INSERT_LEFT))
         {
-            new_split->add_child(std::move(dragged_view));
-            new_split->add_child(std::move(dropped_view));
+            new_split->add_child(std::move(dragged_view), tx);
+            new_split->add_child(std::move(dropped_view), tx);
         } else
         {
-            new_split->add_child(std::move(dropped_view));
-            new_split->add_child(std::move(dragged_view));
+            new_split->add_child(std::move(dropped_view), tx);
+            new_split->add_child(std::move(dragged_view), tx);
         }
 
         /* Put them in place */
-        dropped_parent->add_child(std::move(new_split), idx);
+        dropped_parent->add_child(std::move(new_split), tx, idx);
     }
 
     /* Clean up tree structure */
-    flatten_tree(this->root);
+    flatten_tree(this->root, tx);
+    wf::get_core().tx_manager->schedule_transaction(std::move(tx));
 }
 
 wf::geometry_t eval(nonstd::observer_ptr<tree_node_t> node)
@@ -537,6 +541,7 @@ void resize_view_controller_t::input_motion(wf::point_t input)
         return;
     }
 
+    auto tx = wf::txn::transaction_t::create();
     if (horizontal_pair.first && horizontal_pair.second)
     {
         int dy = input.y - last_point.y;
@@ -545,8 +550,8 @@ void resize_view_controller_t::input_motion(wf::point_t input)
         auto g2 = horizontal_pair.second->geometry;
 
         adjust_geometry(g1.y, g1.height, g2.y, g2.height, dy);
-        horizontal_pair.first->set_geometry(g1);
-        horizontal_pair.second->set_geometry(g2);
+        horizontal_pair.first->set_geometry(g1, tx);
+        horizontal_pair.second->set_geometry(g2, tx);
     }
 
     if (vertical_pair.first && vertical_pair.second)
@@ -557,10 +562,11 @@ void resize_view_controller_t::input_motion(wf::point_t input)
         auto g2 = vertical_pair.second->geometry;
 
         adjust_geometry(g1.x, g1.width, g2.x, g2.width, dx);
-        vertical_pair.first->set_geometry(g1);
-        vertical_pair.second->set_geometry(g2);
+        vertical_pair.first->set_geometry(g1, tx);
+        vertical_pair.second->set_geometry(g2, tx);
     }
 
+    wf::get_core().tx_manager->schedule_transaction(std::move(tx));
     this->last_point = input;
 }
 }

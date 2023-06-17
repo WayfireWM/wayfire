@@ -4,6 +4,7 @@
 #include "wayfire/signal-definitions.hpp"
 #include <wayfire/view.hpp>
 #include <wayfire/option-wrapper.hpp>
+#include <wayfire/txn/transaction.hpp>
 
 namespace wf
 {
@@ -46,10 +47,10 @@ struct tree_node_t
     wf::geometry_t geometry;
 
     /** Set the geometry available for the node and its subnodes. */
-    virtual void set_geometry(wf::geometry_t geometry);
+    virtual void set_geometry(wf::geometry_t geometry, wf::txn::transaction_uptr& tx);
 
     /** Set the gaps for the node and subnodes. */
-    virtual void set_gaps(const gap_size_t& gaps) = 0;
+    virtual void set_gaps(const gap_size_t& gaps, wf::txn::transaction_uptr& tx) = 0;
 
     virtual ~tree_node_t()
     {}
@@ -88,26 +89,26 @@ struct split_node_t : public tree_node_t
      * @param index The index at which to insert the new child, or -1 for
      *              adding to the end of the child list.
      */
-    void add_child(std::unique_ptr<tree_node_t> child, int index = -1);
+    void add_child(std::unique_ptr<tree_node_t> child, wf::txn::transaction_uptr& tx, int index = -1);
 
     /**
      * Remove a child from the node, and return its unique_ptr
      */
     std::unique_ptr<tree_node_t> remove_child(
-        nonstd::observer_ptr<tree_node_t> child);
+        nonstd::observer_ptr<tree_node_t> child, wf::txn::transaction_uptr& tx);
 
     /**
      * Set the total geometry available to the node. This will recursively
      * resize the children nodes, so that they fit inside the new geometry and
      * have a size proportional to their old size.
      */
-    void set_geometry(wf::geometry_t geometry) override;
+    void set_geometry(wf::geometry_t geometry, wf::txn::transaction_uptr& tx) override;
 
     /**
      * Set the gaps for the subnodes. The internal gap will override
      * the corresponding edges for each child.
      */
-    void set_gaps(const gap_size_t& gaps) override;
+    void set_gaps(const gap_size_t& gaps, wf::txn::transaction_uptr& tx) override;
 
     split_node_t(split_direction_t direction);
     split_direction_t get_split_direction() const;
@@ -119,7 +120,7 @@ struct split_node_t : public tree_node_t
      * Resize the children so that they fit inside the given
      * available_geometry.
      */
-    void recalculate_children(wf::geometry_t available_geometry);
+    void recalculate_children(wf::geometry_t available_geometry, wf::txn::transaction_uptr& tx);
 
     /**
      * Calculate the geometry of a child if it has child_size as one
@@ -158,13 +159,13 @@ struct view_node_t : public tree_node_t
      * geometry of the node. For example, a fullscreen view will always have
      * the geometry of the whole output.
      */
-    void set_geometry(wf::geometry_t geometry) override;
+    void set_geometry(wf::geometry_t geometry, wf::txn::transaction_uptr& tx) override;
 
     /**
      * Set the gaps for non-fullscreen mode.
      * The gap sizes will be subtracted from all edges of the view's geometry.
      */
-    void set_gaps(const gap_size_t& gaps) override;
+    void set_gaps(const gap_size_t& gaps, wf::txn::transaction_uptr& tx) override;
 
     /* Return the tree node corresponding to the view, or nullptr if none */
     static nonstd::observer_ptr<view_node_t> get_node(wayfire_view view);
@@ -198,7 +199,7 @@ struct view_node_t : public tree_node_t
  * Note: this will potentially invalidate pointers to the tree and modify
  * the given parameter.
  */
-void flatten_tree(std::unique_ptr<tree_node_t>& root);
+void flatten_tree(std::unique_ptr<tree_node_t>& root, wf::txn::transaction_uptr& tx);
 
 /**
  * Get the root of the tree which node is part of

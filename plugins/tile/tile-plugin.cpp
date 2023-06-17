@@ -24,6 +24,22 @@
 #include "wayfire/signal-provider.hpp"
 #include "wayfire/toplevel-view.hpp"
 #include "wayfire/view-helpers.hpp"
+#include "wayfire/txn/transaction-manager.hpp"
+
+struct autocommit_transaction_t
+{
+  public:
+    wf::txn::transaction_uptr tx;
+    autocommit_transaction_t()
+    {
+        tx = wf::txn::transaction_t::create();
+    }
+
+    ~autocommit_transaction_t()
+    {
+        wf::get_core().tx_manager->schedule_transaction(std::move(tx));
+    }
+};
 
 namespace wf
 {
@@ -142,7 +158,9 @@ class tile_workspace_set_data_t : public wf::custom_data_t
                 auto vp_geometry = workarea;
                 vp_geometry.x += i * output_geometry.width;
                 vp_geometry.y += j * output_geometry.height;
-                roots[i][j]->set_geometry(vp_geometry);
+
+                autocommit_transaction_t tx;
+                roots[i][j]->set_geometry(vp_geometry, tx.tx);
             }
         }
     }
@@ -174,8 +192,9 @@ class tile_workspace_set_data_t : public wf::custom_data_t
         {
             for (auto& root : col)
             {
-                root->set_gaps(gaps);
-                root->set_geometry(root->geometry);
+                autocommit_transaction_t tx;
+                root->set_gaps(gaps, tx.tx);
+                root->set_geometry(root->geometry, tx.tx);
             }
         }
     };
@@ -186,7 +205,8 @@ class tile_workspace_set_data_t : public wf::custom_data_t
         {
             for (auto& root : col)
             {
-                tile::flatten_tree(root);
+                autocommit_transaction_t tx;
+                tile::flatten_tree(root, tx.tx);
             }
         }
     }
@@ -234,7 +254,10 @@ class tile_workspace_set_data_t : public wf::custom_data_t
         }
 
         auto view_node = std::make_unique<wf::tile::view_node_t>(view);
-        roots[vp.x][vp.y]->as_split_node()->add_child(std::move(view_node));
+        {
+            autocommit_transaction_t tx;
+            roots[vp.x][vp.y]->as_split_node()->add_child(std::move(view_node), tx.tx);
+        }
 
         auto node = view->get_root_node();
         wf::scene::readd_front(tiled_sublayer[vp.x][vp.y], node);
@@ -247,7 +270,10 @@ class tile_workspace_set_data_t : public wf::custom_data_t
     {
         auto wview = view->view;
         wview->set_allowed_actions(VIEW_ALLOW_ALL);
-        view->parent->remove_child(view);
+        {
+            autocommit_transaction_t tx;
+            view->parent->remove_child(view, tx.tx);
+        }
         /* View node is invalid now */
         flatten_roots();
 
