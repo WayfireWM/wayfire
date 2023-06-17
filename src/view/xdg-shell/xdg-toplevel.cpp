@@ -47,18 +47,16 @@ void wf::xdg_toplevel_t::commit()
         return;
     }
 
+    wf::dimensions_t current_size = wf::dimensions(_current.geometry);
     if (_pending.mapped && !_current.mapped)
     {
         // We are trying to map the toplevel => check whether we should wait until it sets the proper
         // geometry, or whether we are 'only' mapping without resizing.
-        auto cur_size = get_current_wlr_toplevel_size();
-        _current.geometry.width  = cur_size.width;
-        _current.geometry.height = cur_size.height;
+        current_size = get_current_wlr_toplevel_size();
     }
 
     bool wait_for_client = false;
-
-    if (wf::dimensions(_pending.geometry) != wf::dimensions(_current.geometry))
+    if (wf::dimensions(_pending.geometry) != current_size)
     {
         wait_for_client = true;
         auto margins = get_margins();

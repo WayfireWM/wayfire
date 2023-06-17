@@ -52,6 +52,7 @@ class wayfire_xwayland_view : public wf::toplevel_view_interface_t, public wayfi
             output_origin = wf::origin(get_output()->get_layout_geometry());
         }
 
+        LOGC(XWL, "Client configure ", self(), " at ", ev->x, ",", ev->y, " ", ev->width, "x", ev->height);
         if (!is_mapped())
         {
             /* If the view is not mapped yet, let it be configured as it
@@ -222,6 +223,8 @@ class wayfire_xwayland_view : public wf::toplevel_view_interface_t, public wayfi
             priv->set_mapped_surface_contents(main_surface);
             toplevel->set_main_surface(main_surface);
             toplevel->pending().mapped = true;
+            toplevel->pending().geometry.width  = xw->surface->current.width;
+            toplevel->pending().geometry.height = xw->surface->current.height;
             wf::get_core().tx_manager->schedule_object(toplevel);
         });
 

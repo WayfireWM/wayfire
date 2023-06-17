@@ -1,5 +1,6 @@
 #include "xwayland-toplevel.hpp"
 #include "wayfire/core.hpp"
+#include "wayfire/debug.hpp"
 #include "wayfire/geometry.hpp"
 #include <wayfire/txn/transaction-manager.hpp>
 #include "../view-impl.hpp"
@@ -53,7 +54,13 @@ void wf::xw::xwayland_toplevel_t::set_main_surface(
 void wf::xw::xwayland_toplevel_t::set_output_offset(wf::point_t output_offset)
 {
     this->output_offset = output_offset;
-    reconfigure_xwayland_surface();
+    if (pending().mapped)
+    {
+        // We want to reconfigure xwayland surfaces with output changes only if they are mapped.
+        // Otherwise, there is no need to generate x11 events, not to mention that perhaps we do not know the
+        // position of the view yet (e.g. if it had never been mapped so far).
+        reconfigure_xwayland_surface();
+    }
 }
 
 void wf::xw::xwayland_toplevel_t::request_native_size()
@@ -85,17 +92,17 @@ void wf::xw::xwayland_toplevel_t::commit()
         return;
     }
 
+    wf::dimensions_t current_size = wf::dimensions(_current.geometry);
+
     if (_pending.mapped && !_current.mapped)
     {
         // We are trying to map the toplevel => check whether we should wait until it sets the proper
         // geometry, or whether we are 'only' mapping without resizing.
-        auto cur_size = get_current_xw_size();
-        _pending.geometry.width  = cur_size.width;
-        _pending.geometry.height = cur_size.height;
+        current_size = get_current_xw_size();
     }
 
     bool wait_for_client = false;
-    if (wf::dimensions(_pending.geometry) != wf::dimensions(_current.geometry))
+    if (wf::dimensions(_pending.geometry) != current_size)
     {
         wait_for_client = true;
         reconfigure_xwayland_surface();
@@ -133,10 +140,10 @@ void wf::xw::xwayland_toplevel_t::reconfigure_xwayland_surface()
     auto margins = get_margins();
     const int configure_x     = _pending.geometry.x - margins.left + output_offset.x;
     const int configure_y     = _pending.geometry.y - margins.top + output_offset.y;
-    const int configure_width = std::max(1, _pending.geometry.width - margins.left - margins.right);
-    const int configure_height = std::max(1, _pending.geometry.height - margins.top - margins.bottom);
+    const int configure_width = _pending.geometry.width - margins.left - margins.right;
+    const int configure_height = _pending.geometry.height - margins.top - margins.bottom;
 
-    if ((configure_width < 0) || (configure_height < 0))
+    if ((configure_width <= 0) || (configure_height <= 0))
     {
         /* such a configure request would freeze xwayland.
          * This is most probably a bug somewhere in the compositor. */
@@ -144,6 +151,8 @@ void wf::xw::xwayland_toplevel_t::reconfigure_xwayland_surface()
         return;
     }
 
+    LOGC(XWL, "Configuring xwayland surface ", nonull(xw->title), " ", nonull(xw->class_t), " ",
+        configure_x, ",", configure_y, " ", configure_width, "x", configure_height);
     wlr_xwayland_surface_configure(xw, configure_x, configure_y, configure_width, configure_height);
 }
 
