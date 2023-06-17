@@ -127,6 +127,12 @@ wf::seat_t::seat_t(wl_display *display, std::string name) : seat(wlr_seat_create
 
     priv->on_wlr_pointer_grab_end.set_callback([&] (void*)
     {
+        if (priv->drag_active)
+        {
+            // Drag is handled separately.
+            return;
+        }
+
         if (auto focus = priv->lpointer->get_focus())
         {
             if (dynamic_cast<wlr_surface_pointer_interaction_t*>(&focus->pointer_interaction()))
