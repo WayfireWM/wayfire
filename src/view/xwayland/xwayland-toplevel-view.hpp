@@ -445,6 +445,7 @@ class wayfire_xwayland_view : public wf::toplevel_view_interface_t, public wayfi
 
     void set_minimized(bool minimized) override
     {
+        wf::toplevel_view_interface_t::set_minimized(minimized);
         if (xw)
         {
             wlr_xwayland_surface_set_minimized(xw, minimized);

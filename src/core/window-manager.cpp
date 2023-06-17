@@ -127,19 +127,14 @@ void window_manager_t::minimize_request(wayfire_toplevel_view view, bool minimiz
         view->get_output()->emit(&data);
     }
 
-    /* Some plugin (e.g animate) will take care of the request, so we need
-     * to just send proper state to foreign-toplevel clients */
-    if (data.carried_out)
-    {
-        view->minimized = minimized;
-        if (view->get_output())
-        {
-            view->get_output()->refocus();
-        }
-    } else
+    if (!data.carried_out)
     {
         /* Do the default minimization */
         view->set_minimized(minimized);
+        if (!minimized && view->get_output())
+        {
+            view->get_output()->focus_view(view, true);
+        }
     }
 }
 

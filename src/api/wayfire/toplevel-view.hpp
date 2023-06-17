@@ -108,7 +108,6 @@ class toplevel_view_interface_t : public wf::view_interface_t
     /** Whether the view is in minimized state, usually you want to use either
      * set_minimized() or minimize_request() */
     bool minimized = false;
-    bool pending_minimized = false;
     /** Whether the view is sticky. If a view is sticky it will not be affected
      * by changes of the current workspace. */
     bool sticky = false;

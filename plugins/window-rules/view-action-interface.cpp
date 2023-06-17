@@ -241,6 +241,10 @@ void view_action_interface_t::_minimize()
 void view_action_interface_t::_unminimize()
 {
     _view->set_minimized(false);
+    if (_view->get_output())
+    {
+        _view->get_output()->focus_view(_view, true);
+    }
 }
 
 void view_action_interface_t::_make_sticky()

@@ -197,29 +197,23 @@ void wf::toplevel_view_interface_t::request_native_size()
 
 void wf::toplevel_view_interface_t::set_minimized(bool minim)
 {
-    this->minimized = minim;
-    view_minimized_signal data;
-    data.view = {this};
-    this->emit(&data);
-    get_output()->emit(&data);
-
-    if (pending_minimized == minim)
+    if (minim == minimized)
     {
         return;
     }
 
-    this->pending_minimized = minim;
-    minimized = minim;
-    if (minimized)
+    this->minimized = minim;
+    wf::scene::set_node_enabled(get_root_node(), !minimized);
+
+    view_minimized_signal data;
+    data.view = {this};
+    this->emit(&data);
+    if (get_output())
     {
+        get_output()->emit(&data);
         view_disappeared_signal data;
         data.view = self();
         get_output()->emit(&data);
-        wf::scene::set_node_enabled(get_root_node(), false);
-    } else
-    {
-        wf::scene::set_node_enabled(get_root_node(), true);
-        get_output()->focus_view(self(), true);
     }
 }
 

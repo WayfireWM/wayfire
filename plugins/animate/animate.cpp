@@ -139,12 +139,6 @@ struct animation_hook : public animation_hook_base
 
     void stop_hook(bool detached) override
     {
-        /* We don't want to change the state of the view if it was detached */
-        if ((type == ANIMATION_TYPE_MINIMIZE) && !detached)
-        {
-            toplevel_cast(view)->set_minimized(true);
-        }
-
         view->erase_data(name);
     }
 
@@ -440,12 +434,14 @@ class wayfire_animation : public wf::plugin_interface_t, private wf::per_output_
     {
         if (ev->state)
         {
-            ev->carried_out = true;
             set_animation<zoom_animation>(ev->view, ANIMATION_TYPE_MINIMIZE, default_duration, "minimize");
         } else
         {
             set_animation<zoom_animation>(ev->view, ANIMATION_TYPE_RESTORE, default_duration, "minimize");
         }
+
+        // ev->carried_out should remain false, so that core also does the automatic minimize/restore and
+        // refocus
     };
 
     wf::signal::connection_t<wf::output_start_rendering_signal> on_render_start =
