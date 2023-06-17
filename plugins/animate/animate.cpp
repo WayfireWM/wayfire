@@ -74,12 +74,21 @@ struct animation_hook : public animation_hook_base
     std::unique_ptr<animation_base> animation;
     std::shared_ptr<wf::unmapped_view_snapshot_node> unmapped_contents;
 
+    void damage_whole_view()
+    {
+        view->damage();
+        if (unmapped_contents)
+        {
+            wf::scene::damage_node(unmapped_contents, unmapped_contents->get_bounding_box());
+        }
+    }
+
     /* Update animation right before each frame */
     wf::effect_hook_t update_animation_hook = [=] ()
     {
-        view->damage();
+        damage_whole_view();
         bool result = animation->step();
-        view->damage();
+        damage_whole_view();
 
         if (!result)
         {
