@@ -194,6 +194,8 @@ class wayfire_xwayland_view : public wf::toplevel_view_interface_t, public wayfi
         {
             wlr_xwayland_surface_activate(xw, active);
         }
+
+        wf::toplevel_view_interface_t::set_activated(active);
     }
 
     virtual void initialize() override

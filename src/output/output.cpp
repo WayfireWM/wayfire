@@ -40,6 +40,7 @@ void wf::output_impl_t::handle_view_removed(wayfire_view view)
 
     if (this->last_active_toplevel == view)
     {
+        last_active_toplevel->set_activated(false);
         this->last_active_toplevel = nullptr;
     }
 
