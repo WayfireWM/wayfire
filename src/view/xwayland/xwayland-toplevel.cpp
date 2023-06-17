@@ -4,6 +4,8 @@
 #include <wayfire/txn/transaction-manager.hpp>
 #include "../view-impl.hpp"
 
+#if WF_HAS_XWAYLAND
+
 wf::xw::xwayland_toplevel_t::xwayland_toplevel_t(wlr_xwayland_surface *xw)
 {
     this->xw = xw;
@@ -268,3 +270,5 @@ wf::dimensions_t wf::xw::xwayland_toplevel_t::get_current_xw_size()
     size.height += margins.top + margins.bottom;
     return size;
 }
+
+#endif
