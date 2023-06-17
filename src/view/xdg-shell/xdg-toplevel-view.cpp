@@ -133,26 +133,6 @@ wf::xdg_toplevel_view_t::xdg_toplevel_view_t(wlr_xdg_toplevel *tlvl)
     xdg_toplevel->base->data = dynamic_cast<view_interface_t*>(this);
 }
 
-void wf::xdg_toplevel_view_t::move(int x, int y)
-{
-    this->wtoplevel->pending().geometry.x = x;
-    this->wtoplevel->pending().geometry.y = y;
-    wf::get_core().tx_manager->schedule_object(wtoplevel);
-}
-
-void wf::xdg_toplevel_view_t::resize(int w, int h)
-{
-    this->wtoplevel->pending().geometry.width  = w;
-    this->wtoplevel->pending().geometry.height = h;
-    wf::get_core().tx_manager->schedule_object(wtoplevel);
-}
-
-void wf::xdg_toplevel_view_t::set_geometry(wf::geometry_t g)
-{
-    this->wtoplevel->pending().geometry = g;
-    wf::get_core().tx_manager->schedule_object(wtoplevel);
-}
-
 void wf::xdg_toplevel_view_t::request_native_size()
 {
     this->wtoplevel->request_native_size();

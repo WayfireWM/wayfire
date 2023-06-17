@@ -19,9 +19,6 @@ class xdg_toplevel_view_t : public wf::toplevel_view_interface_t
   public:
     xdg_toplevel_view_t(wlr_xdg_toplevel *tlvl);
 
-    void move(int x, int y) override;
-    void resize(int w, int h) override;
-    void set_geometry(wf::geometry_t g) override;
     void request_native_size() override;
     void close() override;
     void ping() override;

@@ -6,6 +6,7 @@
 #include <wayfire/signal-definitions.hpp>
 #include <wayfire/workarea.hpp>
 #include <wayfire/window-manager.hpp>
+#include <wayfire/txn/transaction-manager.hpp>
 #include "view-impl.hpp"
 #include "wayfire/core.hpp"
 #include "wayfire/view.hpp"
@@ -169,15 +170,24 @@ void wf::toplevel_view_interface_t::set_output(wf::output_t *new_output)
     }
 }
 
-void wf::toplevel_view_interface_t::resize(int w, int h)
+void wf::toplevel_view_interface_t::move(int x, int y)
 {
-    /* no-op */
+    toplevel()->pending().geometry.x = x;
+    toplevel()->pending().geometry.y = y;
+    wf::get_core().tx_manager->schedule_object(toplevel());
 }
 
-void wf::toplevel_view_interface_t::set_geometry(wf::geometry_t g)
+void wf::toplevel_view_interface_t::resize(int w, int h)
 {
-    move(g.x, g.y);
-    resize(g.width, g.height);
+    toplevel()->pending().geometry.width  = w;
+    toplevel()->pending().geometry.height = h;
+    wf::get_core().tx_manager->schedule_object(toplevel());
+}
+
+void wf::toplevel_view_interface_t::set_geometry(wf::geometry_t geometry)
+{
+    toplevel()->pending().geometry = geometry;
+    wf::get_core().tx_manager->schedule_object(toplevel());
 }
 
 void wf::toplevel_view_interface_t::request_native_size()

@@ -443,26 +443,6 @@ class wayfire_xwayland_view : public wf::toplevel_view_interface_t, public wayfi
         this->last_bounding_box = get_bounding_box();
     }
 
-    void move(int x, int y) override
-    {
-        toplevel->pending().geometry.x = x;
-        toplevel->pending().geometry.y = y;
-        wf::get_core().tx_manager->schedule_object(toplevel);
-    }
-
-    void set_geometry(wf::geometry_t geometry) override
-    {
-        toplevel->pending().geometry = geometry;
-        wf::get_core().tx_manager->schedule_object(toplevel);
-    }
-
-    void resize(int w, int h) override
-    {
-        toplevel->pending().geometry.width = w;
-        toplevel->pending().geometry.height = h;
-        wf::get_core().tx_manager->schedule_object(toplevel);
-    }
-
     virtual void request_native_size() override
     {
         toplevel->request_native_size();

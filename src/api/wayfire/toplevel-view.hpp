@@ -79,22 +79,23 @@ class toplevel_view_interface_t : public wf::view_interface_t
      */
     std::vector<wayfire_toplevel_view> enumerate_views(bool mapped_only = true);
 
-    /** Move the view to the given output-local coordinates.  */
-    virtual void move(int x, int y) = 0;
+    /**
+     * A wrapper function for updating the toplevel's position.
+     * Equivalent to setting the pending coordinates of the toplevel and committing it in a new transaction.
+     */
+    void move(int x, int y);
 
     /**
-     * Request that the view change its size to the given dimensions. The view
-     * is not obliged to assume the given dimensions.
-     *
-     * Maximized and tiled views typically do obey the resize request.
+     * A wrapper function for updating the toplevel's dimensions.
+     * Equivalent to setting the pending dimensions of the toplevel and committing it in a new transaction.
      */
-    virtual void resize(int w, int h);
+    void resize(int w, int h);
 
     /**
-     * A convenience function, has the same effect as calling move and resize
-     * atomically.
+     * A wrapper function for updating the toplevel's geometry.
+     * Equivalent to setting the pending geometry of the toplevel and committing it in a new transaction.
      */
-    virtual void set_geometry(wf::geometry_t g);
+    void set_geometry(wf::geometry_t g);
 
     /**
      * Request that the view resizes to its native size.
