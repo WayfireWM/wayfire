@@ -15,6 +15,12 @@
 			<_long>Switches to the previous view with the specified key.</_long>
 			<default>&lt;alt&gt; &lt;shift&gt; KEY_TAB</default>
 		</option>
+		<!-- Behavior -->
+		<option name="start_from_active" type="bool">
+			<_short>Start from active</_short>
+			<_long>Starts to switch views from the active window.</_long>
+			<default>false</default>
+		</option>
 		<!-- Effects -->
 		<option name="speed" type="int">
 			<_short>Duration</_short>
