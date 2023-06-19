@@ -2,6 +2,7 @@
 #include "wayfire/plugin.hpp"
 #include "wayfire/plugins/common/shared-core-data.hpp"
 #include "wayfire/toplevel-view.hpp"
+#include "wayfire/unstable/wlr-surface-node.hpp"
 #include "wayfire/util.hpp"
 #include "wayfire/view-helpers.hpp"
 #include <wayfire/view.hpp>
@@ -350,6 +351,24 @@ class stipc_plugin_t : public wf::plugin_interface_t
         return false;
     }
 
+    static wf::geometry_t get_view_base_geometry(wayfire_view view)
+    {
+        auto sroot = view->get_surface_root_node();
+        for (auto& ch : sroot->get_children())
+        {
+            if (auto wlr_surf = dynamic_cast<scene::wlr_surface_node_t*>(ch.get()))
+            {
+                auto bbox = wlr_surf->get_bounding_box();
+                wf::pointf_t origin = sroot->to_global({0, 0});
+                bbox.x = origin.x;
+                bbox.y = origin.y;
+                return bbox;
+            }
+        }
+
+        return sroot->get_bounding_box();
+    }
+
     ipc::method_callback list_views = [] (nlohmann::json)
     {
         auto response = nlohmann::json::array();
@@ -360,7 +379,7 @@ class stipc_plugin_t : public wf::plugin_interface_t
             v["id"]     = view->get_id();
             v["title"]  = view->get_title();
             v["app-id"] = view->get_app_id();
-            v["base-geometry"] = wf::ipc::geometry_to_json(view->get_bounding_box());
+            v["base-geometry"] = wf::ipc::geometry_to_json(get_view_base_geometry(view));
             v["state"] = {};
 
             if (auto toplevel = toplevel_cast(view))
