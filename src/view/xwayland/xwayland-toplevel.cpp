@@ -39,16 +39,16 @@ void wf::xw::xwayland_toplevel_t::set_main_surface(
             LOGW("Setting xwayland toplevel's main surface to a surface without wlr_surface!");
             return;
         }
+
+        auto size = get_current_xw_size();
+
+        _pending.geometry.width    = size.width;
+        _current.geometry.width    = size.width;
+        _committed.geometry.width  = size.width;
+        _pending.geometry.height   = size.height;
+        _current.geometry.height   = size.height;
+        _committed.geometry.height = size.height;
     }
-
-    auto size = get_current_xw_size();
-
-    _pending.geometry.width    = size.width;
-    _current.geometry.width    = size.width;
-    _committed.geometry.width  = size.width;
-    _pending.geometry.height   = size.height;
-    _current.geometry.height   = size.height;
-    _committed.geometry.height = size.height;
 }
 
 void wf::xw::xwayland_toplevel_t::set_output_offset(wf::point_t output_offset)
@@ -224,17 +224,12 @@ void wf::xw::xwayland_toplevel_t::set_decoration(decorator_frame_t_t *frame)
 
 wf::geometry_t wf::xw::xwayland_toplevel_t::calculate_base_geometry()
 {
-    if (!main_surface)
-    {
-        return {0, 0, 0, 0};
-    }
-
     auto geometry = current().geometry;
     auto margins  = get_margins();
     geometry.x     = geometry.x + margins.left;
     geometry.y     = geometry.y + margins.top;
-    geometry.width = main_surface->get_bounding_box().width;
-    geometry.height = main_surface->get_bounding_box().height;
+    geometry.width = geometry.width + margins.left + margins.right;
+    geometry.height = geometry.height + margins.top + margins.bottom;
     return geometry;
 }
 
