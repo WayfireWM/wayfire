@@ -26,5 +26,10 @@
 			<_long>Sets the thumbnail size.</_long>
 			<default>1.0</default>
 		</option>
+		<option name="view_thumbnail_rotation" type="int">
+			<_short>Thumbnail rotation</_short>
+			<_long>Sets the thumbnail rotation in degrees.</_long>
+			<default>30</default>
+		</option>
 	</plugin>
 </wayfire>
