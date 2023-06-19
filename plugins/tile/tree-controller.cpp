@@ -219,7 +219,7 @@ move_view_controller_t::~move_view_controller_t()
     if (this->preview)
     {
         this->preview->set_target_geometry(
-            get_output_local_coordinates(output, current_input), 0.0, true);
+            get_wset_local_coordinates(output->wset(), current_input), 0.0, true);
     }
 }
 
@@ -262,18 +262,17 @@ void move_view_controller_t::input_motion(wf::point_t input)
         /* No view, no preview */
         if (this->preview)
         {
-            preview->set_target_geometry(
-                get_output_local_coordinates(output, input), 0.0);
+            preview->set_target_geometry(get_wset_local_coordinates(output->wset(), input), 0.0);
         }
 
         return;
     }
 
     auto split = calculate_insert_type(view, input);
-    ensure_preview(get_output_local_coordinates(output, input));
+    ensure_preview(get_wset_local_coordinates(output->wset(), input));
 
     auto preview_geometry = calculate_split_preview(view, split);
-    preview_geometry = get_output_local_coordinates(output, preview_geometry);
+    preview_geometry = get_wset_local_coordinates(output->wset(), preview_geometry);
     this->preview->set_target_geometry(preview_geometry, 1.0);
 }
 

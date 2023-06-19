@@ -2,6 +2,7 @@
 #define WF_TILE_PLUGIN_TREE
 
 #include "wayfire/signal-definitions.hpp"
+#include "wayfire/workspace-set.hpp"
 #include <wayfire/view.hpp>
 #include <wayfire/option-wrapper.hpp>
 #include <wayfire/txn/transaction.hpp>
@@ -207,11 +208,15 @@ void flatten_tree(std::unique_ptr<tree_node_t>& root, wf::txn::transaction_uptr&
 nonstd::observer_ptr<split_node_t> get_root(nonstd::observer_ptr<tree_node_t> node);
 
 /**
- * Transform coordinates from the tiling trees coordinate system to output-local
- * coordinates.
+ * Transform coordinates from the tiling trees coordinate system to wset-local coordinates.
  */
-wf::geometry_t get_output_local_coordinates(wf::output_t *output, wf::geometry_t g);
-wf::point_t get_output_local_coordinates(wf::output_t *output, wf::point_t g);
+wf::geometry_t get_wset_local_coordinates(std::shared_ptr<wf::workspace_set_t> wset, wf::geometry_t g);
+wf::point_t get_wset_local_coordinates(std::shared_ptr<wf::workspace_set_t> wset, wf::point_t g);
+
+// Since wsets may not have been attached to any output yet, they may not have a native 'resolution'.
+// In this case, we use a default resolution of 1920x1080 in order to layout views. This resolution will be
+// automatically adjusted once the wset is added to an output.
+static constexpr wf::geometry_t default_output_resolution = {0, 0, 1920, 1080};
 }
 }
 

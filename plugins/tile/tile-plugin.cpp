@@ -37,7 +37,10 @@ struct autocommit_transaction_t
 
     ~autocommit_transaction_t()
     {
-        wf::get_core().tx_manager->schedule_transaction(std::move(tx));
+        if (!tx->get_objects().empty())
+        {
+            wf::get_core().tx_manager->schedule_transaction(std::move(tx));
+        }
     }
 };
 
@@ -142,13 +145,12 @@ class tile_workspace_set_data_t : public wf::custom_data_t
 
     void update_root_size()
     {
-        if (!wset.lock()->get_attached_output())
-        {
-            return;
-        }
+        auto wo = wset.lock()->get_attached_output();
+        wf::geometry_t workarea = wo ? wo->workarea->get_workarea() : tile::default_output_resolution;
 
-        wf::geometry_t workarea = wset.lock()->get_attached_output()->workarea->get_workarea();
-        wf::geometry_t output_geometry = wset.lock()->get_attached_output()->get_relative_geometry();
+        wf::geometry_t output_geometry =
+            wset.lock()->get_last_output_geometry().value_or(tile::default_output_resolution);
+
         auto wsize = wset.lock()->get_workspace_grid_size();
         for (int i = 0; i < wsize.width; i++)
         {

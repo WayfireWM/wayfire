@@ -1,5 +1,6 @@
 #include "tree.hpp"
 #include "wayfire/core.hpp"
+#include "wayfire/geometry.hpp"
 #include "wayfire/toplevel-view.hpp"
 #include <wayfire/util.hpp>
 #include <wayfire/util/log.hpp>
@@ -33,19 +34,18 @@ nonstd::observer_ptr<view_node_t> tree_node_t::as_view_node()
     return nonstd::make_observer(dynamic_cast<view_node_t*>(this));
 }
 
-wf::point_t get_output_local_coordinates(wf::output_t *output, wf::point_t p)
+wf::point_t get_wset_local_coordinates(std::shared_ptr<wf::workspace_set_t> wset, wf::point_t p)
 {
-    auto vp   = output->wset()->get_current_workspace();
-    auto size = output->get_screen_size();
+    auto vp   = wset->get_current_workspace();
+    auto size = wset->get_last_output_geometry().value_or(default_output_resolution);
     p.x -= vp.x * size.width;
     p.y -= vp.y * size.height;
-
     return p;
 }
 
-wf::geometry_t get_output_local_coordinates(wf::output_t *output, wf::geometry_t g)
+wf::geometry_t get_wset_local_coordinates(std::shared_ptr<wf::workspace_set_t> wset, wf::geometry_t g)
 {
-    auto new_tl = get_output_local_coordinates(output, wf::point_t{g.x, g.y});
+    auto new_tl = get_wset_local_coordinates(wset, wf::point_t{g.x, g.y});
     g.x = new_tl.x;
     g.y = new_tl.y;
 
@@ -378,21 +378,19 @@ wf::geometry_t view_node_t::calculate_target_geometry()
 {
     /* Calculate view geometry in coordinates local to the active workspace,
      * because tree coordinates are kept in workspace-agnostic coordinates. */
-    auto output = view->get_output();
-    auto local_geometry = get_output_local_coordinates(
-        view->get_output(), geometry);
+    auto wset = view->get_wset();
+    auto local_geometry = get_wset_local_coordinates(wset, geometry);
 
     local_geometry.x     += gaps.left;
     local_geometry.y     += gaps.top;
     local_geometry.width -= gaps.left + gaps.right;
     local_geometry.height -= gaps.top + gaps.bottom;
 
-    auto size = output->get_screen_size();
+    auto size = wset->get_last_output_geometry().value_or(default_output_resolution);
     /* If view is maximized, we want to use the full available geometry */
     if (view->pending_fullscreen())
     {
-        auto vp = output->wset()->get_current_workspace();
-
+        auto vp = wset->get_current_workspace();
         int view_vp_x = std::floor(1.0 * geometry.x / size.width);
         int view_vp_y = std::floor(1.0 * geometry.y / size.height);
 
@@ -406,10 +404,8 @@ wf::geometry_t view_node_t::calculate_target_geometry()
 
     if (view->sticky)
     {
-        local_geometry.x =
-            (local_geometry.x % size.width + size.width) % size.width;
-        local_geometry.y =
-            (local_geometry.y % size.height + size.height) % size.height;
+        local_geometry.x = (local_geometry.x % size.width + size.width) % size.width;
+        local_geometry.y = (local_geometry.y % size.height + size.height) % size.height;
     }
 
     return local_geometry;
