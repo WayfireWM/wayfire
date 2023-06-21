@@ -103,8 +103,6 @@ class WayfireSwitcher : public wf::per_output_plugin_instance_t, public wf::keyb
     wf::option_wrapper_t<int> speed{"switcher/speed"};
     wf::option_wrapper_t<int> view_thumbnail_rotation{
         "switcher/view_thumbnail_rotation"};
-    wf::option_wrapper_t<bool> start_from_active{
-        "switcher/start_from_active"};
 
     duration_t duration{speed};
     duration_t background_dim_duration{speed};
@@ -527,13 +525,10 @@ class WayfireSwitcher : public wf::per_output_plugin_instance_t, public wf::keyb
             views.push_back(create_switcher_view(v));
         }
 
-        if ((bool)start_from_active)
+        std::sort(views.begin(), views.end(), [](SwitcherView& a, SwitcherView& b)
         {
-            std::sort(views.begin(), views.end(), [](SwitcherView& a, SwitcherView& b)
-            {
-                return wf::get_focus_timestamp(a.view) > wf::get_focus_timestamp(b.view);
-            });
-        }
+            return wf::get_focus_timestamp(a.view) > wf::get_focus_timestamp(b.view);
+        });
 
         /* Add a copy of the unfocused view if we have just 2 */
         if (ws_views.size() == 2)
