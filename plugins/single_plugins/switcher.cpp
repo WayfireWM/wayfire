@@ -527,18 +527,18 @@ class WayfireSwitcher : public wf::per_output_plugin_instance_t, public wf::keyb
             views.push_back(create_switcher_view(v));
         }
 
-        /* Add a copy of the unfocused view if we have just 2 */
-        if (ws_views.size() == 2)
-        {
-            views.push_back(create_switcher_view(ws_views.back()));
-        }
-
         if ((bool)start_from_active)
         {
             std::sort(views.begin(), views.end(), [](SwitcherView& a, SwitcherView& b)
             {
                 return wf::get_focus_timestamp(a.view) > wf::get_focus_timestamp(b.view);
             });
+        }
+
+        /* Add a copy of the unfocused view if we have just 2 */
+        if (ws_views.size() == 2)
+        {
+            views.push_back(create_switcher_view(ws_views.back()));
         }
 
         arrange_view(views[0], SWITCHER_POSITION_CENTER);
