@@ -7,6 +7,17 @@
 
 namespace wf
 {
+/**
+ * Describes the size of the decoration frame around a toplevel.
+ */
+struct decoration_margins_t
+{
+    int left;
+    int right;
+    int bottom;
+    int top;
+};
+
 struct toplevel_state_t
 {
     /**
@@ -45,6 +56,16 @@ struct toplevel_state_t
      * full size of their primary output.
      */
     bool fullscreen = false;
+
+    /**
+     * The size of the server-side decorations around the view.
+     *
+     * Note that the margin values should be updated by decoration plugins before the toplevel state is
+     * committed, for example during the new_transaction_signal. As a result, the pending margins are not
+     * always meaningful for plugins, and they should avoid reading these values as they likely will not be
+     * finalized before the view is actually committed.
+     */
+    decoration_margins_t margins = {0, 0, 0, 0};
 };
 
 /**
@@ -89,4 +110,39 @@ class toplevel_t : public wf::txn::transaction_object_t, public wf::object_base_
 
     std::optional<wf::geometry_t> last_windowed_geometry;
 };
+
+// Helper functions when working with toplevel state
+inline wf::dimensions_t expand_dimensions_by_margins(wf::dimensions_t dim,
+    const decoration_margins_t& margins)
+{
+    dim.width  += margins.left + margins.right;
+    dim.height += margins.top + margins.bottom;
+    return dim;
+}
+
+inline wf::dimensions_t shrink_dimensions_by_margins(wf::dimensions_t dim,
+    const decoration_margins_t& margins)
+{
+    dim.width  -= margins.left + margins.right;
+    dim.height -= margins.top + margins.bottom;
+    return dim;
+}
+
+inline wf::geometry_t expand_geometry_by_margins(wf::geometry_t geometry, const decoration_margins_t& margins)
+{
+    geometry.x     -= margins.left;
+    geometry.y     -= margins.top;
+    geometry.width += margins.left + margins.right;
+    geometry.height += margins.top + margins.bottom;
+    return geometry;
+}
+
+inline wf::geometry_t shrink_geometry_by_margins(wf::geometry_t geometry, const decoration_margins_t& margins)
+{
+    geometry.x     += margins.left;
+    geometry.y     += margins.top;
+    geometry.width -= margins.left + margins.right;
+    geometry.height -= margins.top + margins.bottom;
+    return geometry;
+}
 }

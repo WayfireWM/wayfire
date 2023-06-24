@@ -3,8 +3,8 @@
 #include <memory>
 #include <wayfire/txn/transaction-manager.hpp>
 #include <wlr/util/edges.h>
-#include "wayfire/decorator.hpp"
 #include "wayfire/geometry.hpp"
+#include "wayfire/toplevel.hpp"
 #include "wayfire/txn/transaction-object.hpp"
 #include "../view-impl.hpp"
 
@@ -38,7 +38,9 @@ void wf::xdg_toplevel_t::commit()
     this->pending_ready = true;
     _committed = _pending;
     LOGC(TXNI, this, ": committing toplevel state mapped=", _pending.mapped,
-        " geometry=", _pending.geometry, " tiled=", _pending.tiled_edges, " fs=", _pending.fullscreen);
+        " geometry=", _pending.geometry, " tiled=", _pending.tiled_edges, " fs=", _pending.fullscreen,
+        " margins=", _pending.margins.left, ",", _pending.margins.right, ",",
+        _pending.margins.top, ",", _pending.margins.bottom);
 
     if (!this->toplevel)
     {
@@ -47,7 +49,8 @@ void wf::xdg_toplevel_t::commit()
         return;
     }
 
-    wf::dimensions_t current_size = wf::dimensions(_current.geometry);
+    wf::dimensions_t current_size =
+        shrink_dimensions_by_margins(wf::dimensions(_current.geometry), _current.margins);
     if (_pending.mapped && !_current.mapped)
     {
         // We are trying to map the toplevel => check whether we should wait until it sets the proper
@@ -56,12 +59,15 @@ void wf::xdg_toplevel_t::commit()
     }
 
     bool wait_for_client = false;
-    if (wf::dimensions(_pending.geometry) != current_size)
+
+    const wf::dimensions_t desired_size =
+        wf::shrink_dimensions_by_margins(wf::dimensions(_pending.geometry), _pending.margins);
+
+    if (current_size != desired_size)
     {
         wait_for_client = true;
-        auto margins = get_margins();
-        const int configure_width  = std::max(1, _pending.geometry.width - margins.left - margins.right);
-        const int configure_height = std::max(1, _pending.geometry.height - margins.top - margins.bottom);
+        const int configure_width  = std::max(1, desired_size.width);
+        const int configure_height = std::max(1, desired_size.height);
         this->target_configure = wlr_xdg_toplevel_set_size(this->toplevel, configure_width, configure_height);
     }
 
@@ -102,8 +108,14 @@ void wf::xdg_toplevel_t::apply()
     }
 
     this->_current = committed();
-    apply_pending_state();
+    const bool is_pending = wf::get_core().tx_manager->is_object_pending(shared_from_this());
+    if (!is_pending)
+    {
+        // Adjust for potential moves due to gravity
+        _pending = committed();
+    }
 
+    apply_pending_state();
     emit(&event_applied);
 }
 
@@ -123,7 +135,9 @@ void wf::xdg_toplevel_t::handle_surface_commit()
             return;
         }
 
-        wf::adjust_geometry_for_gravity(_committed, this->get_current_wlr_toplevel_size());
+        const wf::dimensions_t real_size =
+            expand_dimensions_by_margins(get_current_wlr_toplevel_size(), _committed.margins);
+        wf::adjust_geometry_for_gravity(_committed, real_size);
         emit_ready();
         return;
     }
@@ -134,7 +148,8 @@ void wf::xdg_toplevel_t::handle_surface_commit()
         return;
     }
 
-    auto toplevel_size = get_current_wlr_toplevel_size();
+    auto toplevel_size =
+        expand_dimensions_by_margins(get_current_wlr_toplevel_size(), _current.margins);
     if (toplevel_size == wf::dimensions(current().geometry))
     {
         // Size did not change, there are no transactions going on - apply the new texture directly
@@ -149,17 +164,11 @@ void wf::xdg_toplevel_t::handle_surface_commit()
     wf::get_core().tx_manager->schedule_transaction(std::move(tx));
 }
 
-void wf::xdg_toplevel_t::set_decoration(decorator_frame_t_t *frame)
-{
-    this->frame = frame;
-}
-
 wf::geometry_t wf::xdg_toplevel_t::calculate_base_geometry()
 {
     auto geometry = current().geometry;
-    auto margins  = get_margins();
-    geometry.x     = geometry.x - wm_offset.x + margins.left;
-    geometry.y     = geometry.y - wm_offset.y + margins.top;
+    geometry.x     = geometry.x - wm_offset.x + _current.margins.left;
+    geometry.y     = geometry.y - wm_offset.y + _current.margins.top;
     geometry.width = main_surface->get_bounding_box().width;
     geometry.height = main_surface->get_bounding_box().height;
     return geometry;
@@ -182,11 +191,6 @@ void wf::xdg_toplevel_t::apply_pending_state()
     }
 }
 
-wf::decoration_margins_t wf::xdg_toplevel_t::get_margins()
-{
-    return frame ? frame->get_margins() : wf::decoration_margins_t{0, 0, 0, 0};
-}
-
 void wf::xdg_toplevel_t::emit_ready()
 {
     if (pending_ready)
@@ -201,9 +205,5 @@ wf::dimensions_t wf::xdg_toplevel_t::get_current_wlr_toplevel_size()
     // Size did change => Start a new transaction to change the size.
     wlr_box wm_box;
     wlr_xdg_surface_get_geometry(toplevel->base, &wm_box);
-    auto margins = get_margins();
-
-    wm_box.width  += margins.left + margins.right;
-    wm_box.height += margins.top + margins.bottom;
     return wf::dimensions(wm_box);
 }

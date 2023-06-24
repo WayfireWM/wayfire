@@ -2,7 +2,6 @@
 #include "wayfire/core.hpp"
 #include "../core/core-impl.hpp"
 #include "view-impl.hpp"
-#include "wayfire/decorator.hpp"
 #include "wayfire/scene-input.hpp"
 #include "wayfire/scene-render.hpp"
 #include "wayfire/scene.hpp"

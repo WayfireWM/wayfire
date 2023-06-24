@@ -43,6 +43,7 @@ wf::xdg_toplevel_view_t::xdg_toplevel_view_t(wlr_xdg_toplevel *tlvl)
         wtoplevel->pending().mapped = true;
         wtoplevel->pending().geometry.width  = box.width;
         wtoplevel->pending().geometry.height = box.height;
+        priv->set_mapped_surface_contents(main_surface);
         wf::get_core().tx_manager->schedule_object(wtoplevel);
     });
     on_unmap.set_callback([&] (void*) { unmap(); });
@@ -234,7 +235,6 @@ void wf::xdg_toplevel_view_t::map()
         this->has_client_decoration = uses_csd[surf];
     }
 
-    priv->set_mapped_surface_contents(main_surface);
     priv->set_mapped(true);
 
     if (role == VIEW_ROLE_TOPLEVEL)
@@ -258,7 +258,6 @@ void wf::xdg_toplevel_view_t::unmap()
 {
     damage();
     emit_view_pre_unmap();
-    set_decoration(nullptr);
 
     main_surface = nullptr;
     priv->unset_mapped_surface_contents();
@@ -329,12 +328,6 @@ void wf::xdg_toplevel_view_t::set_decoration_mode(bool use_csd)
         this->emit(&data);
         wf::get_core().emit(&data);
     }
-}
-
-void wf::xdg_toplevel_view_t::set_decoration(std::unique_ptr<decorator_frame_t_t> frame)
-{
-    wtoplevel->set_decoration(frame.get());
-    wf::toplevel_view_interface_t::set_decoration(std::move(frame));
 }
 
 /* decorations impl */

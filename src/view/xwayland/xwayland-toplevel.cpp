@@ -4,6 +4,7 @@
 #include "wayfire/geometry.hpp"
 #include <wayfire/txn/transaction-manager.hpp>
 #include "../view-impl.hpp"
+#include "wayfire/toplevel.hpp"
 
 #if WF_HAS_XWAYLAND
 
@@ -40,8 +41,7 @@ void wf::xw::xwayland_toplevel_t::set_main_surface(
             return;
         }
 
-        auto size = get_current_xw_size();
-
+        auto size = expand_dimensions_by_margins(get_current_xw_size(), _current.margins);
         _pending.geometry.width    = size.width;
         _current.geometry.width    = size.width;
         _committed.geometry.width  = size.width;
@@ -83,7 +83,9 @@ void wf::xw::xwayland_toplevel_t::commit()
     this->pending_ready = true;
     _committed = _pending;
     LOGC(TXNI, this, ": committing xwayland state mapped=", _pending.mapped, " geometry=", _pending.geometry,
-        " tiled=", _pending.tiled_edges, " fs=", _pending.fullscreen);
+        " tiled=", _pending.tiled_edges, " fs=", _pending.fullscreen,
+        " margins=", _pending.margins.left, ",", _pending.margins.right, ",",
+        _pending.margins.top, ",", _pending.margins.bottom);
 
     if (!this->xw)
     {
@@ -92,8 +94,8 @@ void wf::xw::xwayland_toplevel_t::commit()
         return;
     }
 
-    wf::dimensions_t current_size = wf::dimensions(_current.geometry);
-
+    wf::dimensions_t current_size =
+        shrink_dimensions_by_margins(wf::dimensions(_current.geometry), _current.margins);
     if (_pending.mapped && !_current.mapped)
     {
         // We are trying to map the toplevel => check whether we should wait until it sets the proper
@@ -101,8 +103,11 @@ void wf::xw::xwayland_toplevel_t::commit()
         current_size = get_current_xw_size();
     }
 
+    const wf::dimensions_t desired_size = wf::shrink_dimensions_by_margins(
+        wf::dimensions(_pending.geometry), _pending.margins);
+
     bool wait_for_client = false;
-    if (wf::dimensions(_pending.geometry) != current_size)
+    if (desired_size != current_size)
     {
         wait_for_client = true;
         reconfigure_xwayland_surface();
@@ -137,13 +142,10 @@ void wf::xw::xwayland_toplevel_t::reconfigure_xwayland_surface()
         return;
     }
 
-    auto margins = get_margins();
-    const int configure_x     = _pending.geometry.x - margins.left + output_offset.x;
-    const int configure_y     = _pending.geometry.y - margins.top + output_offset.y;
-    const int configure_width = _pending.geometry.width - margins.left - margins.right;
-    const int configure_height = _pending.geometry.height - margins.top - margins.bottom;
+    const wf::geometry_t configure =
+        shrink_geometry_by_margins(_pending.geometry, _pending.margins) + output_offset;
 
-    if ((configure_width <= 0) || (configure_height <= 0))
+    if ((configure.width <= 0) || (configure.height <= 0))
     {
         /* such a configure request would freeze xwayland.
          * This is most probably a bug somewhere in the compositor. */
@@ -151,9 +153,8 @@ void wf::xw::xwayland_toplevel_t::reconfigure_xwayland_surface()
         return;
     }
 
-    LOGC(XWL, "Configuring xwayland surface ", nonull(xw->title), " ", nonull(xw->class_t), " ",
-        configure_x, ",", configure_y, " ", configure_width, "x", configure_height);
-    wlr_xwayland_surface_configure(xw, configure_x, configure_y, configure_width, configure_height);
+    LOGC(XWL, "Configuring xwayland surface ", nonull(xw->title), " ", nonull(xw->class_t), " ", configure);
+    wlr_xwayland_surface_configure(xw, configure.x, configure.y, configure.width, configure.height);
 }
 
 void wf::xw::xwayland_toplevel_t::apply()
@@ -168,11 +169,19 @@ void wf::xw::xwayland_toplevel_t::apply()
         _committed.geometry.height = _current.geometry.height;
     }
 
-    wf::adjust_geometry_for_gravity(_committed, this->get_current_xw_size());
+    wf::adjust_geometry_for_gravity(_committed,
+        expand_dimensions_by_margins(this->get_current_xw_size(), _committed.margins));
     this->_current = committed();
-    apply_pending_state();
-    reconfigure_xwayland_surface();
 
+    const bool is_pending = wf::get_core().tx_manager->is_object_pending(shared_from_this());
+    if (!is_pending)
+    {
+        // Adjust for potential moves due to gravity
+        _pending = committed();
+        reconfigure_xwayland_surface();
+    }
+
+    apply_pending_state();
     emit(&event_applied);
 }
 
@@ -183,7 +192,10 @@ void wf::xw::xwayland_toplevel_t::handle_surface_commit()
     const bool is_committed = wf::get_core().tx_manager->is_object_committed(shared_from_this());
     if (is_committed)
     {
-        if (get_current_xw_size() != wf::dimensions(_committed.geometry))
+        const wf::dimensions_t desired_size =
+            shrink_dimensions_by_margins(wf::dimensions(_committed.geometry), _committed.margins);
+
+        if (get_current_xw_size() != desired_size)
         {
             // Desired state not reached => wait for the desired state to be reached. In the meantime, send a
             // frame done so that the client can redraw faster.
@@ -202,7 +214,7 @@ void wf::xw::xwayland_toplevel_t::handle_surface_commit()
         return;
     }
 
-    auto toplevel_size = get_current_xw_size();
+    auto toplevel_size = expand_dimensions_by_margins(get_current_xw_size(), current().margins);
     if (toplevel_size == wf::dimensions(current().geometry))
     {
         // Size did not change, there are no transactions going on - apply the new texture directly
@@ -217,20 +229,10 @@ void wf::xw::xwayland_toplevel_t::handle_surface_commit()
     wf::get_core().tx_manager->schedule_transaction(std::move(tx));
 }
 
-void wf::xw::xwayland_toplevel_t::set_decoration(decorator_frame_t_t *frame)
-{
-    this->frame = frame;
-}
-
 wf::geometry_t wf::xw::xwayland_toplevel_t::calculate_base_geometry()
 {
     auto geometry = current().geometry;
-    auto margins  = get_margins();
-    geometry.x     = geometry.x + margins.left;
-    geometry.y     = geometry.y + margins.top;
-    geometry.width = geometry.width + margins.left + margins.right;
-    geometry.height = geometry.height + margins.top + margins.bottom;
-    return geometry;
+    return shrink_geometry_by_margins(geometry, _current.margins);
 }
 
 void wf::xw::xwayland_toplevel_t::apply_pending_state()
@@ -244,11 +246,6 @@ void wf::xw::xwayland_toplevel_t::apply_pending_state()
     {
         main_surface->apply_state(std::move(pending_state));
     }
-}
-
-wf::decoration_margins_t wf::xw::xwayland_toplevel_t::get_margins()
-{
-    return frame ? frame->get_margins() : wf::decoration_margins_t{0, 0, 0, 0};
 }
 
 void wf::xw::xwayland_toplevel_t::emit_ready()
@@ -269,9 +266,6 @@ wf::dimensions_t wf::xw::xwayland_toplevel_t::get_current_xw_size()
 
     auto surf = main_surface->get_surface();
     wf::dimensions_t size = wf::dimensions_t{surf->current.width, surf->current.height};
-    auto margins = get_margins();
-    size.width  += margins.left + margins.right;
-    size.height += margins.top + margins.bottom;
     return size;
 }
 

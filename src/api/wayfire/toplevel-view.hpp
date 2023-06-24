@@ -173,17 +173,6 @@ class toplevel_view_interface_t : public wf::view_interface_t
     virtual bool should_be_decorated();
 
     /**
-     * Set the decoration surface for the view.
-     *
-     * @param frame The surface to be set as a decoration.
-     *
-     * The life-time of the decoration frame is managed by the view itself, so after
-     * calling this function you probably want to drop any references that you
-     * hold (excluding the default one)
-     */
-    virtual void set_decoration(std::unique_ptr<decorator_frame_t_t> frame);
-
-    /**
      * Set the view's output.
      *
      * If the new output is different from the previous, the view will be
@@ -214,4 +203,9 @@ inline wayfire_toplevel_view toplevel_cast(wayfire_view view)
 {
     return dynamic_cast<toplevel_view_interface_t*>(view.get());
 }
+
+// Find the view which has the given toplevel, if such a view exists.
+// The view might not exist if it was destroyed, but a plugin holds on to a stale toplevel pointer.
+wayfire_toplevel_view find_view_for_toplevel(
+    std::shared_ptr<wf::toplevel_t> toplevel);
 }

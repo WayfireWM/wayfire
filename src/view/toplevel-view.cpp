@@ -260,73 +260,6 @@ bool wf::toplevel_view_interface_t::should_be_decorated()
     return false;
 }
 
-void wf::toplevel_view_interface_t::set_decoration(std::unique_ptr<wf::decorator_frame_t_t> frame)
-{
-    if (!frame)
-    {
-        damage();
-
-        // Take wm geometry as it was with the decoration.
-        const auto wm = get_pending_geometry();
-
-        // Drop the owned frame.
-        priv->frame = nullptr;
-
-        // Grow the tiled view to fill its old expanded geometry that included
-        // the decoration.
-        if (!pending_fullscreen() && this->pending_tiled_edges())
-        {
-            set_geometry(wm);
-        }
-
-        view_decoration_changed_signal data;
-        data.view = self();
-        emit(&data);
-        return;
-    }
-
-    // Take wm geometry as it was before adding the frame */
-    auto wm = get_pending_geometry();
-
-    damage();
-    // Drop the old frame if any and assign the new one.
-    priv->frame = std::move(frame);
-
-    /* Calculate the wm geometry of the view after adding the decoration.
-     *
-     * If the view is neither maximized nor fullscreen, then we want to expand
-     * the view geometry so that the actual view contents retain their size.
-     *
-     * For fullscreen and maximized views we want to "shrink" the view contents
-     * so that the total wm geometry remains the same as before. */
-    wf::geometry_t target_wm_geometry;
-    if (!pending_fullscreen() && !this->pending_tiled_edges())
-    {
-        target_wm_geometry = priv->frame->expand_wm_geometry(wm);
-        // make sure that the view doesn't go outside of the screen or such
-        auto wa = get_output()->workarea->get_workarea();
-        auto visible = wf::geometry_intersection(target_wm_geometry, wa);
-        if (visible != target_wm_geometry)
-        {
-            target_wm_geometry.x = wm.x;
-            target_wm_geometry.y = wm.y;
-        }
-    } else if (pending_fullscreen())
-    {
-        target_wm_geometry = get_output()->get_relative_geometry();
-    } else if (this->pending_tiled_edges())
-    {
-        target_wm_geometry = get_output()->workarea->get_workarea();
-    }
-
-    set_geometry(target_wm_geometry);
-    damage();
-
-    view_decoration_changed_signal ev;
-    ev.view = self();
-    emit(&ev);
-}
-
 void wf::toplevel_view_interface_t::deinitialize()
 {
     auto children = this->children;
@@ -335,7 +268,6 @@ void wf::toplevel_view_interface_t::deinitialize()
         ch->set_toplevel_parent(nullptr);
     }
 
-    set_decoration(nullptr);
     view_interface_t::deinitialize();
 }
 
@@ -363,4 +295,22 @@ std::shared_ptr<wf::workspace_set_t> wf::toplevel_view_interface_t::get_wset()
 const std::shared_ptr<wf::toplevel_t>& wf::toplevel_view_interface_t::toplevel() const
 {
     return priv->toplevel;
+}
+
+wayfire_toplevel_view wf::find_view_for_toplevel(
+    std::shared_ptr<wf::toplevel_t> toplevel)
+{
+    // FIXME: this could be a lot more efficient if we simply store a custom data on the toplevel.
+    for (auto& view : wf::get_core().get_all_views())
+    {
+        if (auto tview = toplevel_cast(view))
+        {
+            if (tview->toplevel() == toplevel)
+            {
+                return tview;
+            }
+        }
+    }
+
+    return nullptr;
 }

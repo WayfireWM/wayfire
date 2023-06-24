@@ -341,19 +341,12 @@ view_node_t::view_node_t(wayfire_toplevel_view view)
     {
         update_transformer();
     });
-    this->on_decoration_changed.set_callback([=] (auto)
-    {
-        auto tx = wf::txn::transaction_t::create();
-        set_geometry(geometry, tx);
-        wf::get_core().tx_manager->schedule_transaction(std::move(tx));
-    });
     on_adjust_transformer.set_callback([=] (auto)
     {
         update_transformer();
     });
 
     view->connect(&on_geometry_changed);
-    view->connect(&on_decoration_changed);
     view->connect(&on_adjust_transformer);
 }
 

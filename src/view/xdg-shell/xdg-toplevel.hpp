@@ -6,7 +6,6 @@
 #include <memory>
 #include <wayfire/toplevel.hpp>
 #include <wayfire/nonstd/wlroots-full.hpp>
-#include <wayfire/decorator.hpp>
 
 namespace wf
 {
@@ -25,7 +24,6 @@ class xdg_toplevel_t : public toplevel_t, public std::enable_shared_from_this<xd
         std::shared_ptr<wf::scene::wlr_surface_node_t> surface);
     void commit() override;
     void apply() override;
-    void set_decoration(decorator_frame_t_t *frame);
     wf::geometry_t calculate_base_geometry();
     void request_native_size();
 
@@ -34,13 +32,11 @@ class xdg_toplevel_t : public toplevel_t, public std::enable_shared_from_this<xd
     scene::surface_state_t pending_state;
 
     void apply_pending_state();
-    decoration_margins_t get_margins();
     wf::dimensions_t get_current_wlr_toplevel_size();
 
     wf::wl_listener_wrapper on_surface_commit;
     wf::wl_listener_wrapper on_toplevel_destroy;
     wlr_xdg_toplevel *toplevel;
-    decorator_frame_t_t *frame = nullptr;
     wf::point_t wm_offset = {0, 0};
 
     void handle_surface_commit();

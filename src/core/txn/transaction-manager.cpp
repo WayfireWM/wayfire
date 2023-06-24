@@ -1,6 +1,7 @@
 #include <memory>
 #include <wayfire/txn/transaction-manager.hpp>
 #include "transaction-manager-impl.hpp"
+#include "wayfire/debug.hpp"
 #include "wayfire/txn/transaction.hpp"
 
 wf::txn::transaction_manager_t::transaction_manager_t()

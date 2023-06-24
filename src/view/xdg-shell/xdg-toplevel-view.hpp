@@ -32,7 +32,6 @@ class xdg_toplevel_view_t : public wf::toplevel_view_interface_t
     void initialize() override;
 
     void set_decoration_mode(bool use_csd);
-    void set_decoration(std::unique_ptr<decorator_frame_t_t> frame) override;
 
   private:
     bool has_client_decoration = true;

@@ -6,7 +6,6 @@
 #include "surface-impl.hpp"
 #include "wayfire/geometry.hpp"
 #include "wayfire/output.hpp"
-#include "wayfire/decorator.hpp"
 #include "wayfire/scene-operations.hpp"
 #include "wayfire/scene-render.hpp"
 #include "wayfire/scene.hpp"

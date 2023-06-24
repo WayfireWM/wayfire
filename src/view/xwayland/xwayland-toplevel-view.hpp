@@ -3,6 +3,7 @@
 #include "config.h"
 #include "view/view-impl.hpp"
 #include "wayfire/core.hpp"
+#include "wayfire/debug.hpp"
 #include "wayfire/geometry.hpp"
 #include "wayfire/scene-render.hpp"
 #include "wayfire/signal-provider.hpp"
@@ -164,12 +165,7 @@ class wayfire_xwayland_view : public wf::toplevel_view_interface_t, public wayfi
             configure_geometry = wf::clamp(configure_geometry, view_workarea);
         }
 
-        if (priv->frame)
-        {
-            configure_geometry =
-                priv->frame->expand_wm_geometry(configure_geometry);
-        }
-
+        configure_geometry = wf::expand_geometry_by_margins(configure_geometry, toplevel->pending().margins);
         set_geometry(configure_geometry);
     }
 
@@ -421,7 +417,6 @@ class wayfire_xwayland_view : public wf::toplevel_view_interface_t, public wayfi
     {
         damage();
         emit_view_pre_unmap();
-        set_decoration(nullptr);
 
         main_surface = nullptr;
         priv->unset_mapped_surface_contents();
@@ -470,12 +465,6 @@ class wayfire_xwayland_view : public wf::toplevel_view_interface_t, public wayfi
         {
             toplevel->set_output_offset({0, 0});
         }
-    }
-
-    void set_decoration(std::unique_ptr<wf::decorator_frame_t_t> frame) override
-    {
-        toplevel->set_decoration(frame.get());
-        toplevel_view_interface_t::set_decoration(std::move(frame));
     }
 
     void handle_toplevel_state_changed(wf::toplevel_state_t old_state)

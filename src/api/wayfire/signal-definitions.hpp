@@ -641,16 +641,6 @@ struct view_decoration_state_updated_signal
 
 /**
  * on: view
- * when: Whenever the view's decoration changes.
- * argument: unused.
- */
-struct view_decoration_changed_signal
-{
-    wayfire_view view;
-};
-
-/**
- * on: view
  * when: Whenever the client fails to respond to a ping request within
  *   the expected time(10 seconds).
  */

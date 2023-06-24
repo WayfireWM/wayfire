@@ -4,6 +4,7 @@
 #include "wayfire/scene-render.hpp"
 #include "wayfire/scene.hpp"
 #include "wayfire/signal-provider.hpp"
+#include "wayfire/toplevel.hpp"
 #include <memory>
 #define GLM_FORCE_RADIANS
 #include <glm/gtc/matrix_transform.hpp>
@@ -14,7 +15,6 @@
 #include <wayfire/output.hpp>
 #include <wayfire/opengl.hpp>
 #include <wayfire/core.hpp>
-#include <wayfire/decorator.hpp>
 #include <wayfire/view-transform.hpp>
 #include <wayfire/signal-definitions.hpp>
 #include <wayfire/toplevel-view.hpp>
@@ -60,13 +60,13 @@ class simple_decoration_node_t : public wf::scene::node_t, public wf::pointer_in
         std::string current_text = "";
     } title_texture;
 
+  public:
     wf::decor::decoration_theme_t theme;
     wf::decor::decoration_layout_t layout;
     wf::region_t cached_region;
 
     wf::dimensions_t size;
 
-  public:
     int current_thickness;
     int current_titlebar;
 
@@ -314,66 +314,55 @@ class simple_decoration_node_t : public wf::scene::node_t, public wf::pointer_in
     }
 };
 
-class simple_decorator_t : public wf::decorator_frame_t_t
+wf::simple_decorator_t::simple_decorator_t(wayfire_toplevel_view view)
 {
-    wayfire_toplevel_view view;
-    std::shared_ptr<simple_decoration_node_t> deco;
+    this->view = view;
+    deco = std::make_shared<simple_decoration_node_t>(view);
+    deco->resize(wf::dimensions(view->get_pending_geometry()));
+    wf::scene::add_back(view->get_surface_root_node(), deco);
 
-    wf::signal::connection_t<wf::view_activated_state_signal> on_view_activated = [&] (auto)
+    view->connect(&on_view_activated);
+    view->connect(&on_view_geometry_changed);
+    view->connect(&on_view_fullscreen);
+
+    on_view_activated = [this] (auto)
     {
-        view->damage();
+        wf::scene::damage_node(deco, deco->get_bounding_box());
     };
 
-    wf::signal::connection_t<wf::view_geometry_changed_signal> on_view_geometry_changed = [&] (auto)
+    on_view_geometry_changed = [this] (auto)
     {
-        deco->resize(wf::dimensions(view->get_geometry()));
+        deco->resize(wf::dimensions(this->view->get_geometry()));
     };
 
-    wf::signal::connection_t<wf::view_fullscreen_signal> on_view_fullscreen = [&] (auto)
+    on_view_fullscreen = [this] (auto)
     {
         deco->update_decoration_size();
-        if (!view->toplevel()->current().fullscreen)
+        if (!this->view->toplevel()->current().fullscreen)
         {
-            deco->resize(wf::dimensions(view->get_geometry()));
+            deco->resize(wf::dimensions(this->view->get_geometry()));
         }
     };
-
-  public:
-    simple_decorator_t(wayfire_toplevel_view view)
-    {
-        this->view = view;
-        deco = std::make_shared<simple_decoration_node_t>(view);
-        wf::scene::add_back(view->get_surface_root_node(), deco);
-
-        view->connect(&on_view_activated);
-        view->connect(&on_view_geometry_changed);
-        view->connect(&on_view_fullscreen);
-    }
-
-    ~simple_decorator_t()
-    {
-        wf::scene::remove_child(deco);
-    }
-
-    /* frame implementation */
-    virtual wf::decoration_margins_t get_margins() override
-    {
-        return wf::decoration_margins_t{
-            .left   = deco->current_thickness,
-            .right  = deco->current_thickness,
-            .bottom = deco->current_thickness,
-            .top    = deco->current_titlebar,
-        };
-    }
-};
-
-void init_view(wayfire_toplevel_view view)
-{
-    auto decor = std::make_unique<simple_decorator_t>(view);
-    view->set_decoration(std::move(decor));
 }
 
-void deinit_view(wayfire_toplevel_view view)
+wf::simple_decorator_t::~simple_decorator_t()
 {
-    view->set_decoration(nullptr);
+    wf::scene::remove_child(deco);
+}
+
+wf::decoration_margins_t wf::simple_decorator_t::get_margins(const wf::toplevel_state_t& state)
+{
+    if (state.fullscreen)
+    {
+        return {0, 0, 0, 0};
+    }
+
+    const int thickness = deco->theme.get_border_size();
+    const int titlebar  = deco->theme.get_title_height() + deco->theme.get_border_size();
+    return wf::decoration_margins_t{
+        .left   = thickness,
+        .right  = thickness,
+        .bottom = thickness,
+        .top    = titlebar,
+    };
 }

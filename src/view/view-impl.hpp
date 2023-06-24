@@ -34,9 +34,7 @@ class view_interface_t::view_priv_impl
     size_t last_view_cnt = 0;
 
     bool keyboard_focus_enabled = true;
-    std::unique_ptr<wf::decorator_frame_t_t> frame = nullptr;
-
-    uint32_t allowed_actions = VIEW_ALLOW_ALL;
+    uint32_t allowed_actions    = VIEW_ALLOW_ALL;
 
     uint32_t edges = 0;
     wlr_box minimize_hint = {0, 0, 0, 0};
