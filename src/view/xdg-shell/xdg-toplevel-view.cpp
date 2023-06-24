@@ -308,6 +308,7 @@ void wf::xdg_toplevel_view_t::destroy()
 void wf::xdg_toplevel_view_t::handle_title_changed(std::string new_title)
 {
     this->title = new_title;
+    emit_title_changed_signal(self());
 }
 
 void wf::xdg_toplevel_view_t::handle_app_id_changed(std::string new_app_id)
