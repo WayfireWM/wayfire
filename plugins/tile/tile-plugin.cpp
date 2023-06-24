@@ -698,6 +698,18 @@ class tile_plugin_t : public wf::plugin_interface_t, wf::per_output_tracker_mixi
         }
     }
 
+    void stop_controller(std::shared_ptr<wf::workspace_set_t> wset)
+    {
+        if (auto wo = wset->get_attached_output())
+        {
+            auto tile = wo->get_data<tile_output_plugin_t>();
+            if (tile)
+            {
+                tile->stop_controller(true);
+            }
+        }
+    }
+
     wf::signal::connection_t<view_pre_moved_to_wset_signal> on_view_pre_moved_to_wset =
         [=] (view_pre_moved_to_wset_signal *ev)
     {
@@ -707,11 +719,7 @@ class tile_plugin_t : public wf::plugin_interface_t, wf::per_output_tracker_mixi
             ev->view->store_data(std::make_unique<wf::view_auto_tile_t>());
             if (ev->old_wset)
             {
-                if (auto wo = ev->old_wset->get_attached_output())
-                {
-                    wo->get_data<tile_output_plugin_t>()->stop_controller(true);
-                }
-
+                stop_controller(ev->old_wset);
                 tile_workspace_set_data_t::get(ev->old_wset).detach_view(node);
             }
         }
@@ -722,11 +730,7 @@ class tile_plugin_t : public wf::plugin_interface_t, wf::per_output_tracker_mixi
     {
         if (ev->view->has_data<view_auto_tile_t>() && ev->new_wset)
         {
-            if (auto wo = ev->new_wset->get_attached_output())
-            {
-                wo->get_data<tile_output_plugin_t>()->stop_controller(true);
-            }
-
+            stop_controller(ev->new_wset);
             tile_workspace_set_data_t::get(ev->new_wset).attach_view(ev->view);
         }
     };
