@@ -525,7 +525,7 @@ class WayfireSwitcher : public wf::per_output_plugin_instance_t, public wf::keyb
             views.push_back(create_switcher_view(v));
         }
 
-        std::sort(views.begin(), views.end(), [](SwitcherView& a, SwitcherView& b)
+        std::sort(views.begin(), views.end(), [] (SwitcherView& a, SwitcherView& b)
         {
             return wf::get_focus_timestamp(a.view) > wf::get_focus_timestamp(b.view);
         });
