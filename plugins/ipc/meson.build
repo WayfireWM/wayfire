@@ -30,4 +30,4 @@ demoipc = shared_module('demo-ipc',
     install: true,
     install_dir: conf_data.get('PLUGIN_PATH'))
 
-install_headers(['ipc-method-repository.hpp', 'ipc.hpp', 'ipc-helpers.hpp'], subdir: 'wayfire/plugins/ipc')
+install_headers(['ipc-method-repository.hpp', 'ipc.hpp', 'ipc-helpers.hpp', 'ipc-activator.hpp'], subdir: 'wayfire/plugins/ipc')
