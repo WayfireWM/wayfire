@@ -29,9 +29,12 @@
 #include <wayfire/output.hpp>
 #include <wayfire/output-layout.hpp>
 #include <wayfire/bindings-repository.hpp>
+#include "wayfire/plugins/common/shared-core-data.hpp"
 #include "wayfire/view-helpers.hpp"
 #include "wayfire/view-transform.hpp"
 #include "wayfire/workspace-set.hpp"
+#include "plugins/ipc/ipc-helpers.hpp"
+#include "plugins/ipc/ipc-method-repository.hpp"
 
 class wayfire_alpha : public wf::plugin_interface_t
 {
@@ -42,14 +45,35 @@ class wayfire_alpha : public wf::plugin_interface_t
         .capabilities = wf::CAPABILITY_MANAGE_DESKTOP,
     };
 
+    wf::shared_data::ref_ptr_t<wf::ipc::method_repository_t> ipc_repo;
+
   public:
     void init() override
     {
         min_value.set_callback(min_value_changed);
         wf::get_core().bindings->add_axis(modifier, &axis_cb);
+        ipc_repo->register_method("wf/alpha/set-view-alpha", ipc_set_view_alpha);
     }
 
-    void update_alpha(wayfire_view view, float delta)
+    wf::ipc::method_callback ipc_set_view_alpha = [=] (nlohmann::json data) -> nlohmann::json
+    {
+        WFJSON_EXPECT_FIELD(data, "view-id", number_unsigned);
+        WFJSON_EXPECT_FIELD(data, "alpha", number);
+
+        auto view = wf::ipc::find_view_by_id(data["view-id"]);
+        if (view && view->is_mapped())
+        {
+            auto tr = ensure_transformer(view);
+            adjust_alpha(view, tr, data["alpha"]);
+        } else
+        {
+            return wf::ipc::json_error("Failed to find view with given id. Maybe it was closed?");
+        }
+
+        return wf::ipc::json_ok();
+    };
+
+    std::shared_ptr<wf::scene::view_2d_transformer_t> ensure_transformer(wayfire_view view)
     {
         auto tmgr = view->get_transformed_node();
         if (!tmgr->get_transformer<wf::scene::node_t>("alpha"))
@@ -58,17 +82,26 @@ class wayfire_alpha : public wf::plugin_interface_t
             tmgr->add_transformer(node, wf::TRANSFORMER_2D, "alpha");
         }
 
-        auto transformer = tmgr->get_transformer<wf::scene::view_2d_transformer_t>("alpha");
-        auto old_value   = transformer->alpha;
-        transformer->alpha = std::clamp(transformer->alpha - delta * 0.003, (double)min_value, 1.0);
+        return tmgr->get_transformer<wf::scene::view_2d_transformer_t>("alpha");
+    }
 
-        if (transformer->alpha == 1.0)
+    void adjust_alpha(wayfire_view view, std::shared_ptr<wf::scene::view_2d_transformer_t> tr, float alpha)
+    {
+        tr->alpha = alpha;
+        if (alpha == 1.0)
         {
             return view->get_transformed_node()->rem_transformer("alpha");
-        } else if (old_value != transformer->alpha)
+        } else
         {
             view->damage();
         }
+    }
+
+    void update_alpha(wayfire_view view, float delta)
+    {
+        auto transformer    = ensure_transformer(view);
+        float desired_value = std::clamp(transformer->alpha - delta * 0.003, (double)min_value, 1.0);
+        adjust_alpha(view, transformer, desired_value);
     }
 
     wf::axis_callback axis_cb = [=] (wlr_pointer_axis_event *ev)
@@ -124,6 +157,7 @@ class wayfire_alpha : public wf::plugin_interface_t
         }
 
         wf::get_core().bindings->rem_binding(&axis_cb);
+        ipc_repo->unregister_method("wf/alpha/set-view-alpha");
     }
 };
 
