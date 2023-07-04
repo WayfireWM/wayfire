@@ -108,6 +108,7 @@ void wf::output_workarea_manager_t::reflow_reserved_areas()
     }
 
     wf::workarea_changed_signal data;
+    data.output = priv->output;
     data.old_workarea = old_workarea;
     data.new_workarea = priv->current_workarea;
 

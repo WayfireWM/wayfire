@@ -341,6 +341,7 @@ struct workspace_grid_changed_signal
  */
 struct workarea_changed_signal
 {
+    wf::output_t *output;
     wf::geometry_t old_workarea;
     wf::geometry_t new_workarea;
 };
