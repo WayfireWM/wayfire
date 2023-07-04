@@ -1,6 +1,8 @@
 #pragma once
 
-#include <wayfire/view.hpp>
+#include <wayfire/toplevel-view.hpp>
+#include <wayfire/output.hpp>
+#include <wayfire/workarea.hpp>
 
 namespace wf
 {
@@ -24,31 +26,85 @@ enum slot_t
     SLOT_TR     = 9,
 };
 
-/**
- * name: grid-query-geometry
- * on: output
- * when: A plugin can emit this signal to ask the grid plugin to calculate
- *   the geometry of a given slot.
+/*
+ * 7 8 9
+ * 4 5 6
+ * 1 2 3
  */
-struct grid_query_geometry_signal
+inline uint32_t get_tiled_edges_for_slot(uint32_t slot)
 {
-    // The slot to calculate geometry for
-    slot_t slot;
+    if (slot == 0)
+    {
+        return 0;
+    }
 
-    // Will be filled in by grid
-    wf::geometry_t out_geometry;
-};
+    uint32_t edges = wf::TILED_EDGES_ALL;
+    if (slot % 3 == 0)
+    {
+        edges &= ~WLR_EDGE_LEFT;
+    }
 
-/**
- * name: grid-snap-view
- * on: output
- * when: A plugin can emit this signal to ask the grid plugin to snap the
- *   view to the given slot.
- */
-struct grid_snap_view_signal
+    if (slot % 3 == 1)
+    {
+        edges &= ~WLR_EDGE_RIGHT;
+    }
+
+    if (slot <= 3)
+    {
+        edges &= ~WLR_EDGE_TOP;
+    }
+
+    if (slot >= 7)
+    {
+        edges &= ~WLR_EDGE_BOTTOM;
+    }
+
+    return edges;
+}
+
+inline uint32_t get_slot_from_tiled_edges(uint32_t edges)
 {
-    wayfire_toplevel_view view;
-    slot_t slot;
-};
+    for (int slot = 0; slot <= 9; slot++)
+    {
+        if (get_tiled_edges_for_slot(slot) == edges)
+        {
+            return slot;
+        }
+    }
+
+    return 0;
+}
+
+/*
+ * 7 8 9
+ * 4 5 6
+ * 1 2 3
+ * */
+inline wf::geometry_t get_slot_dimensions(wf::output_t *output, int n)
+{
+    auto area = output->workarea->get_workarea();
+    int w2    = area.width / 2;
+    int h2    = area.height / 2;
+
+    if (n % 3 == 1)
+    {
+        area.width = w2;
+    }
+
+    if (n % 3 == 0)
+    {
+        area.width = w2, area.x += w2;
+    }
+
+    if (n >= 7)
+    {
+        area.height = h2;
+    } else if (n <= 3)
+    {
+        area.height = h2, area.y += h2;
+    }
+
+    return area;
+}
 }
 }

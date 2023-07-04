@@ -1,5 +1,6 @@
 #include "view-action-interface.hpp"
 
+#include "wayfire/core.hpp"
 #include "wayfire/output.hpp"
 #include "wayfire/toplevel-view.hpp"
 #include "wayfire/view.hpp"
@@ -120,36 +121,34 @@ bool view_action_interface_t::execute(const std::string & name,
 
         auto location = wf::get_string(args.at(0));
 
-        wf::grid::grid_snap_view_signal data;
-        data.view = _view;
-
+        grid::slot_t slot;
         if (location == "top")
         {
-            data.slot = grid::SLOT_TOP;
+            slot = grid::SLOT_TOP;
         } else if (location == "top_right")
         {
-            data.slot = grid::SLOT_TR;
+            slot = grid::SLOT_TR;
         } else if (location == "right")
         {
-            data.slot = grid::SLOT_RIGHT;
+            slot = grid::SLOT_RIGHT;
         } else if (location == "bottom_right")
         {
-            data.slot = grid::SLOT_BR;
+            slot = grid::SLOT_BR;
         } else if (location == "bottom")
         {
-            data.slot = grid::SLOT_BOTTOM;
+            slot = grid::SLOT_BOTTOM;
         } else if (location == "bottom_left")
         {
-            data.slot = grid::SLOT_BL;
+            slot = grid::SLOT_BL;
         } else if (location == "left")
         {
-            data.slot = grid::SLOT_LEFT;
+            slot = grid::SLOT_LEFT;
         } else if (location == "top_left")
         {
-            data.slot = grid::SLOT_TL;
+            slot = grid::SLOT_TL;
         } else if (location == "center")
         {
-            data.slot = grid::SLOT_CENTER;
+            slot = grid::SLOT_CENTER;
         } else
         {
             LOGE(
@@ -160,9 +159,7 @@ bool view_action_interface_t::execute(const std::string & name,
         }
 
         LOGI("View action interface: Snap to ", location, ".");
-
-        output->emit(&data);
-
+        wf::get_core().default_wm->tile_request(_view, grid::get_tiled_edges_for_slot(slot));
         return false;
     } else if (name == "start_on_output")
     {

@@ -1,4 +1,5 @@
 #include "wayfire/debug.hpp"
+#include "wayfire/geometry.hpp"
 #include "wayfire/plugins/common/input-grab.hpp"
 #include "wayfire/scene-input.hpp"
 #include "wayfire/signal-provider.hpp"
@@ -94,10 +95,8 @@ class wayfire_move : public wf::per_output_plugin_instance_t,
 
             if (enable_snap && (slot.slot_id != wf::grid::SLOT_NONE))
             {
-                wf::grid::grid_snap_view_signal data;
-                data.view = ev->main_view;
-                data.slot = slot.slot_id;
-                output->emit(&data);
+                wf::get_core().default_wm->tile_request(ev->main_view,
+                    wf::grid::get_tiled_edges_for_slot(slot.slot_id));
 
                 /* Update slot, will hide the preview as well */
                 update_slot(wf::grid::SLOT_NONE);
@@ -478,13 +477,9 @@ class wayfire_move : public wf::per_output_plugin_instance_t,
         /* Show a preview overlay */
         if (new_slot_id)
         {
-            wf::grid::grid_query_geometry_signal query;
-            query.slot = new_slot_id;
-            query.out_geometry = {0, 0, -1, -1};
-            output->emit(&query);
-
+            wf::geometry_t slot_geometry = wf::grid::get_slot_dimensions(output, new_slot_id);
             /* Unknown slot geometry, can't show a preview */
-            if ((query.out_geometry.width <= 0) || (query.out_geometry.height <= 0))
+            if ((slot_geometry.width <= 0) || (slot_geometry.height <= 0))
             {
                 return;
             }
@@ -496,7 +491,7 @@ class wayfire_move : public wf::per_output_plugin_instance_t,
                 std::unique_ptr<wf::view_interface_t>(preview));
             preview->set_output(output);
 
-            preview->set_target_geometry(query.out_geometry, 1);
+            preview->set_target_geometry(slot_geometry, 1);
             slot.preview = nonstd::make_observer(preview);
         }
 
