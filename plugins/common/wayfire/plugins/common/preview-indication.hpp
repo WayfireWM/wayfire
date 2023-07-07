@@ -28,13 +28,13 @@ class preview_indication_view_t : public wf::color_rect_view_t
     wf::effect_hook_t pre_paint;
     wf::output_t *output;
 
+    preview_indication_animation_t animation;
+    bool should_close = false;
+
     /* Default colors */
     const wf::option_wrapper_t<wf::color_t> base_color;
     const wf::option_wrapper_t<wf::color_t> base_border;
     const wf::option_wrapper_t<int> base_border_w;
-
-    preview_indication_animation_t animation;
-    bool should_close = false;
 
   public:
 
