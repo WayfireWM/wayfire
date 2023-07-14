@@ -31,37 +31,6 @@ wf::geometry_t wf::output_workarea_manager_t::get_workarea()
     return priv->current_workarea;
 }
 
-wf::geometry_t calculate_anchored_geometry(wf::geometry_t wa,
-    const wf::output_workarea_manager_t::anchored_area& area)
-{
-    wf::geometry_t target;
-
-    if (area.edge <= wf::output_workarea_manager_t::ANCHORED_EDGE_BOTTOM)
-    {
-        target.width  = wa.width;
-        target.height = area.real_size;
-    } else
-    {
-        target.height = wa.height;
-        target.width  = area.real_size;
-    }
-
-    target.x = wa.x;
-    target.y = wa.y;
-
-    if (area.edge == wf::output_workarea_manager_t::ANCHORED_EDGE_RIGHT)
-    {
-        target.x = wa.x + wa.width - target.width;
-    }
-
-    if (area.edge == wf::output_workarea_manager_t::ANCHORED_EDGE_BOTTOM)
-    {
-        target.y = wa.y + wa.height - target.height;
-    }
-
-    return target;
-}
-
 void wf::output_workarea_manager_t::add_reserved_area(anchored_area *area)
 {
     priv->anchors.push_back(area);
@@ -80,11 +49,9 @@ void wf::output_workarea_manager_t::reflow_reserved_areas()
     priv->current_workarea = priv->output->get_relative_geometry();
     for (auto a : priv->anchors)
     {
-        auto anchor_area = calculate_anchored_geometry(priv->current_workarea, *a);
-
         if (a->reflowed)
         {
-            a->reflowed(anchor_area, priv->current_workarea);
+            a->reflowed(priv->current_workarea);
         }
 
         switch (a->edge)

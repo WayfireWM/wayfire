@@ -258,9 +258,10 @@ struct wf_layer_shell_manager
         {
             v->anchored_area =
                 std::make_unique<wf::output_workarea_manager_t::anchored_area>();
-            v->anchored_area->reflowed =
-                [v] (wf::geometry_t geometry, wf::geometry_t _)
-            { v->configure(geometry); };
+            v->anchored_area->reflowed = [this, v] (wf::geometry_t avail_workarea)
+            {
+                pin_view(v, avail_workarea);
+            };
             /* Notice that the reflowed areas won't be changed until we call
              * reflow_reserved_areas(). However, by that time the information
              * in anchored_area will have been populated */
@@ -269,9 +270,8 @@ struct wf_layer_shell_manager
 
         v->anchored_area->edge = anchor_to_edge(edges);
         v->anchored_area->reserved_size = v->lsurface->current.exclusive_zone;
-        v->anchored_area->real_size     = v->anchored_area->edge <=
-            wf::output_workarea_manager_t::ANCHORED_EDGE_BOTTOM ?
-            v->lsurface->current.desired_height : v->lsurface->current.desired_width;
+        LOGC(LSHELL, "Set exclusive zone for ", v->self(), " edges=", edges,
+            " excl=", v->anchored_area->reserved_size);
     }
 
     void pin_view(wayfire_layer_shell_view *v, wf::geometry_t usable_workarea)
@@ -284,7 +284,8 @@ struct wf_layer_shell_manager
         box.x     = box.y = 0;
         box.width = state->desired_width;
         box.height = state->desired_height;
-
+        LOGC(LSHELL, "Pin view ", v->self(), " desired=", wf::dimensions(box), " workarea=", bounds,
+            " anchor=", state->anchor);
         if ((state->anchor & both_horiz) && (box.width == 0))
         {
             box.x     = bounds.x;
@@ -331,6 +332,7 @@ struct wf_layer_shell_manager
                 set_exclusive_zone(v);
             } else
             {
+                LOGC(LSHELL, "Unset anchored area for ", v->self());
                 /* Make sure the view doesn't have a reserved area anymore */
                 v->remove_anchored(false);
             }

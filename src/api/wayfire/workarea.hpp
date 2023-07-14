@@ -29,22 +29,18 @@ class output_workarea_manager_t
 
     struct anchored_area
     {
-        /* The edge from which to reserver area */
+        // The edge from which to reserve area.
         anchored_edge edge;
-        /* Amount of space to reserve */
+
+        // Amount of space to reserve.
         int reserved_size;
 
-        /* Desired size, to be given later in the reflowed callback */
-        int real_size;
-
-        /* The reflowed callbacks allows the component registering the
-         * anchored area to be notified whenever the dimensions or the position
-         * of the anchored area changes.
-         *
-         * The first passed geometry is the geometry of the anchored area. The
-         * second one is the available workarea at the moment that the current
-         * workarea was considered. */
-        std::function<void(wf::geometry_t, wf::geometry_t)> reflowed;
+        // The reflowed callback is optional and when present, is called every time the anchored areas are
+        // reflowed (e.g. anchored areas are recalculated). The passed geometry is the available workarea
+        // before the view's own request was considered. That means, for the first anchored area in the
+        // workarea manager, the geometry will be the full output's geometry. For each subsequent anchored
+        // area, the size of the previous anchored areas is excluded from the passed available workarea.
+        std::function<void(wf::geometry_t)> reflowed;
     };
 
     /**
