@@ -215,6 +215,10 @@ void parse_extended_debugging(const std::vector<std::string>& categories)
         {
             LOGD("Enabling extended debugging for xwayland events");
             wf::log::enabled_categories.set((size_t)wf::log::logging_category::XWL, 1);
+        } else if (cat == "layer-shell")
+        {
+            LOGD("Enabling extended debugging for layer-shell events");
+            wf::log::enabled_categories.set((size_t)wf::log::logging_category::LSHELL, 1);
         } else
         {
             LOGE("Unrecognized debugging category \"", cat, "\"");
