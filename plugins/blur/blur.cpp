@@ -183,7 +183,7 @@ class blur_render_instance_t : public transformer_render_instance_t<blur_node_t>
         if (!damage.empty())
         {
             auto translucent_damage = calculate_translucent_damage(target, damage);
-            self->provider()->pre_render(bounding_box, translucent_damage, target);
+            self->provider()->prepare_blur(target, translucent_damage);
             auto reg = target.framebuffer_region_from_geometry_region(damage);
 
             for (const auto& rect : reg)

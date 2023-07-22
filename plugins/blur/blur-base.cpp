@@ -1,6 +1,8 @@
 #include "blur.hpp"
 #include "wayfire/core.hpp"
+#include "wayfire/geometry.hpp"
 #include "wayfire/scene-render.hpp"
+#include <glm/ext/matrix_transform.hpp>
 #include <wayfire/output.hpp>
 #include <wayfire/workspace-set.hpp>
 #include <wayfire/util/log.hpp>
@@ -15,13 +17,13 @@ attribute mediump vec2 uv_in;
 varying mediump vec2 uvpos[2];
 
 uniform mat4 mvp;
-uniform mat4 background_inverse;
+uniform mat4 background_uv_matrix;
 
 void main() {
 
     gl_Position = mvp * vec4(position, 0.0, 1.0);
     uvpos[0] = uv_in;
-    uvpos[1] = vec4(background_inverse * vec4(uv_in - 0.5, 0.0, 1.0)).xy + 0.5;
+    uvpos[1] = vec4(background_uv_matrix * vec4(uv_in - 0.5, 0.0, 1.0)).xy + 0.5;
 })";
 
 static const char *blur_blend_fragment_shader =
@@ -46,9 +48,9 @@ vec3 saturation(vec3 rgb, float adjustment)
 
 void main()
 {
-    vec4 bp = texture2D(bg_texture, uvpos[0]);
+    vec4 bp = texture2D(bg_texture, uvpos[1]);
     bp = vec4(saturation(bp.rgb, sat), bp.a);
-    vec4 wp = get_pixel(uvpos[1]);
+    vec4 wp = get_pixel(uvpos[0]);
     vec4 c = clamp(4.0 * wp.a, 0.0, 1.0) * bp;
     gl_FragColor = wp + (1.0 - wp.a) * c;
 })";
@@ -174,8 +176,7 @@ wlr_box wf_blur_base::copy_region(wf::framebuffer_t& result,
     return subbox;
 }
 
-void wf_blur_base::pre_render(wlr_box src_box,
-    const wf::region_t& damage, const wf::render_target_t& target_fb)
+void wf_blur_base::prepare_blur(const wf::render_target_t& target_fb, const wf::region_t& damage)
 {
     if (damage.empty())
     {
@@ -201,36 +202,19 @@ void wf_blur_base::pre_render(wlr_box src_box,
 
     int r = blur_fb0(blur_damage, fb[0].viewport_width, fb[0].viewport_height);
 
-    /* Make sure the result is always fb[1], because that's what is used in render()
+    /* Make sure the result is always fb[0], because that's what is used in render()
      * */
     if (r != 0)
     {
         std::swap(fb[0], fb[1]);
     }
 
-    /* we subtract target_fb's position to so that
-     * view box is relative to framebuffer */
-    auto view_box = target_fb.framebuffer_box_from_geometry_box(src_box);
+    prepared_geometry = damage_box;
+}
 
-    OpenGL::render_begin();
-    fb[1].allocate(view_box.width, view_box.height);
-    fb[1].bind();
-    GL_CALL(glBindFramebuffer(GL_READ_FRAMEBUFFER, fb[0].fb));
-
-    /* Blit the blurred texture into an fb which has the size of the view,
-     * so that the view texture and the blurred background can be combined
-     * together in render()
-     *
-     * local_geometry is damage_box relative to view box */
-    wlr_box local_box = damage_box + wf::point_t{-view_box.x, -view_box.y};
-    GL_CALL(glBlitFramebuffer(0, 0, fb[0].viewport_width, fb[0].viewport_height,
-        local_box.x,
-        view_box.height - local_box.y - local_box.height,
-        local_box.x + local_box.width,
-        view_box.height - local_box.y,
-        GL_COLOR_BUFFER_BIT, GL_LINEAR));
-    GL_CALL(glBindTexture(GL_TEXTURE_2D, 0));
-    OpenGL::render_end();
+static wf::pointf_t get_center(wf::geometry_t g)
+{
+    return {g.x + g.width / 2.0, g.y + g.height / 2.0};
 }
 
 void wf_blur_base::render(wf::texture_t src_tex, wlr_box src_box,
@@ -241,10 +225,10 @@ void wf_blur_base::render(wf::texture_t src_tex, wlr_box src_box,
 
     /* Use shader and enable vertex and texcoord data */
     static const float vertex_data_uv[] = {
-        0.0f, 1.0f,
-        1.0f, 1.0f,
-        1.0f, 0.0f,
         0.0f, 0.0f,
+        1.0f, 0.0f,
+        1.0f, 1.0f,
+        0.0f, 1.0f,
     };
 
     const float vertex_data_pos[] = {
@@ -257,8 +241,37 @@ void wf_blur_base::render(wf::texture_t src_tex, wlr_box src_box,
     blend_program.attrib_pointer("position", 2, 0, vertex_data_pos);
     blend_program.attrib_pointer("uv_in", 2, 0, vertex_data_uv);
 
+    // The blurred background is contained in a framebuffer with dimensions equal to the projected damage.
+    // We need to calculate a mapping between the uv coordinates of the view (which may be bigger than the
+    // damage) and the uv coordinates used for sampling the blurred background.
+
+    // How it works:
+    // 1. translate UV coordinates to (-0.5, -0.5) ~ (0.5, 0.5) range
+    // 2. apply inverse framebuffer transform (needed because on rotated outputs, the framebuffer box includes
+    // rotation).
+    // 3. Scale to match the view size
+    // 4. Translate to match the view
+
+    auto view_box = target_fb.framebuffer_box_from_geometry_box(src_box); // Projected view
+    // auto blurred_box = wf::clamp(prepared_geometry, view_box);
+    auto blurred_box = prepared_geometry;
+    // prepared_geometry is the projected damage bounding box
+
+    glm::mat4 fb_fix   = target_fb.transform;
+    const auto scale_x = 1.0 * view_box.width / blurred_box.width;
+    const auto scale_y = 1.0 * view_box.height / blurred_box.height;
+    glm::mat4 scale    = glm::scale(glm::mat4(1.0), glm::vec3{scale_x, scale_y, 1.0});
+
+    const wf::pointf_t center_view     = get_center(view_box);
+    const wf::pointf_t center_prepared = get_center(blurred_box);
+    const auto translate_x = 1.0 * (center_view.x - center_prepared.x) / view_box.width;
+    const auto translate_y = -1.0 * (center_view.y - center_prepared.y) / view_box.height;
+    glm::mat4 fix_center   = glm::translate(glm::mat4(1.0), glm::vec3{translate_x, translate_y, 0.0});
+    glm::mat4 composite    = scale * fix_center * fb_fix;
+    blend_program.uniformMatrix4f("background_uv_matrix", composite);
+
     /* Blend blurred background with window texture src_tex */
-    blend_program.uniformMatrix4f("background_inverse", glm::inverse(target_fb.transform));
+
     blend_program.uniformMatrix4f("mvp", target_fb.get_orthographic_projection());
     /* XXX: core should give us the number of texture units used */
     blend_program.uniform1i("bg_texture", 1);
@@ -266,7 +279,7 @@ void wf_blur_base::render(wf::texture_t src_tex, wlr_box src_box,
 
     blend_program.set_active_texture(src_tex);
     GL_CALL(glActiveTexture(GL_TEXTURE0 + 1));
-    GL_CALL(glBindTexture(GL_TEXTURE_2D, fb[1].tex));
+    GL_CALL(glBindTexture(GL_TEXTURE_2D, fb[0].tex));
     /* Render it to target_fb */
     target_fb.bind();
 
