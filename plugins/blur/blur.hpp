@@ -140,8 +140,17 @@ class wf_blur_base
      */
     void prepare_blur(const wf::render_target_t& target_fb, const wf::region_t& damage);
 
-    virtual void render(wf::texture_t src_tex, wlr_box src_box,
-        wlr_box scissor_box, const wf::render_target_t& target_fb);
+    /**
+     * Render a view with a blended background as prepared from @prepare_blur.
+     *
+     * @param src_tex The texture of the view to render.
+     * @param src_box The geometry of the view in framebuffer logical coordinates.
+     * @param damage The region to repaint, in logical coordinates.
+     * @param background_source_fb The framebuffer used to prepare the background blur.
+     * @param target_fb The target to draw to.
+     */
+    void render(wf::texture_t src_tex, wlr_box src_box, const wf::region_t& damage,
+        const wf::render_target_t& background_source_fb, const wf::render_target_t& target_fb);
 };
 
 std::unique_ptr<wf_blur_base> create_box_blur();

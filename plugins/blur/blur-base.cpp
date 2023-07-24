@@ -1,6 +1,7 @@
 #include "blur.hpp"
 #include "wayfire/core.hpp"
 #include "wayfire/geometry.hpp"
+#include "wayfire/region.hpp"
 #include "wayfire/scene-render.hpp"
 #include <glm/ext/matrix_transform.hpp>
 #include <wayfire/output.hpp>
@@ -217,8 +218,8 @@ static wf::pointf_t get_center(wf::geometry_t g)
     return {g.x + g.width / 2.0, g.y + g.height / 2.0};
 }
 
-void wf_blur_base::render(wf::texture_t src_tex, wlr_box src_box,
-    wlr_box scissor_box, const wf::render_target_t& target_fb)
+void wf_blur_base::render(wf::texture_t src_tex, wlr_box src_box, const wf::region_t& damage,
+    const wf::render_target_t& background_source_fb, const wf::render_target_t& target_fb)
 {
     OpenGL::render_begin(target_fb);
     blend_program.use(src_tex.type);
@@ -251,9 +252,7 @@ void wf_blur_base::render(wf::texture_t src_tex, wlr_box src_box,
     // rotation).
     // 3. Scale to match the view size
     // 4. Translate to match the view
-
-    auto view_box = target_fb.framebuffer_box_from_geometry_box(src_box); // Projected view
-    // auto blurred_box = wf::clamp(prepared_geometry, view_box);
+    auto view_box    = background_source_fb.framebuffer_box_from_geometry_box(src_box); // Projected view
     auto blurred_box = prepared_geometry;
     // prepared_geometry is the projected damage bounding box
 
@@ -271,7 +270,6 @@ void wf_blur_base::render(wf::texture_t src_tex, wlr_box src_box,
     blend_program.uniformMatrix4f("background_uv_matrix", composite);
 
     /* Blend blurred background with window texture src_tex */
-
     blend_program.uniformMatrix4f("mvp", target_fb.get_orthographic_projection());
     /* XXX: core should give us the number of texture units used */
     blend_program.uniform1i("bg_texture", 1);
@@ -283,8 +281,11 @@ void wf_blur_base::render(wf::texture_t src_tex, wlr_box src_box,
     /* Render it to target_fb */
     target_fb.bind();
 
-    target_fb.scissor(scissor_box);
-    GL_CALL(glDrawArrays(GL_TRIANGLE_FAN, 0, 4));
+    for (const auto& box : damage)
+    {
+        target_fb.logic_scissor(wlr_box_from_pixman_box(box));
+        GL_CALL(glDrawArrays(GL_TRIANGLE_FAN, 0, 4));
+    }
 
     /*
      * Disable stuff
