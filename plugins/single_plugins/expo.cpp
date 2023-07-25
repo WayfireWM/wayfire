@@ -368,7 +368,7 @@ class wayfire_expo : public wf::per_output_plugin_instance_t, public wf::keyboar
     wf::point_t input_grab_origin;
     void handle_input_press(int32_t x, int32_t y, uint32_t state)
     {
-        if (zoom_animation.running())
+        if (zoom_animation.running() || !this->state.active)
         {
             return;
         }
