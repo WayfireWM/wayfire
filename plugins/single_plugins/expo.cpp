@@ -290,7 +290,7 @@ class wayfire_expo : public wf::per_output_plugin_instance_t, public wf::keyboar
         start_zoom(true);
 
         wall->start_output_renderer();
-        output->render->add_effect(&post_frame, wf::OUTPUT_EFFECT_POST);
+        output->render->add_effect(&pre_frame, wf::OUTPUT_EFFECT_PRE);
         output->render->schedule_redraw();
 
         auto cws = output->wset()->get_current_workspace();
@@ -670,7 +670,7 @@ class wayfire_expo : public wf::per_output_plugin_instance_t, public wf::keyboar
         }
     }
 
-    wf::effect_hook_t post_frame = [=] ()
+    wf::effect_hook_t pre_frame = [=] ()
     {
         if (zoom_animation.running())
         {
@@ -743,7 +743,7 @@ class wayfire_expo : public wf::per_output_plugin_instance_t, public wf::keyboar
         output->deactivate_plugin(&grab_interface);
         input_grab->ungrab_input();
         wall->stop_output_renderer(true);
-        output->render->rem_effect(&post_frame);
+        output->render->rem_effect(&pre_frame);
         key_repeat.disconnect();
         key_pressed = 0;
     }

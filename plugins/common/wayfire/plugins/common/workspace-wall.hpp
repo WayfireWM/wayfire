@@ -88,11 +88,6 @@ class workspace_wall_t : public wf::signal::provider_t
      */
     void set_viewport(const wf::geometry_t& viewport_geometry)
     {
-        if (viewport_geometry == viewport)
-        {
-            return;
-        }
-
         this->viewport = viewport_geometry;
         if (render_node)
         {
