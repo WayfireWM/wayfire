@@ -1,8 +1,9 @@
 #include "wayfire/nonstd/tracking-allocator.hpp"
+#include "wayfire/signal-provider.hpp"
 #define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
 #include <doctest/doctest.h>
 
-class base_t
+class base_t : public wf::signal::provider_t
 {
   public:
     static int destroyed;
@@ -35,10 +36,21 @@ TEST_CASE("Misc factory works")
     auto obj_a = allocator.allocate<base_t>();
     REQUIRE(allocator.get_all().size() == 1);
 
+    int destruct_events = 0;
+    wf::signal::connection_t<wf::destruct_signal<base_t>> on_destroy;
+
     {
         auto obj_b = allocator.allocate<derived_t>(5);
+        on_destroy = [&destruct_events, expected = obj_b.get()] (wf::destruct_signal<base_t> *ev)
+        {
+            REQUIRE(ev->object == expected);
+            ++destruct_events;
+        };
+
+        obj_b->connect(&on_destroy);
         REQUIRE(allocator.get_all().size() == 2);
     }
 
+    REQUIRE(destruct_events == 1);
     REQUIRE(allocator.get_all().size() == 1);
 }

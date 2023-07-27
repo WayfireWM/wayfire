@@ -3,9 +3,20 @@
 #include <functional>
 #include <wayfire/dassert.hpp>
 #include <wayfire/nonstd/observer_ptr.h>
+#include <wayfire/signal-provider.hpp>
 
 namespace wf
 {
+/**
+ * The destruct signal is emitted directly before an object is freed.
+ * Emitted on objects managed with the tracking allocator which support signals.
+ */
+template<class T>
+struct destruct_signal
+{
+    T *object;
+};
+
 /**
  * The tracking allocator is a factory singleton for allocating objects of a certain type.
  * The objects are allocated via shared pointers, and the tracking allocator keeps a list of all allocated
@@ -45,6 +56,13 @@ class tracking_allocator_t
     std::vector<nonstd::observer_ptr<ObjectType>> allocated_objects;
     void deallocate_object(ObjectType *obj)
     {
+        if constexpr (std::is_base_of_v<wf::signal::provider_t, ObjectType>)
+        {
+            destruct_signal<ObjectType> event;
+            event.object = obj;
+            obj->emit(&event);
+        }
+
         auto it = std::find(allocated_objects.begin(), allocated_objects.end(),
             nonstd::observer_ptr<ObjectType>{obj});
         wf::dassert(it != allocated_objects.end(), "Object is not allocated?");
