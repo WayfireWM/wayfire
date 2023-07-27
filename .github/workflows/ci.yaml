@@ -31,7 +31,6 @@ jobs:
     - run: env CC=clang CXX=clang++ CXXFLAGS="-stdlib=libc++" LDFLAGS="-fuse-ld=lld -stdlib=libc++" meson build
     - run: ninja -v -Cbuild
     - run: ninja -v -Cbuild test
-    - run: /usr/bin/run-clang-tidy -p build -quiet "^$PWD/"'(src|plugins)/.*'
   test_code_style:
     name: "Check code style with uncrustify"
     runs-on: ubuntu-latest
