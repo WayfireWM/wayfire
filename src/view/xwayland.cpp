@@ -5,6 +5,7 @@
 #include "../core/seat/cursor.hpp"
 #include <wayfire/view.hpp>
 
+#include "wayfire/util.hpp"
 #include "xwayland/xwayland-helpers.hpp"
 #include "xwayland/xwayland-view-base.hpp"
 #include "xwayland/xwayland-unmanaged-view.hpp"
@@ -17,62 +18,166 @@ xcb_atom_t wf::xw::_NET_WM_WINDOW_TYPE_DIALOG;
 xcb_atom_t wf::xw::_NET_WM_WINDOW_TYPE_SPLASH;
 xcb_atom_t wf::xw::_NET_WM_WINDOW_TYPE_DND;
 
-void wayfire_xwayland_view_base::recreate_view()
+namespace wf
 {
-    wf::xw::view_type target_type = wf::xw::view_type::NORMAL;
-    if (this->is_dnd())
+/**
+ * A class which manages a xwayland surface for the duration of the wlr_xwayland_surface lifetime.
+ */
+class xwayland_view_controller_t
+{
+    nonstd::observer_ptr<wayfire_xwayland_view_base> view_base;
+    nonstd::observer_ptr<wf::view_interface_t> view_impl;
+    wlr_xwayland_surface *xw;
+
+    wf::wl_listener_wrapper on_destroy;
+    wf::wl_listener_wrapper on_or_changed;
+    wf::wl_listener_wrapper on_set_window_type;
+    wf::wl_listener_wrapper on_set_parent;
+
+  public:
+    xwayland_view_controller_t(wlr_xwayland_surface *xsurf)
     {
-        target_type = wf::xw::view_type::DND;
-    } else if (this->is_unmanaged())
-    {
-        target_type = wf::xw::view_type::UNMANAGED;
+        this->xw = xsurf;
+        on_destroy.set_callback([=] (auto) { delete this; });
+        on_destroy.connect(&xw->events.destroy);
+
+        create_view(determine_type());
+        on_or_changed.set_callback([&] (void*)
+        {
+            recreate_view();
+        });
+        on_set_window_type.set_callback([&] (void*)
+        {
+            recreate_view();
+        });
+        on_set_parent.set_callback([&] (void*)
+        {
+            /* Menus, etc. with TRANSIENT_FOR but not dialogs */
+            recreate_view();
+        });
+
+        on_or_changed.connect(&xw->events.set_override_redirect);
+        on_set_window_type.connect(&xw->events.set_window_type);
+        on_set_parent.connect(&xw->events.set_parent);
     }
 
-    if (target_type == this->get_current_impl_type())
+    ~xwayland_view_controller_t()
     {
-        // Nothing changed
-        return;
+        view_impl->unref();
     }
 
-    /*
-     * Copy xw and mapped status into the stack, because "this" may be destroyed
-     * at some point of this function.
+    bool is_dialog()
+    {
+        if (xw::has_type(xw, wf::xw::_NET_WM_WINDOW_TYPE_DIALOG) ||
+            (xw->parent && (xw->window_type_len == 0)))
+        {
+            return true;
+        } else
+        {
+            return false;
+        }
+    }
+
+    /**
+     * Determine whether the view should be treated as override-redirect or not.
      */
-    auto xw_surf    = this->xw;
-    bool was_mapped = xw->mapped;
-
-    // destroy the view (unmap + destroy)
-    if (was_mapped)
+    bool is_unmanaged()
     {
-        unmap();
+        if (xw->override_redirect)
+        {
+            return true;
+        }
+
+        /** Example: Android Studio dialogs */
+        if (xw->parent && !this->is_dialog() &&
+            !wf::xw::has_type(xw, wf::xw::_NET_WM_WINDOW_TYPE_NORMAL))
+        {
+            return true;
+        }
+
+        return false;
     }
 
-    destroy();
-
-    // Create the new view.
-    // Take care! The new_view pointer is passed to core as unique_ptr
-    wayfire_xwayland_view_base *new_view;
-    switch (target_type)
+    /**
+     * Determine whether the view should be treated as a drag icon.
+     */
+    bool is_dnd()
     {
-      case wf::xw::view_type::DND:
-        new_view = new wayfire_dnd_xwayland_view(xw_surf);
-        break;
-
-      case wf::xw::view_type::UNMANAGED:
-        new_view = new wayfire_unmanaged_xwayland_view(xw_surf);
-        break;
-
-      case wf::xw::view_type::NORMAL:
-        new_view = new wayfire_xwayland_view(xw_surf);
-        break;
+        return wf::xw::has_type(xw, wf::xw::_NET_WM_WINDOW_TYPE_DND);
     }
 
-    wf::get_core().add_view(std::unique_ptr<wf::view_interface_t>(
-        dynamic_cast<wf::view_interface_t*>(new_view)));
-    if (was_mapped)
+    wf::xw::view_type determine_type()
     {
-        new_view->map(xw_surf->surface);
+        wf::xw::view_type target_type = wf::xw::view_type::NORMAL;
+        if (this->is_dnd())
+        {
+            target_type = wf::xw::view_type::DND;
+        } else if (this->is_unmanaged())
+        {
+            target_type = wf::xw::view_type::UNMANAGED;
+        }
+
+        return target_type;
     }
+
+    void create_view(wf::xw::view_type target_type)
+    {
+        std::unique_ptr<wf::view_interface_t> new_view;
+        switch (target_type)
+        {
+          case wf::xw::view_type::DND:
+            new_view = std::make_unique<wayfire_dnd_xwayland_view>(xw);
+            break;
+
+          case wf::xw::view_type::UNMANAGED:
+            new_view = std::make_unique<wayfire_unmanaged_xwayland_view>(xw);
+            break;
+
+          case wf::xw::view_type::NORMAL:
+            new_view = std::make_unique<wayfire_xwayland_view>(xw);
+            break;
+        }
+
+        this->view_base = {dynamic_cast<wayfire_xwayland_view_base*>(new_view.get())};
+        this->view_impl = {new_view};
+        wf::get_core().add_view(std::move(new_view));
+        if (xw->mapped)
+        {
+            view_base->map(xw->surface);
+        }
+    }
+
+    /**
+     * Destroy the view, and create a new one with the correct type -
+     * unmanaged(override-redirect), DnD or normal.
+     *
+     * No-op if the view already has the correct type.
+     */
+    void recreate_view()
+    {
+        const auto target_type = determine_type();
+
+        if (target_type == view_base->get_current_impl_type())
+        {
+            // Nothing changed
+            return;
+        }
+
+        // destroy the view (unmap + destroy)
+        if (view_impl->is_mapped())
+        {
+            view_base->unmap();
+        }
+
+        view_base->destroy();
+        view_impl->unref();
+        view_base = nullptr;
+        view_impl = nullptr;
+
+        // Create the new view.
+        create_view(target_type);
+    }
+};
 }
 
 static wlr_xwayland *xwayland_handle = nullptr;
@@ -92,15 +197,7 @@ void wf::init_xwayland()
     on_created.set_callback([] (void *data)
     {
         auto xsurf = (wlr_xwayland_surface*)data;
-        if (xsurf->override_redirect)
-        {
-            wf::get_core().add_view(
-                std::make_unique<wayfire_unmanaged_xwayland_view>(xsurf));
-        } else
-        {
-            wf::get_core().add_view(
-                std::make_unique<wayfire_xwayland_view>(xsurf));
-        }
+        new wf::xwayland_view_controller_t{xsurf};
     });
 
     on_ready.set_callback([&] (void *data)
@@ -113,8 +210,7 @@ void wf::init_xwayland()
             LOGD("Successfully loaded Xwayland atoms.");
         }
 
-        wlr_xwayland_set_seat(xwayland_handle,
-            wf::get_core().get_current_seat());
+        wlr_xwayland_set_seat(xwayland_handle, wf::get_core().get_current_seat());
         xwayland_update_default_cursor();
     });
 

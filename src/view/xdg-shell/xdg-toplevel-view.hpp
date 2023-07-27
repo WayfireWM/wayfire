@@ -63,4 +63,6 @@ class xdg_toplevel_view_t : public wf::toplevel_view_interface_t
     void handle_app_id_changed(std::string new_app_id);
     void handle_toplevel_state_changed(toplevel_state_t old_state);
 };
+
+void default_handle_new_xdg_toplevel(wlr_xdg_toplevel *toplevel);
 }

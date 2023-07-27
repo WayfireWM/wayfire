@@ -36,4 +36,17 @@ bool wf::xw::load_basic_atoms(const char *server_name)
     return true;
 }
 
+bool wf::xw::has_type(wlr_xwayland_surface *xw, xcb_atom_t type)
+{
+    for (size_t i = 0; i < xw->window_type_len; i++)
+    {
+        if (xw->window_type[i] == type)
+        {
+            return true;
+        }
+    }
+
+    return false;
+}
+
 #endif

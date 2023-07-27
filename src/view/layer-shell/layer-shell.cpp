@@ -28,7 +28,6 @@ class wayfire_layer_shell_view : public wf::view_interface_t
 {
     wf::wl_listener_wrapper on_map;
     wf::wl_listener_wrapper on_unmap;
-    wf::wl_listener_wrapper on_destroy;
     wf::wl_listener_wrapper on_new_popup;
     wf::wl_listener_wrapper on_commit_unmapped;
 
@@ -69,7 +68,7 @@ class wayfire_layer_shell_view : public wf::view_interface_t
     void close() override;
 
     /* Handle the destruction of the underlying wlroots object */
-    void destroy();
+    void handle_destroy();
 
     void configure(wf::geometry_t geometry);
     void set_output(wf::output_t *output) override;
@@ -409,7 +408,6 @@ void wayfire_layer_shell_view::initialize()
 
     on_map.set_callback([&] (void*) { map(); });
     on_unmap.set_callback([&] (void*) { unmap(); });
-    on_destroy.set_callback([&] (void*) { destroy(); });
     on_new_popup.set_callback([&] (void *data)
     {
         create_xdg_popup((wlr_xdg_popup*)data);
@@ -432,7 +430,6 @@ void wayfire_layer_shell_view::initialize()
 
     on_map.connect(&lsurface->events.map);
     on_unmap.connect(&lsurface->events.unmap);
-    on_destroy.connect(&lsurface->events.destroy);
     on_new_popup.connect(&lsurface->events.new_popup);
     on_commit_unmapped.connect(&lsurface->surface->events.commit);
 
@@ -440,16 +437,13 @@ void wayfire_layer_shell_view::initialize()
     on_commit_unmapped.emit(NULL);
 }
 
-void wayfire_layer_shell_view::destroy()
+void wayfire_layer_shell_view::handle_destroy()
 {
     this->lsurface = nullptr;
     on_map.disconnect();
     on_unmap.disconnect();
-    on_destroy.disconnect();
     on_new_popup.disconnect();
-
     remove_anchored(true);
-    unref();
 }
 
 wf::scene::layer wayfire_layer_shell_view::get_layer()
@@ -643,6 +637,32 @@ void wayfire_layer_shell_view::remove_anchored(bool reflow)
     }
 }
 
+/**
+ * A class which manages the layer_shell_view for the duration of the wlr_layer_surface object lifetime.
+ */
+class layer_shell_view_controller_t
+{
+    nonstd::observer_ptr<wayfire_layer_shell_view> view;
+    wf::wl_listener_wrapper on_destroy;
+
+  public:
+    layer_shell_view_controller_t(wlr_layer_surface_v1 *lsurface)
+    {
+        on_destroy.set_callback([=] (auto) { delete this; });
+        on_destroy.connect(&lsurface->events.destroy);
+
+        auto view = std::make_unique<wayfire_layer_shell_view>(lsurface);
+        this->view = {view};
+        wf::get_core().add_view(std::move(view));
+    }
+
+    ~layer_shell_view_controller_t()
+    {
+        view->handle_destroy();
+        view->unref();
+    }
+};
+
 static wlr_layer_shell_v1 *layer_shell_handle;
 void wf::init_layer_shell()
 {
@@ -654,8 +674,7 @@ void wf::init_layer_shell()
         on_created.set_callback([] (void *data)
         {
             auto lsurf = static_cast<wlr_layer_surface_v1*>(data);
-            wf::get_core().add_view(
-                std::make_unique<wayfire_layer_shell_view>(lsurf));
+            new layer_shell_view_controller_t{lsurf};
         });
 
         on_created.connect(&layer_shell_handle->events.new_surface);

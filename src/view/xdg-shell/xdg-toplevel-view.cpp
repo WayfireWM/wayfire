@@ -9,6 +9,7 @@
 #include "../xdg-shell.hpp"
 #include "wayfire/debug.hpp"
 #include "wayfire/geometry.hpp"
+#include "wayfire/util.hpp"
 #include <wayfire/output-layout.hpp>
 #include <wayfire/workspace-set.hpp>
 #include <wlr/util/edges.h>
@@ -298,10 +299,7 @@ void wf::xdg_toplevel_view_t::destroy()
     on_request_minimize.disconnect();
     on_show_window_menu.disconnect();
     on_request_fullscreen.disconnect();
-
     xdg_toplevel = nullptr;
-    /* Drop the internal reference */
-    unref();
 }
 
 void wf::xdg_toplevel_view_t::handle_title_changed(std::string new_title)
@@ -459,4 +457,35 @@ void wf::init_xdg_decoration_handlers()
 {
     init_legacy_decoration();
     init_xdg_decoration();
+}
+
+/**
+ * A class which manages the xdg_toplevel_view for the duration of the wlr_xdg_toplevel object lifetime.
+ */
+class xdg_toplevel_controller_t
+{
+    nonstd::observer_ptr<wf::xdg_toplevel_view_t> view;
+    wf::wl_listener_wrapper on_destroy;
+
+  public:
+    xdg_toplevel_controller_t(wlr_xdg_toplevel *toplevel)
+    {
+        on_destroy.set_callback([=] (auto) { delete this; });
+        on_destroy.connect(&toplevel->base->events.destroy);
+
+        auto view = std::make_unique<wf::xdg_toplevel_view_t>(toplevel);
+        this->view = {view};
+        wf::get_core().add_view(std::move(view));
+    }
+
+    ~xdg_toplevel_controller_t()
+    {
+        view->unref();
+    }
+};
+
+void wf::default_handle_new_xdg_toplevel(wlr_xdg_toplevel *toplevel)
+{
+    // Will be deleted by the destroy handler
+    new xdg_toplevel_controller_t(toplevel);
 }

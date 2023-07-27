@@ -210,8 +210,6 @@ class wayfire_unmanaged_xwayland_view : public wf::view_interface_t, public wayf
         on_unmap.disconnect();
         on_set_geometry.disconnect();
         wayfire_xwayland_view_base::destroy();
-        /* Drop the internal reference */
-        unref();
     }
 
     wf::xw::view_type get_current_impl_type() const override

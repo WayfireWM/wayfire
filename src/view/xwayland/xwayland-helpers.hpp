@@ -7,6 +7,7 @@
 #if WF_HAS_XWAYLAND
 
     #include <xcb/xcb.h>
+    #include <wayfire/nonstd/wlroots-full.hpp>
 
 namespace wf
 {
@@ -26,6 +27,7 @@ extern xcb_atom_t _NET_WM_WINDOW_TYPE_DND;
 
 std::optional<xcb_atom_t> load_atom(xcb_connection_t *connection, const std::string& name);
 bool load_basic_atoms(const char *server_name);
+bool has_type(wlr_xwayland_surface *xw, xcb_atom_t type);
 }
 }
 

@@ -19,9 +19,7 @@
 class wayfire_xwayland_view_base
 {
   protected:
-    wf::wl_listener_wrapper on_destroy, on_configure,
-        on_set_title, on_set_app_id, on_or_changed, on_ping_timeout, on_set_window_type;
-
+    wf::wl_listener_wrapper on_destroy, on_configure, on_set_title, on_set_app_id, on_ping_timeout;
     wf::wl_listener_wrapper on_surface_commit;
     std::shared_ptr<wf::scene::wlr_surface_node_t> main_surface;
 
@@ -44,67 +42,14 @@ class wayfire_xwayland_view_base
         wf::emit_title_changed_signal(dynamic_cast<wf::view_interface_t*>(this));
     }
 
-    bool has_type(xcb_atom_t type)
-    {
-        for (size_t i = 0; i < xw->window_type_len; i++)
-        {
-            if (xw->window_type[i] == type)
-            {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    bool is_dialog()
-    {
-        if (has_type(wf::xw::_NET_WM_WINDOW_TYPE_DIALOG) ||
-            (xw->parent && (xw->window_type_len == 0)))
-        {
-            return true;
-        } else
-        {
-            return false;
-        }
-    }
-
-    /**
-     * Determine whether the view should be treated as override-redirect or not.
-     */
-    bool is_unmanaged()
-    {
-        if (xw->override_redirect)
-        {
-            return true;
-        }
-
-        /** Example: Android Studio dialogs */
-        if (xw->parent && !this->is_dialog() &&
-            !this->has_type(wf::xw::_NET_WM_WINDOW_TYPE_NORMAL))
-        {
-            return true;
-        }
-
-        return false;
-    }
-
-    /**
-     * Determine whether the view should be treated as a drag icon.
-     */
-    bool is_dnd()
-    {
-        return this->has_type(wf::xw::_NET_WM_WINDOW_TYPE_DND);
-    }
+  public:
+    wayfire_xwayland_view_base(wlr_xwayland_surface *xww) : xw(xww)
+    {}
 
     /**
      * Get the current implementation type.
      */
     virtual wf::xw::view_type get_current_impl_type() const = 0;
-
-  public:
-    wayfire_xwayland_view_base(wlr_xwayland_surface *xww) : xw(xww)
-    {}
 
     virtual ~wayfire_xwayland_view_base() = default;
 
@@ -123,19 +68,10 @@ class wayfire_xwayland_view_base
         {
             handle_app_id_changed(nonull(xw->class_t));
         });
-        on_or_changed.set_callback([&] (void*)
-        {
-            recreate_view();
-        });
         on_ping_timeout.set_callback([&] (void*)
         {
             wf::emit_ping_timeout_signal(dynamic_cast<wf::view_interface_t*>(this));
         });
-        on_set_window_type.set_callback([&] (void*)
-        {
-            recreate_view();
-        });
-
         handle_title_changed(nonull(xw->title));
         handle_app_id_changed(nonull(xw->class_t));
 
@@ -143,18 +79,8 @@ class wayfire_xwayland_view_base
         on_configure.connect(&xw->events.request_configure);
         on_set_title.connect(&xw->events.set_title);
         on_set_app_id.connect(&xw->events.set_class);
-        on_or_changed.connect(&xw->events.set_override_redirect);
         on_ping_timeout.connect(&xw->events.ping_timeout);
-        on_set_window_type.connect(&xw->events.set_window_type);
     }
-
-    /**
-     * Destroy the view, and create a new one with the correct type -
-     * unmanaged(override-redirect), DnD or normal.
-     *
-     * No-op if the view already has the correct type.
-     */
-    virtual void recreate_view();
 
     virtual void handle_client_configure(wlr_xwayland_surface_configure_event *ev)
     {}
@@ -167,9 +93,7 @@ class wayfire_xwayland_view_base
         on_configure.disconnect();
         on_set_title.disconnect();
         on_set_app_id.disconnect();
-        on_or_changed.disconnect();
         on_ping_timeout.disconnect();
-        on_set_window_type.disconnect();
     }
 
     void _ping()

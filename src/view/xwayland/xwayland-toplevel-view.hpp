@@ -21,7 +21,7 @@ class wayfire_xwayland_view : public wf::toplevel_view_interface_t, public wayfi
 {
     wf::wl_listener_wrapper on_request_move, on_request_resize,
         on_request_maximize, on_request_minimize, on_request_activate,
-        on_request_fullscreen, on_set_parent, on_set_hints;
+        on_request_fullscreen, on_set_hints, on_set_parent;
 
     wf::wl_listener_wrapper on_set_decorations;
 
@@ -269,21 +269,12 @@ class wayfire_xwayland_view : public wf::toplevel_view_interface_t, public wayfi
 
         on_set_parent.set_callback([&] (void*)
         {
-            /* Menus, etc. with TRANSIENT_FOR but not dialogs */
-            if (is_unmanaged())
-            {
-                recreate_view();
-
-                return;
-            }
-
             auto parent = xw->parent ? (wf::view_interface_t*)(xw->parent->data) : nullptr;
 
             // Make sure the parent is mapped, and that we are not a toplevel view
             if (parent)
             {
-                if (!parent->is_mapped() ||
-                    this->has_type(wf::xw::_NET_WM_WINDOW_TYPE_NORMAL))
+                if (!parent->is_mapped() || !wf::xw::has_type(xw, wf::xw::_NET_WM_WINDOW_TYPE_NORMAL))
                 {
                     parent = nullptr;
                 }
@@ -343,9 +334,6 @@ class wayfire_xwayland_view : public wf::toplevel_view_interface_t, public wayfi
         on_request_fullscreen.disconnect();
 
         wayfire_xwayland_view_base::destroy();
-
-        /* Drop the internal reference */
-        unref();
     }
 
     bool is_mapped() const override
@@ -526,7 +514,7 @@ class wayfire_xwayland_view : public wf::toplevel_view_interface_t, public wayfi
     bool should_be_decorated() override
     {
         return role == wf::VIEW_ROLE_TOPLEVEL && !has_client_decoration &&
-               !has_type(wf::xw::_NET_WM_WINDOW_TYPE_SPLASH);
+               !wf::xw::has_type(xw, wf::xw::_NET_WM_WINDOW_TYPE_SPLASH);
     }
 
     void ping() override
