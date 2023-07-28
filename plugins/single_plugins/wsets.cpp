@@ -220,7 +220,7 @@ class wayfire_wsets_plugin_t : public wf::plugin_interface_t
 
         if (!available_sets.count(index))
         {
-            available_sets[index] = std::make_shared<wf::workspace_set_t>(index);
+            available_sets[index] = wf::workspace_set_t::create(index);
         }
 
         if (wo->wset() != available_sets[index])
@@ -232,7 +232,7 @@ class wayfire_wsets_plugin_t : public wf::plugin_interface_t
                 if (old_output->wset() == available_sets[index])
                 {
                     // Create new empty wset for the output
-                    old_output->set_workspace_set(std::make_shared<wf::workspace_set_t>());
+                    old_output->set_workspace_set(wf::workspace_set_t::create());
                     available_sets[old_output->wset()->get_index()] = old_output->wset();
                     show_workspace_set_overlay(old_output);
                 }
@@ -262,7 +262,7 @@ class wayfire_wsets_plugin_t : public wf::plugin_interface_t
 
         if (!available_sets.count(index))
         {
-            available_sets[index] = std::make_shared<wf::workspace_set_t>(index);
+            available_sets[index] = wf::workspace_set_t::create(index);
         }
 
         auto target_wset     = available_sets[index];

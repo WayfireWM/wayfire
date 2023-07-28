@@ -8,6 +8,7 @@
 #include <functional>
 #include <memory>
 #include <vector>
+#include <wayfire/nonstd/observer_ptr.h>
 #include <wayfire/toplevel-view.hpp>
 
 namespace wf
@@ -66,13 +67,14 @@ class workspace_set_t : public wf::signal::provider_t, public wf::object_base_t,
      * @param index The index of the new workspace set. It will be used if available, otherwise, a the lowest
      *   available index will be selected (starting from 1).
      */
-    workspace_set_t(int64_t index = -1);
+    static std::shared_ptr<workspace_set_t> create(int64_t index = -1);
     ~workspace_set_t();
 
     /**
      * Generate a list of all workspace sets currently allocated.
      */
-    static std::vector<workspace_set_t*> get_all();
+    static std::vector<nonstd::observer_ptr<workspace_set_t>> get_all();
+
 
     /**
      * Get the index of the workspace set. The index is assigned on creation and always the lowest unused
@@ -216,6 +218,9 @@ class workspace_set_t : public wf::signal::provider_t, public wf::object_base_t,
     struct impl;
     std::unique_ptr<impl> pimpl;
     friend class output_impl_t;
+
+    friend class wf::tracking_allocator_t<workspace_set_t>;
+    workspace_set_t(int64_t index = -1);
 
     /**
      * Change the visibility of the workspace set. On each output, only one workspace set will be visible
