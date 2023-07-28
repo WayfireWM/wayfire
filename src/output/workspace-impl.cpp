@@ -17,6 +17,7 @@
 #include "../view/view-impl.hpp"
 #include "wayfire/debug.hpp"
 #include "wayfire/geometry.hpp"
+#include "wayfire/nonstd/tracking-allocator.hpp"
 #include "wayfire/option-wrapper.hpp"
 #include "wayfire/scene-input.hpp"
 #include "wayfire/scene.hpp"
@@ -274,9 +275,10 @@ struct workspace_set_t::impl
         }
     };
 
-    wf::signal::connection_t<view_destruct_signal> on_view_destruct = [=] (view_destruct_signal *ev)
+    wf::signal::connection_t<wf::destruct_signal<view_interface_t>> on_view_destruct =
+        [=] (wf::destruct_signal<view_interface_t> *ev)
     {
-        remove_view(toplevel_cast(ev->view));
+        remove_view(toplevel_cast(ev->object));
     };
 
     bool visible = false;

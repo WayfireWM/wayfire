@@ -4,6 +4,7 @@
 #include "../core/core-impl.hpp"
 #include "../core/seat/cursor.hpp"
 #include <wayfire/view.hpp>
+#include <wayfire/nonstd/tracking-allocator.hpp>
 
 #include "wayfire/util.hpp"
 #include "xwayland/xwayland-helpers.hpp"
@@ -26,7 +27,7 @@ namespace wf
 class xwayland_view_controller_t
 {
     nonstd::observer_ptr<wayfire_xwayland_view_base> view_base;
-    nonstd::observer_ptr<wf::view_interface_t> view_impl;
+    std::shared_ptr<wf::view_interface_t> view_impl;
     wlr_xwayland_surface *xw;
 
     wf::wl_listener_wrapper on_destroy;
@@ -62,9 +63,7 @@ class xwayland_view_controller_t
     }
 
     ~xwayland_view_controller_t()
-    {
-        view_impl->unref();
-    }
+    {}
 
     bool is_dialog()
     {
@@ -122,25 +121,24 @@ class xwayland_view_controller_t
 
     void create_view(wf::xw::view_type target_type)
     {
-        std::unique_ptr<wf::view_interface_t> new_view;
+        std::shared_ptr<wf::view_interface_t> new_view;
         switch (target_type)
         {
           case wf::xw::view_type::DND:
-            new_view = std::make_unique<wayfire_dnd_xwayland_view>(xw);
+            new_view = wayfire_unmanaged_xwayland_view::create<wayfire_dnd_xwayland_view>(xw);
             break;
 
           case wf::xw::view_type::UNMANAGED:
-            new_view = std::make_unique<wayfire_unmanaged_xwayland_view>(xw);
+            new_view = wayfire_unmanaged_xwayland_view::create<wayfire_unmanaged_xwayland_view>(xw);
             break;
 
           case wf::xw::view_type::NORMAL:
-            new_view = std::make_unique<wayfire_xwayland_view>(xw);
+            new_view = wayfire_xwayland_view::create(xw);
             break;
         }
 
         this->view_base = {dynamic_cast<wayfire_xwayland_view_base*>(new_view.get())};
         this->view_impl = {new_view};
-        wf::get_core().add_view(std::move(new_view));
         if (xw->mapped)
         {
             view_base->map(xw->surface);
@@ -170,7 +168,6 @@ class xwayland_view_controller_t
         }
 
         view_base->destroy();
-        view_impl->unref();
         view_base = nullptr;
         view_impl = nullptr;
 

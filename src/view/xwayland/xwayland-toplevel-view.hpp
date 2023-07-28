@@ -181,37 +181,10 @@ class wayfire_xwayland_view : public wf::toplevel_view_interface_t, public wayfi
     wayfire_xwayland_view(wlr_xwayland_surface *xww) :
         wayfire_xwayland_view_base(xww)
     {
-        surface_root_node = std::make_shared<wf::toplevel_view_node_t>(this);
-        this->set_surface_root_node(surface_root_node);
-    }
-
-    void set_activated(bool active) override
-    {
-        if (xw)
-        {
-            wlr_xwayland_surface_activate(xw, active);
-        }
-
-        wf::toplevel_view_interface_t::set_activated(active);
-    }
-
-    virtual void initialize() override
-    {
-        LOGE("new xwayland surface ", xw->title,
-            " class: ", xw->class_t, " instance: ", xw->instance);
-
+        LOGE("new xwayland surface ", xw->title, " class: ", xw->class_t, " instance: ", xw->instance);
         this->toplevel = std::make_shared<wf::xw::xwayland_toplevel_t>(xw);
         toplevel->connect(&on_toplevel_applied);
         this->priv->toplevel = toplevel;
-
-        _initialize();
-        wf::view_interface_t::initialize();
-
-        // Set the output early, so that we can emit the signals on the output
-        if (!get_output())
-        {
-            set_output(wf::get_core().get_active_output());
-        }
 
         on_map.set_callback([&] (void*)
         {
@@ -299,7 +272,6 @@ class wayfire_xwayland_view : public wf::toplevel_view_interface_t, public wayfi
         {
             update_decorated();
         });
-        update_decorated();
 
         on_map.connect(&xw->events.map);
         on_unmap.connect(&xw->events.unmap);
@@ -315,8 +287,32 @@ class wayfire_xwayland_view : public wf::toplevel_view_interface_t, public wayfi
         on_request_fullscreen.connect(&xw->events.request_fullscreen);
 
         xw->data = dynamic_cast<wf::view_interface_t*>(this);
+    }
+
+    static std::shared_ptr<wayfire_xwayland_view> create(wlr_xwayland_surface *surface)
+    {
+        auto self = wf::view_interface_t::create<wayfire_xwayland_view>(surface);
+        self->surface_root_node = std::make_shared<wf::toplevel_view_node_t>(self);
+        self->set_surface_root_node(self->surface_root_node);
+
+        // Set the output early, so that we can emit the signals on the output
+        self->set_output(wf::get_core().get_active_output());
+        self->_initialize();
+
+        self->update_decorated();
         // set initial parent
-        on_set_parent.emit(nullptr);
+        self->on_set_parent.emit(nullptr);
+        return self;
+    }
+
+    void set_activated(bool active) override
+    {
+        if (xw)
+        {
+            wlr_xwayland_surface_activate(xw, active);
+        }
+
+        wf::toplevel_view_interface_t::set_activated(active);
     }
 
     virtual void destroy() override

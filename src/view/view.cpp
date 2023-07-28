@@ -24,7 +24,6 @@
 void wf::view_interface_t::set_role(view_role_t new_role)
 {
     role = new_role;
-    damage();
 }
 
 std::string wf::view_interface_t::to_string() const
@@ -126,43 +125,28 @@ void wf::view_interface_t::take_snapshot(wf::render_target_t& target)
 wf::view_interface_t::view_interface_t()
 {
     this->priv = std::make_unique<wf::view_interface_t::view_priv_impl>();
-    take_ref();
 }
 
 void wf::view_interface_t::set_surface_root_node(scene::floating_inner_ptr surface_root_node)
 {
     this->priv->surface_root_node = surface_root_node;
-}
-
-void wf::view_interface_t::take_ref()
-{
-    ++priv->ref_cnt;
-}
-
-void wf::view_interface_t::unref()
-{
-    --priv->ref_cnt;
-    if (priv->ref_cnt <= 0)
-    {
-        destruct();
-    }
+    // Set up view content to scene.
+    priv->transformed_node->set_children_list({surface_root_node});
 }
 
 class view_root_node_t : public wf::scene::floating_inner_node_t, public wf::view_node_tag_t
 {
   public:
     view_root_node_t(wf::view_interface_t *_view) : floating_inner_node_t(false),
-        view_node_tag_t(_view), view(_view)
-    {
-        view->connect(&on_destruct);
-    }
+        view_node_tag_t(_view), view(_view->weak_from_this())
+    {}
 
     std::string stringify() const override
     {
-        if (view)
+        if (auto ptr = view.lock())
         {
             std::ostringstream out;
-            out << this->view->self();
+            out << ptr->self();
             return "view-root-node of " + out.str() + " " + stringify_flags();
         } else
         {
@@ -171,40 +155,35 @@ class view_root_node_t : public wf::scene::floating_inner_node_t, public wf::vie
     }
 
   private:
-    wf::view_interface_t *view;
-    wf::signal::connection_t<wf::view_destruct_signal> on_destruct = [=] (wf::view_destruct_signal *ev)
-    {
-        view = nullptr;
-    };
+    std::weak_ptr<wf::view_interface_t> view;
 };
 
-void wf::view_interface_t::initialize()
+void wf::view_interface_t::base_initialization()
 {
-    wf::dassert(priv->surface_root_node != nullptr,
-        "View implementations should set the surface root node immediately after creating the view!");
-
     priv->root_node = std::make_shared<view_root_node_t>(this);
     priv->transformed_node = std::make_shared<scene::transform_manager_node_t>();
-
-    // Set up view content to scene.
-    priv->transformed_node->set_children_list({priv->surface_root_node});
     priv->root_node->set_children_list({priv->transformed_node});
     priv->root_node->set_enabled(false);
+
+    priv->pre_free = [=] (auto)
+    {
+        this->_clear_data();
+        if (auto self = dynamic_cast<toplevel_view_interface_t*>(this))
+        {
+            auto children = self->children;
+            for (auto ch : children)
+            {
+                ch->set_toplevel_parent(nullptr);
+            }
+        }
+    };
+
+    this->connect(&priv->pre_free);
 }
 
-void wf::view_interface_t::deinitialize()
+wf::view_interface_t::~view_interface_t()
 {
-    this->_clear_data();
-}
-
-wf::view_interface_t::~view_interface_t() = default;
-
-void wf::view_interface_t::destruct()
-{
-    view_destruct_signal ev;
-    ev.view = self();
-    this->emit(&ev);
-    wf::get_core_impl().erase_view(self());
+    wf::scene::remove_child(get_root_node());
 }
 
 const wf::scene::floating_inner_ptr& wf::view_interface_t::get_root_node() const

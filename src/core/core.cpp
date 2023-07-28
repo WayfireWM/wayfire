@@ -4,6 +4,7 @@
     #include "wayfire/core.hpp"
 #endif
 
+#include <wayfire/nonstd/tracking-allocator.hpp>
 #include "wayfire/scene.hpp"
 #include <wayfire/workarea.hpp>
 #include "wayfire/scene-operations.hpp"
@@ -397,68 +398,9 @@ wf::output_t*wf::compositor_core_impl_t::get_active_output()
     return active_output;
 }
 
-void wf::compositor_core_impl_t::add_view(
-    std::unique_ptr<wf::view_interface_t> view)
+std::vector<wayfire_view> wf::compositor_core_t::get_all_views()
 {
-    auto v = view->self(); /* non-owning copy */
-    views.push_back(std::move(view));
-    id_to_view[std::to_string(v->get_id())] = v;
-
-    assert(active_output);
-
-    v->initialize();
-    if (!v->get_output())
-    {
-        v->set_output(active_output);
-    }
-
-    view_added_signal data;
-    data.view = v;
-    emit(&data);
-}
-
-std::vector<wayfire_view> wf::compositor_core_impl_t::get_all_views()
-{
-    std::vector<wayfire_view> result;
-    for (auto& view : this->views)
-    {
-        result.push_back({view});
-    }
-
-    return result;
-}
-
-void wf::compositor_core_impl_t::erase_view(wayfire_view v)
-{
-    if (!v)
-    {
-        return;
-    }
-
-    if (v->get_output())
-    {
-        v->set_output(nullptr);
-    }
-
-    wf::scene::remove_child(v->get_root_node());
-    auto it = std::find_if(views.begin(), views.end(),
-        [&v] (const auto& view) { return view.get() == v.get(); });
-
-    v->deinitialize();
-
-    id_to_view.erase(std::to_string(v->get_id()));
-    views.erase(it);
-}
-
-wayfire_view wf::compositor_core_impl_t::find_view(const std::string& id)
-{
-    auto it = id_to_view.find(id);
-    if (it != id_to_view.end())
-    {
-        return it->second;
-    }
-
-    return nullptr;
+    return wf::tracking_allocator_t<view_interface_t>::get().get_all();
 }
 
 pid_t wf::compositor_core_impl_t::run(std::string command)
@@ -594,9 +536,6 @@ wf::compositor_core_impl_t::compositor_core_impl_t()
 {}
 wf::compositor_core_impl_t::~compositor_core_impl_t()
 {
-    /* Unloading order is important. First we want to free any remaining views,
-     * then we destroy the input manager, and finally the rest is auto-freed */
-    views.clear();
     input.reset();
     output_layout.reset();
 }

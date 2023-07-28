@@ -13,29 +13,32 @@
  */
 class view_keyboard_interaction_t : public wf::keyboard_interaction_t
 {
-    wayfire_view view;
+    std::weak_ptr<wf::view_interface_t> view;
 
   public:
     view_keyboard_interaction_t(wayfire_view _view)
     {
-        this->view = _view;
+        this->view = _view->weak_from_this();
     }
 
     void handle_keyboard_enter(wf::seat_t *seat) override
     {
-        if (view->get_wlr_surface())
+        if (auto ptr = view.lock())
         {
-            auto pressed_keys = seat->get_pressed_keys();
+            if (ptr->get_wlr_surface())
+            {
+                auto pressed_keys = seat->get_pressed_keys();
 
-            auto kbd = wlr_seat_get_keyboard(seat->seat);
-            wlr_seat_keyboard_notify_enter(seat->seat, view->get_wlr_surface(),
-                pressed_keys.data(), pressed_keys.size(), kbd ? &kbd->modifiers : NULL);
+                auto kbd = wlr_seat_get_keyboard(seat->seat);
+                wlr_seat_keyboard_notify_enter(seat->seat, ptr->get_wlr_surface(),
+                    pressed_keys.data(), pressed_keys.size(), kbd ? &kbd->modifiers : NULL);
+            }
         }
     }
 
     void handle_keyboard_leave(wf::seat_t *seat) override
     {
-        if (view->get_wlr_surface())
+        if (auto ptr = view.lock())
         {
             wlr_seat_keyboard_notify_clear_focus(seat->seat);
         }

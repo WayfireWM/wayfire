@@ -16,6 +16,7 @@
 #include "wayfire/scene-operations.hpp"
 #include "wayfire/scene.hpp"
 #include "wayfire/signal-provider.hpp"
+#include "wayfire/view.hpp"
 #include <wayfire/matcher.hpp>
 
 void animation_base::init(wayfire_view, int, wf_animation_type)
@@ -67,8 +68,8 @@ struct animation_hook : public animation_hook_base
     static_assert(std::is_base_of<animation_base, animation_t>::value,
         "animation_type must be derived from animation_base!");
 
+    std::shared_ptr<wf::view_interface_t> view;
     wf_animation_type type;
-    wayfire_view view;
     std::string name;
     wf::output_t *current_output = nullptr;
     std::unique_ptr<animation_base> animation;
@@ -125,7 +126,7 @@ struct animation_hook : public animation_hook_base
         std::string name)
     {
         this->type = type;
-        this->view = view;
+        this->view = view->shared_from_this();
         this->name = name;
 
         animation = std::make_unique<animation_t>();
@@ -135,10 +136,7 @@ struct animation_hook : public animation_hook_base
         /* Animation is driven by the output render cycle the view is on.
          * Thus, we need to keep in sync with the current output. */
         view->connect(&on_set_output);
-
-        // Take a ref on the view, so that it remains available for as long as the animation runs.
         wf::scene::set_node_enabled(view->get_root_node(), true);
-        view->take_ref();
 
         if (type == ANIMATION_TYPE_UNMAP)
         {
@@ -216,7 +214,6 @@ struct animation_hook : public animation_hook_base
 
         unset_unmapped_contents();
         wf::scene::set_node_enabled(view->get_root_node(), false);
-        view->unref();
     }
 
     animation_hook(const animation_hook &) = delete;

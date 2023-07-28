@@ -1,6 +1,7 @@
 #include "wayfire/debug.hpp"
 #include "wayfire/geometry.hpp"
 #include "wayfire/plugins/common/input-grab.hpp"
+#include "wayfire/nonstd/tracking-allocator.hpp"
 #include "wayfire/scene-input.hpp"
 #include "wayfire/signal-provider.hpp"
 #include "wayfire/view-helpers.hpp"
@@ -44,7 +45,7 @@ class wayfire_move : public wf::per_output_plugin_instance_t,
 
     struct
     {
-        nonstd::observer_ptr<wf::preview_indication_view_t> preview;
+        std::shared_ptr<wf::preview_indication_t> preview;
         wf::grid::slot_t slot_id = wf::grid::SLOT_NONE;
     } slot;
 
@@ -484,15 +485,10 @@ class wayfire_move : public wf::per_output_plugin_instance_t,
                 return;
             }
 
-            auto input   = get_input_coords();
-            auto preview =
-                new wf::preview_indication_view_t({input.x, input.y, 1, 1}, "move");
-            wf::get_core().add_view(
-                std::unique_ptr<wf::view_interface_t>(preview));
-            preview->set_output(output);
-
-            preview->set_target_geometry(slot_geometry, 1);
-            slot.preview = nonstd::make_observer(preview);
+            auto input = get_input_coords();
+            slot.preview = std::make_shared<wf::preview_indication_t>(
+                wf::geometry_t{input.x, input.y, 1, 1}, output, "move");
+            slot.preview->set_target_geometry(slot_geometry, 1);
         }
 
         update_workspace_switch_timeout(new_slot_id);

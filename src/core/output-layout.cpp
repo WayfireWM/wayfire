@@ -2,6 +2,7 @@
 #include "wayfire/core.hpp"
 #include "wayfire/output-layout.hpp"
 #include "wayfire/view-helpers.hpp"
+#include "wayfire/view.hpp"
 #include "wayfire/workspace-set.hpp"
 #include "wayfire/render-manager.hpp"
 #include "wayfire/signal-definitions.hpp"
@@ -157,14 +158,13 @@ void transfer_views(wf::output_t *from, wf::output_t *to)
     // Step 2: Ensure none of the remaining views have an invalid output.
     // Note that all views in workspace sets will have their output reassigned automatically by the
     // workspace-set impl.
-    std::vector<wayfire_view> non_ws_views;
+    std::vector<std::shared_ptr<wf::view_interface_t>> non_ws_views;
     for (auto& view : wf::get_core().get_all_views())
     {
         if ((view->get_output() == from) && (!toplevel_cast(view) || !toplevel_cast(view)->get_wset()))
         {
-            non_ws_views.push_back(view);
             // Take a ref, so that the view doesn't get destroyed while we're doing operations on the views
-            view->take_ref();
+            non_ws_views.push_back(view->shared_from_this());
         }
     }
 
@@ -180,12 +180,6 @@ void transfer_views(wf::output_t *from, wf::output_t *to)
             // typically: xwayland OR views
             view->set_output(to);
         }
-    }
-
-    // Drop refs we have taken
-    for (auto& view : non_ws_views)
-    {
-        view->unref();
     }
 }
 

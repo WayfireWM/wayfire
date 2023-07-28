@@ -38,18 +38,6 @@ class compositor_core_impl_t : public compositor_core_t
      */
     virtual void post_init();
 
-    /**
-     * Remove a view from the compositor list. This is called when the view's
-     * keep_count reaches zero for the first time after its creation.
-     */
-    virtual void erase_view(wayfire_view view);
-
-    /**
-     * Find a view by its stringified ID.
-     * @return nullptr if no such view exists.
-     */
-    virtual wayfire_view find_view(const std::string& id);
-
     static compositor_core_impl_t& get();
 
     wlr_seat *get_current_seat() override;
@@ -75,8 +63,6 @@ class compositor_core_impl_t : public compositor_core_t
     override;
     virtual wlr_cursor *get_wlr_cursor() override;
 
-    void add_view(std::unique_ptr<wf::view_interface_t> view) override;
-    std::vector<wayfire_view> get_all_views() override;
     void focus_output(wf::output_t *o) override;
     wf::output_t *get_active_output() override;
     std::string get_xwayland_display() override;
@@ -94,9 +80,6 @@ class compositor_core_impl_t : public compositor_core_t
     wf::wl_listener_wrapper idle_inhibitor_created;
 
     wf::output_t *active_output = nullptr;
-    std::vector<std::unique_ptr<wf::view_interface_t>> views;
-    std::unordered_map<std::string, wayfire_view> id_to_view;
-
     std::shared_ptr<scene::root_node_t> scene_root;
 
     compositor_state_t state = compositor_state_t::UNKNOWN;

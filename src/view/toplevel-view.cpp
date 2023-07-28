@@ -260,17 +260,6 @@ bool wf::toplevel_view_interface_t::should_be_decorated()
     return false;
 }
 
-void wf::toplevel_view_interface_t::deinitialize()
-{
-    auto children = this->children;
-    for (auto ch : children)
-    {
-        ch->set_toplevel_parent(nullptr);
-    }
-
-    view_interface_t::deinitialize();
-}
-
 wf::toplevel_view_interface_t::~toplevel_view_interface_t()
 {
     /* Note: at this point, it is invalid to call most functions */

@@ -359,15 +359,6 @@ struct fullscreen_layer_focused_signal
  * View signals
  * -------------------------------------------------------------------------- */
 /**
- * on: core
- * when: A view is created.
- */
-struct view_added_signal
-{
-    wayfire_view view;
-};
-
-/**
  * on: view, output, core
  * when: After the view becomes mapped. This signal must also be emitted from all compositor views.
  */

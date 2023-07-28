@@ -30,8 +30,7 @@ class toplevel_view_node_t : public wf::scene::translation_node_t,
     wf::region_t get_opaque_region() const override;
 
   protected:
-    wayfire_toplevel_view view;
+    std::weak_ptr<toplevel_view_interface_t> _view;
     std::unique_ptr<keyboard_interaction_t> kb_interaction;
-    wf::signal::connection_t<view_destruct_signal> on_view_destroy;
 };
 }

@@ -4,6 +4,7 @@
 
 #include <wayfire/workarea.hpp>
 #include <wayfire/signal-definitions.hpp>
+#include <wayfire/nonstd/tracking-allocator.hpp>
 #include "view/layer-shell/layer-shell-node.hpp"
 #include "wayfire/geometry.hpp"
 #include "wayfire/scene-operations.hpp"
@@ -48,18 +49,18 @@ class wayfire_layer_shell_view : public wf::view_interface_t
     /** The output geometry of the view */
     wf::geometry_t geometry{100, 100, 0, 0};
 
-  protected:
-    void initialize() override;
     std::string app_id;
+    friend class wf::tracking_allocator_t<view_interface_t>;
+    wayfire_layer_shell_view(wlr_layer_surface_v1 *lsurf);
 
   public:
     wlr_layer_surface_v1 *lsurface;
     wlr_layer_surface_v1_state prev_state;
 
+    static std::shared_ptr<wayfire_layer_shell_view> create(wlr_layer_surface_v1 *lsurface);
     std::unique_ptr<wf::output_workarea_manager_t::anchored_area> anchored_area;
     void remove_anchored(bool reflow);
 
-    wayfire_layer_shell_view(wlr_layer_surface_v1 *lsurf);
     virtual ~wayfire_layer_shell_view() = default;
 
     void map();
@@ -377,34 +378,11 @@ wayfire_layer_shell_view::wayfire_layer_shell_view(wlr_layer_surface_v1 *lsurf) 
 {
     on_surface_commit.set_callback([&] (void*) { commit(); });
     this->main_surface = std::make_shared<wf::scene::wlr_surface_node_t>(lsurf->surface, true);
-    this->surface_root_node = std::make_shared<wf::layer_shell_node_t>(self());
-    this->set_surface_root_node(surface_root_node);
 
     LOGD("Create a layer surface: namespace ", lsurf->namespace_t, " layer ", lsurf->current.layer);
-
     role = wf::VIEW_ROLE_DESKTOP_ENVIRONMENT;
     std::memset(&this->prev_state, 0, sizeof(prev_state));
-
-    /* If we already have an output set, then assign it before core assigns us
-     * an output */
-    if (lsurf->output)
-    {
-        auto wo = wf::get_core().output_layout->find_output(lsurf->output);
-        set_output(wo);
-    } else
-    {
-        set_output(wf::get_core().get_active_output());
-    }
-}
-
-void wayfire_layer_shell_view::initialize()
-{
-    wf::view_interface_t::initialize();
-    wf::dassert(get_output() != nullptr,
-        "layer-shell views are always assigned an output!");
-
-    lsurface->output = get_output()->handle;
-    lsurface->data   = dynamic_cast<wf::view_interface_t*>(this);
+    lsurface->data = dynamic_cast<wf::view_interface_t*>(this);
 
     on_map.set_callback([&] (void*) { map(); });
     on_unmap.set_callback([&] (void*) { unmap(); });
@@ -432,9 +410,31 @@ void wayfire_layer_shell_view::initialize()
     on_unmap.connect(&lsurface->events.unmap);
     on_new_popup.connect(&lsurface->events.new_popup);
     on_commit_unmapped.connect(&lsurface->surface->events.commit);
+}
+
+std::shared_ptr<wayfire_layer_shell_view> wayfire_layer_shell_view::create(wlr_layer_surface_v1 *lsurface)
+{
+    auto self = wf::view_interface_t::create<wayfire_layer_shell_view>(lsurface);
+    self->surface_root_node = std::make_shared<wf::layer_shell_node_t>(self);
+    self->set_surface_root_node(self->surface_root_node);
+
+    /* If we already have an output set, then assign it before core assigns us
+     * an output */
+    if (lsurface->output)
+    {
+        auto wo = wf::get_core().output_layout->find_output(lsurface->output);
+        self->set_output(wo);
+    } else
+    {
+        self->set_output(wf::get_core().get_active_output());
+    }
+
+    lsurface->output = self->get_output()->handle;
 
     // Initial configure
-    on_commit_unmapped.emit(NULL);
+    self->on_commit_unmapped.emit(NULL);
+
+    return self;
 }
 
 void wayfire_layer_shell_view::handle_destroy()
@@ -642,7 +642,7 @@ void wayfire_layer_shell_view::remove_anchored(bool reflow)
  */
 class layer_shell_view_controller_t
 {
-    nonstd::observer_ptr<wayfire_layer_shell_view> view;
+    std::shared_ptr<wayfire_layer_shell_view> view;
     wf::wl_listener_wrapper on_destroy;
 
   public:
@@ -650,16 +650,12 @@ class layer_shell_view_controller_t
     {
         on_destroy.set_callback([=] (auto) { delete this; });
         on_destroy.connect(&lsurface->events.destroy);
-
-        auto view = std::make_unique<wayfire_layer_shell_view>(lsurface);
-        this->view = {view};
-        wf::get_core().add_view(std::move(view));
+        view = wayfire_layer_shell_view::create(lsurface);
     }
 
     ~layer_shell_view_controller_t()
     {
         view->handle_destroy();
-        view->unref();
     }
 };
 

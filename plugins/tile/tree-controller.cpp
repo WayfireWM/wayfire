@@ -1,6 +1,7 @@
 #include "tree-controller.hpp"
 
 #include <set>
+#include <wayfire/nonstd/tracking-allocator.hpp>
 #include <algorithm>
 #include <wayfire/core.hpp>
 #include <wayfire/output.hpp>
@@ -242,11 +243,7 @@ void move_view_controller_t::ensure_preview(wf::point_t start)
         return;
     }
 
-    auto view =
-        std::make_unique<wf::preview_indication_view_t>(start, "simple-tile");
-    this->preview = {view};
-    wf::get_core().add_view(std::move(view));
-    this->preview->set_output(output);
+    preview = std::make_shared<wf::preview_indication_t>(start, output, "simple-tile");
 }
 
 void move_view_controller_t::input_motion(wf::point_t input)

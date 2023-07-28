@@ -2,9 +2,11 @@
 #define VIEW_HPP
 
 #include <memory>
+#include <type_traits>
 #include <vector>
 #include <wayfire/nonstd/observer_ptr.h>
 
+#include "wayfire/nonstd/tracking-allocator.hpp"
 #include "wayfire/object.hpp"
 #include "wayfire/opengl.hpp"
 #include "wayfire/scene-input.hpp"
@@ -33,12 +35,6 @@ namespace scene
 class view_node_t;
 }
 
-// A signal emitted when the view is destroyed and its memory will be freed.
-struct view_destruct_signal
-{
-    wayfire_view view;
-};
-
 /* abstraction for desktop-apis, no real need for plugins
  * This is a base class to all "drawables" - desktop views, subsurfaces, popups */
 enum view_role_t
@@ -55,10 +51,19 @@ enum view_role_t
 };
 
 /**
- * view_interface_t is the base class for all "toplevel windows", i.e surfaces
- * which have no parent.
+ * The view_interface_t represents a window shown to the user. It includes panels, backgrounds, notifications,
+ * and toplevels (which derive from the subclass toplevel_view_interface_t).
+ *
+ * Views should be allocated via the helper allocator tracking_allocator_t<view_interface_t>:
+ * ```
+ * auto& alloc = tracking_allocator_t<view_interface_t>::get();
+ * alloc.allocate<concrete view class>(arguments)
+ * ```
+ *
+ * This ensures that all plugins can query a list of all available views at any given time.
  */
-class view_interface_t : public wf::signal::provider_t, public wf::object_base_t
+class view_interface_t : public wf::signal::provider_t, public wf::object_base_t,
+    public std::enable_shared_from_this<view_interface_t>
 {
   public:
     /**
@@ -165,19 +170,6 @@ class view_interface_t : public wf::signal::provider_t, public wf::object_base_t
     virtual void take_snapshot(wf::render_target_t& target);
 
     /**
-     * View lifetime is managed by reference counting. To take a reference,
-     * use take_ref(). Note that one reference is automatically made when the
-     * view is created.
-     */
-    void take_ref();
-
-    /**
-     * Drop a reference to the surface. When the reference count reaches 0, the
-     * destruct() method is called.
-     */
-    void unref();
-
-    /**
      * @return the wl_client associated with this surface, or null if the
      *   surface doesn't have a backing wlr_surface.
      */
@@ -198,40 +190,24 @@ class view_interface_t : public wf::signal::provider_t, public wf::object_base_t
     class view_priv_impl;
     std::unique_ptr<view_priv_impl> priv;
 
+    template<class ConcreteView, class... Args>
+    static std::shared_ptr<ConcreteView> create(Args... args)
+    {
+        static_assert(std::is_base_of_v<view_interface_t, ConcreteView>,
+            "view_interface_t::create<T> can be used only when T is a view type!");
+        auto view = tracking_allocator_t<view_interface_t>::get().allocate<ConcreteView>(args...);
+        view->base_initialization();
+        return view;
+    }
+
   protected:
     view_interface_t();
     void set_surface_root_node(scene::floating_inner_ptr surface_root_node);
 
-    friend class compositor_core_impl_t;
     /**
-     * View initialization happens in three stages:
-     *
-     * First, memory for the view is allocated and default members are set.
-     * Second, the view is added to core, which assigns the view to an output.
-     * Third, core calls @initialize() on the view. This is where the real view
-     *   initialization should happen.
-     *
-     * Note that generally most of the operations in 3. can be also done in 1.,
-     * except when they require an output.
+     * Initialize the base implementation of a view, for example the node hierarchy.
      */
-    virtual void initialize();
-
-    /**
-     * When a view is being destroyed, all associated objects like subsurfaces,
-     * transformers and custom data are destroyed.
-     *
-     * In general, we want to make sure that these associated objects are freed
-     * before the actual view object destruction starts. Thus, deinitialize()
-     * is called from core just before destroying the view.
-     */
-    virtual void deinitialize();
-
-    /**
-     * Called when the reference count reaches 0.
-     * It destructs the object and deletes it, so "this" may not be
-     * accessed after destruct() is called.
-     */
-    virtual void destruct();
+    void base_initialization();
 
     /**
      * Emit the view map signal. It indicates that a view has been mapped, i.e.

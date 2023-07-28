@@ -250,17 +250,12 @@ class compositor_core_t : public wf::object_base_t, public signal::provider_t
         nonstd::observer_ptr<wf::touch::gesture_t> gesture) = 0;
 
     /**
-     * Add a view to the compositor's view list. The view will be freed when
-     * its keep_count drops to zero, hence a plugin using this doesn't have to
-     * erase the view manually (instead it should just drop the keep_count)
-     */
-    virtual void add_view(std::unique_ptr<wf::view_interface_t> view) = 0;
-
-    /**
+     * @deprecated. Use tracking_allocator_t<view_interface_t>::get_all()
+     *
      * @return A list of all views core manages, regardless of their output,
      *  properties, etc.
      */
-    virtual std::vector<wayfire_view> get_all_views() = 0;
+    std::vector<wayfire_view> get_all_views();
 
     /**
      * Focus the given output. The currently focused output is used to determine

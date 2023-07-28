@@ -7,7 +7,7 @@
 /* Contains functions which are related to manipulating the tiling tree */
 namespace wf
 {
-class preview_indication_view_t;
+class preview_indication_t;
 namespace tile
 {
 /**
@@ -91,7 +91,7 @@ class move_view_controller_t : public tile_controller_t
     wf::output_t *output;
     wf::point_t current_input;
 
-    nonstd::observer_ptr<wf::preview_indication_view_t> preview;
+    std::shared_ptr<wf::preview_indication_t> preview;
     /**
      * Create preview if it doesn't exist
      *

@@ -6,14 +6,7 @@
 wf::toplevel_view_node_t::toplevel_view_node_t(wayfire_toplevel_view view) : view_node_tag_t(view)
 {
     this->kb_interaction = std::make_unique<view_keyboard_interaction_t>(view);
-    on_view_destroy = [=] (view_destruct_signal *ev)
-    {
-        this->view = nullptr;
-        this->kb_interaction = std::make_unique<keyboard_interaction_t>();
-    };
-
-    view->connect(&on_view_destroy);
-    this->view = view;
+    this->_view = view->weak_from_this();
 }
 
 /**
@@ -24,13 +17,13 @@ static constexpr double MIN_VISIBILITY_PC = 0.1;
 
 wf::keyboard_focus_node_t wf::toplevel_view_node_t::keyboard_refocus(wf::output_t *output)
 {
+    auto view = _view.lock();
     if (!view)
     {
         return wf::keyboard_focus_node_t{};
     }
 
-    if (!this->view->is_mapped() || !this->view->get_keyboard_focus_surface() ||
-        this->view->minimized || !this->view->get_output())
+    if (!view->is_mapped() || !view->get_keyboard_focus_surface() || view->minimized || !view->get_output())
     {
         return wf::keyboard_focus_node_t{};
     }
@@ -78,9 +71,15 @@ wf::keyboard_interaction_t& wf::toplevel_view_node_t::keyboard_interaction()
 
 std::string wf::toplevel_view_node_t::stringify() const
 {
-    std::ostringstream out;
-    out << this->view;
-    return out.str() + " " + stringify_flags();
+    if (auto view = _view.lock())
+    {
+        std::ostringstream out;
+        out << view->self();
+        return out.str() + " " + stringify_flags();
+    } else
+    {
+        return "inert toplevel " + stringify_flags();
+    }
 }
 
 class toplevel_view_render_instance_t : public wf::scene::translation_node_instance_t
@@ -128,6 +127,7 @@ void wf::toplevel_view_node_t::gen_render_instances(
 
 std::optional<wf::texture_t> wf::toplevel_view_node_t::to_texture() const
 {
+    auto view = _view.lock();
     if (!view || !view->is_mapped() || (get_children().size() != 1))
     {
         return {};
@@ -143,6 +143,7 @@ std::optional<wf::texture_t> wf::toplevel_view_node_t::to_texture() const
 
 wf::region_t wf::toplevel_view_node_t::get_opaque_region() const
 {
+    auto view = _view.lock();
     if (view && view->is_mapped() && view->get_wlr_surface())
     {
         auto surf = view->get_wlr_surface();

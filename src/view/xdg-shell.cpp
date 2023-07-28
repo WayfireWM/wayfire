@@ -16,6 +16,7 @@
 #include <wayfire/workspace-set.hpp>
 #include <wayfire/signal-definitions.hpp>
 #include <wayfire/unstable/wlr-view-events.hpp>
+#include <wayfire/nonstd/tracking-allocator.hpp>
 
 #include "xdg-shell/xdg-toplevel-view.hpp"
 #include "view-keyboard-interaction.hpp"
@@ -41,10 +42,6 @@ wayfire_xdg_popup::wayfire_xdg_popup(wlr_xdg_popup *popup) : wf::view_interface_
     this->popup = popup;
     this->role  = wf::VIEW_ROLE_UNMANAGED;
     this->priv->keyboard_focus_enabled = false;
-    this->surface_root_node = std::make_shared<wayfire_xdg_popup_node>(this->get_id());
-    this->set_surface_root_node(surface_root_node);
-    this->set_output(popup_parent->get_output());
-
 
     if (!dynamic_cast<wayfire_xdg_popup*>(popup_parent.get()))
     {
@@ -62,16 +59,10 @@ wayfire_xdg_popup::wayfire_xdg_popup(wlr_xdg_popup *popup) : wf::view_interface_
     }
 
     on_surface_commit.set_callback([&] (void*) { commit(); });
-}
-
-wayfire_xdg_popup::~wayfire_xdg_popup() = default;
-
-void wayfire_xdg_popup::initialize()
-{
-    wf::view_interface_t::initialize();
-    this->main_surface = std::make_shared<wf::scene::wlr_surface_node_t>(popup->base->surface, true);
 
     LOGI("New xdg popup");
+    this->main_surface = std::make_shared<wf::scene::wlr_surface_node_t>(popup->base->surface, true);
+
     on_map.set_callback([&] (void*) { map(); });
     on_unmap.set_callback([&] (void*) { unmap(); });
     on_destroy.set_callback([&] (void*) { destroy(); });
@@ -107,8 +98,19 @@ void wayfire_xdg_popup::initialize()
     popup_parent->connect(&this->parent_geometry_changed);
     popup_parent->connect(&this->parent_app_id_changed);
     popup_parent->connect(&this->parent_title_changed);
+}
 
-    unconstrain();
+wayfire_xdg_popup::~wayfire_xdg_popup() = default;
+
+std::shared_ptr<wayfire_xdg_popup> wayfire_xdg_popup::create(wlr_xdg_popup *popup)
+{
+    auto self = wf::view_interface_t::create<wayfire_xdg_popup>(popup);
+
+    self->surface_root_node = std::make_shared<wayfire_xdg_popup_node>(self->get_id());
+    self->set_surface_root_node(self->surface_root_node);
+    self->set_output(self->popup_parent->get_output());
+    self->unconstrain();
+    return self;
 }
 
 void wayfire_xdg_popup::map()
@@ -315,7 +317,7 @@ wlr_surface*wayfire_xdg_popup::get_keyboard_focus_surface()
  */
 class xdg_popup_controller_t
 {
-    nonstd::observer_ptr<wayfire_xdg_popup> view;
+    std::shared_ptr<wayfire_xdg_popup> view;
     wf::wl_listener_wrapper on_destroy;
 
   public:
@@ -323,16 +325,11 @@ class xdg_popup_controller_t
     {
         on_destroy.set_callback([=] (auto) { delete this; });
         on_destroy.connect(&popup->base->events.destroy);
-
-        auto view = std::make_unique<wayfire_xdg_popup>(popup);
-        this->view = {view};
-        wf::get_core().add_view(std::move(view));
+        view = wayfire_xdg_popup::create(popup);
     }
 
     ~xdg_popup_controller_t()
-    {
-        view->unref();
-    }
+    {}
 };
 
 void create_xdg_popup(wlr_xdg_popup *popup)

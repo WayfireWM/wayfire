@@ -187,16 +187,15 @@ class toplevel_view_interface_t : public wf::view_interface_t
 
     virtual ~toplevel_view_interface_t();
 
-  protected:
-    /**
-     * When a view is being destroyed, all associated objects like subsurfaces,
-     * transformers and custom data are destroyed.
-     *
-     * In general, we want to make sure that these associated objects are freed
-     * before the actual view object destruction starts. Thus, deinitialize()
-     * is called from core just before destroying the view.
-     */
-    void deinitialize() override;
+    std::shared_ptr<toplevel_view_interface_t> shared_from_this()
+    {
+        return std::dynamic_pointer_cast<toplevel_view_interface_t>(view_interface_t::shared_from_this());
+    }
+
+    std::weak_ptr<toplevel_view_interface_t> weak_from_this()
+    {
+        return shared_from_this();
+    }
 };
 
 inline wayfire_toplevel_view toplevel_cast(wayfire_view view)
@@ -206,6 +205,5 @@ inline wayfire_toplevel_view toplevel_cast(wayfire_view view)
 
 // Find the view which has the given toplevel, if such a view exists.
 // The view might not exist if it was destroyed, but a plugin holds on to a stale toplevel pointer.
-wayfire_toplevel_view find_view_for_toplevel(
-    std::shared_ptr<wf::toplevel_t> toplevel);
+wayfire_toplevel_view find_view_for_toplevel(std::shared_ptr<wf::toplevel_t> toplevel);
 }

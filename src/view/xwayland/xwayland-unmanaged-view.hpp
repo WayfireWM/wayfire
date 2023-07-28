@@ -1,6 +1,7 @@
 #pragma once
 
 #include "config.h"
+#include "wayfire/core.hpp"
 #include "wayfire/output.hpp"
 #include "wayfire/unstable/translation-node.hpp"
 #include "wayfire/util.hpp"
@@ -21,18 +22,13 @@ class xwayland_unmanaged_view_node_t : public wf::scene::translation_node_t, pub
   public:
     xwayland_unmanaged_view_node_t(wayfire_view view) : view_node_tag_t(view)
     {
+        _view = view->weak_from_this();
         this->kb_interaction = std::make_unique<view_keyboard_interaction_t>(view);
-        on_view_destroy = [=] (view_destruct_signal *ev)
-        {
-            this->view = nullptr;
-            this->kb_interaction = std::make_unique<keyboard_interaction_t>();
-        };
-
-        view->connect(&on_view_destroy);
     }
 
     wf::keyboard_focus_node_t keyboard_refocus(wf::output_t *output) override
     {
+        auto view = _view.lock();
         if (!view || !view->get_keyboard_focus_surface())
         {
             return wf::keyboard_focus_node_t{};
@@ -62,15 +58,20 @@ class xwayland_unmanaged_view_node_t : public wf::scene::translation_node_t, pub
 
     std::string stringify() const override
     {
-        std::ostringstream out;
-        out << this->view;
-        return "unmanaged " + out.str() + " " + stringify_flags();
+        if (auto view = _view.lock())
+        {
+            std::ostringstream out;
+            out << view->self();
+            return "unmanaged " + out.str() + " " + stringify_flags();
+        } else
+        {
+            return "inert unmanaged " + stringify_flags();
+        }
     }
 
   protected:
-    wayfire_toplevel_view view;
+    std::weak_ptr<view_interface_t> _view;
     std::unique_ptr<keyboard_interaction_t> kb_interaction;
-    wf::signal::connection_t<view_destruct_signal> on_view_destroy;
 };
 }
 
@@ -144,12 +145,8 @@ class wayfire_unmanaged_xwayland_view : public wf::view_interface_t, public wayf
         LOGE("new unmanaged xwayland surface ", xw->title, " class: ", xw->class_t,
             " instance: ", xw->instance);
 
-        surface_root_node = std::make_shared<wf::xwayland_unmanaged_view_node_t>(this);
-        this->set_surface_root_node(surface_root_node);
-
         xw->data = this;
         role     = wf::VIEW_ROLE_UNMANAGED;
-
         on_set_geometry.set_callback([&] (void*) { update_geometry_from_xsurface(); });
         on_map.set_callback([&] (void*) { map(xw->surface); });
         on_unmap.set_callback([&] (void*) { unmap(); });
@@ -159,10 +156,14 @@ class wayfire_unmanaged_xwayland_view : public wf::view_interface_t, public wayf
         on_set_geometry.connect(&xw->events.set_geometry);
     }
 
-    virtual void initialize() override
+    template<class ConcreteUnmanagedView>
+    static std::shared_ptr<wayfire_unmanaged_xwayland_view> create(wlr_xwayland_surface *xw)
     {
-        _initialize();
-        wf::view_interface_t::initialize();
+        auto self = wf::view_interface_t::create<ConcreteUnmanagedView>(xw);
+        self->surface_root_node = std::make_shared<wf::xwayland_unmanaged_view_node_t>(self);
+        self->set_surface_root_node(self->surface_root_node);
+        self->_initialize();
+        return self;
     }
 
     void map(wlr_surface *surface) override
@@ -258,15 +259,9 @@ class wayfire_dnd_xwayland_view : public wayfire_unmanaged_xwayland_view
         return wf::xw::view_type::DND;
     }
 
-    void destruct() override
+    ~wayfire_dnd_xwayland_view()
     {
         LOGD("Destroying a Xwayland drag icon");
-        wayfire_unmanaged_xwayland_view::destruct();
-    }
-
-    void deinitialize() override
-    {
-        wayfire_unmanaged_xwayland_view::deinitialize();
     }
 
     void map(wlr_surface *surface) override

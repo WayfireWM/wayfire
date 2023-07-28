@@ -9,6 +9,7 @@
 
 #include "surface-impl.hpp"
 #include "wayfire/core.hpp"
+#include "wayfire/nonstd/tracking-allocator.hpp"
 #include "wayfire/signal-provider.hpp"
 #include "wayfire/unstable/wlr-surface-node.hpp"
 #include "wayfire/output.hpp"
@@ -27,11 +28,7 @@ class view_interface_t::view_priv_impl
 {
   public:
     wlr_surface *wsurface = nullptr;
-
-    /** Reference count to the view */
-    int ref_cnt = 0;
-
-    size_t last_view_cnt = 0;
+    size_t last_view_cnt  = 0;
 
     bool keyboard_focus_enabled = true;
     uint32_t allowed_actions    = VIEW_ALLOW_ALL;
@@ -49,8 +46,8 @@ class view_interface_t::view_priv_impl
     void set_mapped_surface_contents(std::shared_ptr<scene::wlr_surface_node_t> content);
     void unset_mapped_surface_contents();
     std::weak_ptr<wf::workspace_set_t> current_wset;
-
     std::shared_ptr<toplevel_t> toplevel;
+    wf::signal::connection_t<destruct_signal<view_interface_t>> pre_free;
 };
 
 /**

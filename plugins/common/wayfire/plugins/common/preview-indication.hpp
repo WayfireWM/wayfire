@@ -23,7 +23,7 @@ class preview_indication_animation_t : public geometry_animation_t
  * A view which can be used to show previews for different actions on the
  * screen, for ex. when snapping a view
  */
-class preview_indication_view_t : public wf::color_rect_view_t
+class preview_indication_t
 {
     wf::effect_hook_t pre_paint;
     wf::output_t *output;
@@ -37,6 +37,7 @@ class preview_indication_view_t : public wf::color_rect_view_t
     const wf::option_wrapper_t<int> base_border_w;
 
   public:
+    std::shared_ptr<color_rect_view_t> view;
 
     /**
      * Create a new indication preview on the indicated output.
@@ -44,9 +45,8 @@ class preview_indication_view_t : public wf::color_rect_view_t
      * @param start_geometry The geometry the preview should have, relative to
      *                       the output
      */
-    preview_indication_view_t(wf::geometry_t start_geometry,
-        const std::string& prefix) :
-        wf::color_rect_view_t(), animation(wf::create_option<int>(200)),
+    preview_indication_t(wf::geometry_t start_geometry, wf::output_t *output, const std::string& prefix) :
+        animation(wf::create_option<int>(200)),
         base_color(prefix + "/preview_base_color"),
         base_border(prefix + "/preview_base_border"),
         base_border_w(prefix + "/preview_border_width")
@@ -55,39 +55,19 @@ class preview_indication_view_t : public wf::color_rect_view_t
         animation.set_end(start_geometry);
         animation.alpha.set(0, 1);
 
-        this->role = VIEW_ROLE_DESKTOP_ENVIRONMENT;
-    }
-
-    void set_output(wf::output_t *output) override
-    {
-        if (get_output())
-        {
-            get_output()->render->rem_effect(&pre_paint);
-        }
-
         this->output = output;
-        wf::color_rect_view_t::set_output(output);
+        pre_paint    = [=] () { update_animation(); };
+        output->render->add_effect(&pre_paint, wf::OUTPUT_EFFECT_PRE);
+        view = color_rect_view_t::create(VIEW_ROLE_DESKTOP_ENVIRONMENT, output, wf::scene::layer::TOP);
 
-        if (output)
-        {
-            pre_paint = [=] () { update_animation(); };
-            output->render->add_effect(&pre_paint, wf::OUTPUT_EFFECT_PRE);
-            wf::scene::readd_front(output->node_for_layer(wf::scene::layer::TOP), get_root_node());
-        }
-    }
-
-    void initialize() override
-    {
-        color_rect_view_t::initialize();
-
-        set_color(base_color);
-        set_border_color(base_border);
-        set_border(base_border_w);
+        view->set_color(base_color);
+        view->set_border_color(base_border);
+        view->set_border(base_border_w);
     }
 
     /** A convenience wrapper around the full version */
-    preview_indication_view_t(wf::point_t start, const std::string & prefix) :
-        preview_indication_view_t(wf::geometry_t{start.x, start.y, 1, 1}, prefix)
+    preview_indication_t(wf::point_t start, wf::output_t *output, const std::string & prefix) :
+        preview_indication_t(wf::geometry_t{start.x, start.y, 1, 1}, output, prefix)
     {}
 
     /**
@@ -117,9 +97,8 @@ class preview_indication_view_t : public wf::color_rect_view_t
             alpha, should_close);
     }
 
-    virtual ~preview_indication_view_t()
+    virtual ~preview_indication_t()
     {
-        wf::scene::remove_child(get_root_node());
         if (this->output)
         {
             this->output->render->rem_effect(&pre_paint);
@@ -131,25 +110,28 @@ class preview_indication_view_t : public wf::color_rect_view_t
     void update_animation()
     {
         wf::geometry_t current = animation;
-        if (current != geometry)
+        if (current != view->get_geometry())
         {
-            set_geometry(current);
+            view->set_geometry(current);
         }
 
-        double alpha = animation.alpha;
-        if (base_color.value().a * alpha != _color.a)
-        {
-            _color.a = alpha * base_color.value().a;
-            _border_color.a = alpha * base_border.value().a;
+        double alpha   = animation.alpha;
+        auto cur_color = view->get_color();
+        auto cur_border_color = view->get_border_color();
 
-            set_color(_color);
-            set_border_color(_border_color);
+        if (base_color.value().a * alpha != cur_color.a)
+        {
+            cur_color.a = alpha * base_color.value().a;
+            cur_border_color.a = alpha * base_border.value().a;
+
+            view->set_color(cur_color);
+            view->set_border_color(cur_border_color);
         }
 
         /* The end of unmap animation, just exit */
         if (!animation.running() && should_close)
         {
-            close();
+            view->close();
         }
     }
 };

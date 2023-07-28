@@ -10,21 +10,21 @@
 wf::layer_shell_node_t::layer_shell_node_t(wayfire_view view) : view_node_tag_t(view)
 {
     this->kb_interaction = std::make_unique<view_keyboard_interaction_t>(view);
-    on_view_destroy = [=] (view_destruct_signal *ev)
-    {
-        this->view = nullptr;
-        this->kb_interaction = std::make_unique<keyboard_interaction_t>();
-    };
-
-    view->connect(&on_view_destroy);
-    this->view = view;
+    this->_view = view->weak_from_this();
 }
 
 std::string wf::layer_shell_node_t::stringify() const
 {
-    std::ostringstream out;
-    out << this->view;
-    return out.str() + " " + stringify_flags();
+    auto view = _view.lock();
+    if (view)
+    {
+        std::ostringstream out;
+        out << view->self();
+        return out.str() + " " + stringify_flags();
+    } else
+    {
+        return "inert layer-shell";
+    }
 }
 
 wf::keyboard_interaction_t& wf::layer_shell_node_t::keyboard_interaction()
@@ -34,6 +34,7 @@ wf::keyboard_interaction_t& wf::layer_shell_node_t::keyboard_interaction()
 
 wf::keyboard_focus_node_t wf::layer_shell_node_t::keyboard_refocus(wf::output_t *output)
 {
+    auto view = _view.lock();
     if (!view || !view->get_keyboard_focus_surface())
     {
         return wf::keyboard_focus_node_t{};
@@ -81,6 +82,7 @@ wf::keyboard_focus_node_t wf::layer_shell_node_t::keyboard_refocus(wf::output_t 
 
 wf::region_t wf::layer_shell_node_t::get_opaque_region() const
 {
+    auto view = _view.lock();
     if (view && view->is_mapped() && view->get_wlr_surface())
     {
         auto surf = view->get_wlr_surface();
@@ -95,6 +97,7 @@ wf::region_t wf::layer_shell_node_t::get_opaque_region() const
 
 std::optional<wf::texture_t> wf::layer_shell_node_t::to_texture() const
 {
+    auto view = _view.lock();
     if (!view || !view->is_mapped() || (get_children().size() != 1))
     {
         return {};
@@ -191,13 +194,14 @@ class layer_shell_render_instance_t : public wf::scene::translation_node_instanc
 void wf::layer_shell_node_t::gen_render_instances(std::vector<scene::render_instance_uptr> & instances,
     scene::damage_callback push_damage, wf::output_t *shown_on)
 {
+    auto view = _view.lock();
     if (!view)
     {
         return;
     }
 
     // Special case: layer-shell views live only inside their outputs and should not be shown on other outputs
-    if (shown_on && (this->view->get_output() != shown_on))
+    if (shown_on && (view->get_output() != shown_on))
     {
         return;
     }
