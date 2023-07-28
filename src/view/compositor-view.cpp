@@ -126,6 +126,7 @@ std::shared_ptr<wf::color_rect_view_t> wf::color_rect_view_t::create(view_role_t
         }
     }
 
+    emit_view_map_signal(self, true);
     return self;
 }
 
