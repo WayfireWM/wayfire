@@ -13,6 +13,7 @@
 #include "wayfire/view.hpp"
 #include "xwayland-helpers.hpp"
 #include <wayfire/scene-operations.hpp>
+#include <wayfire/view-helpers.hpp>
 
 #if WF_HAS_XWAYLAND
 
@@ -32,14 +33,14 @@ class wayfire_xwayland_view_base
     void handle_app_id_changed(std::string new_app_id)
     {
         this->app_id = new_app_id;
-        wf::emit_app_id_changed_signal(dynamic_cast<wf::view_interface_t*>(this));
+        wf::view_implementation::emit_app_id_changed_signal(dynamic_cast<wf::view_interface_t*>(this));
     }
 
     /** Used by view implementations when the title changes */
     void handle_title_changed(std::string new_title)
     {
         this->title = new_title;
-        wf::emit_title_changed_signal(dynamic_cast<wf::view_interface_t*>(this));
+        wf::view_implementation::emit_title_changed_signal(dynamic_cast<wf::view_interface_t*>(this));
     }
 
   public:
@@ -70,7 +71,7 @@ class wayfire_xwayland_view_base
         });
         on_ping_timeout.set_callback([&] (void*)
         {
-            wf::emit_ping_timeout_signal(dynamic_cast<wf::view_interface_t*>(this));
+            wf::view_implementation::emit_ping_timeout_signal(dynamic_cast<wf::view_interface_t*>(this));
         });
         handle_title_changed(nonull(xw->title));
         handle_app_id_changed(nonull(xw->class_t));

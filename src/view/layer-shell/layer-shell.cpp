@@ -19,6 +19,7 @@
 #include "wayfire/workspace-set.hpp"
 #include "wayfire/output-layout.hpp"
 #include "../view-impl.hpp"
+#include <wayfire/view-helpers.hpp>
 
 static const uint32_t both_vert =
     ZWLR_LAYER_SURFACE_V1_ANCHOR_TOP | ZWLR_LAYER_SURFACE_V1_ANCHOR_BOTTOM;
@@ -484,7 +485,7 @@ void wayfire_layer_shell_view::map()
 {
     {
         this->app_id = nonull(lsurface->namespace_t);
-        wf::emit_app_id_changed_signal(self());
+        wf::view_implementation::emit_app_id_changed_signal(self());
     }
 
     // Disconnect, from now on regular commits will work

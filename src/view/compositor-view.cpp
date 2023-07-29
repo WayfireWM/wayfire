@@ -9,6 +9,7 @@
 #include <wayfire/output.hpp>
 #include <wayfire/opengl.hpp>
 #include <wayfire/compositor-view.hpp>
+#include <wayfire/view-helpers.hpp>
 #include <wayfire/signal-definitions.hpp>
 #include <cstring>
 
@@ -126,7 +127,7 @@ std::shared_ptr<wf::color_rect_view_t> wf::color_rect_view_t::create(view_role_t
         }
     }
 
-    emit_view_map_signal(self, true);
+    wf::view_implementation::emit_view_map_signal(self, true);
     return self;
 }
 

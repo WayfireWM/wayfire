@@ -16,6 +16,7 @@
 #include <wayfire/workspace-set.hpp>
 #include <wlr/util/edges.h>
 #include <wayfire/window-manager.hpp>
+#include <wayfire/view-helpers.hpp>
 
 /**
  * When we get a request for setting CSD, the view might not have been
@@ -90,7 +91,7 @@ wf::xdg_toplevel_view_t::xdg_toplevel_view_t(wlr_xdg_toplevel *tlvl)
     });
     on_ping_timeout.set_callback([&] (void*)
     {
-        wf::emit_ping_timeout_signal(self());
+        wf::view_implementation::emit_ping_timeout_signal(self());
     });
 
     on_request_move.set_callback([&] (void*)
@@ -276,7 +277,7 @@ void wf::xdg_toplevel_view_t::handle_toplevel_state_changed(wf::toplevel_state_t
     }
 
     wf::scene::damage_node(get_root_node(), last_bounding_box);
-    emit_toplevel_state_change_signals({this}, old_state);
+    wf::view_implementation::emit_toplevel_state_change_signals({this}, old_state);
 
     damage();
     last_bounding_box = this->get_surface_root_node()->get_bounding_box();
@@ -305,13 +306,13 @@ void wf::xdg_toplevel_view_t::destroy()
 void wf::xdg_toplevel_view_t::handle_title_changed(std::string new_title)
 {
     this->title = new_title;
-    emit_title_changed_signal(self());
+    wf::view_implementation::emit_title_changed_signal(self());
 }
 
 void wf::xdg_toplevel_view_t::handle_app_id_changed(std::string new_app_id)
 {
     this->app_id = new_app_id;
-    emit_app_id_changed_signal(self());
+    wf::view_implementation::emit_app_id_changed_signal(self());
 }
 
 void wf::xdg_toplevel_view_t::set_decoration_mode(bool use_csd)

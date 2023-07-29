@@ -19,6 +19,7 @@
 #include <wayfire/nonstd/tracking-allocator.hpp>
 
 #include "xdg-shell/xdg-toplevel-view.hpp"
+#include <wayfire/view-helpers.hpp>
 #include "view-keyboard-interaction.hpp"
 
 class wayfire_xdg_popup_node : public wf::scene::translation_node_t
@@ -72,7 +73,7 @@ wayfire_xdg_popup::wayfire_xdg_popup(wlr_xdg_popup *popup) : wf::view_interface_
     });
     on_ping_timeout.set_callback([&] (void*)
     {
-        wf::emit_ping_timeout_signal(self());
+        wf::view_implementation::emit_ping_timeout_signal(self());
     });
 
     on_map.connect(&popup->base->events.map);
@@ -272,13 +273,13 @@ bool wayfire_xdg_popup::is_mapped() const
 void wayfire_xdg_popup::handle_app_id_changed(std::string new_app_id)
 {
     this->app_id = new_app_id;
-    wf::emit_app_id_changed_signal(self());
+    wf::view_implementation::emit_app_id_changed_signal(self());
 }
 
 void wayfire_xdg_popup::handle_title_changed(std::string new_title)
 {
     this->title = new_title;
-    wf::emit_title_changed_signal(self());
+    wf::view_implementation::emit_title_changed_signal(self());
 }
 
 std::string wayfire_xdg_popup::get_app_id()

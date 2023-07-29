@@ -1,5 +1,6 @@
 #pragma once
 
+#include "toplevel.hpp"
 #include "wayfire/scene-input.hpp"
 #include "wayfire/scene.hpp"
 #include <initializer_list>
@@ -33,4 +34,17 @@ std::vector<wayfire_view> collect_views_from_scenegraph(wf::scene::node_ptr root
  */
 std::vector<wayfire_view> collect_views_from_output(
     wf::output_t *output, std::initializer_list<wf::scene::layer> layers);
+
+/**
+ * A few simple functions which help in view implementations.
+ */
+namespace view_implementation
+{
+void emit_toplevel_state_change_signals(wayfire_toplevel_view view, const wf::toplevel_state_t& old_state);
+void emit_view_map_signal(wayfire_view view, bool has_position);
+void emit_ping_timeout_signal(wayfire_view view);
+void emit_geometry_changed_signal(wayfire_toplevel_view view, wf::geometry_t old_geometry);
+void emit_title_changed_signal(wayfire_view view);
+void emit_app_id_changed_signal(wayfire_view view);
+}
 }

@@ -16,7 +16,7 @@
 
 #include "xdg-shell.hpp"
 
-void wf::emit_view_map_signal(wayfire_view view, bool has_position)
+void wf::view_implementation::emit_view_map_signal(wayfire_view view, bool has_position)
 {
     wf::view_mapped_signal data;
     data.view = view;
@@ -27,14 +27,15 @@ void wf::emit_view_map_signal(wayfire_view view, bool has_position)
     wf::get_core().emit(&data);
 }
 
-void wf::emit_ping_timeout_signal(wayfire_view view)
+void wf::view_implementation::emit_ping_timeout_signal(wayfire_view view)
 {
     wf::view_ping_timeout_signal data;
     data.view = view;
     view->emit(&data);
 }
 
-void wf::emit_geometry_changed_signal(wayfire_toplevel_view view, wf::geometry_t old_geometry)
+void wf::view_implementation::emit_geometry_changed_signal(wayfire_toplevel_view view,
+    wf::geometry_t old_geometry)
 {
     wf::view_geometry_changed_signal data;
     data.view = view;
@@ -50,7 +51,7 @@ void wf::emit_geometry_changed_signal(wayfire_toplevel_view view, wf::geometry_t
 
 void wf::view_interface_t::emit_view_map()
 {
-    emit_view_map_signal(self(), false);
+    view_implementation::emit_view_map_signal(self(), false);
 }
 
 void wf::view_interface_t::emit_view_unmap()
@@ -85,21 +86,22 @@ void wf::view_interface_t::emit_view_pre_unmap()
     wf::get_core().emit(&data);
 }
 
-void wf::emit_title_changed_signal(wayfire_view view)
+void wf::view_implementation::emit_title_changed_signal(wayfire_view view)
 {
     view_title_changed_signal data;
     data.view = view;
     view->emit(&data);
 }
 
-void wf::emit_app_id_changed_signal(wayfire_view view)
+void wf::view_implementation::emit_app_id_changed_signal(wayfire_view view)
 {
     view_app_id_changed_signal data;
     data.view = view;
     view->emit(&data);
 }
 
-void wf::emit_toplevel_state_change_signals(wayfire_toplevel_view view, const wf::toplevel_state_t& old_state)
+void wf::view_implementation::emit_toplevel_state_change_signals(wayfire_toplevel_view view,
+    const wf::toplevel_state_t& old_state)
 {
     if (view->toplevel()->current().geometry != old_state.geometry)
     {

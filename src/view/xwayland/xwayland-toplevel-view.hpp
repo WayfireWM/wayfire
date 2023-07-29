@@ -14,6 +14,7 @@
 #include <wayfire/window-manager.hpp>
 #include "xwayland-toplevel.hpp"
 #include <wayfire/txn/transaction-manager.hpp>
+#include <wayfire/view-helpers.hpp>
 
 #if WF_HAS_XWAYLAND
 
@@ -344,7 +345,7 @@ class wayfire_xwayland_view : public wf::toplevel_view_interface_t, public wayfi
          * two cases we're dealing with by checking whether we have received
          * a valid ConfigureRequest before mapping */
         bool client_self_positioned = self_positioned;
-        emit_view_map_signal(self(), client_self_positioned);
+        wf::view_implementation::emit_view_map_signal(self(), client_self_positioned);
     }
 
     void map(wlr_surface *surface) override
@@ -465,7 +466,7 @@ class wayfire_xwayland_view : public wf::toplevel_view_interface_t, public wayfi
         }
 
         wf::scene::damage_node(get_root_node(), last_bounding_box);
-        wf::emit_toplevel_state_change_signals({this}, old_state);
+        wf::view_implementation::emit_toplevel_state_change_signals({this}, old_state);
 
         damage();
         last_bounding_box = this->get_surface_root_node()->get_bounding_box();
