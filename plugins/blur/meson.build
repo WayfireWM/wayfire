@@ -1,7 +1,8 @@
-blur_base = shared_module('wayfire-blur-base',
+blur_base = shared_library('wayfire-blur-base',
      ['blur-base.cpp', 'box.cpp', 'gaussian.cpp', 'kawase.cpp', 'bokeh.cpp'],
      include_directories: [wayfire_api_inc, wayfire_conf_inc],
      dependencies: [wlroots, pixman, wfconfig],
+     override_options: ['b_lundef=false'],
      install: true)
 install_headers(['blur.hpp'], subdir: 'wayfire/plugins/blur')
 
