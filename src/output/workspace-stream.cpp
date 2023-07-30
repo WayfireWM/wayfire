@@ -3,6 +3,7 @@
 #include "wayfire/region.hpp"
 #include "wayfire/scene-render.hpp"
 #include "wayfire/scene.hpp"
+#include "wayfire/view.hpp"
 #include <wayfire/config/types.hpp>
 #include <wayfire/workspace-stream.hpp>
 #include <wayfire/output.hpp>
@@ -15,7 +16,10 @@ class workspace_stream_node_t::workspace_stream_instance_t : public scene::
     render_instance_t
 {
     workspace_stream_node_t *self;
+
     std::vector<scene::render_instance_uptr> instances;
+    // True for each instance generated from a desktop environment view.
+    std::vector<bool> is_dekstop_environment;
 
     wf::point_t get_offset()
     {
@@ -32,7 +36,7 @@ class workspace_stream_node_t::workspace_stream_instance_t : public scene::
         scene::damage_callback push_damage)
     {
         this->self = self;
-        auto acc_damage = [this, push_damage] (wf::region_t damage)
+        auto translate_and_push_damage = [this, push_damage] (wf::region_t damage)
         {
             damage += -get_offset();
             push_damage(damage);
@@ -45,10 +49,25 @@ class workspace_stream_node_t::workspace_stream_instance_t : public scene::
             {
                 if (ch->is_enabled())
                 {
-                    ch->gen_render_instances(this->instances, acc_damage,
-                        self->output);
+                    auto view = node_to_view(ch);
+                    const bool is_de     = (view && (view->role == wf::VIEW_ROLE_DESKTOP_ENVIRONMENT));
+                    size_t num_generated = this->instances.size();
+
+                    // We push the damage as-is for desktop environment views, because they are visible on
+                    // every workspace.
+                    ch->gen_render_instances(this->instances,
+                        is_de ? push_damage : translate_and_push_damage, self->output);
+
+                    // Mark whether the instances were generated from a desktop environment view
+                    num_generated = this->instances.size() - num_generated;
+                    for (size_t i = 0; i < num_generated; i++)
+                    {
+                        is_dekstop_environment.push_back(is_de);
+                    }
                 }
             }
+
+            wf::dassert(instances.size() == is_dekstop_environment.size(), "Setting de flag is wrong!");
         }
     }
 
@@ -64,9 +83,19 @@ class workspace_stream_node_t::workspace_stream_instance_t : public scene::
             wf::render_target_t subtarget = target.translated(offset);
 
             our_damage += offset;
-            for (auto& ch : instances)
+            for (size_t i = 0; i < instances.size(); i++)
             {
-                ch->schedule_instructions(instructions, subtarget, our_damage);
+                if (is_dekstop_environment[i])
+                {
+                    // Special handling: move everything to 'current workspace' so that panels and backgrounds
+                    // render at the correct position.
+                    our_damage -= offset;
+                    instances[i]->schedule_instructions(instructions, target, our_damage);
+                    our_damage += offset;
+                } else
+                {
+                    instances[i]->schedule_instructions(instructions, subtarget, our_damage);
+                }
             }
 
             our_damage += -offset;

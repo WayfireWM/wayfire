@@ -111,86 +111,6 @@ std::optional<wf::texture_t> wf::layer_shell_node_t::to_texture() const
     return {};
 }
 
-class layer_shell_render_instance_t : public wf::scene::translation_node_instance_t
-{
-    wf::layer_shell_node_t *sself;
-
-  public:
-    layer_shell_render_instance_t(wf::layer_shell_node_t *self,
-        wf::scene::damage_callback push_damage, wf::output_t *shown_on) :
-        translation_node_instance_t(self, push_damage_on_all_workspaces(push_damage), shown_on)
-    {
-        sself = self;
-    }
-
-    wf::scene::damage_callback push_damage_on_all_workspaces(wf::scene::damage_callback push_damage)
-    {
-        return [=] (const wf::region_t& region)
-        {
-            if (!sself->get_view())
-            {
-                return;
-            }
-
-            auto view   = sself->get_view();
-            auto output = view->get_output();
-            if (!output)
-            {
-                push_damage(region);
-                return;
-            }
-
-            auto wsize = output->wset()->get_workspace_grid_size();
-            auto cws   = output->wset()->get_current_workspace();
-
-            /* Damage only the visible region of the shell view.
-             * This prevents hidden panels from spilling damage onto other workspaces */
-            wlr_box ws_box = output->get_relative_geometry();
-            wf::region_t full_damage;
-
-            for (int i = 0; i < wsize.width; i++)
-            {
-                for (int j = 0; j < wsize.height; j++)
-                {
-                    const int dx = (i - cws.x) * ws_box.width;
-                    const int dy = (j - cws.y) * ws_box.height;
-                    full_damage |= region + wf::point_t{dx, dy};
-                }
-            }
-
-            push_damage(full_damage);
-        };
-    }
-
-    void schedule_instructions(std::vector<wf::scene::render_instruction_t>& instructions,
-        const wf::render_target_t& target, wf::region_t& damage) override
-    {
-        if (!sself->get_view())
-        {
-            return;
-        }
-
-        wf::render_target_t our_target = target;
-        wf::point_t offset = {0, 0};
-
-        if (sself->get_view()->get_output())
-        {
-            // Adjust geometry of damage/target so that it is visible on all workspaces
-            auto output_size = sself->get_view()->get_output()->get_screen_size();
-            offset = {
-                (target.geometry.x % output_size.width) - target.geometry.x,
-                (target.geometry.y % output_size.height) - target.geometry.y,
-            };
-
-            our_target = target.translated(offset);
-        }
-
-        damage += offset;
-        translation_node_instance_t::schedule_instructions(instructions, our_target, damage);
-        damage += -offset;
-    }
-};
-
 void wf::layer_shell_node_t::gen_render_instances(std::vector<scene::render_instance_uptr> & instances,
     scene::damage_callback push_damage, wf::output_t *shown_on)
 {
@@ -206,5 +126,5 @@ void wf::layer_shell_node_t::gen_render_instances(std::vector<scene::render_inst
         return;
     }
 
-    instances.push_back(std::make_unique<layer_shell_render_instance_t>(this, push_damage, shown_on));
+    instances.push_back(std::make_unique<scene::translation_node_instance_t>(this, push_damage, shown_on));
 }
