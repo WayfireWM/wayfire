@@ -505,5 +505,13 @@ void update(node_ptr changed_node, uint32_t flags)
         update(changed_node->parent()->shared_from_this(), flags);
     }
 }
+
+floating_inner_node_t::~floating_inner_node_t()
+{
+    for (auto& node : this->children)
+    {
+        node->_parent = nullptr;
+    }
+}
 } // namespace scene
 }

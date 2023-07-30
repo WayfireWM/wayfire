@@ -309,6 +309,7 @@ class node_t : public std::enable_shared_from_this<node_t>,
     int enabled_counter = 1;
     node_t *_parent     = nullptr;
     friend class surface_root_node_t;
+    friend class floating_inner_node_t;
 
     // A helper functions for stringify() implementations, serializes the flags()
     // to a string, e.g. node with KEYBOARD and USER_INPUT -> '(ku)'
@@ -335,6 +336,7 @@ class floating_inner_node_t : public node_t
 {
   public:
     using node_t::node_t;
+    ~floating_inner_node_t();
 
     /**
      * Exchange the list of children of this node.
