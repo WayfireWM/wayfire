@@ -355,6 +355,10 @@ void wf::output_impl_t::update_active_view(wayfire_view v)
     }
 
     this->active_view = v;
+
+    focus_view_signal data;
+    data.view = v;
+    this->emit(&data);
 }
 
 wayfire_view find_topmost_parent(wayfire_view v)
@@ -415,14 +419,10 @@ void wf::output_impl_t::focus_view(wayfire_view v, uint32_t flags)
         focus_node(view ? view->get_surface_root_node() : nullptr);
     };
 
-    focus_view_signal data;
     if (!v || !v->is_mapped())
     {
         give_input_focus(nullptr);
         update_active_view(nullptr);
-
-        data.view = nullptr;
-        emit(&data);
         return;
     }
 
@@ -445,8 +445,6 @@ void wf::output_impl_t::focus_view(wayfire_view v, uint32_t flags)
         make_view_visible(v);
         update_active_view(v);
         give_input_focus(select_focus_view(v));
-        data.view = v;
-        emit(&data);
     }
 }
 
