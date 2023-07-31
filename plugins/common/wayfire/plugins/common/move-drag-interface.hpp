@@ -451,6 +451,7 @@ class core_drag_t : public signal::provider_t
 
         this->view   = grab_view;
         this->params = options;
+        wf::get_core().default_wm->set_view_grabbed(view, true);
 
         auto target_views = get_target_views(grab_view, options.join_views);
         for (auto& v : target_views)
@@ -605,6 +606,7 @@ class core_drag_t : public signal::provider_t
         }
 
         // Reset our state
+        wf::get_core().default_wm->set_view_grabbed(view, false);
         view = nullptr;
         all_views.clear();
         current_output     = nullptr;

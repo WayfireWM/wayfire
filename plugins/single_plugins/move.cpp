@@ -92,6 +92,14 @@ class wayfire_move : public wf::per_output_plugin_instance_t,
     {
         if ((ev->focused_output == output) && can_handle_drag())
         {
+            // Mark the last windowed geometry (which is the geometry before the view was grabbed: grabs work
+            // not by moving the view, but by translating it with a transformer. Therefore, the view geometry
+            // is still the geometry before the drag.
+            wf::get_core().default_wm->update_last_windowed_geometry(ev->main_view);
+            // Artifically continue the grab for a little bit more, so that the last windowed geometry does
+            // not get overwritten.
+            wf::get_core().default_wm->set_view_grabbed(ev->main_view, true);
+
             wf::move_drag::adjust_view_on_output(ev);
 
             if (enable_snap && (slot.slot_id != wf::grid::SLOT_NONE))
@@ -102,6 +110,8 @@ class wayfire_move : public wf::per_output_plugin_instance_t,
                 /* Update slot, will hide the preview as well */
                 update_slot(wf::grid::SLOT_NONE);
             }
+
+            wf::get_core().default_wm->set_view_grabbed(ev->main_view, false);
 
             wf::view_change_workspace_signal data;
             data.view = ev->main_view;
