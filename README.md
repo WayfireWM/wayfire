@@ -136,9 +136,17 @@ emerge --ask --verbose "=gui-wm/wayfire-9999"
 
 ###### NixOS
 
-See [nixpkgs-wayland].
-
-[nixpkgs-wayland]: https://github.com/nix-community/nixpkgs-wayland
+Enable Wayfire in your NixOS configuration:
+```nix
+programs.wayfire = {
+  enable = true;
+  plugins = with pkgs.wayfirePlugins; [
+    wcm
+    wf-shell
+    wayfire-plugins-extra
+  ];
+};
+```
 
 ###### Ubuntu
 
