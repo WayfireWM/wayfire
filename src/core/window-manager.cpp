@@ -15,6 +15,8 @@ namespace wf
 class windowed_geometry_data_t : public wf::custom_data_t
 {
   public:
+    bool is_grabbed = false;
+
     /** Last geometry the view has had in non-tiled and non-fullscreen state.
      * -1 as width/height means that no such geometry has been stored. */
     wf::geometry_t last_windowed_geometry = {0, 0, -1, -1};
@@ -35,6 +37,10 @@ void wf::window_manager_t::update_last_windowed_geometry(wayfire_toplevel_view v
     }
 
     auto windowed = view->get_data_safe<windowed_geometry_data_t>();
+    if (windowed->is_grabbed)
+    {
+        return;
+    }
 
     windowed->last_windowed_geometry = view->toplevel()->pending().geometry;
     if (view->get_output())
@@ -69,6 +75,12 @@ std::optional<wf::geometry_t> wf::window_manager_t::get_last_windowed_geometry(w
         .width = geom.width * new_area.width / old_area.width,
         .height = geom.height * new_area.height / old_area.height
     };
+}
+
+void window_manager_t::set_view_grabbed(wayfire_toplevel_view view, bool grabbed)
+{
+    auto windowed = view->get_data_safe<windowed_geometry_data_t>();
+    windowed->is_grabbed = grabbed;
 }
 
 void window_manager_t::move_request(wayfire_toplevel_view view)

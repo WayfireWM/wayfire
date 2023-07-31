@@ -27,6 +27,12 @@ class window_manager_t
     virtual std::optional<wf::geometry_t> get_last_windowed_geometry(wayfire_toplevel_view view);
 
     /**
+     * Mark the view as (un)grabbed.
+     * While a view is grabbed, its last windowed geometry will not be updated.
+     */
+    virtual void set_view_grabbed(wayfire_toplevel_view view, bool grabbed);
+
+    /**
      * Request that an interactive move starts for the given view.
      */
     virtual void move_request(wayfire_toplevel_view view);
