@@ -22,7 +22,12 @@ wf_cube_background_skydome::wf_cube_background_skydome(wf::output_t *output)
 wf_cube_background_skydome::~wf_cube_background_skydome()
 {
     OpenGL::render_begin();
-    program.deactivate();
+    program.free_resources();
+    if (tex != (GLuint) - 1)
+    {
+        GL_CALL(glDeleteTextures(1, &tex));
+    }
+
     OpenGL::render_end();
 }
 

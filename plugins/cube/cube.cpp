@@ -206,7 +206,7 @@ class wayfire_cube : public wf::per_output_plugin_instance_t, public wf::pointer
 
     void reload_background()
     {
-        if (!last_background_mode.compare(background_mode))
+        if (last_background_mode == (std::string)background_mode)
         {
             return;
         }
@@ -412,6 +412,7 @@ class wayfire_cube : public wf::per_output_plugin_instance_t, public wf::pointer
             identity_z_offset = 0.0f;
         }
 
+        reload_background();
         animation.cube_animation.offset_z.set(identity_z_offset + Z_OFFSET_NEAR,
             identity_z_offset + Z_OFFSET_NEAR);
         return true;
@@ -636,8 +637,6 @@ class wayfire_cube : public wf::per_output_plugin_instance_t, public wf::pointer
         OpenGL::render_begin(dest);
         GL_CALL(glClear(GL_DEPTH_BUFFER_BIT));
         OpenGL::render_end();
-
-        reload_background();
         background->render_frame(dest, animation);
 
         auto vp = calculate_vp_matrix(dest);
