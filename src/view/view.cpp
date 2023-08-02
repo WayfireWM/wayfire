@@ -39,17 +39,9 @@ wayfire_view wf::view_interface_t::self()
 /** Set the view's output. */
 void wf::view_interface_t::set_output(wf::output_t *new_output)
 {
-    /* Make sure the view doesn't stay on the old output */
-    if (get_output() && (get_output() != new_output))
-    {
-        view_disappeared_signal data_disappeared;
-        data_disappeared.view = self();
-        get_output()->emit(&data_disappeared);
-    }
-
     view_set_output_signal data;
     data.view   = self();
-    data.output = get_output();
+    data.output = get_output(); // the old output
 
     this->priv->output = new_output;
 
@@ -60,6 +52,13 @@ void wf::view_interface_t::set_output(wf::output_t *new_output)
     }
 
     wf::get_core().emit(&data);
+
+    if (data.output && (data.output != new_output))
+    {
+        view_disappeared_signal data_disappeared;
+        data_disappeared.view = self();
+        data.output->emit(&data_disappeared);
+    }
 }
 
 wf::output_t*wf::view_interface_t::get_output()
