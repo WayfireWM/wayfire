@@ -210,6 +210,30 @@ class wayfire_wsets_plugin_t : public wf::plugin_interface_t
         });
     }
 
+    /**
+     * Find the workspace set with the given index, or create a new one if it does not exist already.
+     * In addition, take a reference to it.
+     */
+    void locate_or_create_wset(uint64_t index)
+    {
+        if (available_sets.count(index))
+        {
+            return;
+        }
+
+        auto all_wsets = wf::workspace_set_t::get_all();
+        auto it = std::find_if(all_wsets.begin(), all_wsets.end(),
+            [&] (auto wset) { return wset->get_index() == index; });
+
+        if (it == all_wsets.end())
+        {
+            available_sets[index] = wf::workspace_set_t::create(index);
+        } else
+        {
+            available_sets[index] = (*it)->shared_from_this();
+        }
+    }
+
     void select_workspace(int index)
     {
         auto wo = wf::get_core().get_active_output();
@@ -218,11 +242,7 @@ class wayfire_wsets_plugin_t : public wf::plugin_interface_t
             return;
         }
 
-        if (!available_sets.count(index))
-        {
-            available_sets[index] = wf::workspace_set_t::create(index);
-        }
-
+        locate_or_create_wset(index);
         if (wo->wset() != available_sets[index])
         {
             LOGC(WSET, "Output ", wo->to_string(), " selecting workspace set id=", index);
@@ -260,10 +280,7 @@ class wayfire_wsets_plugin_t : public wf::plugin_interface_t
             return;
         }
 
-        if (!available_sets.count(index))
-        {
-            available_sets[index] = wf::workspace_set_t::create(index);
-        }
+        locate_or_create_wset(index);
 
         auto target_wset     = available_sets[index];
         const auto& old_wset = view->get_wset();
