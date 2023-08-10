@@ -1050,6 +1050,8 @@ class output_layout_t::impl
         state.source = OUTPUT_IMAGE_SOURCE_NONE;
         noop_output->apply_state(state);
         wlr_output_layout_remove(output_layout, noop_output->handle);
+        // Trigger repositioning of all outputs
+        apply_configuration(get_current_configuration());
     }
 
     void add_output(wlr_output *output)
@@ -1382,15 +1384,6 @@ class output_layout_t::impl
             {
                 ++count_enabled;
                 wlr_output_layout_add_auto(output_layout, handle);
-
-                /* Get the correct position */
-                wlr_box box;
-                wlr_output_layout_get_box(output_layout, handle, &box);
-                if (wlr_box_empty(&box))
-                {
-                    LOGE("failed to get layout box");
-                }
-
                 lo->apply_state(state);
             }
         }
