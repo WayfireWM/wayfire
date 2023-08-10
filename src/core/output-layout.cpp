@@ -1409,6 +1409,21 @@ class output_layout_t::impl
             }
         }
 
+        /* Fifth: emit configuration-changed again for dynamically-positioned outputs, because their position
+         * might have changed. */
+        for (auto& entry : config)
+        {
+            auto& handle = entry.first;
+            auto& state  = entry.second;
+            auto& lo     = this->outputs[handle];
+
+            if (state.source & OUTPUT_IMAGE_SOURCE_SELF &&
+                entry.second.position.is_automatic_position())
+            {
+                lo->emit_configuration_changed(wf::OUTPUT_POSITION_CHANGE);
+            }
+        }
+
         wf::output_layout_configuration_changed_signal ev;
         get_core().output_layout->emit(&ev);
 
