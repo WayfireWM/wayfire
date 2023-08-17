@@ -259,18 +259,21 @@ static void handle_gtk_shell_get_gtk_surface(wl_client *client, wl_resource *res
     wl_resource_set_implementation(gtk_surface->resource, &gtk_surface1_impl,
         gtk_surface, handle_gtk_surface_destroy);
 
-    wlr_surface *wlr_surface     = wlr_surface_from_resource(surface);
-    wlr_xdg_surface *xdg_surface = wlr_xdg_surface_from_wlr_surface(wlr_surface);
-    gtk_surface->on_configure.set_callback([=] (void*)
+    wlr_surface *wlr_surface = wlr_surface_from_resource(surface);
+    if (wlr_surface_is_xdg_surface(wlr_surface))
     {
-        handle_xdg_surface_on_configure(gtk_surface);
-    });
-    gtk_surface->on_configure.connect(&xdg_surface->events.configure);
-    gtk_surface->on_destroy.set_callback([=] (void*)
-    {
-        handle_xdg_surface_on_destroy(gtk_surface);
-    });
-    gtk_surface->on_destroy.connect(&xdg_surface->events.destroy);
+        wlr_xdg_surface *xdg_surface = wlr_xdg_surface_from_wlr_surface(wlr_surface);
+        gtk_surface->on_configure.set_callback([=] (void*)
+        {
+             handle_xdg_surface_on_configure(gtk_surface);
+        });
+        gtk_surface->on_configure.connect(&xdg_surface->events.configure);
+        gtk_surface->on_destroy.set_callback([=] (void*)
+        {
+            handle_xdg_surface_on_destroy(gtk_surface);
+        });
+        gtk_surface->on_destroy.connect(&xdg_surface->events.destroy);
+    }
 }
 
 /**
