@@ -388,6 +388,7 @@ class stipc_plugin_t : public wf::plugin_interface_t
                 v["state"]["tiled"] = toplevel->pending_tiled_edges();
                 v["state"]["fullscreen"] = toplevel->pending_fullscreen();
                 v["state"]["minimized"]  = toplevel->minimized;
+                v["state"]["activated"]  = toplevel->activated;
             } else
             {
                 v["geometry"] = wf::ipc::geometry_to_json(view->get_bounding_box());
