@@ -1,4 +1,5 @@
 #include "wayfire/plugins/common/shared-core-data.hpp"
+#include "wayfire/util.hpp"
 #include <string>
 #include <map>
 #include <wayfire/plugin.hpp>
@@ -187,14 +188,20 @@ class scale_title_filter : public wf::per_output_plugin_instance_t
         return true;
     };
 
+    wf::wl_idle_call idle_update_filter;
+
     void update_filter()
     {
-        if (scale_running)
+        // Delay updating the filter in case the last key causes scale to exit.
+        idle_update_filter.run_once([&]
         {
-            scale_update_signal ev;
-            output->emit(&ev);
-            update_overlay();
-        }
+            if (scale_running)
+            {
+                scale_update_signal ev;
+                output->emit(&ev);
+                update_overlay();
+            }
+        });
     }
 
     wf::signal::connection_t<wf::input_event_signal<wlr_keyboard_key_event>> scale_key =
