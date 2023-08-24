@@ -278,6 +278,7 @@ class workspace_switch_t
         output->emit(&data);
 
         set_overlay_view(nullptr);
+        output->refocus();
     }
 };
 
