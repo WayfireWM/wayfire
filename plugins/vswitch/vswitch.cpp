@@ -70,7 +70,7 @@ class vswitch : public wf::per_output_plugin_instance_t
                     return true;
                 }
 
-                if (only_view)
+                if (only_view && view)
                 {
                     auto size = output->get_screen_size();
 
