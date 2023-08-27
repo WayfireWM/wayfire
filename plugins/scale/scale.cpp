@@ -23,6 +23,7 @@
 
 #include <linux/input-event-codes.h>
 
+#include "plugins/ipc/ipc-activator.hpp"
 #include "scale.hpp"
 #include "scale-title-overlay.hpp"
 #include "wayfire/core.hpp"
@@ -134,11 +135,7 @@ class wayfire_scale : public wf::per_output_plugin_instance_t,
     void init() override
     {
         active = hook_set = false;
-        output->add_activator(wf::option_wrapper_t<wf::activatorbinding_t>{"scale/toggle"}, &toggle_cb);
-        output->add_activator(
-            wf::option_wrapper_t<wf::activatorbinding_t>{"scale/toggle_all"}, &toggle_all_cb);
-        output->connect(&update_cb);
-        grab = std::make_unique<wf::input_grab_t>("scale", output, this, this, this);
+        grab   = std::make_unique<wf::input_grab_t>("scale", output, this, this, this);
 
         allow_scale_zoom.set_callback(allow_scale_zoom_option_changed);
 
@@ -149,6 +146,7 @@ class wayfire_scale : public wf::per_output_plugin_instance_t,
         drag_helper->connect(&on_drag_snap_off);
 
         show_title.init(output);
+        output->connect(&update_cb);
     }
 
     void setup_workspace_switching()
@@ -271,32 +269,6 @@ class wayfire_scale : public wf::per_output_plugin_instance_t,
             return activate();
         }
     }
-
-    /* Activate scale for views on the current workspace */
-    wf::activator_callback toggle_cb = [=] (auto)
-    {
-        if (handle_toggle(false))
-        {
-            output->render->schedule_redraw();
-
-            return true;
-        }
-
-        return false;
-    };
-
-    /* Activate scale for views on all workspaces */
-    wf::activator_callback toggle_all_cb = [=] (auto)
-    {
-        if (handle_toggle(true))
-        {
-            output->render->schedule_redraw();
-
-            return true;
-        }
-
-        return false;
-    };
 
     wf::signal::connection_t<scale_update_signal> update_cb = [=] (scale_update_signal *ev)
     {
@@ -1446,10 +1418,50 @@ class wayfire_scale : public wf::per_output_plugin_instance_t,
     void fini() override
     {
         finalize();
-        output->rem_binding(&toggle_cb);
-        output->rem_binding(&toggle_all_cb);
         show_title.fini();
     }
 };
 
-DECLARE_WAYFIRE_PLUGIN(wf::per_output_plugin_t<wayfire_scale>);
+class wayfire_scale_global : public wf::plugin_interface_t,
+    public wf::per_output_tracker_mixin_t<wayfire_scale>
+{
+    wf::ipc_activator_t toggle_ws{"scale/toggle"};
+    wf::ipc_activator_t toggle_all{"scale/toggle_all"};
+
+  public:
+    void init() override
+    {
+        this->init_output_tracking();
+        toggle_ws.set_handler(toggle_cb);
+        toggle_all.set_handler(toggle_all_cb);
+    }
+
+    void fini() override
+    {
+        this->fini_output_tracking();
+    }
+
+    wf::ipc_activator_t::handler_t toggle_cb = [=] (wf::output_t *output, wayfire_view)
+    {
+        if (this->output_instance[output]->handle_toggle(false))
+        {
+            output->render->schedule_redraw();
+            return true;
+        }
+
+        return false;
+    };
+
+    wf::ipc_activator_t::handler_t toggle_all_cb = [=] (wf::output_t *output, wayfire_view)
+    {
+        if (this->output_instance[output]->handle_toggle(true))
+        {
+            output->render->schedule_redraw();
+            return true;
+        }
+
+        return false;
+    };
+};
+
+DECLARE_WAYFIRE_PLUGIN(wayfire_scale_global);
