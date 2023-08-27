@@ -18,6 +18,7 @@
 #include <wayfire/plugins/wobbly/wobbly-signal.hpp>
 #include <wayfire/view-transform.hpp>
 #include "plugins/ipc/ipc-activator.hpp"
+#include "wayfire/signal-provider.hpp"
 
 const std::string grid_view_id = "grid-view";
 
@@ -109,6 +110,7 @@ class wayfire_grid : public wf::plugin_interface_t, public wf::per_output_tracke
         output->connect(&on_workarea_changed);
         output->connect(&on_maximize_signal);
         output->connect(&on_fullscreen_signal);
+        output->connect(&on_tiled);
     }
 
     void handle_output_removed(wf::output_t *output) override
@@ -217,6 +219,20 @@ class wayfire_grid : public wf::plugin_interface_t, public wf::per_output_tracke
         data->carried_out = true;
         ensure_grid_view(data->view)->adjust_target_geometry(
             adjust_for_workspace(data->view->get_wset(), data->desired_size, data->workspace), -1);
+    };
+
+    wf::signal::connection_t<wf::view_tiled_signal> on_tiled = [=] (wf::view_tiled_signal *ev)
+    {
+        if (!ev->view->has_data<wf_grid_slot_data>())
+        {
+            return;
+        }
+
+        auto data = ev->view->get_data_safe<wf_grid_slot_data>();
+        if (ev->new_edges != wf::grid::get_tiled_edges_for_slot(data->slot))
+        {
+            ev->view->erase_data<wf_grid_slot_data>();
+        }
     };
 };
 
