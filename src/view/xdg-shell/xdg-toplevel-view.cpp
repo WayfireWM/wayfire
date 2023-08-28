@@ -405,7 +405,7 @@ struct wf_xdg_decoration_t
             default_mode = WLR_XDG_TOPLEVEL_DECORATION_V1_MODE_SERVER_SIDE;
         }
 
-        auto mode = decor->pending.mode;
+        auto mode = decor->requested_mode;
         if (mode == WLR_XDG_TOPLEVEL_DECORATION_V1_MODE_NONE)
         {
             mode = default_mode;
