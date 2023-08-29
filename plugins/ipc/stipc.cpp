@@ -9,9 +9,7 @@
 #include <wayfire/output.hpp>
 #include <wayfire/workspace-set.hpp>
 #include <wayfire/output-layout.hpp>
-#include <getopt.h>
-#include <wayland-server-core.h>
-#include <wayland-server-protocol.h>
+#include <wayfire/txn/transaction-manager.hpp>
 
 #define WAYFIRE_PLUGIN
 #include <wayfire/debug.hpp>
@@ -344,6 +342,7 @@ class stipc_plugin_t : public wf::plugin_interface_t
         method_repository->register_method("stipc/tablet/tool_axis", do_tool_axis);
         method_repository->register_method("stipc/tablet/tool_tip", do_tool_tip);
         method_repository->register_method("stipc/tablet/pad_button", do_pad_button);
+        method_repository->register_method("stipc/delay_next_tx", delay_next_tx);
     }
 
     bool is_unloadable() override
@@ -674,6 +673,34 @@ class stipc_plugin_t : public wf::plugin_interface_t
         WFJSON_EXPECT_FIELD(data, "button", number_integer);
         WFJSON_EXPECT_FIELD(data, "state", boolean);
         input->do_tablet_pad_button(data["button"], data["state"]);
+        return wf::ipc::json_ok();
+    };
+
+    class never_ready_object : public wf::txn::transaction_object_t
+    {
+      public:
+        void commit() override
+        {}
+
+        void apply() override
+        {}
+
+        std::string stringify() const override
+        {
+            return "force-timeout";
+        }
+    };
+
+    wf::signal::connection_t<wf::txn::new_transaction_signal> on_new_tx =
+        [=] (wf::txn::new_transaction_signal *ev)
+    {
+        ev->tx->add_object(std::make_shared<never_ready_object>());
+        on_new_tx.disconnect();
+    };
+
+    ipc::method_callback delay_next_tx = [=] (nlohmann::json)
+    {
+        wf::get_core().tx_manager->connect(&on_new_tx);
         return wf::ipc::json_ok();
     };
 
