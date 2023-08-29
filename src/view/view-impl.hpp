@@ -73,6 +73,7 @@ void xwayland_update_default_cursor();
 
 /* Ensure that the given surface is on top of the Xwayland stack order. */
 void xwayland_bring_to_front(wlr_surface *surface);
+int xwayland_get_pid();
 
 void init_desktop_apis();
 void init_xdg_decoration_handlers();

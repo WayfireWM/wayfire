@@ -267,3 +267,14 @@ std::string wf::xwayland_get_display()
     return "";
 #endif
 }
+
+int wf::xwayland_get_pid()
+{
+#if WF_HAS_XWAYLAND
+
+    return xwayland_handle ? xwayland_handle->server->pid : -1;
+#else
+
+    return -1;
+#endif
+}

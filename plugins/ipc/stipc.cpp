@@ -10,6 +10,7 @@
 #include <wayfire/workspace-set.hpp>
 #include <wayfire/output-layout.hpp>
 #include <wayfire/txn/transaction-manager.hpp>
+#include "src/view/view-impl.hpp"
 
 #define WAYFIRE_PLUGIN
 #include <wayfire/debug.hpp>
@@ -343,6 +344,7 @@ class stipc_plugin_t : public wf::plugin_interface_t
         method_repository->register_method("stipc/tablet/tool_tip", do_tool_tip);
         method_repository->register_method("stipc/tablet/pad_button", do_pad_button);
         method_repository->register_method("stipc/delay_next_tx", delay_next_tx);
+        method_repository->register_method("stipc/get_xwayland_pid", get_xwayland_pid);
     }
 
     bool is_unloadable() override
@@ -702,6 +704,13 @@ class stipc_plugin_t : public wf::plugin_interface_t
     {
         wf::get_core().tx_manager->connect(&on_new_tx);
         return wf::ipc::json_ok();
+    };
+
+    ipc::method_callback get_xwayland_pid = [=] (nlohmann::json)
+    {
+        auto response = wf::ipc::json_ok();
+        response["pid"] = wf::xwayland_get_pid();
+        return response;
     };
 
     std::unique_ptr<headless_input_backend_t> input;
