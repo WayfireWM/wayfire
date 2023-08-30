@@ -23,7 +23,7 @@ class preview_indication_animation_t : public geometry_animation_t
  * A view which can be used to show previews for different actions on the
  * screen, for ex. when snapping a view
  */
-class preview_indication_t
+class preview_indication_t : public std::enable_shared_from_this<preview_indication_t>
 {
     wf::effect_hook_t pre_paint;
     wf::output_t *output;
@@ -35,6 +35,7 @@ class preview_indication_t
     const wf::option_wrapper_t<wf::color_t> base_color;
     const wf::option_wrapper_t<wf::color_t> base_border;
     const wf::option_wrapper_t<int> base_border_w;
+    std::shared_ptr<preview_indication_t> _self_reference;
 
   public:
     std::shared_ptr<color_rect_view_t> view;
@@ -85,6 +86,12 @@ class preview_indication_t
         animation.alpha.restart_with_end(alpha);
         animation.start();
         this->should_close = close;
+
+        if (should_close)
+        {
+            // Take a reference until we finally close the view
+            _self_reference = shared_from_this();
+        }
     }
 
     /**
@@ -132,6 +139,8 @@ class preview_indication_t
         if (!animation.running() && should_close)
         {
             view->close();
+            view->damage();
+            _self_reference.reset();
         }
     }
 };
