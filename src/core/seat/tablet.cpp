@@ -459,6 +459,8 @@ wf::tablet_pad_t::tablet_pad_t(wlr_input_device *pad) :
     on_button.connect(&wlr_tablet_pad_from_input_device(pad)->events.button);
     on_strip.connect(&wlr_tablet_pad_from_input_device(pad)->events.strip);
     on_ring.connect(&wlr_tablet_pad_from_input_device(pad)->events.ring);
+
+    on_focus_destroy.set_callback([&] (auto) { update_focus(nullptr); });
 }
 
 void wf::tablet_pad_t::update_focus()
@@ -485,6 +487,12 @@ void wf::tablet_pad_t::update_focus(wlr_surface *focus_surface)
     if (focus_surface && attached_to)
     {
         wlr_tablet_v2_tablet_pad_notify_enter(pad_v2, attached_to->tablet_v2, focus_surface);
+    }
+
+    on_focus_destroy.disconnect();
+    if (focus_surface)
+    {
+        on_focus_destroy.connect(&focus_surface->events.destroy);
     }
 
     old_focus = focus_surface;

@@ -123,6 +123,7 @@ struct tablet_pad_t : public input_device_impl_t
     nonstd::observer_ptr<tablet_t> attached_to;
 
     wf::wl_listener_wrapper on_attach, on_button, on_strip, on_ring;
+    wf::wl_listener_wrapper on_focus_destroy;
 
     wf::signal::connection_t<wf::input_device_added_signal> on_device_added;
     wf::signal::connection_t<wf::input_device_removed_signal> on_device_removed;
