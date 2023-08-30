@@ -6,6 +6,7 @@
 #include "wayfire/scene-render.hpp"
 #include "wayfire/scene.hpp"
 #include "wayfire/signal-definitions.hpp"
+#include "wayfire/unstable/wlr-surface-node.hpp"
 #include "wayfire/view.hpp"
 #include "wayfire/workspace-set.hpp"
 #include "wayfire/output-layout.hpp"
@@ -216,8 +217,7 @@ void wf::view_interface_t::view_priv_impl::set_mapped_surface_contents(
 
     if (content->get_surface())
     {
-        surface_controller =
-            std::make_unique<wlr_surface_controller_t>(content->get_surface(), surface_root_node);
+        wlr_surface_controller_t::create_controller(content->get_surface(), surface_root_node);
     }
 }
 
@@ -225,8 +225,16 @@ void wf::view_interface_t::view_priv_impl::unset_mapped_surface_contents()
 {
     wsurface = nullptr;
     replace_node_or_add_front(surface_root_node, current_content, dummy_node);
+
+    if (auto wcont = dynamic_cast<scene::wlr_surface_node_t*>(current_content.get()))
+    {
+        if (wcont->get_surface())
+        {
+            wlr_surface_controller_t::try_free_controller(wcont->get_surface());
+        }
+    }
+
     current_content = nullptr;
-    surface_controller.reset();
 }
 
 void wf::view_interface_t::view_priv_impl::set_mapped(bool mapped)

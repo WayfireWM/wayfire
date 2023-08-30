@@ -15,10 +15,13 @@ struct node_recheck_constraints_signal
 class wlr_surface_controller_t
 {
   public:
+    static void create_controller(wlr_surface *surface, scene::floating_inner_ptr root_node);
+    static void try_free_controller(wlr_surface *surface);
+
+  private:
     wlr_surface_controller_t(wlr_surface *surface, scene::floating_inner_ptr root_node);
     ~wlr_surface_controller_t();
 
-  private:
     scene::floating_inner_ptr root;
     wlr_surface *surface;
 

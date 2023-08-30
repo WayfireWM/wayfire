@@ -36,7 +36,6 @@ class wayfire_layer_shell_view : public wf::view_interface_t
     wf::wl_listener_wrapper on_surface_commit;
     std::shared_ptr<wf::scene::wlr_surface_node_t> main_surface;
     std::shared_ptr<wf::layer_shell_node_t> surface_root_node;
-    std::unique_ptr<wf::wlr_surface_controller_t> surface_controller;
 
     /**
      * The bounding box of the view the last time it was rendered.

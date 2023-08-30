@@ -156,7 +156,7 @@ wf::drag_icon_t::drag_icon_t(wlr_drag_icon *ic) : icon(ic)
     root_node->set_children_list({main_node});
 
     // Memory is auto-freed when the wlr_surface is destroyed
-    new wlr_surface_controller_t(icon->surface, root_node);
+    wlr_surface_controller_t::create_controller(icon->surface, root_node);
 
     // Connect to the scenegraph
     wf::scene::readd_front(wf::get_core().scene(), root_node);

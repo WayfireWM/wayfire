@@ -44,8 +44,6 @@ class view_interface_t::view_priv_impl
 
     scene::node_ptr current_content;
     scene::node_ptr dummy_node;
-
-    std::unique_ptr<wlr_surface_controller_t> surface_controller;
     scene::floating_inner_ptr surface_root_node;
     wf::output_t *output;
 
