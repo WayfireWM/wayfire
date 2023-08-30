@@ -50,15 +50,19 @@ class wayfire_resize : public wf::per_output_plugin_instance_t, public wf::point
     };
 
     wf::button_callback activate_binding;
+    wf::button_callback activate_binding_preserve_aspect;
 
     wayfire_toplevel_view view;
 
     bool was_client_request, is_using_touch;
+    bool preserve_aspect = false;
     wf::point_t grab_start;
     wf::geometry_t grabbed_geometry;
 
     uint32_t edges;
     wf::option_wrapper_t<wf::buttonbinding_t> button{"resize/activate"};
+    wf::option_wrapper_t<wf::buttonbinding_t> button_preserve_aspect{
+        "resize/activate_preserve_aspect"};
     std::unique_ptr<wf::input_grab_t> input_grab;
     wf::plugin_activation_data_t grab_interface = {
         .name = "resize",
@@ -72,18 +76,16 @@ class wayfire_resize : public wf::per_output_plugin_instance_t, public wf::point
 
         activate_binding = [=] (auto)
         {
-            auto view = toplevel_cast(wf::get_core().get_cursor_focus_view());
-            if (view)
-            {
-                is_using_touch     = false;
-                was_client_request = false;
-                initiate(view);
-            }
+            return activate(false);
+        };
 
-            return false;
+        activate_binding_preserve_aspect = [=] (auto)
+        {
+            return activate(true);
         };
 
         output->add_button(button, &activate_binding);
+        output->add_button(button_preserve_aspect, &activate_binding_preserve_aspect);
         grab_interface.cancel = [=] ()
         {
             input_pressed(WLR_BUTTON_RELEASED);
@@ -93,6 +95,20 @@ class wayfire_resize : public wf::per_output_plugin_instance_t, public wf::point
         output->connect(&on_view_disappeared);
     }
 
+    bool activate(bool should_preserve_aspect)
+    {
+        auto view = toplevel_cast(wf::get_core().get_cursor_focus_view());
+        if (view)
+        {
+            is_using_touch     = false;
+            was_client_request = false;
+            preserve_aspect    = should_preserve_aspect;
+            initiate(view);
+        }
+
+        return false;
+    }
+
     void handle_pointer_button(const wlr_pointer_button_event& event) override
     {
         if ((event.state == WLR_BUTTON_RELEASED) && was_client_request && (event.button == BTN_LEFT))
@@ -100,7 +116,8 @@ class wayfire_resize : public wf::per_output_plugin_instance_t, public wf::point
             return input_pressed(event.state);
         }
 
-        if (event.button != wf::buttonbinding_t(button).get_button())
+        if ((event.button != wf::buttonbinding_t(button).get_button()) &&
+            (event.button != wf::buttonbinding_t(button_preserve_aspect).get_button()))
         {
             return;
         }
@@ -287,6 +304,12 @@ class wayfire_resize : public wf::per_output_plugin_instance_t, public wf::point
         int dy     = input.y - grab_start.y;
 
         wf::geometry_t desired = grabbed_geometry;
+        double ratio;
+        if (preserve_aspect)
+        {
+            ratio = (double)desired.width / desired.height;
+        }
+
         if (edges & WLR_EDGE_LEFT)
         {
             desired.x     += dx;
@@ -305,8 +328,24 @@ class wayfire_resize : public wf::per_output_plugin_instance_t, public wf::point
             desired.height += dy;
         }
 
-        desired.width  = std::max(desired.width, 1);
-        desired.height = std::max(desired.height, 1);
+        if (preserve_aspect)
+        {
+            auto bbox = desired;
+            desired.width  = std::min(std::max(bbox.width, 1), (int)(bbox.height * ratio));
+            desired.height = std::min(std::max(bbox.height, 1), (int)(bbox.width / ratio));
+            if (edges & WLR_EDGE_LEFT)
+            {
+                desired.x += bbox.width - desired.width;
+            }
+            if (edges & WLR_EDGE_TOP)
+            {
+                desired.y += bbox.height - desired.height;
+            }
+        } else
+        {
+            desired.width  = std::max(desired.width, 1);
+            desired.height = std::max(desired.height, 1);
+        }
 
         view->toplevel()->pending().gravity  = calculate_gravity();
         view->toplevel()->pending().geometry = desired;
@@ -321,6 +360,7 @@ class wayfire_resize : public wf::per_output_plugin_instance_t, public wf::point
         }
 
         output->rem_binding(&activate_binding);
+        output->rem_binding(&activate_binding_preserve_aspect);
     }
 };
 

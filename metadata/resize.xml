@@ -9,5 +9,11 @@
 			<_long>When the specified button is held down, you can drag windows to resize them.</_long>
 			<default>&lt;super&gt; BTN_RIGHT</default>
 		</option>
+
+		<option name="activate_preserve_aspect" type="button">
+			<_short>Activate resize while preserving aspect</_short>
+			<_long>When the specified button is held down, you can drag windows to resize them while perserving its orignal aspect.</_long>
+			<default>disabled</default>
+		</option>
 	</plugin>
 </wayfire>
