@@ -36,7 +36,7 @@ class wayfire_resize : public wf::per_output_plugin_instance_t, public wf::point
         }
 
         was_client_request = true;
-        preserve_aspect = false;
+        preserve_aspect    = false;
         initiate(request->view, request->edges);
     };
 
