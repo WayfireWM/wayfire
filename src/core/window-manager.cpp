@@ -195,13 +195,13 @@ void window_manager_t::tile_request(wayfire_toplevel_view view,
         {
             // set geometry will commit the state
             view->set_geometry(data.desired_size);
+            move_to_workspace(view, workspace);
         } else
         {
+            // Move will commit the tiled edges
+            move_to_workspace(view, workspace);
             view->request_native_size();
-            wf::get_core().tx_manager->schedule_object(view->toplevel());
         }
-
-        move_to_workspace(view, workspace);
     }
 }
 
