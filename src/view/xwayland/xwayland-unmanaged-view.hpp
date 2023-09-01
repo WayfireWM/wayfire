@@ -29,7 +29,7 @@ class xwayland_unmanaged_view_node_t : public wf::scene::translation_node_t, pub
     wf::keyboard_focus_node_t keyboard_refocus(wf::output_t *output) override
     {
         auto view = _view.lock();
-        if (!view || !view->get_keyboard_focus_surface())
+        if (!view || !view->get_keyboard_focus_surface() || !view->is_mapped())
         {
             return wf::keyboard_focus_node_t{};
         }
@@ -89,10 +89,6 @@ class wayfire_unmanaged_xwayland_view : public wf::view_interface_t, public wayf
      */
     wf::geometry_t last_bounding_box{0, 0, 0, 0};
 
-    // The geometry of the view in output-layout coordinates (same as Xwayland).
-    wf::geometry_t geometry{100, 100, 0, 0};
-
-
     void handle_client_configure(wlr_xwayland_surface_configure_event *ev) override
     {
         // We accept the client requests without any modification when it comes to unmanaged views.
@@ -103,28 +99,30 @@ class wayfire_unmanaged_xwayland_view : public wf::view_interface_t, public wayf
     void update_geometry_from_xsurface()
     {
         wf::scene::damage_node(get_root_node(), last_bounding_box);
-
-        geometry.x     = xw->x;
-        geometry.y     = xw->y;
-        geometry.width = xw->width;
-        geometry.height = xw->height;
-
-        wf::point_t new_position = wf::origin(geometry);
+        wf::point_t new_position = {xw->x, xw->y};
 
         // Move to the correct output, if the xsurface has changed geometry
-        wf::pointf_t midpoint = {geometry.x + geometry.width / 2.0, geometry.y + geometry.height / 2.0};
+        wf::pointf_t midpoint = {xw->x + xw->width / 2.0, xw->y + xw->height / 2.0};
         wf::output_t *wo = wf::get_core().output_layout->get_output_coords_at(midpoint, midpoint);
+
+        if (wo)
+        {
+            new_position = new_position - wf::origin(wo->get_layout_geometry());
+        }
+
+        surface_root_node->set_offset(new_position);
         if (wo != get_output())
         {
+            LOGC(XWL, "Transferring xwayland unmanaged surface ", self(),
+                " to output ", wo ? wo->to_string() : "null");
             set_output(wo);
             if (wo && (get_current_impl_type() != wf::xw::view_type::DND))
             {
-                new_position = new_position - wf::origin(wo->get_layout_geometry());
                 wf::scene::readd_front(wo->node_for_layer(wf::scene::layer::UNMANAGED), get_root_node());
             }
         }
 
-        surface_root_node->set_offset(new_position);
+        LOGC(XWL, "Xwayland unmanaged surface ", self(), " new position ", new_position);
         last_bounding_box = get_bounding_box();
         wf::scene::damage_node(get_root_node(), last_bounding_box);
         wf::scene::update(surface_root_node, wf::scene::update_flag::GEOMETRY);
@@ -166,11 +164,11 @@ class wayfire_unmanaged_xwayland_view : public wf::view_interface_t, public wayf
 
     virtual void map(wlr_surface *surface)
     {
-        update_geometry_from_xsurface();
-
+        LOGC(XWL, "Mapping unmanaged xwayland surface ", self());
         priv->set_mapped(true);
         this->main_surface = std::make_shared<wf::scene::wlr_surface_node_t>(surface, true);
         priv->set_mapped_surface_contents(main_surface);
+        update_geometry_from_xsurface();
 
         /* We update the keyboard focus before emitting the map event, so that
          * plugins can detect that this view can have keyboard focus.
@@ -192,6 +190,7 @@ class wayfire_unmanaged_xwayland_view : public wf::view_interface_t, public wayf
 
     virtual void unmap()
     {
+        LOGC(XWL, "Unmapping unmanaged xwayland surface ", self());
         damage();
         emit_view_pre_unmap();
 
