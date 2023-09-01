@@ -419,7 +419,7 @@ void wf::output_impl_t::focus_view(wayfire_view v, uint32_t flags)
         focus_node(view ? view->get_surface_root_node() : nullptr);
     };
 
-    if (!v || !v->is_mapped())
+    if (!v || !v->is_mapped() || (v->get_output() != this))
     {
         give_input_focus(nullptr);
         update_active_view(nullptr);
