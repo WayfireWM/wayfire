@@ -1,5 +1,6 @@
 #include <wayfire/per-output-plugin.hpp>
 #include <wayfire/view.hpp>
+#include <wayfire/workarea.hpp>
 #include <wayfire/matcher.hpp>
 #include <wayfire/workspace-set.hpp>
 #include <wayfire/output.hpp>
@@ -110,6 +111,10 @@ class wayfire_decoration : public wf::plugin_interface_t
         if (!pending.fullscreen && !pending.tiled_edges)
         {
             pending.geometry = wf::expand_geometry_by_margins(pending.geometry, pending.margins);
+            if (view->get_output())
+            {
+                pending.geometry = wf::clamp(pending.geometry, view->get_output()->workarea->get_workarea());
+            }
         }
     }
 

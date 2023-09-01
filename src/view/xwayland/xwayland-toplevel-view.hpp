@@ -8,6 +8,7 @@
 #include "wayfire/scene-render.hpp"
 #include "wayfire/signal-provider.hpp"
 #include "wayfire/toplevel-view.hpp"
+#include "wayfire/toplevel.hpp"
 #include "wayfire/util.hpp"
 #include "xwayland-view-base.hpp"
 #include <wayfire/workarea.hpp>
@@ -188,15 +189,7 @@ class wayfire_xwayland_view : public wf::toplevel_view_interface_t, public wayfi
 
         on_map.set_callback([&] (void*)
         {
-            auto margins = toplevel->pending().margins;
-
-            this->main_surface = std::make_shared<wf::scene::wlr_surface_node_t>(xw->surface, false);
-            priv->set_mapped_surface_contents(main_surface);
-            toplevel->set_main_surface(main_surface);
-            toplevel->pending().mapped = true;
-            toplevel->pending().geometry.width  = xw->surface->current.width + margins.left + margins.right;
-            toplevel->pending().geometry.height = xw->surface->current.height + margins.top + margins.bottom;
-            wf::get_core().tx_manager->schedule_object(toplevel);
+            handle_map_request();
         });
 
         on_unmap.set_callback([&] (void*)
@@ -351,39 +344,73 @@ class wayfire_xwayland_view : public wf::toplevel_view_interface_t, public wayfi
         wf::view_implementation::emit_view_map_signal(self(), client_self_positioned);
     }
 
-    void map(wlr_surface *surface)
+    void store_xw_geometry_unmapped()
     {
-        priv->keyboard_focus_enabled = wlr_xwayland_or_surface_wants_focus(xw);
-        if (xw->maximized_horz && xw->maximized_vert)
+        if ((xw->width > 0) && (xw->height > 0) && get_output())
         {
-            if ((xw->width > 0) && (xw->height > 0))
-            {
-                /* Save geometry which the window has put itself in */
-                wf::geometry_t save_geometry = {
-                    xw->x, xw->y, xw->width, xw->height
-                };
+            /* Save geometry which the window has put itself in */
+            wf::geometry_t save_geometry = {
+                xw->x, xw->y, xw->width, xw->height
+            };
 
-                /* Make sure geometry is properly visible on the view output */
-                save_geometry = wf::clamp(save_geometry,
-                    get_output()->workarea->get_workarea());
-
-                toplevel->pending().geometry = save_geometry;
-                wf::get_core().default_wm->update_last_windowed_geometry({this});
-            }
-
-            wf::get_core().default_wm->tile_request({this}, wf::TILED_EDGES_ALL);
+            /* Make sure geometry is properly visible on the view output */
+            save_geometry = wf::clamp(save_geometry, get_output()->workarea->get_workarea());
+            toplevel->pending().geometry = save_geometry;
+            wf::get_core().default_wm->update_last_windowed_geometry({this});
         }
+    }
+
+    void handle_map_request()
+    {
+        this->main_surface = std::make_shared<wf::scene::wlr_surface_node_t>(xw->surface, false);
+        priv->set_mapped_surface_contents(main_surface);
+        toplevel->set_main_surface(main_surface);
+        toplevel->pending().mapped = true;
 
         if (xw->fullscreen)
         {
+            store_xw_geometry_unmapped();
+            toplevel->pending().fullscreen = true;
+            if (get_output())
+            {
+                toplevel->pending().geometry = get_output()->workarea->get_workarea();
+            }
+
             wf::get_core().default_wm->fullscreen_request({this}, get_output(), true);
-        }
-
-        if (!this->pending_tiled_edges() && !xw->fullscreen)
+        } else if (xw->maximized_horz && xw->maximized_vert)
         {
-            configure_request({xw->x, xw->y, xw->width, xw->height});
+            store_xw_geometry_unmapped();
+            toplevel->pending().tiled_edges = wf::TILED_EDGES_ALL;
+            if (get_output())
+            {
+                toplevel->pending().geometry = get_output()->workarea->get_workarea();
+            }
+        } else
+        {
+            wf::geometry_t desired_geometry = {
+                xw->x,
+                xw->y,
+                xw->surface->current.width,
+                xw->surface->current.height
+            };
+
+            if (get_output())
+            {
+                desired_geometry = desired_geometry + -wf::origin(get_output()->get_layout_geometry());
+                desired_geometry =
+                    wf::expand_geometry_by_margins(desired_geometry, toplevel->pending().margins);
+                desired_geometry = wf::clamp(desired_geometry, get_output()->workarea->get_workarea());
+            }
+
+            toplevel->pending().geometry = desired_geometry;
         }
 
+        wf::get_core().tx_manager->schedule_object(toplevel);
+    }
+
+    void map(wlr_surface *surface)
+    {
+        priv->keyboard_focus_enabled = wlr_xwayland_or_surface_wants_focus(xw);
         priv->set_mapped(true);
         on_surface_commit.connect(&surface->events.commit);
 
