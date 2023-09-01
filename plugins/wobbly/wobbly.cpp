@@ -553,9 +553,6 @@ class wobbly_transformer_node_t : public wf::scene::floating_inner_node_t
         this->view = view;
         init_model();
         last_frame = wf::get_current_time();
-
-        pre_hook = [=] () { update_model(); };
-        view->get_output()->render->add_effect(&pre_hook, wf::OUTPUT_EFFECT_PRE);
         view->get_output()->connect(&on_workspace_changed);
 
         view->connect(&on_view_unmap);
@@ -573,11 +570,6 @@ class wobbly_transformer_node_t : public wf::scene::floating_inner_node_t
     {
         state = nullptr;
         wobbly_fini(model.get());
-
-        if (view->get_output())
-        {
-            view->get_output()->render->rem_effect(&pre_hook);
-        }
     }
 
     std::string stringify() const override
@@ -610,7 +602,6 @@ class wobbly_transformer_node_t : public wf::scene::floating_inner_node_t
 
   private:
     wayfire_toplevel_view view;
-    wf::effect_hook_t pre_hook;
 
     wf::signal::connection_t<wf::view_unmapped_signal> on_view_unmap = [=] (wf::view_unmapped_signal*)
     {
@@ -648,7 +639,6 @@ class wobbly_transformer_node_t : public wf::scene::floating_inner_node_t
         if (!view->get_output())
         {
             // Destructor won't be able to disconnect bc view output is invalid
-            ev->output->render->rem_effect(&pre_hook);
             return destroy_self();
         }
 
@@ -656,9 +646,6 @@ class wobbly_transformer_node_t : public wf::scene::floating_inner_node_t
         auto old_geometry = ev->output->get_layout_geometry();
         auto new_geometry = view->get_output()->get_layout_geometry();
         state->translate_model(old_geometry.x - new_geometry.x, old_geometry.y - new_geometry.y);
-
-        ev->output->render->rem_effect(&pre_hook);
-        view->get_output()->render->add_effect(&pre_hook, wf::OUTPUT_EFFECT_PRE);
 
         on_workspace_changed.disconnect();
         view->get_output()->connect(&on_workspace_changed);
@@ -689,6 +676,7 @@ class wobbly_transformer_node_t : public wf::scene::floating_inner_node_t
         wobbly_init(model.get());
     }
 
+  public:
     void update_model()
     {
         view->damage();
@@ -701,13 +689,16 @@ class wobbly_transformer_node_t : public wf::scene::floating_inner_node_t
 
         /* Update all the wobbly model */
         auto now = wf::get_current_time();
-        wobbly_prepare_paint(model.get(), now - last_frame);
 
-        /* Update wobbly geometry */
-        last_frame = now;
-        wobbly_add_geometry(model.get());
-        wobbly_done_paint(model.get());
-        view->damage();
+        if (now > last_frame)
+        {
+            wobbly_prepare_paint(model.get(), now - last_frame);
+            /* Update wobbly geometry */
+            last_frame = now;
+            wobbly_add_geometry(model.get());
+            wobbly_done_paint(model.get());
+            view->damage();
+        }
 
         if (state->is_wobbly_done())
         {
@@ -864,8 +855,28 @@ class wobbly_transformer_node_t : public wf::scene::floating_inner_node_t
 class wobbly_render_instance_t :
     public wf::scene::transformer_render_instance_t<wobbly_transformer_node_t>
 {
+    wf::output_t *wo = nullptr;
+    wf::effect_hook_t pre_hook;
+
   public:
-    using transformer_render_instance_t::transformer_render_instance_t;
+    wobbly_render_instance_t(wobbly_transformer_node_t *self, wf::scene::damage_callback push_damage,
+        wf::output_t *shown_on) : transformer_render_instance_t(self, push_damage, shown_on)
+    {
+        if (shown_on)
+        {
+            wo = shown_on;
+            pre_hook = [=] () { self->update_model(); };
+            wo->render->add_effect(&pre_hook, wf::OUTPUT_EFFECT_PRE);
+        }
+    }
+
+    ~wobbly_render_instance_t()
+    {
+        if (wo)
+        {
+            wo->render->rem_effect(&pre_hook);
+        }
+    }
 
     void transform_damage_region(wf::region_t& damage) override
     {
