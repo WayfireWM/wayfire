@@ -345,6 +345,7 @@ class stipc_plugin_t : public wf::plugin_interface_t
         method_repository->register_method("stipc/tablet/pad_button", do_pad_button);
         method_repository->register_method("stipc/delay_next_tx", delay_next_tx);
         method_repository->register_method("stipc/get_xwayland_pid", get_xwayland_pid);
+        method_repository->register_method("stipc/get_xwayland_display", get_xwayland_display);
     }
 
     bool is_unloadable() override
@@ -710,6 +711,13 @@ class stipc_plugin_t : public wf::plugin_interface_t
     {
         auto response = wf::ipc::json_ok();
         response["pid"] = wf::xwayland_get_pid();
+        return response;
+    };
+
+    ipc::method_callback get_xwayland_display = [=] (nlohmann::json)
+    {
+        auto response = wf::ipc::json_ok();
+        response["display"] = wf::xwayland_get_display();
         return response;
     };
 
