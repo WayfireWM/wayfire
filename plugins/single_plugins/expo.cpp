@@ -244,7 +244,7 @@ class wayfire_expo : public wf::per_output_plugin_instance_t, public wf::keyboar
     wf::signal::connection_t<wf::move_drag::drag_done_signal> on_drag_done =
         [=] (wf::move_drag::drag_done_signal *ev)
     {
-        if ((ev->focused_output == output) && can_handle_drag())
+        if ((ev->focused_output == output) && can_handle_drag() && !drag_helper->is_view_held_in_place())
         {
             bool same_output = ev->main_view->get_output() == output;
 

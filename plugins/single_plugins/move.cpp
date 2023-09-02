@@ -90,7 +90,7 @@ class wayfire_move : public wf::per_output_plugin_instance_t,
     wf::signal::connection_t<wf::move_drag::drag_done_signal> on_drag_done =
         [=] (wf::move_drag::drag_done_signal *ev)
     {
-        if ((ev->focused_output == output) && can_handle_drag())
+        if ((ev->focused_output == output) && can_handle_drag() && !drag_helper->is_view_held_in_place())
         {
             // Mark the last windowed geometry (which is the geometry before the view was grabbed: grabs work
             // not by moving the view, but by translating it with a transformer. Therefore, the view geometry
