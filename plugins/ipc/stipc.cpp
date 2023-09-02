@@ -382,7 +382,8 @@ class stipc_plugin_t : public wf::plugin_interface_t
             v["title"]  = view->get_title();
             v["app-id"] = view->get_app_id();
             v["base-geometry"] = wf::ipc::geometry_to_json(get_view_base_geometry(view));
-            v["state"] = {};
+            v["state"]  = {};
+            v["output"] = view->get_output() ? view->get_output()->to_string() : "null";
 
             if (auto toplevel = toplevel_cast(view))
             {
