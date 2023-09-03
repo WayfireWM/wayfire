@@ -1,3 +1,4 @@
+#pragma once
 #include "wayfire/geometry.hpp"
 #include <wayfire/core.hpp>
 #include <wayfire/opengl.hpp>

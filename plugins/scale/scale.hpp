@@ -1,3 +1,5 @@
+#pragma once
+
 #include "wayfire/toplevel-view.hpp"
 #include <wayfire/plugin.hpp>
 #include <wayfire/output.hpp>

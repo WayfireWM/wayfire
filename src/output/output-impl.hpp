@@ -1,3 +1,4 @@
+#pragma once
 #include "output/promotion-manager.hpp"
 #include "wayfire/bindings.hpp"
 #include "wayfire/output.hpp"

@@ -1,3 +1,5 @@
+#pragma once
+
 static const char* cube_vertex_2_0 =
 R"(#version 100
 attribute mediump vec3 position;
