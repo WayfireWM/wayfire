@@ -8,13 +8,9 @@
 
 #include "wayfire/nonstd/tracking-allocator.hpp"
 #include "wayfire/object.hpp"
-#include "wayfire/opengl.hpp"
-#include "wayfire/scene-input.hpp"
-#include "wayfire/scene-render.hpp"
 #include "wayfire/geometry.hpp"
 #include "wayfire/view-transform.hpp"
 #include <wayfire/nonstd/wlroots.hpp>
-#include <wayfire/region.hpp>
 #include <wayfire/signal-provider.hpp>
 #include <wayfire/scene.hpp>
 
@@ -22,7 +18,7 @@ namespace wf
 {
 class view_interface_t;
 class workspace_set_t;
-class decorator_frame_t;
+struct render_target_t;
 }
 
 using wayfire_view = nonstd::observer_ptr<wf::view_interface_t>;
