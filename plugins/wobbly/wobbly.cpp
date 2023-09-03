@@ -931,7 +931,7 @@ class wayfire_wobbly : public wf::plugin_interface_t
     {
         auto tr_manager = data->view->get_transformed_node();
         if ((data->events & (WOBBLY_EVENT_GRAB | WOBBLY_EVENT_ACTIVATE)) &&
-            !tr_manager->get_transformer<wobbly_transformer_node_t>())
+            !tr_manager->get_transformer<wobbly_transformer_node_t>("wobbly"))
         {
             tr_manager->add_transformer(
                 std::make_shared<wobbly_transformer_node_t>(data->view),
