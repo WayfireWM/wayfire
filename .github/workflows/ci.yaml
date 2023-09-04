@@ -11,7 +11,8 @@ jobs:
     - uses: actions/checkout@v1
     - run: git config --global --add safe.directory /__w/wayfire/wayfire
     - run: git submodule sync --recursive && git submodule update --init --force --recursive
-    - run: meson build -Dtests=enabled -Db_pch=true
+    - run: (cd subprojects/wlroots && meson build --prefix=/usr && ninja -C build install)
+    - run: meson build -Dtests=enabled -Db_pch=true -Duse_system_wlroots=enabled --unity on
     - run: ninja -v -Cbuild
     - run: ninja -v -Cbuild test
   test_glibc_llvm:
@@ -28,7 +29,8 @@ jobs:
     - uses: actions/checkout@v1
     - run: git config --global --add safe.directory /__w/wayfire/wayfire
     - run: git submodule sync --recursive && git submodule update --init --force --recursive
-    - run: env CC=clang CXX=clang++ CXXFLAGS="-stdlib=libc++" LDFLAGS="-fuse-ld=lld -stdlib=libc++" meson build -Db_pch=true
+    - run: (cd subprojects/wlroots && env CC=clang CXX=clang++ CXXFLAGS="-stdlib=libc++" LDFLAGS="-fuse-ld=lld -stdlib=libc++" meson build --prefix=/usr && ninja -C build install)
+    - run: env CC=clang CXX=clang++ CXXFLAGS="-stdlib=libc++" LDFLAGS="-fuse-ld=lld -stdlib=libc++" meson build -Db_pch=true -Duse_system_wlroots=enabled --unity on
     - run: ninja -v -Cbuild
     - run: ninja -v -Cbuild test
   test_code_style:
