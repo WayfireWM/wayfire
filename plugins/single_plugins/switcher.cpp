@@ -551,6 +551,10 @@ class WayfireSwitcher : public wf::per_output_plugin_instance_t, public wf::keyb
         {
             arrange_view(views[i], SWITCHER_POSITION_RIGHT);
         }
+
+        // We want the next view to be focused right off the bat
+        // But we want it to be animated.
+        handle_switch_request(-1);
     }
 
     void dearrange()
