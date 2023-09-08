@@ -23,6 +23,7 @@ enum class view_type
 extern xcb_atom_t _NET_WM_WINDOW_TYPE_NORMAL;
 extern xcb_atom_t _NET_WM_WINDOW_TYPE_DIALOG;
 extern xcb_atom_t _NET_WM_WINDOW_TYPE_SPLASH;
+extern xcb_atom_t _NET_WM_WINDOW_TYPE_UTILITY;
 extern xcb_atom_t _NET_WM_WINDOW_TYPE_DND;
 
 std::optional<xcb_atom_t> load_atom(xcb_connection_t *connection, const std::string& name);

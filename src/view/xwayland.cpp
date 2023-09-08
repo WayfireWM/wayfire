@@ -17,6 +17,7 @@
 xcb_atom_t wf::xw::_NET_WM_WINDOW_TYPE_NORMAL;
 xcb_atom_t wf::xw::_NET_WM_WINDOW_TYPE_DIALOG;
 xcb_atom_t wf::xw::_NET_WM_WINDOW_TYPE_SPLASH;
+xcb_atom_t wf::xw::_NET_WM_WINDOW_TYPE_UTILITY;
 xcb_atom_t wf::xw::_NET_WM_WINDOW_TYPE_DND;
 
 namespace wf
@@ -89,7 +90,8 @@ class xwayland_view_controller_t
 
         /** Example: Android Studio dialogs */
         if (xw->parent && !this->is_dialog() &&
-            !wf::xw::has_type(xw, wf::xw::_NET_WM_WINDOW_TYPE_NORMAL))
+            !wf::xw::has_type(xw, wf::xw::_NET_WM_WINDOW_TYPE_NORMAL) &&
+            !wf::xw::has_type(xw, wf::xw::_NET_WM_WINDOW_TYPE_UTILITY))
         {
             return true;
         }

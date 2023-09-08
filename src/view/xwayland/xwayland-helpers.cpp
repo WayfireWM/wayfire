@@ -28,10 +28,11 @@ bool wf::xw::load_basic_atoms(const char *server_name)
         return false;
     }
 
-    _NET_WM_WINDOW_TYPE_NORMAL = load_atom(connection, "_NET_WM_WINDOW_TYPE_NORMAL").value_or(-1);
-    _NET_WM_WINDOW_TYPE_DIALOG = load_atom(connection, "_NET_WM_WINDOW_TYPE_DIALOG").value_or(-1);
-    _NET_WM_WINDOW_TYPE_SPLASH = load_atom(connection, "_NET_WM_WINDOW_TYPE_SPLASH").value_or(-1);
-    _NET_WM_WINDOW_TYPE_DND    = load_atom(connection, "_NET_WM_WINDOW_TYPE_DND").value_or(-1);
+    _NET_WM_WINDOW_TYPE_NORMAL  = load_atom(connection, "_NET_WM_WINDOW_TYPE_NORMAL").value_or(-1);
+    _NET_WM_WINDOW_TYPE_DIALOG  = load_atom(connection, "_NET_WM_WINDOW_TYPE_DIALOG").value_or(-1);
+    _NET_WM_WINDOW_TYPE_SPLASH  = load_atom(connection, "_NET_WM_WINDOW_TYPE_SPLASH").value_or(-1);
+    _NET_WM_WINDOW_TYPE_UTILITY = load_atom(connection, "_NET_WM_WINDOW_TYPE_UTILITY").value_or(-1);
+    _NET_WM_WINDOW_TYPE_DND     = load_atom(connection, "_NET_WM_WINDOW_TYPE_DND").value_or(-1);
     xcb_disconnect(connection);
     return true;
 }
