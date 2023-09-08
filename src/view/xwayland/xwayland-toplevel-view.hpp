@@ -410,7 +410,6 @@ class wayfire_xwayland_view : public wf::toplevel_view_interface_t, public wayfi
 
     void map(wlr_surface *surface)
     {
-        priv->keyboard_focus_enabled = wlr_xwayland_or_surface_wants_focus(xw);
         priv->set_mapped(true);
         on_surface_commit.connect(&surface->events.commit);
 
