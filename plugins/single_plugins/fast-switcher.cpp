@@ -61,7 +61,9 @@ class wayfire_fast_switcher : public wf::per_output_plugin_instance_t, public wf
             return;
         }
 
-        set_view_alpha(views[i], 1.0);
+        current_view_index = i;
+        set_view_highlighted(views[i], true);
+
         for (int i = (int)views.size() - 1; i >= 0; i--)
         {
             wf::view_bring_to_front(views[i]);
@@ -98,9 +100,9 @@ class wayfire_fast_switcher : public wf::per_output_plugin_instance_t, public wf
 
         if (i <= current_view_index)
         {
-            current_view_index =
+            int new_index =
                 (current_view_index + views.size() - 1) % views.size();
-            view_chosen(current_view_index, true);
+            view_chosen(new_index, true);
         }
     };
 
@@ -112,6 +114,14 @@ class wayfire_fast_switcher : public wf::per_output_plugin_instance_t, public wf
             view, wf::TRANSFORMER_2D, transformer_name, view);
         tr->alpha = alpha;
         view->damage();
+    }
+
+    void set_view_highlighted(wayfire_toplevel_view view, bool selected)
+    {
+        // set alpha and decoration to indicate selected view
+        view->set_activated(selected); // changes decoration focus state
+        double alpha = selected ? 1.0 : inactive_alpha;
+        set_view_alpha(view, alpha);
     }
 
     void update_views()
@@ -151,7 +161,7 @@ class wayfire_fast_switcher : public wf::per_output_plugin_instance_t, public wf
         /* Set all to semi-transparent */
         for (auto view : views)
         {
-            set_view_alpha(view, inactive_alpha);
+            set_view_highlighted(view, false);
         }
 
         input_grab->grab_input(wf::scene::layer::OVERLAY);
@@ -192,8 +202,9 @@ class wayfire_fast_switcher : public wf::per_output_plugin_instance_t, public wf
 
     void switch_next(bool forward)
     {
-#define index current_view_index
-        set_view_alpha(views[index], inactive_alpha);
+        set_view_highlighted(views[current_view_index], false); // deselect last view
+
+        int index = current_view_index;
         if (forward)
         {
             index = (index + 1) % views.size();
@@ -202,8 +213,7 @@ class wayfire_fast_switcher : public wf::per_output_plugin_instance_t, public wf
             index = index ? index - 1 : views.size() - 1;
         }
 
-#undef index
-        view_chosen(current_view_index, true);
+        view_chosen(index, true);
     }
 
     void fini() override
