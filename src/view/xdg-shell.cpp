@@ -114,6 +114,8 @@ std::shared_ptr<wayfire_xdg_popup> wayfire_xdg_popup::create(wlr_xdg_popup *popu
 
 void wayfire_xdg_popup::map()
 {
+    update_position();
+
     wf::scene::layer parent_layer = wf::get_view_layer(popup_parent).value_or(wf::scene::layer::WORKSPACE);
     auto target_layer = wf::scene::layer::UNMANAGED;
     if ((int)parent_layer > (int)wf::scene::layer::WORKSPACE)
@@ -130,7 +132,6 @@ void wayfire_xdg_popup::map()
 
     damage();
     emit_view_map();
-    update_position();
     wf::get_core().connect(&on_keyboard_focus_changed);
 }
 
@@ -155,7 +156,7 @@ void wayfire_xdg_popup::commit()
 
 void wayfire_xdg_popup::update_position()
 {
-    if (!popup_parent->is_mapped() || !is_mapped())
+    if (!popup_parent->is_mapped() || !popup)
     {
         return;
     }
@@ -222,6 +223,7 @@ void wayfire_xdg_popup::destroy()
     on_destroy.disconnect();
     on_new_popup.disconnect();
     on_ping_timeout.disconnect();
+    popup = nullptr;
 }
 
 void wayfire_xdg_popup::close()
