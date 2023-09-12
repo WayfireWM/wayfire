@@ -122,7 +122,12 @@ void wf::output_impl_t::set_workspace_set(std::shared_ptr<workspace_set_t> wset)
 
     wset->attach_to_output(this);
     wset->set_visible(true);
-    this->current_wset = wset;
+
+    {
+        // Delay freeing old_wset until we can safely report the new value
+        auto old_wset = std::move(this->current_wset);
+        this->current_wset = wset;
+    }
 
     workspace_set_changed_signal data;
     data.new_wset = wset;
