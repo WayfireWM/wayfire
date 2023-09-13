@@ -264,6 +264,7 @@ class tile_workspace_set_data_t : public wf::custom_data_t
         auto node = view->get_root_node();
         wf::scene::readd_front(tiled_sublayer[vp.x][vp.y], node);
         view_bring_to_front(view);
+        consider_exit_fullscreen(view);
     }
 
     /** Remove the given view from its tiling container */
@@ -289,6 +290,32 @@ class tile_workspace_set_data_t : public wf::custom_data_t
         {
             wf::scene::readd_front(wview->get_output()->wset()->get_node(), wview->get_root_node());
         }
+    }
+
+    /**
+     * Consider unfullscreening all fullscreen views because a new view has been focused or attached to the
+     * tiling tree.
+     */
+    void consider_exit_fullscreen(wayfire_toplevel_view view)
+    {
+        if (tile::view_node_t::get_node(view) && !view->pending_fullscreen())
+        {
+            auto vp = this->wset.lock()->get_current_workspace();
+            for_each_view(roots[vp.x][vp.y], [&] (wayfire_toplevel_view view)
+            {
+                if (view->pending_fullscreen())
+                {
+                    set_view_fullscreen(view, false);
+                }
+            });
+        }
+    }
+
+    void set_view_fullscreen(wayfire_toplevel_view view, bool fullscreen)
+    {
+        /* Set fullscreen, and trigger resizing of the views (which will commit the view) */
+        view->toplevel()->pending().fullscreen = fullscreen;
+        update_root_size();
     }
 };
 
@@ -420,8 +447,7 @@ class tile_output_plugin_t : public wf::pointer_interaction_t, public wf::custom
         {
             if (tile_window_by_default(toplevel))
             {
-                stop_controller(true);
-                tile_workspace_set_data_t::get(output).attach_view(toplevel);
+                attach_view(toplevel);
             }
         }
     };
@@ -447,13 +473,6 @@ class tile_output_plugin_t : public wf::pointer_interaction_t, public wf::custom
         ev->carried_out = true;
     };
 
-    void set_view_fullscreen(wayfire_toplevel_view view, bool fullscreen)
-    {
-        /* Set fullscreen, and trigger resizing of the views (which will commit the view) */
-        view->toplevel()->pending().fullscreen = fullscreen;
-        tile_workspace_set_data_t::get(output).update_root_size();
-    }
-
     wf::signal::connection_t<view_fullscreen_request_signal> on_fullscreen_request =
         [=] (view_fullscreen_request_signal *ev)
     {
@@ -463,27 +482,14 @@ class tile_output_plugin_t : public wf::pointer_interaction_t, public wf::custom
         }
 
         ev->carried_out = true;
-        set_view_fullscreen(ev->view, ev->state);
+        tile_workspace_set_data_t::get(ev->view->get_wset()).set_view_fullscreen(ev->view, ev->state);
     };
 
     wf::signal::connection_t<focus_view_signal> on_focus_changed = [=] (focus_view_signal *ev)
     {
-        if (!toplevel_cast(ev->view))
+        if (auto toplevel = toplevel_cast(ev->view))
         {
-            return;
-        }
-
-        auto toplevel = toplevel_cast(ev->view);
-        if (tile::view_node_t::get_node(ev->view) && !toplevel->pending_fullscreen())
-        {
-            for_each_view(tile_workspace_set_data_t::get_current_root(output), [&] (
-                wayfire_toplevel_view view)
-            {
-                if (view->pending_fullscreen())
-                {
-                    set_view_fullscreen(view, false);
-                }
-            });
+            tile_workspace_set_data_t::get(output->wset()).consider_exit_fullscreen(toplevel);
         }
     };
 

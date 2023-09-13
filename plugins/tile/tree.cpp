@@ -335,6 +335,7 @@ class tile_view_animation_t : public wf::grid::grid_animation_t
 view_node_t::view_node_t(wayfire_toplevel_view view)
 {
     this->view = view;
+    LOGI("We store data??");
     view->store_data(std::make_unique<view_node_custom_data_t>(this));
 
     this->on_geometry_changed.set_callback([=] (auto)
