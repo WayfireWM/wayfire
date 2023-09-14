@@ -27,5 +27,6 @@ class wlr_surface_controller_t
 
     wf::wl_listener_wrapper on_destroy;
     wf::wl_listener_wrapper on_new_subsurface;
+    wf::wl_listener_wrapper on_commit;
 };
 }

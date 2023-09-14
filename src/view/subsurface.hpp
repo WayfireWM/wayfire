@@ -16,12 +16,12 @@ class wlr_subsurface_root_node_t : public wf::scene::translation_node_t
   public:
     wlr_subsurface_root_node_t(wlr_subsurface *subsurface);
     std::string stringify() const override;
+    void update_offset();
 
   private:
     wlr_subsurface *subsurface;
     wf::wl_listener_wrapper on_subsurface_destroy;
     wf::wl_listener_wrapper on_subsurface_commit;
-    void update_offset();
 };
 
 /**

@@ -14,6 +14,18 @@
 #include "wayfire/signal-definitions.hpp"
 #include <wayfire/scene-operations.hpp>
 
+static void update_subsurface_position(wlr_surface *surface, int, int, void*)
+{
+    if (wlr_surface_is_subsurface(surface))
+    {
+        auto sub = wlr_subsurface_from_wlr_surface(surface);
+        if (sub->data)
+        {
+            ((wf::wlr_subsurface_controller_t*)sub->data)->get_subsurface_root()->update_offset();
+        }
+    }
+}
+
 wf::wlr_surface_controller_t::wlr_surface_controller_t(wlr_surface *surface,
     scene::floating_inner_ptr root_node)
 {
@@ -50,6 +62,16 @@ wf::wlr_surface_controller_t::wlr_surface_controller_t(wlr_surface *surface,
     wl_list_for_each(sub, &surface->current.subsurfaces_above, current.link)
     {
         on_new_subsurface.emit(sub);
+    }
+
+    if (!wlr_surface_is_subsurface(surface))
+    {
+        on_commit.set_callback([=] (void*)
+        {
+            wlr_surface_for_each_surface(surface, update_subsurface_position, nullptr);
+        });
+
+        on_commit.connect(&surface->events.commit);
     }
 }
 

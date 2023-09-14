@@ -41,6 +41,7 @@ wf::wlr_subsurface_controller_t::wlr_subsurface_controller_t(wlr_subsurface *sub
     on_destroy.set_callback([=] (void*)
     {
         wf::scene::remove_child(subsurface_root_node);
+        sub->data = NULL;
         delete this;
     });
 
