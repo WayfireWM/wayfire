@@ -1,4 +1,5 @@
 #include <string>
+#include <wayfire/config/option-types.hpp>
 #include <wayfire/util/log.hpp>
 #include <wayfire/debug.hpp>
 #include <wayfire/view.hpp>
@@ -347,27 +348,30 @@ static void _dump_scene(wf::scene::node_ptr root, int depth = 0)
     // | |-nested
     // | | |-nested2
     //
-    std::string node_line;
+    std::ostringstream node_line;
     for (int i = 0; i < depth; i++)
     {
-        node_line += "| ";
+        node_line << "|";
+        if (i < depth - 1)
+        {
+            node_line << " ";
+        } else
+        {
+            node_line << "-";
+        }
     }
 
-    if (depth > 0)
-    {
-        node_line.back() = '-';
-    }
-
-    node_line += root->stringify();
-    node_line += " [" + fmt_pointer(root.get()) + "]";
+    node_line << root->stringify();
+    node_line << " [" + fmt_pointer(root.get()) + "]";
+    node_line << " geometry=" << root->get_bounding_box();
 
     const int greyed_flags = (int)node_flags::DISABLED;
     if (root->flags() & greyed_flags)
     {
-        color_debug_log(GREY_COLOR, node_line);
+        color_debug_log(GREY_COLOR, node_line.str());
     } else
     {
-        color_debug_log(CLEAR_COLOR, node_line);
+        color_debug_log(CLEAR_COLOR, node_line.str());
     }
 
     for (auto& ch : root->get_children())
