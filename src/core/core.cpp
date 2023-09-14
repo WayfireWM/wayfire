@@ -367,7 +367,7 @@ void wf::compositor_core_impl_t::focus_output(wf::output_t *wo)
 
     if (wo)
     {
-        LOGD("focus output: ", wo->handle->name);
+        LOGC(KBD, "focus output: ", wo->handle->name);
         /* Move to the middle of the output if this is the first output */
         wo->ensure_pointer((active_output == nullptr));
     }

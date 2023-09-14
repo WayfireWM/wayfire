@@ -326,6 +326,7 @@ void wf::seat_t::impl::set_keyboard_focus(wf::scene::node_ptr new_focus)
         return;
     }
 
+    LOGC(KBD, "Setting keyboard focus node to ", new_focus.get());
     if (this->keyboard_focus)
     {
         this->keyboard_focus->keyboard_interaction().handle_keyboard_leave(wf::get_core().seat.get());

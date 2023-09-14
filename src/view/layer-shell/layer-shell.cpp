@@ -205,6 +205,14 @@ struct wf_layer_shell_manager
         view->remove_anchored(false);
         remove_view_from_layer(view, view->lsurface->current.layer);
         arrange_layers(view->get_output());
+
+        // We refocus the active output when a layer-shell view is destroyed. This is because grabbing
+        // keyboard input works across all outputs, but the unmap/disappear signal is sent on the grabbing
+        // layer surface's output - which might not be the actually focused output (#1741)
+        if (view->lsurface->current.keyboard_interactive)
+        {
+            wf::get_core().get_active_output()->refocus();
+        }
     }
 
     layer_t filter_views(wf::output_t *output, int layer)
