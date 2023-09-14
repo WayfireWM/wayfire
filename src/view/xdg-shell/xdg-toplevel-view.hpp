@@ -54,8 +54,6 @@ class xdg_toplevel_view_t : public wf::toplevel_view_interface_t
 
     std::shared_ptr<wf::xdg_toplevel_t> wtoplevel;
     wf::signal::connection_t<xdg_toplevel_applied_state_signal> on_toplevel_applied;
-    wf::geometry_t last_bounding_box = {0, 0, 0, 0};
-
     wlr_xdg_toplevel *xdg_toplevel;
 
     void map();

@@ -162,6 +162,13 @@ void wf::xw::xwayland_toplevel_t::apply()
     xwayland_toplevel_applied_state_signal event_applied;
     event_applied.old_state = current();
 
+    // Damage the main surface before applying the new state. This ensures that the old position of the view
+    // is damaged.
+    if (main_surface && main_surface->parent())
+    {
+        wf::scene::damage_node(main_surface->parent(), main_surface->parent()->get_bounding_box());
+    }
+
     if (!xw)
     {
         // If toplevel does no longer exist, we can't change the size anymore.
@@ -186,6 +193,12 @@ void wf::xw::xwayland_toplevel_t::apply()
 
     apply_pending_state();
     emit(&event_applied);
+
+    // Damage the new position.
+    if (main_surface && main_surface->parent())
+    {
+        wf::scene::damage_node(main_surface->parent(), main_surface->parent()->get_bounding_box());
+    }
 }
 
 void wf::xw::xwayland_toplevel_t::handle_surface_commit()

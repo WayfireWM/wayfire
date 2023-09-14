@@ -28,15 +28,6 @@ class wayfire_xwayland_view : public wf::toplevel_view_interface_t, public wayfi
     wf::wl_listener_wrapper on_set_decorations;
     std::shared_ptr<wf::xw::xwayland_toplevel_t> toplevel;
 
-    /**
-     * The bounding box of the view the last time it was rendered.
-     *
-     * This is used to damage the view when it is resized, because when a
-     * transformer changes because the view is resized, we can't reliably
-     * calculate the old view region to damage.
-     */
-    wf::geometry_t last_bounding_box{0, 0, 0, 0};
-
     wf::signal::connection_t<wf::output_configuration_changed_signal> output_geometry_changed =
         [=] (wf::output_configuration_changed_signal *ev)
     {
@@ -449,8 +440,6 @@ class wayfire_xwayland_view : public wf::toplevel_view_interface_t, public wayfi
                 &priv->wsurface->opaque_region, &priv->wsurface->opaque_region,
                 0, 0, priv->wsurface->current.width, priv->wsurface->current.height);
         }
-
-        this->last_bounding_box = get_bounding_box();
     }
 
     virtual void request_native_size() override
@@ -495,11 +484,7 @@ class wayfire_xwayland_view : public wf::toplevel_view_interface_t, public wayfi
             unmap();
         }
 
-        wf::scene::damage_node(get_root_node(), last_bounding_box);
         wf::view_implementation::emit_toplevel_state_change_signals({this}, old_state);
-
-        damage();
-        last_bounding_box = this->get_surface_root_node()->get_bounding_box();
         wf::scene::update(this->get_surface_root_node(), wf::scene::update_flag::GEOMETRY);
 
         if (!toplevel->current().mapped)

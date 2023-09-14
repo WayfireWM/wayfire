@@ -294,11 +294,7 @@ void wf::xdg_toplevel_view_t::handle_toplevel_state_changed(wf::toplevel_state_t
         unmap();
     }
 
-    wf::scene::damage_node(get_root_node(), last_bounding_box);
     wf::view_implementation::emit_toplevel_state_change_signals({this}, old_state);
-
-    damage();
-    last_bounding_box = this->get_surface_root_node()->get_bounding_box();
     scene::update(this->get_surface_root_node(), scene::update_flag::GEOMETRY);
 
     if (!wtoplevel->current().mapped)
