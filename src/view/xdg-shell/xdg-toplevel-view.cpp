@@ -394,10 +394,11 @@ struct wf_xdg_decoration_t
     wlr_xdg_toplevel_decoration_v1 *decor;
     wf::wl_listener_wrapper on_mode_request, on_commit, on_destroy;
 
+    wf::option_wrapper_t<std::string> deco_mode{"core/preferred_decoration_mode"};
+    wf::option_wrapper_t<bool> force_preferred{"workarounds/force_preferred_decoration_mode"};
+
     std::function<void(void*)> mode_request = [&] (void*)
     {
-        wf::option_wrapper_t<std::string>
-        deco_mode{"core/preferred_decoration_mode"};
         wlr_xdg_toplevel_decoration_v1_mode default_mode =
             WLR_XDG_TOPLEVEL_DECORATION_V1_MODE_CLIENT_SIDE;
         if ((std::string)deco_mode == "server")
@@ -406,7 +407,7 @@ struct wf_xdg_decoration_t
         }
 
         auto mode = decor->requested_mode;
-        if (mode == WLR_XDG_TOPLEVEL_DECORATION_V1_MODE_NONE)
+        if ((mode == WLR_XDG_TOPLEVEL_DECORATION_V1_MODE_NONE) || force_preferred)
         {
             mode = default_mode;
         }

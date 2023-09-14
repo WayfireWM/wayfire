@@ -42,5 +42,9 @@
       <_short>Allow views to overlap between multiple outputs. Many of the core plugins will not behave properly with this option set!</_short>
       <default>false</default>
     </option>
+    <option name="force_preferred_decoration_mode" type="bool">
+      <_short>Force xdg-decoration clients to use the compositor-preferred decoration mode regardless of the client's preference.</_short>
+      <default>false</default>
+    </option>
 	</plugin>
 </wayfire>
