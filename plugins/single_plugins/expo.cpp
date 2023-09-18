@@ -1,5 +1,6 @@
 #include "wayfire/plugins/common/input-grab.hpp"
 #include "wayfire/plugins/common/util.hpp"
+#include "plugins/ipc/ipc-activator.hpp"
 #include "wayfire/render-manager.hpp"
 #include "wayfire/scene-input.hpp"
 #include "wayfire/scene.hpp"
@@ -35,20 +36,6 @@ class wayfire_expo : public wf::per_output_plugin_instance_t, public wf::keyboar
         return wf::point_t{x, y};
     }
 
-    wf::activator_callback toggle_cb = [=] (auto)
-    {
-        if (!state.active)
-        {
-            return activate();
-        } else if (!zoom_animation.running() || state.zoom_in)
-        {
-            deactivate();
-        }
-
-        return true;
-    };
-
-    wf::option_wrapper_t<wf::activatorbinding_t> toggle_binding{"expo/toggle"};
     wf::option_wrapper_t<wf::color_t> background_color{"expo/background"};
     wf::option_wrapper_t<int> zoom_duration{"expo/duration"};
     wf::option_wrapper_t<int> delimiter_offset{"expo/offset"};
@@ -141,13 +128,25 @@ class wayfire_expo : public wf::per_output_plugin_instance_t, public wf::keyboar
         setup_workspace_bindings_from_config();
         wall = std::make_unique<wf::workspace_wall_t>(this->output);
 
-        output->add_activator(toggle_binding, &toggle_cb);
         drag_helper->connect(&on_drag_output_focus);
         drag_helper->connect(&on_drag_snap_off);
         drag_helper->connect(&on_drag_done);
 
         resize_ws_fade();
         output->connect(&on_workspace_grid_changed);
+    }
+
+    bool handle_toggle()
+    {
+        if (!state.active)
+        {
+            return activate();
+        } else if (!zoom_animation.running() || state.zoom_in)
+        {
+            deactivate();
+        }
+
+        return true;
     }
 
     void handle_pointer_button(const wlr_pointer_button_event& event) override
@@ -777,9 +776,30 @@ class wayfire_expo : public wf::per_output_plugin_instance_t, public wf::keyboar
         {
             finalize_and_exit();
         }
-
-        output->rem_binding(&toggle_cb);
     }
 };
 
-DECLARE_WAYFIRE_PLUGIN(wf::per_output_plugin_t<wayfire_expo>);
+class wayfire_expo_global : public wf::plugin_interface_t,
+    public wf::per_output_tracker_mixin_t<wayfire_expo>
+{
+    wf::ipc_activator_t toggle_binding{"expo/toggle"};
+
+  public:
+    void init() override
+    {
+        this->init_output_tracking();
+        toggle_binding.set_handler(toggle_cb);
+    }
+
+    void fini() override
+    {
+        this->fini_output_tracking();
+    }
+
+    wf::ipc_activator_t::handler_t toggle_cb = [=] (wf::output_t *output, wayfire_view)
+    {
+        return this->output_instance[output]->handle_toggle();
+    };
+};
+
+DECLARE_WAYFIRE_PLUGIN(wayfire_expo_global);
