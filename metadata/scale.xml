@@ -32,6 +32,11 @@
 				<_long>Use the middle mouse button to close views in the scale state. Only applies if interactive mode is not enabled.</_long>
 				<default>false</default>
 			</option>
+			<option name="include_minimized" type="bool">
+				<_short>Include minimized views</_short>
+				<_long>Whether to show views that are minimized when starting scale.</_long>
+				<default>false</default>
+			</option>
 		</group>
 		<group>
 			<_short>Appearance</_short>
@@ -45,6 +50,14 @@
 				<_short>Inactive Opacity</_short>
 				<_long>Set the opacity value of the inactive windows.</_long>
 				<default>0.75</default>
+				<precision>0.05</precision>
+				<min>0.0</min>
+				<max>1.0</max>
+			</option>
+			<option name="minimized_alpha" type="double">
+				<_short>Minimized View Opacity</_short>
+				<_long>Set the opacity value of minimized views that are shown in scale.</_long>
+				<default>0.45</default>
 				<precision>0.05</precision>
 				<min>0.0</min>
 				<max>1.0</max>
