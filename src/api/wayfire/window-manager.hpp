@@ -45,7 +45,7 @@ class window_manager_t
     /**
      * Try to focus the view and its output.
      */
-    virtual void focus_request(wayfire_toplevel_view view);
+    virtual void focus_request(wayfire_toplevel_view view, bool self_request = false);
 
     /** Request that the view is (un)minimized */
     virtual void minimize_request(wayfire_toplevel_view view, bool minimized);

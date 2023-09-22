@@ -9,6 +9,7 @@
 #include <wayfire/nonstd/wlroots-full.hpp>
 #include <wayfire/plugin.hpp>
 #include <wayfire/toplevel-view.hpp>
+#include <wayfire/window-manager.hpp>
 
 #include "gtk-shell.hpp"
 
@@ -91,14 +92,10 @@ static void handle_gtk_surface_present(wl_client *client, wl_resource *resource,
     uint32_t time)
 {
     auto surface = static_cast<wf_gtk_surface*>(wl_resource_get_user_data(resource));
-    wayfire_view view = wf::wl_surface_to_wayfire_view(surface->wl_surface);
+    wayfire_toplevel_view view = toplevel_cast(wf::wl_surface_to_wayfire_view(surface->wl_surface));
     if (view)
     {
-        wf::view_focus_request_signal data;
-        data.view = view;
-        data.self_request = true;
-        view->emit(&data);
-        wf::get_core().emit(&data);
+        wf::get_core().default_wm->focus_request(view, true);
     }
 }
 
@@ -113,14 +110,10 @@ static void handle_gtk_surface_request_focus(struct wl_client *client,
     const char *startup_id)
 {
     auto surface = static_cast<wf_gtk_surface*>(wl_resource_get_user_data(resource));
-    wayfire_view view = wf::wl_surface_to_wayfire_view(surface->wl_surface);
+    wayfire_toplevel_view view = toplevel_cast(wf::wl_surface_to_wayfire_view(surface->wl_surface));
     if (view)
     {
-        wf::view_focus_request_signal data;
-        data.view = view;
-        data.self_request = true;
-        view->emit(&data);
-        wf::get_core().emit(&data);
+        wf::get_core().default_wm->focus_request(view, true);
     }
 }
 

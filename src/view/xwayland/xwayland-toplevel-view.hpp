@@ -205,11 +205,7 @@ class wayfire_xwayland_view : public wf::toplevel_view_interface_t, public wayfi
         {
             if (!this->activated)
             {
-                wf::view_focus_request_signal data;
-                data.view = self();
-                data.self_request = true;
-                emit(&data);
-                wf::get_core().emit(&data);
+                wf::get_core().default_wm->focus_request({this}, true);
             }
         });
 

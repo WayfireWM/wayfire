@@ -104,13 +104,13 @@ void window_manager_t::resize_request(wayfire_toplevel_view view, uint32_t edges
     }
 }
 
-void window_manager_t::focus_request(wayfire_toplevel_view view)
+void window_manager_t::focus_request(wayfire_toplevel_view view, bool self_request)
 {
     if (view->get_output())
     {
         view_focus_request_signal data;
         data.view = view;
-        data.self_request = false;
+        data.self_request = self_request;
 
         view->emit(&data);
         wf::get_core().emit(&data);
