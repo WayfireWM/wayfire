@@ -23,7 +23,7 @@ struct cursor_t
      * @param validate_request Whether to validate the request against the
      * currently focused pointer surface, or not.
      */
-    void set_cursor(wlr_seat_pointer_request_set_cursor_event *ev,
+    void set_cursor(const wlr_seat_pointer_request_set_cursor_event *ev,
         bool validate_request);
     void set_cursor(std::string name);
     void unhide_cursor();
@@ -35,7 +35,9 @@ struct cursor_t
      * multiple times in a single frame and to avoid setting it in the middle
      * of the repaint loop (not allowed by wlroots).
      */
-    wf::wl_idle_call idle_set_cursor;
+    wf::wl_idle_call idle_set_cursor, idle_request_set_cursor;
+
+    wlr_surface *last_surface;
 
     /**
      * Start/stop touchscreen mode, which means the cursor will be hidden.
@@ -63,7 +65,7 @@ struct cursor_t
         on_frame;
 
     // Seat events
-    wf::wl_listener_wrapper request_set_cursor;
+    wf::wl_listener_wrapper request_set_cursor, cursor_surface_destroyed, seat_client_destroyed;
 
     wf::signal::connection_t<wf::reload_config_signal> config_reloaded;
     wf::seat_t *seat;

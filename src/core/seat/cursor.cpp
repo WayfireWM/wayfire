@@ -30,10 +30,49 @@ wf::cursor_t::cursor_t(wf::seat_t *seat)
 
     wf::get_core().connect(&config_reloaded);
 
-    request_set_cursor.set_callback([&] (void *data)
+    request_set_cursor.set_callback([=] (void *data)
     {
         auto ev = static_cast<wlr_seat_pointer_request_set_cursor_event*>(data);
-        set_cursor(ev, true);
+        if (!ev->surface || (last_surface == ev->surface))
+        {
+            return;
+        }
+
+        auto saved_event = *ev;
+
+        cursor_surface_destroyed.set_callback([=] (void *data)
+        {
+            if (saved_event.surface != data)
+            {
+                return;
+            }
+
+            seat_client_destroyed.disconnect();
+            idle_request_set_cursor.disconnect();
+            cursor_surface_destroyed.disconnect();
+        });
+        cursor_surface_destroyed.connect(&saved_event.surface->events.destroy);
+
+        seat_client_destroyed.set_callback([=] (void *data)
+        {
+            if (saved_event.seat_client != data)
+            {
+                return;
+            }
+
+            seat_client_destroyed.disconnect();
+            idle_request_set_cursor.disconnect();
+            cursor_surface_destroyed.disconnect();
+        });
+        seat_client_destroyed.connect(&saved_event.seat_client->events.destroy);
+
+        idle_request_set_cursor.run_once([=] ()
+        {
+            seat_client_destroyed.disconnect();
+            cursor_surface_destroyed.disconnect();
+            set_cursor(&saved_event, true);
+        });
+        last_surface = saved_event.surface;
     });
     request_set_cursor.connect(&seat->seat->events.request_set_cursor);
 }
@@ -199,7 +238,7 @@ wf::pointf_t wf::cursor_t::get_cursor_position()
 }
 
 void wf::cursor_t::set_cursor(
-    wlr_seat_pointer_request_set_cursor_event *ev, bool validate_request)
+    const wlr_seat_pointer_request_set_cursor_event *ev, bool validate_request)
 {
     if (this->hide_ref_counter)
     {
