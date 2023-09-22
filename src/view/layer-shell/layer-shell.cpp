@@ -155,9 +155,20 @@ struct wf_layer_shell_manager
         }
     };
 
+    wf::signal::connection_t<wf::output_configuration_changed_signal> on_output_configuration_changed =
+        [=] (wf::output_configuration_changed_signal *ev)
+    {
+        auto output = ev->output;
+        arrange_layers(output);
+    };
+
     wf_layer_shell_manager()
     {
-        wf::get_core().output_layout->connect(&on_output_layout_changed);
+        auto outputs = wf::get_core().output_layout->get_outputs();
+        for (auto output : outputs)
+        {
+            output->connect(&on_output_configuration_changed);
+        }
     }
 
   public:
