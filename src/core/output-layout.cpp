@@ -286,6 +286,12 @@ struct output_layout_output_t
                 this->output->set_effective_size(get_effective_size());
                 this->output->render->damage_whole();
                 emit_configuration_changed(wf::OUTPUT_MODE_CHANGE);
+
+                // Emit the output-layout-configuration-changed signal as well, which is usually emitted for
+                // all changed outputs together in output-layout::apply_state(). However, resizing nested
+                // backends does not use apply_state(), hence we have to emit the signal manually.
+                output_layout_configuration_changed_signal ev;
+                wf::get_core().output_layout->emit(&ev);
             }
         }
     }
