@@ -89,7 +89,7 @@ void wf::xdg_toplevel_t::commit()
     if (wait_for_client)
     {
         // Send frame done to let the client know it update its state as fast as possible.
-        main_surface->send_frame_done();
+        main_surface->send_frame_done(true);
     } else
     {
         emit_ready();
@@ -145,7 +145,7 @@ void wf::xdg_toplevel_t::handle_surface_commit()
         {
             // Desired state not reached => wait for the desired state to be reached. In the meantime, send a
             // frame done so that the client can redraw faster.
-            main_surface->send_frame_done();
+            main_surface->send_frame_done(true);
             return;
         }
 

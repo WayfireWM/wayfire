@@ -110,7 +110,7 @@ wf::scene::wlr_surface_node_t::wlr_surface_node_t(wlr_surface *surface, bool aut
     {
         if (!wlr_surface_has_buffer(this->surface) && this->visibility.empty())
         {
-            send_frame_done();
+            send_frame_done(false);
         }
 
         if (this->autocommit)
@@ -126,7 +126,7 @@ wf::scene::wlr_surface_node_t::wlr_surface_node_t(wlr_surface *surface, bool aut
 
     on_surface_destroyed.connect(&surface->events.destroy);
     on_surface_commit.connect(&surface->events.commit);
-    send_frame_done();
+    send_frame_done(false);
 
     current_state.merge_state(surface);
 }
@@ -193,13 +193,24 @@ wf::touch_interaction_t& wf::scene::wlr_surface_node_t::touch_interaction()
     return *this->tch_interaction;
 }
 
-void wf::scene::wlr_surface_node_t::send_frame_done()
+void wf::scene::wlr_surface_node_t::send_frame_done(bool delay_until_vblank)
 {
-    if (surface)
+    if (!surface)
+    {
+        return;
+    }
+
+    if (!delay_until_vblank || visibility.empty())
     {
         timespec now;
         clock_gettime(CLOCK_MONOTONIC, &now);
         wlr_surface_send_frame_done(surface, &now);
+    } else
+    {
+        for (auto& [wo, _] : visibility)
+        {
+            wlr_output_schedule_frame(wo->handle);
+        }
     }
 }
 
@@ -208,7 +219,7 @@ class wf::scene::wlr_surface_node_t::wlr_surface_render_instance_t : public rend
     std::shared_ptr<wlr_surface_node_t> self;
     wf::signal::connection_t<wf::frame_done_signal> on_frame_done = [=] (wf::frame_done_signal *ev)
     {
-        self->send_frame_done();
+        self->send_frame_done(false);
     };
 
     wf::output_t *visible_on;

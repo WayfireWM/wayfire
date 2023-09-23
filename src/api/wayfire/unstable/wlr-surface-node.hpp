@@ -65,7 +65,7 @@ class wlr_surface_node_t : public node_t, public zero_copy_texturable_node_t
 
     wlr_surface *get_surface() const;
     void apply_state(surface_state_t&& state);
-    void send_frame_done();
+    void send_frame_done(bool delay_until_vblank);
 
   private:
     std::unique_ptr<pointer_interaction_t> ptr_interaction;
