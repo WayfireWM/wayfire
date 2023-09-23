@@ -211,9 +211,12 @@ void wf::toplevel_view_interface_t::set_minimized(bool minim)
     if (get_output())
     {
         get_output()->emit(&data);
-        view_disappeared_signal data;
-        data.view = self();
-        get_output()->emit(&data);
+        if (minim)
+        {
+            view_disappeared_signal data;
+            data.view = self();
+            get_output()->emit(&data);
+        }
     }
 }
 
