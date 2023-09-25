@@ -276,7 +276,7 @@ class grid_animation_t : public wf::custom_data_t
         }
 
         auto tr = view->get_transformed_node()->get_transformer<crossfade_node_t>();
-        view->damage();
+        view->get_transformed_node()->begin_transform_update();
         tr->displayed_geometry = animation;
 
         auto geometry = view->get_geometry();
@@ -289,7 +289,7 @@ class grid_animation_t : public wf::custom_data_t
             (geometry.y + geometry.height / 2.0);
 
         tr->overlay_alpha = animation.progress();
-        view->damage();
+        view->get_transformed_node()->end_transform_update();
     };
 
     void destroy()

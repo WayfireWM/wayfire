@@ -112,8 +112,9 @@ class wayfire_fast_switcher : public wf::per_output_plugin_instance_t, public wf
     {
         auto tr = wf::ensure_named_transformer<wf::scene::view_2d_transformer_t>(
             view, wf::TRANSFORMER_2D, transformer_name, view);
+        view->get_transformed_node()->begin_transform_update();
         tr->alpha = alpha;
-        view->damage();
+        view->get_transformed_node()->end_transform_update();
     }
 
     void set_view_highlighted(wayfire_toplevel_view view, bool selected)

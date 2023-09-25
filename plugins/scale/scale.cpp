@@ -679,7 +679,7 @@ class wayfire_scale : public wf::per_output_plugin_instance_t,
             if (view_data.fade_animation.running() ||
                 view_data.animation.scale_animation.running())
             {
-                view->damage();
+                view->get_transformed_node()->begin_transform_update();
                 view_data.transformer->scale_x =
                     view_data.animation.scale_animation.scale_x;
                 view_data.transformer->scale_y =
@@ -699,7 +699,7 @@ class wayfire_scale : public wf::per_output_plugin_instance_t,
                     wf::scene::set_node_enabled(view->get_transformed_node(), false);
                 }
 
-                view->damage();
+                view->get_transformed_node()->end_transform_update();
             }
         }
     }

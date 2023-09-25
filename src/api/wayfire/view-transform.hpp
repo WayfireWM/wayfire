@@ -238,6 +238,18 @@ class transform_manager_node_t : public wf::scene::floating_inner_node_t
     {}
 
     /**
+     * Marks a section of the code which updates one or more transformers added to this transform manager.
+     * Doing so will ensure that the proper damage is propagated upwards in the scenegraph.
+     */
+    void begin_transform_update();
+
+    /**
+     * Marks the end of a section of the code which updates one or more transformers added to this transform
+     * manager. Doing so will ensure that the proper damage is propagated upwards in the scenegraph.
+     */
+    void end_transform_update();
+
+    /**
      * Add a new transformer in the transformer chain.
      *
      * @param transformer The transformer to be added.

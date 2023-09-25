@@ -114,8 +114,8 @@ class wf_wrot : public wf::per_output_plugin_instance_t, public wf::pointer_inte
     {
         auto tr = wf::ensure_named_transformer<wf::scene::view_2d_transformer_t>(
             current_view, wf::TRANSFORMER_2D, transformer_2d, current_view);
-        current_view->damage();
 
+        current_view->get_transformed_node()->begin_transform_update();
         auto g = current_view->get_geometry();
 
         double cx = g.x + g.width / 2.0;
@@ -126,6 +126,7 @@ class wf_wrot : public wf::per_output_plugin_instance_t, public wf::pointer_inte
 
         if (vlen(x2, y2) <= reset_radius)
         {
+            current_view->get_transformed_node()->end_transform_update();
             current_view->get_transformed_node()->rem_transformer(transformer_2d);
             return;
         }
@@ -134,8 +135,7 @@ class wf_wrot : public wf::per_output_plugin_instance_t, public wf::pointer_inte
         tr->angle -= std::asin(cross(x1, y1, x2, y2) / vlen(x1, y1) / vlen(x2,
             y2));
 
-        current_view->damage();
-
+        current_view->get_transformed_node()->end_transform_update();
         last_position = {1.0 * x, 1.0 * y};
     }
 
@@ -149,15 +149,14 @@ class wf_wrot : public wf::per_output_plugin_instance_t, public wf::pointer_inte
         auto tr = wf::ensure_named_transformer<wf::scene::view_3d_transformer_t>(
             current_view, wf::TRANSFORMER_3D, transformer_3d, current_view);
 
-        current_view->damage();
+        current_view->get_transformed_node()->begin_transform_update();
         float dx     = x - last_position.x;
         float dy     = y - last_position.y;
         float ascale = glm::radians(sensitivity / 60.0f);
         float dir    = invert ? -1.f : 1.f;
         tr->rotation = glm::rotate<float>(tr->rotation, vlen(dx, dy) * ascale,
             {dir *dy, dir * dx, 0});
-        current_view->damage();
-
+        current_view->get_transformed_node()->end_transform_update();
         last_position = {(double)x, (double)y};
     }
 
@@ -250,10 +249,10 @@ class wf_wrot : public wf::per_output_plugin_instance_t, public wf::pointer_inte
                 if (std::abs(dot) < 0.05)
                 {
                     /* rotate 2.5 degrees around an axis perpendicular to x */
-                    current_view->damage();
+                    current_view->get_transformed_node()->begin_transform_update();
                     tr->rotation = glm::rotate<float>(tr->rotation, glm::radians(
                         dot < 0 ? -2.5f : 2.5f), {x.y, -x.x, 0});
-                    current_view->damage();
+                    current_view->get_transformed_node()->end_transform_update();
                 }
             }
         }

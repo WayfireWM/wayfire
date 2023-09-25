@@ -541,9 +541,9 @@ class core_drag_t : public signal::provider_t
             move_wobbly(v.view, to.x, to.y);
             if (!view_held_in_place)
             {
-                v.view->damage();
+                v.view->get_transformed_node()->begin_transform_update();
                 v.transformer->grab_position = to;
-                v.view->damage();
+                v.view->get_transformed_node()->end_transform_update();
             }
         }
 

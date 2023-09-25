@@ -431,5 +431,16 @@ void view_3d_transformer_t::gen_render_instances(
         instances.push_back(std::move(uptr));
     }
 }
+
+void transform_manager_node_t::begin_transform_update()
+{
+    wf::scene::damage_node(this, get_bounding_box());
+}
+
+void transform_manager_node_t::end_transform_update()
+{
+    wf::scene::damage_node(this, get_bounding_box());
+    wf::scene::update(shared_from_this(), wf::scene::update_flag::GEOMETRY);
+}
 } // namespace scene
 }

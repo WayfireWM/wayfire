@@ -75,7 +75,7 @@ class view_interface_t : public wf::signal::provider_t, public wf::object_base_t
      * Get the root of the view itself, including its main surface, subsurfaces
      * and transformers, but not dialogs.
      */
-    std::shared_ptr<scene::transform_manager_node_t> get_transformed_node() const;
+    const std::shared_ptr<scene::transform_manager_node_t>& get_transformed_node() const;
 
     /**
      * Get the node which contains the main view (+subsurfaces) only.

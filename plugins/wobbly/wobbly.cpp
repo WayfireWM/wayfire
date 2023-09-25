@@ -692,12 +692,13 @@ class wobbly_transformer_node_t : public wf::scene::floating_inner_node_t
 
         if (now > last_frame)
         {
+            view->get_transformed_node()->begin_transform_update();
             wobbly_prepare_paint(model.get(), now - last_frame);
             /* Update wobbly geometry */
             last_frame = now;
             wobbly_add_geometry(model.get());
             wobbly_done_paint(model.get());
-            view->damage();
+            view->get_transformed_node()->end_transform_update();
         }
 
         if (state->is_wobbly_done())

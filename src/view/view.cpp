@@ -204,7 +204,7 @@ const wf::scene::floating_inner_ptr& wf::view_interface_t::get_root_node() const
     return priv->root_node;
 }
 
-std::shared_ptr<wf::scene::transform_manager_node_t> wf::view_interface_t::get_transformed_node() const
+const std::shared_ptr<wf::scene::transform_manager_node_t>& wf::view_interface_t::get_transformed_node() const
 {
     return priv->transformed_node;
 }
