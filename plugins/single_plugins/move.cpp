@@ -331,7 +331,7 @@ class wayfire_move : public wf::per_output_plugin_instance_t,
         if (join_views)
         {
             // ensure that the originally grabbed view will be focused
-            output->focus_view(grabbed_view);
+            wf::get_core().seat->focus_view(grabbed_view);
         }
 
         drag_helper->start_drag(view, grab_position, opts);

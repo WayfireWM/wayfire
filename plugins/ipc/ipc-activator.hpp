@@ -9,6 +9,7 @@
 #include "wayfire/option-wrapper.hpp"
 #include "wayfire/output.hpp"
 #include "wayfire/plugins/common/shared-core-data.hpp"
+#include "wayfire/seat.hpp"
 
 namespace wf
 {
@@ -74,7 +75,7 @@ class ipc_activator_t
         WFJSON_OPTIONAL_FIELD(data, "output_id", number_integer);
         WFJSON_OPTIONAL_FIELD(data, "view_id", number_integer);
 
-        wf::output_t *wo = wf::get_core().get_active_output();
+        wf::output_t *wo = wf::get_core().seat->get_active_output();
         if (data.contains("output_id"))
         {
             wo = ipc::find_output_by_id(data["output_id"]);
@@ -104,7 +105,7 @@ class ipc_activator_t
 
     wf::output_t *choose_output()
     {
-        return wf::get_core().get_active_output();
+        return wf::get_core().seat->get_active_output();
     }
 
     wayfire_view choose_view(wf::activator_source_t source)
@@ -115,7 +116,7 @@ class ipc_activator_t
             view = wf::get_core().get_cursor_focus_view();
         } else
         {
-            view = wf::get_core().get_active_output()->get_active_view();
+            view = wf::get_core().seat->get_active_view();
         }
 
         return view;

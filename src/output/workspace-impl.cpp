@@ -11,6 +11,8 @@
 #include <algorithm>
 #include <wayfire/nonstd/reverse.hpp>
 #include <wayfire/util/log.hpp>
+#include <wayfire/window-manager.hpp>
+#include <wayfire/seat.hpp>
 
 #include <wayfire/scene-operations.hpp>
 
@@ -627,7 +629,7 @@ struct workspace_set_t::impl
             if (output)
             {
                 output->emit(&vdata);
-                output->focus_view(v, true);
+                wf::get_core().default_wm->focus_raise_view(v, false);
             }
         }
 
@@ -635,7 +637,7 @@ struct workspace_set_t::impl
         if (output)
         {
             // Finally, do a refocus to update the keyboard focus
-            output->refocus();
+            wf::get_core().seat->refocus();
             output->emit(&data);
         }
 

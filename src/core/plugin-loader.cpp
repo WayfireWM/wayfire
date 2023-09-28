@@ -224,7 +224,7 @@ static wf::loaded_plugin_t create_plugin()
 void wf::plugin_manager_t::load_static_plugins()
 {
     loaded_plugins["_exit"]  = create_plugin<wf::per_output_plugin_t<wayfire_exit>>();
-    loaded_plugins["_focus"] = create_plugin<wf::per_output_plugin_t<wayfire_focus>>();
+    loaded_plugins["_focus"] = create_plugin<wayfire_focus>();
     loaded_plugins["_close"] = create_plugin<wf::per_output_plugin_t<wayfire_close>>();
 }
 

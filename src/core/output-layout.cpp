@@ -449,11 +449,11 @@ struct output_layout_output_t
         /* Focus the first output, but do not change the focus on subsequently
          * added outputs. We also change the focus if the noop output was
          * focused */
-        wlr_output *focused = get_core().get_active_output() ?
-            get_core().get_active_output()->handle : nullptr;
+        wlr_output *focused = get_core().seat->get_active_output() ?
+            get_core().seat->get_active_output()->handle : nullptr;
         if (!focused || (focused->data == WF_NOOP_OUTPUT_MAGIC))
         {
-            get_core().focus_output(wo);
+            get_core().seat->focus_output(wo);
         }
 
         output_added_signal data;
@@ -479,18 +479,18 @@ struct output_layout_output_t
         wo->cancel_active_plugins();
 
         bool shutdown = is_shutting_down();
-        if ((get_core().get_active_output() == wo) && !shutdown)
+        if ((get_core().seat->get_active_output() == wo) && !shutdown)
         {
-            get_core().focus_output(
+            get_core().seat->focus_output(
                 get_core().output_layout->get_next_output(wo));
         } else if (shutdown)
         {
-            get_core().focus_output(nullptr);
+            get_core().seat->focus_output(nullptr);
         }
 
         /* It doesn't make sense to transfer to another output if we're
          * going to shut down the compositor */
-        transfer_views(wo, shutdown ? nullptr : get_core().get_active_output());
+        transfer_views(wo, shutdown ? nullptr : get_core().seat->get_active_output());
 
         wf::output_removed_signal data2;
         data2.output = wo;

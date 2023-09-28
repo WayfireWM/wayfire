@@ -9,6 +9,9 @@
 #include "wayfire/output.hpp"
 #include "wayfire/input-device.hpp"
 #include "wayfire/scene-input.hpp"
+#include "wayfire/scene.hpp"
+#include "wayfire/signal-provider.hpp"
+#include "wayfire/toplevel-view.hpp"
 #include "wayfire/util.hpp"
 
 namespace wf
@@ -99,6 +102,13 @@ struct seat_t::impl
 
     wf::wl_listener_wrapper on_wlr_keyboard_grab_end;
     wf::wl_listener_wrapper on_wlr_pointer_grab_end;
+
+    uint64_t last_timestamp     = 0;
+    wf::output_t *active_output = nullptr;
+    std::weak_ptr<wf::toplevel_view_interface_t> _last_active_toplevel;
+    std::weak_ptr<wf::view_interface_t> _last_active_view;
+    wf::signal::connection_t<scene::root_node_update_signal> on_root_node_updated;
+    void update_active_view(wf::scene::node_ptr new_focus);
 };
 }
 

@@ -3,6 +3,7 @@
 #include <wayfire/view.hpp>
 #include <wayfire/output.hpp>
 #include <wayfire/toplevel-view.hpp>
+#include <wayfire/seat.hpp>
 #include <set>
 
 #include "plugins/ipc/ipc-helpers.hpp"
@@ -75,7 +76,7 @@ class ipc_rules_t : public wf::plugin_interface_t, public wf::per_output_tracker
 
     wf::ipc::method_callback get_focused_view = [=] (nlohmann::json data)
     {
-        if (auto view = wf::get_core().get_active_output()->get_active_view())
+        if (auto view = wf::get_core().seat->get_active_view())
         {
             auto response = wf::ipc::json_ok();
             response["info"] = view_to_json(view);

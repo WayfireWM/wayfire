@@ -6,6 +6,7 @@
 #include "wayfire/workspace-set.hpp"
 #include "wayfire/output-layout.hpp"
 #include <wayfire/seat.hpp>
+#include <wayfire/window-manager.hpp>
 
 #include <wayfire/util/log.hpp>
 #include <wayfire/nonstd/wlroots-full.hpp>
@@ -24,8 +25,7 @@ void wayfire_exit::init()
 {
     key = [] (const wf::keybinding_t&)
     {
-        auto output_impl =
-            static_cast<wf::output_impl_t*>(wf::get_core().get_active_output());
+        auto output_impl = static_cast<wf::output_impl_t*>(wf::get_core().seat->get_active_output());
         if (output_impl->is_inhibited())
         {
             return false;
@@ -55,7 +55,7 @@ void wayfire_close::init()
         }
 
         output->deactivate_plugin(&grab_interface);
-        auto view = output->get_active_view();
+        auto view = wf::get_core().seat->get_active_view();
         if (view && (view->role == wf::VIEW_ROLE_TOPLEVEL))
         {
             view->close();
@@ -74,12 +74,6 @@ void wayfire_close::fini()
 
 void wayfire_focus::init()
 {
-    on_wm_focus_request.set_callback([=] (wm_focus_request_signal *ev)
-    {
-        check_focus_surface(wf::node_to_view(ev->node));
-    });
-    output->connect(&on_wm_focus_request);
-
     on_pointer_button = [=] (wf::input_event_signal<wlr_pointer_button_event> *ev)
     {
         if ((ev->mode == wf::input_event_processing_mode_t::IGNORE) ||
@@ -111,10 +105,7 @@ void wayfire_focus::init()
     actions.emplace_back(std::move(on_tap));
     const auto& on_tap_action = [this] ()
     {
-        if (wf::get_core().get_active_output() == this->output)
-        {
-            this->check_focus_surface(wf::get_core().get_touch_focus_view());
-        }
+        this->check_focus_surface(wf::get_core().get_touch_focus_view());
     };
 
     this->tap_gesture =
@@ -124,22 +115,16 @@ void wayfire_focus::init()
 
 bool wayfire_focus::check_focus_surface(wayfire_view view)
 {
-    if (!view || !view->is_mapped() || !output->can_activate_plugin(grab_interface.capabilities))
+    auto& core = wf::get_core();
+    if (!view || !view->is_mapped() || !core.seat->get_active_output() ||
+        !core.seat->get_active_output()->can_activate_plugin(grab_interface.capabilities))
     {
         return false;
     }
 
-    auto target_wo = view->get_output();
-    auto old_focus = target_wo->get_active_view();
-    if (view->get_keyboard_focus_surface())
-    {
-        target_wo->focus_view(view->self(), true);
-    } else
-    {
-        wf::view_bring_to_front(view);
-    }
-
-    return target_wo->get_active_view() != old_focus;
+    auto old_focus = core.seat->get_active_view();
+    core.default_wm->focus_raise_view(view);
+    return core.seat->get_active_view() != old_focus;
 }
 
 void wayfire_focus::fini()

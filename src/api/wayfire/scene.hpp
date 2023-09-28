@@ -448,6 +448,10 @@ enum update_flag
      * of the view, but also things like opaque regions.
      */
     GEOMETRY      = (1 << 3),
+    /**
+     * A keyboard refocus might be necessary (for example, node removed, keyboard input state changed, etc.).
+     */
+    REFOCUS       = (1 << 4),
 };
 }
 

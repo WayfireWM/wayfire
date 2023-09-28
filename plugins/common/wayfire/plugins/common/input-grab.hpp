@@ -8,6 +8,7 @@
 #include <wayfire/debug.hpp>
 #include <memory>
 #include <string>
+#include <wayfire/seat.hpp>
 namespace wf
 {
 namespace scene
@@ -146,8 +147,7 @@ class input_grab_t
         children.insert(idx, grab_node);
         root->set_children_list(children);
         wf::get_core().transfer_grab(grab_node);
-        scene::update(root, scene::update_flag::CHILDREN_LIST);
-        output->refocus();
+        scene::update(root, scene::update_flag::CHILDREN_LIST | scene::update_flag::REFOCUS);
 
         // Set cursor to default.
         wf::get_core().set_cursor("default");
@@ -160,10 +160,8 @@ class input_grab_t
     {
         if (grab_node->parent())
         {
-            wf::scene::remove_child(grab_node);
+            wf::scene::remove_child(grab_node, scene::update_flag::REFOCUS);
         }
-
-        output->refocus();
     }
 };
 }

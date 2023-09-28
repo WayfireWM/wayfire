@@ -11,6 +11,7 @@
 #include <wayfire/util/log.hpp>
 #include <wayfire/seat.hpp>
 #include <wayfire/toplevel-view.hpp>
+#include <wayfire/window-manager.hpp>
 
 /*
  * This plugin provides abilities to switch between views.
@@ -74,7 +75,7 @@ class wayfire_fast_switcher : public wf::per_output_plugin_instance_t, public wf
             wf::view_bring_to_front(views[i]);
         } else
         {
-            output->focus_view(views[i], true);
+            wf::get_core().default_wm->focus_raise_view(views[i]);
         }
     }
 

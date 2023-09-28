@@ -3,6 +3,7 @@
 #include <wayfire/workspace-set.hpp>
 #include <wayfire/signal-definitions.hpp>
 #include <wayfire/output.hpp>
+#include <wayfire/seat.hpp>
 #include <wayfire/output-layout.hpp>
 #include <wayfire/nonstd/wlroots-full.hpp>
 #include <chrono>
@@ -47,7 +48,7 @@ class preserve_output_t : public wf::plugin_interface_t
         auto ident = make_output_identifier(output);
         auto& data = saved_outputs[ident];
 
-        data.was_focused = (output == wf::get_core().get_active_output());
+        data.was_focused = (output == wf::get_core().seat->get_active_output());
         data.destroy_timestamp = std::chrono::steady_clock::now();
         data.workspace_set     = output->wset();
 
@@ -84,7 +85,7 @@ class preserve_output_t : public wf::plugin_interface_t
         output->set_workspace_set(data.workspace_set);
         if (data.was_focused && !focused_output_expired(data))
         {
-            wf::get_core().focus_output(output);
+            wf::get_core().seat->focus_output(output);
         }
 
         saved_outputs.erase(ident);

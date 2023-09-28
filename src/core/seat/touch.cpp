@@ -203,7 +203,7 @@ void wf::touch_interface_t::handle_touch_down(int32_t id, uint32_t time,
 
     if (id == 0)
     {
-        wf::get_core().focus_output(
+        wf::get_core().seat->focus_output(
             wf::get_core().output_layout->get_output_at(point.x, point.y));
     }
 
@@ -409,7 +409,7 @@ class multi_action_t : public gesture_action_t
 
 static uint32_t find_swipe_edges(wf::touch::point_t point)
 {
-    auto output   = wf::get_core().get_active_output();
+    auto output   = wf::get_core().seat->get_active_output();
     auto geometry = output->get_layout_geometry();
 
     uint32_t edge_directions = 0;

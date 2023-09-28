@@ -63,8 +63,6 @@ class compositor_core_impl_t : public compositor_core_t
     override;
     virtual wlr_cursor *get_wlr_cursor() override;
 
-    void focus_output(wf::output_t *o) override;
-    wf::output_t *get_active_output() override;
     std::string get_xwayland_display() override;
     pid_t run(std::string command) override;
     void shutdown() override;
@@ -78,8 +76,6 @@ class compositor_core_impl_t : public compositor_core_t
     wf::wl_listener_wrapper input_inhibit_deactivated;
     wf::wl_listener_wrapper pointer_constraint_added;
     wf::wl_listener_wrapper idle_inhibitor_created;
-
-    wf::output_t *active_output = nullptr;
     std::shared_ptr<scene::root_node_t> scene_root;
 
     compositor_state_t state = compositor_state_t::UNKNOWN;

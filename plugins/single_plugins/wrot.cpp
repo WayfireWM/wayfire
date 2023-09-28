@@ -9,6 +9,7 @@
 #include <wayfire/workspace-set.hpp>
 #include <wayfire/signal-definitions.hpp>
 #include <wayfire/plugins/common/util.hpp>
+#include <wayfire/window-manager.hpp>
 #include <linux/input.h>
 
 #include <glm/gtc/matrix_transform.hpp>
@@ -74,7 +75,7 @@ class wf_wrot : public wf::per_output_plugin_instance_t, public wf::pointer_inte
             return false;
         }
 
-        output->focus_view(current_view, true);
+        wf::get_core().default_wm->focus_raise_view(current_view);
         current_view->connect(&current_view_unmapped);
         input_grab->grab_input(wf::scene::layer::OVERLAY);
 
@@ -91,7 +92,7 @@ class wf_wrot : public wf::per_output_plugin_instance_t, public wf::pointer_inte
 
     wf::key_callback reset_one = [this] (auto)
     {
-        auto view = output->get_active_view();
+        auto view = wf::get_active_view_for_output(output);
         if (view)
         {
             view->get_transformed_node()->rem_transformer(transformer_2d);
@@ -188,7 +189,7 @@ class wf_wrot : public wf::per_output_plugin_instance_t, public wf::pointer_inte
                 return false;
             }
 
-            output->focus_view(current_view, true);
+            wf::get_core().default_wm->focus_raise_view(current_view);
             current_view->connect(&current_view_unmapped);
             input_grab->grab_input(wf::scene::layer::OVERLAY);
 

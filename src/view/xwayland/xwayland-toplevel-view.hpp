@@ -5,6 +5,7 @@
 #include "wayfire/core.hpp"
 #include "wayfire/debug.hpp"
 #include "wayfire/geometry.hpp"
+#include "wayfire/seat.hpp"
 #include "wayfire/scene-render.hpp"
 #include "wayfire/signal-provider.hpp"
 #include "wayfire/toplevel-view.hpp"
@@ -280,7 +281,7 @@ class wayfire_xwayland_view : public wf::toplevel_view_interface_t, public wayfi
         self->set_surface_root_node(self->surface_root_node);
 
         // Set the output early, so that we can emit the signals on the output
-        self->set_output(wf::get_core().get_active_output());
+        self->set_output(wf::get_core().seat->get_active_output());
         self->_initialize();
 
         self->update_decorated();
@@ -406,7 +407,7 @@ class wayfire_xwayland_view : public wf::toplevel_view_interface_t, public wayfi
             get_output()->wset()->add_view({this});
         }
 
-        get_output()->focus_view(self(), true);
+        wf::get_core().default_wm->focus_request(self());
 
         damage();
         emit_view_map();
@@ -425,6 +426,7 @@ class wayfire_xwayland_view : public wf::toplevel_view_interface_t, public wayfi
 
         emit_view_unmap();
         priv->set_mapped(false);
+        wf::scene::update(get_surface_root_node(), wf::scene::update_flag::INPUT_STATE);
     }
 
     void commit()

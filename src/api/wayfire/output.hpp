@@ -167,55 +167,10 @@ class output_t : public wf::object_base_t, public wf::signal::provider_t
     virtual bool is_plugin_active(std::string owner_name) const = 0;
 
     /**
-     * Get the most recently focused view on this output.
-     *
-     * Note that the view might not be actually focused, as focus can be overridden
-     * by core, layer-shell views or plugins.
-     */
-    virtual wayfire_view get_active_view() const = 0;
-
-    /**
-     * Set the view as the output's active view.
-     *
-     * This operation will change the view's last_focus_timestamp and its activated
-     * status. In addition, an attempt to focus the view on the current seat will
-     * be made. Note, however, that the last operation may fail if layer-shell
-     * views, plugin grabs or something similar overrides the focus request.
-     *
-     * @param raise If set to true, the view will additionally be raised to the
-     *   top of its layer.
-     */
-    virtual void focus_view(wayfire_view v, bool raise = false) = 0;
-
-    /**
-     * Try to focus the given scenegraph node. This may not work if another node
-     * requests a higher focus_importance.
-     *
-     * Note that the focus_view function should be used for view nodes, as
-     * focusing views typically involves more operations. Calling this function
-     * does not change the active view on the output, even if the newly focused
-     * node is a view node!
-     *
-     * The new_focus' last focus timestamp will be updated.
-     */
-    virtual void focus_node(wf::scene::node_ptr new_focus) = 0;
-
-    /**
-     * Get the last focus timestamp which was given out by this output.
-     */
-    virtual uint64_t get_last_focus_timestamp() const = 0;
-
-    /**
      * Switch the workspace so that view becomes visible.
      * @return true if workspace switch really occurred
      */
     bool ensure_visible(wayfire_view view);
-
-    /**
-     * Trigger a refocus operation on the output.
-     * See scene::node_t::keyboard_refocus() for details.
-     */
-    virtual void refocus() = 0;
 
     /**
      * the add_* functions are used by plugins to register bindings. They pass
@@ -244,6 +199,12 @@ class output_t : public wf::object_base_t, public wf::signal::provider_t
     /* outputs are instantiated internally by core */
     output_t();
 };
+
+/**
+ * Find the active view on the given output. It is the same as wf::get_core().seat->get_active_view() if the
+ * output is currently focused, otherwise NULL.
+ */
+wayfire_view get_active_view_for_output(wf::output_t *output);
 }
 
 #endif /* end of include guard: OUTPUT_HPP */

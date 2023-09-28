@@ -5,6 +5,7 @@
 #include <wayfire/view.hpp>
 #include <wayfire/output-layout.hpp>
 #include <wayfire/bindings-repository.hpp>
+#include <wayfire/seat.hpp>
 
 class wayfire_oswitch : public wf::plugin_interface_t
 {
@@ -15,11 +16,11 @@ class wayfire_oswitch : public wf::plugin_interface_t
         /* when we switch the output, the oswitch keybinding
          * may be activated for the next output, which we don't want,
          * so we postpone the switch */
-        auto current_output = wf::get_core().get_active_output();
+        auto current_output = wf::get_core().seat->get_active_output();
         auto next = wf::get_core().output_layout->get_next_output(current_output);
         idle_next_output.run_once([=] ()
         {
-            wf::get_core().focus_output(next);
+            wf::get_core().seat->focus_output(next);
         });
 
         return true;
@@ -27,9 +28,10 @@ class wayfire_oswitch : public wf::plugin_interface_t
 
     wf::activator_callback switch_output_with_window = [=] (auto)
     {
-        auto current_output = wf::get_core().get_active_output();
+        auto current_output = wf::get_core().seat->get_active_output();
         auto next = wf::get_core().output_layout->get_next_output(current_output);
-        auto view = wf::toplevel_cast(current_output->get_active_view());
+        auto view = wf::toplevel_cast(wf::get_active_view_for_output(current_output));
+        LOGI("Found view ", view);
         if (!view)
         {
             switch_output(wf::activator_data_t{});
@@ -40,7 +42,7 @@ class wayfire_oswitch : public wf::plugin_interface_t
         move_view_to_output(view, next, true);
         idle_next_output.run_once([=] ()
         {
-            wf::get_core().focus_output(next);
+            wf::get_core().seat->focus_output(next);
         });
 
         return true;

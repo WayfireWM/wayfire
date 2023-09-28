@@ -208,7 +208,7 @@ void wf::compositor_core_impl_t::post_init()
     wf::output_t *wo = wf::get_core().output_layout->get_output_coords_at({FLT_MIN, FLT_MIN}, p);
     // Output might be noop but guaranteed to not be null
     wo->ensure_pointer(true);
-    focus_output(wo);
+    seat->focus_output(wo);
 
     // Refresh device mappings when we have all outputs and devices
     input->refresh_device_mappings();
@@ -358,46 +358,6 @@ wlr_cursor*wf::compositor_core_impl_t::get_wlr_cursor()
     return seat->priv->cursor->cursor;
 }
 
-void wf::compositor_core_impl_t::focus_output(wf::output_t *wo)
-{
-    if (active_output == wo)
-    {
-        return;
-    }
-
-    if (wo)
-    {
-        LOGC(KBD, "focus output: ", wo->handle->name);
-        /* Move to the middle of the output if this is the first output */
-        wo->ensure_pointer((active_output == nullptr));
-    }
-
-    if (active_output)
-    {
-        active_output->focus_view(nullptr);
-    }
-
-    active_output = wo;
-
-    /* On shutdown */
-    if (!active_output)
-    {
-        return;
-    }
-
-    wo->refocus();
-
-    wf::output_gain_focus_signal data;
-    data.output = active_output;
-    active_output->emit(&data);
-    this->emit(&data);
-}
-
-wf::output_t*wf::compositor_core_impl_t::get_active_output()
-{
-    return active_output;
-}
-
 std::vector<wayfire_view> wf::compositor_core_t::get_all_views()
 {
     return wf::tracking_allocator_t<view_interface_t>::get().get_all();
@@ -502,7 +462,11 @@ void wf::move_view_to_output(wayfire_toplevel_view v, wf::output_t *new_output, 
 
     wf::scene::add_front(new_output->wset()->get_node(), v->get_root_node());
     new_output->wset()->add_view(v);
-    new_output->focus_view(v);
+
+    if (new_output == wf::get_core().seat->get_active_output())
+    {
+        wf::get_core().seat->focus_view(v);
+    }
 
     if (reconfigure)
     {

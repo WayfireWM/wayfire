@@ -14,7 +14,7 @@ namespace scene
 /**
  * Remove a child node from a parent node and update the parent.
  */
-inline void remove_child(node_ptr child)
+inline void remove_child(node_ptr child, uint32_t add_flags = 0)
 {
     if (!child->parent())
     {
@@ -28,7 +28,7 @@ inline void remove_child(node_ptr child)
     children.erase(std::remove(children.begin(), children.end(), child),
         children.end());
     parent->set_children_list(children);
-    update(parent->shared_from_this(), update_flag::CHILDREN_LIST);
+    update(parent->shared_from_this(), update_flag::CHILDREN_LIST | add_flags);
 }
 
 inline void add_front(floating_inner_ptr parent, node_ptr child)
@@ -59,17 +59,23 @@ inline void readd_back(floating_inner_ptr parent, node_ptr child)
     add_back(parent, child);
 }
 
-inline void raise_to_front(node_ptr child)
+inline bool raise_to_front(node_ptr child)
 {
     auto dyn_parent = dynamic_cast<floating_inner_node_t*>(child->parent());
     wf::dassert(dyn_parent, "Raise to front in a non-floating container!");
 
     auto children = dyn_parent->get_children();
+    if (children.front() == child)
+    {
+        return false;
+    }
+
     children.erase(std::remove(children.begin(), children.end(), child),
         children.end());
     children.insert(children.begin(), child);
     dyn_parent->set_children_list(children);
     update(dyn_parent->shared_from_this(), update_flag::CHILDREN_LIST);
+    return true;
 }
 }
 }

@@ -194,7 +194,7 @@ class wayfire_idle_plugin : public wf::per_output_plugin_instance_t
         output->connect(&fullscreen_state_changed);
         disable_on_fullscreen.set_callback(disable_on_fullscreen_changed);
 
-        if (auto toplevel = toplevel_cast(output->get_active_view()))
+        if (auto toplevel = toplevel_cast(wf::get_active_view_for_output(output)))
         {
             /* Currently, the fullscreen count would always be 0 or 1,
              * since fullscreen-layer-focused is only emitted on changes between 0

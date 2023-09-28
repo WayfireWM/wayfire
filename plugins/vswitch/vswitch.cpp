@@ -1,8 +1,9 @@
+#include "wayfire/core.hpp"
 #include <wayfire/plugins/vswitch.hpp>
 #include <wayfire/per-output-plugin.hpp>
 #include <linux/input.h>
 #include <wayfire/util/log.hpp>
-
+#include <wayfire/seat.hpp>
 
 class vswitch : public wf::per_output_plugin_instance_t
 {
@@ -85,7 +86,7 @@ class vswitch : public wf::per_output_plugin_instance_t
                     data.from = output->wset()->get_current_workspace();
                     data.to   = data.from + delta;
                     output->emit(&data);
-                    output->refocus();
+                    wf::get_core().seat->refocus();
 
                     return true;
                 }

@@ -5,6 +5,7 @@
 #include "wayfire/scene-render.hpp"
 #include "wayfire/scene.hpp"
 #include "wayfire/view-helpers.hpp"
+#include <wayfire/window-manager.hpp>
 #include <memory>
 #include <wayfire/per-output-plugin.hpp>
 #include <wayfire/opengl.hpp>
@@ -598,7 +599,7 @@ class WayfireSwitcher : public wf::per_output_plugin_instance_t, public wf::keyb
         /* Potentially restore view[0] if it was maximized */
         if (views.size())
         {
-            output->focus_view(views[0].view, true);
+            wf::get_core().default_wm->focus_raise_view(views[0].view);
         }
     }
 

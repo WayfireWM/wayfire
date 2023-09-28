@@ -257,17 +257,6 @@ class compositor_core_t : public wf::object_base_t, public signal::provider_t
      */
     std::vector<wayfire_view> get_all_views();
 
-    /**
-     * Focus the given output. The currently focused output is used to determine
-     * which plugins receive various events (including bindings)
-     */
-    virtual void focus_output(wf::output_t *o) = 0;
-
-    /**
-     * Get the currently focused "active" output
-     */
-    virtual wf::output_t *get_active_output() = 0;
-
     /** The wayland socket name of Wayfire */
     std::string wayland_display;
 

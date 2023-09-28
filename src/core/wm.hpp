@@ -10,11 +10,6 @@
 #include "wayfire/touch/touch.hpp"
 #include "wayfire/option-wrapper.hpp"
 
-struct wm_focus_request_signal
-{
-    wf::scene::node_ptr node;
-};
-
 class wayfire_close : public wf::per_output_plugin_instance_t
 {
     wf::activator_callback callback;
@@ -29,11 +24,9 @@ class wayfire_close : public wf::per_output_plugin_instance_t
     void fini() override;
 };
 
-class wayfire_focus : public wf::per_output_plugin_instance_t
+class wayfire_focus : public wf::plugin_interface_t
 {
     wf::signal::connection_t<wf::input_event_signal<wlr_pointer_button_event>> on_pointer_button;
-    wf::signal::connection_t<wm_focus_request_signal> on_wm_focus_request;
-
     std::unique_ptr<wf::touch::gesture_t> tap_gesture;
 
     // @return True if the focus has changed

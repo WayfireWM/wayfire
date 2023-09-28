@@ -9,6 +9,7 @@
 #include "xwayland-view-base.hpp"
 #include <wayfire/render-manager.hpp>
 #include <wayfire/scene-operations.hpp>
+#include <wayfire/window-manager.hpp>
 #include "../core/core-impl.hpp"
 #include "../core/seat/seat-impl.hpp"
 #include "../view-keyboard-interaction.hpp"
@@ -39,10 +40,10 @@ class xwayland_unmanaged_view_node_t : public wf::scene::translation_node_t, pub
             return wf::keyboard_focus_node_t{};
         }
 
-        const uint64_t output_last_ts = view->get_output()->get_last_focus_timestamp();
-        const uint64_t our_ts = keyboard_interaction().last_focus_timestamp;
+        const uint64_t last_ts = wf::get_core().seat->get_last_focus_timestamp();
+        const uint64_t our_ts  = keyboard_interaction().last_focus_timestamp;
         auto cur_focus = wf::get_core_impl().seat->priv->keyboard_focus.get();
-        bool has_focus = (cur_focus == this) || (our_ts == output_last_ts);
+        bool has_focus = (cur_focus == this) || (our_ts == last_ts);
         if (has_focus)
         {
             return wf::keyboard_focus_node_t{this, focus_importance::REGULAR};
@@ -181,7 +182,7 @@ class wayfire_unmanaged_xwayland_view : public wf::view_interface_t, public wayf
 
         if (priv->keyboard_focus_enabled)
         {
-            get_output()->focus_view(self(), true);
+            wf::get_core().default_wm->focus_request(self());
         }
 
         damage();

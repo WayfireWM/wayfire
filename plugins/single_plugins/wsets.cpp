@@ -1,6 +1,7 @@
 #include "wayfire/bindings.hpp"
 #include "wayfire/geometry.hpp"
 #include "wayfire/object.hpp"
+#include "wayfire/seat.hpp"
 #include "wayfire/option-wrapper.hpp"
 #include "wayfire/scene-operations.hpp"
 #include "wayfire/signal-provider.hpp"
@@ -125,7 +126,7 @@ class wayfire_wsets_plugin_t : public wf::plugin_interface_t
 
             select_callback.push_back([=] (auto)
             {
-                auto wo = wf::get_core().get_active_output();
+                auto wo = wf::get_core().seat->get_active_output();
                 if (!wo->can_activate_plugin(wf::CAPABILITY_MANAGE_COMPOSITOR))
                 {
                     return false;
@@ -149,7 +150,7 @@ class wayfire_wsets_plugin_t : public wf::plugin_interface_t
 
             send_callback.push_back([=] (auto)
             {
-                auto wo = wf::get_core().get_active_output();
+                auto wo = wf::get_core().seat->get_active_output();
                 if (!wo->can_activate_plugin(wf::CAPABILITY_MANAGE_COMPOSITOR))
                 {
                     return false;
@@ -236,7 +237,7 @@ class wayfire_wsets_plugin_t : public wf::plugin_interface_t
 
     void select_workspace(int index)
     {
-        auto wo = wf::get_core().get_active_output();
+        auto wo = wf::get_core().seat->get_active_output();
         if (!wo)
         {
             return;
@@ -268,13 +269,13 @@ class wayfire_wsets_plugin_t : public wf::plugin_interface_t
 
     void send_window_to(int index)
     {
-        auto wo = wf::get_core().get_active_output();
+        auto wo = wf::get_core().seat->get_active_output();
         if (!wo)
         {
             return;
         }
 
-        auto view = toplevel_cast(wo->get_active_view());
+        auto view = toplevel_cast(wf::get_active_view_for_output(wo));
         if (!view)
         {
             return;
@@ -298,10 +299,7 @@ class wayfire_wsets_plugin_t : public wf::plugin_interface_t
         target_wset->add_view(view);
         wf::emit_view_moved_to_wset(view, old_wset, target_wset);
 
-        if (target_wset->get_attached_output())
-        {
-            target_wset->get_attached_output()->refocus();
-        }
+        wf::get_core().seat->refocus();
     }
 
     wf::signal::connection_t<wf::output_added_signal> on_new_output = [=] (wf::output_added_signal *ev)

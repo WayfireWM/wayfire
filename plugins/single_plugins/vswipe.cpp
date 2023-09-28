@@ -205,7 +205,7 @@ class vswipe : public wf::per_output_plugin_instance_t
         }
 
         input_grab->grab_input(wf::scene::layer::OVERLAY);
-        wf::get_core().focus_output(output);
+        wf::get_core().seat->focus_output(output);
 
         auto ws = output->wset()->get_current_workspace();
         wall->set_background_color(background_color);

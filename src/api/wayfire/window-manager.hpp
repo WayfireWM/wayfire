@@ -44,8 +44,18 @@ class window_manager_t
 
     /**
      * Try to focus the view and its output.
+     * This will first emit a focus_request signal for the view, and if it is not handled by any plugin, the
+     * default focus actions will be taken (i.e @focus_raise_view(allow_switch_ws=true) will be called).
      */
-    virtual void focus_request(wayfire_toplevel_view view, bool self_request = false);
+    virtual void focus_request(wayfire_view view, bool self_request = false);
+
+    /**
+     * Focus the view and take any actions necessary to make it visible:
+     * - Unminimize minized views
+     * - Switch to the view's workspace, if @allow_switch_ws is set.
+     * - Raise the view to the top of the stack.
+     */
+    virtual void focus_raise_view(wayfire_view view, bool allow_switch_ws = false);
 
     /** Request that the view is (un)minimized */
     virtual void minimize_request(wayfire_toplevel_view view, bool minimized);

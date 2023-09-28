@@ -687,27 +687,6 @@ struct view_disappeared_signal
 
 /**
  * on: output
- * when: Before the output focus changes.
- */
-struct pre_focus_view_signal
-{
-    wayfire_view view;
-    /* Set by the listener to indicate whether or not to give the view focus */
-    bool can_focus = true;
-};
-
-/**
- * on: output
- * when: As soon as the output focus changes.
- * argument: The newly focused view.
- */
-struct focus_view_signal
-{
-    wayfire_view view;
-};
-
-/**
- * on: output
  * when: Whenever an interactive move is requested on the view. See also
  *   view_interface_t::move_request()
  */

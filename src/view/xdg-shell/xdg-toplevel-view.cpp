@@ -10,6 +10,8 @@
 #include "wayfire/debug.hpp"
 #include "wayfire/geometry.hpp"
 #include "wayfire/nonstd/tracking-allocator.hpp"
+#include "wayfire/scene.hpp"
+#include "wayfire/seat.hpp"
 #include "wayfire/util.hpp"
 #include "wayfire/view.hpp"
 #include <wayfire/output-layout.hpp>
@@ -154,7 +156,7 @@ std::shared_ptr<wf::xdg_toplevel_view_t> wf::xdg_toplevel_view_t::create(wlr_xdg
     self->set_surface_root_node(self->surface_root_node);
 
     // Set the output early, so that we can emit the signals on the output
-    self->set_output(wf::get_core().get_active_output());
+    self->set_output(wf::get_core().seat->get_active_output());
 
     self->handle_title_changed(nonull(toplevel->title));
     self->handle_app_id_changed(nonull(toplevel->app_id));
@@ -261,7 +263,7 @@ void wf::xdg_toplevel_view_t::map()
             get_output()->wset()->add_view({this});
         }
 
-        get_output()->focus_view(self(), true);
+        wf::get_core().default_wm->focus_request(self());
     }
 
     damage();
@@ -279,6 +281,7 @@ void wf::xdg_toplevel_view_t::unmap()
 
     emit_view_unmap();
     priv->set_mapped(false);
+    wf::scene::update(get_surface_root_node(), wf::scene::update_flag::INPUT_STATE);
 }
 
 void wf::xdg_toplevel_view_t::handle_toplevel_state_changed(wf::toplevel_state_t old_state)

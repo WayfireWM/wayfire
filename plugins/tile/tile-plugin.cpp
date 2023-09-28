@@ -25,6 +25,7 @@
 #include "wayfire/toplevel-view.hpp"
 #include "wayfire/view-helpers.hpp"
 #include "wayfire/txn/transaction-manager.hpp"
+#include "wayfire/view.hpp"
 
 struct autocommit_transaction_t
 {
@@ -485,14 +486,6 @@ class tile_output_plugin_t : public wf::pointer_interaction_t, public wf::custom
         tile_workspace_set_data_t::get(ev->view->get_wset()).set_view_fullscreen(ev->view, ev->state);
     };
 
-    wf::signal::connection_t<focus_view_signal> on_focus_changed = [=] (focus_view_signal *ev)
-    {
-        if (auto toplevel = toplevel_cast(ev->view))
-        {
-            tile_workspace_set_data_t::get(output->wset()).consider_exit_fullscreen(toplevel);
-        }
-    };
-
     void change_view_workspace(wayfire_toplevel_view view, wf::point_t vp = {-1, -1})
     {
         auto existing_node = wf::tile::view_node_t::get_node(view);
@@ -537,8 +530,8 @@ class tile_output_plugin_t : public wf::pointer_interaction_t, public wf::custom
     bool conditioned_view_execute(bool need_tiled,
         std::function<void(wayfire_toplevel_view)> func)
     {
-        auto view = output->get_active_view();
-        if (!toplevel_cast(view))
+        auto view = wf::get_core().seat->get_active_view();
+        if (!toplevel_cast(view) || (view->get_output() != output))
         {
             return false;
         }
@@ -584,7 +577,8 @@ class tile_output_plugin_t : public wf::pointer_interaction_t, public wf::custom
             if (adjacent)
             {
                 /* This will lower the fullscreen status of the view */
-                output->focus_view(adjacent->view, true);
+                view_bring_to_front(adjacent->view);
+                wf::get_core().seat->focus_view(adjacent->view);
 
                 if (was_fullscreen && keep_fullscreen_on_adjacent)
                 {
@@ -670,7 +664,6 @@ class tile_output_plugin_t : public wf::pointer_interaction_t, public wf::custom
         output->connect(&on_view_unmapped);
         output->connect(&on_tile_request);
         output->connect(&on_fullscreen_request);
-        output->connect(&on_focus_changed);
         output->connect(&on_view_change_workspace);
         output->connect(&on_view_minimized);
         setup_callbacks();
@@ -693,6 +686,7 @@ class tile_plugin_t : public wf::plugin_interface_t, wf::per_output_tracker_mixi
         init_output_tracking();
         wf::get_core().connect(&on_view_pre_moved_to_wset);
         wf::get_core().connect(&on_view_moved_to_wset);
+        wf::get_core().connect(&on_focus_changed);
     }
 
     void fini() override
@@ -730,6 +724,19 @@ class tile_plugin_t : public wf::plugin_interface_t, wf::per_output_tracker_mixi
             }
         }
     };
+
+    wf::signal::connection_t<keyboard_focus_changed_signal> on_focus_changed =
+        [=] (keyboard_focus_changed_signal *ev)
+    {
+        if (auto toplevel = toplevel_cast(wf::node_to_view(ev->new_focus)))
+        {
+            if (toplevel->get_wset())
+            {
+                tile_workspace_set_data_t::get(toplevel->get_wset()).consider_exit_fullscreen(toplevel);
+            }
+        }
+    };
+
 
     wf::signal::connection_t<view_moved_to_wset_signal> on_view_moved_to_wset =
         [=] (view_moved_to_wset_signal *ev)

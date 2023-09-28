@@ -9,6 +9,8 @@
 #include <wayfire/signal-definitions.hpp>
 #include <wayfire/workspace-set.hpp>
 #include <wayfire/txn/transaction-manager.hpp>
+#include <wayfire/view-helpers.hpp>
+#include <wayfire/seat.hpp>
 
 namespace wf
 {
@@ -104,23 +106,50 @@ void window_manager_t::resize_request(wayfire_toplevel_view view, uint32_t edges
     }
 }
 
-void window_manager_t::focus_request(wayfire_toplevel_view view, bool self_request)
+void window_manager_t::focus_request(wayfire_view view, bool self_request)
 {
-    if (view->get_output())
-    {
-        view_focus_request_signal data;
-        data.view = view;
-        data.self_request = self_request;
+    view_focus_request_signal data;
+    data.view = view;
+    data.self_request = self_request;
 
-        view->emit(&data);
-        wf::get_core().emit(&data);
-        if (!data.carried_out)
+    view->emit(&data);
+    wf::get_core().emit(&data);
+    if (!data.carried_out)
+    {
+        focus_raise_view(view, true);
+    }
+}
+
+void window_manager_t::focus_raise_view(wayfire_view view, bool allow_switch_ws)
+{
+    if (!view)
+    {
+        wf::get_core().seat->focus_view(nullptr);
+        return;
+    }
+
+    if (!view->get_output())
+    {
+        LOGW("Attempting to give focus to a view without an output!");
+        return;
+    }
+
+    if (auto toplevel = toplevel_cast(find_topmost_parent(view)))
+    {
+        if (toplevel->minimized)
         {
-            wf::get_core().focus_output(view->get_output());
-            view->get_output()->ensure_visible(view);
-            view->get_output()->focus_view(view, true);
+            minimize_request(toplevel, false);
         }
     }
+
+    if (allow_switch_ws)
+    {
+        view->get_output()->ensure_visible(view);
+    }
+
+    view_bring_to_front(view);
+    wf::get_core().seat->focus_output(view->get_output());
+    wf::get_core().seat->focus_view(view);
 }
 
 void window_manager_t::minimize_request(wayfire_toplevel_view view, bool minimized)
@@ -145,7 +174,8 @@ void window_manager_t::minimize_request(wayfire_toplevel_view view, bool minimiz
         view->set_minimized(minimized);
         if (!minimized && view->get_output())
         {
-            view->get_output()->focus_view(view, true);
+            view_bring_to_front(view);
+            wf::get_core().seat->focus_view(view);
         }
     }
 }
@@ -208,7 +238,7 @@ void window_manager_t::tile_request(wayfire_toplevel_view view,
 void window_manager_t::fullscreen_request(wayfire_toplevel_view view,
     wf::output_t *output, bool state, std::optional<wf::point_t> ws)
 {
-    wf::output_t *wo = output ?: (view->get_output() ?: wf::get_core().get_active_output());
+    wf::output_t *wo = output ?: (view->get_output() ?: wf::get_core().seat->get_active_output());
     const wf::point_t workspace = ws.value_or(wo->wset()->get_current_workspace());
     wf::dassert(wo != nullptr, "Fullscreening should not happen with null output!");
 

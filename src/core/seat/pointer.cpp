@@ -218,9 +218,8 @@ void wf::pointer_t::handle_pointer_button(wlr_pointer_button_event *ev,
             /* Focus only the first click, since then we also start an implicit
              * grab, and we don't want to suddenly change the output */
             auto gc     = seat->priv->cursor->get_cursor_position();
-            auto output =
-                wf::get_core().output_layout->get_output_at(gc.x, gc.y);
-            wf::get_core().focus_output(output);
+            auto output = wf::get_core().output_layout->get_output_at(gc.x, gc.y);
+            seat->focus_output(output);
         }
 
         handled_in_binding |= wf::get_core().bindings->handle_button(

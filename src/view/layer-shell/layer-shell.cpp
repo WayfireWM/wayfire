@@ -2,6 +2,7 @@
 #include <cstring>
 #include <cstdlib>
 
+#include <wayfire/seat.hpp>
 #include <wayfire/workarea.hpp>
 #include <wayfire/signal-definitions.hpp>
 #include <wayfire/nonstd/tracking-allocator.hpp>
@@ -19,6 +20,7 @@
 #include "wayfire/workspace-set.hpp"
 #include "wayfire/output-layout.hpp"
 #include "../view-impl.hpp"
+#include "wlr-layer-shell-unstable-v1-protocol.h"
 #include <wayfire/view-helpers.hpp>
 
 static const uint32_t both_vert =
@@ -205,14 +207,6 @@ struct wf_layer_shell_manager
         view->remove_anchored(false);
         remove_view_from_layer(view, view->lsurface->current.layer);
         arrange_layers(view->get_output());
-
-        // We refocus the active output when a layer-shell view is destroyed. This is because grabbing
-        // keyboard input works across all outputs, but the unmap/disappear signal is sent on the grabbing
-        // layer surface's output - which might not be the actually focused output (#1741)
-        if (view->lsurface->current.keyboard_interactive)
-        {
-            wf::get_core().get_active_output()->refocus();
-        }
     }
 
     layer_t filter_views(wf::output_t *output, int layer)
@@ -439,7 +433,7 @@ std::shared_ptr<wayfire_layer_shell_view> wayfire_layer_shell_view::create(wlr_l
         self->set_output(wo);
     } else
     {
-        self->set_output(wf::get_core().get_active_output());
+        self->set_output(wf::get_core().seat->get_active_output());
     }
 
     lsurface->output = self->get_output()->handle;
@@ -512,9 +506,11 @@ void wayfire_layer_shell_view::map()
 
     wf::scene::add_front(get_output()->node_for_layer(get_layer()), get_root_node());
     wf_layer_shell_manager::get_instance().handle_map(this);
-    if (lsurface->current.keyboard_interactive == 1)
+
+    auto& state = lsurface->current;
+    if ((state.keyboard_interactive == 1) && (state.layer >= ZWLR_LAYER_SHELL_V1_LAYER_TOP))
     {
-        get_output()->refocus();
+        wf::get_core().seat->focus_view(self());
     }
 
     emit_view_map();
@@ -566,9 +562,9 @@ void wayfire_layer_shell_view::commit()
 
         if (prev_state.keyboard_interactive != state->keyboard_interactive)
         {
-            if (state->keyboard_interactive == 1)
+            if ((state->keyboard_interactive == 1) && (state->layer >= ZWLR_LAYER_SHELL_V1_LAYER_TOP))
             {
-                get_output()->refocus();
+                wf::get_core().seat->focus_view(self());
             }
         }
 

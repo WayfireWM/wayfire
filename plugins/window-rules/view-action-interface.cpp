@@ -232,16 +232,12 @@ void view_action_interface_t::_unmaximize()
 
 void view_action_interface_t::_minimize()
 {
-    _view->set_minimized(true);
+    wf::get_core().default_wm->minimize_request(_view, true);
 }
 
 void view_action_interface_t::_unminimize()
 {
-    _view->set_minimized(false);
-    if (_view->get_output())
-    {
-        _view->get_output()->focus_view(_view, true);
-    }
+    wf::get_core().default_wm->minimize_request(_view, false);
 }
 
 void view_action_interface_t::_make_sticky()

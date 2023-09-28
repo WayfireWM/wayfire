@@ -4,6 +4,7 @@
 #include <wayfire/scene.hpp>
 #include <wayfire/nonstd/wlroots.hpp>
 #include <wayfire/nonstd/wlroots-full.hpp>
+#include <wayfire/view.hpp>
 
 namespace wf
 {
@@ -42,10 +43,54 @@ class seat_t
     uint32_t modifier_from_keycode(uint32_t keycode);
 
     /**
-     * Set the keyboard focus node. Note that this changes only the focus state
-     * and does not reorder nodes or anything like this.
+     * Try to focus the given scenegraph node. This may not work if another node requests a higher focus
+     * importance.
+     *
+     * Note that the focus_view function should be used for view nodes, as focusing views typically involves
+     * more operations. Calling this function does not change the active view, even if the newly focused node
+     * is a view node!
+     *
+     * The new_focus' last focus timestamp will be updated.
      */
     void set_active_node(wf::scene::node_ptr node);
+
+    /**
+     * Try to focus the given view. This may not work if another view or a node requests a higher focus
+     * importance.
+     */
+    void focus_view(wayfire_view v);
+
+    /**
+     * Get the view which is currently marked as active. In general, this is the last view for which
+     * @focus_view() was called, or for ex. when refocusing after a view disappears, the next view which
+     * received focus.
+     *
+     * Usually, the active view has keyboard focus as well. In some cases (for ex. grabs), however, another
+     * node might have the actual keyboard focus.
+     */
+    wayfire_view get_active_view() const;
+
+    /**
+     * Get the last focus timestamp which was given out by a set_active_node request.
+     */
+    uint64_t get_last_focus_timestamp() const;
+
+    /**
+     * Trigger a refocus operation.
+     * See scene::node_t::keyboard_refocus() for details.
+     */
+    void refocus();
+
+    /**
+     * Focus the given output. The currently focused output is used to determine
+     * which plugins receive various events (including bindings)
+     */
+    void focus_output(wf::output_t *o);
+
+    /**
+     * Get the currently focused "active" output
+     */
+    wf::output_t *get_active_output();
 
     /**
      * Create and initialize a new seat.

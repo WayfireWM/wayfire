@@ -1,9 +1,12 @@
 #pragma once
 
+#include "wayfire/seat.hpp"
+#include "wayfire/core.hpp"
 #include "wayfire/render-manager.hpp"
 #include "wayfire/scene-render.hpp"
 #include "wayfire/scene.hpp"
 #include "wayfire/toplevel-view.hpp"
+#include "wayfire/view-helpers.hpp"
 #include <memory>
 #include <wayfire/signal-definitions.hpp>
 #include <wayfire/plugins/common/geometry-animation.hpp>
@@ -278,7 +281,7 @@ class workspace_switch_t
         output->emit(&data);
 
         set_overlay_view(nullptr);
-        output->refocus();
+        wf::get_core().seat->refocus();
     }
 };
 
@@ -480,12 +483,7 @@ class control_bindings_t
     /** Find the view to switch workspace with */
     virtual wayfire_toplevel_view get_target_view()
     {
-        auto view = toplevel_cast(output->get_active_view());
-        while (view && view->parent)
-        {
-            view = view->parent;
-        }
-
+        auto view = find_topmost_parent(toplevel_cast(wf::get_core().seat->get_active_view()));
         if (!view || (view->role != wf::VIEW_ROLE_TOPLEVEL))
         {
             return nullptr;

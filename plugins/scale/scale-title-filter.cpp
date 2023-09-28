@@ -10,6 +10,7 @@
 #include <wayfire/plugins/scale-signal.hpp>
 #include <wayfire/nonstd/wlroots-full.hpp>
 #include <wayfire/toplevel-view.hpp>
+#include <wayfire/seat.hpp>
 
 #include <linux/input-event-codes.h>
 
@@ -218,7 +219,7 @@ class scale_title_filter : public wf::per_output_plugin_instance_t
             return;
         }
 
-        if (output != wf::get_core().get_active_output())
+        if (output != wf::get_core().seat->get_active_output())
         {
             return;
         }

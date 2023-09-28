@@ -31,22 +31,6 @@
 
 wf::output_t::output_t() = default;
 
-void wf::output_impl_t::handle_view_removed(wayfire_view view)
-{
-    if (this->active_view == view)
-    {
-        this->active_view = nullptr;
-    }
-
-    if (this->last_active_toplevel == view)
-    {
-        last_active_toplevel->set_activated(false);
-        this->last_active_toplevel = nullptr;
-    }
-
-    refocus();
-}
-
 void wf::output_impl_t::update_node_limits()
 {
     static wf::option_wrapper_t<bool> remove_output_limits{"workarounds/remove_output_limits"};
@@ -85,13 +69,10 @@ wf::output_impl_t::output_impl_t(wlr_output *handle,
     render = std::make_unique<render_manager>(this);
     promotion_manager = std::make_unique<promotion_manager_t>(this);
 
-    on_view_disappeared.set_callback([=] (view_disappeared_signal *ev) { handle_view_removed(ev->view); });
     on_configuration_changed = [=] (wf::output_configuration_changed_signal *ev)
     {
         update_node_limits();
     };
-
-    connect(&on_view_disappeared);
     connect(&on_configuration_changed);
 }
 
@@ -134,37 +115,12 @@ void wf::output_impl_t::set_workspace_set(std::shared_ptr<workspace_set_t> wset)
     data.output   = this;
     this->emit(&data);
 
-    refocus();
+    wf::get_core().seat->refocus();
 }
 
 std::string wf::output_t::to_string() const
 {
     return handle->name;
-}
-
-void wf::output_impl_t::do_update_focus(wf::scene::node_t *new_focus)
-{
-    auto focus =
-        new_focus ? new_focus->shared_from_this() : nullptr;
-    if (this == wf::get_core().get_active_output())
-    {
-        wf::get_core().seat->set_active_node(focus);
-    }
-}
-
-void wf::output_impl_t::refocus()
-{
-    auto new_focus = wf::get_core().scene()->keyboard_refocus(this);
-    LOGC(KBD, "Output ", this->to_string(), " refocusing: choosing node ", new_focus.node);
-    if (auto view = node_to_view(new_focus.node))
-    {
-        update_active_view(view);
-    } else if (new_focus.node == nullptr)
-    {
-        update_active_view(nullptr);
-    }
-
-    do_update_focus(new_focus.node);
 }
 
 wf::output_t::~output_t()
@@ -285,188 +241,6 @@ bool wf::output_t::ensure_visible(wayfire_view v)
     wset()->request_workspace(cws + wf::point_t{dvx, dvy});
 
     return true;
-}
-
-static wayfire_view pick_topmost_focusable(wayfire_view view)
-{
-    if (!wf::toplevel_cast(view))
-    {
-        if (view->get_keyboard_focus_surface())
-        {
-            return view;
-        }
-
-        return nullptr;
-    }
-
-    auto all_views = toplevel_cast(view)->enumerate_views();
-    auto it = std::find_if(all_views.begin(), all_views.end(),
-        [] (wayfire_view v) { return v->get_keyboard_focus_surface() != NULL; });
-
-    if (it != all_views.end())
-    {
-        return *it;
-    }
-
-    return nullptr;
-}
-
-#include <wayfire/debug.hpp>
-
-uint64_t wf::output_impl_t::get_last_focus_timestamp() const
-{
-    return this->last_timestamp;
-}
-
-void wf::output_impl_t::focus_node(wf::scene::node_ptr new_focus)
-{
-    // When we get a focus request, we have to consider whether there is
-    // any node requesting a keyboard grab or something like that.
-    if (new_focus)
-    {
-        timespec ts;
-        clock_gettime(CLOCK_MONOTONIC, &ts);
-        this->last_timestamp = ts.tv_sec * 1'000'000'000ll + ts.tv_nsec;
-        new_focus->keyboard_interaction().last_focus_timestamp =
-            this->last_timestamp;
-
-        auto focus = wf::get_core().scene()->keyboard_refocus(this);
-        do_update_focus(focus.node);
-    } else
-    {
-        do_update_focus(nullptr);
-    }
-}
-
-void wf::output_impl_t::update_active_view(wayfire_view v)
-{
-    LOGC(KBD, "Output ", this->to_string(), ": active view becomes ", v);
-    if ((v == nullptr) || toplevel_cast(v))
-    {
-        if (last_active_toplevel != v)
-        {
-            if (last_active_toplevel)
-            {
-                last_active_toplevel->set_activated(false);
-            }
-
-            last_active_toplevel = nullptr;
-            if (auto toplevel = toplevel_cast(v))
-            {
-                toplevel->set_activated(true);
-                last_active_toplevel = toplevel;
-            }
-        }
-    }
-
-    this->active_view = v;
-
-    focus_view_signal data;
-    data.view = v;
-    this->emit(&data);
-}
-
-wayfire_view find_topmost_parent(wayfire_view v)
-{
-    if (auto toplevel = wf::toplevel_cast(v))
-    {
-        while (toplevel->parent)
-        {
-            toplevel = toplevel->parent;
-        }
-
-        return toplevel;
-    }
-
-    return v;
-}
-
-void wf::output_impl_t::focus_view(wayfire_view v, uint32_t flags)
-{
-    static wf::option_wrapper_t<bool>
-    all_dialogs_modal{"workarounds/all_dialogs_modal"};
-
-    const auto& make_view_visible = [flags] (wayfire_view view)
-    {
-        view = find_topmost_parent(view);
-        if (auto toplevel = toplevel_cast(view))
-        {
-            if (toplevel->minimized)
-            {
-                wf::get_core().default_wm->minimize_request(toplevel, false);
-            }
-        }
-
-        if (flags & FOCUS_VIEW_RAISE)
-        {
-            view_bring_to_front(view);
-        }
-    };
-
-    const auto& select_focus_view = [] (wayfire_view v) -> wayfire_view
-    {
-        if (v && v->is_mapped())
-        {
-            if (all_dialogs_modal)
-            {
-                return pick_topmost_focusable(v);
-            }
-
-            return v;
-        } else
-        {
-            return nullptr;
-        }
-    };
-
-    const auto& give_input_focus = [this] (wayfire_view view)
-    {
-        focus_node(view ? view->get_surface_root_node() : nullptr);
-    };
-
-    if (!v || !v->is_mapped() || (v->get_output() != this))
-    {
-        give_input_focus(nullptr);
-        update_active_view(nullptr);
-        return;
-    }
-
-    if (all_dialogs_modal)
-    {
-        v = find_topmost_parent(v);
-    }
-
-    pre_focus_view_signal pre_focus;
-    pre_focus.view = v;
-    emit(&pre_focus);
-    if (!pre_focus.can_focus)
-    {
-        return;
-    }
-
-    /* If no keyboard focus surface is set, then we don't want to focus the view */
-    if (v->get_keyboard_focus_surface())
-    {
-        make_view_visible(v);
-        update_active_view(v);
-        give_input_focus(select_focus_view(v));
-    }
-}
-
-void wf::output_impl_t::focus_view(wayfire_view v, bool raise)
-{
-    uint32_t flags = 0;
-    if (raise)
-    {
-        flags |= FOCUS_VIEW_RAISE;
-    }
-
-    focus_view(v, flags);
-}
-
-wayfire_view wf::output_impl_t::get_active_view() const
-{
-    return this->active_view;
 }
 
 bool wf::output_impl_t::can_activate_plugin(uint32_t caps,
@@ -596,7 +370,7 @@ void output_impl_t::add_key(option_sptr_t<keybinding_t> key, wf::key_callback *c
 {
     this->key_map[callback] = [=] (const wf::keybinding_t& kb)
     {
-        if (this != wf::get_core().get_active_output())
+        if (this != wf::get_core().seat->get_active_output())
         {
             return false;
         }
@@ -612,7 +386,7 @@ void output_impl_t::add_axis(option_sptr_t<keybinding_t> axis,
 {
     this->axis_map[callback] = [=] (wlr_pointer_axis_event *ax)
     {
-        if (this != wf::get_core().get_active_output())
+        if (this != wf::get_core().seat->get_active_output())
         {
             return false;
         }
@@ -628,7 +402,7 @@ void output_impl_t::add_button(option_sptr_t<buttonbinding_t> button,
 {
     this->button_map[callback] = [=] (const wf::buttonbinding_t& kb)
     {
-        if (this != wf::get_core().get_active_output())
+        if (this != wf::get_core().seat->get_active_output())
         {
             return false;
         }
@@ -652,7 +426,7 @@ void output_impl_t::add_activator(
             {
                 return false;
             }
-        } else if (this != wf::get_core().get_active_output())
+        } else if (this != wf::get_core().seat->get_active_output())
         {
             return false;
         }
@@ -679,5 +453,15 @@ void wf::output_impl_t::rem_binding(void *callback)
     remove_binding(button_map, (button_callback*)callback);
     remove_binding(axis_map, (axis_callback*)callback);
     remove_binding(activator_map, (activator_callback*)callback);
+}
+
+wayfire_view get_active_view_for_output(wf::output_t *output)
+{
+    if (output == wf::get_core().seat->get_active_output())
+    {
+        return wf::get_core().seat->get_active_view();
+    }
+
+    return nullptr;
 }
 } // namespace wf

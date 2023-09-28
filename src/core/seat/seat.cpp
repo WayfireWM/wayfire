@@ -13,9 +13,11 @@
 #include "wayfire/output-layout.hpp"
 #include <wayfire/util/log.hpp>
 #include "wayfire/scene-input.hpp"
+#include "wayfire/scene.hpp"
 #include "wayfire/signal-definitions.hpp"
 #include <wayfire/nonstd/wlroots.hpp>
 #include <wayfire/seat.hpp>
+#include <wayfire/view-helpers.hpp>
 #include <string>
 #include "../../view/view-keyboard-interaction.hpp"
 #include "../../view/wlr-surface-pointer-interaction.hpp"
@@ -23,11 +25,197 @@
 
 #include "drag-icon.hpp"
 #include "wayfire/util.hpp"
+#include "wayfire/view.hpp"
 
 wf::seat_t::~seat_t() = default;
 void wf::seat_t::set_active_node(wf::scene::node_ptr node)
 {
-    priv->set_keyboard_focus(node);
+    if (!node)
+    {
+        auto focus = wf::get_core().scene()->keyboard_refocus(priv->active_output);
+        if (focus.importance == focus_importance::HIGH)
+        {
+            priv->set_keyboard_focus(focus.node->shared_from_this());
+        } else
+        {
+            priv->set_keyboard_focus(nullptr);
+        }
+
+        return;
+    }
+
+    timespec ts;
+    clock_gettime(CLOCK_MONOTONIC, &ts);
+    priv->last_timestamp = ts.tv_sec * 1'000'000'000ll + ts.tv_nsec;
+    node->keyboard_interaction().last_focus_timestamp = priv->last_timestamp;
+    auto focus = wf::get_core().scene()->keyboard_refocus(priv->active_output);
+    priv->set_keyboard_focus(focus.node ? focus.node->shared_from_this() : nullptr);
+}
+
+void wf::seat_t::focus_output(wf::output_t *wo)
+{
+    if (priv->active_output == wo)
+    {
+        return;
+    }
+
+    priv->active_output = wo;
+    if (wo)
+    {
+        LOGC(KBD, "focus output: ", wo->handle->name);
+        /* Move to the middle of the output if this is the first output */
+        wo->ensure_pointer((priv->active_output == nullptr));
+
+        refocus();
+
+        wf::output_gain_focus_signal data;
+        data.output = wo;
+        wo->emit(&data);
+        wf::get_core().emit(&data);
+    } else
+    {
+        /* On shutdown */
+    }
+}
+
+wf::output_t*wf::seat_t::get_active_output()
+{
+    return priv->active_output;
+}
+
+uint64_t wf::seat_t::get_last_focus_timestamp() const
+{
+    return priv->last_timestamp;
+}
+
+wayfire_view wf::seat_t::get_active_view() const
+{
+    return priv->_last_active_view.lock();
+}
+
+void wf::seat_t::impl::update_active_view(wf::scene::node_ptr new_focus)
+{
+    auto view = node_to_view(new_focus);
+    auto last_active = _last_active_view.lock();
+    if (view.get() == last_active.get())
+    {
+        return;
+    }
+
+    LOGC(KBD, "Active view becomes ", view);
+    if ((view == nullptr) || toplevel_cast(view))
+    {
+        auto last_toplevel = _last_active_toplevel.lock();
+        if (last_toplevel.get() != view.get())
+        {
+            if (last_toplevel)
+            {
+                last_toplevel->set_activated(false);
+            }
+
+            _last_active_toplevel.reset();
+            if (auto toplevel = toplevel_cast(view))
+            {
+                toplevel->set_activated(true);
+                _last_active_toplevel = toplevel->weak_from_this();
+            }
+        }
+    }
+
+    if (view)
+    {
+        _last_active_view = view->weak_from_this();
+    } else
+    {
+        this->_last_active_view.reset();
+    }
+}
+
+static wayfire_view pick_topmost_focusable(wayfire_view view)
+{
+    if (!wf::toplevel_cast(view))
+    {
+        if (view->get_keyboard_focus_surface())
+        {
+            return view;
+        }
+
+        return nullptr;
+    }
+
+    auto all_views = toplevel_cast(view)->enumerate_views();
+    auto it = std::find_if(all_views.begin(), all_views.end(),
+        [] (wayfire_view v) { return v->get_keyboard_focus_surface() != NULL; });
+
+    if (it != all_views.end())
+    {
+        return *it;
+    }
+
+    return nullptr;
+}
+
+void wf::seat_t::focus_view(wayfire_view v)
+{
+    static wf::option_wrapper_t<bool> all_dialogs_modal{"workarounds/all_dialogs_modal"};
+    const auto& select_focus_view = [] (wayfire_view v) -> wayfire_view
+    {
+        if (v && v->is_mapped())
+        {
+            if (all_dialogs_modal)
+            {
+                return pick_topmost_focusable(v);
+            }
+
+            return v;
+        } else
+        {
+            return nullptr;
+        }
+    };
+
+    const auto& give_input_focus = [this] (wayfire_view view)
+    {
+        set_active_node(view ? view->get_surface_root_node() : nullptr);
+    };
+
+    if (!v || !v->is_mapped())
+    {
+        give_input_focus(nullptr);
+        priv->update_active_view(nullptr);
+        return;
+    }
+
+    if (all_dialogs_modal)
+    {
+        v = find_topmost_parent(v);
+    }
+
+    /* If no keyboard focus surface is set, then we don't want to focus the view */
+    if (v->get_keyboard_focus_surface())
+    {
+        priv->update_active_view(v->get_root_node());
+        give_input_focus(select_focus_view(v));
+    }
+}
+
+void wf::seat_t::refocus()
+{
+    if (!priv->active_output)
+    {
+        return;
+    }
+
+    auto focus = wf::get_core().scene()->keyboard_refocus(priv->active_output).node;
+    LOGC(KBD, "Output ", priv->active_output->to_string(), " refocusing: choosing node ", focus);
+
+    auto focus_sptr = focus ? focus->shared_from_this() : nullptr;
+    if (wf::node_to_view(focus_sptr) || !focus)
+    {
+        priv->update_active_view(focus_sptr);
+    }
+
+    priv->set_keyboard_focus(focus_sptr);
 }
 
 uint32_t wf::seat_t::get_keyboard_modifiers()
@@ -204,6 +392,16 @@ wf::seat_t::seat_t(wl_display *display, std::string name) : seat(wlr_seat_create
 
     wf::get_core().connect(&priv->on_new_device);
     wf::get_core().connect(&priv->on_remove_device);
+
+    priv->on_root_node_updated.set_callback([=] (scene::root_node_update_signal *ev)
+    {
+        if (ev->flags & scene::update_flag::REFOCUS)
+        {
+            refocus();
+        }
+    });
+
+    wf::get_core().scene()->connect(&priv->on_root_node_updated);
 }
 
 void wf::seat_t::impl::update_capabilities()

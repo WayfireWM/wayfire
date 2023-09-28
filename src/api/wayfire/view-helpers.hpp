@@ -36,6 +36,12 @@ std::vector<wayfire_view> collect_views_from_output(
     wf::output_t *output, std::initializer_list<wf::scene::layer> layers);
 
 /**
+ * Find the topmost parent in the chain of views.
+ */
+wayfire_view find_topmost_parent(wayfire_view v);
+wayfire_toplevel_view find_topmost_parent(wayfire_toplevel_view v);
+
+/**
  * A few simple functions which help in view implementations.
  */
 namespace view_implementation

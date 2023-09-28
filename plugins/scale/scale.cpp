@@ -418,7 +418,7 @@ class wayfire_scale : public wf::per_output_plugin_instance_t,
     {
         if (view == current_focus_view)
         {
-            current_focus_view = toplevel_cast(output->get_active_view());
+            current_focus_view = toplevel_cast(wf::get_active_view_for_output(output));
         }
 
         if (view == initial_focus_view)
@@ -498,9 +498,6 @@ class wayfire_scale : public wf::per_output_plugin_instance_t,
             // End scale
             initial_focus_view = nullptr;
             deactivate();
-            select_view(view);
-
-            output->focus_view(view, false);
             break;
 
           case BTN_MIDDLE:
@@ -587,7 +584,7 @@ class wayfire_scale : public wf::per_output_plugin_instance_t,
 
     void handle_keyboard_key(wf::seat_t*, wlr_keyboard_key_event ev) override
     {
-        auto view = toplevel_cast(output->get_active_view());
+        auto view = toplevel_cast(wf::get_active_view_for_output(output));
         if (!view)
         {
             view = current_focus_view;
@@ -595,7 +592,8 @@ class wayfire_scale : public wf::per_output_plugin_instance_t,
             {
                 fade_out_all_except(view);
                 fade_in(view);
-                output->focus_view(view, true);
+
+                wf::get_core().default_wm->focus_raise_view(view);
                 return;
             }
         } else if (!scale_data.count(view))
@@ -635,14 +633,14 @@ class wayfire_scale : public wf::per_output_plugin_instance_t,
           case KEY_ENTER:
             deactivate();
             select_view(current_focus_view);
-            output->focus_view(current_focus_view, true);
+            wf::get_core().default_wm->focus_raise_view(view);
 
             return;
 
           case KEY_ESC:
             deactivate();
             output->wset()->request_workspace(initial_workspace);
-            output->focus_view(initial_focus_view, true);
+            wf::get_core().default_wm->focus_raise_view(initial_focus_view);
             initial_focus_view = nullptr;
 
             return;
@@ -682,9 +680,12 @@ class wayfire_scale : public wf::per_output_plugin_instance_t,
         view = find_view_in_grid(next_row, next_col);
         if (view && (current_focus_view != view))
         {
-            /* view_focused handler will update the view state
-             * note: this will always unminimize a minimized view */
-            output->focus_view(view, false);
+            fade_out_all_except(view);
+            fade_in(view);
+            current_focus_view = view;
+
+            // Update activated state
+            wf::get_core().seat->focus_view(view);
         }
     }
 
@@ -896,7 +897,7 @@ class wayfire_scale : public wf::per_output_plugin_instance_t,
             });
 
             current_focus_view = views.empty() ? nullptr : views.front();
-            output->focus_view(current_focus_view, true);
+            wf::get_core().default_wm->focus_raise_view(current_focus_view);
         }
     }
 
@@ -1162,7 +1163,7 @@ class wayfire_scale : public wf::per_output_plugin_instance_t,
     {
         if (current_focus_view)
         {
-            output->focus_view(current_focus_view, true);
+            wf::get_core().default_wm->focus_raise_view(current_focus_view);
         }
 
         layout_slots(get_views());
@@ -1202,20 +1203,12 @@ class wayfire_scale : public wf::per_output_plugin_instance_t,
         }
     };
 
-    /* View focused. This handler makes sure our view remains focused */
-    wf::signal::connection_t<wf::focus_view_signal> view_focused = [=] (wf::focus_view_signal *ev)
-    {
-        fade_out_all_except(toplevel_cast(ev->view));
-        fade_in(toplevel_cast(ev->view));
-        current_focus_view = toplevel_cast(ev->view);
-    };
-
     /* Our own refocus that uses untransformed coordinates */
     void refocus()
     {
         if (current_focus_view)
         {
-            output->focus_view(current_focus_view, true);
+            wf::get_core().default_wm->focus_raise_view(current_focus_view);
             select_view(current_focus_view);
 
             return;
@@ -1234,7 +1227,7 @@ class wayfire_scale : public wf::per_output_plugin_instance_t,
             }
         }
 
-        output->focus_view(next_focus, true);
+        wf::get_core().default_wm->focus_raise_view(current_focus_view);
     }
 
     /* Returns true if any scale animation is running */
@@ -1340,16 +1333,16 @@ class wayfire_scale : public wf::per_output_plugin_instance_t,
         }
 
         initial_workspace  = output->wset()->get_current_workspace();
-        initial_focus_view = toplevel_cast(output->get_active_view());
+        initial_focus_view = toplevel_cast(wf::get_active_view_for_output(output));
         current_focus_view = initial_focus_view ?: views.front();
         // Make sure no leftover events from the activation binding
         // trigger an action in scale
         last_selected_view = nullptr;
 
         grab->grab_input(wf::scene::layer::OVERLAY);
-        if (current_focus_view != output->get_active_view())
+        if (current_focus_view != wf::get_core().seat->get_active_view())
         {
-            output->focus_view(current_focus_view, true);
+            wf::get_core().default_wm->focus_raise_view(current_focus_view);
         }
 
         active = true;
@@ -1362,7 +1355,6 @@ class wayfire_scale : public wf::per_output_plugin_instance_t,
         output->connect(&view_disappeared);
         output->connect(&view_minimized);
         output->connect(&view_unmapped);
-        output->connect(&view_focused);
 
         fade_out_all_except(current_focus_view);
         fade_in(current_focus_view);
@@ -1376,7 +1368,6 @@ class wayfire_scale : public wf::per_output_plugin_instance_t,
         active = false;
 
         set_hook();
-        view_focused.disconnect();
         on_view_mapped.disconnect();
         on_view_set_output.disconnect();
         view_unmapped.disconnect();
@@ -1433,7 +1424,6 @@ class wayfire_scale : public wf::per_output_plugin_instance_t,
         remove_transformers();
         scale_data.clear();
         grab->ungrab_input();
-        view_focused.disconnect();
         on_view_mapped.disconnect();
         on_view_set_output.disconnect();
         view_unmapped.disconnect();

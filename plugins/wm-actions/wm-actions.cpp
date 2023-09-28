@@ -14,6 +14,7 @@
 #include "wayfire/signal-provider.hpp"
 #include "wayfire/toplevel-view.hpp"
 #include "wayfire/window-manager.hpp"
+#include "wayfire/seat.hpp"
 #include "wm-actions-signals.hpp"
 
 class always_on_top_root_node_t : public wf::scene::output_node_t
@@ -93,7 +94,7 @@ class wayfire_wm_actions_output_t : public wf::per_output_plugin_instance_t
             view = wf::get_core().get_cursor_focus_view();
         } else
         {
-            view = output->get_active_view();
+            view = wf::get_core().seat->get_active_view();
         }
 
         return wf::toplevel_cast(view);
@@ -325,7 +326,7 @@ class wayfire_wm_actions_output_t : public wf::per_output_plugin_instance_t
                     wf::WSET_CURRENT_WORKSPACE | wf::WSET_MAPPED_ONLY |
                     wf::WSET_EXCLUDE_MINIMIZED | wf::WSET_SORT_STACKING);
 
-                view->get_output()->focus_view(views[0], false);
+                wf::get_core().seat->focus_view(views[0]);
             }
 
             return true;

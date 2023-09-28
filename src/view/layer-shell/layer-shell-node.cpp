@@ -67,11 +67,11 @@ wf::keyboard_focus_node_t wf::layer_shell_node_t::keyboard_refocus(wf::output_t 
         return wf::keyboard_focus_node_t{};
     }
 
-    const uint64_t output_last_ts = view->get_output()->get_last_focus_timestamp();
-    const uint64_t our_ts = keyboard_interaction().last_focus_timestamp;
+    const uint64_t last_ts = wf::get_core().seat->get_last_focus_timestamp();
+    const uint64_t our_ts  = keyboard_interaction().last_focus_timestamp;
 
     auto cur_focus = wf::get_core_impl().seat->priv->keyboard_focus.get();
-    bool has_focus = (cur_focus == this) || (our_ts == output_last_ts);
+    bool has_focus = (cur_focus == this) || (our_ts == last_ts);
     if (has_focus)
     {
         return wf::keyboard_focus_node_t{this, focus_importance::REGULAR};

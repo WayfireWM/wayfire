@@ -15,6 +15,7 @@
 #include <wayfire/signal-definitions.hpp>
 #include <wayfire/output-layout.hpp>
 #include <linux/input-event-codes.h>
+#include <wayfire/window-manager.hpp>
 
 /* --------------------- Tablet tool implementation ------------------------- */
 wf::tablet_tool_t::tablet_tool_t(wlr_tablet_tool *tool,
@@ -246,12 +247,7 @@ void wf::tablet_tool_t::handle_tip(wlr_tablet_tool_tip_event *ev)
 
         /* Try to focus the view under the tool */
         auto view = wf::node_to_view(this->proximity_surface);
-        if (view)
-        {
-            wm_focus_request_signal data;
-            data.node = this->proximity_surface;
-            view->get_output()->emit(&data);
-        }
+        wf::get_core().default_wm->focus_raise_view(view);
     } else
     {
         wlr_send_tablet_v2_tablet_tool_up(tool_v2);
@@ -329,7 +325,7 @@ void wf::tablet_t::handle_tip(wlr_tablet_tool_tip_event *ev,
         auto gc     = seat->priv->cursor->get_cursor_position();
         auto output =
             wf::get_core().output_layout->get_output_at(gc.x, gc.y);
-        wf::get_core().focus_output(output);
+        wf::get_core().seat->focus_output(output);
 
         handled_in_binding |= wf::get_core().bindings->handle_button(
             wf::buttonbinding_t{seat->priv->get_modifiers(), BTN_LEFT});
@@ -465,9 +461,7 @@ wf::tablet_pad_t::tablet_pad_t(wlr_input_device *pad) :
 
 void wf::tablet_pad_t::update_focus()
 {
-    auto active_output = wf::get_core().get_active_output();
-    auto focus_view    =
-        active_output ? active_output->get_active_view() : nullptr;
+    auto focus_view    = wf::get_core().seat->get_active_view();
     auto focus_surface = focus_view ? focus_view->priv->wsurface : nullptr;
     update_focus(focus_surface);
 }

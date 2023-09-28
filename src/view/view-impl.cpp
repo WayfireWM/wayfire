@@ -71,6 +71,7 @@ void wf::view_interface_t::emit_view_unmap()
 
     this->emit(&data);
     wf::get_core().emit(&data);
+    wf::scene::update(data.view->get_surface_root_node(), scene::update_flag::REFOCUS);
 }
 
 void wf::view_interface_t::emit_view_pre_unmap()
@@ -277,18 +278,20 @@ void wf::view_bring_to_front(wayfire_view view)
 {
     wf::scene::node_t *node = view->get_root_node().get();
     wf::scene::node_t *damage_from = nullptr;
+    bool actual_update = false;
+
     while (node->parent())
     {
         if (!node->is_structure_node() && dynamic_cast<scene::floating_inner_node_t*>(node->parent()))
         {
-            damage_from = node->parent();
-            wf::scene::raise_to_front(node->shared_from_this());
+            damage_from    = node->parent();
+            actual_update |= wf::scene::raise_to_front(node->shared_from_this());
         }
 
         node = node->parent();
     }
 
-    if (damage_from)
+    if (damage_from && actual_update)
     {
         wf::scene::damage_node(damage_from->shared_from_this(), damage_from->get_bounding_box());
     }
@@ -346,4 +349,24 @@ void wf::adjust_geometry_for_gravity(wf::toplevel_state_t& desired_state, wf::di
 
     desired_state.geometry.width  = actual_size.width;
     desired_state.geometry.height = actual_size.height;
+}
+
+wayfire_view wf::find_topmost_parent(wayfire_view v)
+{
+    if (auto toplevel = toplevel_cast(v))
+    {
+        return find_topmost_parent(toplevel);
+    }
+
+    return v;
+}
+
+wayfire_toplevel_view wf::find_topmost_parent(wayfire_toplevel_view v)
+{
+    while (v && v->parent)
+    {
+        v = v->parent;
+    }
+
+    return v;
 }

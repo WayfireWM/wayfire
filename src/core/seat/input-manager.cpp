@@ -195,6 +195,6 @@ void wf::input_manager_t::set_exclusive_focus(wl_client *client)
      * focus to the topmost view */
     if (!client)
     {
-        wf::get_core().get_active_output()->refocus();
+        wf::get_core().seat->refocus();
     }
 }

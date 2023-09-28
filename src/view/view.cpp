@@ -58,6 +58,7 @@ void wf::view_interface_t::set_output(wf::output_t *new_output)
         view_disappeared_signal data_disappeared;
         data_disappeared.view = self();
         data.output->emit(&data_disappeared);
+        wf::scene::update(get_root_node(), scene::update_flag::REFOCUS);
     }
 }
 

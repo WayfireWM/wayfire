@@ -7,8 +7,10 @@
 #include <wayfire/workarea.hpp>
 #include <wayfire/window-manager.hpp>
 #include <wayfire/txn/transaction-manager.hpp>
+#include <wayfire/seat.hpp>
 #include "view-impl.hpp"
 #include "wayfire/core.hpp"
+#include "wayfire/scene.hpp"
 #include "wayfire/view.hpp"
 
 static void reposition_relative_to_parent(wayfire_toplevel_view view)
@@ -87,9 +89,9 @@ static wayfire_toplevel_view find_toplevel_parent(wayfire_toplevel_view view)
 static void check_refocus_parent(wayfire_toplevel_view view)
 {
     view = find_toplevel_parent(view);
-    if (view->get_output() && (view->get_output()->get_active_view() == view))
+    if (wf::get_core().seat->get_active_view() == view)
     {
-        view->get_output()->focus_view(view, false);
+        wf::get_core().seat->focus_view(view);
     }
 }
 
@@ -216,6 +218,7 @@ void wf::toplevel_view_interface_t::set_minimized(bool minim)
             view_disappeared_signal data;
             data.view = self();
             get_output()->emit(&data);
+            wf::scene::update(get_root_node(), scene::update_flag::REFOCUS);
         }
     }
 }
