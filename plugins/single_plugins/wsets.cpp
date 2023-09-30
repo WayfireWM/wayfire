@@ -104,7 +104,7 @@ class wayfire_wsets_plugin_t : public wf::plugin_interface_t
 
   private:
     wf::option_wrapper_t<wf::config::compound_list_t<wf::activatorbinding_t>>
-    workspace_bindings{"wsets/workspace_bindings"};
+    workspace_bindings{"wsets/wsets_bindings"};
     wf::option_wrapper_t<wf::config::compound_list_t<wf::activatorbinding_t>>
     send_to_bindings{"wsets/send_window_bindings"};
     wf::option_wrapper_t<int> label_duration{"wsets/label_duration"};
