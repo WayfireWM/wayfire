@@ -1,5 +1,7 @@
 #pragma once
 
+#include "wayfire/scene-input.hpp"
+#include "wayfire/scene-operations.hpp"
 #include "wayfire/seat.hpp"
 #include "wayfire/core.hpp"
 #include "wayfire/render-manager.hpp"
@@ -33,6 +35,50 @@ class workspace_animation_t : public duration_t
 };
 
 /**
+ * A simple scenegraph node which draws a view at a fixed position and as an overlay over the workspace wall.
+ */
+class vswitch_overlay_node_t : public wf::scene::node_t
+{
+    std::weak_ptr<wf::toplevel_view_interface_t> _view;
+
+  public:
+    vswitch_overlay_node_t(wayfire_toplevel_view view) : node_t(true)
+    {
+        _view = view->weak_from_this();
+    }
+
+    // Since we do not grab focus via a grab node, route focus to the view being rendered as an overlay
+    wf::keyboard_focus_node_t keyboard_refocus(wf::output_t *output)
+    {
+        if (auto view = _view.lock())
+        {
+            return view->get_transformed_node()->keyboard_refocus(output);
+        }
+
+        return wf::keyboard_focus_node_t{};
+    }
+
+    virtual void gen_render_instances(std::vector<scene::render_instance_uptr>& instances,
+        scene::damage_callback push_damage, wf::output_t *output = nullptr)
+    {
+        if (auto view = _view.lock())
+        {
+            view->get_transformed_node()->gen_render_instances(instances, push_damage, output);
+        }
+    }
+
+    virtual wf::geometry_t get_bounding_box()
+    {
+        if (auto view = _view.lock())
+        {
+            view->get_transformed_node()->get_bounding_box();
+        }
+
+        return {0, 0, 0, 0};
+    }
+};
+
+/**
  * Represents the action of switching workspaces with the vswitch algorithm.
  *
  * The workspace is actually switched at the end of the animation
@@ -49,8 +95,6 @@ class workspace_switch_t
     {
         this->output = output;
         wall = std::make_unique<workspace_wall_t>(output);
-        wall->connect(&on_frame);
-
         animation = workspace_animation_t{
             wf::option_wrapper_t<int>{"vswitch/duration"}
         };
@@ -69,6 +113,12 @@ class workspace_switch_t
             output->wset()->get_current_workspace()));
         wall->set_background_color(background_color);
         wall->start_output_renderer();
+
+        if (overlay_view_node)
+        {
+            wf::scene::readd_front(wf::get_core().scene(), overlay_view_node);
+        }
+
         output->render->add_effect(&post_render, OUTPUT_EFFECT_POST);
 
         running = true;
@@ -127,6 +177,9 @@ class workspace_switch_t
             wf::scene::set_node_enabled(overlay_view->get_transformed_node(), true);
             overlay_view->get_transformed_node()->rem_transformer(
                 vswitch_view_transformer_name);
+
+            wf::scene::remove_child(overlay_view_node);
+            overlay_view_node.reset();
         }
 
         /* Set new view */
@@ -137,6 +190,13 @@ class workspace_switch_t
                 std::make_shared<wf::scene::view_2d_transformer_t>(view),
                 wf::TRANSFORMER_2D, vswitch_view_transformer_name);
             wf::scene::set_node_enabled(view->get_transformed_node(), false);
+
+            // Render as an overlay, but make sure it is translated and clipped properly to the local output
+            overlay_view_node = std::make_shared<scene::output_node_t>(output);
+            auto vswitch_overlay = std::make_shared<vswitch_overlay_node_t>(view);
+
+            overlay_view_node->set_children_list({vswitch_overlay});
+            wf::scene::add_front(wf::get_core().scene(), overlay_view_node);
         }
     }
 
@@ -185,14 +245,10 @@ class workspace_switch_t
 
     const std::string vswitch_view_transformer_name = "vswitch-transformer";
     wayfire_toplevel_view overlay_view;
+    std::shared_ptr<scene::output_node_t> overlay_view_node;
 
     bool running = false;
-    wf::signal::connection_t<wall_frame_event_t> on_frame = [=] (wall_frame_event_t *ev)
-    {
-        render_frame(ev->target);
-    };
-
-    virtual void render_overlay_view(const render_target_t& fb)
+    void update_overlay_fb()
     {
         if (!overlay_view)
         {
@@ -209,6 +265,7 @@ class workspace_switch_t
         static constexpr double smoothing_out    = 0.2;
         static constexpr double smoothing_amount = 0.5;
 
+        tmanager->begin_transform_update();
         if (progress <= smoothing_in)
         {
             tr->alpha = 1.0 - (smoothing_amount / smoothing_in) * progress;
@@ -220,25 +277,10 @@ class workspace_switch_t
             tr->alpha = smoothing_amount;
         }
 
-        auto all_views = overlay_view->enumerate_views();
-        for (auto v : wf::reverse(all_views))
-        {
-            tmanager = v->get_transformed_node();
-
-            std::vector<wf::scene::render_instance_uptr> instances;
-            tmanager->gen_render_instances(instances, [] (auto) {});
-            auto bbox = tmanager->get_bounding_box();
-
-            wf::scene::render_pass_params_t params;
-            params.damage = bbox;
-            params.reference_output = output;
-            params.instances = &instances;
-            params.target    = fb;
-            wf::scene::run_render_pass(params, scene::RPASS_EMIT_SIGNALS);
-        }
+        tmanager->end_transform_update();
     }
 
-    virtual void render_frame(const render_target_t& fb)
+    wf::effect_hook_t post_render = [=] ()
     {
         auto start = wall->get_workspace_rectangle(
             output->wset()->get_current_workspace());
@@ -250,11 +292,8 @@ class workspace_switch_t
             start.height,
         };
         wall->set_viewport(viewport);
-        render_overlay_view(fb);
-    }
+        update_overlay_fb();
 
-    wf::effect_hook_t post_render = [=] ()
-    {
         output->render->damage_whole();
         output->render->schedule_redraw();
         if (!animation.running())

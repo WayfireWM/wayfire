@@ -13,7 +13,7 @@ namespace scene
 class translation_node_t : public wf::scene::floating_inner_node_t
 {
   public:
-    translation_node_t();
+    translation_node_t(bool is_structure = false);
 
     /**
      * Set the offset the node applies to its children.

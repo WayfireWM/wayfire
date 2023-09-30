@@ -3,7 +3,8 @@
 #include <wayfire/unstable/translation-node.hpp>
 #include <wayfire/debug.hpp>
 
-wf::scene::translation_node_t::translation_node_t() : wf::scene::floating_inner_node_t(false)
+wf::scene::translation_node_t::translation_node_t(bool is_structure) :
+    wf::scene::floating_inner_node_t(is_structure)
 {}
 
 wf::pointf_t wf::scene::translation_node_t::to_local(const wf::pointf_t& point)
