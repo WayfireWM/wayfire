@@ -30,24 +30,14 @@
 wf::seat_t::~seat_t() = default;
 void wf::seat_t::set_active_node(wf::scene::node_ptr node)
 {
-    if (!node)
+    if (node)
     {
-        auto focus = wf::get_core().scene()->keyboard_refocus(priv->active_output);
-        if (focus.importance == focus_importance::HIGH)
-        {
-            priv->set_keyboard_focus(focus.node->shared_from_this());
-        } else
-        {
-            priv->set_keyboard_focus(nullptr);
-        }
-
-        return;
+        timespec ts;
+        clock_gettime(CLOCK_MONOTONIC, &ts);
+        priv->last_timestamp = ts.tv_sec * 1'000'000'000ll + ts.tv_nsec;
+        node->keyboard_interaction().last_focus_timestamp = priv->last_timestamp;
     }
 
-    timespec ts;
-    clock_gettime(CLOCK_MONOTONIC, &ts);
-    priv->last_timestamp = ts.tv_sec * 1'000'000'000ll + ts.tv_nsec;
-    node->keyboard_interaction().last_focus_timestamp = priv->last_timestamp;
     auto focus = wf::get_core().scene()->keyboard_refocus(priv->active_output);
     priv->set_keyboard_focus(focus.node ? focus.node->shared_from_this() : nullptr);
 }
@@ -181,8 +171,8 @@ void wf::seat_t::focus_view(wayfire_view v)
 
     if (!v || !v->is_mapped())
     {
-        give_input_focus(nullptr);
         priv->update_active_view(nullptr);
+        give_input_focus(nullptr);
         return;
     }
 
