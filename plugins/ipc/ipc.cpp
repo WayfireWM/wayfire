@@ -1,5 +1,6 @@
 #include "ipc.hpp"
 #include "wayfire/plugins/common/shared-core-data.hpp"
+#include <climits>
 #include <wayfire/util/log.hpp>
 #include <wayfire/core.hpp>
 #include <wayfire/plugin.hpp>
@@ -324,6 +325,11 @@ class ipc_plugin_t : public wf::plugin_interface_t
     bool is_unloadable() override
     {
         return false;
+    }
+
+    int get_order_hint() const override
+    {
+        return INT_MIN;
     }
 };
 } // namespace wf

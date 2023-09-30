@@ -195,6 +195,8 @@ void wf::plugin_manager_t::reload_dynamic_plugins()
     }
 
     /* load new plugins */
+    std::vector<std::pair<std::string, wf::loaded_plugin_t>> pending_initialize;
+
     for (auto plugin : next_plugins)
     {
         if (loaded_plugins.count(plugin))
@@ -202,12 +204,22 @@ void wf::plugin_manager_t::reload_dynamic_plugins()
             continue;
         }
 
-        auto ptr = load_plugin_from_file(plugin);
+        std::optional<wf::loaded_plugin_t> ptr = load_plugin_from_file(plugin);
         if (ptr)
         {
-            ptr->instance->init();
-            loaded_plugins[plugin] = std::move(*ptr);
+            pending_initialize.emplace_back(plugin, std::move(*ptr));
         }
+    }
+
+    std::stable_sort(pending_initialize.begin(), pending_initialize.end(), [] (const auto& a, const auto& b)
+    {
+        return a.second.instance->get_order_hint() < b.second.instance->get_order_hint();
+    });
+
+    for (auto& [plugin, ptr] : pending_initialize)
+    {
+        ptr.instance->init();
+        loaded_plugins[plugin] = std::move(ptr);
     }
 }
 

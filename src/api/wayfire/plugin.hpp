@@ -80,6 +80,20 @@ class plugin_interface_t
         return true;
     }
 
+    /**
+     * When Wayfire starts, plugins are first sorted according to their order_hint before being initialized.
+     *
+     * The initialization order can be important for plugins which provide basic services like IPC and should
+     * therefore be loaded and initialized first.
+     *
+     * The lower the order_hint, the earlier the plugin will be loaded.
+     * Plugins with equal order hints will be loaded according to the order in the `core/plugins` option.
+     */
+    virtual int get_order_hint() const
+    {
+        return 0;
+    }
+
     virtual ~plugin_interface_t() = default;
 };
 }
@@ -94,7 +108,7 @@ class plugin_interface_t
 using wayfire_plugin_load_func = wf::plugin_interface_t * (*)();
 
 /** The version of Wayfire's API/ABI */
-constexpr uint32_t WAYFIRE_API_ABI_VERSION = 2023'09'28;
+constexpr uint32_t WAYFIRE_API_ABI_VERSION = 2023'09'30;
 
 /**
  * Each plugin must also provide a function which returns the Wayfire API/ABI
