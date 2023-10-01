@@ -1,5 +1,9 @@
 #pragma once
 
+#ifndef WLR_USE_UNSTABLE
+    #define WLR_USE_UNSTABLE
+#endif
+
 /**
  * This file is used to put all wlroots headers needed in the Wayfire API
  * in an extern "C" block because wlroots headers are not always compatible
