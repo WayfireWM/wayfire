@@ -100,16 +100,16 @@ class wayfire_cube : public wf::per_output_plugin_instance_t, public wf::pointer
             {
                 for (int i = 0; i < (int)ws_instances.size(); i++)
                 {
-                    OpenGL::render_begin();
-                    framebuffers[i].allocate(target.viewport_width,
-                        target.viewport_height);
-                    OpenGL::render_end();
-
                     framebuffers[i].geometry = self->workspaces[i]->get_bounding_box();
                     framebuffers[i].scale    = self->cube->output->handle->scale;
-                    framebuffers[i].wl_transform = WL_OUTPUT_TRANSFORM_FLIPPED_180;
+                    framebuffers[i].wl_transform = WL_OUTPUT_TRANSFORM_NORMAL;
                     framebuffers[i].transform    = get_output_matrix_from_transform(
                         framebuffers[i].wl_transform);
+
+                    auto size = framebuffers[i].framebuffer_box_from_geometry_box(framebuffers[i].geometry);
+                    OpenGL::render_begin();
+                    framebuffers[i].allocate(size.width, size.height);
+                    OpenGL::render_end();
 
                     wf::scene::render_pass_params_t params;
                     params.instances = &ws_instances[i];
@@ -576,7 +576,7 @@ class wayfire_cube : public wf::per_output_plugin_instance_t, public wf::pointer
     }
 
     /* Calculate the base model matrix for the i-th side of the cube */
-    glm::mat4 calculate_model_matrix(int i, glm::mat4 fb_transform)
+    glm::mat4 calculate_model_matrix(int i)
     {
         const float angle =
             i * animation.side_angle + animation.cube_animation.rotation;
@@ -595,7 +595,7 @@ class wayfire_cube : public wf::per_output_plugin_instance_t, public wf::pointer
         auto translation = glm::translate(glm::mat4(1.0),
             glm::vec3(0, 0, identity_z_offset + additional_z));
 
-        return rotation * translation * glm::inverse(fb_transform);
+        return rotation * translation;
     }
 
     /* Render the sides of the cube, using the given culling mode - cw or ccw */
@@ -611,7 +611,7 @@ class wayfire_cube : public wf::per_output_plugin_instance_t, public wf::pointer
             int index = (cws.x + i) % get_num_faces();
             GL_CALL(glBindTexture(GL_TEXTURE_2D, buffers[index].tex));
 
-            auto model = calculate_model_matrix(i, fb_transform);
+            auto model = calculate_model_matrix(i);
             program.uniformMatrix4f("model", model);
 
             if (tessellation_support)
