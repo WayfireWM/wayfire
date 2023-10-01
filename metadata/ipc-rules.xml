@@ -1,0 +1,8 @@
+<?xml version="1.0"?>
+<wayfire>
+	<plugin name="ipc-rules">
+		<_short>Window Rules IPC Interface</_short>
+		<_long>Interface to allow an external program to implement window rules (requires the IPC plugin).</_long>
+		<category>Window Management</category>
+	</plugin>
+</wayfire>

@@ -1,0 +1,8 @@
+<?xml version="1.0"?>
+<wayfire>
+	<plugin name="ipc">
+		<_short>IPC protocol</_short>
+		<_long>Allow external programs to interact with Wayfire plugins.</_long>
+		<category>Utility</category>
+	</plugin>
+</wayfire>
