@@ -629,45 +629,7 @@ class wayfire_expo : public wf::per_output_plugin_instance_t, public wf::keyboar
     {
         auto local = input_coordinates_to_output_local_coordinates({gx, gy});
         wf::pointf_t localf = {1.0 * local.x, 1.0 * local.y};
-
-        for (int i = int(wf::scene::layer::ALL_LAYERS) - 1; i >= 0; i--)
-        {
-            auto output_root = output->node_for_layer((wf::scene::layer)i);
-            if (!output_root->is_enabled())
-            {
-                continue;
-            }
-
-            // We start the search directly from the output node's children. This is because the output nodes
-            // usually reject all queries outside of their current visible geometry, but we want to be able to
-            // query views from all workspaces, not just the current (and the only visible) one.
-            for (auto& ch : output_root->get_children())
-            {
-                if (!ch->is_enabled())
-                {
-                    continue;
-                }
-
-                auto isec = ch->find_node_at(localf);
-                auto node = isec ? isec->node.get() : nullptr;
-
-                if (auto view = wf::toplevel_cast(wf::node_to_view(node)))
-                {
-                    auto all_views = output->wset()->get_views();
-                    if (std::find(all_views.begin(), all_views.end(), view) != all_views.end())
-                    {
-                        return view;
-                    }
-                }
-
-                if (node)
-                {
-                    return nullptr;
-                }
-            }
-        }
-
-        return nullptr;
+        return wf::find_output_view_at(output, localf);
     }
 
     void update_target_workspace(int x, int y)

@@ -1,6 +1,8 @@
 #pragma once
 
+#include "wayfire/debug.hpp"
 #include "wayfire/toplevel-view.hpp"
+#include "wayfire/plugins/common/util.hpp"
 #include <wayfire/plugin.hpp>
 #include <wayfire/output.hpp>
 #include <wayfire/view.hpp>
@@ -11,12 +13,5 @@ inline wayfire_toplevel_view scale_find_view_at(wf::pointf_t at, wf::output_t *o
     auto offset = wf::origin(output->get_layout_geometry());
     at.x -= offset.x;
     at.y -= offset.y;
-
-    auto node = output->wset()->get_node()->find_node_at(at);
-    if (node)
-    {
-        return wf::toplevel_cast(wf::node_to_view(node->node->shared_from_this()));
-    }
-
-    return nullptr;
+    return wf::find_output_view_at(output, at);
 }
