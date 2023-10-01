@@ -6,6 +6,7 @@
 #include "plugins/common/wayfire/plugins/common/shared-core-data.hpp"
 #include "plugins/ipc/ipc-method-repository.hpp"
 #include "plugins/ipc/ipc-helpers.hpp"
+#include "plugins/ipc/ipc-activator.hpp"
 #include "wayfire/core.hpp"
 #include "wayfire/plugin.hpp"
 #include "wayfire/scene-operations.hpp"
@@ -33,8 +34,6 @@ class wayfire_wm_actions_output_t : public wf::per_output_plugin_instance_t
     wf::scene::floating_inner_ptr always_above;
     bool showdesktop_active = false;
 
-    wf::option_wrapper_t<wf::activatorbinding_t> toggle_showdesktop{
-        "wm-actions/toggle_showdesktop"};
     wf::option_wrapper_t<wf::activatorbinding_t> minimize{
         "wm-actions/minimize"};
     wf::option_wrapper_t<wf::activatorbinding_t> toggle_maximize{
@@ -261,7 +260,7 @@ class wayfire_wm_actions_output_t : public wf::per_output_plugin_instance_t
         });
     };
 
-    wf::activator_callback on_toggle_showdesktop = [=] (auto ev) -> bool
+    bool on_toggle_showdesktop()
     {
         showdesktop_active = !showdesktop_active;
 
@@ -286,7 +285,7 @@ class wayfire_wm_actions_output_t : public wf::per_output_plugin_instance_t
         disable_showdesktop();
 
         return true;
-    };
+    }
 
     void do_send_to_back(wayfire_view view)
     {
@@ -356,7 +355,6 @@ class wayfire_wm_actions_output_t : public wf::per_output_plugin_instance_t
     {
         always_above = std::make_shared<always_on_top_root_node_t>(output);
         wf::scene::add_front(wf::get_core().scene()->layers[(int)wf::scene::layer::WORKSPACE], always_above);
-        output->add_activator(toggle_showdesktop, &on_toggle_showdesktop);
         output->add_activator(minimize, &on_minimize);
         output->add_activator(toggle_maximize, &on_toggle_maximize);
         output->add_activator(toggle_above, &on_toggle_above);
@@ -379,7 +377,6 @@ class wayfire_wm_actions_output_t : public wf::per_output_plugin_instance_t
         }
 
         wf::scene::remove_child(always_above);
-        output->rem_binding(&on_toggle_showdesktop);
         output->rem_binding(&on_minimize);
         output->rem_binding(&on_toggle_maximize);
         output->rem_binding(&on_toggle_above);
@@ -393,6 +390,7 @@ class wayfire_wm_actions_t : public wf::plugin_interface_t,
     public wf::per_output_tracker_mixin_t<wayfire_wm_actions_output_t>
 {
     wf::shared_data::ref_ptr_t<wf::ipc::method_repository_t> ipc_repo;
+    wf::ipc_activator_t toggle_showdesktop{"wm-actions/toggle_showdesktop"};
 
   public:
     void init() override
@@ -403,6 +401,7 @@ class wayfire_wm_actions_t : public wf::plugin_interface_t,
         ipc_repo->register_method("wm-actions/set-fullscreen", ipc_set_fullscreen);
         ipc_repo->register_method("wm-actions/set-sticky", ipc_set_sticky);
         ipc_repo->register_method("wm-actions/send-to-back", ipc_send_to_back);
+        toggle_showdesktop.set_handler(on_toggle_showdesktop);
     }
 
     void fini() override
@@ -489,6 +488,11 @@ class wayfire_wm_actions_t : public wf::plugin_interface_t,
 
             output_instance[view->get_output()]->do_send_to_back(view);
         });
+    };
+
+    wf::ipc_activator_t::handler_t on_toggle_showdesktop = [=] (wf::output_t *output, wayfire_view)
+    {
+        return this->output_instance[output]->on_toggle_showdesktop();
     };
 };
 
