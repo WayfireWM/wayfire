@@ -186,11 +186,12 @@ class wayfire_fast_switcher : public wf::per_output_plugin_instance_t, public wf
 
     void switch_terminate()
     {
-        input_grab->ungrab_input();
-        output->deactivate_plugin(&grab_interface);
-
         // May modify alpha
         view_chosen(current_view_index, false);
+
+        // Ungrab after selecting the correct view, so that it gets the focus directly
+        input_grab->ungrab_input();
+        output->deactivate_plugin(&grab_interface);
 
         // Remove transformers after modifying alpha
         for (auto view : views)
