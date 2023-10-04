@@ -237,9 +237,9 @@ wayfire_view wf::node_to_view(wf::scene::node_ptr node)
 
 wl_client*wf::view_interface_t::get_client()
 {
-    if (priv->wsurface)
+    if (get_wlr_surface())
     {
-        return wl_resource_get_client(priv->wsurface->resource);
+        return wl_resource_get_client(get_wlr_surface()->resource);
     }
 
     return nullptr;

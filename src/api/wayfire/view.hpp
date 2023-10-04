@@ -174,7 +174,7 @@ class view_interface_t : public wf::signal::provider_t, public wf::object_base_t
     /**
      * @return the wlr_surface associated with this surface, or null if no
      *   the surface doesn't have a backing wlr_surface. */
-    wlr_surface *get_wlr_surface();
+    virtual wlr_surface *get_wlr_surface();
 
     virtual bool is_mapped() const
     {
