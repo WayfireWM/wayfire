@@ -1,11 +1,11 @@
 #include "toplevel-node.hpp"
 #include "wayfire/view.hpp"
 #include <wayfire/output.hpp>
-#include "view-keyboard-interaction.hpp"
+#include <wayfire/unstable/wlr-view-keyboard-interaction.hpp>
 
 wf::toplevel_view_node_t::toplevel_view_node_t(wayfire_toplevel_view view) : view_node_tag_t(view)
 {
-    this->kb_interaction = std::make_unique<view_keyboard_interaction_t>(view);
+    this->kb_interaction = std::make_unique<wlr_view_keyboard_interaction_t>(view);
     this->_view = view->weak_from_this();
 }
 

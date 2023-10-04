@@ -1,5 +1,5 @@
 #include "layer-shell-node.hpp"
-#include "../view-keyboard-interaction.hpp"
+#include "wayfire/unstable/wlr-view-keyboard-interaction.hpp"
 #include "wayfire/scene-input.hpp"
 #include "../core/core-impl.hpp"
 #include "../core/seat/seat-impl.hpp"
@@ -9,7 +9,7 @@
 
 wf::layer_shell_node_t::layer_shell_node_t(wayfire_view view) : view_node_tag_t(view)
 {
-    this->kb_interaction = std::make_unique<view_keyboard_interaction_t>(view);
+    this->kb_interaction = std::make_unique<wlr_view_keyboard_interaction_t>(view);
     this->_view = view->weak_from_this();
 }
 

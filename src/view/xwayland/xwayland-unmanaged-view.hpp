@@ -12,7 +12,7 @@
 #include <wayfire/window-manager.hpp>
 #include "../core/core-impl.hpp"
 #include "../core/seat/seat-impl.hpp"
-#include "../view-keyboard-interaction.hpp"
+#include "wayfire/unstable/wlr-view-keyboard-interaction.hpp"
 
 #if WF_HAS_XWAYLAND
 
@@ -24,7 +24,7 @@ class xwayland_unmanaged_view_node_t : public wf::scene::translation_node_t, pub
     xwayland_unmanaged_view_node_t(wayfire_view view) : view_node_tag_t(view)
     {
         _view = view->weak_from_this();
-        this->kb_interaction = std::make_unique<view_keyboard_interaction_t>(view);
+        this->kb_interaction = std::make_unique<wlr_view_keyboard_interaction_t>(view);
     }
 
     wf::keyboard_focus_node_t keyboard_refocus(wf::output_t *output) override

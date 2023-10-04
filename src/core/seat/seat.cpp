@@ -19,7 +19,7 @@
 #include <wayfire/seat.hpp>
 #include <wayfire/view-helpers.hpp>
 #include <string>
-#include "../../view/view-keyboard-interaction.hpp"
+#include "wayfire/unstable/wlr-view-keyboard-interaction.hpp"
 #include "../../view/wlr-surface-pointer-interaction.hpp"
 
 
@@ -296,7 +296,7 @@ wf::seat_t::seat_t(wl_display *display, std::string name) : seat(wlr_seat_create
     priv->on_wlr_keyboard_grab_end.set_callback([&] (void*)
     {
         if (priv->keyboard_focus &&
-            dynamic_cast<view_keyboard_interaction_t*>(&priv->keyboard_focus->keyboard_interaction()))
+            dynamic_cast<wlr_view_keyboard_interaction_t*>(&priv->keyboard_focus->keyboard_interaction()))
         {
             priv->keyboard_focus->keyboard_interaction().handle_keyboard_enter(this);
         }

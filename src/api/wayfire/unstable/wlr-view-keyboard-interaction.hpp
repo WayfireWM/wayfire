@@ -1,6 +1,5 @@
 #pragma once
 
-#include "view/view-impl.hpp"
 #include "wayfire/signal-definitions.hpp"
 #include "wayfire/signal-provider.hpp"
 #include <wayfire/view.hpp>
@@ -10,15 +9,18 @@
 #include <wayfire/seat.hpp>
 
 #include <wayfire/nonstd/wlroots-full.hpp>
+
+namespace wf
+{
 /**
- * An interface for scene nodes which interact with the keyboard.
+ * An implementation of keyboard_interaction_t for wlr_surface-based views.
  */
-class view_keyboard_interaction_t : public wf::keyboard_interaction_t
+class wlr_view_keyboard_interaction_t : public wf::keyboard_interaction_t
 {
     std::weak_ptr<wf::view_interface_t> view;
 
   public:
-    view_keyboard_interaction_t(wayfire_view _view)
+    wlr_view_keyboard_interaction_t(wayfire_view _view)
     {
         this->view = _view->weak_from_this();
     }
@@ -51,3 +53,4 @@ class view_keyboard_interaction_t : public wf::keyboard_interaction_t
         wlr_seat_keyboard_notify_key(seat->seat, event.time_msec, event.keycode, event.state);
     }
 };
+}

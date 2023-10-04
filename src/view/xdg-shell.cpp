@@ -20,7 +20,6 @@
 
 #include "xdg-shell/xdg-toplevel-view.hpp"
 #include <wayfire/view-helpers.hpp>
-#include "view-keyboard-interaction.hpp"
 
 class wayfire_xdg_popup_node : public wf::scene::translation_node_t
 {
