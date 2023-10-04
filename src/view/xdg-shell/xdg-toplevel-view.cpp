@@ -19,6 +19,7 @@
 #include <wlr/util/edges.h>
 #include <wayfire/window-manager.hpp>
 #include <wayfire/view-helpers.hpp>
+#include <wayfire/unstable/wlr-view-events.hpp>
 
 /**
  * When we get a request for setting CSD, the view might not have been
@@ -42,25 +43,6 @@ wf::xdg_toplevel_view_t::xdg_toplevel_view_t(wlr_xdg_toplevel *tlvl)
         this->handle_toplevel_state_changed(ev->old_state);
     };
 
-    on_map.set_callback([&] (void*)
-    {
-        wlr_box box;
-        wlr_xdg_surface_get_geometry(xdg_toplevel->base, &box);
-        auto margins = wtoplevel->pending().margins;
-
-        wtoplevel->pending().mapped = true;
-        wtoplevel->pending().geometry.width  = box.width + margins.left + margins.right;
-        wtoplevel->pending().geometry.height = box.height + margins.top + margins.bottom;
-        priv->set_mapped_surface_contents(main_surface);
-        wf::get_core().tx_manager->schedule_object(wtoplevel);
-    });
-    on_unmap.set_callback([&] (void*)
-    {
-        // Take reference until the view has been unmapped
-        _self_ref = shared_from_this();
-        wtoplevel->pending().mapped = false;
-        wf::get_core().tx_manager->schedule_object(wtoplevel);
-    });
     on_destroy.set_callback([&] (void*) { destroy(); });
     on_new_popup.set_callback([&] (void *data)
     {
@@ -129,8 +111,6 @@ wf::xdg_toplevel_view_t::xdg_toplevel_view_t(wlr_xdg_toplevel *tlvl)
         wf::get_core().default_wm->fullscreen_request({this}, wo, req->fullscreen);
     });
 
-    on_map.connect(&xdg_toplevel->base->events.map);
-    on_unmap.connect(&xdg_toplevel->base->events.unmap);
     on_destroy.connect(&xdg_toplevel->base->events.destroy);
     on_new_popup.connect(&xdg_toplevel->base->events.new_popup);
     on_ping_timeout.connect(&xdg_toplevel->base->events.ping_timeout);
@@ -309,8 +289,6 @@ void wf::xdg_toplevel_view_t::handle_toplevel_state_changed(wf::toplevel_state_t
 
 void wf::xdg_toplevel_view_t::destroy()
 {
-    on_map.disconnect();
-    on_unmap.disconnect();
     on_destroy.disconnect();
     on_new_popup.disconnect();
     on_set_title.disconnect();
@@ -484,12 +462,36 @@ void wf::init_xdg_decoration_handlers()
     init_xdg_decoration();
 }
 
+void wf::xdg_toplevel_view_t::start_map_tx()
+{
+    wlr_box box;
+    wlr_xdg_surface_get_geometry(xdg_toplevel->base, &box);
+    auto margins = wtoplevel->pending().margins;
+
+    wtoplevel->pending().mapped = true;
+    wtoplevel->pending().geometry.width = box.width + margins.left + margins.right;
+    wtoplevel->pending().geometry.height = box.height + margins.top + margins.bottom;
+    priv->set_mapped_surface_contents(main_surface);
+    wf::get_core().tx_manager->schedule_object(wtoplevel);
+}
+
+void wf::xdg_toplevel_view_t::start_unmap_tx()
+{
+    // Take reference until the view has been unmapped
+    _self_ref = shared_from_this();
+    wtoplevel->pending().mapped = false;
+    wf::get_core().tx_manager->schedule_object(wtoplevel);
+}
+
 /**
  * A class which manages the xdg_toplevel_view for the duration of the wlr_xdg_toplevel object lifetime.
  */
 class xdg_toplevel_controller_t
 {
     std::shared_ptr<wf::xdg_toplevel_view_t> view;
+
+    wf::wl_listener_wrapper on_map;
+    wf::wl_listener_wrapper on_unmap;
     wf::wl_listener_wrapper on_destroy;
 
   public:
@@ -498,6 +500,30 @@ class xdg_toplevel_controller_t
         on_destroy.set_callback([=] (auto) { delete this; });
         on_destroy.connect(&toplevel->base->events.destroy);
         view = wf::xdg_toplevel_view_t::create(toplevel);
+
+        on_map.set_callback([=] (void*)
+        {
+            wf::view_pre_map_signal pre_map;
+            pre_map.view    = view.get();
+            pre_map.surface = toplevel->base->surface;
+            wf::get_core().emit(&pre_map);
+
+            if (pre_map.override_implementation)
+            {
+                delete this;
+            } else
+            {
+                view->start_map_tx();
+            }
+        });
+
+        on_unmap.set_callback([&] (void*)
+        {
+            view->start_unmap_tx();
+        });
+
+        on_map.connect(&toplevel->base->events.map);
+        on_unmap.connect(&toplevel->base->events.unmap);
     }
 
     ~xdg_toplevel_controller_t()

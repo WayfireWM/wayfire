@@ -31,12 +31,16 @@ class xdg_toplevel_view_t : public wf::toplevel_view_interface_t
     bool is_mapped() const override;
     void set_decoration_mode(bool use_csd);
 
+    // start the map transaction
+    void start_map_tx();
+    // start the unmap transaction
+    void start_unmap_tx();
+
   private:
     friend class wf::tracking_allocator_t<view_interface_t>;
     xdg_toplevel_view_t(wlr_xdg_toplevel *tlvl);
     bool has_client_decoration = true;
-    bool _is_mapped = false;
-    wf::wl_listener_wrapper on_map, on_unmap, on_destroy, on_new_popup,
+    wf::wl_listener_wrapper on_destroy, on_new_popup,
         on_request_move, on_request_resize,
         on_request_minimize, on_request_maximize,
         on_request_fullscreen, on_set_parent,
@@ -56,6 +60,7 @@ class xdg_toplevel_view_t : public wf::toplevel_view_interface_t
     wf::signal::connection_t<xdg_toplevel_applied_state_signal> on_toplevel_applied;
     wlr_xdg_toplevel *xdg_toplevel;
 
+    // do the actual map operation
     void map();
     void unmap();
     void destroy();

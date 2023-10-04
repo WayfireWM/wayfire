@@ -6,6 +6,7 @@
 #include <wayfire/view.hpp>
 #include <wayfire/nonstd/tracking-allocator.hpp>
 
+#include "wayfire/unstable/wlr-view-events.hpp"
 #include "wayfire/util.hpp"
 #include "xwayland/xwayland-helpers.hpp"
 #include "xwayland/xwayland-view-base.hpp"
@@ -35,6 +36,8 @@ class xwayland_view_controller_t
     wf::wl_listener_wrapper on_or_changed;
     wf::wl_listener_wrapper on_set_window_type;
     wf::wl_listener_wrapper on_set_parent;
+    wf::wl_listener_wrapper on_map;
+    wf::wl_listener_wrapper on_unmap;
 
   public:
     xwayland_view_controller_t(wlr_xwayland_surface *xsurf)
@@ -61,6 +64,24 @@ class xwayland_view_controller_t
         on_or_changed.connect(&xw->events.set_override_redirect);
         on_set_window_type.connect(&xw->events.set_window_type);
         on_set_parent.connect(&xw->events.set_parent);
+
+        on_map.set_callback([&] (void*)
+        {
+            wf::view_pre_map_signal pre_map;
+            pre_map.view    = view_impl.get();
+            pre_map.surface = xw->surface;
+            wf::get_core().emit(&pre_map);
+            if (pre_map.override_implementation)
+            {
+                delete this;
+            } else
+            {
+                view_base->handle_map_request(xw->surface);
+            }
+        });
+        on_unmap.set_callback([&] (void*) { view_base->handle_unmap_request(); });
+        on_map.connect(&xw->events.map);
+        on_unmap.connect(&xw->events.unmap);
     }
 
     ~xwayland_view_controller_t()
@@ -143,7 +164,7 @@ class xwayland_view_controller_t
         this->view_impl = {new_view};
         if (xw->mapped)
         {
-            view_base->on_map.emit(xw->surface);
+            view_base->handle_map_request(xw->surface);
         }
     }
 
@@ -166,7 +187,7 @@ class xwayland_view_controller_t
         // destroy the view (unmap + destroy)
         if (view_impl->is_mapped())
         {
-            view_base->on_unmap.emit(xw);
+            view_base->handle_unmap_request();
         }
 
         view_base->destroy();

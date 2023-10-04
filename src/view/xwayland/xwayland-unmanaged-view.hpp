@@ -145,11 +145,6 @@ class wayfire_unmanaged_xwayland_view : public wf::view_interface_t, public wayf
         xw->data = this;
         role     = wf::VIEW_ROLE_UNMANAGED;
         on_set_geometry.set_callback([&] (void*) { update_geometry_from_xsurface(); });
-        on_map.set_callback([&] (void*) { map(xw->surface); });
-        on_unmap.set_callback([&] (void*) { unmap(); });
-
-        on_map.connect(&xw->events.map);
-        on_unmap.connect(&xw->events.unmap);
         on_set_geometry.connect(&xw->events.set_geometry);
     }
 
@@ -163,7 +158,7 @@ class wayfire_unmanaged_xwayland_view : public wf::view_interface_t, public wayf
         return self;
     }
 
-    virtual void map(wlr_surface *surface)
+    void handle_map_request(wlr_surface *surface) override
     {
         LOGC(XWL, "Mapping unmanaged xwayland surface ", self());
         priv->set_mapped(true);
@@ -189,7 +184,7 @@ class wayfire_unmanaged_xwayland_view : public wf::view_interface_t, public wayf
         emit_view_map();
     }
 
-    virtual void unmap()
+    void handle_unmap_request() override
     {
         LOGC(XWL, "Unmapping unmanaged xwayland surface ", self());
         damage();
@@ -205,8 +200,6 @@ class wayfire_unmanaged_xwayland_view : public wf::view_interface_t, public wayf
 
     void destroy() override
     {
-        on_map.disconnect();
-        on_unmap.disconnect();
         on_set_geometry.disconnect();
         wayfire_xwayland_view_base::destroy();
     }
@@ -262,16 +255,16 @@ class wayfire_dnd_xwayland_view : public wayfire_unmanaged_xwayland_view
         LOGD("Destroying a Xwayland drag icon");
     }
 
-    void map(wlr_surface *surface) override
+    void handle_map_request(wlr_surface *surface) override
     {
         LOGD("Mapping a Xwayland drag icon");
-        wayfire_unmanaged_xwayland_view::map(surface);
+        wayfire_unmanaged_xwayland_view::handle_map_request(surface);
         wf::scene::readd_front(wf::get_core().scene(), this->get_root_node());
     }
 
-    void unmap() override
+    void handle_unmap_request() override
     {
-        wayfire_unmanaged_xwayland_view::unmap();
+        wayfire_unmanaged_xwayland_view::handle_unmap_request();
         wf::scene::remove_child(this->get_root_node());
     }
 };

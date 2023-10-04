@@ -114,7 +114,8 @@ class wayfire_xwayland_view_base
         }
     }
 
-    wf::wl_listener_wrapper on_map, on_unmap;
+    virtual void handle_map_request(wlr_surface *surface) = 0;
+    virtual void handle_unmap_request() = 0;
 };
 
 #endif

@@ -1,5 +1,6 @@
 #pragma once
 #include <wayfire/nonstd/wlroots-full.hpp>
+#include <wayfire/view.hpp>
 
 namespace wf
 {
@@ -17,5 +18,29 @@ struct new_xdg_surface_signal
      * corresponding nodes for the xdg_surface. Core will not handle the xdg_surface any further.
      */
     bool use_default_implementation = true;
+};
+
+/**
+ * A signal emitted on core when a view with the default wayfire implementation is about to be mapped.
+ * Plugins can take a look at the view and decide to overwrite its implementation.
+ */
+struct view_pre_map_signal
+{
+    /**
+     * The view which will be mapped after this signal, if plugins do not override it.
+     */
+    wf::view_interface_t *view;
+
+    /**
+     * The wlr-surface of the view.
+     */
+    wlr_surface *surface;
+
+    /**
+     * Plugins can set this to override the view implementation. If they do so, the view will not be mapped,
+     * and instead the default controller and view implementation for the view will be destroyed after the
+     * signal. Plugins are then free to provide a view implementation themselves.
+     */
+    bool override_implementation = false;
 };
 }

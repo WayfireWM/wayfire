@@ -179,20 +179,6 @@ class wayfire_xwayland_view : public wf::toplevel_view_interface_t, public wayfi
         toplevel->connect(&on_toplevel_applied);
         this->priv->toplevel = toplevel;
 
-        on_map.set_callback([&] (void*)
-        {
-            handle_map_request();
-        });
-
-        on_unmap.set_callback([&] (void*)
-        {
-            // Store a reference to this until the view is actually unmapped with a transaction.
-            _self_ref = shared_from_this();
-            toplevel->set_main_surface(nullptr);
-            toplevel->pending().mapped = false;
-            wf::get_core().tx_manager->schedule_object(toplevel);
-        });
-
         on_request_move.set_callback([&] (void*)
         {
             wf::get_core().default_wm->move_request({this});
@@ -258,8 +244,6 @@ class wayfire_xwayland_view : public wf::toplevel_view_interface_t, public wayfi
             update_decorated();
         });
 
-        on_map.connect(&xw->events.map);
-        on_unmap.connect(&xw->events.unmap);
         on_set_parent.connect(&xw->events.set_parent);
         on_set_hints.connect(&xw->events.set_hints);
         on_set_decorations.connect(&xw->events.set_decorations);
@@ -302,8 +286,6 @@ class wayfire_xwayland_view : public wf::toplevel_view_interface_t, public wayfi
 
     virtual void destroy() override
     {
-        on_map.disconnect();
-        on_unmap.disconnect();
         on_set_parent.disconnect();
         on_set_hints.disconnect();
         on_set_decorations.disconnect();
@@ -348,7 +330,7 @@ class wayfire_xwayland_view : public wf::toplevel_view_interface_t, public wayfi
         }
     }
 
-    void handle_map_request()
+    void handle_map_request(wlr_surface*) override
     {
         this->main_surface = std::make_shared<wf::scene::wlr_surface_node_t>(xw->surface, false);
         priv->set_mapped_surface_contents(main_surface);
@@ -393,6 +375,15 @@ class wayfire_xwayland_view : public wf::toplevel_view_interface_t, public wayfi
             toplevel->pending().geometry = desired_geometry;
         }
 
+        wf::get_core().tx_manager->schedule_object(toplevel);
+    }
+
+    void handle_unmap_request() override
+    {
+        // Store a reference to this until the view is actually unmapped with a transaction.
+        _self_ref = shared_from_this();
+        toplevel->set_main_surface(nullptr);
+        toplevel->pending().mapped = false;
         wf::get_core().tx_manager->schedule_object(toplevel);
     }
 
