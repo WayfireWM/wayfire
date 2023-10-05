@@ -208,6 +208,11 @@ static inline void replace_node_or_add_front(wf::scene::floating_inner_ptr surfa
 void wf::view_interface_t::view_priv_impl::set_mapped_surface_contents(
     std::shared_ptr<scene::wlr_surface_node_t> content)
 {
+    if (current_content == content)
+    {
+        return;
+    }
+
     wsurface = content->get_surface();
 
     // Locate the proper place to add the surface contents.

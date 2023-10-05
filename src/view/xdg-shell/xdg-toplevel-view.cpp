@@ -21,27 +21,14 @@
 #include <wayfire/view-helpers.hpp>
 #include <wayfire/unstable/wlr-view-events.hpp>
 
-/**
- * When we get a request for setting CSD, the view might not have been
- * created. So, we store all requests in core, and the views pick this
- * information when they are created
- */
-std::unordered_map<wlr_surface*, uint32_t> uses_csd;
 
-wf::xdg_toplevel_view_t::xdg_toplevel_view_t(wlr_xdg_toplevel *tlvl)
+// --------------------------------------- xdg-toplevel-base impl --------------------------------------------
+wf::xdg_toplevel_view_base_t::xdg_toplevel_view_base_t(wlr_xdg_toplevel *toplevel, bool autocommit)
 {
-    this->xdg_toplevel = tlvl;
+    this->xdg_toplevel = toplevel;
     LOGI("new xdg_shell_stable surface: ", xdg_toplevel->title, " app-id: ", xdg_toplevel->app_id);
 
-    this->main_surface = std::make_shared<scene::wlr_surface_node_t>(tlvl->base->surface, false);
-    this->wtoplevel    = std::make_shared<xdg_toplevel_t>(tlvl, this->main_surface);
-    this->wtoplevel->connect(&this->on_toplevel_applied);
-    this->priv->toplevel = this->wtoplevel;
-
-    this->on_toplevel_applied = [&] (xdg_toplevel_applied_state_signal *ev)
-    {
-        this->handle_toplevel_state_changed(ev->old_state);
-    };
+    this->main_surface = std::make_shared<scene::wlr_surface_node_t>(toplevel->base->surface, autocommit);
 
     on_destroy.set_callback([&] (void*) { destroy(); });
     on_new_popup.set_callback([&] (void *data)
@@ -57,6 +44,137 @@ wf::xdg_toplevel_view_t::xdg_toplevel_view_t(wlr_xdg_toplevel *tlvl)
     {
         handle_app_id_changed(nonull(xdg_toplevel->app_id));
     });
+    on_ping_timeout.set_callback([&] (void*)
+    {
+        wf::view_implementation::emit_ping_timeout_signal(self());
+    });
+
+    on_destroy.connect(&xdg_toplevel->base->events.destroy);
+    on_new_popup.connect(&xdg_toplevel->base->events.new_popup);
+    on_ping_timeout.connect(&xdg_toplevel->base->events.ping_timeout);
+    on_set_title.connect(&xdg_toplevel->events.set_title);
+    on_set_app_id.connect(&xdg_toplevel->events.set_app_id);
+
+    xdg_toplevel->base->data = dynamic_cast<view_interface_t*>(this);
+}
+
+void wf::xdg_toplevel_view_base_t::map()
+{
+    priv->set_mapped(true);
+    priv->set_mapped_surface_contents(main_surface);
+    damage();
+    emit_view_map();
+}
+
+void wf::xdg_toplevel_view_base_t::unmap()
+{
+    damage();
+    emit_view_pre_unmap();
+
+    priv->unset_mapped_surface_contents();
+
+    emit_view_unmap();
+    priv->set_mapped(false);
+    wf::scene::update(get_surface_root_node(), wf::scene::update_flag::INPUT_STATE);
+}
+
+wf::xdg_toplevel_view_base_t::~xdg_toplevel_view_base_t()
+{
+    if (xdg_toplevel && (xdg_toplevel->base->data == dynamic_cast<view_interface_t*>(this)))
+    {
+        xdg_toplevel->base->data = nullptr;
+    }
+}
+
+void wf::xdg_toplevel_view_base_t::destroy()
+{
+    on_destroy.disconnect();
+    on_new_popup.disconnect();
+    on_set_title.disconnect();
+    on_set_app_id.disconnect();
+    on_ping_timeout.disconnect();
+
+    xdg_toplevel = nullptr;
+}
+
+void wf::xdg_toplevel_view_base_t::handle_title_changed(std::string new_title)
+{
+    this->title = new_title;
+    wf::view_implementation::emit_title_changed_signal(self());
+}
+
+void wf::xdg_toplevel_view_base_t::handle_app_id_changed(std::string new_app_id)
+{
+    this->app_id = new_app_id;
+    wf::view_implementation::emit_app_id_changed_signal(self());
+}
+
+void wf::xdg_toplevel_view_base_t::close()
+{
+    if (xdg_toplevel)
+    {
+        wlr_xdg_toplevel_send_close(xdg_toplevel);
+        view_interface_t::close();
+    }
+}
+
+void wf::xdg_toplevel_view_base_t::ping()
+{
+    if (xdg_toplevel)
+    {
+        wlr_xdg_surface_ping(xdg_toplevel->base);
+    }
+}
+
+wlr_surface*wf::xdg_toplevel_view_base_t::get_keyboard_focus_surface()
+{
+    if (is_mapped())
+    {
+        return xdg_toplevel->base->surface;
+    }
+
+    return nullptr;
+}
+
+bool wf::xdg_toplevel_view_base_t::is_focusable() const
+{
+    return true;
+}
+
+std::string wf::xdg_toplevel_view_base_t::get_app_id()
+{
+    return app_id;
+}
+
+std::string wf::xdg_toplevel_view_base_t::get_title()
+{
+    return title;
+}
+
+bool wf::xdg_toplevel_view_base_t::is_mapped() const
+{
+    return priv->wsurface;
+}
+
+// ------------------------------------------ xdg-toplevel impl ----------------------------------------------
+/**
+ * When we get a request for setting CSD, the view might not have been
+ * created. So, we store all requests in core, and the views pick this
+ * information when they are created
+ */
+std::unordered_map<wlr_surface*, uint32_t> uses_csd;
+
+wf::xdg_toplevel_view_t::xdg_toplevel_view_t(wlr_xdg_toplevel *tlvl) : xdg_toplevel_view_base_t(tlvl, false)
+{
+    this->wtoplevel = std::make_shared<xdg_toplevel_t>(tlvl, this->main_surface);
+    this->wtoplevel->connect(&this->on_toplevel_applied);
+    this->priv->toplevel = this->wtoplevel;
+
+    this->on_toplevel_applied = [&] (xdg_toplevel_applied_state_signal *ev)
+    {
+        this->handle_toplevel_state_changed(ev->old_state);
+    };
+
     on_show_window_menu.set_callback([&] (void *data)
     {
         wlr_xdg_toplevel_show_window_menu_event *event =
@@ -80,10 +198,6 @@ wf::xdg_toplevel_view_t::xdg_toplevel_view_t(wlr_xdg_toplevel *tlvl)
         auto parent =
             xdg_toplevel->parent ? (wf::view_interface_t*)(xdg_toplevel->parent->base->data) : nullptr;
         set_toplevel_parent(toplevel_cast(parent));
-    });
-    on_ping_timeout.set_callback([&] (void*)
-    {
-        wf::view_implementation::emit_ping_timeout_signal(self());
     });
 
     on_request_move.set_callback([&] (void*)
@@ -111,12 +225,6 @@ wf::xdg_toplevel_view_t::xdg_toplevel_view_t(wlr_xdg_toplevel *tlvl)
         wf::get_core().default_wm->fullscreen_request({this}, wo, req->fullscreen);
     });
 
-    on_destroy.connect(&xdg_toplevel->base->events.destroy);
-    on_new_popup.connect(&xdg_toplevel->base->events.new_popup);
-    on_ping_timeout.connect(&xdg_toplevel->base->events.ping_timeout);
-
-    on_set_title.connect(&xdg_toplevel->events.set_title);
-    on_set_app_id.connect(&xdg_toplevel->events.set_app_id);
     on_set_parent.connect(&xdg_toplevel->events.set_parent);
     on_request_move.connect(&xdg_toplevel->events.request_move);
     on_request_resize.connect(&xdg_toplevel->events.request_resize);
@@ -124,8 +232,6 @@ wf::xdg_toplevel_view_t::xdg_toplevel_view_t(wlr_xdg_toplevel *tlvl)
     on_request_minimize.connect(&xdg_toplevel->events.request_minimize);
     on_show_window_menu.connect(&xdg_toplevel->events.request_show_window_menu);
     on_request_fullscreen.connect(&xdg_toplevel->events.request_fullscreen);
-
-    xdg_toplevel->base->data = dynamic_cast<view_interface_t*>(this);
 }
 
 std::shared_ptr<wf::xdg_toplevel_view_t> wf::xdg_toplevel_view_t::create(wlr_xdg_toplevel *toplevel)
@@ -161,38 +267,6 @@ void wf::xdg_toplevel_view_t::request_native_size()
     this->wtoplevel->request_native_size();
 }
 
-void wf::xdg_toplevel_view_t::close()
-{
-    if (xdg_toplevel)
-    {
-        wlr_xdg_toplevel_send_close(xdg_toplevel);
-        view_interface_t::close();
-    }
-}
-
-void wf::xdg_toplevel_view_t::ping()
-{
-    if (xdg_toplevel)
-    {
-        wlr_xdg_surface_ping(xdg_toplevel->base);
-    }
-}
-
-wlr_surface*wf::xdg_toplevel_view_t::get_keyboard_focus_surface()
-{
-    if (is_mapped())
-    {
-        return xdg_toplevel->base->surface;
-    }
-
-    return nullptr;
-}
-
-bool wf::xdg_toplevel_view_t::is_focusable() const
-{
-    return true;
-}
-
 void wf::xdg_toplevel_view_t::set_activated(bool active)
 {
     toplevel_view_interface_t::set_activated(active);
@@ -203,16 +277,6 @@ void wf::xdg_toplevel_view_t::set_activated(bool active)
     {
         xdg_toplevel->pending.activated = active;
     }
-}
-
-std::string wf::xdg_toplevel_view_t::get_app_id()
-{
-    return app_id;
-}
-
-std::string wf::xdg_toplevel_view_t::get_title()
-{
-    return title;
 }
 
 bool wf::xdg_toplevel_view_t::should_be_decorated()
@@ -233,35 +297,17 @@ void wf::xdg_toplevel_view_t::map()
         this->has_client_decoration = uses_csd[surf];
     }
 
-    priv->set_mapped(true);
-
-    if (role == VIEW_ROLE_TOPLEVEL)
+    if (!parent)
     {
-        if (!parent)
-        {
-            wf::scene::readd_front(get_output()->wset()->get_node(), get_root_node());
-            get_output()->wset()->add_view({this});
-        }
-
-        wf::get_core().default_wm->focus_request(self());
+        wf::scene::readd_front(get_output()->wset()->get_node(), get_root_node());
+        get_output()->wset()->add_view({this});
     }
 
-    damage();
-    emit_view_map();
+    xdg_toplevel_view_base_t::map();
+    wf::get_core().default_wm->focus_request(self());
+
     /* Might trigger repositioning */
     set_toplevel_parent(this->parent);
-}
-
-void wf::xdg_toplevel_view_t::unmap()
-{
-    damage();
-    emit_view_pre_unmap();
-
-    priv->unset_mapped_surface_contents();
-
-    emit_view_unmap();
-    priv->set_mapped(false);
-    wf::scene::update(get_surface_root_node(), wf::scene::update_flag::INPUT_STATE);
 }
 
 void wf::xdg_toplevel_view_t::handle_toplevel_state_changed(wf::toplevel_state_t old_state)
@@ -289,31 +335,14 @@ void wf::xdg_toplevel_view_t::handle_toplevel_state_changed(wf::toplevel_state_t
 
 void wf::xdg_toplevel_view_t::destroy()
 {
-    on_destroy.disconnect();
-    on_new_popup.disconnect();
-    on_set_title.disconnect();
-    on_set_app_id.disconnect();
+    wf::xdg_toplevel_view_base_t::destroy();
     on_set_parent.disconnect();
-    on_ping_timeout.disconnect();
     on_request_move.disconnect();
     on_request_resize.disconnect();
     on_request_maximize.disconnect();
     on_request_minimize.disconnect();
     on_show_window_menu.disconnect();
     on_request_fullscreen.disconnect();
-    xdg_toplevel = nullptr;
-}
-
-void wf::xdg_toplevel_view_t::handle_title_changed(std::string new_title)
-{
-    this->title = new_title;
-    wf::view_implementation::emit_title_changed_signal(self());
-}
-
-void wf::xdg_toplevel_view_t::handle_app_id_changed(std::string new_app_id)
-{
-    this->app_id = new_app_id;
-    wf::view_implementation::emit_app_id_changed_signal(self());
 }
 
 void wf::xdg_toplevel_view_t::set_decoration_mode(bool use_csd)

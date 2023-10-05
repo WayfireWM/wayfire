@@ -43,7 +43,7 @@ constexpr uint32_t TILED_EDGES_ALL =
  * Toplevel views are a subtype of views which have an associated toplevel object. As such, they may be moved,
  * resized, etc. freely by plugins and have many additional operations when compared to other view types.
  */
-class toplevel_view_interface_t : public wf::view_interface_t
+class toplevel_view_interface_t : public virtual wf::view_interface_t
 {
   public:
     /**
