@@ -76,7 +76,7 @@ class xwayland_unmanaged_view_node_t : public wf::scene::translation_node_t, pub
 };
 }
 
-class wayfire_unmanaged_xwayland_view : public wf::view_interface_t, public wayfire_xwayland_view_base
+class wayfire_unmanaged_xwayland_view : public wayfire_xwayland_view_internal_base
 {
   protected:
     wf::wl_listener_wrapper on_set_geometry;
@@ -129,23 +129,18 @@ class wayfire_unmanaged_xwayland_view : public wf::view_interface_t, public wayf
         wf::scene::update(surface_root_node, wf::scene::update_flag::GEOMETRY);
     }
 
-    bool is_mapped() const override
-    {
-        return priv->wsurface != nullptr;
-    }
-
     std::shared_ptr<wf::xwayland_unmanaged_view_node_t> surface_root_node;
 
   public:
-    wayfire_unmanaged_xwayland_view(wlr_xwayland_surface *xww) : wayfire_xwayland_view_base(xww)
+    wayfire_unmanaged_xwayland_view(wlr_xwayland_surface *xww) : wayfire_xwayland_view_internal_base(xww)
     {
         LOGE("new unmanaged xwayland surface ", xw->title, " class: ", xw->class_t,
             " instance: ", xw->instance);
 
-        xw->data = this;
-        role     = wf::VIEW_ROLE_UNMANAGED;
+        role = wf::VIEW_ROLE_UNMANAGED;
         on_set_geometry.set_callback([&] (void*) { update_geometry_from_xsurface(); });
         on_set_geometry.connect(&xw->events.set_geometry);
+        _initialize();
     }
 
     template<class ConcreteUnmanagedView>
@@ -161,9 +156,8 @@ class wayfire_unmanaged_xwayland_view : public wf::view_interface_t, public wayf
     void handle_map_request(wlr_surface *surface) override
     {
         LOGC(XWL, "Mapping unmanaged xwayland surface ", self());
-        priv->set_mapped(true);
-        this->main_surface = std::make_shared<wf::scene::wlr_surface_node_t>(surface, true);
-        priv->set_mapped_surface_contents(main_surface);
+        do_map(surface, true, false);
+
         update_geometry_from_xsurface();
 
         /* We update the keyboard focus before emitting the map event, so that
@@ -180,7 +174,6 @@ class wayfire_unmanaged_xwayland_view : public wf::view_interface_t, public wayf
             wf::get_core().default_wm->focus_request(self());
         }
 
-        damage();
         emit_view_map();
     }
 
@@ -201,42 +194,12 @@ class wayfire_unmanaged_xwayland_view : public wf::view_interface_t, public wayf
     void destroy() override
     {
         on_set_geometry.disconnect();
-        wayfire_xwayland_view_base::destroy();
+        wayfire_xwayland_view_internal_base::destroy();
     }
 
     wf::xw::view_type get_current_impl_type() const override
     {
         return wf::xw::view_type::UNMANAGED;
-    }
-
-    std::string get_app_id() override
-    {
-        return this->app_id;
-    }
-
-    std::string get_title() override
-    {
-        return this->title;
-    }
-
-    wlr_surface *get_keyboard_focus_surface() override
-    {
-        if (is_mapped() && priv->keyboard_focus_enabled)
-        {
-            return priv->wsurface;
-        }
-
-        return NULL;
-    }
-
-    void ping() override
-    {
-        wayfire_xwayland_view_base::_ping();
-    }
-
-    void close() override
-    {
-        wayfire_xwayland_view_base::_close();
     }
 };
 

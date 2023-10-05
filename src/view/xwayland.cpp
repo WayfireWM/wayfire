@@ -28,8 +28,7 @@ namespace wf
  */
 class xwayland_view_controller_t
 {
-    nonstd::observer_ptr<wayfire_xwayland_view_base> view_base;
-    std::shared_ptr<wf::view_interface_t> view_impl;
+    std::shared_ptr<wayfire_xwayland_view_internal_base> view;
     wlr_xwayland_surface *xw;
 
     wf::wl_listener_wrapper on_destroy;
@@ -68,7 +67,7 @@ class xwayland_view_controller_t
         on_map.set_callback([&] (void*)
         {
             wf::view_pre_map_signal pre_map;
-            pre_map.view    = view_impl.get();
+            pre_map.view    = view.get();
             pre_map.surface = xw->surface;
             wf::get_core().emit(&pre_map);
             if (pre_map.override_implementation)
@@ -76,10 +75,10 @@ class xwayland_view_controller_t
                 delete this;
             } else
             {
-                view_base->handle_map_request(xw->surface);
+                view->handle_map_request(xw->surface);
             }
         });
-        on_unmap.set_callback([&] (void*) { view_base->handle_unmap_request(); });
+        on_unmap.set_callback([&] (void*) { view->handle_unmap_request(); });
         on_map.connect(&xw->events.map);
         on_unmap.connect(&xw->events.unmap);
     }
@@ -144,27 +143,24 @@ class xwayland_view_controller_t
 
     void create_view(wf::xw::view_type target_type)
     {
-        std::shared_ptr<wf::view_interface_t> new_view;
         switch (target_type)
         {
           case wf::xw::view_type::DND:
-            new_view = wayfire_unmanaged_xwayland_view::create<wayfire_dnd_xwayland_view>(xw);
+            this->view = wayfire_unmanaged_xwayland_view::create<wayfire_dnd_xwayland_view>(xw);
             break;
 
           case wf::xw::view_type::UNMANAGED:
-            new_view = wayfire_unmanaged_xwayland_view::create<wayfire_unmanaged_xwayland_view>(xw);
+            this->view = wayfire_unmanaged_xwayland_view::create<wayfire_unmanaged_xwayland_view>(xw);
             break;
 
           case wf::xw::view_type::NORMAL:
-            new_view = wayfire_xwayland_view::create(xw);
+            this->view = wayfire_xwayland_view::create(xw);
             break;
         }
 
-        this->view_base = {dynamic_cast<wayfire_xwayland_view_base*>(new_view.get())};
-        this->view_impl = {new_view};
         if (xw->mapped)
         {
-            view_base->handle_map_request(xw->surface);
+            view->handle_map_request(xw->surface);
         }
     }
 
@@ -178,21 +174,20 @@ class xwayland_view_controller_t
     {
         const auto target_type = determine_type();
 
-        if (target_type == view_base->get_current_impl_type())
+        if (target_type == view->get_current_impl_type())
         {
             // Nothing changed
             return;
         }
 
         // destroy the view (unmap + destroy)
-        if (view_impl->is_mapped())
+        if (view->is_mapped())
         {
-            view_base->handle_unmap_request();
+            view->handle_unmap_request();
         }
 
-        view_base->destroy();
-        view_base = nullptr;
-        view_impl = nullptr;
+        view->destroy();
+        view = nullptr;
 
         // Create the new view.
         create_view(target_type);

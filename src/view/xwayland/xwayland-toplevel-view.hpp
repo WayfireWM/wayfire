@@ -20,7 +20,7 @@
 
 #if WF_HAS_XWAYLAND
 
-class wayfire_xwayland_view : public wf::toplevel_view_interface_t, public wayfire_xwayland_view_base
+class wayfire_xwayland_view : public wf::toplevel_view_interface_t, public wayfire_xwayland_view_internal_base
 {
     wf::wl_listener_wrapper on_request_move, on_request_resize,
         on_request_maximize, on_request_minimize, on_request_activate,
@@ -172,7 +172,7 @@ class wayfire_xwayland_view : public wf::toplevel_view_interface_t, public wayfi
 
   public:
     wayfire_xwayland_view(wlr_xwayland_surface *xww) :
-        wayfire_xwayland_view_base(xww)
+        wayfire_xwayland_view_internal_base(xww)
     {
         LOGE("new xwayland surface ", xw->title, " class: ", xw->class_t, " instance: ", xw->instance);
         this->toplevel = std::make_shared<wf::xw::xwayland_toplevel_t>(xw);
@@ -254,8 +254,6 @@ class wayfire_xwayland_view : public wf::toplevel_view_interface_t, public wayfi
         on_request_maximize.connect(&xw->events.request_maximize);
         on_request_minimize.connect(&xw->events.request_minimize);
         on_request_fullscreen.connect(&xw->events.request_fullscreen);
-
-        xw->data = dynamic_cast<wf::view_interface_t*>(this);
     }
 
     static std::shared_ptr<wayfire_xwayland_view> create(wlr_xwayland_surface *surface)
@@ -296,12 +294,7 @@ class wayfire_xwayland_view : public wf::toplevel_view_interface_t, public wayfi
         on_request_minimize.disconnect();
         on_request_fullscreen.disconnect();
 
-        wayfire_xwayland_view_base::destroy();
-    }
-
-    bool is_mapped() const override
-    {
-        return priv->wsurface != nullptr;
+        wayfire_xwayland_view_internal_base::destroy();
     }
 
     void emit_view_map() override
@@ -389,35 +382,24 @@ class wayfire_xwayland_view : public wf::toplevel_view_interface_t, public wayfi
 
     void map(wlr_surface *surface)
     {
-        priv->set_mapped(true);
-        on_surface_commit.connect(&surface->events.commit);
-
         if (!parent)
         {
             wf::scene::readd_front(get_output()->wset()->get_node(), get_root_node());
             get_output()->wset()->add_view({this});
         }
 
-        wf::get_core().default_wm->focus_request(self());
+        do_map(surface, false);
+        on_surface_commit.connect(&surface->events.commit);
 
-        damage();
-        emit_view_map();
+        wf::get_core().default_wm->focus_request(self());
         /* Might trigger repositioning */
         set_toplevel_parent(this->parent);
     }
 
     void unmap()
     {
-        damage();
-        emit_view_pre_unmap();
-
-        main_surface = nullptr;
-        priv->unset_mapped_surface_contents();
+        do_unmap();
         on_surface_commit.disconnect();
-
-        emit_view_unmap();
-        priv->set_mapped(false);
-        wf::scene::update(get_surface_root_node(), wf::scene::update_flag::INPUT_STATE);
     }
 
     void commit()
@@ -482,24 +464,9 @@ class wayfire_xwayland_view : public wf::toplevel_view_interface_t, public wayfi
         }
     }
 
-    std::string get_app_id() override
-    {
-        return this->app_id;
-    }
-
-    std::string get_title() override
-    {
-        return this->title;
-    }
-
     wf::xw::view_type get_current_impl_type() const override
     {
         return wf::xw::view_type::NORMAL;
-    }
-
-    wlr_surface *get_keyboard_focus_surface() override
-    {
-        return priv->keyboard_focus_enabled ? priv->wsurface : nullptr;
     }
 
     bool has_client_decoration = true;
@@ -521,16 +488,6 @@ class wayfire_xwayland_view : public wf::toplevel_view_interface_t, public wayfi
     {
         return role == wf::VIEW_ROLE_TOPLEVEL && !has_client_decoration &&
                !wf::xw::has_type(xw, wf::xw::_NET_WM_WINDOW_TYPE_SPLASH);
-    }
-
-    void ping() override
-    {
-        wayfire_xwayland_view_base::_ping();
-    }
-
-    void close() override
-    {
-        wayfire_xwayland_view_base::_close();
     }
 };
 
