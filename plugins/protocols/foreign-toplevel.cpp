@@ -53,6 +53,12 @@ class wayfire_foreign_toplevel
 
     ~wayfire_foreign_toplevel()
     {
+        toplevel_handle_v1_close_request.disconnect();
+        toplevel_handle_v1_maximize_request.disconnect();
+        toplevel_handle_v1_minimize_request.disconnect();
+        toplevel_handle_v1_activate_request.disconnect();
+        toplevel_handle_v1_fullscreen_request.disconnect();
+        toplevel_handle_v1_set_rectangle_request.disconnect();
         wlr_foreign_toplevel_handle_v1_destroy(handle);
     }
 
