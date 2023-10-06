@@ -1,4 +1,11 @@
 #pragma once
+
+#if __has_include(<wayfire/config.h>)
+    #include <wayfire/config.h>
+#else
+    #include "config.h"
+#endif
+
 #include <wayfire/nonstd/wlroots-full.hpp>
 #include <wayfire/view.hpp>
 
@@ -19,6 +26,25 @@ struct new_xdg_surface_signal
      */
     bool use_default_implementation = true;
 };
+
+#if WF_HAS_XWAYLAND
+/**
+ * A signal emitted whenever a new wlr_xwayland_surface object was created on the wlroots side.
+ * By using this signal, plugins may indicate to core that they want to override the view implementation for
+ * the given surface.
+ */
+struct new_xwayland_surface_signal
+{
+    wlr_xwayland_surface *surface;
+
+    /**
+     * If a plugin sets this to false, then that plugin is responsible for allocating a view and the
+     * corresponding nodes for the xwayland_surface. Core will not handle the xwayland_surface any further.
+     */
+    bool use_default_implementation = true;
+};
+
+#endif
 
 /**
  * A signal emitted on core when a view with the default wayfire implementation is about to be mapped.

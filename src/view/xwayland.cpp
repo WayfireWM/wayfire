@@ -211,8 +211,15 @@ void wf::init_xwayland()
 
     on_created.set_callback([] (void *data)
     {
-        auto xsurf = (wlr_xwayland_surface*)data;
-        new wf::xwayland_view_controller_t{xsurf};
+        wf::new_xwayland_surface_signal ev;
+        ev.surface = (wlr_xwayland_surface*)data;
+        wf::get_core().emit(&ev);
+
+        if (ev.use_default_implementation)
+        {
+            // Will be auto-freed on surface.destroy
+            new wf::xwayland_view_controller_t{ev.surface};
+        }
     });
 
     on_ready.set_callback([&] (void *data)
