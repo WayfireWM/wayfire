@@ -12,16 +12,14 @@ void wf::idle_inhibitor_t::notify_wlroots()
 
 wf::idle_inhibitor_t::idle_inhibitor_t()
 {
-    LOGD("creating idle inhibitor %p, previous count: %d", this,
-        inhibitors);
+    LOGD("creating idle inhibitor ", this, " previous count: ", inhibitors);
     inhibitors++;
     notify_wlroots();
 }
 
 wf::idle_inhibitor_t::~idle_inhibitor_t()
 {
-    LOGD("destroying idle inhibitor %p, previous count: %d", this,
-        inhibitors);
+    LOGD("destroying idle inhibitor ", this, " previous count: ", inhibitors);
     inhibitors--;
     notify_wlroots();
 }
