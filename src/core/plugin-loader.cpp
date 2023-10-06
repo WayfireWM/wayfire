@@ -16,6 +16,7 @@
 wf::plugin_manager_t::plugin_manager_t()
 {
     this->plugins_opt.load_option("core/plugins");
+    this->enable_so_unloading.load_option("workarounds/enable_so_unloading");
 
     reload_dynamic_plugins();
     load_static_plugins();
@@ -74,7 +75,7 @@ void wf::plugin_manager_t::destroy_plugin(wf::loaded_plugin_t& p)
      * [3]:
      * https://wiki.musl-libc.org/functional-differences-from-glibc.html#Unloading-libraries
      * */
-    if (p.so_handle)
+    if (p.so_handle && enable_so_unloading)
     {
         dlclose(p.so_handle);
     }

@@ -28,6 +28,7 @@ struct plugin_manager_t
 
   private:
     wf::option_wrapper_t<std::string> plugins_opt;
+    wf::option_wrapper_t<bool> enable_so_unloading;
     std::unordered_map<std::string, loaded_plugin_t> loaded_plugins;
 
     void deinit_plugins(bool unloadable);
