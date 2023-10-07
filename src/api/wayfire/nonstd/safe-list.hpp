@@ -7,6 +7,7 @@
 #include <functional>
 #include <optional>
 #include <type_traits>
+#include <vector>
 #include <assert.h>
 #include <wayfire/util.hpp>
 
