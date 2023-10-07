@@ -2,7 +2,7 @@ project(
 	'wayfire',
 	'c',
 	'cpp',
-	version: '0.8.0',
+	version: '0.9.0',
 	license: 'MIT',
 	meson_version: '>=0.56.0',
 	default_options: [
@@ -58,10 +58,10 @@ if get_option('use_system_wfconfig').disabled()
 
 elif get_option('use_system_wfconfig').enabled()
 	use_system_wfconfig = true
-	wfconfig = dependency('wf-config', version: ['>=0.8.0', '<0.9.0'], required: true)
+	wfconfig = dependency('wf-config', version: ['>=0.9.0', '<0.10.0'], required: true)
 
 elif get_option('use_system_wfconfig').auto()
-	wfconfig = dependency('wf-config', version: ['>=0.8.0', '<0.9.0'], required: false)
+	wfconfig = dependency('wf-config', version: ['>=0.9.0', '<0.10.0'], required: false)
 	use_system_wfconfig = true
 	if not wfconfig.found()
 		use_system_wfconfig = false
