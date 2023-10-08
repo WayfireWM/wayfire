@@ -174,6 +174,7 @@ void wf::xdg_toplevel_t::handle_surface_commit()
             if (this->wm_offset != wf::origin(wm_box))
             {
                 // Trigger reppositioning in the view implementation
+                this->wm_offset = wf::origin(wm_box);
                 xdg_toplevel_applied_state_signal event_applied;
                 event_applied.old_state = current();
                 this->emit(&event_applied);
