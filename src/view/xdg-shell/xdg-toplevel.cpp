@@ -166,6 +166,20 @@ void wf::xdg_toplevel_t::handle_surface_commit()
         expand_dimensions_by_margins(get_current_wlr_toplevel_size(), _current.margins);
     if ((toplevel_size == wf::dimensions(current().geometry)) || !current().mapped)
     {
+        if (toplevel)
+        {
+            wlr_box wm_box;
+            wlr_xdg_surface_get_geometry(toplevel->base, &wm_box);
+
+            if (this->wm_offset != wf::origin(wm_box))
+            {
+                // Trigger reppositioning in the view implementation
+                xdg_toplevel_applied_state_signal event_applied;
+                event_applied.old_state = current();
+                this->emit(&event_applied);
+            }
+        }
+
         // Size did not change, there are no transactions going on - apply the new texture directly
         apply_pending_state();
         return;
