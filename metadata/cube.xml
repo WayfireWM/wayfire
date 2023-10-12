@@ -8,7 +8,7 @@
 		<group>
 			<_short>Bindings</_short>
 			<_long>Sets the cube bindings.</_long>
-			<option name="activate" type="button">
+			<option name="activate" type="activator">
 				<_short>Activate</_short>
 				<_long>Activates the cube with the specified button.</_long>
 				<default>&lt;ctrl&gt; &lt;alt&gt; BTN_LEFT</default>

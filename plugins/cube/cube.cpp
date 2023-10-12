@@ -9,6 +9,7 @@
 #include <wayfire/workspace-set.hpp>
 #include <wayfire/scene-operations.hpp>
 #include <wayfire/plugins/common/input-grab.hpp>
+#include "plugins/ipc/ipc-activator.hpp"
 
 #include <glm/gtc/matrix_transform.hpp>
 #include <wayfire/img.hpp>
@@ -178,9 +179,6 @@ class wayfire_cube : public wf::per_output_plugin_instance_t, public wf::pointer
     std::unique_ptr<wf::input_grab_t> input_grab;
     std::shared_ptr<cube_render_node_t> render_node;
 
-    wf::button_callback activate_binding;
-    wf::activator_callback rotate_left, rotate_right;
-
     wf::option_wrapper_t<double> XVelocity{"cube/speed_spin_horiz"},
     YVelocity{"cube/speed_spin_vert"}, ZVelocity{"cube/speed_zoom"};
     wf::option_wrapper_t<double> zoom_opt{"cube/zoom"};
@@ -194,10 +192,6 @@ class wayfire_cube : public wf::per_output_plugin_instance_t, public wf::pointer
     wf_cube_animation_attribs animation;
     wf::option_wrapper_t<bool> use_light{"cube/light"};
     wf::option_wrapper_t<int> use_deform{"cube/deform"};
-
-    wf::option_wrapper_t<wf::buttonbinding_t> button{"cube/activate"};
-    wf::option_wrapper_t<wf::activatorbinding_t> key_left{"cube/rotate_left"};
-    wf::option_wrapper_t<wf::activatorbinding_t> key_right{"cube/rotate_right"};
 
     std::string last_background_mode;
     std::unique_ptr<wf_cube_background_base> background;
@@ -259,24 +253,6 @@ class wayfire_cube : public wf::per_output_plugin_instance_t, public wf::pointer
 
         reload_background();
 
-        activate_binding = [=] (auto)
-        {
-            return input_grabbed();
-        };
-
-        rotate_left = [=] (auto)
-        {
-            return move_vp(-1);
-        };
-
-        rotate_right = [=] (auto)
-        {
-            return move_vp(1);
-        };
-
-        output->add_button(button, &activate_binding);
-        output->add_activator(key_left, &rotate_left);
-        output->add_activator(key_right, &rotate_right);
         output->connect(&on_cube_control);
 
         OpenGL::render_begin();
@@ -778,11 +754,45 @@ class wayfire_cube : public wf::per_output_plugin_instance_t, public wf::pointer
         OpenGL::render_begin();
         program.free_resources();
         OpenGL::render_end();
-
-        output->rem_binding(&activate_binding);
-        output->rem_binding(&rotate_left);
-        output->rem_binding(&rotate_right);
     }
 };
 
-DECLARE_WAYFIRE_PLUGIN(wf::per_output_plugin_t<wayfire_cube>);
+
+class wayfire_cube_global : public wf::plugin_interface_t,
+    public wf::per_output_tracker_mixin_t<wayfire_cube>
+{
+    wf::ipc_activator_t rotate_left{"cube/rotate_left"};
+    wf::ipc_activator_t rotate_right{"cube/rotate_right"};
+    wf::ipc_activator_t activate{"cube/activate"};
+
+  public:
+    void init() override
+    {
+        this->init_output_tracking();
+        rotate_left.set_handler(rotate_left_cb);
+        rotate_right.set_handler(rotate_right_cb);
+        activate.set_handler(activate_cb);
+    }
+
+    void fini() override
+    {
+        this->fini_output_tracking();
+    }
+
+    wf::ipc_activator_t::handler_t rotate_left_cb = [=] (wf::output_t *output, wayfire_view)
+    {
+        return this->output_instance[output]->move_vp(-1);
+    };
+
+    wf::ipc_activator_t::handler_t rotate_right_cb = [=] (wf::output_t *output, wayfire_view)
+    {
+        return this->output_instance[output]->move_vp(+1);
+    };
+
+    wf::ipc_activator_t::handler_t activate_cb = [=] (wf::output_t *output, wayfire_view)
+    {
+        return this->output_instance[output]->input_grabbed();
+    };
+};
+
+DECLARE_WAYFIRE_PLUGIN(wayfire_cube_global);
