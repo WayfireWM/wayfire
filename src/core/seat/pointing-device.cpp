@@ -14,6 +14,8 @@ void wf::pointing_device_t::config_t::load()
 
     mouse_scroll_speed.load_option("input/mouse_scroll_speed");
     mouse_cursor_speed.load_option("input/mouse_cursor_speed");
+    mouse_scroll_button.load_option("input/mouse_scroll_button");
+    mouse_scroll_method.load_option("input/mouse_scroll_method");
     touchpad_cursor_speed.load_option("input/touchpad_cursor_speed");
     touchpad_scroll_speed.load_option("input/touchpad_scroll_speed");
 
@@ -63,6 +65,23 @@ void wf::pointing_device_t::update_options()
     assert(dev);
 
     libinput_device_config_left_handed_set(dev, config.left_handed_mode);
+
+    if ((std::string)config.mouse_scroll_method == "default")
+    {
+        libinput_device_config_scroll_set_method(dev,
+                                                 libinput_device_config_scroll_get_default_method(dev));
+    } else if ((std::string)config.mouse_scroll_method == "none")
+    {
+        libinput_device_config_scroll_set_method(dev,
+                                                 LIBINPUT_CONFIG_SCROLL_NO_SCROLL);
+    }  else if ( ((std::string)config.mouse_scroll_method == "on-button-down") &&
+                 ((int)config.mouse_scroll_button != 0))
+    {
+        libinput_device_config_scroll_set_method(dev,
+                                                 LIBINPUT_CONFIG_SCROLL_ON_BUTTON_DOWN);
+        libinput_device_config_scroll_set_button(dev,
+                                                 (int)config.mouse_scroll_button);
+    }
 
     libinput_device_config_middle_emulation_set_enabled(dev,
         config.middle_emulation ?
