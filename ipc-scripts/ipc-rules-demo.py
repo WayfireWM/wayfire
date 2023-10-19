@@ -23,7 +23,7 @@ while True:
         view = msg["view"]
         if view["app-id"] == "gedit":
             output_data = sock.query_output(view["output"])
-            workarea = output_data["workarea"]
+            workarea = output_data["view"]["geometry"]
 
             # We want gedit to take a certain position (200,200) and a quarter of the output
             x = 200
