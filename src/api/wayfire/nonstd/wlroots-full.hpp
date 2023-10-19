@@ -37,6 +37,7 @@ extern "C"
 #include <wlr/util/region.h>
 #include <wlr/types/wlr_screencopy_v1.h>
 #include <wlr/types/wlr_export_dmabuf_v1.h>
+#include <wlr/types/wlr_keyboard_shortcuts_inhibit_v1.h>
 
 // Shells
 #if  __has_include(<xdg-shell-protocol.h>)

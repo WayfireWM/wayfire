@@ -1,0 +1,20 @@
+<?xml version="1.0"?>
+<wayfire>
+	<plugin name="shortcuts-inhibit">
+		<_short>Keyboard Shortcuts Inhibit Protocol</_short>
+		<_long>An implementation of the keyboard-shortcuts-inhibit-v1 protocol.</_long>
+		<category>Utility</category>
+
+		<option name="inhibit_by_default" type="string">
+			<_short>Inhibit by default</_short>
+			<_long>Criteria for which apps to inhibit input for even though they do not request it via the protocol.</_long>
+			<default>none</default>
+		</option>
+
+		<option name="break_grab" type="key">
+			<_short>Break current inhibitor</_short>
+			<_long>A keybinding to remove the currently active inhibitor temporary.</_long>
+			<default>disabled</default>
+		</option>
+	</plugin>
+</wayfire>
