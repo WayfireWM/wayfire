@@ -626,28 +626,21 @@ struct output_layout_output_t
             return;
         }
 
-        wlr_dmabuf_attributes attributes;
         if (source_back_buffer == NULL)
         {
             LOGE("Got empty buffer on ", wo->handle->name);
             return;
         }
 
-        if (!wlr_buffer_get_dmabuf(source_back_buffer, &attributes))
+        auto texture = wlr_texture_from_buffer(get_core().renderer, source_back_buffer);
+        if (!texture)
         {
-            LOGE("Failed reading mirrored output contents from ", wo->handle->name);
-
+            LOGE("Failed to export texture to dmabuf!");
             return;
         }
 
-        /* We export the output to mirror from to a dmabuf, then create
-         * a texture from this and use it to render "our" output */
-        auto texture = wlr_texture_from_dmabuf(
-            get_core().renderer, &attributes);
         render_output(texture);
-
         wlr_texture_destroy(texture);
-        wlr_dmabuf_attributes_finish(&attributes);
     }
 
     void set_enabled(bool enabled)
