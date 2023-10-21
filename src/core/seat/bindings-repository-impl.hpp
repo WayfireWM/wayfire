@@ -16,7 +16,13 @@ struct wf::bindings_repository_t::impl
     {
         this->idle_recreate_hotspots.run_once([=] ()
         {
-            hotspot_mgr.update_hotspots(activators);
+            if (enabled > 0)
+            {
+                hotspot_mgr.update_hotspots(activators);
+            } else
+            {
+                hotspot_mgr.update_hotspots({});
+            }
         });
     }
 
@@ -33,4 +39,5 @@ struct wf::bindings_repository_t::impl
     };
 
     wf::wl_idle_call idle_recreate_hotspots;
+    int enabled = 1;
 };

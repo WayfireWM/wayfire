@@ -59,6 +59,11 @@ class bindings_repository_t
     /** Erase binding of any type by callback */
     void rem_binding(void *callback);
 
+    /**
+     * Enable or disable the repository. The state is reference-counted and starts at 1 (enabled).
+     */
+    void set_enabled(bool enabled);
+
     struct impl;
     std::unique_ptr<impl> priv;
 };

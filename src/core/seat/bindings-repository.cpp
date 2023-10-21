@@ -49,6 +49,11 @@ void wf::bindings_repository_t::add_activator(
 bool wf::bindings_repository_t::handle_key(const wf::keybinding_t& pressed,
     uint32_t mod_binding_key)
 {
+    if (!priv->enabled)
+    {
+        return false;
+    }
+
     std::vector<std::function<bool()>> callbacks;
     for (auto& binding : this->priv->keys)
     {
@@ -101,6 +106,11 @@ bool wf::bindings_repository_t::handle_key(const wf::keybinding_t& pressed,
 bool wf::bindings_repository_t::handle_axis(uint32_t modifiers,
     wlr_pointer_axis_event *ev)
 {
+    if (!priv->enabled)
+    {
+        return false;
+    }
+
     std::vector<wf::axis_callback*> callbacks;
 
     for (auto& binding : this->priv->axes)
@@ -121,6 +131,11 @@ bool wf::bindings_repository_t::handle_axis(uint32_t modifiers,
 
 bool wf::bindings_repository_t::handle_button(const wf::buttonbinding_t& pressed)
 {
+    if (!priv->enabled)
+    {
+        return false;
+    }
+
     std::vector<std::function<bool()>> callbacks;
     for (auto& binding : this->priv->buttons)
     {
@@ -165,6 +180,11 @@ bool wf::bindings_repository_t::handle_button(const wf::buttonbinding_t& pressed
 
 void wf::bindings_repository_t::handle_gesture(const wf::touchgesture_t& gesture)
 {
+    if (!priv->enabled)
+    {
+        return;
+    }
+
     std::vector<std::function<void()>> callbacks;
     for (auto& binding : this->priv->activators)
     {
@@ -217,4 +237,10 @@ void wf::bindings_repository_t::rem_binding(void *callback)
     {
         priv->recreate_hotspots();
     }
+}
+
+void wf::bindings_repository_t::set_enabled(bool enabled)
+{
+    priv->enabled += (enabled ? 1 : -1);
+    priv->recreate_hotspots();
 }
