@@ -1,3 +1,4 @@
+#include "wayfire/plugin.hpp"
 #include "wayfire/signal-provider.hpp"
 #include <wayfire/per-output-plugin.hpp>
 #include <wayfire/output.hpp>
@@ -5,6 +6,8 @@
 #include <linux/input.h>
 #include <linux/input-event-codes.h>
 #include <wayfire/signal-definitions.hpp>
+#include <wayfire/bindings-repository.hpp>
+#include <wayfire/seat.hpp>
 #include <wayfire/util/log.hpp>
 
 /* Initial repeat delay passed */
@@ -38,7 +41,7 @@ static int repeat_once_handler(void *callback)
  * Push-To-Talk. They have a prefix release_
  * */
 
-class wayfire_command : public wf::per_output_plugin_instance_t
+class wayfire_command : public wf::plugin_interface_t
 {
     std::vector<wf::activator_callback> bindings;
 
@@ -73,7 +76,8 @@ class wayfire_command : public wf::per_output_plugin_instance_t
             act_flags |= wf::PLUGIN_ACTIVATION_IGNORE_INHIBIT;
         }
 
-        if (!output->activate_plugin(&grab_interface, act_flags))
+        auto focused_output = wf::get_core().seat->get_active_output();
+        if (!focused_output->can_activate_plugin(&grab_interface, act_flags))
         {
             return false;
         }
@@ -102,8 +106,6 @@ class wayfire_command : public wf::per_output_plugin_instance_t
             (data.source == wf::activator_source_t::GESTURE) ||
             (data.activation_data == 0))
         {
-            output->deactivate_plugin(&grab_interface);
-
             return true;
         }
 
@@ -160,8 +162,6 @@ class wayfire_command : public wf::per_output_plugin_instance_t
         }
 
         repeat.pressed_key = repeat.pressed_button = 0;
-        output->deactivate_plugin(&grab_interface);
-
         on_button_event.disconnect();
         on_key_event.disconnect();
     }
@@ -191,7 +191,6 @@ class wayfire_command : public wf::per_output_plugin_instance_t
         {
             wf::get_core().run(repeat.repeat_command.c_str());
             repeat.pressed_key = repeat.pressed_button = 0;
-            output->deactivate_plugin(&grab_interface);
             on_key_event_release.disconnect();
         }
     };
@@ -203,7 +202,6 @@ class wayfire_command : public wf::per_output_plugin_instance_t
         {
             wf::get_core().run(repeat.repeat_command.c_str());
             repeat.pressed_key = repeat.pressed_button = 0;
-            output->deactivate_plugin(&grab_interface);
             on_button_event_release.disconnect();
         }
     };
@@ -243,7 +241,7 @@ class wayfire_command : public wf::per_output_plugin_instance_t
             for (const auto& [_, cmd, activator] : list)
             {
                 bindings[i] = std::bind(std::mem_fn(&wayfire_command::on_binding), this, cmd, mode, _1);
-                output->add_activator(wf::create_option(activator), &bindings[i]);
+                wf::get_core().bindings->add_activator(wf::create_option(activator), &bindings[i]);
                 ++i;
             }
         };
@@ -258,7 +256,7 @@ class wayfire_command : public wf::per_output_plugin_instance_t
     {
         for (auto& binding : bindings)
         {
-            output->rem_binding(&binding);
+            wf::get_core().bindings->rem_binding(&binding);
         }
 
         bindings.clear();
@@ -287,4 +285,4 @@ class wayfire_command : public wf::per_output_plugin_instance_t
     }
 };
 
-DECLARE_WAYFIRE_PLUGIN(wf::per_output_plugin_t<wayfire_command>);
+DECLARE_WAYFIRE_PLUGIN(wayfire_command);
