@@ -42,6 +42,11 @@ void wf::seat_t::set_active_node(wf::scene::node_ptr node)
     priv->set_keyboard_focus(focus.node ? focus.node->shared_from_this() : nullptr);
 }
 
+wf::scene::node_ptr wf::seat_t::get_active_node()
+{
+    return priv->keyboard_focus;
+}
+
 void wf::seat_t::focus_output(wf::output_t *wo)
 {
     if (priv->active_output == wo)

@@ -55,6 +55,11 @@ class seat_t
     void set_active_node(wf::scene::node_ptr node);
 
     /**
+     * Get the node which has current keyboard focus.
+     */
+    wf::scene::node_ptr get_active_node();
+
+    /**
      * Try to focus the given view. This may not work if another view or a node requests a higher focus
      * importance.
      */
