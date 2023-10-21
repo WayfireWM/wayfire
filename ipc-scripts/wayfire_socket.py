@@ -1,5 +1,6 @@
 import socket
 import json as js
+import select
 
 def get_msg_template(method: str):
     # Create generic message template
@@ -32,8 +33,15 @@ class WayfireSocket:
 
         return response
 
+    def read_message_timeout(self, timeout: float):
+        ready = select.select([self.client], [], [], timeout) # Wait 5 seconds
+        if not ready[0]:
+            return None
+        return self.read_message()
+
     def read_message(self):
-        rlen = int.from_bytes(self.read_exact(4), byteorder="little")
+        bs = self.read_exact(4)
+        rlen = int.from_bytes(bs, byteorder="little")
         response_message = self.read_exact(rlen)
         response = js.loads(response_message)
         if "error" in response:
@@ -61,28 +69,28 @@ class WayfireSocket:
                          command = None,
                          mode = None,
                          exec_always = False):
-        message = get_msg_template("command/register_binding")
+        message = get_msg_template("command/register-binding")
         message["data"]["binding"] = binding
-        message["data"]["exec_always"] = exec_always
+        message["data"]["exec-always"] = exec_always
         if mode and mode != "press" and mode != "normal":
             message["data"]["mode"] = mode
 
         if call_method is not None:
-            message["data"]["call_method"] = call_method
+            message["data"]["call-method"] = call_method
         if call_data is not None:
-            message["data"]["call_data"] = call_data
+            message["data"]["call-data"] = call_data
         if command is not None:
             message["data"]["command"] = command
 
         return self.send_json(message)
 
     def unregister_binding(self, binding_id: int):
-        message = get_msg_template("command/unregister_binding")
-        message["data"]["binding_id"] = binding_id
+        message = get_msg_template("command/unregister-binding")
+        message["data"]["binding-id"] = binding_id
         return self.send_json(message)
 
     def clear_bindings(self):
-        message = get_msg_template("command/clear_bindings")
+        message = get_msg_template("command/clear-bindings")
         return self.send_json(message)
 
     def query_output(self, output_id: int):
