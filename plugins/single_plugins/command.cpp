@@ -1,5 +1,10 @@
+#include "wayfire/bindings.hpp"
 #include "wayfire/plugin.hpp"
+#include "wayfire/plugins/common/shared-core-data.hpp"
 #include "wayfire/signal-provider.hpp"
+#include <cstdint>
+#include <wayfire/config/option-types.hpp>
+#include <wayfire/config/types.hpp>
 #include <wayfire/per-output-plugin.hpp>
 #include <wayfire/output.hpp>
 #include <wayfire/core.hpp>
@@ -9,6 +14,7 @@
 #include <wayfire/bindings-repository.hpp>
 #include <wayfire/seat.hpp>
 #include <wayfire/util/log.hpp>
+#include <plugins/ipc/ipc-method-repository.hpp>
 
 /* Initial repeat delay passed */
 static int repeat_delay_timeout_handler(void *callback)
@@ -45,24 +51,39 @@ class wayfire_command : public wf::plugin_interface_t
 {
     std::vector<wf::activator_callback> bindings;
 
+    struct ipc_binding_t
+    {
+        wf::activator_callback callback;
+        wf::ipc::client_interface_t *client;
+    };
+
+    static inline uint64_t binding_to_id(const ipc_binding_t& binding)
+    {
+        return (std::uintptr_t)(&binding.callback);
+    }
+
+    std::list<ipc_binding_t> ipc_bindings;
+    using command_callback = std::function<void ()>;
+
     struct
     {
         uint32_t pressed_button = 0;
         uint32_t pressed_key    = 0;
-        std::string repeat_command;
+        command_callback callback;
     } repeat;
 
-    wl_event_source *repeat_source = NULL, *repeat_delay_source = NULL;
+    wl_event_source *repeat_source = NULL;
+    wl_event_source *repeat_delay_source = NULL;
 
     enum binding_mode
     {
         BINDING_NORMAL,
         BINDING_REPEAT,
-        BINDING_ALWAYS,
         BINDING_RELEASE,
     };
 
-    bool on_binding(std::string command, binding_mode mode, const wf::activator_data_t& data)
+    bool on_binding(command_callback callback, binding_mode mode, bool exec_always,
+        const wf::activator_data_t& data)
     {
         /* We already have a repeatable command, do not accept further bindings */
         if (repeat.pressed_key || repeat.pressed_button)
@@ -70,22 +91,17 @@ class wayfire_command : public wf::plugin_interface_t
             return false;
         }
 
-        uint32_t act_flags = 0;
-        if (mode == BINDING_ALWAYS)
-        {
-            act_flags |= wf::PLUGIN_ACTIVATION_IGNORE_INHIBIT;
-        }
-
         auto focused_output = wf::get_core().seat->get_active_output();
-        if (!focused_output->can_activate_plugin(&grab_interface, act_flags))
+        if (!exec_always && !focused_output->can_activate_plugin(&grab_interface))
         {
             return false;
         }
 
         if (mode == BINDING_RELEASE)
         {
-            repeat.repeat_command = command;
-            if (data.source == wf::activator_source_t::KEYBINDING)
+            repeat.callback = callback;
+            if ((data.source == wf::activator_source_t::KEYBINDING) ||
+                (data.source == wf::activator_source_t::MODIFIERBINDING))
             {
                 repeat.pressed_key = data.activation_data;
                 wf::get_core().connect(&on_key_event_release);
@@ -98,7 +114,7 @@ class wayfire_command : public wf::plugin_interface_t
             return true;
         } else
         {
-            wf::get_core().run(command.c_str());
+            callback();
         }
 
         /* No repeat necessary in any of those cases */
@@ -109,7 +125,7 @@ class wayfire_command : public wf::plugin_interface_t
             return true;
         }
 
-        repeat.repeat_command = command;
+        repeat.callback = callback;
         if (data.source == wf::activator_source_t::KEYBINDING)
         {
             repeat.pressed_key = data.activation_data;
@@ -144,7 +160,7 @@ class wayfire_command : public wf::plugin_interface_t
         }
 
         wl_event_source_timer_update(repeat_source, 1000 / repeat_rate);
-        wf::get_core().run(repeat.repeat_command.c_str());
+        repeat.callback();
     };
 
     void reset_repeat()
@@ -189,7 +205,7 @@ class wayfire_command : public wf::plugin_interface_t
     {
         if ((ev->event->keycode == repeat.pressed_key) && (ev->event->state == WLR_KEY_RELEASED))
         {
-            wf::get_core().run(repeat.repeat_command.c_str());
+            repeat.callback();
             repeat.pressed_key = repeat.pressed_button = 0;
             on_key_event_release.disconnect();
         }
@@ -200,11 +216,13 @@ class wayfire_command : public wf::plugin_interface_t
     {
         if ((ev->event->button == repeat.pressed_button) && (ev->event->state == WLR_BUTTON_RELEASED))
         {
-            wf::get_core().run(repeat.repeat_command.c_str());
+            repeat.callback();
             repeat.pressed_key = repeat.pressed_button = 0;
             on_button_event_release.disconnect();
         }
     };
+
+    wf::shared_data::ref_ptr_t<wf::ipc::method_repository_t> method_repository;
 
   public:
     wf::option_wrapper_t<wf::config::compound_list_t<
@@ -236,11 +254,15 @@ class wayfire_command : public wf::plugin_interface_t
         size_t i = 0;
 
         const auto& push_bindings =
-            [&] (wf::config::compound_list_t<std::string, wf::activatorbinding_t>& list, binding_mode mode)
+            [&] (wf::config::compound_list_t<std::string, wf::activatorbinding_t>& list, binding_mode mode,
+                 bool always_exec = false)
         {
-            for (const auto& [_, cmd, activator] : list)
+            for (const auto& [_, _cmd, activator] : list)
             {
-                bindings[i] = std::bind(std::mem_fn(&wayfire_command::on_binding), this, cmd, mode, _1);
+                std::string cmd     = _cmd;
+                command_callback cb = [cmd] () { wf::get_core().run(cmd); };
+                bindings[i] =
+                    std::bind(std::mem_fn(&wayfire_command::on_binding), this, cb, mode, always_exec, _1);
                 wf::get_core().bindings->add_activator(wf::create_option(activator), &bindings[i]);
                 ++i;
             }
@@ -248,7 +270,7 @@ class wayfire_command : public wf::plugin_interface_t
 
         push_bindings(regular, BINDING_NORMAL);
         push_bindings(repeatable, BINDING_REPEAT);
-        push_bindings(always, BINDING_ALWAYS);
+        push_bindings(always, BINDING_NORMAL, true);
         push_bindings(release, BINDING_RELEASE);
     };
 
@@ -277,12 +299,156 @@ class wayfire_command : public wf::plugin_interface_t
         using namespace std::placeholders;
         setup_bindings_from_config();
         wf::get_core().connect(&on_reload_config);
+
+        method_repository->connect(&on_client_disconnect);
+        method_repository->register_method("command/register-binding", on_register_binding);
+        method_repository->register_method("command/unregister-binding", on_unregister_binding);
+        method_repository->register_method("command/clear-bindings", on_clear_ipc_bindings);
     }
 
     void fini()
     {
+        method_repository->unregister_method("command/register-binding");
+        method_repository->unregister_method("command/unregister-binding");
+        method_repository->unregister_method("command/clear-bindings");
         clear_bindings();
     }
+
+    wf::ipc::method_callback_full on_register_binding =
+        [&] (const nlohmann::json& js, wf::ipc::client_interface_t *client)
+    {
+        WFJSON_EXPECT_FIELD(js, "binding", string);
+        WFJSON_OPTIONAL_FIELD(js, "mode", string);
+        WFJSON_OPTIONAL_FIELD(js, "exec-always", boolean);
+        WFJSON_OPTIONAL_FIELD(js, "call-method", string);
+        WFJSON_OPTIONAL_FIELD(js, "command", string);
+
+        if (js.contains("call-method") && !js.contains("call-data"))
+        {
+            return wf::ipc::json_error("call-method requires call-data!");
+        }
+
+        auto binding = wf::option_type::from_string<wf::activatorbinding_t>(js["binding"]);
+        if (!binding)
+        {
+            return wf::ipc::json_error("Invalid binding!");
+        }
+
+        bool exec_always = js.contains("exec-always") && js["exec-always"];
+
+        binding_mode mode = BINDING_NORMAL;
+        if (js.contains("mode"))
+        {
+            if (js["mode"] == "release")
+            {
+                mode = BINDING_RELEASE;
+            } else if (js["mode"] == "repeat")
+            {
+                mode = BINDING_REPEAT;
+            } else
+            {
+                return wf::ipc::json_error("Invalid mode!");
+            }
+        }
+
+        ipc_bindings.push_back({});
+
+        uint64_t id = binding_to_id(ipc_bindings.back());
+
+        wf::activator_callback act_callback;
+        bool temporary_binding = false;
+
+        if (js.contains("call-method"))
+        {
+            act_callback = [=] (const wf::activator_data_t& data)
+            {
+                return on_binding([js, this] ()
+                {
+                    method_repository->call_method(js["call-method"], js["call-data"]);
+                }, mode, exec_always, data);
+            };
+        } else if (js.contains("command"))
+        {
+            act_callback = [=] (const wf::activator_data_t& data)
+            {
+                return on_binding([js] ()
+                {
+                    wf::get_core().run(js["command"]);
+                }, mode, exec_always, data);
+            };
+        } else
+        {
+            temporary_binding = true;
+            act_callback = [=] (const wf::activator_data_t& data)
+            {
+                return on_binding([client, id] ()
+                {
+                    nlohmann::json event;
+                    event["event"] = "command-binding";
+                    event["binding-id"] = id;
+                    client->send_json(event);
+                }, mode, exec_always, data);
+            };
+        }
+
+        ipc_bindings.back().callback = act_callback;
+        ipc_bindings.back().client   = temporary_binding ? client : NULL;
+        wf::get_core().bindings->add_activator(wf::create_option(*binding), &ipc_bindings.back().callback);
+
+        nlohmann::json response = wf::ipc::json_ok();
+        response["binding-id"] = id;
+        return response;
+    };
+
+    wf::ipc::method_callback on_unregister_binding = [&] (const nlohmann::json& js)
+    {
+        WFJSON_EXPECT_FIELD(js, "binding-id", number_integer);
+        ipc_bindings.remove_if([&] (const ipc_binding_t& binding)
+        {
+            if (binding_to_id(binding) == js["binding-id"])
+            {
+                wf::get_core().bindings->rem_binding((void*)&binding.callback);
+                return true;
+            }
+
+            return false;
+        });
+
+        return wf::ipc::json_ok();
+    };
+
+    void clear_ipc_bindings(std::function<bool(const ipc_binding_t&)> filter)
+    {
+        ipc_bindings.remove_if([&] (const ipc_binding_t& binding)
+        {
+            if (filter(binding))
+            {
+                wf::get_core().bindings->rem_binding((void*)&binding.callback);
+                return true;
+            }
+
+            return false;
+        });
+    }
+
+    wf::ipc::method_callback on_clear_ipc_bindings = [&] (const nlohmann::json& js)
+    {
+        clear_ipc_bindings([&] (const ipc_binding_t& binding)
+        {
+            return binding.client == nullptr;
+        });
+
+        return wf::ipc::json_ok();
+    };
+
+    wf::signal::connection_t<wf::ipc::client_disconnected_signal> on_client_disconnect =
+        [=] (wf::ipc::client_disconnected_signal *ev)
+    {
+        clear_ipc_bindings([&] (const ipc_binding_t& binding)
+        {
+            return binding.client == ev->client;
+        });
+    };
 };
 
 DECLARE_WAYFIRE_PLUGIN(wayfire_command);
