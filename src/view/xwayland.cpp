@@ -275,8 +275,11 @@ void wf::xwayland_bring_to_front(wlr_surface *surface)
 #if WF_HAS_XWAYLAND
     if (wlr_surface_is_xwayland_surface(surface))
     {
-        auto xw = wlr_xwayland_surface_from_wlr_surface(surface);
-        wlr_xwayland_surface_restack(xw, NULL, XCB_STACK_MODE_ABOVE);
+        // Conversion to wlr surface might fail if we are at the very end of the surface life cycle.
+        if (auto xw = wlr_xwayland_surface_from_wlr_surface(surface))
+        {
+            wlr_xwayland_surface_restack(xw, NULL, XCB_STACK_MODE_ABOVE);
+        }
     }
 
 #endif

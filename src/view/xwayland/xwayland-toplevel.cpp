@@ -18,7 +18,9 @@ wf::xw::xwayland_toplevel_t::xwayland_toplevel_t(wlr_xwayland_surface *xw)
         this->xw = NULL;
         on_xw_destroy.disconnect();
         on_surface_commit.disconnect();
-        emit_ready();
+
+        // Emit the ready signal on the next idle, to give all substructures time to properly deinitialize.
+        idle_ready.run_once([&] () { emit_ready(); });
     });
 
     on_xw_destroy.connect(&xw->events.destroy);

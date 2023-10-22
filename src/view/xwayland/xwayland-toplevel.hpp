@@ -2,6 +2,7 @@
 
 #include "config.h"
 #include "wayfire/geometry.hpp"
+#include "wayfire/util.hpp"
 #include <memory>
 #include <wayfire/toplevel.hpp>
 #include <wayfire/nonstd/wlroots-full.hpp>
@@ -44,6 +45,7 @@ class xwayland_toplevel_t : public wf::toplevel_t, public std::enable_shared_fro
 
     wf::wl_listener_wrapper on_surface_commit;
     wf::wl_listener_wrapper on_xw_destroy;
+    wf::wl_idle_call idle_ready;
 
     wlr_xwayland_surface *xw;
     wf::point_t output_offset = {0, 0};
