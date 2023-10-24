@@ -388,6 +388,7 @@ class stipc_plugin_t : public wf::plugin_interface_t
 
             if (auto toplevel = toplevel_cast(view))
             {
+                v["parent"]   = toplevel->parent ? (int)toplevel->parent->get_id() : -1;
                 v["geometry"] = wf::ipc::geometry_to_json(toplevel->get_geometry());
                 v["state"]["tiled"] = toplevel->pending_tiled_edges();
                 v["state"]["fullscreen"] = toplevel->pending_fullscreen();
