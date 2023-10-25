@@ -100,6 +100,8 @@ void wf::toplevel_view_interface_t::set_toplevel_parent(wayfire_toplevel_view ne
     auto old_parent = parent;
     if (parent != new_parent)
     {
+        LOGC(VIEWS, "Setting toplevel parent of ", self(), " to ", new_parent);
+
         /* Erase from the old parent */
         unset_toplevel_parent({this});
 
