@@ -227,6 +227,7 @@ void wayfire_xdg_popup::destroy()
     on_destroy.disconnect();
     on_new_popup.disconnect();
     on_ping_timeout.disconnect();
+    on_reposition.disconnect();
     popup = nullptr;
 }
 
