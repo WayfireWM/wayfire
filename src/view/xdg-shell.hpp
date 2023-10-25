@@ -16,7 +16,7 @@ class wayfire_xdg_popup : public wf::view_interface_t
 {
   protected:
     wf::wl_listener_wrapper on_destroy, on_new_popup,
-        on_map, on_unmap, on_ping_timeout, on_repostion;
+        on_map, on_unmap, on_ping_timeout, on_reposition;
 
     wf::signal::connection_t<wf::view_geometry_changed_signal> parent_geometry_changed;
     wf::signal::connection_t<wf::view_title_changed_signal> parent_title_changed;
