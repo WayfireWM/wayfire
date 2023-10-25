@@ -117,9 +117,9 @@ void wf::toplevel_view_interface_t::set_toplevel_parent(wayfire_toplevel_view ne
     if (parent)
     {
         /* Make sure the view is available only as a child */
-        if (this->get_output())
+        if (this->get_wset())
         {
-            this->get_output()->wset()->remove_view({this});
+            get_wset()->remove_view({this});
         }
 
         this->set_output(parent->get_output());
