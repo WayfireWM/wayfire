@@ -67,41 +67,38 @@ inline wf::geometry_t view_bounding_box_up_to(wayfire_view view,
  */
 inline wayfire_toplevel_view find_output_view_at(wf::output_t *output, const wf::pointf_t& coords)
 {
-    for (int i = int(wf::scene::layer::ALL_LAYERS) - 1; i >= 0; i--)
+    for (auto& output_node : wf::collect_output_nodes(wf::get_core().scene(), output))
     {
-        for (auto& output_node : wf::get_core().scene()->layers[i]->get_children())
+        auto as_output = std::dynamic_pointer_cast<scene::output_node_t>(output_node);
+        if (!as_output || (as_output->get_output() != output) || !as_output->is_enabled())
         {
-            auto as_output = std::dynamic_pointer_cast<scene::output_node_t>(output_node);
-            if (!as_output || (as_output->get_output() != output) || !as_output->is_enabled())
+            continue;
+        }
+
+        // We start the search directly from the output node's children. This is because the output nodes
+        // usually reject all queries outside of their current visible geometry, but we want to be able to
+        // query views from all workspaces, not just the current (and the only visible) one.
+        for (auto& ch : output_node->get_children())
+        {
+            if (!ch->is_enabled())
             {
                 continue;
             }
 
-            // We start the search directly from the output node's children. This is because the output nodes
-            // usually reject all queries outside of their current visible geometry, but we want to be able to
-            // query views from all workspaces, not just the current (and the only visible) one.
-            for (auto& ch : output_node->get_children())
+            auto isec = ch->find_node_at(coords);
+            auto node = isec ? isec->node.get() : nullptr;
+
+            if (auto view = wf::toplevel_cast(wf::node_to_view(node)))
             {
-                if (!ch->is_enabled())
+                if (view->get_wset() == output->wset())
                 {
-                    continue;
+                    return view;
                 }
+            }
 
-                auto isec = ch->find_node_at(coords);
-                auto node = isec ? isec->node.get() : nullptr;
-
-                if (auto view = wf::toplevel_cast(wf::node_to_view(node)))
-                {
-                    if (view->get_wset() == output->wset())
-                    {
-                        return view;
-                    }
-                }
-
-                if (node)
-                {
-                    return nullptr;
-                }
+            if (node)
+            {
+                return nullptr;
             }
         }
     }

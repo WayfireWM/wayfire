@@ -42,10 +42,9 @@ class workspace_stream_node_t::workspace_stream_instance_t : public scene::
             push_damage(damage);
         };
 
-        for (int layer = (int)scene::layer::ALL_LAYERS - 1; layer >= 0; layer--)
+        for (auto& output_node : wf::collect_output_nodes(wf::get_core().scene(), self->output))
         {
-            auto layer_root = self->output->node_for_layer((scene::layer)layer);
-            for (auto& ch : layer_root->get_children())
+            for (auto& ch : output_node->get_children())
             {
                 if (ch->is_enabled())
                 {

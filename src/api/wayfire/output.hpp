@@ -205,6 +205,12 @@ class output_t : public wf::object_base_t, public wf::signal::provider_t
  * output is currently focused, otherwise NULL.
  */
 wayfire_view get_active_view_for_output(wf::output_t *output);
+
+/**
+ * Collect all nodes which belong to an output from the scenegraph.
+ */
+std::vector<std::shared_ptr<scene::output_node_t>> collect_output_nodes(
+    wf::scene::node_ptr root, wf::output_t *output);
 }
 
 #endif /* end of include guard: OUTPUT_HPP */

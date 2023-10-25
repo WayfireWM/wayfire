@@ -464,4 +464,36 @@ wayfire_view get_active_view_for_output(wf::output_t *output)
 
     return nullptr;
 }
+
+void collect_output_nodes_recursive(wf::scene::node_ptr root, wf::output_t *output,
+    std::vector<std::shared_ptr<scene::output_node_t>>& result)
+{
+    if (!root->is_enabled())
+    {
+        return;
+    }
+
+    if (auto output_node = std::dynamic_pointer_cast<scene::output_node_t>(root))
+    {
+        if (output_node->get_output() == output)
+        {
+            result.push_back(output_node);
+        }
+
+        return;
+    }
+
+    for (auto& ch : root->get_children())
+    {
+        collect_output_nodes_recursive(ch, output, result);
+    }
+}
+
+std::vector<std::shared_ptr<scene::output_node_t>> collect_output_nodes(
+    wf::scene::node_ptr root, wf::output_t *output)
+{
+    std::vector<std::shared_ptr<scene::output_node_t>> res;
+    collect_output_nodes_recursive(root, output, res);
+    return res;
+}
 } // namespace wf
