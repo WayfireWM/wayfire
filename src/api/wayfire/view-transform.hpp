@@ -64,7 +64,7 @@ class transformer_render_instance_t : public render_instance_t
   protected:
     // A pointer to the transformer node this render instance belongs to.
     NodeType *self;
-    // A list of render instances of the next trasformer or the view itself.
+    // A list of render instances of the next transformer or the view itself.
     std::vector<render_instance_uptr> children;
     // A temporary buffer to render children to.
     wf::render_target_t inner_content;
@@ -78,7 +78,7 @@ class transformer_render_instance_t : public render_instance_t
      * If the node has a single child which supports zero-copy texture generation
      * via @to_texture, that method is preferred to avoid unnecessary copies.
      *
-     * Otherwise, the children are rendered to an auxilliary buffer (@inner_content),
+     * Otherwise, the children are rendered to an auxiliary buffer (@inner_content),
      * whose texture is returned.
      *
      * @param scale The scale to use when generating the texture. The scale
@@ -100,7 +100,7 @@ class transformer_render_instance_t : public render_instance_t
                     if (inner_content.fb != (uint) - 1)
                     {
                         // Release the inner_content buffer, because we are on
-                        // the zero-copy path and we do not need an auxilliary
+                        // the zero-copy path and we do not need an auxiliary
                         // buffer to render to.
                         OpenGL::render_begin();
                         inner_content.release();

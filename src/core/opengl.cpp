@@ -97,7 +97,7 @@ GLuint compile_program(std::string vertex_source, std::string frag_source)
 void init()
 {
     render_begin();
-    // enable_gl_synchronuous_debug()
+    // enable_gl_synchronous_debug()
     program.compile(default_vertex_shader_source,
         default_fragment_shader_source);
 
@@ -516,7 +516,7 @@ wf::render_target_t wf::render_target_t::translated(wf::point_t offset) const
 }
 
 /* look up the actual values of wl_output_transform enum
- * All _flipped transforms have values (regular_transfrom + 4) */
+ * All _flipped transforms have values (regular_transform + 4) */
 glm::mat4 get_output_matrix_from_transform(wl_output_transform transform)
 {
     glm::mat4 scale = glm::mat4(1.0);

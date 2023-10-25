@@ -818,7 +818,7 @@ class WayfireSwitcher : public wf::per_output_plugin_instance_t, public wf::keyb
         if (bool(count_left) ^ bool(count_right))
         {
             const int empty_slot = 1 - dir;
-            fill_emtpy_slot(empty_slot);
+            fill_empty_slot(empty_slot);
         }
 
         rebuild_view_list();
@@ -868,7 +868,7 @@ class WayfireSwitcher : public wf::per_output_plugin_instance_t, public wf::keyb
         return nullptr;
     }
 
-    void fill_emtpy_slot(const int empty_slot)
+    void fill_empty_slot(const int empty_slot)
     {
         const int full_slot = 2 - empty_slot;
 

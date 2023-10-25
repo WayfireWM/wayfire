@@ -84,7 +84,7 @@ struct render_target_t : public framebuffer_t
     wl_output_transform wl_transform = WL_OUTPUT_TRANSFORM_NORMAL;
     // The scale of a framebuffer is a hint at how bigger the actual framebuffer
     // is compared to the logical geometry. It is useful for plugins utilizing
-    // auxilliary buffers in logical coordinates, so that they know they should
+    // auxiliary buffers in logical coordinates, so that they know they should
     // render with higher resolution and still get a crisp image on the screen.
     float scale = 1.0;
 

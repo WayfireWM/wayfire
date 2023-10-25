@@ -335,7 +335,7 @@ class workspace_wall_t : public wf::signal::provider_t
 
                         our_target.subbuffer = target.framebuffer_box_from_geometry_box(relative_to_viewport);
 
-                        // Take the damage for the workspace in workspace-local coordindates, as the workspace
+                        // Take the damage for the workspace in workspace-local coordinates, as the workspace
                         // stream node expects.
                         wf::region_t our_damage = workspaces_damage & workspace_rect;
                         workspaces_damage ^= our_damage;

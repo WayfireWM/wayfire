@@ -19,7 +19,7 @@ class workspace_stream_node_t::workspace_stream_instance_t : public scene::
 
     std::vector<scene::render_instance_uptr> instances;
     // True for each instance generated from a desktop environment view.
-    std::vector<bool> is_dekstop_environment;
+    std::vector<bool> is_desktop_environment;
 
     wf::point_t get_offset()
     {
@@ -62,12 +62,12 @@ class workspace_stream_node_t::workspace_stream_instance_t : public scene::
                     num_generated = this->instances.size() - num_generated;
                     for (size_t i = 0; i < num_generated; i++)
                     {
-                        is_dekstop_environment.push_back(is_de);
+                        is_desktop_environment.push_back(is_de);
                     }
                 }
             }
 
-            wf::dassert(instances.size() == is_dekstop_environment.size(), "Setting de flag is wrong!");
+            wf::dassert(instances.size() == is_desktop_environment.size(), "Setting de flag is wrong!");
         }
     }
 
@@ -85,7 +85,7 @@ class workspace_stream_node_t::workspace_stream_instance_t : public scene::
             our_damage += offset;
             for (size_t i = 0; i < instances.size(); i++)
             {
-                if (is_dekstop_environment[i])
+                if (is_desktop_environment[i])
                 {
                     // Special handling: move everything to 'current workspace' so that panels and backgrounds
                     // render at the correct position.

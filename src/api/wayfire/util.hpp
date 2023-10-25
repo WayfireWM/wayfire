@@ -78,7 +78,7 @@ class wl_idle_call
      * if already waiting for idleness, or if the callback hasn't been set. */
     void run_once();
 
-    /* Same as calling set_callbck + run_once */
+    /* Same as calling set_callback + run_once */
     void run_once(callback_t call);
 
     /** Stop waiting for idle, no-op if not connected */

@@ -12,7 +12,7 @@
 
 		<option name="activate_preserve_aspect" type="button">
 			<_short>Activate resize while preserving aspect</_short>
-			<_long>When the specified button is held down, you can drag a window to resize it while perserving its orignal aspect.</_long>
+			<_long>When the specified button is held down, you can drag a window to resize it while preserving its original aspect.</_long>
 			<default>disabled</default>
 		</option>
 	</plugin>

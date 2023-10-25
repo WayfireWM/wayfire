@@ -96,7 +96,7 @@ class wayfire_move : public wf::per_output_plugin_instance_t,
             // not by moving the view, but by translating it with a transformer. Therefore, the view geometry
             // is still the geometry before the drag.
             wf::get_core().default_wm->update_last_windowed_geometry(ev->main_view);
-            // Artifically continue the grab for a little bit more, so that the last windowed geometry does
+            // Artificially continue the grab for a little bit more, so that the last windowed geometry does
             // not get overwritten.
             wf::get_core().default_wm->set_view_grabbed(ev->main_view, true);
 

@@ -82,7 +82,7 @@ void wayfire_focus::init()
             return;
         }
 
-        /* focuse_btns->get_value() does not compile */
+        /* focus_btns->get_value() does not compile */
         wf::option_sptr_t<wf::activatorbinding_t> tmp = focus_btns;
         if ((!focus_modifiers && wf::get_core().seat->get_keyboard_modifiers()) ||
             !tmp->get_value().has_match(wf::buttonbinding_t(0, ev->event->button)))

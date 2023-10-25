@@ -19,7 +19,7 @@ using node_ptr = std::shared_ptr<node_t>;
  * When refocusing on a particular output, there may be multiple nodes
  * which can receive keyboard focus. While usually the most recently focused
  * node is chosen, there are cases where this is not the desired behavior, for ex.
- * nodes which have keyboard grabs. In order to accomodate for these cases,
+ * nodes which have keyboard grabs. In order to accommodate for these cases,
  * the focus_importance enum provides a way for nodes to indicate in what cases
  * they should receive keyboard focus.
  */

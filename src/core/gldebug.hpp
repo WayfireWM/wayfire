@@ -115,7 +115,7 @@ void errorHandler(GLenum src, GLenum type, GLuint id, GLenum severity,
         "_______________________________________________\n");
 }
 
-void enable_gl_synchronuous_debug()
+void enable_gl_synchronous_debug()
 {
     glEnable(GL_DEBUG_OUTPUT);
     glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);

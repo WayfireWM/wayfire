@@ -89,7 +89,7 @@ class render_instance_t
      *   regions, or expand it for certain special effects like blur.
      * @param fb The target framebuffer to render the node and its children.
      *   Note that some nodes may cause their children to be rendered to
-     *   auxilliary buffers.
+     *   auxiliary buffers.
      */
     virtual void schedule_instructions(
         std::vector<render_instruction_t>& instructions,

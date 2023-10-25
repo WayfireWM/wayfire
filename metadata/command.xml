@@ -46,7 +46,7 @@
 			</entry>
 		</option>
 		<option name="release_bindings" type="dynamic-list" type-hint="dict">
-			<_short>Realease bindings</_short>
+			<_short>Release bindings</_short>
 			<_long>Sets the bindings which activate on release</_long>
 			<entry prefix="command_" type="string" name="command">
 				<_short>Command</_short>
