@@ -72,12 +72,17 @@ wayfire_xdg_popup::wayfire_xdg_popup(wlr_xdg_popup *popup) : wf::view_interface_
     {
         wf::view_implementation::emit_ping_timeout_signal(self());
     });
+    on_repostion.set_callback([&] (void*)
+    {
+        unconstrain();
+    });
 
     on_map.connect(&popup->base->events.map);
     on_unmap.connect(&popup->base->events.unmap);
     on_destroy.connect(&popup->base->events.destroy);
     on_new_popup.connect(&popup->base->events.new_popup);
     on_ping_timeout.connect(&popup->base->events.ping_timeout);
+    on_repostion.connect(&popup->events.reposition);
 
     popup->base->data = this;
     parent_geometry_changed.set_callback([=] (auto)
@@ -350,7 +355,7 @@ static wlr_xdg_shell *xdg_handle = nullptr;
 void wf::init_xdg_shell()
 {
     static wf::wl_listener_wrapper on_xdg_created;
-    xdg_handle = wlr_xdg_shell_create(wf::get_core().display, 2);
+    xdg_handle = wlr_xdg_shell_create(wf::get_core().display, 3);
 
     if (xdg_handle)
     {
