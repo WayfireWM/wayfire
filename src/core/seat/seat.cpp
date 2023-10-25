@@ -174,24 +174,17 @@ void wf::seat_t::focus_view(wayfire_view v)
         set_active_node(view ? view->get_surface_root_node() : nullptr);
     };
 
-    if (!v || !v->is_mapped())
+    v = select_focus_view(v);
+
+    if (!v || !v->is_mapped() || !v->get_keyboard_focus_surface())
     {
         priv->update_active_view(nullptr);
         give_input_focus(nullptr);
         return;
     }
 
-    if (all_dialogs_modal)
-    {
-        v = find_topmost_parent(v);
-    }
-
-    /* If no keyboard focus surface is set, then we don't want to focus the view */
-    if (v->get_keyboard_focus_surface())
-    {
-        priv->update_active_view(v->get_root_node());
-        give_input_focus(select_focus_view(v));
-    }
+    priv->update_active_view(v->get_root_node());
+    give_input_focus(v);
 }
 
 void wf::seat_t::refocus()
