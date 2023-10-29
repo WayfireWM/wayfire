@@ -86,6 +86,10 @@ class tile_workspace_set_data_t : public wf::custom_data_t
         wset->connect(&on_wset_attached);
         wset->connect(&on_workspace_grid_changed);
         resize_roots(wset->get_workspace_grid_size());
+        if (wset->get_attached_output())
+        {
+            wset->get_attached_output()->connect(&on_workarea_changed);
+        }
 
         inner_gaps.set_callback(update_gaps);
         outer_horiz_gaps.set_callback(update_gaps);
