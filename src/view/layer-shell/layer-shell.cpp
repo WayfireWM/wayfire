@@ -508,7 +508,7 @@ void wayfire_layer_shell_view::map()
     wf_layer_shell_manager::get_instance().handle_map(this);
 
     auto& state = lsurface->current;
-    if ((state.keyboard_interactive == 1) && (state.layer >= ZWLR_LAYER_SHELL_V1_LAYER_TOP))
+    if ((state.keyboard_interactive >= 1) && (state.layer >= ZWLR_LAYER_SHELL_V1_LAYER_TOP))
     {
         wf::get_core().seat->focus_view(self());
     }
