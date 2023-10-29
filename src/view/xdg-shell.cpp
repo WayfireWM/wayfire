@@ -316,7 +316,7 @@ wf::geometry_t wayfire_xdg_popup::get_geometry()
 
 wlr_surface*wayfire_xdg_popup::get_keyboard_focus_surface()
 {
-    return nullptr;
+    return priv->wsurface;
 }
 
 /**
