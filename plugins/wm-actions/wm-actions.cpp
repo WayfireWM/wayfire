@@ -218,8 +218,13 @@ class wayfire_wm_actions_output_t : public wf::per_output_plugin_instance_t
     wf::activator_callback on_toggle_above = [=] (auto ev) -> bool
     {
         auto view = choose_view(ev.source);
-
-        return set_keep_above_state(view, !view->has_data("wm-actions-above"));
+        if (view)
+        {
+            return set_keep_above_state(view, !view->has_data("wm-actions-above"));
+        } else
+        {
+            return false;
+        }
     };
 
     wf::activator_callback on_minimize = [=] (auto ev) -> bool
