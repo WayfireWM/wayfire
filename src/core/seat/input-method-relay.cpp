@@ -26,9 +26,11 @@ wf::input_method_relay::input_method_relay()
             return;
         }
 
+        LOGI("new input method connected");
         input_method = new_input_method;
         on_input_method_commit.connect(&input_method->events.commit);
         on_input_method_destroy.connect(&input_method->events.destroy);
+        on_grab_keyboard.connect(&input_method->events.grab_keyboard);
 
         auto *text_input = find_focusable_text_input();
         if (text_input)
@@ -83,7 +85,10 @@ wf::input_method_relay::input_method_relay()
 
         on_input_method_commit.disconnect();
         on_input_method_destroy.disconnect();
-        input_method = nullptr;
+        on_grab_keyboard.disconnect();
+        on_grab_keyboard_destroy.disconnect();
+        input_method  = nullptr;
+        keyboard_grab = nullptr;
 
         auto *text_input = find_focused_text_input();
         if (text_input != nullptr)
@@ -94,6 +99,24 @@ wf::input_method_relay::input_method_relay()
                 focused_surface);
             wlr_text_input_v3_send_leave(text_input->input);
         }
+    });
+
+    on_grab_keyboard.set_callback([&] (void *data)
+    {
+        if (keyboard_grab != nullptr)
+        {
+            LOGI("Attempted to grab input method keyboard twice");
+            return;
+        }
+
+        keyboard_grab = static_cast<wlr_input_method_keyboard_grab_v2*>(data);
+        on_grab_keyboard_destroy.connect(&keyboard_grab->events.destroy);
+    });
+
+    on_grab_keyboard_destroy.set_callback([&] (void *data)
+    {
+        on_grab_keyboard_destroy.disconnect();
+        keyboard_grab = nullptr;
     });
 
     on_text_input_new.connect(&wf::get_core().protocols.text_input->events.text_input);
@@ -139,6 +162,50 @@ void wf::input_method_relay::remove_text_input(wlr_text_input_v3 *input)
         return inp->input == input;
     });
     text_inputs.erase(it, text_inputs.end());
+}
+
+bool wf::input_method_relay::should_grab(wlr_keyboard *kbd)
+{
+    if (keyboard_grab == nullptr)
+    {
+        return false;
+    }
+
+    // input method sends key via a virtual keyboard
+    struct wlr_virtual_keyboard_v1 *virtual_keyboard = wlr_input_device_get_virtual_keyboard(&kbd->base);
+    if (virtual_keyboard &&
+        (wl_resource_get_client(virtual_keyboard->resource) ==
+         wl_resource_get_client(input_method->keyboard_grab->resource)))
+    {
+        return false;
+    }
+
+    return true;
+}
+
+bool wf::input_method_relay::handle_key(struct wlr_keyboard *kbd, uint32_t time, uint32_t key,
+    uint32_t state)
+{
+    if (!should_grab(kbd))
+    {
+        return false;
+    }
+
+    wlr_input_method_keyboard_grab_v2_set_keyboard(keyboard_grab, kbd);
+    wlr_input_method_keyboard_grab_v2_send_key(keyboard_grab, time, key, state);
+    return true;
+}
+
+bool wf::input_method_relay::handle_modifier(struct wlr_keyboard *kbd)
+{
+    if (!should_grab(kbd))
+    {
+        return false;
+    }
+
+    wlr_input_method_keyboard_grab_v2_set_keyboard(keyboard_grab, kbd);
+    wlr_input_method_keyboard_grab_v2_send_modifiers(keyboard_grab, &kbd->modifiers);
+    return true;
 }
 
 wf::text_input*wf::input_method_relay::find_focusable_text_input()

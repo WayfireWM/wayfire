@@ -17,7 +17,9 @@ class input_method_relay
   private:
 
     wf::wl_listener_wrapper on_text_input_new,
-        on_input_method_new, on_input_method_commit, on_input_method_destroy;
+        on_input_method_new, on_input_method_commit, on_input_method_destroy,
+        on_grab_keyboard, on_grab_keyboard_destroy;
+    wlr_input_method_keyboard_grab_v2 *keyboard_grab = nullptr;
     text_input *find_focusable_text_input();
     text_input *find_focused_text_input();
     void set_focus(wlr_surface*);
@@ -34,6 +36,8 @@ class input_method_relay
         }
     };
 
+    bool should_grab(wlr_keyboard*);
+
   public:
 
     wlr_input_method_v2 *input_method = nullptr;
@@ -43,6 +47,8 @@ class input_method_relay
     void send_im_state(wlr_text_input_v3*);
     void disable_text_input(wlr_text_input_v3*);
     void remove_text_input(wlr_text_input_v3*);
+    bool handle_key(struct wlr_keyboard*, uint32_t, uint32_t, uint32_t);
+    bool handle_modifier(struct wlr_keyboard*);
     ~input_method_relay();
 };
 

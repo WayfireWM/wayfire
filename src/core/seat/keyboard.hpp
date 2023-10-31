@@ -50,7 +50,7 @@ class keyboard_t
 
     std::chrono::steady_clock::time_point mod_binding_start;
 
-    bool handle_keyboard_key(uint32_t key, uint32_t state);
+    bool handle_keyboard_key(uint32_t time, uint32_t key, uint32_t state);
 
     /** Get the current locked mods */
     uint32_t get_locked_mods();
