@@ -50,5 +50,9 @@
       <_short>Enable calling dlclose() when a plugin is unloaded. Note that this may not work well with all plugins.</_short>
       <default>false</default>
     </option>
+    <option name="discard_command_output" type="bool">
+      <_short>Discard output from commands invoked by Wayfire, so that they don't end up in the logs.</_short>
+      <default>true</default>
+    </option>
 	</plugin>
 </wayfire>

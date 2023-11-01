@@ -81,6 +81,9 @@ class compositor_core_impl_t : public compositor_core_t
     compositor_state_t state = compositor_state_t::UNKNOWN;
     compositor_core_impl_t();
     virtual ~compositor_core_impl_t();
+
+  private:
+    wf::option_wrapper_t<bool> discard_command_output;
 };
 
 compositor_core_impl_t& get_core_impl();

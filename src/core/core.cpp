@@ -216,6 +216,8 @@ void wf::compositor_core_impl_t::post_init()
     // Start processing cursor events
     seat->priv->cursor->setup_listeners();
 
+    discard_command_output.load_option("workarounds/discard_command_output");
+
     core_startup_finished_signal startup_ev;
     this->emit(&startup_ev);
 }
@@ -391,10 +393,13 @@ pid_t wf::compositor_core_impl_t::run(std::string command)
             }
 
 #endif
-            int dev_null = open("/dev/null", O_WRONLY);
-            dup2(dev_null, 1);
-            dup2(dev_null, 2);
-            close(dev_null);
+            if (discard_command_output)
+            {
+                int dev_null = open("/dev/null", O_WRONLY);
+                dup2(dev_null, 1);
+                dup2(dev_null, 2);
+                close(dev_null);
+            }
 
             _exit(execl("/bin/sh", "/bin/sh", "-c", command.c_str(), NULL));
         } else
