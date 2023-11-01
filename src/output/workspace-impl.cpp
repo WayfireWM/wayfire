@@ -757,6 +757,11 @@ uint64_t workspace_set_t::get_index() const
 
 std::optional<wf::geometry_t> workspace_set_t::get_last_output_geometry()
 {
+    if (pimpl->output)
+    {
+        return pimpl->output->get_relative_geometry();
+    }
+
     return pimpl->workspace_geometry;
 }
 
