@@ -198,6 +198,8 @@ void wf::compositor_core_impl_t::init()
 
 void wf::compositor_core_impl_t::post_init()
 {
+    discard_command_output.load_option("workarounds/discard_command_output");
+
     core_backend_started_signal backend_started_ev;
     this->emit(&backend_started_ev);
     this->state = compositor_state_t::RUNNING;
@@ -215,9 +217,6 @@ void wf::compositor_core_impl_t::post_init()
 
     // Start processing cursor events
     seat->priv->cursor->setup_listeners();
-
-    discard_command_output.load_option("workarounds/discard_command_output");
-
     core_startup_finished_signal startup_ev;
     this->emit(&startup_ev);
 }
