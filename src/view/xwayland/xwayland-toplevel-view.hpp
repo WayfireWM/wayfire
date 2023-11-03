@@ -190,7 +190,7 @@ class wayfire_xwayland_view : public wf::toplevel_view_interface_t, public wayfi
         });
         on_request_activate.set_callback([&] (void*)
         {
-            if (!this->activated)
+            if (!this->activated && this->is_mapped())
             {
                 wf::get_core().default_wm->focus_request({this}, true);
             }
