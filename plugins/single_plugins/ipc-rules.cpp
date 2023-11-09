@@ -11,6 +11,7 @@
 #include "plugins/ipc/ipc-method-repository.hpp"
 #include "wayfire/core.hpp"
 #include "wayfire/object.hpp"
+#include "wayfire/unstable/wlr-surface-node.hpp"
 #include "wayfire/plugins/common/shared-core-data.hpp"
 #include "wayfire/signal-definitions.hpp"
 #include "wayfire/signal-provider.hpp"
@@ -21,12 +22,70 @@
 #include "config.h"
 #include <wayfire/nonstd/wlroots-full.hpp>
 
+
+static std::string layer_to_string(std::optional<wf::scene::layer> layer)
+{
+    if (!layer.has_value())
+    {
+        return "none";
+    }
+
+    switch (layer.value())
+    {
+      case wf::scene::layer::BACKGROUND:
+        return "background";
+
+      case wf::scene::layer::BOTTOM:
+        return "bottom";
+
+      case wf::scene::layer::WORKSPACE:
+        return "workspace";
+
+      case wf::scene::layer::TOP:
+        return "top";
+
+      case wf::scene::layer::UNMANAGED:
+        return "unmanaged";
+
+      case wf::scene::layer::OVERLAY:
+        return "lock";
+
+      case wf::scene::layer::DWIDGET:
+        return "dew";
+
+      default:
+        break;
+    }
+
+    wf::dassert(false, "invalid layer!");
+    assert(false); // prevent compiler warning
+}
+
+static wf::geometry_t get_view_base_geometry(wayfire_view view)
+{
+    auto sroot = view->get_surface_root_node();
+    for (auto& ch : sroot->get_children())
+    {
+        if (auto wlr_surf = dynamic_cast<wf::scene::wlr_surface_node_t*>(ch.get()))
+        {
+            auto bbox = wlr_surf->get_bounding_box();
+            wf::pointf_t origin = sroot->to_global({0, 0});
+            bbox.x = origin.x;
+            bbox.y = origin.y;
+            return bbox;
+        }
+    }
+
+    return sroot->get_bounding_box();
+}
+
 class ipc_rules_t : public wf::plugin_interface_t, public wf::per_output_tracker_mixin_t<>
 {
   public:
     void init() override
     {
         method_repository->register_method("window-rules/events/watch", on_client_watch);
+        method_repository->register_method("window-rules/list-views", list_views);
         method_repository->register_method("window-rules/view-info", get_view_info);
         method_repository->register_method("window-rules/output-info", get_output_info);
         method_repository->register_method("window-rules/configure-view", configure_view);
@@ -41,6 +100,7 @@ class ipc_rules_t : public wf::plugin_interface_t, public wf::per_output_tracker
     void fini() override
     {
         method_repository->unregister_method("window-rules/events/watch");
+        method_repository->unregister_method("window-rules/list-views");
         method_repository->unregister_method("window-rules/view-info");
         method_repository->unregister_method("window-rules/output-info");
         method_repository->unregister_method("window-rules/configure-view");
@@ -60,6 +120,44 @@ class ipc_rules_t : public wf::plugin_interface_t, public wf::per_output_tracker
     {
         // no-op
     }
+
+    wf::ipc::method_callback list_views = [] (nlohmann::json)
+    {
+        auto response = nlohmann::json::array();
+
+        for (auto& output : wf::get_core().output_layout->get_outputs())
+        {
+            for (auto& view : output->wset()->get_views(wf::WSET_SORT_STACKING))
+            {
+                nlohmann::json v;
+                v["id"]     = view->get_id();
+                v["title"]  = view->get_title();
+                v["app-id"] = view->get_app_id();
+                v["base-geometry"] = wf::ipc::geometry_to_json(get_view_base_geometry(view));
+                v["bbox"]   = wf::ipc::geometry_to_json(view->get_bounding_box());
+                v["state"]  = {};
+                v["output"] = view->get_output() ? view->get_output()->to_string() : "null";
+
+                if (auto toplevel = toplevel_cast(view))
+                {
+                    v["parent"]   = toplevel->parent ? (int)toplevel->parent->get_id() : -1;
+                    v["geometry"] = wf::ipc::geometry_to_json(toplevel->get_geometry());
+                    v["state"]["tiled"] = toplevel->pending_tiled_edges();
+                    v["state"]["fullscreen"] = toplevel->pending_fullscreen();
+                    v["state"]["minimized"]  = toplevel->minimized;
+                    v["state"]["activated"]  = toplevel->activated;
+                } else
+                {
+                    v["geometry"] = wf::ipc::geometry_to_json(view->get_bounding_box());
+                }
+
+                v["layer"] = layer_to_string(get_view_layer(view));
+                response.push_back(v);
+            }
+        }
+
+        return response;
+    };
 
     wf::ipc::method_callback get_view_info = [=] (nlohmann::json data)
     {

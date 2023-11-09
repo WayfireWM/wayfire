@@ -52,44 +52,6 @@ static void locate_wayland_backend(wlr_backend *backend, void *data)
 
 namespace wf
 {
-static std::string layer_to_string(std::optional<wf::scene::layer> layer)
-{
-    if (!layer.has_value())
-    {
-        return "none";
-    }
-
-    switch (layer.value())
-    {
-      case wf::scene::layer::BACKGROUND:
-        return "background";
-
-      case wf::scene::layer::BOTTOM:
-        return "bottom";
-
-      case wf::scene::layer::WORKSPACE:
-        return "workspace";
-
-      case wf::scene::layer::TOP:
-        return "top";
-
-      case wf::scene::layer::UNMANAGED:
-        return "unmanaged";
-
-      case wf::scene::layer::OVERLAY:
-        return "lock";
-
-      case wf::scene::layer::DWIDGET:
-        return "dew";
-
-      default:
-        break;
-    }
-
-    wf::dassert(false, "invalid layer!");
-    assert(false); // prevent compiler warning
-}
-
 static const struct wlr_pointer_impl pointer_impl = {
     .name = "stipc-pointer",
 };
@@ -326,7 +288,6 @@ class stipc_plugin_t : public wf::plugin_interface_t
     void init() override
     {
         input = std::make_unique<headless_input_backend_t>();
-        method_repository->register_method("stipc/list_views", list_views);
         method_repository->register_method("stipc/create_wayland_output", create_wayland_output);
         method_repository->register_method("stipc/destroy_wayland_output", destroy_wayland_output);
         method_repository->register_method("stipc/feed_key", feed_key);
@@ -352,59 +313,6 @@ class stipc_plugin_t : public wf::plugin_interface_t
     {
         return false;
     }
-
-    static wf::geometry_t get_view_base_geometry(wayfire_view view)
-    {
-        auto sroot = view->get_surface_root_node();
-        for (auto& ch : sroot->get_children())
-        {
-            if (auto wlr_surf = dynamic_cast<scene::wlr_surface_node_t*>(ch.get()))
-            {
-                auto bbox = wlr_surf->get_bounding_box();
-                wf::pointf_t origin = sroot->to_global({0, 0});
-                bbox.x = origin.x;
-                bbox.y = origin.y;
-                return bbox;
-            }
-        }
-
-        return sroot->get_bounding_box();
-    }
-
-    ipc::method_callback list_views = [] (nlohmann::json)
-    {
-        auto response = nlohmann::json::array();
-
-        for (auto& view : wf::get_core().get_all_views())
-        {
-            nlohmann::json v;
-            v["id"]     = view->get_id();
-            v["title"]  = view->get_title();
-            v["app-id"] = view->get_app_id();
-            v["base-geometry"] = wf::ipc::geometry_to_json(get_view_base_geometry(view));
-            v["bbox"]   = wf::ipc::geometry_to_json(view->get_bounding_box());
-            v["state"]  = {};
-            v["output"] = view->get_output() ? view->get_output()->to_string() : "null";
-
-            if (auto toplevel = toplevel_cast(view))
-            {
-                v["parent"]   = toplevel->parent ? (int)toplevel->parent->get_id() : -1;
-                v["geometry"] = wf::ipc::geometry_to_json(toplevel->get_geometry());
-                v["state"]["tiled"] = toplevel->pending_tiled_edges();
-                v["state"]["fullscreen"] = toplevel->pending_fullscreen();
-                v["state"]["minimized"]  = toplevel->minimized;
-                v["state"]["activated"]  = toplevel->activated;
-            } else
-            {
-                v["geometry"] = wf::ipc::geometry_to_json(view->get_bounding_box());
-            }
-
-            v["layer"] = layer_to_string(get_view_layer(view));
-            response.push_back(v);
-        }
-
-        return response;
-    };
 
     ipc::method_callback layout_views = [] (nlohmann::json data)
     {
