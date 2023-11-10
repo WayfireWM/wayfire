@@ -66,7 +66,7 @@ int ParticleSystem::spawn(int num)
 #   pragma omp parallel for
     for (size_t i = 0; i < ps.size(); i++)
     {
-        if (ps[i].life <= 0 && spawned < num)
+        if ((ps[i].life <= 0) && (spawned < num))
         {
             pinit_func(ps[i]);
             ++spawned;
@@ -131,7 +131,6 @@ void ParticleSystem::update_worker(float time, int i)
 
     radius[i] = ps[i].radius;
 }
-
 
 void ParticleSystem::update()
 {
