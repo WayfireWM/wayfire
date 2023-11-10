@@ -23,7 +23,7 @@ jobs:
     steps:
     - run: sed -i 's/SigLevel    = Required DatabaseOptional/SigLevel    = Optional TrustAll/' /etc/pacman.conf
     - run: pacman --noconfirm --noprogressbar -Syyu
-    - run: pacman --noconfirm --noprogressbar -Sy git clang lld libc++ pkgconf cmake meson ninja wayland wayland-protocols libinput libxkbcommon pixman glm libdrm libglvnd cairo pango systemd scdoc base-devel seatd hwdata libdisplay-info
+    - run: pacman --noconfirm --noprogressbar -Sy git clang lld libc++ pkgconf cmake meson ninja wayland wayland-protocols libinput libxkbcommon pixman glm libdrm libglvnd cairo pango systemd scdoc base-devel seatd hwdata libdisplay-info openmp
 
       # Build Wayfire
     - uses: actions/checkout@v1
