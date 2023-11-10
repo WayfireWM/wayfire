@@ -370,7 +370,7 @@ pid_t wf::compositor_core_impl_t::run(std::string command)
 
     if (socketpair(AF_UNIX, SOCK_STREAM, PF_UNSPEC, sp) == -1)
     {
-      return -1;
+        return -1;
     }
 
     pid = fork();
@@ -378,6 +378,7 @@ pid_t wf::compositor_core_impl_t::run(std::string command)
     {
         return -1;
     }
+
     if (!pid)
     {
         daemonized = daemon(1, 0);
@@ -385,10 +386,11 @@ pid_t wf::compositor_core_impl_t::run(std::string command)
         {
             _exit(daemonized);
         }
+
         /* return daemon pid back to wayfire */
         pid = getpid();
         close(sp[0]);
-        write(sp[1], (void *)&pid, sizeof(pid));
+        write(sp[1], (void*)&pid, sizeof(pid));
         close(sp[1]);
 
         setenv("_JAVA_AWT_WM_NONREPARENTING", "1", 1);
@@ -398,24 +400,27 @@ pid_t wf::compositor_core_impl_t::run(std::string command)
         {
             setenv("DISPLAY", xwayland_get_display().c_str(), 1);
         }
+
 #endif
         execl("/bin/sh", "/bin/sh", "-c", command.c_str(), NULL);
     }
+
     waitpid(pid, &status, 0);
 
     close(sp[1]);
 
-    pfd.fd = sp[0];
+    pfd.fd     = sp[0];
     pfd.events = POLLIN;
     pfd.revents = 0;
     status = poll(&pfd, 1, TIMEOUT);
     if (status == 1)
     {
-        read(sp[0], (void *)&pid, sizeof(pid));
+        read(sp[0], (void*)&pid, sizeof(pid));
     } else
     {
         pid = -1;
     }
+
     close(sp[0]);
     return pid;
 }
