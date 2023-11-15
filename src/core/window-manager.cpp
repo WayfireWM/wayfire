@@ -134,6 +134,12 @@ void window_manager_t::focus_raise_view(wayfire_view view, bool allow_switch_ws)
         return;
     }
 
+    if (!view->get_keyboard_focus_surface())
+    {
+        LOGW("Attempting to give focus to a view without focus surface!");
+        return;
+    }
+
     if (auto toplevel = toplevel_cast(find_topmost_parent(view)))
     {
         if (toplevel->minimized)

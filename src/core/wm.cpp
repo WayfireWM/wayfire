@@ -122,6 +122,12 @@ bool wayfire_focus::check_focus_surface(wayfire_view view)
         return false;
     }
 
+    if (!view->get_keyboard_focus_surface())
+    {
+        wf::view_bring_to_front(view);
+        return false;
+    }
+
     auto old_focus = core.seat->get_active_view();
     core.default_wm->focus_raise_view(view);
     return core.seat->get_active_view() != old_focus;
