@@ -4,6 +4,7 @@
 #include <wayfire/output.hpp>
 #include <wayfire/toplevel-view.hpp>
 #include <wayfire/seat.hpp>
+#include <wayfire/input-device.hpp>
 #include <set>
 
 #include "plugins/ipc/ipc-helpers.hpp"
@@ -61,6 +62,33 @@ static std::string layer_to_string(std::optional<wf::scene::layer> layer)
     assert(false); // prevent compiler warning
 }
 
+static std::string wlr_input_device_type_to_string(wlr_input_device_type type)
+{
+    switch (type)
+    {
+      case WLR_INPUT_DEVICE_KEYBOARD:
+        return "keyboard";
+
+      case WLR_INPUT_DEVICE_POINTER:
+        return "pointer";
+
+      case WLR_INPUT_DEVICE_TOUCH:
+        return "touch";
+
+      case WLR_INPUT_DEVICE_TABLET_TOOL:
+        return "tablet_tool";
+
+      case WLR_INPUT_DEVICE_TABLET_PAD:
+        return "tablet_pad";
+
+      case WLR_INPUT_DEVICE_SWITCH:
+        return "switch";
+
+      default:
+        return "unknown";
+    }
+}
+
 static wf::geometry_t get_view_base_geometry(wayfire_view view)
 {
     auto sroot = view->get_surface_root_node();
@@ -84,6 +112,8 @@ class ipc_rules_t : public wf::plugin_interface_t, public wf::per_output_tracker
   public:
     void init() override
     {
+        method_repository->register_method("input/list-devices", list_input_devices);
+        method_repository->register_method("input/configure-device", configure_input_device);
         method_repository->register_method("window-rules/events/watch", on_client_watch);
         method_repository->register_method("window-rules/list-views", list_views);
         method_repository->register_method("window-rules/view-info", get_view_info);
@@ -99,6 +129,8 @@ class ipc_rules_t : public wf::plugin_interface_t, public wf::per_output_tracker
 
     void fini() override
     {
+        method_repository->unregister_method("input/list-devices");
+        method_repository->unregister_method("input/configure-device");
         method_repository->unregister_method("window-rules/events/watch");
         method_repository->unregister_method("window-rules/list-views");
         method_repository->unregister_method("window-rules/view-info");
@@ -387,6 +419,42 @@ class ipc_rules_t : public wf::plugin_interface_t, public wf::per_output_tracker
         description["type"] = get_view_type(view);
         return description;
     }
+
+    wf::ipc::method_callback list_input_devices = [&] (const nlohmann::json&)
+    {
+        auto response = nlohmann::json::array();
+        for (auto& device : wf::get_core().get_input_devices())
+        {
+            nlohmann::json d;
+            d["id"]     = (intptr_t)device->get_wlr_handle();
+            d["name"]   = nonull(device->get_wlr_handle()->name);
+            d["vendor"] = device->get_wlr_handle()->vendor;
+            d["product"] = device->get_wlr_handle()->product;
+            d["type"]    = wlr_input_device_type_to_string(device->get_wlr_handle()->type);
+            d["enabled"] = device->is_enabled();
+            response.push_back(d);
+        }
+
+        return response;
+    };
+
+    wf::ipc::method_callback configure_input_device = [&] (const nlohmann::json& data)
+    {
+        WFJSON_EXPECT_FIELD(data, "id", number_unsigned);
+        WFJSON_EXPECT_FIELD(data, "enabled", boolean);
+
+        for (auto& device : wf::get_core().get_input_devices())
+        {
+            if ((intptr_t)device->get_wlr_handle() == data["id"])
+            {
+                device->set_enabled(data["enabled"]);
+
+                return wf::ipc::json_ok();
+            }
+        }
+
+        return wf::ipc::json_error("Unknown input device!");
+    };
 };
 
 DECLARE_WAYFIRE_PLUGIN(ipc_rules_t);

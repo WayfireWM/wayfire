@@ -82,3 +82,13 @@ class WayfireSocket:
         message["data"]["view-id"] = view_id
         message["data"]["alpha"] = alpha
         return self.send_json(message)
+
+    def list_input_devices(self):
+        message = get_msg_template("input/list-devices")
+        return self.send_json(message)
+
+    def configure_input_device(self, id, enabled: bool):
+        message = get_msg_template("input/configure-device")
+        message["data"]["id"] = id
+        message["data"]["enabled"] = enabled
+        return self.send_json(message)
