@@ -2,6 +2,7 @@
 #include "input-method-relay.hpp"
 #include "../core-impl.hpp"
 #include "../../output/output-impl.hpp"
+#include "wayfire/scene-operations.hpp"
 
 #include <algorithm>
 
@@ -31,6 +32,7 @@ wf::input_method_relay::input_method_relay()
         on_input_method_commit.connect(&input_method->events.commit);
         on_input_method_destroy.connect(&input_method->events.destroy);
         on_grab_keyboard.connect(&input_method->events.grab_keyboard);
+        on_new_popup_surface.connect(&input_method->events.new_popup_surface);
 
         auto *text_input = find_focusable_text_input();
         if (text_input)
@@ -87,6 +89,7 @@ wf::input_method_relay::input_method_relay()
         on_input_method_destroy.disconnect();
         on_grab_keyboard.disconnect();
         on_grab_keyboard_destroy.disconnect();
+        on_new_popup_surface.disconnect();
         input_method  = nullptr;
         keyboard_grab = nullptr;
 
@@ -117,6 +120,12 @@ wf::input_method_relay::input_method_relay()
     {
         on_grab_keyboard_destroy.disconnect();
         keyboard_grab = nullptr;
+    });
+
+    on_new_popup_surface.set_callback([&] (void *data)
+    {
+        auto popup = static_cast<wlr_input_popup_surface_v2*>(data);
+        popup_surfaces.push_back(wf::popup_surface::create(this, popup));
     });
 
     on_text_input_new.connect(&wf::get_core().protocols.text_input->events.text_input);
@@ -162,6 +171,17 @@ void wf::input_method_relay::remove_text_input(wlr_text_input_v3 *input)
         return inp->input == input;
     });
     text_inputs.erase(it, text_inputs.end());
+}
+
+void wf::input_method_relay::remove_popup_surface(wf::popup_surface *popup)
+{
+    auto it = std::remove_if(popup_surfaces.begin(),
+        popup_surfaces.end(),
+        [&] (const auto & suf)
+    {
+        return suf.get() == popup;
+    });
+    popup_surfaces.erase(it, popup_surfaces.end());
 }
 
 bool wf::input_method_relay::should_grab(wlr_keyboard *kbd)
@@ -318,6 +338,11 @@ wf::text_input::text_input(wf::input_method_relay *rel, wlr_text_input_v3 *in) :
             return;
         }
 
+        for (auto popup : relay->popup_surfaces)
+        {
+            popup->update_geometry();
+        }
+
         relay->send_im_state(input);
     });
 
@@ -377,4 +402,157 @@ void wf::text_input::set_pending_focused_surface(wlr_surface *surface)
 }
 
 wf::text_input::~text_input()
+{}
+
+wf::popup_surface::popup_surface(wf::input_method_relay *rel, wlr_input_popup_surface_v2 *in) :
+    relay(rel), surface(in)
+{
+    main_surface = std::make_shared<wf::scene::wlr_surface_node_t>(in->surface, true);
+
+    on_destroy.set_callback([&] (void*)
+    {
+        on_map.disconnect();
+        on_unmap.disconnect();
+        on_destroy.disconnect();
+
+        relay->remove_popup_surface(this);
+    });
+
+    on_map.set_callback([&] (void*) { map(); });
+    on_unmap.set_callback([&] (void*) { unmap(); });
+    on_commit.set_callback([&] (void*) { update_geometry(); });
+
+    on_map.connect(&surface->surface->events.map);
+    on_unmap.connect(&surface->surface->events.unmap);
+    on_destroy.connect(&surface->events.destroy);
+}
+
+std::shared_ptr<wf::popup_surface> wf::popup_surface::create(
+    wf::input_method_relay *rel, wlr_input_popup_surface_v2 *in)
+{
+    auto self = view_interface_t::create<wf::popup_surface>(rel, in);
+    auto translation_node = std::make_shared<wf::scene::translation_node_t>();
+    translation_node->set_children_list({std::make_unique<wf::scene::wlr_surface_node_t>(in->surface,
+        false)});
+    self->surface_root_node = translation_node;
+    self->set_surface_root_node(translation_node);
+    self->set_role(VIEW_ROLE_DESKTOP_ENVIRONMENT);
+    return self;
+}
+
+void wf::popup_surface::map()
+{
+    auto text_input = this->relay->find_focused_text_input();
+    if (!text_input)
+    {
+        LOGE("trying to map IM popup surface without text input.");
+        return;
+    }
+
+    auto view   = wf::wl_surface_to_wayfire_view(text_input->input->focused_surface->resource);
+    auto output = view->get_output();
+    set_output(output);
+
+    auto target_layer = wf::scene::layer::UNMANAGED;
+    wf::scene::readd_front(get_output()->node_for_layer(target_layer), get_root_node());
+
+    priv->set_mapped_surface_contents(main_surface);
+    priv->set_mapped(true);
+    on_commit.connect(&surface->surface->events.commit);
+
+    update_geometry();
+
+    damage();
+    emit_view_map();
+}
+
+void wf::popup_surface::unmap()
+{
+    damage();
+
+    priv->unset_mapped_surface_contents();
+
+    emit_view_unmap();
+    priv->set_mapped(false);
+    on_commit.disconnect();
+}
+
+void wf::popup_surface::update_geometry()
+{
+    auto text_input = this->relay->find_focused_text_input();
+    if (!text_input)
+    {
+        LOGI("no focused text input");
+        return;
+    }
+
+    if (!is_mapped())
+    {
+        LOGI("input method window not mapped");
+        return;
+    }
+
+    bool cursor_rect = text_input->input->current.features & WLR_TEXT_INPUT_V3_FEATURE_CURSOR_RECTANGLE;
+    auto cursor = text_input->input->current.cursor_rectangle;
+    int x = 0, y = 0;
+    if (cursor_rect)
+    {
+        x = cursor.x;
+        y = cursor.y + cursor.height;
+    }
+
+    auto wlr_surface = text_input->input->focused_surface;
+    auto view     = wf::wl_surface_to_wayfire_view(wlr_surface->resource);
+    auto toplevel = toplevel_cast(view);
+    auto g = toplevel->get_geometry();
+    auto margins = toplevel->toplevel()->current().margins;
+
+    auto xdg_surface = wlr_xdg_surface_try_from_wlr_surface(wlr_surface);
+    if (xdg_surface)
+    {
+        // substract shadows etc; test app: d-feet
+        x -= xdg_surface->current.geometry.x;
+        y -= xdg_surface->current.geometry.y;
+    }
+
+    damage();
+    x += g.x + margins.left;
+    y += g.y + margins.top;
+    auto width  = surface->surface->current.width;
+    auto height = surface->surface->current.height;
+
+    auto output   = view->get_output();
+    auto g_output = output->get_layout_geometry();
+    x = std::max(0, std::min(x, g_output.width - width));
+    if (y + height > g_output.height)
+    {
+        y -= height;
+        if (cursor_rect)
+        {
+            y -= cursor.height;
+        }
+    }
+
+    y = std::max(0, y);
+
+    surface_root_node->set_offset({x, y});
+    geometry.x     = x;
+    geometry.y     = y;
+    geometry.width = width;
+    geometry.height = height;
+    damage();
+    wf::scene::update(get_surface_root_node(), wf::scene::update_flag::GEOMETRY);
+}
+
+bool wf::popup_surface::is_mapped() const
+{
+    return priv->wsurface != nullptr;
+}
+
+wf::geometry_t wf::popup_surface::get_geometry()
+{
+    return geometry;
+}
+
+wf::popup_surface::~popup_surface()
 {}
