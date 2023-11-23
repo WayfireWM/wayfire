@@ -157,35 +157,35 @@ class ipc_rules_t : public wf::plugin_interface_t, public wf::per_output_tracker
     {
         auto response = nlohmann::json::array();
 
-        for (auto& output : wf::get_core().output_layout->get_outputs())
+        for (auto& view : wf::get_core().get_all_views())
         {
-            for (auto& view : output->wset()->get_views(wf::WSET_SORT_STACKING))
+            nlohmann::json v;
+            v["id"]     = view->get_id();
+            v["title"]  = view->get_title();
+            v["app-id"] = view->get_app_id();
+            v["base-geometry"] = wf::ipc::geometry_to_json(get_view_base_geometry(view));
+            v["bbox"]   = wf::ipc::geometry_to_json(view->get_bounding_box());
+            v["output"] = view->get_output() ? view->get_output()->to_string() : "null";
+
+            v["state"] = {};
+            v["state"]["mapped"]    = view->is_mapped();
+            v["state"]["focusable"] = view->is_focusable();
+
+            if (auto toplevel = toplevel_cast(view))
             {
-                nlohmann::json v;
-                v["id"]     = view->get_id();
-                v["title"]  = view->get_title();
-                v["app-id"] = view->get_app_id();
-                v["base-geometry"] = wf::ipc::geometry_to_json(get_view_base_geometry(view));
-                v["bbox"]   = wf::ipc::geometry_to_json(view->get_bounding_box());
-                v["state"]  = {};
-                v["output"] = view->get_output() ? view->get_output()->to_string() : "null";
-
-                if (auto toplevel = toplevel_cast(view))
-                {
-                    v["parent"]   = toplevel->parent ? (int)toplevel->parent->get_id() : -1;
-                    v["geometry"] = wf::ipc::geometry_to_json(toplevel->get_geometry());
-                    v["state"]["tiled"] = toplevel->pending_tiled_edges();
-                    v["state"]["fullscreen"] = toplevel->pending_fullscreen();
-                    v["state"]["minimized"]  = toplevel->minimized;
-                    v["state"]["activated"]  = toplevel->activated;
-                } else
-                {
-                    v["geometry"] = wf::ipc::geometry_to_json(view->get_bounding_box());
-                }
-
-                v["layer"] = layer_to_string(get_view_layer(view));
-                response.push_back(v);
+                v["parent"]   = toplevel->parent ? (int)toplevel->parent->get_id() : -1;
+                v["geometry"] = wf::ipc::geometry_to_json(toplevel->get_geometry());
+                v["state"]["tiled"] = toplevel->pending_tiled_edges();
+                v["state"]["fullscreen"] = toplevel->pending_fullscreen();
+                v["state"]["minimized"]  = toplevel->minimized;
+                v["state"]["activated"]  = toplevel->activated;
+            } else
+            {
+                v["geometry"] = wf::ipc::geometry_to_json(view->get_bounding_box());
             }
+
+            v["layer"] = layer_to_string(get_view_layer(view));
+            response.push_back(v);
         }
 
         return response;
