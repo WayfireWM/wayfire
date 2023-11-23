@@ -12,6 +12,7 @@
 #include "plugins/ipc/ipc-method-repository.hpp"
 #include "wayfire/core.hpp"
 #include "wayfire/object.hpp"
+#include "wayfire/plugins/common/util.hpp"
 #include "wayfire/unstable/wlr-surface-node.hpp"
 #include "wayfire/plugins/common/shared-core-data.hpp"
 #include "wayfire/signal-definitions.hpp"
@@ -166,6 +167,7 @@ class ipc_rules_t : public wf::plugin_interface_t, public wf::per_output_tracker
             v["base-geometry"] = wf::ipc::geometry_to_json(get_view_base_geometry(view));
             v["bbox"]   = wf::ipc::geometry_to_json(view->get_bounding_box());
             v["output"] = view->get_output() ? view->get_output()->to_string() : "null";
+            v["last-focus-timestamp"] = wf::get_focus_timestamp(view);
 
             v["state"] = {};
             v["state"]["mapped"]    = view->is_mapped();
