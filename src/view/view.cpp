@@ -84,7 +84,7 @@ wlr_box wf::view_interface_t::get_bounding_box()
 
 bool wf::view_interface_t::is_focusable() const
 {
-    return priv->keyboard_focus_enabled;
+    return true;
 }
 
 void wf::view_interface_t::damage()

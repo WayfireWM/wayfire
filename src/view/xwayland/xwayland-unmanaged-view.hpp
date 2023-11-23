@@ -164,12 +164,12 @@ class wayfire_unmanaged_xwayland_view : public wayfire_xwayland_view_internal_ba
          * plugins can detect that this view can have keyboard focus.
          *
          * Note: only actual override-redirect views should get their focus disabled */
-        priv->keyboard_focus_enabled = (!xw->override_redirect ||
+        kb_focus_enabled = (!xw->override_redirect ||
             wlr_xwayland_or_surface_wants_focus(xw));
 
         wf::scene::readd_front(get_output()->node_for_layer(wf::scene::layer::UNMANAGED), get_root_node());
 
-        if (priv->keyboard_focus_enabled)
+        if (kb_focus_enabled)
         {
             wf::get_core().default_wm->focus_request(self());
         }

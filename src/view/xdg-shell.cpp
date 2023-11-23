@@ -41,7 +41,6 @@ wayfire_xdg_popup::wayfire_xdg_popup(wlr_xdg_popup *popup) : wf::view_interface_
     this->popup_parent = wf::wl_surface_to_wayfire_view(popup->parent->resource).get();
     this->popup = popup;
     this->role  = wf::VIEW_ROLE_UNMANAGED;
-    this->priv->keyboard_focus_enabled = false;
 
     if (!dynamic_cast<wayfire_xdg_popup*>(popup_parent.get()))
     {
@@ -373,4 +372,9 @@ void wf::init_xdg_shell()
         });
         on_xdg_created.connect(&xdg_handle->events.new_surface);
     }
+}
+
+bool wayfire_xdg_popup::is_focusable() const
+{
+    return false;
 }

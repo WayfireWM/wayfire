@@ -30,11 +30,9 @@ namespace wf
 class view_interface_t::view_priv_impl
 {
   public:
-    wlr_surface *wsurface = nullptr;
-    size_t last_view_cnt  = 0;
-
-    bool keyboard_focus_enabled = true;
-    uint32_t allowed_actions    = VIEW_ALLOW_ALL;
+    wlr_surface *wsurface    = nullptr;
+    size_t last_view_cnt     = 0;
+    uint32_t allowed_actions = VIEW_ALLOW_ALL;
 
     uint32_t edges = 0;
     wlr_box minimize_hint = {0, 0, 0, 0};

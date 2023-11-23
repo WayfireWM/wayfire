@@ -47,6 +47,8 @@ class wayfire_xdg_popup : public wf::view_interface_t
     std::string get_app_id() override final;
     std::string get_title() override final;
 
+    bool is_focusable() const override final;
+
     void move(int x, int y);
     wf::geometry_t get_geometry();
     virtual wlr_surface *get_keyboard_focus_surface() override;

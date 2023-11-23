@@ -54,6 +54,7 @@ class wayfire_layer_shell_view : public wf::view_interface_t
     std::string app_id;
     friend class wf::tracking_allocator_t<view_interface_t>;
     wayfire_layer_shell_view(wlr_layer_surface_v1 *lsurf);
+    bool keyboard_focus_enabled = true;
 
   public:
     wlr_layer_surface_v1 *lsurface;
@@ -110,7 +111,7 @@ class wayfire_layer_shell_view : public wf::view_interface_t
 
     wlr_surface *get_keyboard_focus_surface() override
     {
-        if (is_mapped() && priv->keyboard_focus_enabled)
+        if (is_mapped() && keyboard_focus_enabled)
         {
             return priv->wsurface;
         }
@@ -502,7 +503,7 @@ void wayfire_layer_shell_view::map()
     on_surface_commit.connect(&lsurface->surface->events.commit);
 
     /* Read initial data */
-    priv->keyboard_focus_enabled = lsurface->current.keyboard_interactive;
+    keyboard_focus_enabled = lsurface->current.keyboard_interactive;
 
     wf::scene::add_front(get_output()->node_for_layer(get_layer()), get_root_node());
     wf_layer_shell_manager::get_instance().handle_map(this);
@@ -544,7 +545,7 @@ void wayfire_layer_shell_view::commit()
     auto state = &lsurface->current;
     /* Update the keyboard focus enabled state. If a refocusing is needed, i.e
      * the view state changed, then this will happen when arranging layers */
-    priv->keyboard_focus_enabled = state->keyboard_interactive;
+    keyboard_focus_enabled = state->keyboard_interactive;
 
     if (state->committed)
     {
