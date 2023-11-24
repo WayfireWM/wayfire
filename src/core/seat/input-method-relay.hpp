@@ -23,6 +23,7 @@ class input_method_relay
         on_grab_keyboard, on_grab_keyboard_destroy, on_new_popup_surface;
     wlr_input_method_keyboard_grab_v2 *keyboard_grab = nullptr;
     wlr_text_input_v3 *already_disabled_input = nullptr;
+    bool focus_just_changed = false;
     text_input *find_focusable_text_input();
     void set_focus(wlr_surface*);
 
@@ -36,6 +37,8 @@ class input_method_relay
         {
             set_focus(nullptr);
         }
+
+        focus_just_changed = true;
     };
 
     bool should_grab(wlr_keyboard*);

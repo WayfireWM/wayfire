@@ -49,6 +49,14 @@ wf::input_method_relay::input_method_relay()
         auto evt_input_method = static_cast<wlr_input_method_v2*>(data);
         assert(evt_input_method == input_method);
 
+        // FIXME: workaround focus change while preediting
+        if (focus_just_changed)
+        {
+            LOGI("focus_just_changed, ignore input method commit");
+            focus_just_changed = false;
+            return;
+        }
+
         auto *text_input = find_focused_text_input();
         if (text_input == nullptr)
         {
