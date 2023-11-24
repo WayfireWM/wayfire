@@ -158,8 +158,17 @@ void wf::input_method_relay::disable_text_input(wlr_text_input_v3 *input)
         return;
     }
 
+    // on focus change, we disable on one text input and enable on another
+    // however, the former may also send us a disable request AFTER we've done the above
+    // let's just ignore repeated disable reuqests.
+    if (input == already_disabled_input)
+    {
+        return;
+    }
+
     wlr_input_method_v2_send_deactivate(input_method);
     send_im_state(input);
+    already_disabled_input = input;
 }
 
 void wf::input_method_relay::remove_text_input(wlr_text_input_v3 *input)

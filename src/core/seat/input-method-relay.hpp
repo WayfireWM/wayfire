@@ -22,6 +22,7 @@ class input_method_relay
         on_input_method_new, on_input_method_commit, on_input_method_destroy,
         on_grab_keyboard, on_grab_keyboard_destroy, on_new_popup_surface;
     wlr_input_method_keyboard_grab_v2 *keyboard_grab = nullptr;
+    wlr_text_input_v3 *already_disabled_input = nullptr;
     text_input *find_focusable_text_input();
     void set_focus(wlr_surface*);
 
