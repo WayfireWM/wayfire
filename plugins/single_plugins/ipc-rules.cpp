@@ -161,12 +161,14 @@ class ipc_rules_t : public wf::plugin_interface_t, public wf::per_output_tracker
         for (auto& view : wf::get_core().get_all_views())
         {
             nlohmann::json v;
+            auto output = view->get_output();
             v["id"]     = view->get_id();
             v["title"]  = view->get_title();
             v["app-id"] = view->get_app_id();
             v["base-geometry"] = wf::ipc::geometry_to_json(get_view_base_geometry(view));
             v["bbox"]   = wf::ipc::geometry_to_json(view->get_bounding_box());
-            v["output"] = view->get_output() ? view->get_output()->to_string() : "null";
+            v["output"] = output ? output->to_string() : "null";
+            v["output-id"] = output ? output->get_id() : -1;
             v["last-focus-timestamp"] = wf::get_focus_timestamp(view);
 
             v["state"] = {};
