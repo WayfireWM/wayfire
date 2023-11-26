@@ -4,7 +4,6 @@
 #include "wayfire/output.hpp"
 #include "wayfire/toplevel-view.hpp"
 #include "wayfire/view.hpp"
-#include "wayfire/workspace-set.hpp"
 #include "wayfire/plugins/grid.hpp"
 #include "wayfire/util/log.hpp"
 #include "wayfire/view-transform.hpp"
@@ -15,7 +14,6 @@
 
 #include <algorithm>
 #include <cfloat>
-#include <iostream>
 #include <string>
 #include <vector>
 
@@ -27,6 +25,30 @@ view_action_interface_t::~view_action_interface_t()
 bool view_action_interface_t::execute(const std::string & name,
     const std::vector<variant_t> & args)
 {
+    const auto& execute_set_alpha = [&]
+    {
+        auto alpha = _validate_alpha(args);
+        if (std::get<0>(alpha))
+        {
+            _set_alpha(std::get<1>(alpha));
+        }
+    };
+
+    if (!_view)
+    {
+        // We have a non-toplevel view. We can only adjust alpha for it ...
+
+        if ((name != "set") || (args.size() != 2) || (wf::get_string(args[0]) != "alpha"))
+        {
+            LOGW("The only allowed action for non-toplevel views is",
+                " set alpha <double>, matched ", _nontoplevel);
+            return true;
+        }
+
+        execute_set_alpha();
+        return false;
+    }
+
     if (name == "set")
     {
         auto id = wf::get_string(args.at(0));
@@ -51,11 +73,7 @@ bool view_action_interface_t::execute(const std::string & name,
 
         if (id == "alpha")
         {
-            auto alpha = _validate_alpha(args);
-            if (std::get<0>(alpha))
-            {
-                _set_alpha(std::get<1>(alpha));
-            }
+            execute_set_alpha();
         } else if (id == "geometry")
         {
             auto geometry = _validate_geometry(args);
@@ -215,9 +233,10 @@ bool view_action_interface_t::execute(const std::string & name,
     return true;
 }
 
-void view_action_interface_t::set_view(wayfire_toplevel_view view)
+void view_action_interface_t::set_view(wayfire_view view)
 {
-    _view = view;
+    _nontoplevel = view;
+    _view = toplevel_cast(view);
 }
 
 void view_action_interface_t::_maximize()
@@ -374,11 +393,11 @@ void view_action_interface_t::_set_alpha(float alpha)
 
     // Apply view transformer if needed and set alpha.
     auto tr = wf::ensure_named_transformer<wf::scene::view_2d_transformer_t>(
-        _view, wf::TRANSFORMER_2D, "alpha", _view);
+        _nontoplevel, wf::TRANSFORMER_2D, "alpha", _nontoplevel);
     if (fabs(tr->alpha - alpha) > FLT_EPSILON)
     {
         tr->alpha = alpha;
-        _view->damage();
+        _nontoplevel->damage();
 
         LOGI("View action interface: Alpha set to ", alpha, ".");
     }

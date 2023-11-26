@@ -1,5 +1,3 @@
-#include <algorithm>
-#include <cfloat>
 #include <memory>
 #include <vector>
 
@@ -26,7 +24,7 @@ class wayfire_window_rules_t : public wf::per_output_plugin_instance_t
   public:
     void init() override;
     void fini() override;
-    void apply(const std::string & signal, wayfire_toplevel_view view);
+    void apply(const std::string & signal, wayfire_view view);
 
   private:
     void setup_rules_from_config();
@@ -35,7 +33,7 @@ class wayfire_window_rules_t : public wf::per_output_plugin_instance_t
     // Created rule handler.
     wf::signal::connection_t<wf::view_mapped_signal> on_view_mapped = [=] (wf::view_mapped_signal *ev)
     {
-        apply("created", toplevel_cast(ev->view));
+        apply("created", ev->view);
     };
 
     // Maximized rule handler.
@@ -95,19 +93,20 @@ void wayfire_window_rules_t::fini()
     }
 }
 
-void wayfire_window_rules_t::apply(const std::string & signal, wayfire_toplevel_view view)
+void wayfire_window_rules_t::apply(const std::string & signal, wayfire_view view)
 {
     if (view == nullptr)
     {
         return;
     }
 
-    if ((signal == "maximized") && (view->pending_tiled_edges() != wf::TILED_EDGES_ALL))
+    auto toplevel = toplevel_cast(view);
+    if ((signal == "maximized") && (!toplevel || (toplevel->pending_tiled_edges() != wf::TILED_EDGES_ALL)))
     {
         return;
     }
 
-    if ((signal == "unmaximized") && (view->pending_tiled_edges() == wf::TILED_EDGES_ALL))
+    if ((signal == "unmaximized") && (!toplevel || (toplevel->pending_tiled_edges() == wf::TILED_EDGES_ALL)))
     {
         return;
     }

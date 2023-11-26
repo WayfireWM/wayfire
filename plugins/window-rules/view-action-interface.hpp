@@ -17,7 +17,7 @@ class view_action_interface_t : public action_interface_t
     virtual bool execute(const std::string & name,
         const std::vector<variant_t> & args) override;
 
-    void set_view(wayfire_toplevel_view view);
+    void set_view(wayfire_view view);
 
   private:
     void _maximize();
@@ -55,6 +55,7 @@ class view_action_interface_t : public action_interface_t
     wf::geometry_t _get_workspace_grid_geometry(wf::output_t *output) const;
 
     wayfire_toplevel_view _view;
+    wayfire_view _nontoplevel;
 };
 } // End namespace wf.
 
