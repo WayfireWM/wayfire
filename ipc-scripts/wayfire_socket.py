@@ -35,7 +35,10 @@ class WayfireSocket:
     def read_message(self):
         rlen = int.from_bytes(self.read_exact(4), byteorder="little")
         response_message = self.read_exact(rlen)
-        return js.loads(response_message)
+        response = js.loads(response_message)
+        if "error" in response:
+            raise Exception(response["error"])
+        return response
 
     def send_json(self, msg):
         data = js.dumps(msg).encode('utf8')
@@ -43,6 +46,9 @@ class WayfireSocket:
         self.client.send(header)
         self.client.send(data)
         return self.read_message()
+
+    def close(self):
+      self.client.close()
 
     def watch(self):
         message = get_msg_template("window-rules/events/watch")
@@ -57,7 +63,6 @@ class WayfireSocket:
         message = get_msg_template("window-rules/configure-view")
         message["data"]["id"] = view_id
         message["data"]["geometry"] = geometry_to_json(x, y, w, h)
-        print(message)
         return self.send_json(message)
 
     def assign_slot(self, view_id: int, slot: str):
