@@ -1,18 +1,14 @@
 #include "wayfire/render-manager.hpp"
 #include "pixman.h"
-#include "view/view-impl.hpp"
 #include "wayfire/core.hpp"
 #include "wayfire/debug.hpp"
 #include "wayfire/geometry.hpp"
 #include "wayfire/region.hpp"
-#include "wayfire/scene-input.hpp"
 #include "wayfire/scene-render.hpp"
 #include "wayfire/scene.hpp"
 #include "wayfire/signal-definitions.hpp"
 #include "wayfire/view.hpp"
-#include "wayfire/workspace-stream.hpp"
 #include "wayfire/output.hpp"
-#include "../core/core-impl.hpp"
 #include "wayfire/util.hpp"
 #include "wayfire/workspace-set.hpp"
 #include "../core/opengl-priv.hpp"
@@ -917,8 +913,7 @@ class wf::render_manager::impl
 
     wf::option_wrapper_t<wf::color_t> background_color_opt;
 
-    impl(output_t *o) :
-        output(o)
+    impl(output_t *o) : output(o), env_allow_scanout(check_scanout_enabled())
     {
         damage_manager = std::make_unique<swapchain_damage_manager_t>(o);
         effects = std::make_unique<effect_hook_manager_t>();
@@ -962,6 +957,19 @@ class wf::render_manager::impl
         damage_manager->schedule_repaint();
     }
 
+    const bool env_allow_scanout;
+    static bool check_scanout_enabled()
+    {
+        const char *env_scanout = getenv("WAYFIRE_DISABLE_DIRECT_SCANOUT");
+        bool env_allow_scanout  = (env_scanout == nullptr) || (!strcmp(env_scanout, "0"));
+        if (!env_allow_scanout)
+        {
+            LOGC(SCANOUT, "Scanout disabled by environment variable.");
+        }
+
+        return env_allow_scanout;
+    }
+
     int output_inhibit_counter = 0;
     void add_inhibit(bool add)
     {
@@ -1000,7 +1008,7 @@ class wf::render_manager::impl
         const bool can_scanout = !output_inhibit_counter && effects->can_scanout() &&
             postprocessing->can_scanout() && wlr_output_is_direct_scanout_allowed(output->handle);
 
-        if (!can_scanout)
+        if (!can_scanout || !env_allow_scanout)
         {
             return false;
         }
