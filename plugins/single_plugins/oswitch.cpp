@@ -21,6 +21,7 @@ class wayfire_oswitch : public wf::plugin_interface_t
         idle_next_output.run_once([=] ()
         {
             wf::get_core().seat->focus_output(next);
+            next->ensure_pointer(true);
         });
 
         return true;
@@ -43,6 +44,7 @@ class wayfire_oswitch : public wf::plugin_interface_t
         idle_next_output.run_once([=] ()
         {
             wf::get_core().seat->focus_output(next);
+            next->ensure_pointer(true);
         });
 
         return true;

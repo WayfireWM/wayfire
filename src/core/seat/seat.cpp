@@ -58,8 +58,6 @@ void wf::seat_t::focus_output(wf::output_t *wo)
     if (wo)
     {
         LOGC(KBD, "focus output: ", wo->handle->name);
-        /* Move to the middle of the output if this is the first output */
-        wo->ensure_pointer((priv->active_output == nullptr));
 
         refocus();
 
