@@ -99,7 +99,7 @@ struct swapchain_damage_manager_t
         wlr_damage_ring_init(&damage_ring);
         update_damage_ring_bounds();
 
-        on_needs_frame.set_callback([&] (void*) { schedule_repaint(); });
+        on_needs_frame.set_callback([=] (void*) { schedule_repaint(); });
         on_damage.set_callback([&] (void *data)
         {
             auto ev = static_cast<wlr_output_event_damage*>(data);
@@ -109,7 +109,7 @@ struct swapchain_damage_manager_t
             }
         });
 
-        on_request_state.set_callback([&] (void *data)
+        on_request_state.set_callback([=] (void *data)
         {
             auto ev = static_cast<wlr_output_event_request_state*>(data);
             wlr_output_commit_state(output->handle, ev->state);
@@ -118,7 +118,7 @@ struct swapchain_damage_manager_t
             schedule_repaint();
         });
 
-        on_gamma_changed.set_callback([&] (void *data)
+        on_gamma_changed.set_callback([=] (void *data)
         {
             auto event = (const wlr_gamma_control_manager_v1_set_gamma_event*)data;
             if (event->output == this->output)
