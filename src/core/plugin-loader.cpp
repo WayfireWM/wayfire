@@ -1,15 +1,11 @@
 #include <sstream>
 #include <algorithm>
-#include <set>
 #include <memory>
 #include <filesystem>
 #include <dlfcn.h>
 
 #include "plugin-loader.hpp"
-#include "wayfire/output-layout.hpp"
-#include "wayfire/output.hpp"
 #include "../core/wm.hpp"
-#include "wayfire/core.hpp"
 #include "wayfire/plugin.hpp"
 #include <wayfire/util/log.hpp>
 
@@ -140,19 +136,6 @@ std::optional<wf::loaded_plugin_t> wf::plugin_manager_t::load_plugin_from_file(s
     return {};
 }
 
-static bool already_loaded(std::vector<std::string> v, std::string key)
-{
-    for (unsigned int i = 0; i < v.size(); i++)
-    {
-        if (!v.at(i).compare(key))
-        {
-            return true;
-        }
-    }
-
-    return false;
-}
-
 void wf::plugin_manager_t::reload_dynamic_plugins()
 {
     std::string plugin_list = plugins_opt;
@@ -172,17 +155,19 @@ void wf::plugin_manager_t::reload_dynamic_plugins()
     std::string plugin_name;
     while (stream >> plugin_name)
     {
-        if (already_loaded(plugin_dup_watcher, plugin_name))
-        {
-            LOGE(plugin_name, " plugin found in the plugin list more than once, skipping");
-            continue;
-        }
-
         if (plugin_name.size())
         {
             auto plugin_path = wf::get_plugin_path_for_name(plugin_paths, plugin_name);
             if (plugin_path)
             {
+                auto already_loaded =
+                    std::find(next_plugins.begin(), next_plugins.end(), plugin_path.value());
+                if (already_loaded != next_plugins.end())
+                {
+                    LOGE(plugin_name, " plugin found in the plugin list more than once, skipping");
+                    continue;
+                }
+
                 next_plugins.push_back(plugin_path.value());
                 plugin_dup_watcher.push_back(plugin_name);
             } else
