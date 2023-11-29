@@ -148,8 +148,6 @@ void wf::plugin_manager_t::reload_dynamic_plugins()
 
     std::stringstream stream(plugin_list);
     std::vector<std::string> next_plugins;
-    std::vector<std::string> plugin_dup_watcher;
-
     std::vector<std::string> plugin_paths = wf::get_plugin_paths();
 
     std::string plugin_name;
@@ -169,7 +167,6 @@ void wf::plugin_manager_t::reload_dynamic_plugins()
                 }
 
                 next_plugins.push_back(plugin_path.value());
-                plugin_dup_watcher.push_back(plugin_name);
             } else
             {
                 LOGE("Failed to load plugin \"", plugin_name, "\". ",
