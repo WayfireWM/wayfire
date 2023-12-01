@@ -343,7 +343,8 @@ class wayfire_wm_actions_output_t : public wf::per_output_plugin_instance_t
         workspace_changed.disconnect();
         view_minimized.disconnect();
 
-        for (auto& view : output->wset()->get_views())
+        auto views = output->wset()->get_views(wf::WSET_SORT_STACKING);
+        for (auto& view : wf::reverse(views))
         {
             if (view->has_data("wm-actions-showdesktop"))
             {
