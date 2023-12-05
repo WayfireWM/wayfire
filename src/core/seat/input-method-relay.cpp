@@ -203,7 +203,7 @@ void wf::input_method_relay::remove_popup_surface(wf::popup_surface *popup)
 
 bool wf::input_method_relay::should_grab(wlr_keyboard *kbd)
 {
-    if (keyboard_grab == nullptr)
+    if ((keyboard_grab == nullptr) || !find_focused_text_input())
     {
         return false;
     }
