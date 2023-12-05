@@ -295,7 +295,8 @@ bool wf::keyboard_t::handle_keyboard_key(uint32_t time, uint32_t key, uint32_t s
     auto& seat  = wf::get_core_impl().seat;
 
     bool handled_in_plugin = false;
-    auto mod = mod_from_key(key);
+    bool im_sent = wf::get_core_impl().im_relay->is_im_sent(handle);
+    auto mod     = mod_from_key(key);
     input->locked_mods = this->get_locked_mods();
 
     if (state == WLR_KEY_PRESSED)
@@ -320,11 +321,19 @@ bool wf::keyboard_t::handle_keyboard_key(uint32_t time, uint32_t key, uint32_t s
             mod_binding_key = 0;
         }
 
-        handled_in_plugin |= wf::get_core().bindings->handle_key(
-            wf::keybinding_t{get_modifiers(), key}, mod_binding_key);
+        if (!im_sent)
+        {
+            handled_in_plugin |= wf::get_core().bindings->handle_key(
+                wf::keybinding_t{get_modifiers(), key}, mod_binding_key);
+        }
+
+        if (!handled_in_plugin)
+        {
+            handled_in_plugin |= wf::get_core_impl().im_relay->handle_key(handle, time, key, state);
+        }
     } else
     {
-        if (mod_binding_key != 0)
+        if (!im_sent && (mod_binding_key != 0))
         {
             int timeout = wf::option_wrapper_t<int>(
                 "input/modifier_binding_timeout");
@@ -338,12 +347,12 @@ bool wf::keyboard_t::handle_keyboard_key(uint32_t time, uint32_t key, uint32_t s
             }
         }
 
-        mod_binding_key = 0;
-    }
+        if (!handled_in_plugin)
+        {
+            handled_in_plugin |= wf::get_core_impl().im_relay->handle_key(handle, time, key, state);
+        }
 
-    if (!handled_in_plugin)
-    {
-        handled_in_plugin |= wf::get_core_impl().im_relay->handle_key(handle, time, key, state);
+        mod_binding_key = 0;
     }
 
     return handled_in_plugin;

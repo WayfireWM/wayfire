@@ -24,6 +24,7 @@ class input_method_relay
     wlr_input_method_keyboard_grab_v2 *keyboard_grab = nullptr;
     wlr_text_input_v3 *already_disabled_input = nullptr;
     bool focus_just_changed = false;
+    wl_resource *last_keyboard_resource = nullptr;
     text_input *find_focusable_text_input();
     void set_focus(wlr_surface*);
 
@@ -57,6 +58,7 @@ class input_method_relay
     void remove_popup_surface(popup_surface*);
     bool handle_key(struct wlr_keyboard*, uint32_t, uint32_t, uint32_t);
     bool handle_modifier(struct wlr_keyboard*);
+    bool is_im_sent(struct wlr_keyboard*);
     ~input_method_relay();
 };
 

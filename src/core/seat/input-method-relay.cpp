@@ -100,6 +100,7 @@ wf::input_method_relay::input_method_relay()
         on_new_popup_surface.disconnect();
         input_method  = nullptr;
         keyboard_grab = nullptr;
+        last_keyboard_resource = nullptr;
 
         auto *text_input = find_focused_text_input();
         if (text_input != nullptr)
@@ -127,6 +128,7 @@ wf::input_method_relay::input_method_relay()
     on_grab_keyboard_destroy.set_callback([&] (void *data)
     {
         on_grab_keyboard_destroy.disconnect();
+        last_keyboard_resource = keyboard_grab->resource;
         keyboard_grab = nullptr;
     });
 
@@ -208,16 +210,20 @@ bool wf::input_method_relay::should_grab(wlr_keyboard *kbd)
         return false;
     }
 
-    // input method sends key via a virtual keyboard
+    return !is_im_sent(kbd);
+}
+
+bool wf::input_method_relay::is_im_sent(wlr_keyboard *kbd)
+{
     struct wlr_virtual_keyboard_v1 *virtual_keyboard = wlr_input_device_get_virtual_keyboard(&kbd->base);
-    if (virtual_keyboard &&
-        (wl_resource_get_client(virtual_keyboard->resource) ==
-         wl_resource_get_client(input_method->keyboard_grab->resource)))
+    if (!virtual_keyboard)
     {
         return false;
     }
 
-    return true;
+    auto resource =
+        input_method->keyboard_grab ? input_method->keyboard_grab->resource : last_keyboard_resource;
+    return wl_resource_get_client(virtual_keyboard->resource) == wl_resource_get_client(resource);
 }
 
 bool wf::input_method_relay::handle_key(struct wlr_keyboard *kbd, uint32_t time, uint32_t key,
