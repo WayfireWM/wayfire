@@ -64,6 +64,12 @@ class wayfire_shortcuts_inhibit : public wf::plugin_interface_t
         }
 
         deactivate_for_surface(last_focus);
+
+        if (ignore_views.matches(focus_view))
+        {
+            return;
+        }
+
         activate_for_surface(new_focus);
     }
 
@@ -73,6 +79,7 @@ class wayfire_shortcuts_inhibit : public wf::plugin_interface_t
     }
 
   private:
+    wf::view_matcher_t ignore_views{"shortcuts-inhibit/ignore_views"};
     wlr_keyboard_shortcuts_inhibit_manager_v1 *inhibit_manager;
     wf::wl_listener_wrapper keyboard_inhibit_new;
     wf::view_matcher_t inhibit_by_default{"shortcuts-inhibit/inhibit_by_default"};

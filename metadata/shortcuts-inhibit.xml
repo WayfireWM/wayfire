@@ -11,6 +11,12 @@
 			<default>none</default>
 		</option>
 
+		<option name="ignore_views" type="string">
+			<_short>Ignore views</_short>
+			<_long>Restrict matched views from activating shortcuts inhibit.</_long>
+			<default>none</default>
+		</option>
+
 		<option name="break_grab" type="key">
 			<_short>Break current inhibitor</_short>
 			<_long>A keybinding to remove the currently active inhibitor temporary.</_long>
