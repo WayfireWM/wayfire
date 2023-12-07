@@ -19,9 +19,9 @@ class decoration_theme_t;
 
 enum button_type_t
 {
-    BUTTON_CLOSE,
-    BUTTON_TOGGLE_MAXIMIZE,
-    BUTTON_MINIMIZE,
+    BUTTON_CLOSE           = 1 << 0,
+    BUTTON_TOGGLE_MAXIMIZE = 1 << 1,
+    BUTTON_MINIMIZE        = 1 << 2,
 };
 
 class button_t

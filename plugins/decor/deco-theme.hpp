@@ -20,6 +20,9 @@ class decoration_theme_t
     int get_title_height() const;
     /** @return The available border for resizing */
     int get_border_size() const;
+    /** Set the flags for buttons */
+    void set_buttons(button_type_t flags);
+    button_type_t button_flags;
 
     /**
      * Fill the given rectangle with the background color(s).

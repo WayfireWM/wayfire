@@ -80,6 +80,15 @@ class simple_decoration_node_t : public wf::scene::node_t, public wf::pointer_in
     {
         this->_view = view->weak_from_this();
         view->connect(&title_set);
+        if (view->parent)
+        {
+            theme.set_buttons(wf::decor::button_type_t(wf::decor::BUTTON_TOGGLE_MAXIMIZE |
+                wf::decor::BUTTON_CLOSE));
+        } else
+        {
+            theme.set_buttons(wf::decor::button_type_t(wf::decor::BUTTON_MINIMIZE |
+                wf::decor::BUTTON_TOGGLE_MAXIMIZE | wf::decor::BUTTON_CLOSE));
+        }
 
         // make sure to hide frame if the view is fullscreen
         update_decoration_size();

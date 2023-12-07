@@ -24,6 +24,12 @@ int decoration_theme_t::get_border_size() const
     return border_size;
 }
 
+/** @return The available border for resizing */
+void decoration_theme_t::set_buttons(button_type_t flags)
+{
+    button_flags = flags;
+}
+
 /**
  * Fill the given rectangle with the background color(s).
  *

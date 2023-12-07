@@ -77,17 +77,17 @@ wf::geometry_t decoration_layout_t::create_buttons(int width, int)
     std::string button_name;
     while (stream >> button_name)
     {
-        if (button_name == "minimize")
+        if ((button_name == "minimize") && (theme.button_flags & BUTTON_MINIMIZE))
         {
             buttons.push_back(BUTTON_MINIMIZE);
         }
 
-        if (button_name == "maximize")
+        if ((button_name == "maximize") && (theme.button_flags & BUTTON_TOGGLE_MAXIMIZE))
         {
             buttons.push_back(BUTTON_TOGGLE_MAXIMIZE);
         }
 
-        if (button_name == "close")
+        if ((button_name == "close") && (theme.button_flags & BUTTON_CLOSE))
         {
             buttons.push_back(BUTTON_CLOSE);
         }
