@@ -124,6 +124,16 @@ static void signal_handler(int signal)
         error = "Fatal error(SIGABRT)";
         break;
 
+      case SIGINT:
+        LOGI("Got SIGINT, shutting down");
+        wf::get_core().shutdown();
+        return;
+
+      case SIGTERM:
+        LOGI("Got SIGTERM, shutting down");
+        wf::get_core().shutdown();
+        return;
+
       default:
         error = "Unknown";
     }
@@ -324,6 +334,9 @@ int main(int argc, char *argv[])
     signal(SIGABRT, signal_handler);
 #endif
 
+    signal(SIGINT, signal_handler);
+    signal(SIGTERM, signal_handler);
+
     std::set_terminate([] ()
     {
         std::cout << "Unhandled exception" << std::endl;
@@ -420,5 +433,7 @@ int main(int argc, char *argv[])
     /* Teardown */
     wl_display_destroy_clients(core.display);
     wl_display_destroy(core.display);
+
+    LOGI("Exiting Wayfire");
     return EXIT_SUCCESS;
 }
