@@ -156,10 +156,9 @@ programs.wayfire = {
 
 ###### Ubuntu
 
-See the [build instructions][Ubuntu build instructions] from [@soreau].
-
-[@soreau]: https://github.com/soreau
-[Ubuntu build instructions]: http://blog.northfield.ws/wayfire/
+```
+apt install wayfire
+```
 
 ###### Void
 
