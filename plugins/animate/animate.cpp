@@ -227,7 +227,7 @@ static void cleanup_views_on_output(wf::output_t *output)
     for (auto& view : wf::get_core().get_all_views())
     {
         auto wo = view->get_output();
-        if ((wo != output) && output)
+        if (!output || ((wo != output) && output))
         {
             continue;
         }
