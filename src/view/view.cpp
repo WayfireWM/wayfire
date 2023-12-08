@@ -282,5 +282,6 @@ wf::pointf_t wf::place_popup_at(wlr_surface *parent, wlr_surface *popup, wf::poi
         popup_offset = node->to_global(popup_offset);
         node = node->parent();
     }
+
     return popup_offset;
 }

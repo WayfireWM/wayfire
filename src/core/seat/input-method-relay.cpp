@@ -502,6 +502,7 @@ void wf::popup_surface::unmap()
     {
         return;
     }
+
     damage();
 
     priv->unset_mapped_surface_contents();
@@ -547,7 +548,7 @@ void wf::popup_surface::update_geometry()
     }
 
     auto wlr_surface = text_input->input->focused_surface;
-    auto view     = wf::wl_surface_to_wayfire_view(wlr_surface->resource);
+    auto view = wf::wl_surface_to_wayfire_view(wlr_surface->resource);
     if (!view)
     {
         return;
@@ -555,7 +556,7 @@ void wf::popup_surface::update_geometry()
 
     damage();
 
-    wf::pointf_t popup_offset = wf::place_popup_at(wlr_surface, surface->surface, {x * 1.0, y * 1.0});
+    wf::pointf_t popup_offset = wf::place_popup_at(wlr_surface, surface->surface, {x* 1.0, y * 1.0});
     x = popup_offset.x;
     y = popup_offset.y;
 

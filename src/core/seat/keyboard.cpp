@@ -301,7 +301,7 @@ bool wf::keyboard_t::handle_keyboard_key(uint32_t time, uint32_t key, uint32_t s
     }
 
     bool handled_in_plugin = false;
-    auto mod     = mod_from_key(key);
+    auto mod = mod_from_key(key);
     input->locked_mods = this->get_locked_mods();
 
     if (state == WLR_KEY_PRESSED)
