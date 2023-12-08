@@ -49,6 +49,8 @@ struct output_state_t
     wl_output_transform transform = WL_OUTPUT_TRANSFORM_NORMAL;
     /* The scale of the output */
     double scale = 1.0;
+    /* Whether or not adaptive sync is enabled */
+    bool vrr = false;
 
     /* Output to take the image from. Valid only if source is mirror */
     std::string mirror_from;

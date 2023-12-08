@@ -14,5 +14,8 @@
     <option name="transform" type="string">
       <default>normal</default>
     </option>
+    <option name="vrr" type="bool">
+      <default>false</default>
+    </option>
   </object>
 </wayfire>
