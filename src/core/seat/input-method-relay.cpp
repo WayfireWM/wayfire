@@ -548,21 +548,17 @@ void wf::popup_surface::update_geometry()
 
     auto wlr_surface = text_input->input->focused_surface;
     auto view     = wf::wl_surface_to_wayfire_view(wlr_surface->resource);
-    auto toplevel = toplevel_cast(view);
-    auto g = toplevel->get_geometry();
-    auto margins = toplevel->toplevel()->current().margins;
-
-    auto xdg_surface = wlr_xdg_surface_try_from_wlr_surface(wlr_surface);
-    if (xdg_surface)
+    if (!view)
     {
-        // substract shadows etc; test app: d-feet
-        x -= xdg_surface->current.geometry.x;
-        y -= xdg_surface->current.geometry.y;
+        return;
     }
 
     damage();
-    x += g.x + margins.left;
-    y += g.y + margins.top;
+
+    wf::pointf_t popup_offset = wf::place_popup_at(wlr_surface, surface->surface, {x * 1.0, y * 1.0});
+    x = popup_offset.x;
+    y = popup_offset.y;
+
     auto width  = surface->surface->current.width;
     auto height = surface->surface->current.height;
 

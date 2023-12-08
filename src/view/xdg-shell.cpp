@@ -165,29 +165,10 @@ void wayfire_xdg_popup::update_position()
     }
 
     // Offset relative to the parent surface
-    wf::pointf_t popup_offset = {1.0 * popup->current.geometry.x, 1.0 * popup->current.geometry.y};
-    if (wlr_xdg_surface *xdg_surface = wlr_xdg_surface_try_from_wlr_surface(popup->parent))
-    {
-        wlr_box box;
-        wlr_xdg_surface_get_geometry(xdg_surface, &box);
-        popup_offset.x += box.x;
-        popup_offset.y += box.y;
-    }
-
-    // Get the {0, 0} of the parent view in output coordinates
-    popup_offset += popup_parent->get_surface_root_node()->to_global({0, 0});
-
-    // Subtract shadows, etc.
-    popup_offset.x -= popup->base->current.geometry.x;
-    popup_offset.y -= popup->base->current.geometry.y;
-
-    // Apply transformers to the popup position
-    auto node = popup_parent->get_surface_root_node()->parent();
-    while (node != popup_parent->get_transformed_node().get())
-    {
-        popup_offset = node->to_global(popup_offset);
-        node = node->parent();
-    }
+    wf::pointf_t popup_offset = wf::place_popup_at(popup->parent, popup->base->surface, {
+        popup->current.geometry.x,
+        popup->current.geometry.y,
+    });
 
     this->move(popup_offset.x, popup_offset.y);
 }

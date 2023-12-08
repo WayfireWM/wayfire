@@ -258,6 +258,8 @@ class view_node_tag_t
   private:
     wayfire_view view;
 };
+
+pointf_t place_popup_at(wlr_surface *parent, wlr_surface *popup, wf::pointf_t relative);
 }
 
 #endif
