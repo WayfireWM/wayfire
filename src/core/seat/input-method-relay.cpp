@@ -27,7 +27,7 @@ wf::input_method_relay::input_method_relay()
             return;
         }
 
-        LOGI("new input method connected");
+        LOGD("new input method connected");
         input_method = new_input_method;
         on_input_method_commit.connect(&input_method->events.commit);
         on_input_method_destroy.connect(&input_method->events.destroy);
@@ -117,7 +117,7 @@ wf::input_method_relay::input_method_relay()
     {
         if (keyboard_grab != nullptr)
         {
-            LOGI("Attempted to grab input method keyboard twice");
+            LOGW("Attempted to grab input method keyboard twice");
             return;
         }
 
@@ -474,6 +474,12 @@ void wf::popup_surface::map()
 
     auto view   = wf::wl_surface_to_wayfire_view(text_input->input->focused_surface->resource);
     auto output = view->get_output();
+    if (!output)
+    {
+        LOGD("trying to map input method popup with a view not on an output.");
+        return;
+    }
+
     set_output(output);
 
     auto target_layer = wf::scene::layer::UNMANAGED;
@@ -481,6 +487,7 @@ void wf::popup_surface::map()
 
     priv->set_mapped_surface_contents(main_surface);
     priv->set_mapped(true);
+    _is_mapped = true;
     on_commit.connect(&surface->surface->events.commit);
 
     update_geometry();
@@ -491,13 +498,28 @@ void wf::popup_surface::map()
 
 void wf::popup_surface::unmap()
 {
+    if (!is_mapped())
+    {
+        return;
+    }
     damage();
 
     priv->unset_mapped_surface_contents();
 
     emit_view_unmap();
     priv->set_mapped(false);
+    _is_mapped = false;
     on_commit.disconnect();
+}
+
+std::string wf::popup_surface::get_app_id()
+{
+    return "input-method-popup";
+}
+
+std::string wf::popup_surface::get_title()
+{
+    return "input-method-popup";
 }
 
 void wf::popup_surface::update_geometry()
@@ -546,7 +568,10 @@ void wf::popup_surface::update_geometry()
 
     auto output   = view->get_output();
     auto g_output = output->get_layout_geometry();
+    // make sure right edge is on screen, sliding to the left when needed,
+    // but keep left edge on screen nonetheless.
     x = std::max(0, std::min(x, g_output.width - width));
+    // down edge is going to be out of screen; flip upwards
     if (y + height > g_output.height)
     {
         y -= height;
@@ -556,6 +581,7 @@ void wf::popup_surface::update_geometry()
         }
     }
 
+    // make sure top edge is on screen, sliding down and sacrificing down edge if unavoidable
     y = std::max(0, y);
 
     surface_root_node->set_offset({x, y});
@@ -569,7 +595,7 @@ void wf::popup_surface::update_geometry()
 
 bool wf::popup_surface::is_mapped() const
 {
-    return priv->wsurface != nullptr;
+    return priv->wsurface != nullptr && _is_mapped;
 }
 
 wf::geometry_t wf::popup_surface::get_geometry()

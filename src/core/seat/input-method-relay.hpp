@@ -56,7 +56,7 @@ class input_method_relay
     void disable_text_input(wlr_text_input_v3*);
     void remove_text_input(wlr_text_input_v3*);
     void remove_popup_surface(popup_surface*);
-    bool handle_key(struct wlr_keyboard*, uint32_t, uint32_t, uint32_t);
+    bool handle_key(struct wlr_keyboard*, uint32_t time, uint32_t key, uint32_t state);
     bool handle_modifier(struct wlr_keyboard*);
     bool is_im_sent(struct wlr_keyboard*);
     ~input_method_relay();
@@ -86,7 +86,9 @@ struct popup_surface : public wf::view_interface_t
 
     popup_surface(input_method_relay*, wlr_input_popup_surface_v2*);
     static std::shared_ptr<popup_surface> create(input_method_relay*, wlr_input_popup_surface_v2*);
-    bool is_mapped() const;
+    bool is_mapped() const override;
+    std::string get_app_id() override;
+    std::string get_title() override;
     wf::geometry_t get_geometry();
     void map();
     void unmap();
@@ -97,6 +99,7 @@ struct popup_surface : public wf::view_interface_t
     wf::geometry_t geometry{0, 0, 0, 0};
     std::shared_ptr<wf::scene::wlr_surface_node_t> main_surface;
     std::shared_ptr<wf::scene::translation_node_t> surface_root_node;
+    bool _is_mapped = false;
 
     virtual wlr_surface *get_keyboard_focus_surface() override
     {
