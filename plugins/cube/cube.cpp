@@ -81,6 +81,17 @@ class wayfire_cube : public wf::per_output_plugin_instance_t, public wf::pointer
                 }
             }
 
+            ~cube_render_instance_t()
+            {
+                OpenGL::render_begin();
+                for (auto& buf : framebuffers)
+                {
+                    buf.release();
+                }
+
+                OpenGL::render_end();
+            }
+
             void schedule_instructions(
                 std::vector<wf::scene::render_instruction_t>& instructions,
                 const wf::render_target_t& target, wf::region_t& damage) override
