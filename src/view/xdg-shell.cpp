@@ -166,8 +166,8 @@ void wayfire_xdg_popup::update_position()
 
     // Offset relative to the parent surface
     wf::pointf_t popup_offset = wf::place_popup_at(popup->parent, popup->base->surface, {
-        popup->current.geometry.x,
-        popup->current.geometry.y,
+        popup->current.geometry.x * 1.0,
+        popup->current.geometry.y * 1.0,
     });
 
     this->move(popup_offset.x, popup_offset.y);
