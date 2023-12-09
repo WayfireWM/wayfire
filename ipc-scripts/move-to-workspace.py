@@ -12,7 +12,7 @@ from wayfire_socket import *
 
 
 def move_to_workspace(s: WayfireSocket, view, ws_x: int, ws_y: int):
-    output = s.query_output(view["output"])
+    output = s.query_output(view["output-id"])
     xsize = output["workarea"]["width"]
     ysize = output["workarea"]["height"]
     cur_ws_x = output["workspace"]["x"]

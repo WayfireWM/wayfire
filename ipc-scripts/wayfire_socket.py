@@ -60,7 +60,7 @@ class WayfireSocket:
         return self.send_json(message)
 
     def list_views(self):
-        return self.send_json(get_msg_template("window-rules/list_views"))
+        return self.send_json(get_msg_template("window-rules/list-views"))
 
     def configure_view(self, view_id: int, x: int, y: int, w: int, h: int):
         message = get_msg_template("window-rules/configure-view")
