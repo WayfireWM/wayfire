@@ -118,6 +118,7 @@ void wf::view_implementation::emit_toplevel_state_change_signals(wayfire_topleve
         data.new_edges = view->toplevel()->current().tiled_edges;
 
         view->emit(&data);
+        wf::get_core().emit(&data);
         if (view->get_output())
         {
             view->get_output()->emit(&data);
@@ -130,6 +131,7 @@ void wf::view_implementation::emit_toplevel_state_change_signals(wayfire_topleve
         data.view  = view;
         data.state = view->toplevel()->current().fullscreen;
         view->emit(&data);
+        wf::get_core().emit(&data);
         if (view->get_output())
         {
             view->get_output()->emit(&data);

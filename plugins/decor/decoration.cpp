@@ -58,11 +58,19 @@ class wayfire_decoration : public wf::plugin_interface_t
         update_view_decoration(ev->view);
     };
 
+    // allows criteria containing maximized or floating check
+    wf::signal::connection_t<wf::view_tiled_signal> on_view_tiled =
+        [=] (wf::view_tiled_signal *ev)
+    {
+        update_view_decoration(ev->view);
+    };
+
   public:
     void init() override
     {
         wf::get_core().connect(&on_decoration_state_changed);
         wf::get_core().tx_manager->connect(&on_new_tx);
+        wf::get_core().connect(&on_view_tiled);
 
         for (auto& view : wf::get_core().get_all_views())
         {
