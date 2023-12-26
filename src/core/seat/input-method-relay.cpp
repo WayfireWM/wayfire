@@ -18,6 +18,8 @@ wf::input_method_relay::input_method_relay()
     on_input_method_new.set_callback([&] (void *data)
     {
         auto new_input_method = static_cast<wlr_input_method_v2*>(data);
+        auto client = wl_resource_get_client(new_input_method->resource);
+        wl_client_get_credentials(client, &pid, NULL, NULL);
 
         if (input_method != nullptr)
         {
@@ -109,7 +111,7 @@ wf::input_method_relay::input_method_relay()
         on_new_popup_surface.disconnect();
         input_method  = nullptr;
         keyboard_grab = nullptr;
-        last_keyboard_resource = nullptr;
+        pid = 0;
 
         auto *text_input = find_focused_text_input();
         if (text_input != nullptr)
@@ -137,7 +139,6 @@ wf::input_method_relay::input_method_relay()
     on_grab_keyboard_destroy.set_callback([&] (void *data)
     {
         on_grab_keyboard_destroy.disconnect();
-        last_keyboard_resource = keyboard_grab->resource;
         keyboard_grab = nullptr;
     });
 
@@ -229,9 +230,10 @@ bool wf::input_method_relay::is_im_sent(wlr_keyboard *kbd)
         return false;
     }
 
-    auto resource =
-        input_method->keyboard_grab ? input_method->keyboard_grab->resource : last_keyboard_resource;
-    return wl_resource_get_client(virtual_keyboard->resource) == wl_resource_get_client(resource);
+    auto client = wl_resource_get_client(virtual_keyboard->resource);
+    pid_t vkbd_pid;
+    wl_client_get_credentials(client, &vkbd_pid, NULL, NULL);
+    return vkbd_pid == pid;
 }
 
 bool wf::input_method_relay::handle_key(struct wlr_keyboard *kbd, uint32_t time, uint32_t key,
