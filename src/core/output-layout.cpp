@@ -588,31 +588,19 @@ struct output_layout_output_t
 
         wlr_output_commit(handle);
 
-        if ((handle->adaptive_sync_status == WLR_OUTPUT_ADAPTIVE_SYNC_DISABLED) && current_state.vrr)
+        const bool adaptive_sync_enabled = (handle->adaptive_sync_status == WLR_OUTPUT_ADAPTIVE_SYNC_ENABLED);
+
+        if (adaptive_sync_enabled != current_state.vrr)
         {
             wlr_output_enable_adaptive_sync(handle, current_state.vrr);
             if (wlr_output_test(handle))
             {
                 wlr_output_commit(handle);
-                LOGD("Enabled adaptive sync on output: ", handle->name);
+                LOGD("Changed adaptive sync on output: ", handle->name, " to ", current_state.vrr);
             } else
             {
-                LOGE("Failed to enable adaptive sync on output: ", handle->name);
-                wlr_output_enable_adaptive_sync(handle, false);
-            }
-        }
-
-        if ((handle->adaptive_sync_status == WLR_OUTPUT_ADAPTIVE_SYNC_ENABLED) && !current_state.vrr)
-        {
-            wlr_output_enable_adaptive_sync(handle, false);
-            if (wlr_output_test(handle))
-            {
-                wlr_output_commit(handle);
-                LOGD("Disabled adaptive sync on output: ", handle->name);
-            } else
-            {
-                LOGE("Failed to disable adaptive sync on output: ", handle->name);
-                wlr_output_enable_adaptive_sync(handle, true);
+                LOGE("Failed to change adaptive sync on output: ", handle->name);
+                wlr_output_enable_adaptive_sync(handle, adaptive_sync_enabled);
             }
         }
     }
