@@ -69,8 +69,6 @@ void wf::xdg_toplevel_view_base_t::map()
 void wf::xdg_toplevel_view_base_t::unmap()
 {
     damage();
-    emit_view_pre_unmap();
-
     priv->unset_mapped_surface_contents();
 
     emit_view_unmap();
@@ -506,6 +504,8 @@ void wf::xdg_toplevel_view_t::start_map_tx()
 
 void wf::xdg_toplevel_view_t::start_unmap_tx()
 {
+    emit_view_pre_unmap();
+
     // Take reference until the view has been unmapped
     _self_ref = shared_from_this();
     wtoplevel->pending().mapped = false;

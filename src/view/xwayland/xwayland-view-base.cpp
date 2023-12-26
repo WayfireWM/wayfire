@@ -1,4 +1,6 @@
-#include "xwayland-view-base.hpp"
+#include "wayfire/unstable/xwl-toplevel-base.hpp"
+#include "wayfire/view-helpers.hpp"
+#include "../view-impl.hpp"
 
 #if WF_HAS_XWAYLAND
 
@@ -59,8 +61,6 @@ void wf::xwayland_view_base_t::do_map(wlr_surface *surface, bool autocommit, boo
 void wf::xwayland_view_base_t::do_unmap()
 {
     damage();
-    emit_view_pre_unmap();
-
     main_surface = nullptr;
     priv->unset_mapped_surface_contents();
 

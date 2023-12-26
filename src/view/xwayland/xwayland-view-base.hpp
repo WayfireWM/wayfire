@@ -6,12 +6,7 @@
 #include <wayfire/workarea.hpp>
 #include <wayfire/signal-definitions.hpp>
 
-#include "../view-impl.hpp"
-#include "../toplevel-node.hpp"
-#include "wayfire/core.hpp"
-#include "wayfire/geometry.hpp"
 #include "wayfire/util.hpp"
-#include "wayfire/view.hpp"
 #include "xwayland-helpers.hpp"
 #include <wayfire/scene-operations.hpp>
 #include <wayfire/view-helpers.hpp>

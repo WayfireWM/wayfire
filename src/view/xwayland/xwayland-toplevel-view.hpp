@@ -17,6 +17,7 @@
 #include "xwayland-toplevel.hpp"
 #include <wayfire/txn/transaction-manager.hpp>
 #include <wayfire/view-helpers.hpp>
+#include "../toplevel-node.hpp"
 
 #if WF_HAS_XWAYLAND
 
@@ -372,6 +373,7 @@ class wayfire_xwayland_view : public wf::toplevel_view_interface_t, public wayfi
 
     void handle_unmap_request() override
     {
+        emit_view_pre_unmap();
         // Store a reference to this until the view is actually unmapped with a transaction.
         _self_ref = shared_from_this();
         toplevel->set_main_surface(nullptr);

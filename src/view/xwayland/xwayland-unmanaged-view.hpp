@@ -180,15 +180,9 @@ class wayfire_unmanaged_xwayland_view : public wayfire_xwayland_view_internal_ba
     void handle_unmap_request() override
     {
         LOGC(XWL, "Unmapping unmanaged xwayland surface ", self());
-        damage();
         emit_view_pre_unmap();
-
-        main_surface = nullptr;
-        priv->unset_mapped_surface_contents();
         on_surface_commit.disconnect();
-
-        emit_view_unmap();
-        priv->set_mapped(false);
+        do_unmap();
     }
 
     void destroy() override
