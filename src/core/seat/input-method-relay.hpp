@@ -1,10 +1,10 @@
 #pragma once
-#include "seat-impl.hpp"
 #include "wayfire/util.hpp"
 #include "wayfire/signal-definitions.hpp"
 #include "wayfire/view.hpp"
 #include <wayfire/nonstd/wlroots-full.hpp>
 #include <wayfire/unstable/translation-node.hpp>
+#include <wayfire/unstable/wlr-surface-node.hpp>
 
 #include <vector>
 #include <memory>

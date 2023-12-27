@@ -1,7 +1,7 @@
 #include <wayfire/util/log.hpp>
 #include "input-method-relay.hpp"
 #include "../core-impl.hpp"
-#include "../../output/output-impl.hpp"
+#include "../../view/view-impl.hpp"
 #include "wayfire/scene-operations.hpp"
 
 #include <algorithm>
