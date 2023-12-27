@@ -73,6 +73,8 @@ int xwayland_get_pid();
 
 void init_desktop_apis();
 void init_xdg_decoration_handlers();
+
+pointf_t place_popup_at(wlr_surface *parent, wlr_surface *popup, wf::pointf_t relative);
 }
 
 #endif /* end of include guard: VIEW_IMPL_HPP */
