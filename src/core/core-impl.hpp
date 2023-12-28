@@ -76,6 +76,7 @@ class compositor_core_impl_t : public compositor_core_t
     wf::wl_listener_wrapper input_inhibit_deactivated;
     wf::wl_listener_wrapper pointer_constraint_added;
     wf::wl_listener_wrapper idle_inhibitor_created;
+    wf::wl_listener_wrapper drm_lease_request;
     std::shared_ptr<scene::root_node_t> scene_root;
 
     compositor_state_t state = compositor_state_t::UNKNOWN;

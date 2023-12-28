@@ -139,6 +139,7 @@ class compositor_core_t : public wf::object_base_t, public signal::provider_t
         wlr_presentation *presentation;
         wlr_primary_selection_v1_device_manager *primary_selection_v1;
         wlr_viewporter *viewporter;
+        wlr_drm_lease_v1_manager *drm_v1;
 
         wlr_xdg_foreign_registry *foreign_registry;
         wlr_xdg_foreign_v1 *foreign_v1;

@@ -101,6 +101,7 @@ extern "C"
 #endif
 #include <wlr/types/wlr_gamma_control_v1.h>
 #include <wlr/types/wlr_xdg_output_v1.h>
+#include <wlr/types/wlr_drm_lease_v1.h>
 
 // Input
 #include <wlr/types/wlr_seat.h>

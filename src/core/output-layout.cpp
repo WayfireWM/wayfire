@@ -1090,6 +1090,14 @@ class output_layout_t::impl
             return;
         }
 
+        if (output->non_desktop)
+        {
+            if (get_core().protocols.drm_v1)
+            {
+                wlr_drm_lease_v1_manager_offer_output(get_core().protocols.drm_v1, output);
+            }
+        }
+
         auto lo = new output_layout_output_t(output);
         outputs[output] = std::unique_ptr<output_layout_output_t>(lo);
         lo->on_destroy.set_callback([output, this] (void*)
