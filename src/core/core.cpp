@@ -126,7 +126,14 @@ void wf::compositor_core_impl_t::init()
             wlr_drm_lease_request_v1_reject(req);
         }
     });
-    drm_lease_request.connect(&protocols.drm_v1->events.request);
+    if (protocols.drm_v1)
+    {
+        drm_lease_request.connect(&protocols.drm_v1->events.request);
+    }
+    else
+    {
+        LOGI("Failed to create wlr_drm_lease_device_v1; VR will not be available!");
+    }
 
     
     /* input-inhibit setup */

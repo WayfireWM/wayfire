@@ -1083,19 +1083,22 @@ class output_layout_t::impl
         LOGI("new output: ", output->name,
             " (\"", output->make, " ", output->model, " ", output->serial, "\")");
 
+        if (output->non_desktop)
+        {
+            LOGI("NON DESKTOP OUTPUT FOUND");
+            if (get_core().protocols.drm_v1)
+            {
+                LOGI("DRM LEASE OFFERED");
+                wlr_drm_lease_v1_manager_offer_output(get_core().protocols.drm_v1, output);
+            }
+            return;
+        }
+
         if (!wlr_output_init_render(output,
             get_core().allocator, get_core().renderer))
         {
             LOGE("failed to init wlr render for output ", output->name);
             return;
-        }
-
-        if (output->non_desktop)
-        {
-            if (get_core().protocols.drm_v1)
-            {
-                wlr_drm_lease_v1_manager_offer_output(get_core().protocols.drm_v1, output);
-            }
         }
 
         auto lo = new output_layout_output_t(output);
