@@ -1091,6 +1091,7 @@ class output_layout_t::impl
                 LOGD("Drm lease offered to ", output->name);
                 wlr_drm_lease_v1_manager_offer_output(get_core().protocols.drm_v1, output);
             }
+
             return;
         }
 
