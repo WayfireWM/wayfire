@@ -122,7 +122,8 @@ void wf::compositor_core_impl_t::init()
     {
         auto req = static_cast<wlr_drm_lease_request_v1*>(data);
         struct wlr_drm_lease_v1 *lease = wlr_drm_lease_request_v1_grant(req);
-        if (!lease) {
+        if (!lease)
+        {
             wlr_drm_lease_request_v1_reject(req);
         }
     });
@@ -132,7 +133,7 @@ void wf::compositor_core_impl_t::init()
     }
     else
     {
-        LOGI("Failed to create wlr_drm_lease_device_v1; VR will not be available!");
+        LOGE("Failed to create wlr_drm_lease_device_v1; VR will not be available!");
     }
 
     

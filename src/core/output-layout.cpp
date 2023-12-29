@@ -1085,10 +1085,10 @@ class output_layout_t::impl
 
         if (output->non_desktop)
         {
-            LOGI("NON DESKTOP OUTPUT FOUND");
+            LOGD("Non-desktop output ", output->name, " found");
             if (get_core().protocols.drm_v1)
             {
-                LOGI("DRM LEASE OFFERED");
+                LOGD("Drm lease offered to ", output->name);
                 wlr_drm_lease_v1_manager_offer_output(get_core().protocols.drm_v1, output);
             }
             return;
