@@ -180,7 +180,7 @@ void wf::input_method_relay::disable_text_input(wlr_text_input_v3 *input)
     // We may get several and posibly interwined enable/disable calls while
     // switching focus / closing windows; don't deactivate for the wrong one.
     auto focused_input = find_focused_text_input();
-    if (!focused_input || input != focused_input->input)
+    if (!focused_input || (input != focused_input->input))
     {
         return;
     }
@@ -240,7 +240,7 @@ bool wf::input_method_relay::is_im_sent(wlr_keyboard *kbd)
     {
         // This is a workaround because we do not have sufficient information to know which virtual keyboards
         // are connected to IMs
-        auto im_client = wl_resource_get_client(input_method->resource);
+        auto im_client   = wl_resource_get_client(input_method->resource);
         auto vkbd_client = wl_resource_get_client(virtual_keyboard->resource);
 
         if (im_client == vkbd_client)
