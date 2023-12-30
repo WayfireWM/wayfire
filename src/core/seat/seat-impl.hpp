@@ -5,7 +5,6 @@
 #include <wayfire/seat.hpp>
 #include <set>
 
-#include "../../view/surface-impl.hpp"
 #include "wayfire/output.hpp"
 #include "wayfire/input-device.hpp"
 #include "wayfire/scene-input.hpp"
@@ -23,11 +22,13 @@ class input_device_impl_t : public wf::input_device_t
 {
   public:
     input_device_impl_t(wlr_input_device *dev);
-    virtual ~input_device_impl_t() = default;
+    virtual ~input_device_impl_t();
 
     wf::wl_listener_wrapper on_destroy;
     virtual void update_options()
     {}
+
+    bool is_im_keyboard = false;
 };
 
 class pointer_t;

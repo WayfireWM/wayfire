@@ -1,15 +1,12 @@
 #include "seat-impl.hpp"
 #include "cursor.hpp"
-#include "wayfire/compositor-view.hpp"
 #include "wayfire/geometry.hpp"
-#include "wayfire/opengl.hpp"
 #include "../core-impl.hpp"
 #include "../view/view-impl.hpp"
 #include "keyboard.hpp"
 #include "pointer.hpp"
 #include "touch.hpp"
 #include "input-manager.hpp"
-#include "wayfire/render-manager.hpp"
 #include "wayfire/output-layout.hpp"
 #include <wayfire/util/log.hpp>
 #include "wayfire/scene-input.hpp"
@@ -593,6 +590,12 @@ wf::input_device_impl_t::input_device_impl_t(wlr_input_device *dev) :
         wf::get_core_impl().input->handle_input_destroyed(this->get_wlr_handle());
     });
     on_destroy.connect(&dev->events.destroy);
+    this->handle->data = this;
+}
+
+wf::input_device_impl_t::~input_device_impl_t()
+{
+    this->handle->data = NULL;
 }
 
 static wf::pointf_t to_local_recursive(wf::scene::node_t *node, wf::pointf_t point)

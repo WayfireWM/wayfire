@@ -2,9 +2,11 @@
 #include "input-method-relay.hpp"
 #include "../core-impl.hpp"
 #include "../../view/view-impl.hpp"
+#include "core/seat/seat-impl.hpp"
 #include "wayfire/scene-operations.hpp"
 
 #include <algorithm>
+#include <wayland-server-core.h>
 
 wf::input_method_relay::input_method_relay()
 {
@@ -18,9 +20,6 @@ wf::input_method_relay::input_method_relay()
     on_input_method_new.set_callback([&] (void *data)
     {
         auto new_input_method = static_cast<wlr_input_method_v2*>(data);
-        auto client = wl_resource_get_client(new_input_method->resource);
-        wl_client_get_credentials(client, &pid, NULL, NULL);
-
         if (input_method != nullptr)
         {
             LOGI("Attempted to connect second input method");
@@ -111,7 +110,6 @@ wf::input_method_relay::input_method_relay()
         on_new_popup_surface.disconnect();
         input_method  = nullptr;
         keyboard_grab = nullptr;
-        pid = 0;
 
         auto *text_input = find_focused_text_input();
         if (text_input != nullptr)
@@ -230,10 +228,28 @@ bool wf::input_method_relay::is_im_sent(wlr_keyboard *kbd)
         return false;
     }
 
-    auto client = wl_resource_get_client(virtual_keyboard->resource);
-    pid_t vkbd_pid;
-    wl_client_get_credentials(client, &vkbd_pid, NULL, NULL);
-    return vkbd_pid == pid;
+    // We have already identified the device as IM-based device
+    auto device_impl = (wf::input_device_impl_t*)kbd->base.data;
+    if (device_impl->is_im_keyboard)
+    {
+        return true;
+    }
+
+    if (this->input_method)
+    {
+        // This is a workaround because we do not have sufficient information to know which virtual keyboards
+        // are connected to IMs
+        auto im_client = wl_resource_get_client(input_method->resource);
+        auto vkbd_client = wl_resource_get_client(virtual_keyboard->resource);
+
+        if (im_client == vkbd_client)
+        {
+            device_impl->is_im_keyboard = true;
+            return true;
+        }
+    }
+
+    return false;
 }
 
 bool wf::input_method_relay::handle_key(struct wlr_keyboard *kbd, uint32_t time, uint32_t key,
