@@ -176,57 +176,17 @@ void wf::input_method_relay::disable_text_input(wlr_text_input_v3 *input)
         return;
     }
 
-    // on focus change, we disable on one text input and enable on another
-    // however, the former may also send us a disable request AFTER we've done the above
-    // let's just ignore repeated disable reuqests.
-    //
-    // input_method->active doesn't work for this purpose e.g. in one case:
-    //
-    // * start Alacritty and activate IM
-    // * start another Alacritty and activate IM
-    // * close the new Alacritty with shortcut key
-    //
-    // The log:
-    //
-    // II 30-12-23 16:13:29.232 - [build/wayfire/src/view/xdg-shell/xdg-toplevel-view.cpp:29] new xdg_shell_stable surface: Alacritty app-id: Alacritty
-    // II 30-12-23 16:13:29.278 - [build/wayfire/src/core/seat/input-method-relay.cpp:365] disable_text_input on set_focus 0x55b8a3cd1900
-    // II 30-12-23 16:13:29.279 - [build/wayfire/src/core/seat/input-method-relay.cpp:179] 0x55b8a2ed7310 disable IM for 0x55b8a3cd1900
-    // II 30-12-23 16:13:29.279 - [build/wayfire/src/core/seat/input-method-relay.cpp:180] 0x55b8a2ed7310 in disable_text_input: input_method->active true
-    // DD 30-12-23 16:13:29.279 - [types/wlr_text_input_v3.c:185] Text input commit received without focus
-    // II 30-12-23 16:13:29.279 - [build/wayfire/src/core/seat/input-method-relay.cpp:444] on_text_input_disable 0x55b8a3cd1900
-    // II 30-12-23 16:13:29.279 - [build/wayfire/src/core/seat/input-method-relay.cpp:179] 0x55b8a2ed7310 disable IM for 0x55b8a3cd1900
-    // II 30-12-23 16:13:29.279 - [build/wayfire/src/core/seat/input-method-relay.cpp:180] 0x55b8a2ed7310 in disable_text_input: input_method->active false
-    // II 30-12-23 16:13:29.279 - [build/wayfire/src/core/seat/input-method-relay.cpp:221] 0x55b8a2ed7310 input_method->active should be false: false
-    // II 30-12-23 16:13:29.279 - [build/wayfire/src/core/seat/input-method-relay.cpp:407] 0x6918e1c4586d3200 enable IM for 0x55b8a3d8c210
-    // DD 30-12-23 16:13:29.986 - [types/wlr_compositor.c:683] New wlr_surface 0x55b8a3de27f0 (res 0x55b8a3e931c0)
-    // DD 30-12-23 16:13:31.011 - [build/wayfire/src/output/output.cpp:293] output Virtual-1: activate plugin builtin-close-view
-    // DD 30-12-23 16:13:31.011 - [build/wayfire/src/output/output.cpp:310] output Virtual-1: deactivate plugin builtin-close-view
-    // II 30-12-23 16:13:31.029 - [build/wayfire/src/core/seat/input-method-relay.cpp:365] disable_text_input on set_focus 0x55b8a3d8c210
-    // II 30-12-23 16:13:31.029 - [build/wayfire/src/core/seat/input-method-relay.cpp:179] 0x55b8a2ed7310 disable IM for 0x55b8a3d8c210
-    // II 30-12-23 16:13:31.029 - [build/wayfire/src/core/seat/input-method-relay.cpp:180] 0x55b8a2ed7310 in disable_text_input: input_method->active true
-    // II 30-12-23 16:13:31.038 - [build/wayfire/src/core/seat/input-method-relay.cpp:407] 0x55b8a3a10060 enable IM for 0x55b8a3cd1900
-    // II 30-12-23 16:13:31.038 - [build/wayfire/src/core/seat/input-method-relay.cpp:455] destroying 0x55b8a3d8c210
-    // II 30-12-23 16:13:31.038 - [build/wayfire/src/core/seat/input-method-relay.cpp:179] 0x55b8a2ed7310 disable IM for 0x55b8a3d8c210
-    // II 30-12-23 16:13:31.038 - [build/wayfire/src/core/seat/input-method-relay.cpp:180] 0x55b8a2ed7310 in disable_text_input: input_method->active true
-    // II 30-12-23 16:13:31.038 - [build/wayfire/src/core/seat/input-method-relay.cpp:221] 0x55b8a2ed7310 input_method->active should be false: true
-    //
-    // * (enable for A; not in log)
-    // * disable for A (set_focus)
-    // * disable for A (on_text_input_disable)
-    // * enable for B
-    // * close B
-    // * disable for B (set_focus)
-    // * enable for A
-    // * disable for B (destruction) <-- this actually disables IM for A as A is in focus now
-
-    if (input == already_disabled_input)
+    // Don't deactivate input method if the text input isn't in focus.
+    // We may get several and posibly interwined enable/disable calls while
+    // switching focus / closing windows; don't deactivate for the wrong one.
+    auto focused_input = find_focused_text_input();
+    if (!focused_input || input != focused_input->input)
     {
         return;
     }
 
     wlr_input_method_v2_send_deactivate(input_method);
     send_im_state(input);
-    already_disabled_input = input;
 }
 
 void wf::input_method_relay::remove_text_input(wlr_text_input_v3 *input)
