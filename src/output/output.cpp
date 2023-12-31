@@ -204,8 +204,9 @@ void wf::output_t::ensure_pointer(bool center) const
         lg.x + lg.width / 2.0,
         lg.y + lg.height / 2.0,
     };
-    wf::get_core().warp_cursor(target);
+
     wf::get_core().set_cursor("default");
+    wf::get_core().warp_cursor(target);
 }
 
 wf::pointf_t wf::output_t::get_cursor_position() const

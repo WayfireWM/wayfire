@@ -12,9 +12,7 @@
 #include "wayfire/bindings-repository.hpp"
 #include "wayfire/util.hpp"
 #include <memory>
-#include <type_traits>
 
-#include "core/seat/bindings-repository-impl.hpp"
 #include "plugin-loader.hpp"
 #include "seat/tablet.hpp"
 #include "wayfire/touch/touch.hpp"
@@ -34,7 +32,6 @@
 
 #include "view/surface-impl.hpp"
 #include "wayfire/scene-input.hpp"
-#include "seat/keyboard.hpp"
 #include "opengl-priv.hpp"
 #include "seat/input-manager.hpp"
 #include "seat/input-method-relay.hpp"
@@ -42,9 +39,7 @@
 #include "seat/pointer.hpp"
 #include "seat/cursor.hpp"
 #include "../view/view-impl.hpp"
-#include "../output/output-impl.hpp"
 #include "main.hpp"
-#include "seat/drag-icon.hpp"
 #include <wayfire/window-manager.hpp>
 
 #include "core-impl.hpp"
@@ -278,6 +273,7 @@ void wf::compositor_core_impl_t::hide_cursor()
 void wf::compositor_core_impl_t::warp_cursor(wf::pointf_t pos)
 {
     seat->priv->cursor->warp_cursor(pos);
+    seat->priv->lpointer->update_cursor_position(get_current_time());
 }
 
 void wf::compositor_core_impl_t::transfer_grab(wf::scene::node_ptr node)
