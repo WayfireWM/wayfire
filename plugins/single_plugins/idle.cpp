@@ -242,6 +242,12 @@ class wayfire_idle_plugin : public wf::per_output_plugin_instance_t
             return;
         }
 
+        if (!timeout_screensaver.is_connected() && output_inhibited)
+        {
+            uninhibit_output();
+            return;
+        }
+
         if (!timeout_screensaver.is_connected() && (state == CUBE_SCREENSAVER_RUNNING))
         {
             stop_screensaver();
