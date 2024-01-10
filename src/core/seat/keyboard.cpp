@@ -61,7 +61,8 @@ void wf::keyboard_t::setup_listeners()
                 }
             }
 
-            if (seat->priv->keyboard_focus)
+            // don't send IM sent keys to plugin grabs
+            if (seat->priv->keyboard_focus && !(seat->priv->is_grab && is_im_sent))
             {
                 seat->priv->keyboard_focus->keyboard_interaction()
                     .handle_keyboard_key(wf::get_core().seat.get(), *ev);
