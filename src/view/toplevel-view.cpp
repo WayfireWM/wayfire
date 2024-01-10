@@ -206,6 +206,12 @@ void wf::toplevel_view_interface_t::set_minimized(bool minim)
         return;
     }
 
+    if (this->parent && minim)
+    {
+        LOGE("Ignoring a request to minimize a view with a parent, minimize the parent instead!");
+        return;
+    }
+
     this->minimized = minim;
     wf::scene::set_node_enabled(get_root_node(), !minimized);
 
