@@ -7,7 +7,7 @@
 		<option name="toggle" type="activator">
 			<_short>Toggle</_short>
 			<_long>Shows an overview of all workspaces with the specified activator.  Pressing again exits.</_long>
-			<default>&lt;super&gt;</default>
+			<default>&lt;super&gt; KEY_E</default>
 		</option>
 		<option name="background" type="color">
 			<_short>Background color</_short>

@@ -4,5 +4,10 @@
 		<_short>Wayfire Shell Protocol</_short>
 		<_long>An implementation of the wayfire-shell protocol.</_long>
 		<category>Utility</category>
+		<option name="toggle_menu" type="activator">
+			<_short>Toggle Menu</_short>
+			<_long>Toggles menu with the specified activator.</_long>
+			<default>&lt;super&gt;</default>
+		</option>
 	</plugin>
 </wayfire>

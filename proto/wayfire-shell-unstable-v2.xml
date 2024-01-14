@@ -87,6 +87,14 @@
       <arg name="timeout" type="uint" summary="minimum time for the mouse to be in the hotspot"/>
       <arg name="id" type="new_id" interface="zwf_hotspot_v2"/>
     </request>
+
+    <event name="toggle_menu">
+      <description summary="Toggle menu event">
+        Tells the menu to open.
+
+        Emitted using an activator binding.
+      </description>
+    </event>
   </interface>
 
   <interface name="zwf_hotspot_v2" version="1">

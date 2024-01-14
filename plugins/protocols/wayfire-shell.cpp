@@ -14,6 +14,7 @@
 #include "wayfire/render-manager.hpp"
 #include "wayfire-shell-unstable-v2-protocol.h"
 #include "wayfire/signal-definitions.hpp"
+#include "plugins/ipc/ipc-activator.hpp"
 
 /* ----------------------------- wfs_hotspot -------------------------------- */
 static void handle_hotspot_destroy(wl_resource *resource);
@@ -196,6 +197,7 @@ static struct zwf_output_v2_interface zwf_output_impl = {
  */
 class wfs_output
 {
+    wf::ipc_activator_t toggle_menu{"wayfire-shell/toggle_menu"};
     uint32_t num_inhibits = 0;
     wl_resource *resource;
     wf::output_t *output;
@@ -228,6 +230,17 @@ class wfs_output
         }
     };
 
+    wf::ipc_activator_t::handler_t toggle_menu_cb = [=] (wf::output_t *toggle_menu_output, wayfire_view)
+    {
+        if (output != toggle_menu_output)
+        {
+            return false;
+        }
+
+        zwf_output_v2_send_toggle_menu(resource);
+        return true;
+    };
+
   public:
     wfs_output(wf::output_t *output, wl_client *client, int id)
     {
@@ -237,6 +250,7 @@ class wfs_output
         wl_resource_set_implementation(resource, &zwf_output_impl, this, handle_output_destroy);
         output->connect(&on_fullscreen_layer_focused);
         wf::get_core().output_layout->connect(&on_output_removed);
+        toggle_menu.set_handler(toggle_menu_cb);
     }
 
     ~wfs_output()
