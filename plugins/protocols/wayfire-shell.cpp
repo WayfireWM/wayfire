@@ -192,12 +192,17 @@ static struct zwf_output_v2_interface zwf_output_impl = {
 };
 
 /**
+ * A signal emitted on the wayfire output where the menu should be toggled.
+ */
+struct wayfire_shell_toggle_menu_signal
+{};
+
+/**
  * Represents a zwf_output_v2.
  * Lifetime is managed by the wl_resource
  */
 class wfs_output
 {
-    wf::ipc_activator_t toggle_menu{"wayfire-shell/toggle_menu"};
     uint32_t num_inhibits = 0;
     wl_resource *resource;
     wf::output_t *output;
@@ -230,15 +235,9 @@ class wfs_output
         }
     };
 
-    wf::ipc_activator_t::handler_t toggle_menu_cb = [=] (wf::output_t *toggle_menu_output, wayfire_view)
+    wf::signal::connection_t<wayfire_shell_toggle_menu_signal> on_toggle_menu = [=] (auto)
     {
-        if (output != toggle_menu_output)
-        {
-            return false;
-        }
-
         zwf_output_v2_send_toggle_menu(resource);
-        return true;
     };
 
   public:
@@ -249,8 +248,8 @@ class wfs_output
         resource = wl_resource_create(client, &zwf_output_v2_interface, 1, id);
         wl_resource_set_implementation(resource, &zwf_output_impl, this, handle_output_destroy);
         output->connect(&on_fullscreen_layer_focused);
+        output->connect(&on_toggle_menu);
         wf::get_core().output_layout->connect(&on_output_removed);
-        toggle_menu.set_handler(toggle_menu_cb);
     }
 
     ~wfs_output()
@@ -454,10 +453,19 @@ wayfire_shell *wayfire_shell_create(wl_display *display)
 
 class wayfire_shell_protocol_impl : public wf::plugin_interface_t
 {
+    wf::ipc_activator_t toggle_menu{"wayfire-shell/toggle_menu"};
+    wf::ipc_activator_t::handler_t toggle_menu_cb = [=] (wf::output_t *toggle_menu_output, wayfire_view)
+    {
+        wayfire_shell_toggle_menu_signal toggle_menu;
+        toggle_menu_output->emit(&toggle_menu);
+        return true;
+    };
+
   public:
     void init() override
     {
         wf_shell = wayfire_shell_create(wf::get_core().display);
+        toggle_menu.set_handler(toggle_menu_cb);
     }
 
     void fini() override
