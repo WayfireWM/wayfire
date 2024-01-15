@@ -311,6 +311,9 @@ int main(int argc, char *argv[])
         }
     }
 
+    /* Don't crash on SIGPIPE, e.g., when doing IPC to a client whose fd has been closed. */
+    signal(SIGPIPE, SIG_IGN);
+
     wf::log::initialize_logging(std::cout, log_level, detect_color_mode());
 
     parse_extended_debugging(extended_debug_categories);
