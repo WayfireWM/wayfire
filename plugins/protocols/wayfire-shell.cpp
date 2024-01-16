@@ -204,6 +204,7 @@ struct wayfire_shell_toggle_menu_signal
 class wfs_output
 {
     uint32_t num_inhibits = 0;
+    wl_resource *shell_resource;
     wl_resource *resource;
     wf::output_t *output;
 
@@ -237,15 +238,23 @@ class wfs_output
 
     wf::signal::connection_t<wayfire_shell_toggle_menu_signal> on_toggle_menu = [=] (auto)
     {
+        if (wl_resource_get_version(shell_resource) < ZWF_OUTPUT_V2_TOGGLE_MENU_SINCE_VERSION)
+        {
+            return;
+        }
+
         zwf_output_v2_send_toggle_menu(resource);
     };
 
   public:
-    wfs_output(wf::output_t *output, wl_client *client, int id)
+    wfs_output(wf::output_t *output, wl_resource *shell_resource, wl_client *client, int id)
     {
         this->output = output;
+        this->shell_resource = shell_resource;
 
-        resource = wl_resource_create(client, &zwf_output_v2_interface, 1, id);
+        resource =
+            wl_resource_create(client, &zwf_output_v2_interface,
+                std::min(wl_resource_get_version(shell_resource), 2), id);
         wl_resource_set_implementation(resource, &zwf_output_impl, this, handle_output_destroy);
         output->connect(&on_fullscreen_layer_focused);
         output->connect(&on_toggle_menu);
@@ -398,7 +407,7 @@ static void zwf_shell_manager_get_wf_output(wl_client *client,
     if (wo)
     {
         // will be deleted when the resource is destroyed
-        new wfs_output(wo, client, id);
+        new wfs_output(wo, resource, client, id);
     }
 }
 
@@ -423,7 +432,7 @@ void bind_zwf_shell_manager(wl_client *client, void *data,
     uint32_t version, uint32_t id)
 {
     auto resource =
-        wl_resource_create(client, &zwf_shell_manager_v2_interface, 1, id);
+        wl_resource_create(client, &zwf_shell_manager_v2_interface, version, id);
     wl_resource_set_implementation(resource,
         &zwf_shell_manager_v2_impl, NULL, NULL);
 }
@@ -438,7 +447,7 @@ wayfire_shell *wayfire_shell_create(wl_display *display)
     wayfire_shell *ws = new wayfire_shell;
 
     ws->shell_manager = wl_global_create(display,
-        &zwf_shell_manager_v2_interface, 1, NULL, bind_zwf_shell_manager);
+        &zwf_shell_manager_v2_interface, 2, NULL, bind_zwf_shell_manager);
 
     if (ws->shell_manager == NULL)
     {
