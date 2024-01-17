@@ -45,6 +45,15 @@ wf::wlr_surface_controller_t::wlr_surface_controller_t(wlr_surface *surface,
         // Allocate memory, it will be auto-freed when the wlr objects are destroyed
         auto sub_controller = new wlr_subsurface_controller_t(sub);
         create_controller(sub->surface, sub_controller->get_subsurface_root());
+        wlr_subsurface *s;
+        wl_list_for_each(s, &surface->current.subsurfaces_below, current.link)
+        {
+            if (sub == s)
+            {
+                wf::scene::add_back(this->root, sub_controller->get_subsurface_root());
+                return;
+            }
+        }
         wf::scene::add_front(this->root, sub_controller->get_subsurface_root());
     });
 
