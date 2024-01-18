@@ -93,14 +93,14 @@
 		<option name="kawase_offset" type="double">
 			<_short>Kawase offset</_short>
 			<_long>Sets the offset value for the kawase method.</_long>
-			<default>2</default>
+			<default>1.7</default>
 			<min>0</min>
 			<max>25</max>
 		</option>
 		<option name="kawase_degrade" type="int">
 			<_short>Kawase degrade</_short>
 			<_long>Sets the degrade value for the kawase method.</_long>
-			<default>8</default>
+			<default>3</default>
 			<min>1</min>
 			<max>10</max>
 		</option>
