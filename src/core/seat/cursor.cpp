@@ -96,7 +96,7 @@ void wf::cursor_t::setup_listeners()
             tablet->handle_ ## evname(ev, handling_mode); \
         } \
         wf::get_core().seat->notify_activity(); \
-        emit_device_event_signal(ev); \
+        emit_device_post_event_signal(ev); \
     }); \
     on_tablet_ ## evname.connect(&cursor->events.tablet_tool_ ## evname);
 
