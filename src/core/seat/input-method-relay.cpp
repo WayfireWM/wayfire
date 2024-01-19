@@ -136,6 +136,7 @@ wf::input_method_relay::input_method_relay()
 
     on_grab_keyboard_destroy.set_callback([&] (void *data)
     {
+        this->pressed_keys.clear();
         on_grab_keyboard_destroy.disconnect();
         keyboard_grab = nullptr;
     });
@@ -221,6 +222,22 @@ bool wf::input_method_relay::should_grab(wlr_keyboard *kbd)
     return !is_im_sent(kbd);
 }
 
+bool wf::input_method_relay::check_superfluous_release(uint32_t key, uint32_t state)
+{
+    if (state == WL_KEYBOARD_KEY_STATE_PRESSED)
+    {
+        this->pressed_keys.insert(key);
+        return false;
+    } else if (auto it = this->pressed_keys.find(key);it != this->pressed_keys.end())
+    {
+        this->pressed_keys.erase(it);
+        return false;
+    } else
+    {
+        return true;
+    }
+}
+
 bool wf::input_method_relay::is_im_sent(wlr_keyboard *kbd)
 {
     struct wlr_virtual_keyboard_v1 *virtual_keyboard = wlr_input_device_get_virtual_keyboard(&kbd->base);
@@ -257,6 +274,11 @@ bool wf::input_method_relay::handle_key(struct wlr_keyboard *kbd, uint32_t time,
     uint32_t state)
 {
     if (!should_grab(kbd))
+    {
+        return false;
+    }
+
+    if (check_superfluous_release(key, state))
     {
         return false;
     }

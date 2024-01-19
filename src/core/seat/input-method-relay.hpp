@@ -41,6 +41,8 @@ class input_method_relay
     };
 
     bool should_grab(wlr_keyboard*);
+    std::multiset<uint32_t> pressed_keys;
+    bool check_superfluous_release(uint32_t key, uint32_t state);
 
   public:
 
