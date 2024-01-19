@@ -8,6 +8,7 @@
 #include "wayfire/scene-render.hpp"
 #include "wayfire/scene.hpp"
 #include "wayfire/toplevel-view.hpp"
+#include "wayfire/unstable/translation-node.hpp"
 #include "wayfire/view-helpers.hpp"
 #include <memory>
 #include <wayfire/signal-definitions.hpp>
@@ -71,7 +72,7 @@ class vswitch_overlay_node_t : public wf::scene::node_t
     {
         if (auto view = _view.lock())
         {
-            view->get_transformed_node()->get_bounding_box();
+            return view->get_transformed_node()->get_bounding_box();
         }
 
         return {0, 0, 0, 0};
@@ -191,11 +192,13 @@ class workspace_switch_t
                 wf::TRANSFORMER_2D, vswitch_view_transformer_name);
             wf::scene::set_node_enabled(view->get_transformed_node(), false);
 
-            // Render as an overlay, but make sure it is translated and clipped properly to the local output
-            overlay_view_node = std::make_shared<scene::output_node_t>(output);
+            // Render as an overlay, but make sure it is translated to the local output
             auto vswitch_overlay = std::make_shared<vswitch_overlay_node_t>(view);
 
+            overlay_view_node = std::make_shared<scene::translation_node_t>();
             overlay_view_node->set_children_list({vswitch_overlay});
+            overlay_view_node->set_offset(origin(output->get_layout_geometry()));
+
             wf::scene::add_front(wf::get_core().scene(), overlay_view_node);
         }
     }
@@ -245,7 +248,7 @@ class workspace_switch_t
 
     const std::string vswitch_view_transformer_name = "vswitch-transformer";
     wayfire_toplevel_view overlay_view;
-    std::shared_ptr<scene::output_node_t> overlay_view_node;
+    std::shared_ptr<scene::translation_node_t> overlay_view_node;
 
     bool running = false;
     void update_overlay_fb()
