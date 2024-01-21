@@ -8,6 +8,7 @@
 
 #include <vector>
 #include <memory>
+#include <chrono>
 
 namespace wf
 {
@@ -22,7 +23,7 @@ class input_method_relay
         on_input_method_new, on_input_method_commit, on_input_method_destroy,
         on_grab_keyboard, on_grab_keyboard_destroy, on_new_popup_surface;
     wlr_input_method_keyboard_grab_v2 *keyboard_grab = nullptr;
-    bool focus_just_changed = false;
+    std::optional<std::chrono::time_point<std::chrono::steady_clock>> last_focus_changed;
     text_input *find_focusable_text_input();
     void set_focus(wlr_surface*);
 
@@ -37,7 +38,7 @@ class input_method_relay
             set_focus(nullptr);
         }
 
-        focus_just_changed = true;
+        last_focus_changed = std::chrono::steady_clock::now();
     };
 
     bool should_grab(wlr_keyboard*);

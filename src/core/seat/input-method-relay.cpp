@@ -60,11 +60,20 @@ wf::input_method_relay::input_method_relay()
         // We ignore such commit requests so it doesn't have any affect on the
         // new window. Even when the previous window isn't preediting when
         // switching focus, it doesn't have any bad effect to the new window anyway.
-        if (focus_just_changed)
+        //
+        // Preediting can be disabled (selectively or globally) because
+        // application bugs were observed. In this case, we see only commits
+        // but no preedit strings, so we need care the timing.
+        static std::chrono::milliseconds focus_change_duration{100};
+        if (last_focus_changed.has_value())
         {
-            LOGI("focus_just_changed, ignore input method commit");
-            focus_just_changed = false;
-            return;
+            auto elapsed = std::chrono::steady_clock::now() - *last_focus_changed;
+            last_focus_changed.reset();
+            if (elapsed < focus_change_duration)
+            {
+                LOGI("focus just changed, ignore input method commit");
+                return;
+            }
         }
 
         auto *text_input = find_focused_text_input();
