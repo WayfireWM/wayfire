@@ -17,5 +17,10 @@
     <option name="vrr" type="bool">
       <default>false</default>
     </option>
+    <option name="depth" type="int">
+      <default>8</default>
+      <min>8</min>
+      <max>10</max>
+    </option>
   </object>
 </wayfire>
