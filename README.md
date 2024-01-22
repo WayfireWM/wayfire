@@ -102,14 +102,13 @@ Installing [wf-shell](https://github.com/WayfireWM/wf-shell) is recommended for 
 
 ###### Arch Linux
 
-[wayfire] and [wayfire-git] are available in the [AUR].
+[wayfire](https://aur.archlinux.org/packages/wayfire/) and [wayfire-git] are available in the [AUR].
 
 ``` sh
 yay -S wayfire
 ```
 
 [AUR]: https://aur.archlinux.org
-[wayfire]: https://aur.archlinux.org/packages/wayfire/
 [wayfire-git]: https://aur.archlinux.org/packages/wayfire-git/
 
 ###### Exherbo
