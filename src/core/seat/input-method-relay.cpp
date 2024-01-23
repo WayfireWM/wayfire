@@ -15,6 +15,23 @@ wf::input_method_relay::input_method_relay()
         auto wlr_text_input = static_cast<wlr_text_input_v3*>(data);
         text_inputs.push_back(std::make_unique<wf::text_input>(this,
             wlr_text_input));
+        // Sometimes text_input is created after the surface, so we failed to
+        // set_focus when the surface is focused. Try once here.
+        //
+        // If no surface has been created, set_focus does nothing.
+        //
+        // Example apps (all GTK4): gnome-font-viewer, easyeffects
+        auto& seat = wf::get_core_impl().seat;
+        if (auto focus = seat->priv->keyboard_focus)
+        {
+            auto surface = wf::node_to_view(focus)->get_keyboard_focus_surface();
+
+            if (surface && (wl_resource_get_client(wlr_text_input->resource) ==
+                            wl_resource_get_client(surface->resource)))
+            {
+                wlr_text_input_v3_send_enter(wlr_text_input, surface);
+            }
+        }
     });
 
     on_input_method_new.set_callback([&] (void *data)
