@@ -244,7 +244,7 @@ struct output_layout_output_t
     bool is_externally_managed = false;
     bool is_nested_compositor  = false;
     bool inhibited = false;
-    std::map<int, std::vector<uint32_t>> bit_depths;
+    std::map<int, std::vector<uint32_t>> formats_for_depth;
     int current_bit_depth = RENDER_BIT_DEPTH_DEFAULT;
 
     std::unique_ptr<wf::output_impl_t> output;
@@ -299,17 +299,11 @@ struct output_layout_output_t
             on_commit.connect(&handle->events.commit);
         }
 
-        bit_depths =
-        {{8, {
-                DRM_FORMAT_XRGB8888,
-                DRM_FORMAT_INVALID,
-            }},
-            {10, {
-                    DRM_FORMAT_XRGB2101010,
-                    DRM_FORMAT_XBGR2101010,
-                    DRM_FORMAT_XRGB8888,
-                    DRM_FORMAT_INVALID,
-                }},
+        formats_for_depth[8]  = {DRM_FORMAT_XRGB8888};
+        formats_for_depth[10] = {
+            DRM_FORMAT_XRGB2101010,
+            DRM_FORMAT_XBGR2101010,
+            DRM_FORMAT_XRGB8888,
         };
     }
 
@@ -646,20 +640,18 @@ struct output_layout_output_t
 
         if (current_state.depth != current_bit_depth)
         {
-            const std::vector<uint32_t> fmts = bit_depths[current_state.depth];
-
-            for (size_t i = 0; fmts[i] != DRM_FORMAT_INVALID; i++)
+            for (auto fmt : formats_for_depth[current_state.depth])
             {
-                wlr_output_set_render_format(handle, fmts[i]);
+                wlr_output_set_render_format(handle, fmt);
                 if (wlr_output_test(handle))
                 {
                     wlr_output_commit(handle);
                     current_bit_depth = current_state.depth;
-                    LOGD("Set output format to ", get_format_name(fmts[i]), " on output ", handle->name);
+                    LOGD("Set output format to ", get_format_name(fmt), " on output ", handle->name);
                     break;
                 }
 
-                LOGD("Failed to set output format ", get_format_name(fmts[i]), " on output ", handle->name);
+                LOGD("Failed to set output format ", get_format_name(fmt), " on output ", handle->name);
             }
         }
     }
