@@ -67,23 +67,6 @@ wf::input_method_relay::input_method_relay()
         auto evt_input_method = static_cast<wlr_input_method_v2*>(data);
         assert(evt_input_method == input_method);
 
-        // FIXME: workaround focus change while preediting
-        //
-        // With input method v2, we have no way to notify the input method that
-        // input focus has changed. The input method maintains its state, and
-        // will bring it to the new window, i.e. a half-finished preedit string
-        // from the old window will be brought to the new one. This is undesired.
-        //
-        // We ignore such commit requests so it doesn't have any affect on the
-        // new window. Even when the previous window isn't preediting when
-        // switching focus, it doesn't have any bad effect to the new window anyway.
-        if (focus_just_changed)
-        {
-            LOGI("focus_just_changed, ignore input method commit");
-            focus_just_changed = false;
-            return;
-        }
-
         auto *text_input = find_focused_text_input();
         if (text_input == nullptr)
         {
