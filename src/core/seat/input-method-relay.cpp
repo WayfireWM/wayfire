@@ -67,6 +67,18 @@ wf::input_method_relay::input_method_relay()
         auto evt_input_method = static_cast<wlr_input_method_v2*>(data);
         assert(evt_input_method == input_method);
 
+        // When we switch focus, we send a done event to the IM.
+        // The IM may need time to process further events and may send additional commits after switching
+        // focus, which belong to the old text input.
+        //
+        // To prevent this, we simply ignore commits which do not acknowledge the newest done event from the
+        // compositor.
+        if (input_method->current_serial < last_done_serial.value_or(0))
+        {
+            LOGD("focus just changed, ignore input method commit");
+            return;
+        }
+
         auto *text_input = find_focused_text_input();
         if (text_input == nullptr)
         {
@@ -164,6 +176,13 @@ void wf::input_method_relay::send_im_state(wlr_text_input_v3 *input)
     wlr_input_method_v2_send_content_type(input_method,
         input->current.content_type.hint,
         input->current.content_type.purpose);
+    send_im_done();
+}
+
+void wf::input_method_relay::send_im_done()
+{
+    last_done_serial = next_done_serial;
+    next_done_serial++;
     wlr_input_method_v2_send_done(input_method);
 }
 
