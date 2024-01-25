@@ -37,8 +37,12 @@ void wf::keyboard_t::setup_listeners()
             return;
         }
 
-        seat->priv->set_keyboard(this);
         auto is_im_sent = wf::get_core_impl().im_relay->is_im_sent(handle);
+        if (!is_im_sent)
+        {
+            seat->priv->set_keyboard(this);
+        }
+
         if ((is_im_sent || !handle_keyboard_key(ev->keycode, ev->state)) &&
             (mode == input_event_processing_mode_t::FULL))
         {
@@ -80,7 +84,11 @@ void wf::keyboard_t::setup_listeners()
 
         if (!wf::get_core_impl().im_relay->handle_modifier(kbd))
         {
-            wlr_seat_set_keyboard(seat, kbd);
+            if (!wf::get_core_impl().im_relay->is_im_sent(handle))
+            {
+                wlr_seat_set_keyboard(seat, kbd);
+            }
+
             wlr_seat_keyboard_send_modifiers(seat, &kbd->modifiers);
         }
 
