@@ -566,6 +566,9 @@ void wayfire_layer_shell_view::commit()
             if ((state->keyboard_interactive >= 1) && (state->layer >= ZWLR_LAYER_SHELL_V1_LAYER_TOP))
             {
                 wf::get_core().seat->focus_view(self());
+            } else
+            {
+                wf::get_core().seat->refocus();
             }
         }
 
