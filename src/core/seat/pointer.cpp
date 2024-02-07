@@ -6,7 +6,6 @@
 #include "wayfire/scene.hpp"
 #include "wayfire/signal-definitions.hpp"
 
-#include "../scene-priv.hpp"
 #include <wayfire/debug.hpp>
 #include <wayfire/util/log.hpp>
 #include <wayfire/core.hpp>
@@ -30,7 +29,7 @@ wf::pointer_t::pointer_t(nonstd::observer_ptr<wf::input_manager_t> input,
             grab_surface(nullptr);
         }
 
-        update_cursor_position(get_current_time(), false);
+        update_cursor_position(get_current_time());
     };
 
     wf::get_core().scene()->connect(&on_root_node_updated);
@@ -60,7 +59,7 @@ void wf::pointer_t::set_enable_focus(bool enabled)
         this->update_cursor_focus(nullptr);
     } else
     {
-        update_cursor_position(get_current_time(), false);
+        update_cursor_position(get_current_time());
     }
 }
 
@@ -69,7 +68,7 @@ bool wf::pointer_t::focus_enabled() const
     return this->focus_enabled_count > 0;
 }
 
-void wf::pointer_t::update_cursor_position(int64_t time_msec, bool real_update)
+void wf::pointer_t::update_cursor_position(int64_t time_msec)
 {
     wf::pointf_t gc = seat->priv->cursor->get_cursor_position();
 
@@ -84,15 +83,11 @@ void wf::pointer_t::update_cursor_position(int64_t time_msec, bool real_update)
         update_cursor_focus(isec ? isec->node->shared_from_this() : nullptr);
     }
 
-    if (real_update)
-    {
-        this->send_motion(time_msec);
-    }
-
+    this->send_motion(time_msec);
     seat->priv->update_drag_icon();
 }
 
-void wf::pointer_t::force_release_buttons()
+void wf::pointer_t::send_leave_to_focus()
 {
     if (cursor_focus)
     {
@@ -111,6 +106,7 @@ void wf::pointer_t::force_release_buttons()
         }
 
         cursor_focus->pointer_interaction().handle_pointer_leave();
+        this->last_focus_coords = {};
     }
 }
 
@@ -125,14 +121,11 @@ void wf::pointer_t::transfer_grab(scene::node_ptr node)
     }
 
     LOGC(POINTER, "transfer grab ", cursor_focus.get(), " -> ", node.get());
-    force_release_buttons();
+    send_leave_to_focus();
     cursor_focus = node;
 
     // Send pointer_enter to the grab
-    auto gc    = wf::get_core().get_cursor_position();
-    auto local = get_node_local_coords(node.get(), gc);
-    node->pointer_interaction().handle_pointer_enter(local);
-
+    send_enter_to_focus();
     if (!node->wants_raw_input())
     {
         currently_sent_buttons.clear();
@@ -145,6 +138,14 @@ void wf::pointer_t::transfer_grab(scene::node_ptr node)
     {
         grabbed_node = nullptr;
     }
+}
+
+void wf::pointer_t::send_enter_to_focus()
+{
+    auto gc    = wf::get_core().get_cursor_position();
+    auto local = get_node_local_coords(cursor_focus.get(), gc);
+    cursor_focus->pointer_interaction().handle_pointer_enter(local);
+    this->last_focus_coords = local;
 }
 
 void wf::pointer_t::update_cursor_focus(wf::scene::node_ptr new_focus)
@@ -160,16 +161,14 @@ void wf::pointer_t::update_cursor_focus(wf::scene::node_ptr new_focus)
     // buttons since otherwise we'll cancel DnD
     if (focus_change)
     {
-        force_release_buttons();
+        send_leave_to_focus();
         currently_sent_buttons.clear();
     }
 
     cursor_focus = new_focus;
     if (focus_change && new_focus)
     {
-        auto gc    = wf::get_core().get_cursor_position();
-        auto local = get_node_local_coords(new_focus.get(), gc);
-        new_focus->pointer_interaction().handle_pointer_enter(local);
+        send_enter_to_focus();
     } else if (focus_change)
     {
         // If there is focused surface, we should reset the cursor image to
@@ -200,7 +199,7 @@ void wf::pointer_t::grab_surface(wf::scene::node_ptr node)
 
     /* End grab */
     grabbed_node = nullptr;
-    update_cursor_position(get_current_time(), false);
+    update_cursor_position(get_current_time());
 }
 
 /* ----------------------- Input event processing --------------------------- */
@@ -296,7 +295,16 @@ void wf::pointer_t::send_motion(uint32_t time_msec)
     {
         auto gc    = wf::get_core().get_cursor_position();
         auto local = get_node_local_coords(cursor_focus.get(), gc);
-        cursor_focus->pointer_interaction().handle_pointer_motion(local, time_msec);
+
+        if (!last_focus_coords.has_value() ||
+            (local.x != last_focus_coords->x) || (local.y != last_focus_coords->y))
+        {
+            // NB: the pointer motion could go to a grab, which could trigger scenegraph changes, which
+            // trigger re-focus. We need to set the last focus coordinates early, so that we break out of
+            // infinite loops.
+            last_focus_coords = local;
+            cursor_focus->pointer_interaction().handle_pointer_motion(local, time_msec);
+        }
     }
 }
 

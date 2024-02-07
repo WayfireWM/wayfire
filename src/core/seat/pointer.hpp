@@ -79,10 +79,8 @@ class pointer_t
      * surface currently under the pointer.
      *
      * @param time_msec The time when the event causing this update occurred
-     * @param real_update Whether the update is caused by a hardware event or
-     *                    was artificially generated.
      */
-    void update_cursor_position(int64_t time_msec, bool real_update = true);
+    void update_cursor_position(int64_t time_msec);
 
     /**
      * Transfer focus and pressed buttons to the given grab.
@@ -92,6 +90,11 @@ class pointer_t
   private:
     nonstd::observer_ptr<wf::input_manager_t> input;
     nonstd::observer_ptr<seat_t> seat;
+
+    // Store the last motion / surface-local coords sent to the current focus.
+    // This is useful to avoid sending repetitive motion events if we for ex. have scenegraph changes, but no
+    // actual movement of the mouse.
+    std::optional<wf::pointf_t> last_focus_coords;
 
     // Buttons sent to the client currently
     // Note that count_pressed_buttons also contains buttons not sent to the
@@ -106,6 +109,8 @@ class pointer_t
     /** Whether focusing is enabled */
     int focus_enabled_count = 1;
     bool focus_enabled() const;
+
+    void send_enter_to_focus();
 
     /**
      * Set the pointer focus.
@@ -138,7 +143,7 @@ class pointer_t
     /**
      * Send synthetic button release events to the current cursor focus.
      */
-    void force_release_buttons();
+    void send_leave_to_focus();
 };
 }
 
