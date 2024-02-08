@@ -1,7 +1,6 @@
 #include "wayfire/debug.hpp"
 #include "wayfire/geometry.hpp"
 #include "wayfire/plugins/common/input-grab.hpp"
-#include "wayfire/nonstd/tracking-allocator.hpp"
 #include "wayfire/scene-input.hpp"
 #include "wayfire/signal-provider.hpp"
 #include "wayfire/view-helpers.hpp"
@@ -19,7 +18,6 @@
 #include <wayfire/workarea.hpp>
 #include <wayfire/window-manager.hpp>
 
-#include <cmath>
 #include <linux/input.h>
 #include <wayfire/signal-definitions.hpp>
 #include <wayfire/plugins/common/preview-indication.hpp>
@@ -334,7 +332,8 @@ class wayfire_move : public wf::per_output_plugin_instance_t,
             wf::get_core().seat->focus_view(grabbed_view);
         }
 
-        drag_helper->start_drag(view, grab_position, opts);
+        drag_helper->set_pending_drag(grab_position);
+        drag_helper->start_drag(view, opts);
         drag_helper->handle_motion(get_global_input_coords());
         slot.slot_id = wf::grid::SLOT_NONE;
         return true;

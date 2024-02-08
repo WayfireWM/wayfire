@@ -365,7 +365,6 @@ class wayfire_expo : public wf::per_output_plugin_instance_t, public wf::keyboar
         return grid;
     }
 
-    wf::point_t input_grab_origin;
     /**
      * Handle an input press event.
      *
@@ -389,25 +388,24 @@ class wayfire_expo : public wf::per_output_plugin_instance_t, public wf::keyboar
         } else
         {
             this->state.button_pressed = true;
-
-            input_grab_origin = {x, y};
+            drag_helper->set_pending_drag(wf::get_core().get_cursor_position());
             update_target_workspace(x, y);
         }
     }
 
-    void start_moving(wayfire_toplevel_view view, wf::point_t grab)
+    void start_moving(wayfire_toplevel_view view, wf::point_t local_grab)
     {
         if (!(view->get_allowed_actions() & (wf::VIEW_ALLOW_WS_CHANGE | wf::VIEW_ALLOW_MOVE)))
         {
             return;
         }
 
-        auto ws_coords = input_coordinates_to_output_local_coordinates(grab);
+        auto ws_coords = input_coordinates_to_output_local_coordinates(local_grab);
         auto bbox = wf::view_bounding_box_up_to(view, "wobbly");
 
         view->damage();
         // Make sure that the view is in output-local coordinates!
-        translate_wobbly(view, grab - ws_coords);
+        translate_wobbly(view, local_grab - ws_coords);
 
         auto [vw, vh] = output->wset()->get_workspace_grid_size();
         wf::move_drag::drag_options_t opts;
@@ -417,9 +415,7 @@ class wayfire_expo : public wf::per_output_plugin_instance_t, public wf::keyboar
         opts.snap_off_threshold = move_snap_off_threshold;
         opts.join_views = move_join_views;
 
-        auto output_offset = wf::origin(output->get_layout_geometry());
-        drag_helper->start_drag(view, grab + output_offset,
-            wf::move_drag::find_relative_grab(bbox, ws_coords), opts);
+        drag_helper->start_drag(view, wf::move_drag::find_relative_grab(bbox, ws_coords), opts);
         move_started_ws = target_ws;
         input_grab->set_wants_raw_input(true);
     }
@@ -433,34 +429,28 @@ class wayfire_expo : public wf::per_output_plugin_instance_t, public wf::keyboar
         }
 
         auto local = to - wf::origin(output->get_layout_geometry());
-
         if (drag_helper->view)
         {
             drag_helper->handle_motion(to);
+            update_target_workspace(local.x, local.y);
+            return;
         }
 
-        LOGI("Motion is ", to, " ", input_grab_origin);
-
-        if (abs(local - input_grab_origin) < 5)
+        if (!drag_helper->should_start_pending_drag(to) || zoom_animation.running())
         {
             /* Ignore small movements */
             return;
         }
 
-        bool first_click = (input_grab_origin != offscreen_point);
-        if (!zoom_animation.running() && first_click)
+        auto local_grab = *drag_helper->tentative_grab_position - wf::origin(output->get_layout_geometry());
+        if (auto view = find_view_at_coordinates(local_grab.x, local_grab.y))
         {
-            auto view = find_view_at_coordinates(input_grab_origin.x, input_grab_origin.y);
-            if (view)
-            {
-                start_moving(view, input_grab_origin);
-                drag_helper->handle_motion(to);
-            }
+            start_moving(view, local_grab);
+            drag_helper->handle_motion(to);
         }
 
         /* As input coordinates are always positive, this will ensure that any
          * subsequent motion events while grabbed are allowed */
-        input_grab_origin = offscreen_point;
         update_target_workspace(local.x, local.y);
     }
 

@@ -428,17 +428,44 @@ class core_drag_t : public signal::provider_t
     }
 
   public:
+    std::optional<wf::point_t> tentative_grab_position;
+
     /**
-     * Start drag.
+     * A button has been pressed which might start a drag action.
+     */
+    template<class Point>
+    void set_pending_drag(const Point& current_position)
+    {
+        this->tentative_grab_position = {(int)current_position.x, (int)current_position.y};
+    }
+
+    /**
+     * Check whether a motion event makes a sufficient drag so that the drag operation may start at all.
+     *
+     * Note that in some cases this functionality is not used at all, if the action for example was triggered
+     * by a binding.
+     */
+    bool should_start_pending_drag(wf::point_t current_position)
+    {
+        if (!tentative_grab_position.has_value())
+        {
+            return false;
+        }
+
+        return distance_to_grab_origin(current_position) > 5;
+    }
+
+    /**
+     * Start the actual dragging operation. Note: this should be called **after** set_pending_drag().
      *
      * @param grab_view The view which is being dragged.
      * @param grab_position The position of the input, in output-layout coordinates.
      * @param relative The position of the grab_position relative to view.
      */
-    void start_drag(wayfire_toplevel_view grab_view, wf::point_t grab_position,
-        wf::pointf_t relative,
-        const drag_options_t& options)
+    void start_drag(wayfire_toplevel_view grab_view, wf::pointf_t relative, const drag_options_t& options)
     {
+        wf::dassert(tentative_grab_position.has_value(),
+            "First, the drag operation should be set as pending!");
         auto bbox = wf::view_bounding_box_up_to(grab_view, "wobbly");
         wf::point_t rel_grab_pos = {
             int(bbox.x + relative.x * bbox.width),
@@ -467,7 +494,7 @@ class core_drag_t : public signal::provider_t
 
             tr->relative_grab = find_relative_grab(
                 wf::view_bounding_box_up_to(v, "wobbly"), rel_grab_pos);
-            tr->grab_position = grab_position;
+            tr->grab_position = *tentative_grab_position;
             tr->scale_factor.animate(options.initial_scale, options.initial_scale);
             v->get_transformed_node()->add_transformer(
                 tr, wf::TRANSFORMER_HIGHLEVEL - 1);
@@ -477,7 +504,7 @@ class core_drag_t : public signal::provider_t
             v->damage();
 
             // Make sure that wobbly has the correct geometry from the start!
-            rebuild_wobbly(v, grab_position, dragged.transformer->relative_grab);
+            rebuild_wobbly(v, *tentative_grab_position, dragged.transformer->relative_grab);
 
             // TODO: make this configurable!
             start_wobbly_rel(v, dragged.transformer->relative_grab);
@@ -499,13 +526,15 @@ class core_drag_t : public signal::provider_t
                 set_tiled_wobbly(v.view, true);
             }
 
-            grab_origin = grab_position;
             view_held_in_place = true;
         }
     }
 
-    void start_drag(wayfire_toplevel_view view, wf::point_t grab_position, const drag_options_t& options)
+    void start_drag(wayfire_toplevel_view view, const drag_options_t& options)
     {
+        wf::dassert(tentative_grab_position.has_value(),
+            "First, the drag operation should be set as pending!");
+
         if (options.join_views)
         {
             view = get_toplevel(view);
@@ -513,7 +542,7 @@ class core_drag_t : public signal::provider_t
 
         auto bbox = view->get_transformed_node()->get_bounding_box() +
             wf::origin(view->get_output()->get_layout_geometry());
-        start_drag(view, grab_position, find_relative_grab(bbox, grab_position), options);
+        start_drag(view, find_relative_grab(bbox, *tentative_grab_position), options);
     }
 
     void handle_motion(wf::point_t to)
@@ -553,15 +582,14 @@ class core_drag_t : public signal::provider_t
 
     double distance_to_grab_origin(wf::point_t to) const
     {
-        auto offset = to - grab_origin;
-        const int dst_sq = offset.x * offset.x + offset.y * offset.y;
-        return std::sqrt(dst_sq);
+        return abs(to - *tentative_grab_position);
     }
 
     void handle_input_released()
     {
         if (!view || all_views.empty())
         {
+            this->tentative_grab_position = {};
             // Input already released => don't do anything
             return;
         }
@@ -617,6 +645,8 @@ class core_drag_t : public signal::provider_t
         emit(&data);
         view_held_in_place = false;
         on_view_unmap.disconnect();
+
+        this->tentative_grab_position = {};
     }
 
     void set_scale(double new_scale)
@@ -644,9 +674,6 @@ class core_drag_t : public signal::provider_t
 
     // Current parameters
     drag_options_t params;
-
-    // Grab origin, used for snap-off
-    wf::point_t grab_origin;
 
     // View is held in place, waiting for snap-off
     bool view_held_in_place = false;

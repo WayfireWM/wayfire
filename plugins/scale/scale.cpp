@@ -469,14 +469,11 @@ class wayfire_scale : public wf::per_output_plugin_instance_t,
                 last_selected_view = nullptr;
             }
 
+            drag_helper->set_pending_drag(input_position);
             return;
         }
 
-        if (drag_helper->view)
-        {
-            drag_helper->handle_input_released();
-        }
-
+        drag_helper->handle_input_released();
         auto view = scale_find_view_at(input_position, output);
         if (!view || (last_selected_view != view))
         {
@@ -517,7 +514,7 @@ class wayfire_scale : public wf::per_output_plugin_instance_t,
     void handle_pointer_motion(wf::pointf_t to_f, uint32_t time) override
     {
         wf::point_t to{(int)std::round(to_f.x), (int)std::round(to_f.y)};
-        if (!drag_helper->view && last_selected_view)
+        if (!drag_helper->view && last_selected_view && drag_helper->should_start_pending_drag(to))
         {
             wf::move_drag::drag_options_t opts;
             opts.join_views = true;
@@ -527,7 +524,8 @@ class wayfire_scale : public wf::per_output_plugin_instance_t,
             // We want to receive raw inputs (e.g. no fake pointer releases) in case the view is moved to
             // another output.
             grab->set_wants_raw_input(true);
-            drag_helper->start_drag(last_selected_view, to, opts);
+            drag_helper->start_drag(last_selected_view, opts);
+            drag_helper->handle_motion(to);
         } else if (drag_helper->view)
         {
             drag_helper->handle_motion(to);
