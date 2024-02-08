@@ -56,6 +56,21 @@ class method_repository_t
         };
     }
 
+    method_repository_t()
+    {
+        register_method("list-methods", [this] (auto)
+        {
+            nlohmann::json response;
+            response["methods"] = nlohmann::json::array();
+            for (auto& [method, _] : methods)
+            {
+                response["methods"].push_back(method);
+            }
+
+            return response;
+        });
+    }
+
   private:
     std::map<std::string, method_callback> methods;
 };
