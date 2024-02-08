@@ -344,7 +344,7 @@ bool wf::keyboard_t::handle_keyboard_key(uint32_t time, uint32_t key, uint32_t s
 
             if ((timeout <= 0) || (time_elapsed < milliseconds(timeout)))
             {
-                handled_in_plugin |= wf::get_core().bindings->handle_key(
+                wf::get_core().bindings->handle_key(
                     wf::keybinding_t{get_modifiers() | mod, 0}, mod_binding_key);
             }
         }
