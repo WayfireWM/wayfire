@@ -8,10 +8,8 @@
 #include <set>
 
 #include "plugins/ipc/ipc-helpers.hpp"
-#include "plugins/ipc/ipc.hpp"
 #include "plugins/ipc/ipc-method-repository.hpp"
 #include "wayfire/core.hpp"
-#include "wayfire/object.hpp"
 #include "wayfire/plugins/common/util.hpp"
 #include "wayfire/unstable/wlr-surface-node.hpp"
 #include "wayfire/plugins/common/shared-core-data.hpp"
@@ -20,7 +18,6 @@
 #include "wayfire/view-helpers.hpp"
 #include "wayfire/window-manager.hpp"
 #include "wayfire/workarea.hpp"
-#include "wayfire/workspace-set.hpp"
 #include "config.h"
 #include <wayfire/nonstd/wlroots-full.hpp>
 
@@ -141,7 +138,7 @@ class ipc_rules_t : public wf::plugin_interface_t, public wf::per_output_tracker
         method_repository->register_method("window-rules/configure-view", configure_view);
         method_repository->register_method("window-rules/focus-view", focus_view);
         method_repository->register_method("window-rules/get-focused-view", get_focused_view);
-        ipc_server->connect(&on_client_disconnected);
+        method_repository->connect(&on_client_disconnected);
         wf::get_core().connect(&on_view_mapped);
         wf::get_core().connect(&on_kbfocus_changed);
         init_output_tracking();
@@ -346,14 +343,14 @@ class ipc_rules_t : public wf::plugin_interface_t, public wf::per_output_tracker
 
   private:
     wf::shared_data::ref_ptr_t<wf::ipc::method_repository_t> method_repository;
-    wf::shared_data::ref_ptr_t<wf::ipc::server_t> ipc_server;
 
     // Track a list of clients which have requested watch
-    std::set<wf::ipc::client_t*> clients;
+    std::set<wf::ipc::client_interface_t*> clients;
 
-    wf::ipc::method_callback on_client_watch = [=] (nlohmann::json data)
+    wf::ipc::method_callback_full on_client_watch =
+        [=] (nlohmann::json data, wf::ipc::client_interface_t *client)
     {
-        clients.insert(ipc_server->get_current_request_client());
+        clients.insert(client);
         return wf::ipc::json_ok();
     };
 

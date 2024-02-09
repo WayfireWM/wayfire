@@ -2,21 +2,17 @@
 #include "wayfire/plugin.hpp"
 #include "wayfire/plugins/common/shared-core-data.hpp"
 #include "wayfire/toplevel-view.hpp"
-#include "wayfire/unstable/wlr-surface-node.hpp"
 #include "wayfire/util.hpp"
-#include "wayfire/view-helpers.hpp"
 #include <wayfire/view.hpp>
 #include <wayfire/output.hpp>
 #include <wayfire/workspace-set.hpp>
 #include <wayfire/output-layout.hpp>
 #include <wayfire/txn/transaction-manager.hpp>
 #include "src/view/view-impl.hpp"
+#include <variant>
 
 #define WAYFIRE_PLUGIN
 #include <wayfire/debug.hpp>
-
-#include "ipc.hpp"
-#include "ipc-helpers.hpp"
 #include <wayfire/touch/touch.hpp>
 
 extern "C" {

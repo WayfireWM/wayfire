@@ -123,7 +123,7 @@ void wf::ipc::server_t::client_disappeared(client_t *client)
 
     client_disconnected_signal ev;
     ev.client = client;
-    this->emit(&ev);
+    method_repository->emit(&ev);
 
     auto it = std::remove_if(clients.begin(), clients.end(),
         [&] (const auto& cl) { return cl.get() == client; });
@@ -133,9 +133,7 @@ void wf::ipc::server_t::client_disappeared(client_t *client)
 void wf::ipc::server_t::handle_incoming_message(
     client_t *client, nlohmann::json message)
 {
-    this->current_client = client;
-    client->send_json(method_repository->call_method(message["method"], message["data"]));
-    this->current_client = nullptr;
+    client->send_json(method_repository->call_method(message["method"], message["data"], client));
 }
 
 /* --------------------------- Per-client code ------------------------------*/

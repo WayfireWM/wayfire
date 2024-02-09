@@ -6,10 +6,8 @@
 #include <set>
 
 #include "ipc-helpers.hpp"
-#include "ipc.hpp"
 #include "ipc-method-repository.hpp"
 #include "wayfire/core.hpp"
-#include "wayfire/object.hpp"
 #include "wayfire/plugins/common/shared-core-data.hpp"
 #include "wayfire/signal-definitions.hpp"
 #include "wayfire/signal-provider.hpp"
@@ -23,7 +21,7 @@ class wayfire_demo_ipc : public wf::plugin_interface_t
         method_repository->register_method("demo-ipc/view-info", get_view_info);
         method_repository->register_method("demo-ipc/output-info", get_output_info);
         method_repository->register_method("demo-ipc/view-set-geometry", set_view_geometry);
-        ipc_server->connect(&on_client_disconnected);
+        method_repository->connect(&on_client_disconnected);
         wf::get_core().connect(&on_view_mapped);
     }
 
@@ -35,9 +33,10 @@ class wayfire_demo_ipc : public wf::plugin_interface_t
         method_repository->unregister_method("demo-ipc/view-set-geometry");
     }
 
-    wf::ipc::method_callback on_client_watch = [=] (nlohmann::json data)
+    wf::ipc::method_callback_full on_client_watch =
+        [=] (nlohmann::json data, wf::ipc::client_interface_t *client)
     {
-        clients.insert(ipc_server->get_current_request_client());
+        clients.insert(client);
         return wf::ipc::json_ok();
     };
 
@@ -99,8 +98,7 @@ class wayfire_demo_ipc : public wf::plugin_interface_t
 
   private:
     wf::shared_data::ref_ptr_t<wf::ipc::method_repository_t> method_repository;
-    wf::shared_data::ref_ptr_t<wf::ipc::server_t> ipc_server;
-    std::set<wf::ipc::client_t*> clients;
+    std::set<wf::ipc::client_interface_t*> clients;
 
     wf::signal::connection_t<wf::ipc::client_disconnected_signal> on_client_disconnected =
         [=] (wf::ipc::client_disconnected_signal *ev)
