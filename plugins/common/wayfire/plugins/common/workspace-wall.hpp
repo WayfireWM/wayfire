@@ -1,24 +1,20 @@
 #pragma once
 
 
-#include <any>
-#include <cstdlib>
+#include "wayfire/workspace-set.hpp" // IWYU pragma: keep
 #include <glm/gtc/matrix_transform.hpp>
 #include <memory>
 #include "wayfire/core.hpp"
-#include "wayfire/debug.hpp"
 #include "wayfire/geometry.hpp"
 #include "wayfire/opengl.hpp"
 #include "wayfire/region.hpp"
-#include "wayfire/render-manager.hpp"
 #include "wayfire/scene-input.hpp"
 #include "wayfire/scene-operations.hpp"
 #include "wayfire/scene-render.hpp"
 #include "wayfire/scene.hpp"
-#include "wayfire/signal-definitions.hpp"
 #include "wayfire/signal-provider.hpp"
 #include "wayfire/workspace-stream.hpp"
-#include "wayfire/workspace-set.hpp"
+#include "wayfire/output.hpp"
 
 namespace wf
 {
@@ -230,14 +226,14 @@ class workspace_wall_t : public wf::signal::provider_t
     }
 
   protected:
+    template<class Data> using per_workspace_map_t = std::map<int, std::map<int, Data>>;
+
     class workspace_wall_node_t : public scene::node_t
     {
         class wwall_render_instance_t : public scene::render_instance_t
         {
             workspace_wall_node_t *self;
-
-            std::vector<std::vector<std::vector<scene::render_instance_uptr>>>
-            instances;
+            per_workspace_map_t<std::vector<scene::render_instance_uptr>> instances;
 
             scene::damage_callback push_damage;
             wf::signal::connection_t<scene::node_damage_signal> on_wall_damage =
@@ -265,14 +261,15 @@ class workspace_wall_t : public wf::signal::provider_t
                 this->push_damage = push_damage;
                 self->connect(&on_wall_damage);
 
-                instances.resize(self->workspaces.size());
                 for (int i = 0; i < (int)self->workspaces.size(); i++)
                 {
-                    instances[i].resize(self->workspaces[i].size());
                     for (int j = 0; j < (int)self->workspaces[i].size(); j++)
                     {
                         auto push_damage_child = [=] (const wf::region_t& damage)
                         {
+                            // Store the damage because we'll have to update the buffers
+                            self->aux_buffer_damage[i][j] |= damage;
+
                             wf::region_t our_damage;
                             for (auto& rect : damage)
                             {
@@ -283,6 +280,7 @@ class workspace_wall_t : public wf::signal::provider_t
                                 our_damage |= scale_box(A, B, box);
                             }
 
+                            // Also damage the 'screen' after transforming damage
                             push_damage(our_damage);
                         };
 
@@ -292,118 +290,164 @@ class workspace_wall_t : public wf::signal::provider_t
                 }
             }
 
-            using render_tag = std::tuple<int, float>;
-            static constexpr int TAG_BACKGROUND = 0;
-            static constexpr int TAG_WS_DIM     = 1;
-            static constexpr int FRAME_EV = 2;
+            static int damage_sum_area(const wf::region_t& damage)
+            {
+                int sum = 0;
+                for (const auto& rect : damage)
+                {
+                    sum += (rect.y2 - rect.y1) * (rect.x2 - rect.x1);
+                }
+
+                return sum;
+            }
+
+            bool consider_rescale_workspace_buffer(int i, int j, wf::region_t& visible_damage)
+            {
+                // In general, when rendering the auxilliary buffers for each workspace, we can render the
+                // workspace thumbnails in a lower resolution, because at the end they are shown scaled.
+                // This helps with performance and uses less GPU power.
+                //
+                // However, the situation is tricky because during the Expo animation the optimal render
+                // scale constantly changes. Thus, in some cases it is actually far from optimal to rescale
+                // on every frame - it is often better to just keep the buffers from the old scale.
+                //
+                // Nonetheless, we need to make sure to rescale when this makes sense, and to avoid visual
+                // artifacts.
+                auto bbox = self->workspaces[i][j]->get_bounding_box();
+                const float render_scale = std::max(
+                    1.0 * bbox.width / self->wall->viewport.width,
+                    1.0 * bbox.height / self->wall->viewport.height);
+                const float current_scale = self->aux_buffer_current_scale[i][j];
+
+                // Avoid keeping a low resolution if we are going up in the scale (for example, expo exit
+                // animation) and we're close to the 1.0 scale. Otherwise, we risk popping artifacts as we
+                // suddenly switch from low to high resolution.
+                const bool rescale_magnification = (render_scale > 0.5) &&
+                    (render_scale > current_scale * 1.1);
+
+                // In general, it is worth changing the buffer scale if we have a lot of damage to the old
+                // buffer, so that for ex. a full re-scale is actually cheaper than repaiting the old buffer.
+                // This could easily happen for example if we have a video player during Expo start animation.
+                const int repaint_cost_current_scale =
+                    damage_sum_area(visible_damage) * (current_scale * current_scale);
+                const int repaint_rescale_cost = (bbox.width * bbox.height) * (render_scale * render_scale);
+
+                if ((repaint_cost_current_scale > repaint_rescale_cost) || rescale_magnification)
+                {
+                    self->aux_buffer_current_scale[i][j] = render_scale;
+                    self->aux_buffers[i][j].subbuffer    = wf::geometry_t{
+                        0, 0,
+                        int(std::ceil(render_scale * self->aux_buffers[i][j].viewport_width)),
+                        int(std::ceil(render_scale * self->aux_buffers[i][j].viewport_height)),
+                    };
+
+                    self->aux_buffer_damage[i][j] |= self->workspaces[i][j]->get_bounding_box();
+                    return true;
+                }
+
+                return false;
+            }
 
             void schedule_instructions(
                 std::vector<scene::render_instruction_t>& instructions,
                 const wf::render_target_t& target, wf::region_t& damage) override
             {
-                instructions.push_back(scene::render_instruction_t{
-                        .instance = this,
-                        .target   = target,
-                        .damage   = wf::region_t{},
-                        .data     = render_tag{FRAME_EV, 0.0},
-                    });
-
-                // Scale damage to be in the workspace's coordinate system
-                wf::region_t workspaces_damage;
-                for (auto& rect : damage)
-                {
-                    auto box = wlr_box_from_pixman_box(rect);
-                    wf::geometry_t A = self->get_bounding_box();
-                    wf::geometry_t B = self->wall->viewport;
-                    workspaces_damage |= scale_box(A, B, box);
-                }
-
+                // Update workspaces in a render pass
                 for (int i = 0; i < (int)self->workspaces.size(); i++)
                 {
                     for (int j = 0; j < (int)self->workspaces[i].size(); j++)
                     {
-                        // Compute render target: a subbuffer of the target buffer
-                        // which corresponds to the region occupied by the
-                        // workspace.
-                        wf::render_target_t our_target = target;
-                        our_target.geometry =
-                            self->workspaces[i][j]->get_bounding_box();
-
-                        wf::geometry_t workspace_rect = get_workspace_rect({i, j});
-                        wf::geometry_t relative_to_viewport = scale_box(
-                            self->wall->viewport, target.geometry, workspace_rect);
-
-                        our_target.subbuffer = target.framebuffer_box_from_geometry_box(relative_to_viewport);
-
-                        // Take the damage for the workspace in workspace-local coordinates, as the workspace
-                        // stream node expects.
-                        wf::region_t our_damage = workspaces_damage & workspace_rect;
-                        workspaces_damage ^= our_damage;
-                        our_damage += -wf::origin(workspace_rect);
-
-                        // Dim workspaces at the end (the first instruction pushed is executed last)
-                        instructions.push_back(scene::render_instruction_t{
-                                .instance = this,
-                                .target   = our_target,
-                                .damage   = our_damage,
-                                .data     = render_tag{TAG_WS_DIM,
-                                    self->wall->get_color_for_workspace({i, j})},
-                            });
-
-                        // Render the workspace contents first
-                        for (auto& ch : instances[i][j])
+                        const auto ws_bbox     = self->wall->get_workspace_rectangle({i, j});
+                        const auto visible_box =
+                            geometry_intersection(self->wall->viewport, ws_bbox) - wf::origin(ws_bbox);
+                        wf::region_t visible_damage = self->aux_buffer_damage[i][j] & visible_box;
+                        if (consider_rescale_workspace_buffer(i, j, visible_damage))
                         {
-                            ch->schedule_instructions(instructions, our_target, our_damage);
+                            visible_damage |= visible_box;
+                        }
+
+                        if (!visible_damage.empty())
+                        {
+                            scene::render_pass_params_t params;
+                            params.instances = &instances[i][j];
+                            params.damage    = std::move(visible_damage);
+                            params.reference_output = self->wall->output;
+                            params.target = self->aux_buffers[i][j];
+                            scene::run_render_pass(params, scene::RPASS_EMIT_SIGNALS);
+                            self->aux_buffer_damage[i][j] ^= visible_damage;
                         }
                     }
                 }
 
-                auto bbox = self->get_bounding_box();
-
+                // Render the wall
                 instructions.push_back(scene::render_instruction_t{
                         .instance = this,
                         .target   = target,
                         .damage   = damage & self->get_bounding_box(),
-                        .data     = render_tag{TAG_BACKGROUND, 0.0},
                     });
 
-                damage ^= bbox;
+                damage ^= self->get_bounding_box();
             }
 
-            void render(const wf::render_target_t& target,
-                const wf::region_t& region, const std::any& any_tag) override
+            static gl_geometry scale_fbox(wf::geometry_t A, wf::geometry_t B, wf::geometry_t box)
             {
-                auto [tag, dim] = std::any_cast<render_tag>(any_tag);
+                const float px  = 1.0 * (box.x - A.x) / A.width;
+                const float py  = 1.0 * (box.y - A.y) / A.height;
+                const float px2 = 1.0 * (box.x + box.width - A.x) / A.width;
+                const float py2 = 1.0 * (box.y + box.height - A.y) / A.height;
+                return gl_geometry{
+                    B.x + B.width * px,
+                    B.y + B.height * py,
+                    B.x + B.width * px2,
+                    B.y + B.height * py2,
+                };
+            }
 
-                if (tag == TAG_BACKGROUND)
+            void render(const wf::render_target_t& target, const wf::region_t& region) override
+            {
+                OpenGL::render_begin(target);
+                for (auto& box : region)
                 {
-                    OpenGL::render_begin(target);
-                    for (auto& box : region)
+                    target.logic_scissor(wlr_box_from_pixman_box(box));
+                    OpenGL::clear(self->wall->background_color);
+                    for (int i = 0; i < (int)self->workspaces.size(); i++)
                     {
-                        target.logic_scissor(wlr_box_from_pixman_box(box));
-                        OpenGL::clear(self->wall->background_color);
+                        for (int j = 0; j < (int)self->workspaces[i].size(); j++)
+                        {
+                            auto box = get_workspace_rect({i, j});
+                            auto A   = self->wall->viewport;
+                            auto B   = self->get_bounding_box();
+                            gl_geometry render_geometry = scale_fbox(A, B, box);
+                            auto& buffer = self->aux_buffers[i][j];
+
+                            float dim = self->wall->get_color_for_workspace({i, j});
+                            const glm::vec4 color = glm::vec4(dim, dim, dim, 1.0);
+
+                            if (!buffer.subbuffer.has_value())
+                            {
+                                OpenGL::render_transformed_texture({buffer.tex},
+                                    render_geometry, {}, target.get_orthographic_projection(), color);
+                            } else
+                            {
+                                // The 0.999f come from trying to avoid floating-point artifacts
+                                const gl_geometry tex_geometry = {
+                                    0.0f,
+                                    1.0f - 0.999f * buffer.subbuffer->height / buffer.viewport_height,
+                                    0.999f * buffer.subbuffer->width / buffer.viewport_width,
+                                    1.0f,
+                                };
+
+                                OpenGL::render_transformed_texture({buffer.tex},
+                                    render_geometry, tex_geometry,
+                                    target.get_orthographic_projection(),
+                                    color, OpenGL::TEXTURE_USE_TEX_GEOMETRY);
+                            }
+                        }
                     }
-
-                    OpenGL::render_end();
-                } else if (tag == FRAME_EV)
-                {
-                    self->wall->render_wall(target, region);
-                } else
-                {
-                    auto fb_region = target.framebuffer_region_from_geometry_region(region);
-
-                    OpenGL::render_begin(target);
-                    for (auto& dmg_rect : fb_region)
-                    {
-                        target.scissor(wlr_box_from_pixman_box(dmg_rect));
-                        const float a = 1.0 - dim;
-
-                        OpenGL::render_rectangle(target.geometry, {0, 0, 0, a},
-                            target.get_orthographic_projection());
-                    }
-
-                    OpenGL::render_end();
                 }
+
+                OpenGL::render_end();
+                self->wall->render_wall(target, region);
             }
 
             void compute_visibility(wf::output_t *output, wf::region_t& visible) override
@@ -435,8 +479,37 @@ class workspace_wall_t : public wf::signal::provider_t
                     auto node = std::make_shared<workspace_stream_node_t>(
                         wall->output, wf::point_t{i, j});
                     workspaces[i].push_back(node);
+
+                    aux_buffers[i][j].geometry = workspaces[i][j]->get_bounding_box();
+                    aux_buffers[i][j].scale    = wall->output->handle->scale;
+                    aux_buffers[i][j].wl_transform = WL_OUTPUT_TRANSFORM_NORMAL;
+                    aux_buffers[i][j].transform    = get_output_matrix_from_transform(
+                        aux_buffers[i][j].wl_transform);
+
+                    auto size =
+                        aux_buffers[i][j].framebuffer_box_from_geometry_box(aux_buffers[i][j].geometry);
+                    OpenGL::render_begin();
+                    aux_buffers[i][j].allocate(size.width, size.height);
+                    OpenGL::render_end();
+
+                    aux_buffer_damage[i][j] |= aux_buffers[i][j].geometry;
+                    aux_buffer_current_scale[i][j] = 1.0;
                 }
             }
+        }
+
+        ~workspace_wall_node_t()
+        {
+            OpenGL::render_begin();
+            for (auto& [_, buffers] : aux_buffers)
+            {
+                for (auto& [_, buffer] : buffers)
+                {
+                    buffer.release();
+                }
+            }
+
+            OpenGL::render_end();
         }
 
         virtual void gen_render_instances(
@@ -465,6 +538,13 @@ class workspace_wall_t : public wf::signal::provider_t
       private:
         workspace_wall_t *wall;
         std::vector<std::vector<std::shared_ptr<workspace_stream_node_t>>> workspaces;
+
+        // Buffers keeping the contents of almost-static workspaces
+        per_workspace_map_t<wf::render_target_t> aux_buffers;
+        // Damage accumulated for those buffers
+        per_workspace_map_t<wf::region_t> aux_buffer_damage;
+        // Current rendering scale for the workspace
+        per_workspace_map_t<float> aux_buffer_current_scale;
     };
     std::shared_ptr<workspace_wall_node_t> render_node;
 };
