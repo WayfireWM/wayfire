@@ -140,6 +140,7 @@ class ipc_rules_t : public wf::plugin_interface_t, public wf::per_output_tracker
         method_repository->register_method("window-rules/get-focused-view", get_focused_view);
         method_repository->connect(&on_client_disconnected);
         wf::get_core().connect(&on_view_mapped);
+        wf::get_core().connect(&on_view_unmapped);
         wf::get_core().connect(&on_kbfocus_changed);
         init_output_tracking();
     }
@@ -345,6 +346,11 @@ class ipc_rules_t : public wf::plugin_interface_t, public wf::per_output_tracker
     wf::signal::connection_t<wf::view_mapped_signal> on_view_mapped = [=] (wf::view_mapped_signal *ev)
     {
         send_view_to_subscribes(ev->view, "view-mapped");
+    };
+
+    wf::signal::connection_t<wf::view_unmapped_signal> on_view_unmapped = [=] (wf::view_unmapped_signal *ev)
+    {
+        send_view_to_subscribes(ev->view, "view-unmapped");
     };
 
     wf::signal::connection_t<wf::keyboard_focus_changed_signal> on_kbfocus_changed =
