@@ -445,6 +445,7 @@ class ipc_rules_t : public wf::plugin_interface_t, public wf::per_output_tracker
 
         nlohmann::json description;
         description["id"]     = view->get_id();
+        description["pid"]    = get_view_pid(view);
         description["app-id"] = view->get_app_id();
         description["title"]  = view->get_title();
         auto toplevel = wf::toplevel_cast(view);
@@ -494,6 +495,29 @@ class ipc_rules_t : public wf::plugin_interface_t, public wf::per_output_tracker
 
         return wf::ipc::json_error("Unknown input device!");
     };
+
+    pid_t get_view_pid(wayfire_view view)
+    {
+        pid_t pid = -1;
+        if (!view)
+        {
+            return pid;
+        }
+
+#if WF_HAS_XWAYLAND
+        wlr_surface *wlr_surface = view->get_wlr_surface();
+        if (wlr_surface && wlr_xwayland_surface_try_from_wlr_surface(wlr_surface))
+        {
+            pid = wlr_xwayland_surface_try_from_wlr_surface(wlr_surface)->pid;
+        } else
+#endif
+        if (view && view->get_client())
+        {
+            wl_client_get_credentials(view->get_client(), &pid, 0, 0);
+        }
+
+        return pid;
+    }
 };
 
 DECLARE_WAYFIRE_PLUGIN(ipc_rules_t);
