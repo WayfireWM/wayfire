@@ -1167,6 +1167,12 @@ class wayfire_scale : public wf::per_output_plugin_instance_t,
         layout_slots(get_views());
     };
 
+    wf::signal::connection_t<wf::workarea_changed_signal> workarea_changed =
+        [=] (wf::workarea_changed_signal *ev)
+    {
+        layout_slots(get_views());
+    };
+
     /* View geometry changed. Also called when workspace changes */
     wf::signal::connection_t<wf::view_geometry_changed_signal> view_geometry_changed =
         [=] (wf::view_geometry_changed_signal *ev)
@@ -1350,6 +1356,7 @@ class wayfire_scale : public wf::per_output_plugin_instance_t,
         output->connect(&on_view_set_output);
         output->connect(&on_view_mapped);
         output->connect(&workspace_changed);
+        output->connect(&workarea_changed);
         output->connect(&view_disappeared);
         output->connect(&view_minimized);
         output->connect(&view_unmapped);
@@ -1371,6 +1378,7 @@ class wayfire_scale : public wf::per_output_plugin_instance_t,
         view_unmapped.disconnect();
         view_minimized.disconnect();
         workspace_changed.disconnect();
+        workarea_changed.disconnect();
         view_geometry_changed.disconnect();
 
         grab->ungrab_input();
@@ -1428,6 +1436,7 @@ class wayfire_scale : public wf::per_output_plugin_instance_t,
         view_disappeared.disconnect();
         view_minimized.disconnect();
         workspace_changed.disconnect();
+        workarea_changed.disconnect();
         view_geometry_changed.disconnect();
         output->deactivate_plugin(&grab_interface);
 
