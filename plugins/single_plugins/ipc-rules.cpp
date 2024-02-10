@@ -171,42 +171,13 @@ class ipc_rules_t : public wf::plugin_interface_t, public wf::per_output_tracker
         // no-op
     }
 
-    wf::ipc::method_callback list_views = [] (nlohmann::json)
+    wf::ipc::method_callback list_views = [=] (nlohmann::json)
     {
         auto response = nlohmann::json::array();
 
         for (auto& view : wf::get_core().get_all_views())
         {
-            nlohmann::json v;
-            auto output = view->get_output();
-            v["id"]     = view->get_id();
-            v["title"]  = view->get_title();
-            v["app-id"] = view->get_app_id();
-            v["base-geometry"] = wf::ipc::geometry_to_json(get_view_base_geometry(view));
-            v["bbox"]   = wf::ipc::geometry_to_json(view->get_bounding_box());
-            v["output"] = output ? output->to_string() : "null";
-            v["output-id"] = output ? output->get_id() : -1;
-            v["last-focus-timestamp"] = wf::get_focus_timestamp(view);
-            v["role"] = role_to_string(view->role);
-
-            v["state"] = {};
-            v["state"]["mapped"]    = view->is_mapped();
-            v["state"]["focusable"] = view->is_focusable();
-
-            if (auto toplevel = toplevel_cast(view))
-            {
-                v["parent"]   = toplevel->parent ? (int)toplevel->parent->get_id() : -1;
-                v["geometry"] = wf::ipc::geometry_to_json(toplevel->get_geometry());
-                v["state"]["tiled"] = toplevel->pending_tiled_edges();
-                v["state"]["fullscreen"] = toplevel->pending_fullscreen();
-                v["state"]["minimized"]  = toplevel->minimized;
-                v["state"]["activated"]  = toplevel->activated;
-            } else
-            {
-                v["geometry"] = wf::ipc::geometry_to_json(view->get_bounding_box());
-            }
-
-            v["layer"] = layer_to_string(get_view_layer(view));
+            nlohmann::json v = view_to_json(view);
             response.push_back(v);
         }
 
@@ -443,20 +414,31 @@ class ipc_rules_t : public wf::plugin_interface_t, public wf::per_output_tracker
             return nullptr;
         }
 
+        auto output = view->get_output();
         nlohmann::json description;
         description["id"]     = view->get_id();
         description["pid"]    = get_view_pid(view);
-        description["app-id"] = view->get_app_id();
         description["title"]  = view->get_title();
+        description["app-id"] = view->get_app_id();
+        description["base-geometry"] = wf::ipc::geometry_to_json(get_view_base_geometry(view));
         auto toplevel = wf::toplevel_cast(view);
+        description["parent"]   = toplevel && toplevel->parent ? (int)toplevel->parent->get_id() : -1;
         description["geometry"] =
             wf::ipc::geometry_to_json(toplevel ? toplevel->get_pending_geometry() : view->get_bounding_box());
-        description["output"] = view->get_output() ? view->get_output()->get_id() : -1;
+        description["bbox"] = wf::ipc::geometry_to_json(view->get_bounding_box());
+        description["output-id"]   = view->get_output() ? view->get_output()->get_id() : -1;
+        description["output-name"] = output ? output->to_string() : "null";
+        description["last-focus-timestamp"] = wf::get_focus_timestamp(view);
+        description["role"]   = role_to_string(view->role);
+        description["mapped"] = view->is_mapped();
+        description["layer"]  = layer_to_string(get_view_layer(view));
         description["tiled-edges"] = toplevel ? toplevel->pending_tiled_edges() : 0;
         description["fullscreen"]  = toplevel ? toplevel->pending_fullscreen() : false;
         description["minimized"]   = toplevel ? toplevel->minimized : false;
+        description["activated"]   = toplevel ? toplevel->activated : false;
         description["focusable"]   = view->is_focusable();
         description["type"] = get_view_type(view);
+
         return description;
     }
 
