@@ -1,9 +1,12 @@
+#include "plugins/ipc/ipc-helpers.hpp"
 #include "wayfire/core.hpp"
 #include <wayfire/plugins/vswitch.hpp>
 #include <wayfire/per-output-plugin.hpp>
 #include <linux/input.h>
 #include <wayfire/util/log.hpp>
 #include <wayfire/seat.hpp>
+#include "plugins/ipc/ipc-method-repository.hpp"
+#include "wayfire/plugins/common/shared-core-data.hpp"
 
 class vswitch : public wf::per_output_plugin_instance_t
 {
@@ -228,4 +231,57 @@ class vswitch : public wf::per_output_plugin_instance_t
     }
 };
 
-DECLARE_WAYFIRE_PLUGIN(wf::per_output_plugin_t<vswitch>);
+class wf_vswitch_global_plugin_t : public wf::per_output_plugin_t<vswitch>
+{
+    wf::shared_data::ref_ptr_t<wf::ipc::method_repository_t> ipc_repo;
+
+  public:
+    void init() override
+    {
+        per_output_plugin_t::init();
+        ipc_repo->register_method("vswitch/set-workspace", request_workspace);
+    }
+
+    void fini() override
+    {
+        per_output_plugin_t::init();
+        ipc_repo->unregister_method("vswitch/set-workspace");
+    }
+
+    wf::ipc::method_callback request_workspace = [=] (const nlohmann::json& data)
+    {
+        WFJSON_EXPECT_FIELD(data, "x", number_unsigned);
+        WFJSON_EXPECT_FIELD(data, "y", number_unsigned);
+        WFJSON_EXPECT_FIELD(data, "output-id", number_unsigned);
+        WFJSON_OPTIONAL_FIELD(data, "view-id", number_unsigned);
+
+        auto wo = wf::ipc::find_output_by_id(data["output-id"]);
+        if (!wo)
+        {
+            return wf::ipc::json_error("Invalid output!");
+        }
+
+        auto grid_size = wo->wset()->get_workspace_grid_size();
+        if ((data["x"] >= grid_size.width) || (data["y"] >= grid_size.height))
+        {
+            return wf::ipc::json_error("Workspace coordinates are too big!");
+        }
+
+        std::vector<wayfire_toplevel_view> switch_with_views;
+        if (data.contains("view-id"))
+        {
+            auto view = toplevel_cast(wf::ipc::find_view_by_id(data["view-id"]));
+            if (!view)
+            {
+                return wf::ipc::json_error("Invalid view or view not toplevel!");
+            }
+
+            switch_with_views.push_back(view);
+        }
+
+        wo->wset()->request_workspace({data["x"], data["y"]}, switch_with_views);
+        return wf::ipc::json_ok();
+    };
+};
+
+DECLARE_WAYFIRE_PLUGIN(wf_vswitch_global_plugin_t);
