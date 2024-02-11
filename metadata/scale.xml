@@ -16,6 +16,16 @@
 				<_long>Toggles scale showing windows from all workspaces.</_long>
 				<default></default>
 			</option>
+			<option name="toggle_app" type="activator">
+				<_short>Toggle for app</_short>
+				<_long>Toggles scale for the focused app's windows.</_long>
+				<default></default>
+			</option>
+			<option name="toggle_app_all" type="activator">
+				<_short>Toggle for app on all workspaces</_short>
+				<_long>Toggles scale for the focused app's windows on all workspaces..</_long>
+				<default></default>
+			</option>
 			<option name="duration" type="int">
 				<_short>Animation Transition Time</_short>
 				<_long>Time it takes for views to transition. Units are in milliseconds.</_long>
