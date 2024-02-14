@@ -214,14 +214,14 @@ class wayfire_xwayland_view : public wf::toplevel_view_interface_t, public wayfi
         on_set_parent.set_callback([&] (void*)
         {
             auto parent = xw->parent ? (wf::view_interface_t*)(xw->parent->data) : nullptr;
-
-            // Make sure the parent is mapped, and that we are not a toplevel view
-            if (parent)
+            if (parent && !parent->is_mapped())
             {
-                if (!parent->is_mapped() || !wf::xw::has_type(xw, wf::xw::_NET_WM_WINDOW_TYPE_NORMAL))
-                {
-                    parent = nullptr;
-                }
+                parent = nullptr;
+            }
+
+            if (wf::xw::has_type(xw, wf::xw::_NET_WM_WINDOW_TYPE_NORMAL))
+            {
+                parent = nullptr;
             }
 
             set_toplevel_parent(toplevel_cast(parent));
