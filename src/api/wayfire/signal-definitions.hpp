@@ -672,7 +672,7 @@ struct view_pre_moved_to_wset_signal
     wayfire_toplevel_view view;
     /* The old wset the view was on, may be NULL. */
     std::shared_ptr<wf::workspace_set_t> old_wset;
-    /* The new wset the view is being moved to. */
+    /* The new wset the view is being moved to, may be NULL. */
     std::shared_ptr<wf::workspace_set_t> new_wset;
 };
 
@@ -686,7 +686,7 @@ struct view_moved_to_wset_signal
     wayfire_toplevel_view view;
     /* The old wset the view was on, may be NULL. */
     std::shared_ptr<wf::workspace_set_t> old_wset;
-    /* The new wset the view is being moved to. */
+    /* The new wset the view is being moved to, may be NULL. */
     std::shared_ptr<wf::workspace_set_t> new_wset;
 };
 

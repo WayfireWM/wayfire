@@ -121,7 +121,19 @@ void wf::toplevel_view_interface_t::set_toplevel_parent(wayfire_toplevel_view ne
         /* Make sure the view is available only as a child */
         if (this->get_wset())
         {
+            wf::view_pre_moved_to_wset_signal pre_move_to_wset;
+            pre_move_to_wset.view     = {this};
+            pre_move_to_wset.old_wset = get_wset();
+            pre_move_to_wset.new_wset = nullptr;
+            wf::get_core().emit(&pre_move_to_wset);
+
             get_wset()->remove_view({this});
+
+            wf::view_moved_to_wset_signal move_to_wset;
+            move_to_wset.view     = {this};
+            move_to_wset.old_wset = pre_move_to_wset.old_wset;
+            move_to_wset.new_wset = nullptr;
+            wf::get_core().emit(&move_to_wset);
         }
 
         this->set_output(parent->get_output());
