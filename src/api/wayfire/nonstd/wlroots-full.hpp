@@ -137,6 +137,7 @@ extern "C"
 #include <wlr/types/wlr_primary_selection_v1.h>
 #include <wlr/types/wlr_fractional_scale_v1.h>
 #include <wlr/types/wlr_single_pixel_buffer_v1.h>
+#include <wlr/types/wlr_session_lock_v1.h>
 
 // Activation plugin
 #include <wlr/types/wlr_xdg_activation_v1.h>
