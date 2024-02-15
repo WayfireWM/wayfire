@@ -1,5 +1,6 @@
 protocol_plugins = [
-  'foreign-toplevel', 'gtk-shell', 'wayfire-shell', 'xdg-activation', 'shortcuts-inhibit', 'input-method-v1'
+  'foreign-toplevel', 'gtk-shell', 'wayfire-shell', 'xdg-activation', 'shortcuts-inhibit',
+  'input-method-v1', 'session-lock'
 ]
 
 all_include_dirs = [wayfire_api_inc, wayfire_conf_inc, plugins_common_inc]

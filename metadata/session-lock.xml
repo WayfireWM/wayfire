@@ -1,0 +1,8 @@
+<?xml version="1.0"?>
+<wayfire>
+	<plugin name="session-lock">
+		<_short>Session Lock Protocol</_short>
+		<_long>An implementation of the ext-session-lock-v1 protocol. Provides more secure screen locking.</_long>
+		<category>Utility</category>
+	</plugin>
+</wayfire>
