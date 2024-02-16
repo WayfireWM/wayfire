@@ -292,6 +292,13 @@ bool wf::output_impl_t::activate_plugin(wf::plugin_activation_data_t *owner, uin
     } else
     {
         LOGD("output ", handle->name, ": activate plugin ", owner->name);
+
+        wf::output_plugin_activated_changed_signal data;
+        data.output = this;
+        data.plugin_name = owner->name;
+        data.activated   = true;
+        this->emit(&data);
+        wf::get_core().emit(&data);
     }
 
     active_plugins.insert(owner);
@@ -312,7 +319,12 @@ bool wf::output_impl_t::deactivate_plugin(wf::plugin_activation_data_t *owner)
 
     if (active_plugins.count(owner) == 0)
     {
-        active_plugins.erase(owner);
+        wf::output_plugin_activated_changed_signal data;
+        data.output = this;
+        data.plugin_name = owner->name;
+        data.activated   = false;
+        this->emit(&data);
+        wf::get_core().emit(&data);
         return true;
     }
 

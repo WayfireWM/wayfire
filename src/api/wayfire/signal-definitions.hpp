@@ -1,7 +1,6 @@
 #ifndef SIGNAL_DEFINITIONS_HPP
 #define SIGNAL_DEFINITIONS_HPP
 
-#include "wayfire/object.hpp"
 #include "wayfire/view.hpp"
 #include "wayfire/output.hpp"
 
@@ -261,6 +260,22 @@ struct output_configuration_changed_signal
 struct output_gain_focus_signal
 {
     wf::output_t *output;
+};
+
+/**
+ * on: output, core
+ * when: When an output activates or deactivates. Note that not all plugin actions are reflected with this
+ *   signal. A plugin activates on an output usually if it (temporarily) changes the way Wayfire works like
+ *   Expo, Scale, Vswitch. One-shot actions like command or wsets do not send this signal.
+ */
+struct output_plugin_activated_changed_signal
+{
+    // The output on which the plugin was activated. May be NULL if the plugin works globally.
+    wf::output_t *output;
+    // The name of the plugin.
+    std::string plugin_name;
+    // Whether the plugin was activated (true) or deactivated (false).
+    bool activated;
 };
 
 /* ----------------------------------------------------------------------------/

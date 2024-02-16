@@ -146,6 +146,7 @@ class ipc_rules_t : public wf::plugin_interface_t, public wf::per_output_tracker
         wf::get_core().connect(&on_kbfocus_changed);
         wf::get_core().connect(&on_title_changed);
         wf::get_core().connect(&on_app_id_changed);
+        wf::get_core().connect(&on_plugin_activation_changed);
         init_output_tracking();
     }
 
@@ -372,11 +373,16 @@ class ipc_rules_t : public wf::plugin_interface_t, public wf::per_output_tracker
         nlohmann::json event;
         event["event"] = event_name;
         event["view"]  = view_to_json(view);
+        send_event_to_subscribes(event, event_name);
+    }
+
+    void send_event_to_subscribes(const nlohmann::json& data, const std::string& event_name)
+    {
         for (auto& [client, events] : clients)
         {
             if (events.empty() || events.count(event_name))
             {
-                client->send_json(event);
+                client->send_json(data);
             }
         }
     }
@@ -425,6 +431,17 @@ class ipc_rules_t : public wf::plugin_interface_t, public wf::per_output_tracker
         [=] (wf::view_app_id_changed_signal *ev)
     {
         send_view_to_subscribes(ev->view, "view-app-id-changed");
+    };
+
+    wf::signal::connection_t<wf::output_plugin_activated_changed_signal> on_plugin_activation_changed =
+        [=] (wf::output_plugin_activated_changed_signal *ev)
+    {
+        nlohmann::json data;
+        data["event"]  = "plugin-activation-state-changed";
+        data["plugin"] = ev->plugin_name;
+        data["state"]  = ev->activated;
+        data["output"] = ev->output ? (int)ev->output->get_id() : -1;
+        send_event_to_subscribes(data, data["event"]);
     };
 
     std::string get_view_type(wayfire_view view)
