@@ -90,6 +90,22 @@ if print_trace
   debug_arguments += ['-DPRINT_TRACE']
 endif
 
+# Generate information about Wayfire version
+git = find_program('git', native: true, required: false)
+git_commit_info = vcs_tag(
+    input: 'version/git-commit.cpp.in',
+    output: 'git-commit.cpp',
+    replace_string: '@GIT_COMMIT@',
+    command: git.found() ? [git, 'rev-parse', '--short', 'HEAD'] : ['echo', 'unknown'],
+    fallback: 'unknown')
+
+git_branch_info = vcs_tag(
+    input: 'version/git-branch.cpp.in',
+    output: 'git-branch.cpp',
+    replace_string: '@GIT_BRANCH@',
+    command: git.found() ? [git, 'rev-parse', '--abbrev-ref', 'HEAD'] : ['echo', 'unknown'],
+    fallback: 'unknown')
+
 # First build a static library of all sources, so that it can be reused
 # in tests
 libwayfire_sta = static_library('libwayfire', wayfire_sources,
@@ -105,7 +121,7 @@ libwayfire = declare_dependency(link_whole: libwayfire_sta,
 tests_include_dirs = include_directories('.')
 
 # Generate main executable
-executable('wayfire', ['main.cpp'],
+executable('wayfire', ['main.cpp', git_commit_info, git_branch_info],
     dependencies: libwayfire,
     install: true,
     cpp_args: debug_arguments)

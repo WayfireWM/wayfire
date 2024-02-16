@@ -19,6 +19,16 @@ namespace wf
  */
 void dump_scene(scene::node_ptr root = wf::get_core().scene());
 
+/**
+ * Information about the version that Wayfire was built with.
+ * Made available at runtime.
+ */
+namespace version
+{
+extern std::string git_commit;
+extern std::string git_branch;
+}
+
 namespace log
 {
 /**

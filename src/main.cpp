@@ -3,25 +3,22 @@
 #include <iostream>
 #include <getopt.h>
 #include <signal.h>
-#include <map>
 #include <fcntl.h>
-#include <filesystem>
 
 #include <unistd.h>
 #include <wayfire/debug.hpp>
 #include "main.hpp"
-#include "wayfire/nonstd/safe-list.hpp"
 
 #include <wayland-server.h>
 
 #include "wayfire/config-backend.hpp"
 #include "core/plugin-loader.hpp"
 #include "core/core-impl.hpp"
-#include "wayfire/output.hpp"
 
 static void print_version()
 {
-    std::cout << WAYFIRE_VERSION << std::endl;
+    std::cout << WAYFIRE_VERSION << "-" << wf::version::git_commit <<
+        " (" __DATE__ ") branch " << wf::version::git_branch << std::endl;
     exit(0);
 }
 

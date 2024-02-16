@@ -4,7 +4,7 @@ project(
 	'cpp',
 	version: '0.9.0',
 	license: 'MIT',
-	meson_version: '>=0.56.0',
+	meson_version: '>=0.63.0',
 	default_options: [
 		'cpp_std=c++17',
 		'c_std=c11',
@@ -12,6 +12,9 @@ project(
 		'werror=false',
 	],
 )
+
+version = '"@0@"'.format(meson.project_version())
+add_project_arguments('-DWAYFIRE_VERSION=@0@'.format(version), language: 'cpp')
 
 wayfire_api_inc  = include_directories('src/api')
 
@@ -82,22 +85,6 @@ png  = dependency('libpng',  required: false)
 backtrace = meson.get_compiler('cpp').find_library('execinfo', required: false)
 
 conf_data = configuration_data()
-
-version = '"@0@"'.format(meson.project_version())
-git = find_program('git', native: true, required: false)
-if git.found()
-	git_commit = run_command([git, 'rev-parse', '--short', 'HEAD'], check: false)
-	git_branch = run_command([git, 'rev-parse', '--abbrev-ref', 'HEAD'], check: false)
-	if git_commit.returncode() == 0 and git_branch.returncode() == 0
-		version = '"@0@-@1@ (" __DATE__ ", branch \'@2@\')"'.format(
-			meson.project_version(),
-			git_commit.stdout().strip(),
-			git_branch.stdout().strip(),
-		)
-	endif
-endif
-add_project_arguments('-DWAYFIRE_VERSION=@0@'.format(version), language: 'cpp')
-conf_data.set('WAYFIRE_VERSION', '-DWAYFIRE_VERSION=@0@'.format(version))
 
 conf_data.set('INSTALL_PREFIX', get_option('prefix'))
 conf_data.set('PLUGIN_PATH', join_paths(get_option('prefix'), get_option('libdir'), 'wayfire'))
