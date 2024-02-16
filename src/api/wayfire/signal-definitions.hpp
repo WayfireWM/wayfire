@@ -579,7 +579,7 @@ struct view_set_sticky_signal
 };
 
 /**
- * on: view
+ * on: view, core
  * when: After the view's title has changed.
  */
 struct view_title_changed_signal
@@ -588,7 +588,7 @@ struct view_title_changed_signal
 };
 
 /**
- * on: view
+ * on: view, core
  * when: After the view's app-id has changed.
  */
 struct view_app_id_changed_signal

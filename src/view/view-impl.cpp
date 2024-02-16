@@ -93,6 +93,7 @@ void wf::view_implementation::emit_title_changed_signal(wayfire_view view)
     view_title_changed_signal data;
     data.view = view;
     view->emit(&data);
+    wf::get_core().emit(&data);
 }
 
 void wf::view_implementation::emit_app_id_changed_signal(wayfire_view view)
@@ -100,6 +101,7 @@ void wf::view_implementation::emit_app_id_changed_signal(wayfire_view view)
     view_app_id_changed_signal data;
     data.view = view;
     view->emit(&data);
+    wf::get_core().emit(&data);
 }
 
 void wf::view_implementation::emit_toplevel_state_change_signals(wayfire_toplevel_view view,
