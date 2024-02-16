@@ -224,7 +224,13 @@ struct animation_hook : public animation_hook_base
 
 static void cleanup_views_on_output(wf::output_t *output)
 {
+    std::vector<std::shared_ptr<wf::view_interface_t>> all_views;
     for (auto& view : wf::get_core().get_all_views())
+    {
+        all_views.push_back(view->shared_from_this());
+    }
+
+    for (auto& view : all_views)
     {
         auto wo = view->get_output();
         if ((wo != output) && output)
