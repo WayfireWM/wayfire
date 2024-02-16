@@ -19,6 +19,7 @@
 #include "wayfire/window-manager.hpp"
 #include "wayfire/workarea.hpp"
 #include "config.h"
+#include <wayfire/debug.hpp>
 #include <wayfire/nonstd/wlroots-full.hpp>
 
 
@@ -128,6 +129,7 @@ class ipc_rules_t : public wf::plugin_interface_t, public wf::per_output_tracker
   public:
     void init() override
     {
+        method_repository->register_method("wayfire/configuration", get_wayfire_configuration_info);
         method_repository->register_method("input/list-devices", list_input_devices);
         method_repository->register_method("input/configure-device", configure_input_device);
         method_repository->register_method("window-rules/events/watch", on_client_watch);
@@ -149,6 +151,7 @@ class ipc_rules_t : public wf::plugin_interface_t, public wf::per_output_tracker
 
     void fini() override
     {
+        method_repository->unregister_method("wayfire/configuration");
         method_repository->unregister_method("input/list-devices");
         method_repository->unregister_method("input/configure-device");
         method_repository->unregister_method("window-rules/events/watch");
@@ -173,6 +176,20 @@ class ipc_rules_t : public wf::plugin_interface_t, public wf::per_output_tracker
     {
         // no-op
     }
+
+    wf::ipc::method_callback get_wayfire_configuration_info = [=] (nlohmann::json)
+    {
+        nlohmann::json response;
+
+        response["api-version"]    = WAYFIRE_API_ABI_VERSION;
+        response["plugin-path"]    = PLUGIN_PATH;
+        response["plugin-xml-dir"] = PLUGIN_XML_DIR;
+        response["xwayland-support"] = WF_HAS_XWAYLAND;
+
+        response["build-commit"] = wf::version::git_commit;
+        response["build-branch"] = wf::version::git_branch;
+        return response;
+    };
 
     wf::ipc::method_callback list_views = [=] (nlohmann::json)
     {
