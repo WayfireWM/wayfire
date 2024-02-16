@@ -142,6 +142,8 @@ class ipc_rules_t : public wf::plugin_interface_t, public wf::per_output_tracker
         wf::get_core().connect(&on_view_mapped);
         wf::get_core().connect(&on_view_unmapped);
         wf::get_core().connect(&on_kbfocus_changed);
+        wf::get_core().connect(&on_title_changed);
+        wf::get_core().connect(&on_app_id_changed);
         init_output_tracking();
     }
 
@@ -396,6 +398,18 @@ class ipc_rules_t : public wf::plugin_interface_t, public wf::per_output_tracker
         send_view_to_subscribes(ev->view, "view-fullscreen");
     };
 
+    wf::signal::connection_t<wf::view_title_changed_signal> on_title_changed   =
+        [=] (wf::view_title_changed_signal *ev)
+    {
+        send_view_to_subscribes(ev->view, "view-title-changed");
+    };
+
+    wf::signal::connection_t<wf::view_app_id_changed_signal> on_app_id_changed =
+        [=] (wf::view_app_id_changed_signal *ev)
+    {
+        send_view_to_subscribes(ev->view, "view-app-id-changed");
+    };
+
     std::string get_view_type(wayfire_view view)
     {
         if (view->role == wf::VIEW_ROLE_TOPLEVEL)
@@ -523,7 +537,7 @@ class ipc_rules_t : public wf::plugin_interface_t, public wf::per_output_tracker
             wl_client_get_credentials(view->get_client(), &pid, 0, 0);
         }
 
-        return pid;
+        return pid; // NOLINT
     }
 };
 
