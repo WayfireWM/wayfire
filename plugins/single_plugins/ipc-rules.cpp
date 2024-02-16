@@ -317,12 +317,28 @@ class ipc_rules_t : public wf::plugin_interface_t, public wf::per_output_tracker
     wf::shared_data::ref_ptr_t<wf::ipc::method_repository_t> method_repository;
 
     // Track a list of clients which have requested watch
-    std::set<wf::ipc::client_interface_t*> clients;
+    std::map<wf::ipc::client_interface_t*, std::set<std::string>> clients;
 
     wf::ipc::method_callback_full on_client_watch =
         [=] (nlohmann::json data, wf::ipc::client_interface_t *client)
     {
-        clients.insert(client);
+        static constexpr const char *EVENTS = "events";
+        WFJSON_OPTIONAL_FIELD(data, EVENTS, array);
+        std::set<std::string> subscribed_to;
+        if (data.contains(EVENTS))
+        {
+            for (auto& sub : data[EVENTS])
+            {
+                if (!sub.is_string())
+                {
+                    return wf::ipc::json_error("Event list contains non-string entries!");
+                }
+
+                subscribed_to.insert((std::string)sub);
+            }
+        }
+
+        clients[client] = subscribed_to;
         return wf::ipc::json_ok();
     };
 
@@ -337,9 +353,12 @@ class ipc_rules_t : public wf::plugin_interface_t, public wf::per_output_tracker
         nlohmann::json event;
         event["event"] = event_name;
         event["view"]  = view_to_json(view);
-        for (auto& client : clients)
+        for (auto& [client, events] : clients)
         {
-            client->send_json(event);
+            if (events.empty() || events.count(event_name))
+            {
+                client->send_json(event);
+            }
         }
     }
 

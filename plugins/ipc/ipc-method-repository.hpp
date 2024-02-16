@@ -140,7 +140,8 @@ inline nlohmann::json json_error(std::string msg)
 #define WFJSON_OPTIONAL_FIELD(data, field, type) \
     if (data.count(field) && !data[field].is_ ## type()) \
     { \
-        return wf::ipc::json_error("Field \"" field "\" does not have the correct type " #type); \
+        return wf::ipc::json_error("Field \"" + std::string(field) + \
+    "\" does not have the correct type " #type); \
     }
 }
 }

@@ -19,12 +19,12 @@ addr = os.getenv('WAYFIRE_SOCKET')
 # We could use the same socket, but this would complicate reading responses, as events and query responses would be mixed with just one socket.
 events_sock = WayfireSocket(addr)
 commands_sock = WayfireSocket(addr)
-events_sock.watch()
+events_sock.watch(['view-mapped'])
 
 while True:
     msg = events_sock.read_message()
     # The view-mapped event is emitted when a new window has been opened.
-    if "event" in msg and msg["event"] == "view-mapped":
+    if "event" in msg:
         view = msg["view"]
         if view["app-id"] == "gedit":
             output_data = commands_sock.query_output(view["output"])

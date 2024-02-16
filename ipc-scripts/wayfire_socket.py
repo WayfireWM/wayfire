@@ -50,8 +50,10 @@ class WayfireSocket:
     def close(self):
       self.client.close()
 
-    def watch(self):
+    def watch(self, events = None):
         message = get_msg_template("window-rules/events/watch")
+        if events:
+            message["data"]["events"] = events
         return self.send_json(message)
 
     def query_output(self, output_id: int):
