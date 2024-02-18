@@ -1047,7 +1047,8 @@ class output_layout_t::impl
                 state.mode.refresh = head->state.custom_mode.refresh;
             }
 
-            state.position  = {head->state.x, head->state.y};
+            state.position = {head->state.x, head->state.y};
+
             state.scale     = head->state.scale;
             state.transform = head->state.transform;
             state.vrr = head->state.adaptive_sync_enabled;
@@ -1247,8 +1248,7 @@ class output_layout_t::impl
         std::vector<wf::geometry_t> geometries;
         for (auto& entry : config)
         {
-            if (!(entry.second.source & OUTPUT_IMAGE_SOURCE_SELF) ||
-                entry.second.position.is_automatic_position())
+            if (!(entry.second.source & OUTPUT_IMAGE_SOURCE_SELF))
             {
                 continue;
             }
