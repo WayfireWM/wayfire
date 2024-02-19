@@ -14,7 +14,6 @@
 #include <wayfire/util/duration.hpp>
 
 #include <cmath>
-#include <utility>
 
 #include <wayfire/plugins/common/workspace-wall.hpp>
 #include <wayfire/plugins/common/geometry-animation.hpp>
@@ -268,8 +267,8 @@ class vswipe : public wf::per_output_plugin_instance_t
         state.delta_sum.y += ev->event->dy / speed_factor;
         if (state.direction == UNKNOWN)
         {
-            state.initial_deltas.x += std::abs(ev->event->dx) / speed_factor;
-            state.initial_deltas.y += std::abs(ev->event->dy) / speed_factor;
+            state.initial_deltas.x += std::abs(ev->event->dx / speed_factor);
+            state.initial_deltas.y += std::abs(ev->event->dy / speed_factor);
             state.direction = calculate_direction(state.initial_deltas);
             if (state.direction == UNKNOWN)
             {
@@ -288,7 +287,6 @@ class vswipe : public wf::per_output_plugin_instance_t
         }
 
         const double cap = speed_cap;
-        const double fac = speed_factor;
 
         state.delta_prev = state.delta_last;
         double current_delta_processed;
@@ -296,8 +294,8 @@ class vswipe : public wf::per_output_plugin_instance_t
         const auto& process_delta =
             [&] (double delta, wf::timed_transition_t& total_delta, int ws, int ws_max)
         {
-            current_delta_processed = vswipe_process_delta(delta, total_delta,
-                ws, ws_max, cap, fac, enable_free_movement);
+            current_delta_processed = vswipe_process_delta(delta / speed_factor, total_delta,
+                ws, ws_max, cap, enable_free_movement);
 
             double new_delta_end   = total_delta.end + current_delta_processed;
             double new_delta_start = smooth_transition ? total_delta : new_delta_end;
