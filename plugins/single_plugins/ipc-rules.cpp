@@ -135,8 +135,10 @@ class ipc_rules_t : public wf::plugin_interface_t, public wf::per_output_tracker
         method_repository->register_method("window-rules/events/watch", on_client_watch);
         method_repository->register_method("window-rules/list-views", list_views);
         method_repository->register_method("window-rules/list-outputs", list_outputs);
+        method_repository->register_method("window-rules/list-workspace-sets", list_workspace_sets);
         method_repository->register_method("window-rules/view-info", get_view_info);
         method_repository->register_method("window-rules/output-info", get_output_info);
+        method_repository->register_method("window-rules/workspace-set-info", get_workspace_set_info);
         method_repository->register_method("window-rules/configure-view", configure_view);
         method_repository->register_method("window-rules/focus-view", focus_view);
         method_repository->register_method("window-rules/get-focused-view", get_focused_view);
@@ -158,8 +160,10 @@ class ipc_rules_t : public wf::plugin_interface_t, public wf::per_output_tracker
         method_repository->unregister_method("window-rules/events/watch");
         method_repository->unregister_method("window-rules/list-views");
         method_repository->unregister_method("window-rules/list-outputs");
+        method_repository->unregister_method("window-rules/list-workspace-sets");
         method_repository->unregister_method("window-rules/view-info");
         method_repository->unregister_method("window-rules/output-info");
+        method_repository->unregister_method("window-rules/workspace-set-info");
         method_repository->unregister_method("window-rules/configure-view");
         method_repository->unregister_method("window-rules/focus-view");
         method_repository->unregister_method("window-rules/get-focused-view");
@@ -171,6 +175,8 @@ class ipc_rules_t : public wf::plugin_interface_t, public wf::per_output_tracker
         output->connect(&_tiled);
         output->connect(&_minimized);
         output->connect(&_fullscreened);
+        output->connect(&on_workspace_set_changed);
+        output->connect(&on_workspace_changed);
     }
 
     void handle_output_removed(wf::output_t *output) override
@@ -192,14 +198,44 @@ class ipc_rules_t : public wf::plugin_interface_t, public wf::per_output_tracker
         return response;
     };
 
-    wf::ipc::method_callback list_views = [=] (nlohmann::json)
+    wf::ipc::method_callback list_views = [=] (nlohmann::json data)
     {
         auto response = nlohmann::json::array();
+        WFJSON_OPTIONAL_FIELD(data, "workspace-set-id", number_integer)
+        WFJSON_OPTIONAL_FIELD(data, "workspace-set-point", object)
 
-        for (auto& view : wf::get_core().get_all_views())
+        if (data.contains("workspace-set-id"))
         {
-            nlohmann::json v = view_to_json(view);
-            response.push_back(v);
+            auto ws = wf::ipc::find_workspace_set_by_id(data["workspace-set-id"]);
+            if (!ws)
+            {
+                return wf::ipc::json_error("workspace set not found");
+            }
+            if (data.contains("workspace-set-point"))
+            {
+                auto point = wf::ipc::point_from_json(data["workspace-set-point"]);
+                for (auto& view : ws->get_views(0, point))
+                {
+                    nlohmann::json v = view_to_json(view);
+                    response.push_back(v);
+                }
+            }
+            else
+            {
+                for (auto& view : ws->get_views(0))
+                {
+                    nlohmann::json v = view_to_json(view);
+                    response.push_back(v);
+                }
+            }
+        }
+        else
+        {
+            for (auto& view : wf::get_core().get_all_views())
+            {
+                nlohmann::json v = view_to_json(view);
+                response.push_back(v);
+            }
         }
 
         return response;
@@ -333,6 +369,44 @@ class ipc_rules_t : public wf::plugin_interface_t, public wf::per_output_tracker
         return wf::ipc::json_ok();
     };
 
+    nlohmann::json workspace_set_to_json(wf::workspace_set_t* ws)
+    {
+        nlohmann::json response;
+        response["id"]   = ws->get_id();
+        response["name"] = ws->to_string();
+        
+        auto output = ws->get_attached_output();
+        response["output-id"] = output ? output->get_id() : -1;
+        response["output-name"] = output ? output->to_string() : "";
+
+        response["current-workspace"] = wf::ipc::point_to_json(ws->get_current_workspace());
+        response["grid-size"] = wf::ipc::dimensions_to_json(ws->get_workspace_grid_size());
+        return response;
+    };
+
+    wf::ipc::method_callback list_workspace_sets = [=] (nlohmann::json)
+    {
+        auto response = nlohmann::json::array();
+        for (auto& workspace_set : wf::workspace_set_t::get_all())
+        {
+            response.push_back(workspace_set_to_json(workspace_set.get()));
+        }
+        return response;
+    };
+
+    wf::ipc::method_callback get_workspace_set_info = [=] (nlohmann::json data)
+    {
+        WFJSON_EXPECT_FIELD(data, "id", number_integer);
+        auto ws = wf::ipc::find_workspace_set_by_id(data["id"]);
+        if (!ws)
+        {
+            return wf::ipc::json_error("workspace set not found");
+        }
+
+        auto response = workspace_set_to_json(ws);
+        return response;
+    };
+
   private:
     wf::shared_data::ref_ptr_t<wf::ipc::method_repository_t> method_repository;
 
@@ -440,6 +514,27 @@ class ipc_rules_t : public wf::plugin_interface_t, public wf::per_output_tracker
         data["event"]  = "plugin-activation-state-changed";
         data["plugin"] = ev->plugin_name;
         data["state"]  = ev->activated;
+        data["output"] = ev->output ? (int)ev->output->get_id() : -1;
+        send_event_to_subscribes(data, data["event"]);
+    };
+
+    wf::signal::connection_t<wf::workspace_set_changed_signal> on_workspace_set_changed =
+        [=] (wf::workspace_set_changed_signal *ev)
+    {
+        nlohmann::json data;
+        data["event"] = "output-workspace-set-changed";
+        data["new-workspace-set"] = ev->new_wset ? (int)ev->new_wset->get_id() : -1;
+        data["output"] = ev->output ? (int)ev->output->get_id() : -1;
+        send_event_to_subscribes(data, data["event"]);
+    };
+
+    wf::signal::connection_t<wf::workspace_changed_signal> on_workspace_changed =
+        [=] (wf::workspace_changed_signal *ev)
+    {
+        nlohmann::json data;
+        data["event"] = "output-workspace-changed";
+        data["previous-workspace"] = wf::ipc::point_to_json(ev->old_viewport);
+        data["new-workspace"] = wf::ipc::point_to_json(ev->new_viewport);
         data["output"] = ev->output ? (int)ev->output->get_id() : -1;
         send_event_to_subscribes(data, data["event"]);
     };
