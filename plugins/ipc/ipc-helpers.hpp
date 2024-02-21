@@ -3,6 +3,7 @@
 #include "wayfire/geometry.hpp"
 #include <wayfire/output.hpp>
 #include <wayfire/view.hpp>
+#include <wayfire/workspace-set.hpp>
 #include <wayfire/core.hpp>
 #include <wayfire/output-layout.hpp>
 #include <wayfire/core.hpp>
