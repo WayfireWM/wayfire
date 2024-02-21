@@ -40,15 +40,15 @@ inline wf::output_t *find_output_by_id(int32_t id)
 
 inline wf::workspace_set_t *find_workspace_set_by_id(int32_t id)
 {
-    for (auto ws : wf::workspace_set_t::get_all())
+    for (auto wset : wf::workspace_set_t::get_all())
     {
-        if ((int)ws->get_id() == id)
+        if ((int)wset->get_id() == id)
         {
-            return ws;
+            return wset.get();
         }
     }
 
-    return nullptr
+    return nullptr;
 }
 
 inline nlohmann::json geometry_to_json(wf::geometry_t g)
