@@ -265,7 +265,7 @@ class ipc_rules_t : public wf::plugin_interface_t, public wf::per_output_tracker
         response["name"] = o->to_string();
         response["geometry"] = wf::ipc::geometry_to_json(o->get_layout_geometry());
         response["workarea"] = wf::ipc::geometry_to_json(o->workarea->get_workarea());
-        response["wset-id"] = o->wset()->get_id();
+        response["wset-id"]  = o->wset()->get_id();
         response["workspace"]["x"] = o->wset()->get_current_workspace().x;
         response["workspace"]["y"] = o->wset()->get_current_workspace().y;
         response["workspace"]["grid_width"]  = o->wset()->get_workspace_grid_size().width;
@@ -340,21 +340,21 @@ class ipc_rules_t : public wf::plugin_interface_t, public wf::per_output_tracker
         return wf::ipc::json_ok();
     };
 
-    nlohmann::json wset_to_json(wf::workspace_set_t* wset)
+    nlohmann::json wset_to_json(wf::workspace_set_t *wset)
     {
         nlohmann::json response;
         response["id"]   = wset->get_id();
         response["name"] = wset->to_string();
-        
+
         auto output = wset->get_attached_output();
-        response["output-id"] = output ? output->get_id() : -1;
+        response["output-id"]   = output ? output->get_id() : -1;
         response["output-name"] = output ? output->to_string() : "";
         response["workspace"]["x"] = wset->get_current_workspace().x;
         response["workspace"]["y"] = wset->get_current_workspace().y;
         response["workspace"]["grid_width"]  = wset->get_workspace_grid_size().width;
         response["workspace"]["grid_height"] = wset->get_workspace_grid_size().height;
         return response;
-    };
+    }
 
     wf::ipc::method_callback list_wsets = [=] (nlohmann::json)
     {
@@ -363,6 +363,7 @@ class ipc_rules_t : public wf::plugin_interface_t, public wf::per_output_tracker
         {
             response.push_back(wset_to_json(workspace_set.get()));
         }
+
         return response;
     };
 
@@ -467,7 +468,7 @@ class ipc_rules_t : public wf::plugin_interface_t, public wf::per_output_tracker
         send_view_to_subscribes(ev->view, "view-fullscreen");
     };
 
-    wf::signal::connection_t<wf::view_title_changed_signal> on_title_changed   =
+    wf::signal::connection_t<wf::view_title_changed_signal> on_title_changed =
         [=] (wf::view_title_changed_signal *ev)
     {
         send_view_to_subscribes(ev->view, "view-title-changed");
@@ -494,9 +495,9 @@ class ipc_rules_t : public wf::plugin_interface_t, public wf::per_output_tracker
         [=] (wf::workspace_set_changed_signal *ev)
     {
         nlohmann::json data;
-        data["event"] = "output-wset-changed";
+        data["event"]    = "output-wset-changed";
         data["new-wset"] = ev->new_wset ? (int)ev->new_wset->get_id() : -1;
-        data["output"] = ev->output ? (int)ev->output->get_id() : -1;
+        data["output"]   = ev->output ? (int)ev->output->get_id() : -1;
         send_event_to_subscribes(data, data["event"]);
     };
 
@@ -576,9 +577,9 @@ class ipc_rules_t : public wf::plugin_interface_t, public wf::per_output_tracker
         description["fullscreen"]  = toplevel ? toplevel->pending_fullscreen() : false;
         description["minimized"]   = toplevel ? toplevel->minimized : false;
         description["activated"]   = toplevel ? toplevel->activated : false;
-        description["sticky"]      = toplevel ? toplevel->sticky : false;
-        description["wset-id"]     = toplevel && toplevel->get_wset() ? toplevel->get_wset()->get_id() : -1;
-        description["focusable"]   = view->is_focusable();
+        description["sticky"]    = toplevel ? toplevel->sticky : false;
+        description["wset-id"]   = toplevel && toplevel->get_wset() ? toplevel->get_wset()->get_id() : -1;
+        description["focusable"] = view->is_focusable();
         description["type"] = get_view_type(view);
 
         return description;
