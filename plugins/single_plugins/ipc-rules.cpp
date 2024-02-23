@@ -263,9 +263,9 @@ class ipc_rules_t : public wf::plugin_interface_t, public wf::per_output_tracker
         nlohmann::json response;
         response["id"]   = o->get_id();
         response["name"] = o->to_string();
-        response["geometry"] = wf::ipc::geometry_to_json(o->get_layout_geometry());
-        response["workarea"] = wf::ipc::geometry_to_json(o->workarea->get_workarea());
-        response["wset-id"]  = o->wset()->get_id();
+        response["geometry"]   = wf::ipc::geometry_to_json(o->get_layout_geometry());
+        response["workarea"]   = wf::ipc::geometry_to_json(o->workarea->get_workarea());
+        response["wset-index"] = o->wset()->get_index();
         response["workspace"]["x"] = o->wset()->get_current_workspace().x;
         response["workspace"]["y"] = o->wset()->get_current_workspace().y;
         response["workspace"]["grid_width"]  = o->wset()->get_workspace_grid_size().width;
@@ -343,11 +343,11 @@ class ipc_rules_t : public wf::plugin_interface_t, public wf::per_output_tracker
     nlohmann::json wset_to_json(wf::workspace_set_t *wset)
     {
         nlohmann::json response;
-        response["id"]   = wset->get_id();
-        response["name"] = wset->to_string();
+        response["index"] = wset->get_index();
+        response["name"]  = wset->to_string();
 
         auto output = wset->get_attached_output();
-        response["output-id"]   = output ? output->get_id() : -1;
+        response["output-id"]   = output ? (int)output->get_id() : -1;
         response["output-name"] = output ? output->to_string() : "";
         response["workspace"]["x"] = wset->get_current_workspace().x;
         response["workspace"]["y"] = wset->get_current_workspace().y;
@@ -370,7 +370,7 @@ class ipc_rules_t : public wf::plugin_interface_t, public wf::per_output_tracker
     wf::ipc::method_callback get_wset_info = [=] (nlohmann::json data)
     {
         WFJSON_EXPECT_FIELD(data, "id", number_integer);
-        auto ws = wf::ipc::find_workspace_set_by_id(data["id"]);
+        auto ws = wf::ipc::find_workspace_set_by_index(data["id"]);
         if (!ws)
         {
             return wf::ipc::json_error("workspace set not found");
@@ -577,9 +577,9 @@ class ipc_rules_t : public wf::plugin_interface_t, public wf::per_output_tracker
         description["fullscreen"]  = toplevel ? toplevel->pending_fullscreen() : false;
         description["minimized"]   = toplevel ? toplevel->minimized : false;
         description["activated"]   = toplevel ? toplevel->activated : false;
-        description["sticky"]    = toplevel ? toplevel->sticky : false;
-        description["wset-id"]   = toplevel && toplevel->get_wset() ? toplevel->get_wset()->get_id() : -1;
-        description["focusable"] = view->is_focusable();
+        description["sticky"]     = toplevel ? toplevel->sticky : false;
+        description["wset-index"] = toplevel && toplevel->get_wset() ? toplevel->get_wset()->get_index() : -1;
+        description["focusable"]  = view->is_focusable();
         description["type"] = get_view_type(view);
 
         return description;

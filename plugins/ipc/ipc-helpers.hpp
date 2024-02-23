@@ -39,11 +39,11 @@ inline wf::output_t *find_output_by_id(int32_t id)
     return nullptr;
 }
 
-inline wf::workspace_set_t *find_workspace_set_by_id(int32_t id)
+inline wf::workspace_set_t *find_workspace_set_by_index(int32_t index)
 {
     for (auto wset : wf::workspace_set_t::get_all())
     {
-        if ((int)wset->get_id() == id)
+        if ((int)wset->get_index() == index)
         {
             return wset.get();
         }
