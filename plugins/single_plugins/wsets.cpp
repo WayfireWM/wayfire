@@ -7,6 +7,9 @@
 #include "wayfire/signal-provider.hpp"
 #include "wayfire/util.hpp"
 #include "wayfire/view.hpp"
+#include "plugins/ipc/ipc-helpers.hpp"
+#include "plugins/ipc/ipc-method-repository.hpp"
+#include "wayfire/plugins/common/shared-core-data.hpp"
 #include <wayfire/signal-definitions.hpp>
 #include <wayfire/config/option-types.hpp>
 #include <wayfire/output.hpp>
@@ -81,6 +84,8 @@ class wayfire_wsets_plugin_t : public wf::plugin_interface_t
   public:
     void init() override
     {
+        method_repository->register_method("wsets/attach-to-output", attach_to_output);
+        method_repository->register_method("wsets/set-output-wset", set_output_wset);
         setup_bindings();
         wf::get_core().output_layout->connect(&on_new_output);
         for (auto& wo : wf::get_core().output_layout->get_outputs())
@@ -91,6 +96,8 @@ class wayfire_wsets_plugin_t : public wf::plugin_interface_t
 
     void fini() override
     {
+        method_repository->unregister_method("wsets/attach-to-output");
+        method_repository->unregister_method("wsets/set-output-wset");
         for (auto& binding : select_callback)
         {
             wf::get_core().bindings->rem_binding(&binding);
@@ -103,6 +110,7 @@ class wayfire_wsets_plugin_t : public wf::plugin_interface_t
     }
 
   private:
+    wf::shared_data::ref_ptr_t<wf::ipc::method_repository_t> method_repository;
     wf::option_wrapper_t<wf::config::compound_list_t<wf::activatorbinding_t>>
     workspace_bindings{"wsets/wsets_bindings"};
     wf::option_wrapper_t<wf::config::compound_list_t<wf::activatorbinding_t>>
@@ -112,6 +120,48 @@ class wayfire_wsets_plugin_t : public wf::plugin_interface_t
     std::list<wf::activator_callback> select_callback;
     std::list<wf::activator_callback> send_callback;
     std::map<int, std::shared_ptr<wf::workspace_set_t>> available_sets;
+
+    wf::ipc::method_callback attach_to_output = [=] (nlohmann::json data)
+    {
+        WFJSON_EXPECT_FIELD(data, "id", number_integer);
+        WFJSON_EXPECT_FIELD(data, "output", number_integer);
+        auto wset = wf::ipc::find_workspace_set_by_id(data["id"]);
+        if (!wset)
+        {
+            return wf::ipc::json_error("workspace set not found");
+        }
+
+        auto o = wf::ipc::find_output_by_id(data["output"]);
+        if (!o)
+        {
+            return wf::ipc::json_error("output not found");
+        }
+
+        auto response = wf::ipc::json_ok();
+        wset->attach_to_output(o);
+        return response;
+    };
+
+    wf::ipc::method_callback set_output_wset = [=] (nlohmann::json data)
+    {
+        WFJSON_EXPECT_FIELD(data, "id", number_integer);
+        WFJSON_EXPECT_FIELD(data, "wset", number_integer);
+        auto o = wf::ipc::find_output_by_id(data["id"]);
+        if (!o)
+        {
+            return wf::ipc::json_error("output not found");
+        }
+
+        auto wset = wf::ipc::find_workspace_set_by_id(data["wset"]);
+        if (!wset)
+        {
+            return wf::ipc::json_error("workspace set not found");
+        }
+
+        auto response = wf::ipc::json_ok();
+        o->set_workspace_set(wset->shared_from_this());
+        return response;
+    };
 
     void setup_bindings()
     {
