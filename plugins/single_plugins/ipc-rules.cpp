@@ -140,6 +140,7 @@ class ipc_rules_t : public wf::plugin_interface_t, public wf::per_output_tracker
         method_repository->register_method("window-rules/configure-view", configure_view);
         method_repository->register_method("window-rules/focus-view", focus_view);
         method_repository->register_method("window-rules/get-focused-view", get_focused_view);
+        method_repository->register_method("window-rules/close-view", close_view);
         method_repository->connect(&on_client_disconnected);
         wf::get_core().connect(&on_view_mapped);
         wf::get_core().connect(&on_view_unmapped);
@@ -163,6 +164,7 @@ class ipc_rules_t : public wf::plugin_interface_t, public wf::per_output_tracker
         method_repository->unregister_method("window-rules/configure-view");
         method_repository->unregister_method("window-rules/focus-view");
         method_repository->unregister_method("window-rules/get-focused-view");
+        method_repository->unregister_method("window-rules/close-view");
         fini_output_tracking();
     }
 
@@ -246,6 +248,19 @@ class ipc_rules_t : public wf::plugin_interface_t, public wf::per_output_tracker
             }
 
             wf::get_core().default_wm->focus_request(toplevel);
+            return response;
+        }
+
+        return wf::ipc::json_error("no such view");
+    };
+
+    wf::ipc::method_callback close_view = [=] (nlohmann::json data)
+    {
+        WFJSON_EXPECT_FIELD(data, "id", number_integer);
+        if (auto view = wf::ipc::find_view_by_id(data["id"]))
+        {
+            auto response = wf::ipc::json_ok();
+            view->close();
             return response;
         }
 
