@@ -50,21 +50,6 @@ void main()
 )";
 }
 
-OpenGL::program_t program;
-void load_program()
-{
-    OpenGL::render_begin();
-    program.compile(vertex_source, frag_source);
-    OpenGL::render_end();
-}
-
-void destroy_program()
-{
-    OpenGL::render_begin();
-    program.free_resources();
-    OpenGL::render_end();
-}
-
 /**
  * Enumerate the needed triangles for rendering the model
  */
@@ -120,15 +105,15 @@ void prepare_geometry(wobbly_surface *model, wf::geometry_t src_box,
 }
 
 /* Requires bound opengl context */
-void render_triangles(wf::texture_t tex, glm::mat4 mat, float *pos, float *uv,
+void render_triangles(OpenGL::program_t *program, wf::texture_t tex, glm::mat4 mat, float *pos, float *uv,
     int cnt)
 {
-    program.use(tex.type);
-    program.set_active_texture(tex);
+    program->use(tex.type);
+    program->set_active_texture(tex);
 
-    program.attrib_pointer("position", 2, 0, pos);
-    program.attrib_pointer("uvPosition", 2, 0, uv);
-    program.uniformMatrix4f("MVP", mat);
+    program->attrib_pointer("position", 2, 0, pos);
+    program->attrib_pointer("uvPosition", 2, 0, uv);
+    program->uniformMatrix4f("MVP", mat);
 
     GL_CALL(glEnable(GL_BLEND));
     GL_CALL(glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA));
@@ -136,7 +121,7 @@ void render_triangles(wf::texture_t tex, glm::mat4 mat, float *pos, float *uv,
     GL_CALL(glDrawArrays(GL_TRIANGLES, 0, 3 * cnt));
     GL_CALL(glDisable(GL_BLEND));
 
-    program.deactivate();
+    program->deactivate();
 }
 }
 
@@ -548,9 +533,11 @@ class wobbly_state_free_t : public iwobbly_state_t
 class wobbly_transformer_node_t : public wf::scene::floating_inner_node_t
 {
   public:
-    wobbly_transformer_node_t(wayfire_toplevel_view view) : floating_inner_node_t(false)
+    wobbly_transformer_node_t(wayfire_toplevel_view view,
+        OpenGL::program_t *wobbly_prog) : floating_inner_node_t(false)
     {
         this->view = view;
+        this->wobbly_program = wobbly_prog;
         init_model();
         last_frame = wf::get_current_time();
         view->get_output()->connect(&on_workspace_changed);
@@ -599,6 +586,8 @@ class wobbly_transformer_node_t : public wf::scene::floating_inner_node_t
     {
         view->get_transformed_node()->rem_transformer("wobbly");
     }
+
+    OpenGL::program_t *wobbly_program;
 
   private:
     wayfire_toplevel_view view;
@@ -896,7 +885,7 @@ class wobbly_render_instance_t :
         for (auto& box : damage)
         {
             target_fb.logic_scissor(wlr_box_from_pixman_box(box));
-            wobbly_graphics::render_triangles(tex,
+            wobbly_graphics::render_triangles(self->wobbly_program, tex,
                 target_fb.get_orthographic_projection(),
                 vert.data(), uv.data(),
                 self->model->x_cells * self->model->y_cells * 2);
@@ -925,7 +914,9 @@ class wayfire_wobbly : public wf::plugin_interface_t
     void init() override
     {
         wf::get_core().connect(&wobbly_changed);
-        wobbly_graphics::load_program();
+        OpenGL::render_begin();
+        program.compile(wobbly_graphics::vertex_source, wobbly_graphics::frag_source);
+        OpenGL::render_end();
     }
 
     void adjust_wobbly(wobbly_signal *data)
@@ -935,7 +926,7 @@ class wayfire_wobbly : public wf::plugin_interface_t
             !tr_manager->get_transformer<wobbly_transformer_node_t>("wobbly"))
         {
             tr_manager->add_transformer(
-                std::make_shared<wobbly_transformer_node_t>(data->view),
+                std::make_shared<wobbly_transformer_node_t>(data->view, &program),
                 wf::TRANSFORMER_HIGHLEVEL, "wobbly");
         }
 
@@ -998,8 +989,13 @@ class wayfire_wobbly : public wf::plugin_interface_t
             }
         }
 
-        wobbly_graphics::destroy_program();
+        OpenGL::render_begin();
+        program.free_resources();
+        OpenGL::render_end();
     }
+
+  private:
+    OpenGL::program_t program;
 };
 
 DECLARE_WAYFIRE_PLUGIN(wayfire_wobbly);

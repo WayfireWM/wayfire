@@ -4,9 +4,8 @@
 static inline double vswipe_process_delta(const double delta,
     const double accumulated_dx,
     const int vx, const int vw,
-    const double speed_cap    = 0.5,
-    const double speed_factor = 256,
-    const bool free_movement  = false)
+    const double speed_cap   = 0.5,
+    const bool free_movement = false)
 {
     // The slowdown below must be applied differently for going out of bounds.
     double sdx_offset = free_movement ?
@@ -31,7 +30,7 @@ static inline double vswipe_process_delta(const double delta,
     const double slowdown = wf::clamp(ease,
         std::signbit(delta) == std::signbit(sdx_offset) ? 0.005 : 0.2, 1.0);
 
-    return wf::clamp(delta / speed_factor, -speed_cap, speed_cap) * slowdown;
+    return wf::clamp(delta, -speed_cap, speed_cap) * slowdown;
 }
 
 static inline int vswipe_finish_target(const double accumulated_dx,
