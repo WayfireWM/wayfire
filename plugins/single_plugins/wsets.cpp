@@ -129,15 +129,8 @@ class wayfire_wsets_plugin_t : public wf::plugin_interface_t
             return wf::ipc::json_error("output not found");
         }
 
-        auto wset = wf::ipc::find_workspace_set_by_index(data["wset-index"]);
-        if (!wset)
-        {
-            return wf::ipc::json_error("workspace set not found");
-        }
-
-        auto response = wf::ipc::json_ok();
-        select_workspace(wset->get_index(), o);
-        return response;
+        select_workspace(data["wset-index"], o);
+        return wf::ipc::json_ok();
     };
 
     void setup_bindings()
@@ -262,9 +255,8 @@ class wayfire_wsets_plugin_t : public wf::plugin_interface_t
         }
     }
 
-    void select_workspace(int index, std::optional<wf::output_t*> output = nullptr)
+    void select_workspace(int index, wf::output_t *wo = wf::get_core().seat->get_active_output())
     {
-        auto wo = output ? output.value() : wf::get_core().seat->get_active_output();
         if (!wo)
         {
             return;

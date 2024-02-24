@@ -524,6 +524,7 @@ class ipc_rules_t : public wf::plugin_interface_t, public wf::per_output_tracker
         data["previous-workspace"] = wf::ipc::point_to_json(ev->old_viewport);
         data["new-workspace"] = wf::ipc::point_to_json(ev->new_viewport);
         data["output"] = ev->output ? (int)ev->output->get_id() : -1;
+        data["wset"]   = (ev->output && ev->output->wset()) ? (int)ev->output->wset()->get_id() : -1;
         send_event_to_subscribes(data, data["event"]);
     };
 
