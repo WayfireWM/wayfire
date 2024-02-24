@@ -87,11 +87,25 @@ GLuint compile_program(std::string vertex_source, std::string frag_source)
     GL_CALL(glAttachShader(result_program, fragment_shader));
     GL_CALL(glLinkProgram(result_program));
 
+    int s = GL_FALSE;
+#define LENGTH 1024 * 128
+    char log[LENGTH];
+    GL_CALL(glGetProgramiv(result_program, GL_LINK_STATUS, &s));
+    GL_CALL(glGetProgramInfoLog(result_program, LENGTH, NULL, log));
+
+    if (s == GL_FALSE)
+    {
+        LOGE("Failed to link vertex shader:\n", vertex_source,
+            "\nFragment shader:\n", frag_source,
+            "\nLinker output:\n", log);
+
+        GL_CALL(glDeleteProgram(result_program));
+    }
+
     /* won't be really deleted until program is deleted as well */
     GL_CALL(glDeleteShader(vertex_shader));
     GL_CALL(glDeleteShader(fragment_shader));
-
-    return result_program;
+    return (s == GL_FALSE) ? 0 : result_program;
 }
 
 void init()
