@@ -633,6 +633,11 @@ class program_t::impl
         uniforms[active_program_idx][name] =
             GL_CALL(glGetUniformLocation(id[active_program_idx], name.c_str()));
 
+        if (uniforms[active_program_idx][name] == -1)
+        {
+            LOGE("Uniform ", name, " not found in program");
+        }
+
         return uniforms[active_program_idx][name];
     }
 
