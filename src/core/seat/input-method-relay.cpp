@@ -47,6 +47,8 @@ wf::input_method_relay::input_method_relay()
 
         LOGD("new input method connected");
         input_method = new_input_method;
+        last_done_serial.reset();
+        next_done_serial = 0;
         on_input_method_commit.connect(&input_method->events.commit);
         on_input_method_destroy.connect(&input_method->events.destroy);
         on_grab_keyboard.connect(&input_method->events.grab_keyboard);
