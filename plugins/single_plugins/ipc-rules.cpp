@@ -181,15 +181,15 @@ class ipc_rules_t : public wf::plugin_interface_t, public wf::per_output_tracker
         output->connect(&on_wset_workspace_changed);
 
         nlohmann::json data;
-        data["event"] = "output-added";
-        data["output"]  = output_to_json(output);
+        data["event"]  = "output-added";
+        data["output"] = output_to_json(output);
         send_event_to_subscribes(data, data["event"]);
     }
 
     void handle_output_removed(wf::output_t *output) override
     {
         nlohmann::json data;
-        data["event"] = "output-removed";
+        data["event"]  = "output-removed";
         data["output"] = output_to_json(output);
         send_event_to_subscribes(data, data["event"]);
     }
