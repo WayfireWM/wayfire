@@ -177,6 +177,7 @@ std::string node_t::stringify() const
             "top",
             "unmanaged",
             "overlay",
+            "lock",
             "dwidget"
         };
 
