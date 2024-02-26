@@ -34,8 +34,6 @@ class output_impl_t : public output_t
     wf::signal::connection_t<output_configuration_changed_signal> on_configuration_changed;
     void update_node_limits();
 
-    bool inhibited = false;
-
     wf::dimensions_t effective_size;
 
   public:
@@ -63,20 +61,6 @@ class output_impl_t : public output_t
     void add_button(option_sptr_t<buttonbinding_t> button, wf::button_callback*) override;
     void add_activator(option_sptr_t<activatorbinding_t> activator, wf::activator_callback*) override;
     void rem_binding(void *callback) override;
-
-    /**
-     * Set the output as inhibited, so that no plugins can be activated
-     * except those that ignore inhibitions.
-     */
-    void inhibit_plugins();
-
-    /**
-     * Uninhibit the output.
-     */
-    void uninhibit_plugins();
-
-    /** @return true if the output is inhibited */
-    bool is_inhibited() const;
 
     /** Set the effective resolution of the output */
     void set_effective_size(const wf::dimensions_t& size);
