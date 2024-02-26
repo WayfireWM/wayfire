@@ -1,7 +1,6 @@
 #pragma once
 
 #include <wayfire/nonstd/wlroots-full.hpp>
-#include "../view/surface-impl.hpp"
 #include "wayfire/geometry.hpp"
 #include "wayfire/scene.hpp"
 
