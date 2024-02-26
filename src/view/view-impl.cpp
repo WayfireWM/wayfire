@@ -1,4 +1,3 @@
-#include "view/surface-impl.hpp"
 #include "wayfire/core.hpp"
 #include "../core/core-impl.hpp"
 #include "view-impl.hpp"
@@ -6,6 +5,7 @@
 #include "wayfire/scene-render.hpp"
 #include "wayfire/scene.hpp"
 #include "wayfire/signal-definitions.hpp"
+#include "wayfire/unstable/wlr-surface-controller.hpp"
 #include "wayfire/unstable/wlr-surface-node.hpp"
 #include "wayfire/view.hpp"
 #include "wayfire/workspace-set.hpp"

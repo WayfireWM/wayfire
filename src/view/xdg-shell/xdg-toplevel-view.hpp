@@ -2,9 +2,9 @@
 #include "wayfire/geometry.hpp"
 #include <wayfire/view.hpp>
 #include <wayfire/nonstd/wlroots-full.hpp>
+#include "wayfire/unstable/wlr-surface-controller.hpp"
 #include "wayfire/unstable/wlr-surface-node.hpp"
 #include <wayfire/unstable/xdg-toplevel-base.hpp>
-#include "../surface-impl.hpp"
 
 #include <wayfire/toplevel-view.hpp>
 #include "wayfire/toplevel.hpp"

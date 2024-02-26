@@ -7,10 +7,10 @@
 #include <wayfire/opengl.hpp>
 #include <wayfire/toplevel.hpp>
 
-#include "surface-impl.hpp"
 #include "wayfire/core.hpp"
 #include "wayfire/nonstd/tracking-allocator.hpp"
 #include "wayfire/signal-provider.hpp"
+#include "wayfire/unstable/wlr-surface-controller.hpp"
 #include "wayfire/unstable/wlr-surface-node.hpp"
 #include "wayfire/output.hpp"
 #include "wayfire/scene.hpp"
