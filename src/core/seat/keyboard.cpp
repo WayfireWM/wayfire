@@ -62,6 +62,9 @@ void wf::keyboard_t::setup_listeners()
                 if (seat->priv->pressed_keys.count(ev->keycode))
                 {
                     seat->priv->pressed_keys.erase(seat->priv->pressed_keys.find(ev->keycode));
+                } else
+                {
+                    return;
                 }
             }
 
