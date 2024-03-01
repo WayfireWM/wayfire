@@ -57,6 +57,8 @@ enum class logging_category : size_t
     XWL     = 8,
     // Layer-shell-related events
     LSHELL  = 9,
+    // Input-Method-related events
+    IM      = 10,
     TOTAL,
 };
 

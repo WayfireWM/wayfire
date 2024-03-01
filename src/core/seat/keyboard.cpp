@@ -8,12 +8,9 @@
 #include "pointer.hpp"
 #include "keyboard.hpp"
 #include "../core-impl.hpp"
-#include "../../output/output-impl.hpp"
-#include "cursor.hpp"
 #include "touch.hpp"
 #include "input-manager.hpp"
 #include "input-method-relay.hpp"
-#include "wayfire/compositor-view.hpp"
 #include "wayfire/signal-definitions.hpp"
 
 void wf::keyboard_t::setup_listeners()
@@ -43,12 +40,14 @@ void wf::keyboard_t::setup_listeners()
             seat->priv->set_keyboard(this);
         }
 
+        LOGC(IM, "Received key=", ev->keycode, " state=", ev->state, " im=", is_im_sent);
         if ((is_im_sent || !handle_keyboard_key(ev->keycode, ev->state)) &&
             (mode == input_event_processing_mode_t::FULL))
         {
             if (!is_im_sent &&
                 wf::get_core_impl().im_relay->handle_key(handle, ev->time_msec, ev->keycode, ev->state))
             {
+                LOGC(IM, "key=", ev->keycode, " state=", ev->state, " swallowed by IM.");
                 return;
             }
 
@@ -64,6 +63,7 @@ void wf::keyboard_t::setup_listeners()
                     seat->priv->pressed_keys.erase(seat->priv->pressed_keys.find(ev->keycode));
                 } else
                 {
+                    LOGC(IM, "Key ", ev->keycode, " ignored.");
                     return;
                 }
             }
@@ -71,9 +71,13 @@ void wf::keyboard_t::setup_listeners()
             // don't send IM sent keys to plugin grabs
             if (seat->priv->keyboard_focus && !(seat->priv->is_grab && is_im_sent))
             {
+                LOGC(IM, "key=", ev->keycode, " state=", ev->state, " sent to node.");
                 seat->priv->keyboard_focus->keyboard_interaction()
                     .handle_keyboard_key(wf::get_core().seat.get(), *ev);
             }
+        } else
+        {
+            LOGC(IM, "key=", ev->keycode, " state=", ev->state, " swallowed by a plugin.");
         }
 
         wf::get_core().seat->notify_activity();
