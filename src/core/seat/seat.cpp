@@ -500,7 +500,6 @@ void wf::seat_t::impl::transfer_grab(wf::scene::node_ptr grab_node)
     }
 
     this->keyboard_focus = grab_node;
-    this->is_grab = true;
     grab_node->keyboard_interaction().handle_keyboard_enter(wf::get_core().seat.get());
 
     wf::keyboard_focus_changed_signal data;
@@ -522,7 +521,6 @@ void wf::seat_t::impl::set_keyboard_focus(wf::scene::node_ptr new_focus)
     }
 
     this->keyboard_focus = new_focus;
-    this->is_grab = false;
     if (new_focus)
     {
         new_focus->keyboard_interaction().handle_keyboard_enter(wf::get_core().seat.get());

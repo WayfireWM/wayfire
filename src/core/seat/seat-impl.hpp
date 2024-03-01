@@ -57,7 +57,6 @@ struct seat_t::impl
 
     void set_keyboard_focus(wf::scene::node_ptr keyboard_focus);
     wf::scene::node_ptr keyboard_focus;
-    bool is_grab = false;
     // Keys sent to the current keyboard focus
     std::multiset<uint32_t> pressed_keys;
     void transfer_grab(wf::scene::node_ptr new_focus);

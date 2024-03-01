@@ -68,8 +68,7 @@ void wf::keyboard_t::setup_listeners()
                 }
             }
 
-            // don't send IM sent keys to plugin grabs
-            if (seat->priv->keyboard_focus && !(seat->priv->is_grab && is_im_sent))
+            if (seat->priv->keyboard_focus)
             {
                 LOGC(IM, "key=", ev->keycode, " state=", ev->state, " sent to node.");
                 seat->priv->keyboard_focus->keyboard_interaction()
