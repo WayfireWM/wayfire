@@ -397,14 +397,6 @@ wf::pointf_t wf::place_popup_at(wlr_surface *parent, wlr_surface *popup, wf::poi
     // Get the {0, 0} of the parent view in output coordinates
     popup_offset += popup_parent->get_surface_root_node()->to_global({0, 0});
 
-    auto xdg_surface = wlr_xdg_surface_try_from_wlr_surface(parent);
-    if (xdg_surface)
-    {
-        // substract shadows etc; test app: d-feet
-        popup_offset.x -= xdg_surface->current.geometry.x;
-        popup_offset.y -= xdg_surface->current.geometry.y;
-    }
-
     // Apply transformers to the popup position
     auto node = popup_parent->get_surface_root_node()->parent();
     while (node != popup_parent->get_transformed_node().get())

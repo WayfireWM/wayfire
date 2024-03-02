@@ -3,7 +3,6 @@
 #include <wayfire/debug.hpp>
 #include "view/view-impl.hpp"
 #include "wayfire/core.hpp"
-#include "surface-impl.hpp"
 #include "wayfire/geometry.hpp"
 #include "wayfire/output.hpp"
 #include "wayfire/scene-operations.hpp"
@@ -166,8 +165,8 @@ void wayfire_xdg_popup::update_position()
 
     // Offset relative to the parent surface
     wf::pointf_t popup_offset = wf::place_popup_at(popup->parent, popup->base->surface, {
-        popup->current.geometry.x * 1.0,
-        popup->current.geometry.y * 1.0,
+        popup->current.geometry.x * 1.0 - popup->base->current.geometry.x,
+        popup->current.geometry.y * 1.0 - popup->base->current.geometry.y,
     });
 
     this->move(popup_offset.x, popup_offset.y);
