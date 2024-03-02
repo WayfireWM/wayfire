@@ -164,11 +164,20 @@ void wayfire_xdg_popup::update_position()
     }
 
     // Offset relative to the parent surface
-    wf::pointf_t popup_offset = wf::place_popup_at(popup->parent, popup->base->surface, {
+    wf::pointf_t local_offset = {
         popup->current.geometry.x * 1.0 - popup->base->current.geometry.x,
         popup->current.geometry.y * 1.0 - popup->base->current.geometry.y,
-    });
+    };
 
+    if (wlr_xdg_surface *xdg_surface = wlr_xdg_surface_try_from_wlr_surface(popup->parent))
+    {
+        wlr_box box;
+        wlr_xdg_surface_get_geometry(xdg_surface, &box);
+        local_offset.x += box.x;
+        local_offset.y += box.y;
+    }
+
+    wf::pointf_t popup_offset = wf::place_popup_at(popup->parent, popup->base->surface, local_offset);
     this->move(popup_offset.x, popup_offset.y);
 }
 
