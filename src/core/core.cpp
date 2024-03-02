@@ -190,8 +190,13 @@ void wf::compositor_core_impl_t::init()
     pointer_constraint_added.connect(
         &protocols.pointer_constraints->events.new_constraint);
 
-    protocols.input_method = wlr_input_method_manager_v2_create(display);
-    protocols.text_input   = wlr_text_input_manager_v3_create(display);
+    wf::option_wrapper_t<bool> enable_input_method_v2{"workarounds/enable_input_method_v2"};
+    if (enable_input_method_v2)
+    {
+        protocols.input_method = wlr_input_method_manager_v2_create(display);
+        protocols.text_input   = wlr_text_input_manager_v3_create(display);
+    }
+
     im_relay = std::make_unique<input_method_relay>();
 
     protocols.presentation = wlr_presentation_create(display, backend);

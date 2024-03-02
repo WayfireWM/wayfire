@@ -29,6 +29,7 @@ server_protocols = [
     [wl_protocol_dir, 'unstable/relative-pointer/relative-pointer-unstable-v1.xml'],
     [wl_protocol_dir, 'unstable/tablet/tablet-unstable-v2.xml'],
     [wl_protocol_dir, 'unstable/keyboard-shortcuts-inhibit/keyboard-shortcuts-inhibit-unstable-v1.xml'],
+    [wl_protocol_dir, 'unstable/input-method/input-method-unstable-v1.xml'],
     'wayfire-shell-unstable-v2.xml',
     'gtk-shell.xml',
     'wlr-layer-shell-unstable-v1.xml',

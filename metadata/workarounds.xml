@@ -54,5 +54,9 @@
       <_short>Discard output from commands invoked by Wayfire, so that they don't end up in the logs.</_short>
       <default>true</default>
     </option>
+    <option name="enable_input_method_v2" type="bool">
+      <_short>Enable support for the newer input-method-v2 protocol. Note that the input-method-v1 protocol works better in many cases.</_short>
+      <default>false</default>
+    </option>
 	</plugin>
 </wayfire>
