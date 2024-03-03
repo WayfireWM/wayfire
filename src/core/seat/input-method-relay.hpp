@@ -23,7 +23,8 @@ class input_method_relay
         on_grab_keyboard, on_grab_keyboard_destroy, on_new_popup_surface;
     wlr_input_method_keyboard_grab_v2 *keyboard_grab = nullptr;
 
-    std::optional<uint32_t> last_done_serial;
+    std::optional<uint32_t> last_focus_switch_serial;
+    std::optional<uint32_t> last_committed_serial;
     uint32_t next_done_serial = 0;
     void send_im_done();
 
@@ -59,6 +60,8 @@ class input_method_relay
     bool handle_key(struct wlr_keyboard*, uint32_t time, uint32_t key, uint32_t state);
     bool handle_modifier(struct wlr_keyboard*);
     bool is_im_sent(struct wlr_keyboard*);
+    bool is_im_in_sync();
+
     ~input_method_relay();
 };
 

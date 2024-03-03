@@ -47,7 +47,8 @@ wf::input_method_relay::input_method_relay()
 
         LOGD("new input method connected");
         input_method = new_input_method;
-        last_done_serial.reset();
+        last_focus_switch_serial.reset();
+        last_committed_serial.reset();
         next_done_serial = 0;
         on_input_method_commit.connect(&input_method->events.commit);
         on_input_method_destroy.connect(&input_method->events.destroy);
@@ -69,15 +70,10 @@ wf::input_method_relay::input_method_relay()
         auto evt_input_method = static_cast<wlr_input_method_v2*>(data);
         assert(evt_input_method == input_method);
 
-        // When we switch focus, we send a done event to the IM.
-        // The IM may need time to process further events and may send additional commits after switching
-        // focus, which belong to the old text input.
-        //
-        // To prevent this, we simply ignore commits which do not acknowledge the newest done event from the
-        // compositor.
-        if (input_method->current_serial < last_done_serial.value_or(0))
+        last_committed_serial = evt_input_method->current_serial;
+        if (!is_im_in_sync())
         {
-            LOGD("focus just changed, ignore input method commit");
+            LOGC(IM, "Ignoring input method commit due to unsynchronized IM state");
             return;
         }
 
@@ -165,6 +161,17 @@ wf::input_method_relay::input_method_relay()
     wf::get_core().connect(&keyboard_focus_changed);
 }
 
+bool wf::input_method_relay::is_im_in_sync()
+{
+    // When we switch focus, we send a done event to the IM.
+    // The IM may need time to process further events and may send additional commits after switching
+    // focus, which belong to the old text input.
+    //
+    // To prevent this, we simply ignore commits which do not acknowledge the newest done event from the
+    // compositor.
+    return last_committed_serial.value_or(0) >= last_focus_switch_serial.value_or(0);
+}
+
 void wf::input_method_relay::send_im_state(wlr_text_input_v3 *input)
 {
     wlr_input_method_v2_send_surrounding_text(
@@ -183,7 +190,6 @@ void wf::input_method_relay::send_im_state(wlr_text_input_v3 *input)
 
 void wf::input_method_relay::send_im_done()
 {
-    last_done_serial = next_done_serial;
     next_done_serial++;
     wlr_input_method_v2_send_done(input_method);
 }
@@ -192,8 +198,7 @@ void wf::input_method_relay::disable_text_input(wlr_text_input_v3 *input)
 {
     if (input_method == nullptr)
     {
-        LOGI("Disabling text input, but input method is gone");
-
+        LOGC(IM, "Disabling text input, but input method is gone");
         return;
     }
 
@@ -366,6 +371,12 @@ void wf::input_method_relay::set_focus(wlr_surface *surface)
             }
         }
     }
+
+    if (input_method)
+    {
+        last_focus_switch_serial = next_done_serial;
+        send_im_done();
+    }
 }
 
 wf::input_method_relay::~input_method_relay()
@@ -381,8 +392,7 @@ wf::text_input::text_input(wf::input_method_relay *rel, wlr_text_input_v3 *in) :
 
         if (relay->input_method == nullptr)
         {
-            LOGI("Enabling text input, but input method is gone");
-
+            LOGC(IM, "Enabling text input, but input method is gone");
             return;
         }
 
@@ -397,15 +407,13 @@ wf::text_input::text_input(wf::input_method_relay *rel, wlr_text_input_v3 *in) :
 
         if (!input->current_enabled)
         {
-            LOGI("Inactive text input tried to commit");
-
+            LOGC(IM, "Inactive text input tried to commit");
             return;
         }
 
         if (relay->input_method == nullptr)
         {
-            LOGI("Committing text input, but input method is gone");
-
+            LOGC(IM, "Committing text input, but input method is gone");
             return;
         }
 
@@ -576,13 +584,13 @@ void wf::popup_surface::update_geometry()
     auto text_input = this->relay->find_focused_text_input();
     if (!text_input)
     {
-        LOGI("no focused text input");
+        LOGC(IM, "no focused text input");
         return;
     }
 
     if (!is_mapped())
     {
-        LOGI("input method window not mapped");
+        LOGC(IM, "input method window not mapped");
         return;
     }
 

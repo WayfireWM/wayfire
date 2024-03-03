@@ -23,10 +23,34 @@ void wf::keyboard_t::setup_listeners()
 
     on_key.set_callback([&] (void *data)
     {
-        auto ev    = static_cast<wlr_keyboard_key_event*>(data);
-        auto mode  = emit_device_event_signal(ev);
-        auto& seat = wf::get_core_impl().seat;
+        auto ev     = static_cast<wlr_keyboard_key_event*>(data);
+        auto& relay = wf::get_core_impl().im_relay;
+        auto& seat  = wf::get_core_impl().seat;
+        auto is_im_sent = relay->is_im_sent(handle);
+        LOGC(IM, "Received key=", ev->keycode, " state=", ev->state, " is_im_sent=", is_im_sent);
 
+        if (is_im_sent && !relay->is_im_in_sync())
+        {
+            // We switched focus or something and the IM is sending events to the old text input. We
+            // don't care about such events.
+            LOGC(IM, "Dropping input event due to IM not in sync key=", ev->keycode, " state=", ev->state);
+            return;
+        } else if (is_im_sent)
+        {
+            LOGC(IM, "Emulating keypress for IM key=", ev->keycode, " state=", ev->state);
+            if (seat->priv->keyboard_focus)
+            {
+                // Event should go directly to the focused client, because the input method wanted to emulate
+                // a keypress specifically for it.
+                seat->priv->keyboard_focus->keyboard_interaction()
+                    .handle_keyboard_key(wf::get_core().seat.get(), *ev);
+            }
+
+            return;
+        }
+
+        // Now, handle 'normal' keyboard events.
+        auto mode = emit_device_event_signal(ev);
         if (mode == input_event_processing_mode_t::IGNORE)
         {
             wf::get_core().seat->notify_activity();
@@ -34,23 +58,9 @@ void wf::keyboard_t::setup_listeners()
             return;
         }
 
-        auto is_im_sent = wf::get_core_impl().im_relay->is_im_sent(handle);
-        if (!is_im_sent)
+        seat->priv->set_keyboard(this);
+        if (!handle_keyboard_key(ev->keycode, ev->state) && (mode == input_event_processing_mode_t::FULL))
         {
-            seat->priv->set_keyboard(this);
-        }
-
-        LOGC(IM, "Received key=", ev->keycode, " state=", ev->state, " im=", is_im_sent);
-        if ((is_im_sent || !handle_keyboard_key(ev->keycode, ev->state)) &&
-            (mode == input_event_processing_mode_t::FULL))
-        {
-            if (!is_im_sent &&
-                wf::get_core_impl().im_relay->handle_key(handle, ev->time_msec, ev->keycode, ev->state))
-            {
-                LOGC(IM, "key=", ev->keycode, " state=", ev->state, " swallowed by IM.");
-                return;
-            }
-
             if (ev->state == WL_KEYBOARD_KEY_STATE_PRESSED)
             {
                 seat->priv->pressed_keys.insert(ev->keycode);
@@ -63,9 +73,19 @@ void wf::keyboard_t::setup_listeners()
                     seat->priv->pressed_keys.erase(seat->priv->pressed_keys.find(ev->keycode));
                 } else
                 {
-                    LOGC(IM, "Key ", ev->keycode, " ignored.");
-                    return;
+                    LOGC(IM, "Release key=", ev->keycode, " ignored.");
+                    return emit_device_post_event_signal(ev);
                 }
+            }
+
+            if (wf::get_core_impl().im_relay->handle_key(handle, ev->time_msec, ev->keycode, ev->state))
+            {
+                // Note that we still keep track of pressed/released HW keys before IM grabs. This is because
+                // such keys are actually physically pressed, and if we were to switch focus, we should send
+                // a key-enter event for them, and the next focus should actually have the key-released events
+                // for them.
+                LOGC(IM, "key=", ev->keycode, " state=", ev->state, " swallowed by IM.");
+                return emit_device_post_event_signal(ev);
             }
 
             if (seat->priv->keyboard_focus)
