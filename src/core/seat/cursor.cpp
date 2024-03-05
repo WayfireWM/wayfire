@@ -1,15 +1,12 @@
 #include "cursor.hpp"
 #include "pointer.hpp"
-#include "touch.hpp"
 #include "../core-impl.hpp"
 #include "../../view/view-impl.hpp"
 #include "input-manager.hpp"
 #include "wayfire/util.hpp"
-#include "wayfire/workspace-set.hpp"
 #include "wayfire/output-layout.hpp"
 #include "tablet.hpp"
 #include "wayfire/signal-definitions.hpp"
-#include "wayfire/util/log.hpp"
 
 wf::cursor_t::cursor_t(wf::seat_t *seat)
 {
@@ -57,13 +54,13 @@ void wf::cursor_t::setup_listeners()
     on_ ## evname.set_callback([&] (void *data) { \
         set_touchscreen_mode(false); \
         auto ev   = static_cast<wlr_pointer_ ## evname ## _event*>(data); \
-        auto mode = emit_device_event_signal(ev); \
+        auto mode = emit_device_event_signal(ev, &ev->pointer->base); \
         if (mode != wf::input_event_processing_mode_t::IGNORE) \
         { \
             seat->priv->lpointer->handle_pointer_ ## evname(ev, mode); \
             wf::get_core().seat->notify_activity(); \
         } \
-        emit_device_post_event_signal(ev); \
+        emit_device_post_event_signal(ev, &ev->pointer->base); \
     }); \
     on_ ## evname.connect(&cursor->events.evname);
 
@@ -89,14 +86,14 @@ void wf::cursor_t::setup_listeners()
     on_tablet_ ## evname.set_callback([&] (void *data) { \
         set_touchscreen_mode(false); \
         auto ev = static_cast<wlr_tablet_tool_ ## evname ## _event*>(data); \
-        auto handling_mode = emit_device_event_signal(ev); \
+        auto handling_mode = emit_device_event_signal(ev, &ev->tablet->base); \
         if (ev->tablet->data) { \
             auto tablet = \
                 static_cast<wf::tablet_t*>(ev->tablet->data); \
             tablet->handle_ ## evname(ev, handling_mode); \
         } \
         wf::get_core().seat->notify_activity(); \
-        emit_device_post_event_signal(ev); \
+        emit_device_post_event_signal(ev, &ev->tablet->base); \
     }); \
     on_tablet_ ## evname.connect(&cursor->events.tablet_tool_ ## evname);
 

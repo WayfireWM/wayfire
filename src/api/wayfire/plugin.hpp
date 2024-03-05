@@ -108,7 +108,7 @@ class plugin_interface_t
 using wayfire_plugin_load_func = wf::plugin_interface_t * (*)();
 
 /** The version of Wayfire's API/ABI */
-constexpr uint32_t WAYFIRE_API_ABI_VERSION = 2024'02'16;
+constexpr uint32_t WAYFIRE_API_ABI_VERSION = 2024'03'05;
 
 /**
  * Each plugin must also provide a function which returns the Wayfire API/ABI

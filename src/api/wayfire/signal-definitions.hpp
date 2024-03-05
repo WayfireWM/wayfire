@@ -132,6 +132,12 @@ struct input_event_signal
      * pointer_button, keyboard_key, touch_down
      */
     input_event_processing_mode_t mode = input_event_processing_mode_t::FULL;
+
+    /**
+     * The wlr device which triggered the event. May be NULL for events which are merged together for ex. via
+     * wlr-cursor.
+     */
+    wlr_input_device *device;
 };
 
 /**
@@ -141,6 +147,7 @@ template<class wlr_event_t>
 struct post_input_event_signal
 {
     wlr_event_t *event;
+    wlr_input_device *device;
 };
 
 /**

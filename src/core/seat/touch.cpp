@@ -1,5 +1,3 @@
-#include <cmath>
-
 #include <wayfire/util/log.hpp>
 #include <wayfire/bindings-repository.hpp>
 
@@ -10,7 +8,6 @@
 #include "wayfire/core.hpp"
 #include "wayfire/output.hpp"
 #include "wayfire/util.hpp"
-#include "wayfire/workspace-set.hpp"
 #include "wayfire/output-layout.hpp"
 
 wf::touch_interface_t::touch_interface_t(wlr_cursor *cursor, wlr_seat *seat,
@@ -24,7 +21,7 @@ wf::touch_interface_t::touch_interface_t(wlr_cursor *cursor, wlr_seat *seat,
     on_down.set_callback([=] (void *data)
     {
         auto ev   = static_cast<wlr_touch_down_event*>(data);
-        auto mode = emit_device_event_signal(ev);
+        auto mode = emit_device_event_signal(ev, &ev->touch->base);
         if (mode != input_event_processing_mode_t::IGNORE)
         {
             double lx, ly;
@@ -36,26 +33,26 @@ wf::touch_interface_t::touch_interface_t(wlr_cursor *cursor, wlr_seat *seat,
         }
 
         wf::get_core().seat->notify_activity();
-        emit_device_post_event_signal(ev);
+        emit_device_post_event_signal(ev, &ev->touch->base);
     });
 
     on_up.set_callback([=] (void *data)
     {
         auto ev   = static_cast<wlr_touch_up_event*>(data);
-        auto mode = emit_device_event_signal(ev);
+        auto mode = emit_device_event_signal(ev, &ev->touch->base);
         if (mode != input_event_processing_mode_t::IGNORE)
         {
             handle_touch_up(ev->touch_id, ev->time_msec, mode);
         }
 
         wf::get_core().seat->notify_activity();
-        emit_device_post_event_signal(ev);
+        emit_device_post_event_signal(ev, &ev->touch->base);
     });
 
     on_motion.set_callback([=] (void *data)
     {
         auto ev   = static_cast<wlr_touch_motion_event*>(data);
-        auto mode = emit_device_event_signal(ev);
+        auto mode = emit_device_event_signal(ev, &ev->touch->base);
 
         if (mode != input_event_processing_mode_t::IGNORE)
         {
@@ -70,7 +67,7 @@ wf::touch_interface_t::touch_interface_t(wlr_cursor *cursor, wlr_seat *seat,
         }
 
         wf::get_core().seat->notify_activity();
-        emit_device_post_event_signal(ev);
+        emit_device_post_event_signal(ev, &ev->touch->base);
     });
 
     on_cancel.set_callback([=] (void *data)

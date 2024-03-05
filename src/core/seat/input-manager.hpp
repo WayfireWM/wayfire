@@ -67,19 +67,21 @@ class input_manager_t
  * Emit a signal for device events.
  */
 template<class EventType>
-wf::input_event_processing_mode_t emit_device_event_signal(EventType *event)
+wf::input_event_processing_mode_t emit_device_event_signal(EventType *event, wlr_input_device *device)
 {
     wf::input_event_signal<EventType> data;
-    data.event = event;
+    data.event  = event;
+    data.device = device;
     wf::get_core().emit(&data);
     return data.mode;
 }
 
 template<class EventType>
-void emit_device_post_event_signal(EventType *event)
+void emit_device_post_event_signal(EventType *event, wlr_input_device *device)
 {
     wf::post_input_event_signal<EventType> data;
-    data.event = event;
+    data.event  = event;
+    data.device = device;
     wf::get_core().emit(&data);
 }
 

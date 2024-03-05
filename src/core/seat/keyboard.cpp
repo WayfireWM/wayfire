@@ -24,13 +24,13 @@ void wf::keyboard_t::setup_listeners()
     on_key.set_callback([&] (void *data)
     {
         auto ev    = static_cast<wlr_keyboard_key_event*>(data);
-        auto mode  = emit_device_event_signal(ev);
+        auto mode  = emit_device_event_signal(ev, &handle->base);
         auto& seat = wf::get_core_impl().seat;
 
         if (mode == input_event_processing_mode_t::IGNORE)
         {
             wf::get_core().seat->notify_activity();
-            emit_device_post_event_signal(ev);
+            emit_device_post_event_signal(ev, &handle->base);
             return;
         }
 
@@ -80,7 +80,7 @@ void wf::keyboard_t::setup_listeners()
         }
 
         wf::get_core().seat->notify_activity();
-        emit_device_post_event_signal(ev);
+        emit_device_post_event_signal(ev, &handle->base);
     });
 
     on_modifier.set_callback([&] (void *data)
