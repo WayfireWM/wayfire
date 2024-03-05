@@ -1,9 +1,9 @@
 #include <wayfire/util/log.hpp>
 #include "input-method-relay.hpp"
 #include "../core-impl.hpp"
-#include "../../view/view-impl.hpp"
 #include "core/seat/seat-impl.hpp"
-#include "wayfire/scene-operations.hpp"
+
+#include <wayfire/unstable/wlr-text-input-v3-popup.hpp>
 
 #include <algorithm>
 #include <wayland-server-core.h>
@@ -157,7 +157,14 @@ wf::input_method_relay::input_method_relay()
     on_new_popup_surface.set_callback([&] (void *data)
     {
         auto popup = static_cast<wlr_input_popup_surface_v2*>(data);
-        popup_surfaces.push_back(wf::popup_surface::create(this, popup));
+        popup_surfaces.push_back(wf::text_input_v3_popup::create(this, popup->surface));
+        popup_surfaces.back()->on_destroy.set_callback([this, view = popup_surfaces.back().get()] (void*)
+        {
+            auto it = std::remove_if(popup_surfaces.begin(), popup_surfaces.end(),
+                [&] (const auto & suf) { return suf.get() == view; });
+            popup_surfaces.erase(it, popup_surfaces.end());
+        });
+        popup_surfaces.back()->on_destroy.connect(&popup->events.destroy);
     });
 
     auto& core = wf::get_core();
@@ -223,17 +230,6 @@ void wf::input_method_relay::remove_text_input(wlr_text_input_v3 *input)
         return inp->input == input;
     });
     text_inputs.erase(it, text_inputs.end());
-}
-
-void wf::input_method_relay::remove_popup_surface(wf::popup_surface *popup)
-{
-    auto it = std::remove_if(popup_surfaces.begin(),
-        popup_surfaces.end(),
-        [&] (const auto & suf)
-    {
-        return suf.get() == popup;
-    });
-    popup_surfaces.erase(it, popup_surfaces.end());
 }
 
 bool wf::input_method_relay::should_grab(wlr_keyboard *kbd)
@@ -413,11 +409,6 @@ wf::text_input::text_input(wf::input_method_relay *rel, wlr_text_input_v3 *in) :
             return;
         }
 
-        for (auto popup : relay->popup_surfaces)
-        {
-            popup->update_geometry();
-        }
-
         relay->send_im_state(input);
     });
 
@@ -479,178 +470,8 @@ void wf::text_input::set_pending_focused_surface(wlr_surface *surface)
 wf::text_input::~text_input()
 {}
 
-wf::popup_surface::popup_surface(wf::input_method_relay *rel, wlr_input_popup_surface_v2 *in) :
-    relay(rel), surface(in)
+wlr_text_input_v3*wf::input_method_relay::find_focused_text_input_v3()
 {
-    main_surface = std::make_shared<wf::scene::wlr_surface_node_t>(in->surface, true);
-
-    on_destroy.set_callback([&] (void*)
-    {
-        on_map.disconnect();
-        on_unmap.disconnect();
-        on_destroy.disconnect();
-
-        relay->remove_popup_surface(this);
-    });
-
-    on_map.set_callback([&] (void*) { map(); });
-    on_unmap.set_callback([&] (void*) { unmap(); });
-    on_commit.set_callback([&] (void*) { update_geometry(); });
-
-    on_map.connect(&surface->surface->events.map);
-    on_unmap.connect(&surface->surface->events.unmap);
-    on_destroy.connect(&surface->events.destroy);
+    auto focus = find_focused_text_input();
+    return focus ? focus->input : nullptr;
 }
-
-std::shared_ptr<wf::popup_surface> wf::popup_surface::create(
-    wf::input_method_relay *rel, wlr_input_popup_surface_v2 *in)
-{
-    auto self = view_interface_t::create<wf::popup_surface>(rel, in);
-    auto translation_node = std::make_shared<wf::scene::translation_node_t>();
-    translation_node->set_children_list({std::make_unique<wf::scene::wlr_surface_node_t>(in->surface,
-        false)});
-    self->surface_root_node = translation_node;
-    self->set_surface_root_node(translation_node);
-    self->set_role(VIEW_ROLE_DESKTOP_ENVIRONMENT);
-    return self;
-}
-
-void wf::popup_surface::map()
-{
-    auto text_input = this->relay->find_focused_text_input();
-    if (!text_input)
-    {
-        LOGE("trying to map IM popup surface without text input.");
-        return;
-    }
-
-    auto view   = wf::wl_surface_to_wayfire_view(text_input->input->focused_surface->resource);
-    auto output = view->get_output();
-    if (!output)
-    {
-        LOGD("trying to map input method popup with a view not on an output.");
-        return;
-    }
-
-    set_output(output);
-
-    auto target_layer = wf::scene::layer::UNMANAGED;
-    wf::scene::readd_front(get_output()->node_for_layer(target_layer), get_root_node());
-
-    priv->set_mapped_surface_contents(main_surface);
-    priv->set_mapped(true);
-    _is_mapped = true;
-    on_commit.connect(&surface->surface->events.commit);
-
-    update_geometry();
-
-    damage();
-    emit_view_map();
-}
-
-void wf::popup_surface::unmap()
-{
-    if (!is_mapped())
-    {
-        return;
-    }
-
-    damage();
-
-    priv->unset_mapped_surface_contents();
-
-    emit_view_unmap();
-    priv->set_mapped(false);
-    _is_mapped = false;
-    on_commit.disconnect();
-}
-
-std::string wf::popup_surface::get_app_id()
-{
-    return "input-method-popup";
-}
-
-std::string wf::popup_surface::get_title()
-{
-    return "input-method-popup";
-}
-
-void wf::popup_surface::update_geometry()
-{
-    auto text_input = this->relay->find_focused_text_input();
-    if (!text_input)
-    {
-        LOGI("no focused text input");
-        return;
-    }
-
-    if (!is_mapped())
-    {
-        LOGI("input method window not mapped");
-        return;
-    }
-
-    bool cursor_rect = text_input->input->current.features & WLR_TEXT_INPUT_V3_FEATURE_CURSOR_RECTANGLE;
-    auto cursor = text_input->input->current.cursor_rectangle;
-    int x = 0, y = 0;
-    if (cursor_rect)
-    {
-        x = cursor.x;
-        y = cursor.y + cursor.height;
-    }
-
-    auto wlr_surface = text_input->input->focused_surface;
-    auto view = wf::wl_surface_to_wayfire_view(wlr_surface->resource);
-    if (!view)
-    {
-        return;
-    }
-
-    damage();
-
-    wf::pointf_t popup_offset = wf::place_popup_at(wlr_surface, surface->surface, {x* 1.0, y * 1.0});
-    x = popup_offset.x;
-    y = popup_offset.y;
-
-    auto width  = surface->surface->current.width;
-    auto height = surface->surface->current.height;
-
-    auto output   = view->get_output();
-    auto g_output = output->get_layout_geometry();
-    // make sure right edge is on screen, sliding to the left when needed,
-    // but keep left edge on screen nonetheless.
-    x = std::max(0, std::min(x, g_output.width - width));
-    // down edge is going to be out of screen; flip upwards
-    if (y + height > g_output.height)
-    {
-        y -= height;
-        if (cursor_rect)
-        {
-            y -= cursor.height;
-        }
-    }
-
-    // make sure top edge is on screen, sliding down and sacrificing down edge if unavoidable
-    y = std::max(0, y);
-
-    surface_root_node->set_offset({x, y});
-    geometry.x     = x;
-    geometry.y     = y;
-    geometry.width = width;
-    geometry.height = height;
-    damage();
-    wf::scene::update(get_surface_root_node(), wf::scene::update_flag::GEOMETRY);
-}
-
-bool wf::popup_surface::is_mapped() const
-{
-    return priv->wsurface != nullptr && _is_mapped;
-}
-
-wf::geometry_t wf::popup_surface::get_geometry()
-{
-    return geometry;
-}
-
-wf::popup_surface::~popup_surface()
-{}
