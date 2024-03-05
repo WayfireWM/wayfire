@@ -88,6 +88,10 @@ void wf::keyboard_t::setup_listeners()
         auto kbd  = static_cast<wlr_keyboard*>(data);
         auto seat = wf::get_core().get_current_seat();
 
+        mwlr_keyboard_modifiers_event event;
+        event.time_msec = wf::get_current_time();
+        emit_device_event_signal(&event, &handle->base);
+
         if (!wf::get_core_impl().im_relay->handle_modifier(kbd))
         {
             if (!wf::get_core_impl().im_relay->is_im_sent(handle))
@@ -99,6 +103,7 @@ void wf::keyboard_t::setup_listeners()
         }
 
         wf::get_core().seat->notify_activity();
+        emit_device_post_event_signal(&event, &handle->base);
     });
 
     on_key.connect(&handle->events.key);

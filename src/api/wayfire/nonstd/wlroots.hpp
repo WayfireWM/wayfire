@@ -64,4 +64,9 @@ extern "C"
 
     static constexpr uint32_t WLR_KEY_PRESSED  = WL_KEYBOARD_KEY_STATE_PRESSED;
     static constexpr uint32_t WLR_KEY_RELEASED = WL_KEYBOARD_KEY_STATE_RELEASED;
+
+    struct mwlr_keyboard_modifiers_event
+    {
+        uint32_t time_msec;
+    };
 }
