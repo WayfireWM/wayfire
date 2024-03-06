@@ -197,13 +197,13 @@ class wayfire_input_method_v1_context
         }
     }
 
-    wf::signal::connection_t<wf::input_event_signal<wlr_keyboard_key_event>> on_keyboard_key =
-        [=] (wf::input_event_signal<wlr_keyboard_key_event> *ev)
+    wf::signal::connection_t<wf::pre_client_input_event_signal<wlr_keyboard_key_event>> on_keyboard_key =
+        [=] (wf::pre_client_input_event_signal<wlr_keyboard_key_event> *ev)
     {
-        if (active_grab_keyboard && (ev->mode == wf::input_event_processing_mode_t::FULL))
+        if (active_grab_keyboard && !ev->carried_out)
         {
             check_send_keymap(wlr_keyboard_from_input_device(ev->device));
-            ev->mode = wf::input_event_processing_mode_t::NO_CLIENT;
+            ev->carried_out = true;
             wl_keyboard_send_key(active_grab_keyboard, vkbd_serial++, ev->event->time_msec,
                 ev->event->keycode, ev->event->state);
 

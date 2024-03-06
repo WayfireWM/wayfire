@@ -26,10 +26,10 @@ void wf::keyboard_t::setup_listeners()
         auto ev    = static_cast<wlr_keyboard_key_event*>(data);
         auto mode  = emit_device_event_signal(ev, &handle->base);
         auto& seat = wf::get_core_impl().seat;
+        wf::get_core().seat->notify_activity();
 
         if (mode == input_event_processing_mode_t::IGNORE)
         {
-            wf::get_core().seat->notify_activity();
             emit_device_post_event_signal(ev, &handle->base);
             return;
         }
@@ -48,7 +48,7 @@ void wf::keyboard_t::setup_listeners()
                 wf::get_core_impl().im_relay->handle_key(handle, ev->time_msec, ev->keycode, ev->state))
             {
                 LOGC(IM, "key=", ev->keycode, " state=", ev->state, " swallowed by IM.");
-                return;
+                return emit_device_post_event_signal(ev, &handle->base);
             }
 
             if (ev->state == WL_KEYBOARD_KEY_STATE_PRESSED)
@@ -64,11 +64,20 @@ void wf::keyboard_t::setup_listeners()
                 } else
                 {
                     LOGC(IM, "Key ", ev->keycode, " ignored.");
-                    return;
+                    return emit_device_post_event_signal(ev, &handle->base);
                 }
             }
 
-            if (seat->priv->keyboard_focus)
+            pre_client_input_event_signal<wlr_keyboard_key_event> pre_ev;
+            pre_ev.event  = ev;
+            pre_ev.device = &handle->base;
+            pre_ev.focus_node = seat->priv->keyboard_focus;
+            wf::get_core().emit(&pre_ev);
+
+            if (pre_ev.carried_out)
+            {
+                LOGC(IM, "key=", ev->keycode, " state=", ev->state, " swallowed by a plugin in pre-client.");
+            } else if (seat->priv->keyboard_focus)
             {
                 LOGC(IM, "key=", ev->keycode, " state=", ev->state, " sent to node.");
                 seat->priv->keyboard_focus->keyboard_interaction()
@@ -79,7 +88,6 @@ void wf::keyboard_t::setup_listeners()
             LOGC(IM, "key=", ev->keycode, " state=", ev->state, " swallowed by a plugin.");
         }
 
-        wf::get_core().seat->notify_activity();
         emit_device_post_event_signal(ev, &handle->base);
     });
 
