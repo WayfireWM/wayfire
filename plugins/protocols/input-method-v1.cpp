@@ -281,6 +281,7 @@ void handle_im_context_commit_string(wl_client *client, wl_resource *resource,
     if (context && context->text_input)
     {
         wlr_text_input_v3_send_commit_string(context->text_input, text);
+        wlr_text_input_v3_send_done(context->text_input);
     }
 }
 
