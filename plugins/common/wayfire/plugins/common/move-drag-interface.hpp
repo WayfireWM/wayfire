@@ -160,7 +160,7 @@ inline static wf::pointf_t find_relative_grab(
  * It is primarily used to scale the view is a plugin needs it, and also to keep it
  * centered around the `grab_position`.
  */
-class scale_around_grab_t : public wf::scene::floating_inner_node_t
+class scale_around_grab_t : public wf::scene::transformer_base_node_t
 {
   public:
     /**
@@ -185,7 +185,7 @@ class scale_around_grab_t : public wf::scene::floating_inner_node_t
      */
     wf::point_t grab_position;
 
-    scale_around_grab_t() : floating_inner_node_t(false)
+    scale_around_grab_t() : transformer_base_node_t(false)
     {}
 
     std::string stringify() const override

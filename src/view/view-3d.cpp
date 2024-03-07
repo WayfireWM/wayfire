@@ -97,7 +97,7 @@ void transform_manager_node_t::_rem_transformer(
 }
 
 view_2d_transformer_t::view_2d_transformer_t(wayfire_view view) :
-    floating_inner_node_t(false)
+    transformer_base_node_t(false)
 {
     this->view = view;
 }
@@ -248,7 +248,7 @@ glm::mat4 view_3d_transformer_t::default_proj_matrix()
 }
 
 view_3d_transformer_t::view_3d_transformer_t(wayfire_view view) :
-    scene::floating_inner_node_t(false)
+    scene::transformer_base_node_t(false)
 {
     this->view = view;
     view_proj  = default_proj_matrix() * default_view_matrix();

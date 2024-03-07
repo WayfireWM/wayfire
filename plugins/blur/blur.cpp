@@ -1,5 +1,4 @@
 #include <wayfire/per-output-plugin.hpp>
-#include <cstdlib>
 #include <memory>
 #include <wayfire/config/types.hpp>
 #include <wayfire/plugin.hpp>
@@ -16,10 +15,8 @@
 #include "wayfire/core.hpp"
 #include "wayfire/debug.hpp"
 #include "wayfire/geometry.hpp"
-#include "wayfire/object.hpp"
 #include "wayfire/opengl.hpp"
 #include "wayfire/region.hpp"
-#include "wayfire/scene-operations.hpp"
 #include "wayfire/scene-render.hpp"
 #include "wayfire/scene.hpp"
 #include "wayfire/signal-provider.hpp"
@@ -44,11 +41,11 @@ namespace wf
 {
 namespace scene
 {
-class blur_node_t : public floating_inner_node_t
+class blur_node_t : public transformer_base_node_t
 {
   public:
     blur_algorithm_provider provider;
-    blur_node_t(blur_algorithm_provider provider) : floating_inner_node_t(false)
+    blur_node_t(blur_algorithm_provider provider) : transformer_base_node_t(false)
     {
         this->provider = provider;
     }

@@ -43,76 +43,25 @@ class opaque_region_node_t
 };
 
 /**
- * A helper class for implementing transformer nodes.
- * Transformer nodes usually operate on views and implement special effects, like
- * for example rotating a view, blurring the background, etc.
- *
- * To allow arbitrary combinations of transformers, the different transformers are
- * arranged so that they build a chain where each transformer is the child of the
- * previous transformer, and the child of the last transformer is the view's
- * surface root node. For the actual composition of effects, every transformer
- * first renders its children (with the transformation which comes from the next
- * transformers in the chain) to a temporary buffer and then renders the temporary
- * buffer with the node's own transform applied.
- *
- * @param NodeType the concrete type of the node this instance belongs to, must be
- *   a subclass of node_t.
+ * A base class for all transformer nodes.
+ * It facilitates the reuse of auxilliary buffers between render instances.
  */
-template<class NodeType>
-class transformer_render_instance_t : public render_instance_t
+class transformer_base_node_t : public scene::floating_inner_node_t
 {
-  protected:
-    // A pointer to the transformer node this render instance belongs to.
-    NodeType *self;
-    // A list of render instances of the next transformer or the view itself.
-    std::vector<render_instance_uptr> children;
+  public:
+    using floating_inner_node_t::floating_inner_node_t;
+
     // A temporary buffer to render children to.
     wf::render_target_t inner_content;
+
     // Damage from the children, which is the region of @inner_content that
     // should be repainted on the next frame to have a valid copy of the
     // children's current content.
     wf::region_t cached_damage;
 
-    /**
-     * Get a texture which contains the contents of the children nodes.
-     * If the node has a single child which supports zero-copy texture generation
-     * via @to_texture, that method is preferred to avoid unnecessary copies.
-     *
-     * Otherwise, the children are rendered to an auxiliary buffer (@inner_content),
-     * whose texture is returned.
-     *
-     * @param scale The scale to use when generating the texture. The scale
-     *   indicates how much bigger the temporary buffer should be than its logical
-     *   size.
-     */
-    wf::texture_t get_texture(float scale)
+    wf::texture_t get_updated_contents(const wf::geometry_t& bbox, float scale,
+        std::vector<scene::render_instance_uptr>& children)
     {
-        // Optimization: if we have a single child (usually the surface root node)
-        // and we can directly convert it to texture, we don't need a full render
-        // pass.
-        if (self->get_children().size() == 1)
-        {
-            auto child = self->get_children().front().get();
-            if (auto zcopy = dynamic_cast<zero_copy_texturable_node_t*>(child))
-            {
-                if (auto tex = zcopy->to_texture())
-                {
-                    if (inner_content.fb != (uint) - 1)
-                    {
-                        // Release the inner_content buffer, because we are on
-                        // the zero-copy path and we do not need an auxiliary
-                        // buffer to render to.
-                        OpenGL::render_begin();
-                        inner_content.release();
-                        OpenGL::render_end();
-                    }
-
-                    return *tex;
-                }
-            }
-        }
-
-        auto bbox = self->get_children_bounding_box();
         int target_width  = scale * bbox.width;
         int target_height = scale * bbox.height;
 
@@ -137,6 +86,91 @@ class transformer_render_instance_t : public render_instance_t
         return wf::texture_t{inner_content.tex};
     }
 
+    void release_buffers()
+    {
+        if (inner_content.fb != (uint) - 1)
+        {
+            // Release the inner_content buffer, because we are on
+            // the zero-copy path and we do not need an auxiliary
+            // buffer to render to.
+            OpenGL::render_begin();
+            inner_content.release();
+            OpenGL::render_end();
+        }
+    }
+
+    ~transformer_base_node_t()
+    {
+        release_buffers();
+    }
+};
+
+/**
+ * A helper class for implementing transformer nodes.
+ * Transformer nodes usually operate on views and implement special effects, like
+ * for example rotating a view, blurring the background, etc.
+ *
+ * To allow arbitrary combinations of transformers, the different transformers are
+ * arranged so that they build a chain where each transformer is the child of the
+ * previous transformer, and the child of the last transformer is the view's
+ * surface root node. For the actual composition of effects, every transformer
+ * first renders its children (with the transformation which comes from the next
+ * transformers in the chain) to a temporary buffer and then renders the temporary
+ * buffer with the node's own transform applied.
+ *
+ * @param NodeType the concrete type of the node this instance belongs to, must be
+ *   a subclass of transformer_base_node_t.
+ */
+template<class NodeType>
+class transformer_render_instance_t : public render_instance_t
+{
+  protected:
+    std::optional<wf::texture_t> zero_copy_texture()
+    {
+        if (self->get_children().size() == 1)
+        {
+            auto child = self->get_children().front().get();
+            if (auto zcopy = dynamic_cast<zero_copy_texturable_node_t*>(child))
+            {
+                return zcopy->to_texture();
+            }
+        }
+
+        return {};
+    }
+
+    // A pointer to the transformer node this render instance belongs to.
+    NodeType *self;
+
+    // A list of render instances of the next transformer or the view itself.
+    std::vector<render_instance_uptr> children;
+
+    /**
+     * Get a texture which contains the contents of the children nodes.
+     * If the node has a single child which supports zero-copy texture generation
+     * via @to_texture, that method is preferred to avoid unnecessary copies.
+     *
+     * Otherwise, the children are rendered to an auxiliary buffer (@inner_content),
+     * whose texture is returned.
+     *
+     * @param scale The scale to use when generating the texture. The scale
+     *   indicates how much bigger the temporary buffer should be than its logical
+     *   size.
+     */
+    wf::texture_t get_texture(float scale)
+    {
+        // Optimization: if we have a single child (usually the surface root node)
+        // and we can directly convert it to texture, we don't need a full render
+        // pass.
+        if (auto tex = zero_copy_texture())
+        {
+            self->release_buffers();
+            return *tex;
+        }
+
+        return self->get_updated_contents(self->get_children_bounding_box(), scale, children);
+    }
+
     void presentation_feedback(wf::output_t *output) override
     {
         for (auto& ch : children)
@@ -159,12 +193,12 @@ class transformer_render_instance_t : public render_instance_t
         this->self = self;
         auto push_damage_child = [=] (wf::region_t region)
         {
-            this->cached_damage |= region;
+            self->cached_damage |= region;
             transform_damage_region(region);
             push_damage(region);
         };
 
-        this->cached_damage |= self->get_children_bounding_box();
+        self->cached_damage |= self->get_children_bounding_box();
         for (auto& ch : self->get_children())
         {
             ch->gen_render_instances(children, push_damage_child, shown_on);
@@ -172,11 +206,7 @@ class transformer_render_instance_t : public render_instance_t
     }
 
     ~transformer_render_instance_t()
-    {
-        OpenGL::render_begin();
-        inner_content.release();
-        OpenGL::render_end();
-    }
+    {}
 
     void schedule_instructions(
         std::vector<render_instruction_t>& instructions,
@@ -318,7 +348,7 @@ class transform_manager_node_t : public wf::scene::floating_inner_node_t
 /**
  * A simple transformer which supports 2D transformations on a view.
  */
-class view_2d_transformer_t : public scene::floating_inner_node_t
+class view_2d_transformer_t : public transformer_base_node_t
 {
   public:
     float scale_x = 1.0f;
@@ -347,7 +377,7 @@ class view_2d_transformer_t : public scene::floating_inner_node_t
 /**
  * A simple transformer which supports 3D transformations on a view.
  */
-class view_3d_transformer_t : public scene::floating_inner_node_t
+class view_3d_transformer_t : public transformer_base_node_t
 {
   protected:
     wayfire_view view;
