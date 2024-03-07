@@ -293,7 +293,12 @@ void handle_im_context_preedit_string(wl_client *client, wl_resource *resource,
     {
         int begin = std::min((int)strlen(text), context->cursor);
         int end   = std::min((int)strlen(text), context->cursor);
-        wlr_text_input_v3_send_preedit_string(context->text_input, text, begin, end);
+        // Send null preedit_string if it's empty.
+        //
+        // This makes GTK to emit preedit-end signals so that vte paints its
+        // cursor. The preedit_string from input-method-v1 can't be null.
+        auto preedit_string = strlen(text) > 0 ? text : nullptr;
+        wlr_text_input_v3_send_preedit_string(context->text_input, preedit_string, begin, end);
         wlr_text_input_v3_send_done(context->text_input);
     }
 }
