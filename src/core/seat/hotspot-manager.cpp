@@ -1,7 +1,7 @@
 #include "hotspot-manager.hpp"
 #include "wayfire/core.hpp"
-#include "wayfire/debug.hpp"
 #include <wayfire/output-layout.hpp>
+#include <wayfire/touch/touch.hpp>
 
 void wf::hotspot_instance_t::process_input_motion(wf::pointf_t gc)
 {
@@ -125,9 +125,13 @@ wf::hotspot_instance_t::hotspot_instance_t(uint32_t edges, uint32_t along, uint3
         process_input_motion(wf::get_core().get_cursor_position());
     };
 
-    on_touch_motion = [=] (auto)
+    on_touch_motion = [=] (wf::post_input_event_signal<wlr_touch_motion_event> *ev)
     {
-        process_input_motion(wf::get_core().get_touch_position(0));
+        const auto& state = wf::get_core().get_touch_state();
+        if (state.fingers.count(0) && (ev->event->touch_id == 0))
+        {
+            process_input_motion(wf::get_core().get_touch_position(0));
+        }
     };
 }
 
