@@ -24,12 +24,14 @@ wf::input_method_relay::input_method_relay()
         auto& seat = wf::get_core_impl().seat;
         if (auto focus = seat->priv->keyboard_focus)
         {
-            auto surface = wf::node_to_view(focus)->get_keyboard_focus_surface();
-
-            if (surface && (wl_resource_get_client(wlr_text_input->resource) ==
-                            wl_resource_get_client(surface->resource)))
+            if (auto view = wf::node_to_view(focus))
             {
-                wlr_text_input_v3_send_enter(wlr_text_input, surface);
+                auto surface = wf::node_to_view(focus)->get_keyboard_focus_surface();
+                if (surface && (wl_resource_get_client(wlr_text_input->resource) ==
+                                wl_resource_get_client(surface->resource)))
+                {
+                    wlr_text_input_v3_send_enter(wlr_text_input, surface);
+                }
             }
         }
     });
