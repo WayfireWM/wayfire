@@ -1,0 +1,8 @@
+<?xml version="1.0"?>
+<wayfire>
+	<plugin name="input-method-v1">
+		<_short>Input-Method-V1 Protocol</_short>
+		<_long>An implementation of the input-method-v1 protocol. Needed for proper functioning of input methods like Fcitx5.</_long>
+		<category>Utility</category>
+	</plugin>
+</wayfire>
