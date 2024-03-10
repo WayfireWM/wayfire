@@ -98,7 +98,7 @@ class wayfire_scale : public wf::per_output_plugin_instance_t,
     scale_show_title_t show_title;
     std::vector<int> current_row_sizes;
     wf::point_t initial_workspace;
-    bool active, hook_set;
+    bool hook_set;
     /* View that was active before scale began. */
     wayfire_toplevel_view initial_focus_view;
     /* View that has active focus. */
@@ -135,10 +135,12 @@ class wayfire_scale : public wf::per_output_plugin_instance_t,
     };
 
   public:
+    bool active = false;
+
     void init() override
     {
-        active = hook_set = false;
-        grab   = std::make_unique<wf::input_grab_t>("scale", output, this, this, this);
+        hook_set = false;
+        grab     = std::make_unique<wf::input_grab_t>("scale", output, this, this, this);
 
         allow_scale_zoom.set_callback(allow_scale_zoom_option_changed);
 
@@ -1095,15 +1097,6 @@ class wayfire_scale : public wf::per_output_plugin_instance_t,
         layout_slots(get_views());
     }
 
-    wf::signal::connection_t<wf::view_set_output_signal> on_view_set_output =
-        [=] (wf::view_set_output_signal *ev)
-    {
-        if (auto toplevel = wf::toplevel_cast(ev->view))
-        {
-            handle_new_view(toplevel);
-        }
-    };
-
     wf::signal::connection_t<wf::view_mapped_signal> on_view_mapped = [=] (wf::view_mapped_signal *ev)
     {
         if (auto toplevel = wf::toplevel_cast(ev->view))
@@ -1353,7 +1346,6 @@ class wayfire_scale : public wf::per_output_plugin_instance_t,
 
         layout_slots(get_views());
 
-        output->connect(&on_view_set_output);
         output->connect(&on_view_mapped);
         output->connect(&workspace_changed);
         output->connect(&workarea_changed);
@@ -1374,7 +1366,6 @@ class wayfire_scale : public wf::per_output_plugin_instance_t,
 
         set_hook();
         on_view_mapped.disconnect();
-        on_view_set_output.disconnect();
         view_unmapped.disconnect();
         view_minimized.disconnect();
         workspace_changed.disconnect();
@@ -1431,7 +1422,6 @@ class wayfire_scale : public wf::per_output_plugin_instance_t,
         scale_data.clear();
         grab->ungrab_input();
         on_view_mapped.disconnect();
-        on_view_set_output.disconnect();
         view_unmapped.disconnect();
         view_disappeared.disconnect();
         view_minimized.disconnect();
@@ -1496,6 +1486,38 @@ class wayfire_scale_global : public wf::plugin_interface_t,
     {
         this->fini_output_tracking();
     }
+
+    void handle_new_output(wf::output_t *output) override
+    {
+        per_output_tracker_mixin_t::handle_new_output(output);
+        output->connect(&on_view_set_output);
+    }
+
+    void handle_output_removed(wf::output_t *output) override
+    {
+        per_output_tracker_mixin_t::handle_output_removed(output);
+        output->disconnect(&on_view_set_output);
+    }
+
+    wf::signal::connection_t<wf::view_set_output_signal> on_view_set_output =
+        [=] (wf::view_set_output_signal *ev)
+    {
+        if (auto toplevel = wf::toplevel_cast(ev->view))
+        {
+            if (auto old_output = ev->output)
+            {
+                this->output_instance[old_output]->handle_view_disappeared(toplevel);
+            }
+
+            if (auto new_output = ev->view->get_output())
+            {
+                if (output_instance[new_output]->active)
+                {
+                    this->output_instance[ev->view->get_output()]->handle_new_view(toplevel);
+                }
+            }
+        }
+    };
 
     wf::ipc_activator_t::handler_t toggle_cb = [=] (wf::output_t *output, wayfire_view)
     {
