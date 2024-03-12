@@ -11,6 +11,7 @@ class text_input_v3_im_relay_interface_t
 {
   public:
     virtual wlr_text_input_v3 *find_focused_text_input_v3() = 0;
+    virtual ~text_input_v3_im_relay_interface_t() = default;
 };
 
 /**
