@@ -101,7 +101,7 @@ class WayfireSwitcher : public wf::per_output_plugin_instance_t, public wf::keyb
 {
     wf::option_wrapper_t<double> view_thumbnail_scale{
         "switcher/view_thumbnail_scale"};
-    wf::option_wrapper_t<int> speed{"switcher/speed"};
+    wf::option_wrapper_t<wf::animation_description_t> speed{"switcher/speed"};
     wf::option_wrapper_t<int> view_thumbnail_rotation{
         "switcher/view_thumbnail_rotation"};
 

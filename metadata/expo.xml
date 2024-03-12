@@ -14,10 +14,10 @@
 			<_long>Sets the background color.</_long>
 			<default>0.1 0.1 0.1 1.0</default>
 		</option>
-		<option name="duration" type="int">
+		<option name="duration" type="animation">
 			<_short>Zoom duration</_short>
 			<_long>Sets the zoom duration in milliseconds.</_long>
-			<default>300</default>
+			<default>300ms circle</default>
 		</option>
 		<option name="offset" type="int">
 			<_short>Delimiter offset</_short>

@@ -1,11 +1,9 @@
-#include <cstddef>
 #include <wayfire/per-output-plugin.hpp>
 #include <wayfire/output.hpp>
 #include <wayfire/signal-definitions.hpp>
 #include <wayfire/render-manager.hpp>
 #include <wayfire/workspace-set.hpp>
 #include <type_traits>
-#include <map>
 #include <wayfire/core.hpp>
 #include "animate.hpp"
 #include "system_fade.hpp"
@@ -19,7 +17,7 @@
 #include "wayfire/view.hpp"
 #include <wayfire/matcher.hpp>
 
-void animation_base::init(wayfire_view, int, wf_animation_type)
+void animation_base::init(wayfire_view, wf::animation_description_t, wf_animation_type)
 {}
 bool animation_base::step()
 {
@@ -122,7 +120,7 @@ struct animation_hook : public animation_hook_base
         set_output(view->get_output());
     };
 
-    animation_hook(wayfire_view view, int duration, wf_animation_type type,
+    animation_hook(wayfire_view view, wf::animation_description_t duration, wf_animation_type type,
         std::string name)
     {
         this->type = type;
@@ -269,12 +267,12 @@ class wayfire_animation : public wf::plugin_interface_t, private wf::per_output_
     wf::option_wrapper_t<std::string> open_animation{"animate/open_animation"};
     wf::option_wrapper_t<std::string> close_animation{"animate/close_animation"};
 
-    wf::option_wrapper_t<int> default_duration{"animate/duration"};
-    wf::option_wrapper_t<int> fade_duration{"animate/fade_duration"};
-    wf::option_wrapper_t<int> zoom_duration{"animate/zoom_duration"};
-    wf::option_wrapper_t<int> fire_duration{"animate/fire_duration"};
+    wf::option_wrapper_t<wf::animation_description_t> default_duration{"animate/duration"};
+    wf::option_wrapper_t<wf::animation_description_t> fade_duration{"animate/fade_duration"};
+    wf::option_wrapper_t<wf::animation_description_t> zoom_duration{"animate/zoom_duration"};
+    wf::option_wrapper_t<wf::animation_description_t> fire_duration{"animate/fire_duration"};
 
-    wf::option_wrapper_t<int> startup_duration{"animate/startup_duration"};
+    wf::option_wrapper_t<wf::animation_description_t> startup_duration{"animate/startup_duration"};
 
     wf::view_matcher_t animation_enabled_for{"animate/enabled_for"};
     wf::view_matcher_t fade_enabled_for{"animate/fade_enabled_for"};
@@ -308,7 +306,7 @@ class wayfire_animation : public wf::plugin_interface_t, private wf::per_output_
     struct view_animation_t
     {
         std::string animation_name;
-        int duration;
+        wf::animation_description_t duration;
     };
 
     view_animation_t get_animation_for_view(
@@ -337,7 +335,7 @@ class wayfire_animation : public wf::plugin_interface_t, private wf::per_output_
             return {anim_type, default_duration};
         }
 
-        return {"none", 0};
+        return {"none", wf::animation_description_t{0, {}, ""}};
     }
 
     bool try_reverse(wayfire_view view, wf_animation_type type, std::string name,
@@ -359,7 +357,7 @@ class wayfire_animation : public wf::plugin_interface_t, private wf::per_output_
 
     template<class animation_t>
     void set_animation(wayfire_view view,
-        wf_animation_type type, int duration, std::string name)
+        wf_animation_type type, wf::animation_description_t duration, std::string name)
     {
         name = "animation-hook-" + name;
 

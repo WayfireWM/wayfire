@@ -37,7 +37,7 @@ class wayfire_expo : public wf::per_output_plugin_instance_t, public wf::keyboar
     }
 
     wf::option_wrapper_t<wf::color_t> background_color{"expo/background"};
-    wf::option_wrapper_t<int> zoom_duration{"expo/duration"};
+    wf::option_wrapper_t<wf::animation_description_t> zoom_duration{"expo/duration"};
     wf::option_wrapper_t<int> delimiter_offset{"expo/offset"};
     wf::option_wrapper_t<bool> keyboard_interaction{"expo/keyboard_interaction"};
     wf::option_wrapper_t<double> inactive_brightness{"expo/inactive_brightness"};

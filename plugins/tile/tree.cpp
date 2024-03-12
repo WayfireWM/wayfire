@@ -8,7 +8,6 @@
 #include <wayfire/output.hpp>
 #include <wayfire/workspace-set.hpp>
 #include <wayfire/view-transform.hpp>
-#include <algorithm>
 #include <wayfire/plugins/crossfade.hpp>
 #include <wayfire/plugins/common/util.hpp>
 #include <wayfire/toplevel.hpp>
@@ -407,7 +406,7 @@ wf::geometry_t view_node_t::calculate_target_geometry()
 
 bool view_node_t::needs_crossfade()
 {
-    if (animation_duration == 0)
+    if (animation_duration.value().length_ms == 0)
     {
         return false;
     }
@@ -427,7 +426,7 @@ bool view_node_t::needs_crossfade()
 }
 
 static nonstd::observer_ptr<wf::grid::grid_animation_t> ensure_animation(
-    wayfire_toplevel_view view, wf::option_sptr_t<int> duration)
+    wayfire_toplevel_view view, wf::option_sptr_t<wf::animation_description_t> duration)
 {
     if (!view->has_data<wf::grid::grid_animation_t>())
     {

@@ -16,7 +16,7 @@
 			<default>&lt;alt&gt; &lt;shift&gt; KEY_TAB</default>
 		</option>
 		<!-- Effects -->
-		<option name="speed" type="int">
+		<option name="speed" type="animation">
 			<_short>Duration</_short>
 			<_long>Sets the duration of the animation in milliseconds.</_long>
 			<default>500</default>

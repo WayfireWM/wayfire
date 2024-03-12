@@ -24,10 +24,10 @@
 			<_long>Enables or disables smooth transition.</_long>
 			<default>false</default>
 		</option>
-		<option name="duration" type="int">
+		<option name="duration" type="animation">
 			<_short>Duration</_short>
 			<_long>Sets the duration of the animation in milliseconds.</_long>
-			<default>180</default>
+			<default>180ms</default>
 		</option>
 		<option name="background" type="color">
 			<_short>Background color</_short>

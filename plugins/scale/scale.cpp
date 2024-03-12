@@ -50,7 +50,7 @@ class scale_animation_t : public duration_t
 
 struct wf_scale_animation_attribs
 {
-    wf::option_wrapper_t<int> duration{"scale/duration"};
+    wf::option_wrapper_t<wf::animation_description_t> duration{"scale/duration"};
     scale_animation_t scale_animation{duration};
 };
 
@@ -802,7 +802,7 @@ class wayfire_scale : public wf::per_output_plugin_instance_t,
             view_data.transformer->translation_y, translation_y);
         view_data.animation.scale_animation.start();
         view_data.fade_animation = wf::animation::simple_animation_t(
-            wf::option_wrapper_t<int>{"scale/duration"});
+            wf::option_wrapper_t<wf::animation_description_t>{"scale/duration"});
         view_data.fade_animation.animate(view_data.transformer->alpha,
             target_alpha);
     }

@@ -4,10 +4,10 @@
 		<_short>Grid</_short>
 		<_long>A plugin to position the windows in certain regions of the output.</_long>
 		<category>Window Management</category>
-		<option name="duration" type="int">
+		<option name="duration" type="animation">
 			<_short>Duration</_short>
 			<_long>Sets the duration of the animation in milliseconds.</_long>
-			<default>300</default>
+			<default>300ms</default>
 		</option>
 		<option name="type" type="string">
 			<_short>Type</_short>

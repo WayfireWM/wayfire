@@ -56,10 +56,10 @@
 			<default>0.1</default>
 			<precision>0.01</precision>
 		</option>
-		<option name="initial_animation" type="int">
+		<option name="initial_animation" type="animation">
 			<_short>Duration</_short>
 			<_long>Sets the initial animation duration in milliseconds.</_long>
-			<default>350</default>
+			<default>350ms</default>
 		</option>
 		<!-- Velocity -->
 		<option name="speed_zoom" type="double">

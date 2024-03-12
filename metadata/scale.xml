@@ -16,10 +16,10 @@
 				<_long>Toggles scale showing windows from all workspaces.</_long>
 				<default></default>
 			</option>
-			<option name="duration" type="int">
+			<option name="duration" type="animation">
 				<_short>Animation Transition Time</_short>
 				<_long>Time it takes for views to transition. Units are in milliseconds.</_long>
-				<default>750</default>
+				<default>750ms</default>
 				<min>0</min>
 			</option>
 			<option name="allow_zoom" type="bool">

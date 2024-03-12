@@ -53,15 +53,15 @@
 			<_long>Specifies the window types to be animated.</_long>
 			<default>(type equals "toplevel" | (type equals "x-or" &amp; focusable equals true))</default>
 		</option>
-		<option name="duration" type="int">
+		<option name="duration" type="animation">
 			<_short>Duration</_short>
 			<_long>Sets the duration of the animation in milliseconds.</_long>
-			<default>400</default>
+			<default>400ms</default>
 		</option>
-		<option name="startup_duration" type="int">
+		<option name="startup_duration" type="animation">
 			<_short>System fade duration when Wayfire starts</_short>
 			<_long>Sets the duration of fading (in milliseconds) when Wayfire starts.</_long>
-			<default>600</default>
+			<default>600ms linear</default>
 		</option>
 		<!-- Fade animation -->
 		<option name="fade_enabled_for" type="string">
@@ -69,10 +69,10 @@
 			<_long>Specifies the window types to be animated with a fade effect.</_long>
 			<default>type equals "overlay"</default>
 		</option>
-		<option name="fade_duration" type="int">
+		<option name="fade_duration" type="animation">
 			<_short>Fade duration</_short>
 			<_long>Sets the duration for the _fade_ animation in milliseconds.  Only applies for windows matched by `animate.fade_enabled_for`.</_long>
-			<default>400</default>
+			<default>400ms</default>
 		</option>
 		<!-- Zoom animation -->
 		<option name="zoom_enabled_for" type="string">
@@ -80,10 +80,10 @@
 			<_long>Specifies the window types to be animated with a zoom effect.</_long>
 			<default>none</default>
 		</option>
-		<option name="zoom_duration" type="int">
+		<option name="zoom_duration" type="animation">
 			<_short>Zoom duration</_short>
 			<_long>Sets the duration for the _zoom_ animation in milliseconds.  Only applies for windows matched by `animate.zoom_enabled_for`.</_long>
-			<default>500</default>
+			<default>500ms circle</default>
 		</option>
 		<!-- Fire animation -->
 		<option name="fire_enabled_for" type="string">
@@ -91,10 +91,10 @@
 			<_long>Specifies the window types to be animated with a fire effect.</_long>
 			<default>none</default>
 		</option>
-		<option name="fire_duration" type="int">
+		<option name="fire_duration" type="animation">
 			<_short>Fire duration</_short>
 			<_long>Sets the duration for the _fire_ animation in milliseconds.  Only applies for windows matched by `animate.fire_enabled_for`.</_long>
-			<default>300</default>
+			<default>300ms linear</default>
 		</option>
 		<option name="fire_particles" type="int">
 			<_short>Fire particles</_short>

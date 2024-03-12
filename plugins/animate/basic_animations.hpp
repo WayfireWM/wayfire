@@ -16,11 +16,11 @@ class fade_animation : public animation_base
 
   public:
 
-    void init(wayfire_view view, int dur, wf_animation_type type) override
+    void init(wayfire_view view, wf::animation_description_t dur, wf_animation_type type) override
     {
         this->view = view;
         this->progression =
-            wf::animation::simple_animation_t(wf::create_option<int>(dur));
+            wf::animation::simple_animation_t(wf::create_option<wf::animation_description_t>(dur));
 
         this->progression.animate(start, end);
 
@@ -81,10 +81,10 @@ class zoom_animation : public animation_base
 
   public:
 
-    void init(wayfire_view view, int dur, wf_animation_type type) override
+    void init(wayfire_view view, wf::animation_description_t dur, wf_animation_type type) override
     {
         this->view = view;
-        this->progression = zoom_animation_t(wf::create_option<int>(dur));
+        this->progression = zoom_animation_t(wf::create_option<wf::animation_description_t>(dur));
         this->progression.alpha = wf::animation::timed_transition_t(
             this->progression, 0, 1);
         this->progression.zoom = wf::animation::timed_transition_t(

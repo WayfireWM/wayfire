@@ -96,7 +96,7 @@ class workspace_switch_t
         this->output = output;
         wall = std::make_unique<workspace_wall_t>(output);
         animation = workspace_animation_t{
-            wf::option_wrapper_t<int>{"vswitch/duration"}
+            wf::option_wrapper_t<wf::animation_description_t>{"vswitch/duration"}
         };
     }
 

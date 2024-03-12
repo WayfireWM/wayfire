@@ -3,6 +3,7 @@
 
 #include "wayfire/signal-definitions.hpp"
 #include "wayfire/workspace-set.hpp"
+#include <wayfire/util/duration.hpp>
 #include <wayfire/view.hpp>
 #include <wayfire/option-wrapper.hpp>
 #include <wayfire/txn/transaction.hpp>
@@ -178,7 +179,7 @@ struct view_node_t : public tree_node_t
     wf::signal::connection_t<view_geometry_changed_signal> on_geometry_changed;
     wf::signal::connection_t<tile_adjust_transformer_signal> on_adjust_transformer;
 
-    wf::option_wrapper_t<int> animation_duration{"simple-tile/animation_duration"};
+    wf::option_wrapper_t<wf::animation_description_t> animation_duration{"simple-tile/animation_duration"};
 
     /**
      * Check whether the crossfade animation should be enabled for the view

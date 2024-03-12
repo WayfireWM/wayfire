@@ -5,7 +5,6 @@
 #include <wayfire/workarea.hpp>
 #include <wayfire/workspace-set.hpp>
 #include <wayfire/render-manager.hpp>
-#include <algorithm>
 #include <cmath>
 #include <linux/input-event-codes.h>
 #include "wayfire/plugin.hpp"
@@ -33,7 +32,7 @@ nonstd::observer_ptr<wf::grid::grid_animation_t> ensure_grid_view(wayfire_toplev
     if (!view->has_data<wf::grid::grid_animation_t>())
     {
         wf::option_wrapper_t<std::string> animation_type{"grid/type"};
-        wf::option_wrapper_t<int> duration{"grid/duration"};
+        wf::option_wrapper_t<wf::animation_description_t> duration{"grid/duration"};
 
         wf::grid::grid_animation_t::type_t type = wf::grid::grid_animation_t::NONE;
         if (animation_type.value() == "crossfade")

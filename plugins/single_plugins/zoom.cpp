@@ -14,7 +14,7 @@ class wayfire_zoom_screen : public wf::per_output_plugin_instance_t
 
     wf::option_wrapper_t<wf::keybinding_t> modifier{"zoom/modifier"};
     wf::option_wrapper_t<double> speed{"zoom/speed"};
-    wf::option_wrapper_t<int> smoothing_duration{"zoom/smoothing_duration"};
+    wf::option_wrapper_t<wf::animation_description_t> smoothing_duration{"zoom/smoothing_duration"};
     wf::option_wrapper_t<int> interpolation_method{"zoom/interpolation_method"};
     wf::animation::simple_animation_t progression{smoothing_duration};
     bool hook_set = false;

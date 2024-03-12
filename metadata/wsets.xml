@@ -14,10 +14,10 @@
 			<_long>A binding to move the currently focused window to the workspace set #N.</_long>
 			<entry prefix="send_to_wset_" type="activator"/>
 		</option>
-		<option name="label_duration" type="int">
+		<option name="label_duration" type="animation">
 			<_short>Label duration</_short>
 			<_long>Sets the duration in milliseconds for which the workspace set label is shown.</_long>
-			<default>2000</default>
+			<default>2s linear</default>
 		</option>
 	</plugin>
 </wayfire>

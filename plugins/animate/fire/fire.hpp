@@ -3,8 +3,6 @@
 
 #include <wayfire/view-transform.hpp>
 #include <wayfire/render-manager.hpp>
-#include <memory>
-
 #include "../animate.hpp"
 
 class FireTransformer;
@@ -19,7 +17,7 @@ class FireAnimation : public animation_base
   public:
 
     ~FireAnimation();
-    void init(wayfire_view view, int duration, wf_animation_type type) override;
+    void init(wayfire_view view, wf::animation_description_t, wf_animation_type type) override;
     bool step() override; /* return true if continue, false otherwise */
     void reverse() override; /* reverse the animation */
 };

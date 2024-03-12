@@ -179,7 +179,7 @@ class grid_animation_t : public wf::custom_data_t
      * @param duration Indicates the duration of the animation (only for crossfade)
      */
     grid_animation_t(wayfire_toplevel_view view, type_t type,
-        wf::option_sptr_t<int> duration)
+        wf::option_sptr_t<wf::animation_description_t> duration)
     {
         this->view   = view;
         this->output = view->get_output();
