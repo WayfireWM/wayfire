@@ -146,6 +146,9 @@ class ipc_rules_t : public wf::plugin_interface_t, public wf::per_output_tracker
         method_repository->connect(&on_client_disconnected);
         wf::get_core().connect(&on_view_mapped);
         wf::get_core().connect(&on_view_unmapped);
+        wf::get_core().connect(&on_view_set_output);
+        wf::get_core().connect(&on_view_geometry_changed);
+        wf::get_core().connect(&on_view_moved_to_wset);
         wf::get_core().connect(&on_kbfocus_changed);
         wf::get_core().connect(&on_title_changed);
         wf::get_core().connect(&on_app_id_changed);
@@ -177,6 +180,8 @@ class ipc_rules_t : public wf::plugin_interface_t, public wf::per_output_tracker
         output->connect(&_tiled);
         output->connect(&_minimized);
         output->connect(&_fullscreened);
+        output->connect(&_stickied);
+        output->connect(&_view_workspace);
         output->connect(&on_wset_changed);
         output->connect(&on_wset_workspace_changed);
 
@@ -467,13 +472,28 @@ class ipc_rules_t : public wf::plugin_interface_t, public wf::per_output_tracker
         send_view_to_subscribes(ev->view, "view-unmapped");
     };
 
+    wf::signal::connection_t<wf::view_set_output_signal> on_view_set_output = [=] (wf::view_set_output_signal *ev)
+    {
+        send_view_to_subscribes(ev->view, "view-set-output");
+    };
+
+    wf::signal::connection_t<wf::view_geometry_changed_signal> on_view_geometry_changed = [=] (wf::view_geometry_changed_signal *ev)
+    {
+        send_view_to_subscribes(ev->view, "view-geometry-changed");
+    };
+
+    wf::signal::connection_t<wf::view_moved_to_wset_signal> on_view_moved_to_wset = [=] (wf::view_moved_to_wset_signal *ev)
+    {
+        send_view_to_subscribes(ev->view, "view-wset-changed");
+    };
+
     wf::signal::connection_t<wf::keyboard_focus_changed_signal> on_kbfocus_changed =
         [=] (wf::keyboard_focus_changed_signal *ev)
     {
         send_view_to_subscribes(wf::node_to_view(ev->new_focus), "view-focused");
     };
 
-    // Maximized rule handler.
+    // Tiled rule handler.
     wf::signal::connection_t<wf::view_tiled_signal> _tiled = [=] (wf::view_tiled_signal *ev)
     {
         send_view_to_subscribes(ev->view, "view-tiled");
@@ -489,6 +509,17 @@ class ipc_rules_t : public wf::plugin_interface_t, public wf::per_output_tracker
     wf::signal::connection_t<wf::view_fullscreen_signal> _fullscreened = [=] (wf::view_fullscreen_signal *ev)
     {
         send_view_to_subscribes(ev->view, "view-fullscreen");
+    };
+
+    // Stickied rule handler.
+    wf::signal::connection_t<wf::view_set_sticky_signal> _stickied = [=] (wf::view_set_sticky_signal *ev)
+    {
+        send_view_to_subscribes(ev->view, "view-sticky");
+    };
+
+    wf::signal::connection_t<wf::view_change_workspace_signal> _view_workspace = [=] (wf::view_change_workspace_signal *ev)
+    {
+        send_view_to_subscribes(ev->view, "view-workspace-changed");
     };
 
     wf::signal::connection_t<wf::view_title_changed_signal> on_title_changed =
