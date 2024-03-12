@@ -13,6 +13,7 @@
 			<_short>Title bar height</_short>
 			<_long>Sets the height of the title bars in pixels.</_long>
 			<default>30</default>
+			<max>100</max>
 		</option>
 		<option name="border_size" type="int">
 			<_short>Border size</_short>
