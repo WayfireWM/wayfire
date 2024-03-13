@@ -3,7 +3,9 @@
 #include <wayfire/util/log.hpp>
 #include <wayfire/debug.hpp>
 #include <wayfire/view.hpp>
+#include <wayfire/option-wrapper.hpp>
 #include <sstream>
+#include <stdlib.h>
 #include <iomanip>
 
 #if __has_include(<execinfo.h>)
@@ -383,4 +385,23 @@ static void _dump_scene(wf::scene::node_ptr root, int depth = 0)
 void wf::dump_scene(scene::node_ptr root)
 {
     _dump_scene(root);
+}
+
+void wf::detail::option_wrapper_debug_message(const std::string & option_name, const std::runtime_error & err)
+{
+    LOGE("Wayfire encountered error loading option \"", option_name, "\": ", err.what(), ". ",
+        "Usual reasons for this include missing or outdated plugin XML files, ",
+        "a bug in the plugin itself, or mismatch between the versions of Wayfire and wf-config. ",
+        "Make sure that you have the correct versions of all relevant packages and make sure that there ",
+        "are no conflicting installations of Wayfire using the same prefix.");
+    wf::print_trace(false);
+    std::_Exit(0);
+}
+
+void wf::detail::option_wrapper_debug_message(const std::string & option_name, const std::logic_error & err)
+{
+    LOGE("Wayfire encountered error loading option \"", option_name, "\": ", err.what(), ". ",
+        "This usually indicates a bug in the plugin.");
+    wf::print_trace(false);
+    std::_Exit(0);
 }

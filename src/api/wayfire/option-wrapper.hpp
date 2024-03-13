@@ -6,6 +6,15 @@
 
 namespace wf
 {
+namespace detail
+{
+// Forward declaration to avoid adding unnecessary includes.
+[[noreturn]]
+void option_wrapper_debug_message(const std::string& option_name, const std::runtime_error& err);
+[[noreturn]]
+void option_wrapper_debug_message(const std::string& option_name, const std::logic_error& err);
+}
+
 /**
  * A simple wrapper around a config option.
  */
@@ -20,6 +29,19 @@ class option_wrapper_t : public base_option_wrapper_t<Type>
         wf::base_option_wrapper_t<Type>()
     {
         this->load_option(option_name);
+    }
+
+    void load_option(const std::string& option_name)
+    {
+        try {
+            base_option_wrapper_t<Type>::load_option(option_name);
+        } catch (const std::runtime_error& err)
+        {
+            detail::option_wrapper_debug_message(option_name, err);
+        } catch (const std::logic_error& err)
+        {
+            detail::option_wrapper_debug_message(option_name, err);
+        }
     }
 
     option_wrapper_t() : wf::base_option_wrapper_t<Type>()
