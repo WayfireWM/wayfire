@@ -460,7 +460,7 @@ wf::tablet_pad_t::tablet_pad_t(wlr_input_device *pad) :
 void wf::tablet_pad_t::update_focus()
 {
     auto focus_view    = wf::get_core().seat->get_active_view();
-    auto focus_surface = focus_view ? focus_view->priv->wsurface : nullptr;
+    auto focus_surface = focus_view ? focus_view->get_wlr_surface() : nullptr;
     update_focus(focus_surface);
 }
 

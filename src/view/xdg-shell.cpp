@@ -261,7 +261,7 @@ void wayfire_xdg_popup::update_size()
 
 bool wayfire_xdg_popup::is_mapped() const
 {
-    return priv->wsurface != nullptr;
+    return priv->is_mapped;
 }
 
 void wayfire_xdg_popup::handle_app_id_changed(std::string new_app_id)

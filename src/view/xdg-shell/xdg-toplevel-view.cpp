@@ -151,7 +151,7 @@ std::string wf::xdg_toplevel_view_base_t::get_title()
 
 bool wf::xdg_toplevel_view_base_t::is_mapped() const
 {
-    return priv->wsurface;
+    return priv->is_mapped;
 }
 
 // ------------------------------------------ xdg-toplevel impl ----------------------------------------------
@@ -284,7 +284,7 @@ bool wf::xdg_toplevel_view_t::should_be_decorated()
 
 bool wf::xdg_toplevel_view_t::is_mapped() const
 {
-    return wtoplevel->current().mapped && priv->wsurface;
+    return wtoplevel->current().mapped && priv->is_mapped;
 }
 
 void wf::xdg_toplevel_view_t::map()

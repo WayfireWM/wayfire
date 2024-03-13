@@ -30,6 +30,7 @@ namespace wf
 class view_interface_t::view_priv_impl
 {
   public:
+    bool is_mapped = false;
     wlr_surface *wsurface    = nullptr;
     size_t last_view_cnt     = 0;
     uint32_t allowed_actions = VIEW_ALLOW_ALL;

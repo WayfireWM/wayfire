@@ -120,7 +120,7 @@ void wf::xwayland_view_base_t::close()
 
 bool wf::xwayland_view_base_t::is_mapped() const
 {
-    return priv->wsurface != nullptr;
+    return priv->is_mapped;
 }
 
 wlr_surface*wf::xwayland_view_base_t::get_keyboard_focus_surface()
