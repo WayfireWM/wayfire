@@ -494,10 +494,8 @@ void wf::move_view_to_output(wayfire_toplevel_view v, wf::output_t *new_output, 
         new_output_g = new_output->get_relative_geometry();
         auto ratio_x = (double)new_output_g.width / old_output_g.width;
         auto ratio_y = (double)new_output_g.height / old_output_g.height;
-        view_g.x     *= ratio_x;
-        view_g.y     *= ratio_y;
-        view_g.width *= ratio_x;
-        view_g.height *= ratio_y;
+        view_g.x *= ratio_x;
+        view_g.y *= ratio_y;
     }
 
     assert(new_output);
