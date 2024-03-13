@@ -1005,6 +1005,7 @@ class output_layout_t::impl
     {
         // Destroy outputs first
         this->outputs.clear();
+        noop_output.reset();
 
         // Disconnect all signals
         on_new_output.disconnect();

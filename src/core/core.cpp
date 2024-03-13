@@ -244,14 +244,19 @@ void wf::compositor_core_impl_t::post_init()
 
 void wf::compositor_core_impl_t::shutdown()
 {
-    this->state = compositor_state_t::SHUTDOWN;
-    core_shutdown_signal ev;
-    this->emit(&ev);
-    wl_display_terminate(wf::get_core().display);
+    // We might get multiple signals in some scenarios. Shutdown only on the first instance.
+    if (this->state != compositor_state_t::SHUTDOWN)
+    {
+        wl_display_terminate(wf::get_core().display);
+    }
 }
 
 void wf::compositor_core_impl_t::fini()
 {
+    this->state = compositor_state_t::SHUTDOWN;
+    core_shutdown_signal ev;
+    this->emit(&ev);
+
     LOGI("Unloading plugins...");
     plugin_mgr.reset();
     LOGI("Stopping clients...");
