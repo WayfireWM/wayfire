@@ -312,6 +312,18 @@ class wfs_output
     void create_hotspot(uint32_t hotspot, uint32_t threshold, uint32_t timeout,
         uint32_t id)
     {
+        if (!this->output)
+        {
+            // It can happen that the client requests a hotspot immediately after an output is destroyed -
+            // this is an inherent race condition because the compositor and client are not in sync.
+            //
+            // In this case, we create a dummy hotspot resource to avoid Wayland protocol errors.
+            auto resource = wl_resource_create(
+                wl_resource_get_client(this->resource), &zwf_hotspot_v2_interface, 1, id);
+            wl_resource_set_implementation(resource, NULL, NULL, NULL);
+            return;
+        }
+
         // will be auto-deleted when the resource is destroyed by the client
         new wfs_hotspot(this->output, hotspot, threshold, timeout,
             wl_resource_get_client(this->resource), id);
