@@ -10,6 +10,8 @@
 #include <wayfire/toplevel-view.hpp>
 #include <wayfire/window-manager.hpp>
 
+#include "ipc-helpers.hpp"
+#include "plugins/ipc/ipc-method-repository.hpp"
 #include "tree-controller.hpp"
 #include "tree.hpp"
 #include "wayfire/debug.hpp"
@@ -18,6 +20,7 @@
 #include "wayfire/option-wrapper.hpp"
 #include "wayfire/plugin.hpp"
 #include "wayfire/plugins/common/input-grab.hpp"
+#include "wayfire/plugins/common/shared-core-data.hpp"
 #include "wayfire/scene-input.hpp"
 #include "wayfire/scene-operations.hpp"
 #include "wayfire/scene.hpp"
@@ -74,7 +77,7 @@ class tile_workspace_set_data_t : public wf::custom_data_t
   public:
     std::vector<std::vector<std::unique_ptr<wf::tile::tree_node_t>>> roots;
     std::vector<std::vector<wf::scene::floating_inner_ptr>> tiled_sublayer;
-    const wf::tile::split_direction_t default_split = wf::tile::SPLIT_VERTICAL;
+    static constexpr wf::tile::split_direction_t default_split = wf::tile::SPLIT_VERTICAL;
 
     wf::option_wrapper_t<int> inner_gaps{"simple-tile/inner_gap_size"};
     wf::option_wrapper_t<int> outer_horiz_gaps{"simple-tile/outer_horiz_gap_size"};
@@ -185,22 +188,25 @@ class tile_workspace_set_data_t : public wf::custom_data_t
         wf::scene::remove_child(sublayer);
     }
 
-    std::function<void()> update_gaps = [=] ()
+    tile::gap_size_t get_gaps() const
     {
-        tile::gap_size_t gaps = {
+        return {
             .left   = outer_horiz_gaps,
             .right  = outer_horiz_gaps,
             .top    = outer_vert_gaps,
             .bottom = outer_vert_gaps,
             .internal = inner_gaps,
         };
+    }
 
+    std::function<void()> update_gaps = [=] ()
+    {
         for (auto& col : roots)
         {
             for (auto& root : col)
             {
                 autocommit_transaction_t tx;
-                root->set_gaps(gaps, tx.tx);
+                root->set_gaps(get_gaps());
                 root->set_geometry(root->geometry, tx.tx);
             }
         }
@@ -212,8 +218,7 @@ class tile_workspace_set_data_t : public wf::custom_data_t
         {
             for (auto& root : col)
             {
-                autocommit_transaction_t tx;
-                tile::flatten_tree(root, tx.tx);
+                tile::flatten_tree(root);
             }
         }
     }
@@ -251,50 +256,55 @@ class tile_workspace_set_data_t : public wf::custom_data_t
 
     std::weak_ptr<workspace_set_t> wset;
 
-    void attach_view(wayfire_toplevel_view view, wf::point_t vp = {-1, -1})
+    std::unique_ptr<wf::tile::view_node_t> setup_view_tiling(wayfire_toplevel_view view, wf::point_t vp)
     {
         view->set_allowed_actions(VIEW_ALLOW_WS_CHANGE);
+        auto node = view->get_root_node();
+        wf::scene::readd_front(tiled_sublayer[vp.x][vp.y], node);
+        view_bring_to_front(view);
+        return std::make_unique<wf::tile::view_node_t>(view);
+    }
 
-        if (vp == wf::point_t{-1, -1})
-        {
-            vp = wset.lock()->get_current_workspace();
-        }
-
-        auto view_node = std::make_unique<wf::tile::view_node_t>(view);
+    void attach_view(wayfire_toplevel_view view, std::optional<wf::point_t> _vp = {})
+    {
+        auto vp = _vp.value_or(wset.lock()->get_current_workspace());
+        auto view_node = setup_view_tiling(view, vp);
         {
             autocommit_transaction_t tx;
             roots[vp.x][vp.y]->as_split_node()->add_child(std::move(view_node), tx.tx);
         }
 
-        auto node = view->get_root_node();
-        wf::scene::readd_front(tiled_sublayer[vp.x][vp.y], node);
-        view_bring_to_front(view);
         consider_exit_fullscreen(view);
     }
 
     /** Remove the given view from its tiling container */
-    void detach_view(nonstd::observer_ptr<tile::view_node_t> view,
+    void detach_views(std::vector<nonstd::observer_ptr<tile::view_node_t>> views,
         bool reinsert = true)
     {
-        auto wview = view->view;
-        wview->set_allowed_actions(VIEW_ALLOW_ALL);
         {
             autocommit_transaction_t tx;
-            view->parent->remove_child(view, tx.tx);
+            for (auto& v : views)
+            {
+                auto view = v->view;
+                view->set_allowed_actions(VIEW_ALLOW_ALL);
+                // After this, `v` is freed.
+                v->parent->remove_child(v, tx.tx);
+
+                if (view->pending_fullscreen() && view->is_mapped())
+                {
+                    wf::get_core().default_wm->fullscreen_request(view, nullptr, false);
+                }
+
+                if (reinsert)
+                {
+                    wf::scene::readd_front(view->get_output()->wset()->get_node(), view->get_root_node());
+                }
+            }
         }
+
         /* View node is invalid now */
         flatten_roots();
-
-        if (wview->pending_fullscreen() && wview->is_mapped())
-        {
-            wf::get_core().default_wm->fullscreen_request(wview, nullptr, false);
-        }
-
-        /* Remove from special sublayer */
-        if (reinsert)
-        {
-            wf::scene::readd_front(wview->get_output()->wset()->get_node(), wview->get_root_node());
-        }
+        update_root_size();
     }
 
     /**
@@ -429,7 +439,7 @@ class tile_output_plugin_t : public wf::pointer_interaction_t, public wf::custom
         return tile_by_default.matches(view) && can_tile_view(view);
     }
 
-    void attach_view(wayfire_toplevel_view view, wf::point_t vp = {-1, -1})
+    void attach_view(wayfire_toplevel_view view, std::optional<wf::point_t> vp = {})
     {
         if (!view->get_wset())
         {
@@ -443,7 +453,7 @@ class tile_output_plugin_t : public wf::pointer_interaction_t, public wf::custom
     void detach_view(nonstd::observer_ptr<tile::view_node_t> view, bool reinsert = true)
     {
         stop_controller(true);
-        tile_workspace_set_data_t::get(view->view->get_wset()).detach_view(view, reinsert);
+        tile_workspace_set_data_t::get(view->view->get_wset()).detach_views({view}, reinsert);
     }
 
     wf::signal::connection_t<view_mapped_signal> on_view_mapped = [=] (view_mapped_signal *ev)
@@ -490,7 +500,7 @@ class tile_output_plugin_t : public wf::pointer_interaction_t, public wf::custom
         tile_workspace_set_data_t::get(ev->view->get_wset()).set_view_fullscreen(ev->view, ev->state);
     };
 
-    void change_view_workspace(wayfire_toplevel_view view, wf::point_t vp = {-1, -1})
+    void change_view_workspace(wayfire_toplevel_view view, std::optional<wf::point_t> vp = {})
     {
         auto existing_node = wf::tile::view_node_t::get_node(view);
         if (existing_node)
@@ -684,6 +694,8 @@ class tile_output_plugin_t : public wf::pointer_interaction_t, public wf::custom
 
 class tile_plugin_t : public wf::plugin_interface_t, wf::per_output_tracker_mixin_t<>
 {
+    shared_data::ref_ptr_t<ipc::method_repository_t> ipc_repo;
+
   public:
     void init() override
     {
@@ -691,6 +703,8 @@ class tile_plugin_t : public wf::plugin_interface_t, wf::per_output_tracker_mixi
         wf::get_core().connect(&on_view_pre_moved_to_wset);
         wf::get_core().connect(&on_view_moved_to_wset);
         wf::get_core().connect(&on_focus_changed);
+        ipc_repo->register_method("simple-tile/get-layout", ipc_get_layout);
+        ipc_repo->register_method("simple-tile/set-layout", ipc_set_layout);
     }
 
     void fini() override
@@ -729,7 +743,7 @@ class tile_plugin_t : public wf::plugin_interface_t, wf::per_output_tracker_mixi
             if (ev->old_wset)
             {
                 stop_controller(ev->old_wset);
-                tile_workspace_set_data_t::get(ev->old_wset).detach_view(node);
+                tile_workspace_set_data_t::get(ev->old_wset).detach_views({node});
             }
         }
     };
@@ -765,6 +779,185 @@ class tile_plugin_t : public wf::plugin_interface_t, wf::per_output_tracker_mixi
     void handle_output_removed(wf::output_t *output) override
     {
         output->erase_data<tile_output_plugin_t>();
+    }
+
+    ipc::method_callback ipc_get_layout = [=] (const nlohmann::json& params)
+    {
+        WFJSON_EXPECT_FIELD(params, "wset-index", number_unsigned);
+        WFJSON_EXPECT_FIELD(params, "workspace", object);
+        WFJSON_EXPECT_FIELD(params["workspace"], "x", number_unsigned);
+        WFJSON_EXPECT_FIELD(params["workspace"], "y", number_unsigned);
+
+        int x   = params["workspace"]["x"].get<int>();
+        int y   = params["workspace"]["y"].get<int>();
+        auto ws = ipc::find_workspace_set_by_index(params["wset-index"].get<int>());
+        if (ws)
+        {
+            auto grid_size = ws->get_workspace_grid_size();
+            if ((x >= grid_size.width) || (y >= grid_size.height))
+            {
+                return wf::ipc::json_error("invalid workspace coordinates");
+            }
+
+            auto response = wf::ipc::json_ok();
+
+            auto cur_ws     = ws->get_current_workspace();
+            auto resolution = ws->get_last_output_geometry().value_or(tile::default_output_resolution);
+            wf::point_t offset = {cur_ws.x * resolution.width, cur_ws.y * resolution.height};
+
+            response["layout"] =
+                tree_to_json(tile_workspace_set_data_t::get(ws->shared_from_this()).roots[x][y], offset);
+            return response;
+        }
+
+        return wf::ipc::json_error("wset-index not found");
+    };
+
+    ipc::method_callback ipc_set_layout = [=] (nlohmann::json params) -> nlohmann::json
+    {
+        WFJSON_EXPECT_FIELD(params, "wset-index", number_unsigned);
+        WFJSON_EXPECT_FIELD(params, "workspace", object);
+        WFJSON_EXPECT_FIELD(params["workspace"], "x", number_unsigned);
+        WFJSON_EXPECT_FIELD(params["workspace"], "y", number_unsigned);
+        WFJSON_EXPECT_FIELD(params, "layout", object);
+        int x = params["workspace"]["x"].get<int>();
+        int y = params["workspace"]["y"].get<int>();
+
+        auto ws = ipc::find_workspace_set_by_index(params["wset-index"].get<int>());
+        if (!ws)
+        {
+            return wf::ipc::json_error("wset-index not found");
+        }
+
+        auto grid_size = ws->get_workspace_grid_size();
+        if ((x >= grid_size.width) || (y >= grid_size.height))
+        {
+            return wf::ipc::json_error("invalid workspace coordinates");
+        }
+
+        auto& tile_ws = tile_workspace_set_data_t::get(ws->shared_from_this());
+
+        tile::json_builder_data_t data;
+        data.gaps = tile_ws.get_gaps();
+        auto workarea = tile_ws.roots[x][y]->geometry;
+        if (auto err = tile::verify_json_tree(params["layout"], data, wf::dimensions(workarea)))
+        {
+            return wf::ipc::json_error(*err);
+        }
+
+        // Step 1: detach any views which are currently present in the layout, but should no longer be
+        // in the layout
+        std::vector<nonstd::observer_ptr<tile::view_node_t>> views_to_remove;
+        tile::for_each_view(tile_ws.roots[x][y], [&] (wayfire_toplevel_view view)
+        {
+            if (!data.touched_views.count(view))
+            {
+                views_to_remove.push_back(tile::view_node_t::get_node(view));
+            }
+        });
+
+        tile_ws.detach_views(views_to_remove);
+
+        {
+            autocommit_transaction_t tx;
+            data.touched_wsets.erase(nullptr);
+
+            // Step 2: temporarily detach some of the nodes
+            for (auto& touched_view : data.touched_views)
+            {
+                auto tile = wf::tile::view_node_t::get_node(touched_view);
+                if (tile)
+                {
+                    tile->parent->remove_child(tile, tx.tx);
+                }
+
+                if (touched_view->get_wset().get() != ws)
+                {
+                    auto old_wset = touched_view->get_wset();
+                    wf::emit_view_pre_moved_to_wset_pre(touched_view,
+                        touched_view->get_wset(), ws->shared_from_this());
+
+                    if (old_wset)
+                    {
+                        old_wset->remove_view(touched_view);
+                    }
+
+                    ws->add_view(touched_view);
+                    wf::emit_view_moved_to_wset(touched_view, old_wset, ws->shared_from_this());
+                }
+            }
+
+            // Step 3: set up the new layout
+            tile_ws.roots[x][y] = build_tree_from_json(params["layout"], &tile_ws, {x, y});
+            tile::flatten_tree(tile_ws.roots[x][y]);
+            tile_ws.roots[x][y]->set_gaps(tile_ws.get_gaps());
+            tile_ws.roots[x][y]->set_geometry(workarea, tx.tx);
+        }
+
+        data.touched_wsets.insert(ws);
+
+        // Step 4: flatten roots, set gaps, trigger resize everywhere
+        for (auto& touched_ws : data.touched_wsets)
+        {
+            auto& tws = tile_workspace_set_data_t::get(touched_ws->shared_from_this());
+            tws.flatten_roots();
+            // will also trigger resize everywhere
+            tws.update_gaps();
+        }
+
+        return wf::ipc::json_ok();
+    };
+
+    /**
+     * Build a tiling tree from a json description.
+     *
+     * Note that the tree description first has to be verified and pre-processed by verify_json_tree().
+     */
+    std::unique_ptr<tile::tree_node_t> build_tree_from_json(const nlohmann::json& json,
+        tile_workspace_set_data_t *wdata, wf::point_t vp)
+    {
+        auto root = build_tree_from_json_rec(json, wdata, vp);
+        if (root->as_view_node())
+        {
+            // Handle cases with a single view.
+            auto split_root = std::make_unique<tile::split_node_t>(tile_workspace_set_data_t::default_split);
+            split_root->children.push_back(std::move(root));
+            return split_root;
+        }
+
+        return root;
+    }
+
+    std::unique_ptr<tile::tree_node_t> build_tree_from_json_rec(const nlohmann::json& json,
+        tile_workspace_set_data_t *wdata, wf::point_t vp)
+    {
+        std::unique_ptr<tile::tree_node_t> root;
+
+        if (json.count("view-id"))
+        {
+            auto view = toplevel_cast(wf::ipc::find_view_by_id(json["view-id"]));
+            root = wdata->setup_view_tiling(view, vp);
+        } else
+        {
+            const bool is_horiz_split = json.count("horizontal-split");
+            auto& children_list = is_horiz_split ? json["horizontal-split"] : json["vertical-split"];
+            auto split_parent   = std::make_unique<tile::split_node_t>(
+                is_horiz_split ? tile::SPLIT_HORIZONTAL : tile::SPLIT_VERTICAL);
+
+            for (auto& child : children_list)
+            {
+                split_parent->children.push_back(build_tree_from_json_rec(child, wdata, vp));
+                split_parent->children.back()->parent = {split_parent.get()};
+            }
+
+            root = std::move(split_parent);
+        }
+
+        root->geometry.x     = 0;
+        root->geometry.y     = 0;
+        root->geometry.width = json["width"];
+        root->geometry.height = json["height"];
+        return root;
     }
 };
 }

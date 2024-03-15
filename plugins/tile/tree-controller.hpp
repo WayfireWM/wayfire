@@ -2,7 +2,9 @@
 #define WF_TILE_PLUGIN_TREE_CONTROLLER_HPP
 
 #include "tree.hpp"
+#include <set>
 #include <wayfire/option-wrapper.hpp>
+#include <nlohmann/json.hpp>
 
 /* Contains functions which are related to manipulating the tiling tree */
 namespace wf
@@ -169,6 +171,27 @@ class resize_view_controller_t : public tile_controller_t
     void adjust_geometry(int32_t& x1, int32_t& len1,
         int32_t& x2, int32_t& len2, int32_t delta);
 };
+
+struct json_builder_data_t
+{
+    std::set<workspace_set_t*> touched_wsets;
+    std::set<wayfire_toplevel_view> touched_views;
+    gap_size_t gaps;
+};
+
+/**
+ * Get a json description of the given tiling tree.
+ */
+nlohmann::json tree_to_json(const std::unique_ptr<tree_node_t>& root, const wf::point_t& offset,
+    double rel_size = 1.0);
+
+
+/**
+ * Go over the json description and verify that it is a valid tiling tree.
+ * @return An error message if the tree is invalid.
+ */
+std::optional<std::string> verify_json_tree(nlohmann::json& json, json_builder_data_t& data,
+    const wf::dimensions_t& available_geometry);
 }
 }
 
