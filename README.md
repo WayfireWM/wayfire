@@ -57,15 +57,21 @@ These are the dependencies needed for building Wayfire.
 These are the dependencies needed for building wlroots, and should be installed before building it.
 They are relevant for cases when the system doesn't have a version of wlroots installed.
 
-#### DRM Backend (optional, but you most likely want this)
+#### DRM Backend (required)
 
 - [libdisplay-info-dev](https://gitlab.freedesktop.org/emersion/libdisplay-info)
 - [hwdata-dev](https://github.com/vcrhonek/hwdata)
 
-#### Session Provider (optional, recommended)
+#### GLES2 renderer (required)
+- [libglvnd](https://gitlab.freedesktop.org/glvnd/libglvnd)
+- [mesa](https://gitlab.freedesktop.org/mesa/mesa) (with libEGL and gbm support)
 
-- [systemd](https://systemd.io/) **or**
-- [elogind](https://github.com/elogind/elogind) **or**
+#### Libinput Backend (required)
+- [libinput](https://gitlab.freedesktop.org/libinput/libinput)
+
+#### Session Provider (required)
+
+- libudev (via [systemd](https://systemd.io/) **or** other providers)
 - [seatd](https://git.sr.ht/~kennylevinsen/seatd)
 
 #### XWayland Support (optional)
