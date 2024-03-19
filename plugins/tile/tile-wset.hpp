@@ -1,3 +1,5 @@
+#pragma once
+
 #include "tree.hpp"
 #include "tree-controller.hpp"
 #include "wayfire/view-helpers.hpp"
