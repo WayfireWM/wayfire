@@ -67,7 +67,9 @@ wlr_output_mode *find_matching_mode(wlr_output *output,
                 return mode;
             }
 
-            if (!best || (best->refresh < mode->refresh))
+            const int bestSoFar = std::abs(best->refresh - reference.refresh);
+            const int current   = std::abs(mode->refresh - reference.refresh);
+            if (!best || (bestSoFar > current))
             {
                 best = mode;
             }
