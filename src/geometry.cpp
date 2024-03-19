@@ -1,6 +1,5 @@
 #include <wayfire/geometry.hpp>
 #include <cmath>
-#include <sstream>
 #include <iomanip>
 
 /* Geometry helpers */
