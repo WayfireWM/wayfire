@@ -6,7 +6,6 @@
 #include <wayfire/compositor-view.hpp>
 
 #include "geometry-animation.hpp"
-#include "wayfire/scene-operations.hpp"
 #include "wayfire/view.hpp"
 #include <wayfire/option-wrapper.hpp>
 #include <wayfire/util/duration.hpp>
@@ -104,6 +103,21 @@ class preview_indication_t : public std::enable_shared_from_this<preview_indicat
     {
         return set_target_geometry({point.x, point.y, 1, 1},
             alpha, should_close);
+    }
+
+    wf::geometry_t get_target_geometry() const
+    {
+        return wf::geometry_t{
+            .x     = int(animation.x.end),
+            .y     = int(animation.y.end),
+            .width = int(animation.width.end),
+            .height = int(animation.height.end),
+        };
+    }
+
+    wf::output_t *get_output() const
+    {
+        return output;
     }
 
     virtual ~preview_indication_t()

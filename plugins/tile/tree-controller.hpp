@@ -2,7 +2,9 @@
 #define WF_TILE_PLUGIN_TREE_CONTROLLER_HPP
 
 #include "tree.hpp"
+#include "wayfire/plugins/common/shared-core-data.hpp"
 #include <wayfire/option-wrapper.hpp>
+#include <wayfire/plugins/common/move-drag-interface.hpp>
 
 /* Contains functions which are related to manipulating the tiling tree */
 namespace wf
@@ -52,7 +54,7 @@ class tile_controller_t
     virtual ~tile_controller_t() = default;
 
     /** Called when the input is moved */
-    virtual void input_motion(wf::point_t input)
+    virtual void input_motion()
     {}
 
     /**
@@ -64,6 +66,8 @@ class tile_controller_t
     {}
 };
 
+std::unique_ptr<tree_node_t>& get_root(wf::workspace_set_t *set, wf::point_t workspace);
+
 /**
  * Represents the moving view action, i.e dragging a window to change its
  * position in the grid
@@ -73,37 +77,15 @@ class move_view_controller_t : public tile_controller_t
   public:
     /**
      * Start the drag-to-reorder action.
-     *
-     * @param root The root of the tiling tree which is currently being
-     *             manipulated
-     * @param Where the grab has started
      */
-    move_view_controller_t(std::unique_ptr<tree_node_t>& root,
-        wf::point_t grab);
+    move_view_controller_t(wf::workspace_set_t *wset);
     ~move_view_controller_t();
 
-    void input_motion(wf::point_t input) override;
+    void input_motion() override;
     void input_released() override;
 
   protected:
-    std::unique_ptr<tree_node_t>& root;
-    nonstd::observer_ptr<view_node_t> grabbed_view;
-    wf::output_t *output;
-    wf::point_t current_input;
-
-    std::shared_ptr<wf::preview_indication_t> preview;
-    /**
-     * Create preview if it doesn't exist
-     *
-     * @param now The position of the input now. Used only if the preview
-     *            needs to be created.
-     */
-    void ensure_preview(wf::point_t now);
-
-    /**
-     * Return the node under the input which is suitable for dropping on.
-     */
-    nonstd::observer_ptr<view_node_t> check_drop_destination(wf::point_t input);
+    wf::shared_data::ref_ptr_t<wf::move_drag::core_drag_t> drag_helper;
 };
 
 class resize_view_controller_t : public tile_controller_t
@@ -111,19 +93,14 @@ class resize_view_controller_t : public tile_controller_t
   public:
     /**
      * Start the drag-to-resize action.
-     *
-     * @param root The root of the tiling tree which is currently being
-     *             manipulated
-     * @param Where the grab has started
      */
-    resize_view_controller_t(std::unique_ptr<tree_node_t>& root,
-        wf::point_t grab);
+    resize_view_controller_t(wf::workspace_set_t *wset);
     ~resize_view_controller_t();
 
-    void input_motion(wf::point_t input) override;
+    void input_motion() override;
 
   protected:
-    std::unique_ptr<tree_node_t>& root;
+    wf::output_t *output;
 
     /** Last input event location */
     wf::point_t last_point;
@@ -169,8 +146,20 @@ class resize_view_controller_t : public tile_controller_t
     void adjust_geometry(int32_t& x1, int32_t& len1,
         int32_t& x2, int32_t& len2, int32_t delta);
 };
-}
-}
 
+/**
+ * Calculate which view node is at the given position
+ *
+ * Returns null if no view nodes are present.
+ */
+nonstd::observer_ptr<view_node_t> find_view_at(nonstd::observer_ptr<tree_node_t> root, wf::point_t input);
+
+/**
+ * Translate coordinates from output-local coordinates to the coordinate
+ * system of the tiling trees, depending on the current workspace
+ */
+wf::point_t get_global_input_coordinates(wf::output_t *output);
+}
+}
 
 #endif /* end of include guard: WF_TILE_PLUGIN_TREE_CONTROLLER_HPP */

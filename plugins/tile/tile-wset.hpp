@@ -167,17 +167,28 @@ class tile_workspace_set_data_t : public wf::custom_data_t
         };
     }
 
-    std::function<void()> update_gaps = [=] ()
+    void update_gaps_with_tx(wf::txn::transaction_uptr& tx)
     {
         for (auto& col : roots)
         {
             for (auto& root : col)
             {
-                autocommit_transaction_t tx;
                 root->set_gaps(get_gaps());
-                root->set_geometry(root->geometry, tx.tx);
+                root->set_geometry(root->geometry, tx);
             }
         }
+    }
+
+    void refresh(wf::txn::transaction_uptr& tx)
+    {
+        flatten_roots();
+        update_gaps_with_tx(tx);
+    }
+
+    std::function<void()> update_gaps = [=] ()
+    {
+        autocommit_transaction_t tx;
+        update_gaps_with_tx(tx.tx);
     };
 
     void flatten_roots()

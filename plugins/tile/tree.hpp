@@ -54,6 +54,11 @@ struct tree_node_t
     /** Set the gaps for the node and subnodes. */
     virtual void set_gaps(const gap_size_t& gaps) = 0;
 
+    gap_size_t get_gaps() const
+    {
+        return gaps;
+    }
+
     virtual ~tree_node_t()
     {}
 

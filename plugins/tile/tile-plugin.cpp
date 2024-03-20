@@ -26,6 +26,7 @@
 
 #include "tile-wset.hpp"
 #include "tile-ipc.hpp"
+#include "tile-dragging.hpp"
 
 static bool can_tile_view(wayfire_toplevel_view view)
 {
@@ -65,22 +66,6 @@ class tile_output_plugin_t : public wf::pointer_interaction_t, public wf::custom
     std::unique_ptr<wf::tile::tile_controller_t> controller =
         get_default_controller();
 
-    /**
-     * Translate coordinates from output-local coordinates to the coordinate
-     * system of the tiling trees, depending on the current workspace
-     */
-    wf::point_t get_global_input_coordinates()
-    {
-        wf::pointf_t local = output->get_cursor_position();
-
-        auto vp   = output->wset()->get_current_workspace();
-        auto size = output->get_screen_size();
-        local.x += size.width * vp.x;
-        local.y += size.height * vp.y;
-
-        return {(int)local.x, (int)local.y};
-    }
-
     /** Check whether we currently have a fullscreen tiled view */
     bool has_fullscreen_view()
     {
@@ -116,8 +101,8 @@ class tile_output_plugin_t : public wf::pointer_interaction_t, public wf::custom
         }
 
         input_grab->grab_input(wf::scene::layer::OVERLAY);
-        controller = std::make_unique<Controller>(tile_workspace_set_data_t::get_current_root(output),
-            get_global_input_coordinates());
+
+        controller = std::make_unique<Controller>(output->wset().get());
     }
 
     void stop_controller(bool force_stop)
@@ -352,9 +337,9 @@ class tile_output_plugin_t : public wf::pointer_interaction_t, public wf::custom
         }
     }
 
-    void handle_pointer_motion(wf::pointf_t pointer_position, uint32_t time_ms) override
+    void handle_pointer_motion(wf::pointf_t, uint32_t) override
     {
-        controller->input_motion(get_global_input_coordinates());
+        controller->input_motion();
     }
 
     void setup_callbacks()
@@ -400,6 +385,8 @@ class tile_output_plugin_t : public wf::pointer_interaction_t, public wf::custom
 class tile_plugin_t : public wf::plugin_interface_t, wf::per_output_tracker_mixin_t<>
 {
     shared_data::ref_ptr_t<ipc::method_repository_t> ipc_repo;
+    shared_data::ref_ptr_t<wf::move_drag::core_drag_t> drag_helper;
+    std::unique_ptr<tile::drag_manager_t> preview_manager;
 
   public:
     void init() override
@@ -410,10 +397,12 @@ class tile_plugin_t : public wf::plugin_interface_t, wf::per_output_tracker_mixi
         wf::get_core().connect(&on_focus_changed);
         ipc_repo->register_method("simple-tile/get-layout", ipc_get_layout);
         ipc_repo->register_method("simple-tile/set-layout", ipc_set_layout);
+        preview_manager = std::make_unique<tile::drag_manager_t>();
     }
 
     void fini() override
     {
+        preview_manager.reset();
         fini_output_tracking();
         for (auto wset : workspace_set_t::get_all())
         {
@@ -442,7 +431,7 @@ class tile_plugin_t : public wf::plugin_interface_t, wf::per_output_tracker_mixi
         [=] (view_pre_moved_to_wset_signal *ev)
     {
         auto node = wf::tile::view_node_t::get_node(ev->view);
-        if (node)
+        if (node && !preview_manager->is_dragging(ev->view))
         {
             ev->view->store_data(std::make_unique<wf::view_auto_tile_t>());
             if (ev->old_wset)
@@ -495,6 +484,11 @@ class tile_plugin_t : public wf::plugin_interface_t, wf::per_output_tracker_mixi
         return tile::handle_ipc_set_layout(params);
     };
 };
+
+std::unique_ptr<tile::tree_node_t>& tile::get_root(wf::workspace_set_t *set, wf::point_t workspace)
+{
+    return tile_workspace_set_data_t::get(set->shared_from_this()).roots[workspace.x][workspace.y];
+}
 }
 
 DECLARE_WAYFIRE_PLUGIN(wf::tile_plugin_t);

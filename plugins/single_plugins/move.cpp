@@ -54,8 +54,8 @@ class wayfire_move : public wf::per_output_plugin_instance_t,
 
     bool can_handle_drag()
     {
-        bool yes = output->can_activate_plugin(&grab_interface,
-            wf::PLUGIN_ACTIVATE_ALLOW_MULTIPLE);
+        bool yes = output->can_activate_plugin(&grab_interface, wf::PLUGIN_ACTIVATE_ALLOW_MULTIPLE);
+        yes &= drag_helper->view && (drag_helper->view->get_allowed_actions() & wf::VIEW_ALLOW_MOVE);
         return yes;
     }
 
