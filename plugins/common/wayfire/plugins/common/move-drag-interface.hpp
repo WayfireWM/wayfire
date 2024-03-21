@@ -651,9 +651,6 @@ class core_drag_t : public signal::provider_t
 
         // Reset our state
         wf::get_core().default_wm->set_view_grabbed(view, false);
-        view = nullptr;
-        all_views.clear();
-        current_output = nullptr;
         wf::get_core().set_cursor("default");
 
         // Lastly, let the plugins handle what happens on drag end.
@@ -661,6 +658,9 @@ class core_drag_t : public signal::provider_t
         view_held_in_place = false;
         on_view_unmap.disconnect();
 
+        view = nullptr;
+        all_views.clear();
+        current_output = nullptr;
         this->tentative_grab_position = {};
     }
 
