@@ -14,7 +14,6 @@
 #include "wayfire/output-layout.hpp"
 #include <wayfire/workspace-set.hpp>
 #include <wayfire/signal-definitions.hpp>
-#include <wayfire/unstable/wlr-surface-controller.hpp>
 #include <wayfire/unstable/wlr-view-events.hpp>
 #include <wayfire/nonstd/tracking-allocator.hpp>
 

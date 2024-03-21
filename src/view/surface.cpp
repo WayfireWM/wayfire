@@ -1,6 +1,8 @@
 #include <algorithm>
 #include <map>
 #include <wayfire/util/log.hpp>
+#include "surface-impl.hpp"
+#include "subsurface.hpp"
 #include "wayfire/geometry.hpp"
 #include "wayfire/opengl.hpp"
 #include "../core/core-impl.hpp"
@@ -10,8 +12,6 @@
 #include "wayfire/scene-render.hpp"
 #include "wayfire/scene.hpp"
 #include "wayfire/signal-definitions.hpp"
-#include "wayfire/unstable/wlr-surface-controller.hpp"
-#include "wayfire/unstable/wlr-subsurface-controller.hpp"
 #include <wayfire/scene-operations.hpp>
 
 static void update_subsurface_position(wlr_surface *surface, int, int, void*)

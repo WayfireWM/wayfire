@@ -66,9 +66,6 @@ static std::string layer_to_string(std::optional<wf::scene::layer> layer)
         return "unmanaged";
 
       case wf::scene::layer::OVERLAY:
-        return "overlay";
-
-      case wf::scene::layer::LOCK:
         return "lock";
 
       case wf::scene::layer::DWIDGET:

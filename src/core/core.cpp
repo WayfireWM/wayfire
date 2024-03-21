@@ -30,7 +30,7 @@
 #include <wayfire/signal-definitions.hpp>
 #include <wayfire/nonstd/wlroots-full.hpp>
 
-#include "wayfire/unstable/wlr-surface-controller.hpp"
+#include "view/surface-impl.hpp"
 #include "wayfire/scene-input.hpp"
 #include "opengl-priv.hpp"
 #include "seat/input-manager.hpp"

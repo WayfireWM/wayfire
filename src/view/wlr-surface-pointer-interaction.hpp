@@ -4,12 +4,12 @@
 #include "../core/core-impl.hpp"
 #include "core/seat/seat-impl.hpp"
 #include "view-impl.hpp"
+#include "view/surface-impl.hpp"
 #include "wayfire/core.hpp"
 #include "wayfire/scene-input.hpp"
 #include "wayfire/signal-definitions.hpp"
 #include "wayfire/signal-provider.hpp"
 #include "wayfire/util.hpp"
-#include "wayfire/unstable/wlr-surface-controller.hpp"
 #include "wayfire/unstable/wlr-surface-node.hpp"
 
 namespace wf

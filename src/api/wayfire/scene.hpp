@@ -414,9 +414,8 @@ enum class layer : size_t
     TOP        = 3,
     UNMANAGED  = 4,
     OVERLAY    = 5,
-    LOCK       = 6,
     // For compatibility with workspace-manager, to be removed
-    DWIDGET    = 7,
+    DWIDGET    = 6,
     /** Not a real layer, but a placeholder for the number of layers. */
     ALL_LAYERS,
 };

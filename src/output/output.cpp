@@ -361,16 +361,18 @@ bool wf::output_impl_t::is_plugin_active(std::string name) const
     return false;
 }
 
-void wf::output_t::set_inhibited(bool inhibited)
+void wf::output_impl_t::inhibit_plugins()
 {
-    this->inhibited = inhibited;
-    if (inhibited)
-    {
-        cancel_active_plugins();
-    }
+    this->inhibited = true;
+    cancel_active_plugins();
 }
 
-bool wf::output_t::is_inhibited() const
+void wf::output_impl_t::uninhibit_plugins()
+{
+    this->inhibited = false;
+}
+
+bool wf::output_impl_t::is_inhibited() const
 {
     return this->inhibited;
 }

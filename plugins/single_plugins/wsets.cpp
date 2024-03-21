@@ -9,9 +9,7 @@
 #include "wayfire/view.hpp"
 #include "plugins/ipc/ipc-helpers.hpp"
 #include "plugins/ipc/ipc-method-repository.hpp"
-#include "wayfire/plugins/common/cairo-util.hpp"
 #include "wayfire/plugins/common/shared-core-data.hpp"
-#include "wayfire/plugins/common/simple-text-node.hpp"
 #include <wayfire/signal-definitions.hpp>
 #include <wayfire/config/option-types.hpp>
 #include <wayfire/output.hpp>
@@ -23,6 +21,63 @@
 #include <wayfire/config/types.hpp>
 #include <wayfire/output-layout.hpp>
 #include <wayfire/bindings-repository.hpp>
+#include <wayfire/plugins/common/cairo-util.hpp>
+
+class wset_output_overlay_t : public wf::scene::node_t
+{
+    class render_instance_t : public wf::scene::simple_render_instance_t<wset_output_overlay_t>
+    {
+      public:
+        using simple_render_instance_t::simple_render_instance_t;
+
+        void render(const wf::render_target_t& target, const wf::region_t& region)
+        {
+            OpenGL::render_begin(target);
+
+            auto g = self->get_bounding_box();
+            for (auto box : region)
+            {
+                target.logic_scissor(wlr_box_from_pixman_box(box));
+                OpenGL::render_texture(self->cr_text.tex.tex, target, g, glm::vec4(1.0f),
+                    OpenGL::TEXTURE_TRANSFORM_INVERT_Y);
+            }
+
+            OpenGL::render_end();
+        }
+    };
+
+    wf::cairo_text_t cr_text;
+
+  public:
+    wset_output_overlay_t() : node_t(false)
+    {}
+
+    void gen_render_instances(std::vector<wf::scene::render_instance_uptr>& instances,
+        wf::scene::damage_callback push_damage, wf::output_t *output) override
+    {
+        instances.push_back(std::make_unique<render_instance_t>(this, push_damage, output));
+    }
+
+    wf::geometry_t get_bounding_box() override
+    {
+        return wf::construct_box({10, 10}, cr_text.get_size());
+    }
+
+    void set_text(std::string text)
+    {
+        wf::cairo_text_t::params params;
+        params.text_color   = wf::color_t{0.9, 0.9, 0.9, 1};
+        params.bg_color     = wf::color_t{0.1, 0.1, 0.1, 0.9};
+        params.font_size    = 32;
+        params.rounded_rect = true;
+        params.bg_rect  = true;
+        params.max_size = wf::dimensions(get_bounding_box());
+
+        cr_text.render_text(text, params);
+        wf::scene::damage_node(this->shared_from_this(), get_bounding_box());
+    }
+};
+
 
 
 class wayfire_wsets_plugin_t : public wf::plugin_interface_t
@@ -132,7 +187,7 @@ class wayfire_wsets_plugin_t : public wf::plugin_interface_t
 
     struct output_overlay_data_t : public wf::custom_data_t
     {
-        std::shared_ptr<simple_text_node_t> node;
+        std::shared_ptr<wset_output_overlay_t> node;
         wf::wl_timer<false> timer;
         ~output_overlay_data_t()
         {
@@ -164,15 +219,10 @@ class wayfire_wsets_plugin_t : public wf::plugin_interface_t
         auto overlay = wo->get_data_safe<output_overlay_data_t>();
         if (!overlay->node)
         {
-            overlay->node = std::make_shared<simple_text_node_t>();
+            overlay->node = std::make_shared<wset_output_overlay_t>();
         }
 
         overlay->node->set_text("Workspace set " + std::to_string(wo->wset()->get_index()));
-        overlay->node->set_position({10, 10});
-        overlay->node->set_text_params(wf::cairo_text_t::params(32 /* font_size */,
-            wf::color_t{0.1, 0.1, 0.1, 0.9} /* bg_color */,
-            wf::color_t{0.9, 0.9, 0.9, 1} /* fg_color */));
-
         wf::scene::readd_front(wo->node_for_layer(wf::scene::layer::DWIDGET), overlay->node);
         wf::scene::damage_node(overlay->node, overlay->node->get_bounding_box());
 

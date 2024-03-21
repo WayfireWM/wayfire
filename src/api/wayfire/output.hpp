@@ -167,17 +167,6 @@ class output_t : public wf::object_base_t, public wf::signal::provider_t
     virtual bool is_plugin_active(std::string owner_name) const = 0;
 
     /**
-     * Sets (or unsets) the output as inhibited, so that no plugins can be activated
-     * except those that ignore inhibitions.
-     */
-    void set_inhibited(bool inhibited);
-
-    /**
-     * Returns whether the output is inhibited..
-     */
-    bool is_inhibited() const;
-
-    /**
      * Switch the workspace so that view becomes visible.
      * @return true if workspace switch really occurred
      */
@@ -209,7 +198,6 @@ class output_t : public wf::object_base_t, public wf::signal::provider_t
   protected:
     /* outputs are instantiated internally by core */
     output_t();
-    bool inhibited = false;
 };
 
 /**

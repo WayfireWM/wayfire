@@ -38,7 +38,6 @@ extern "C"
     struct wlr_presentation;
     struct wlr_primary_selection_v1_device_manager;
     struct wlr_drm_lease_v1_manager;
-    struct wlr_session_lock_manager_v1;
 
     struct wlr_xdg_foreign_v1;
     struct wlr_xdg_foreign_v2;

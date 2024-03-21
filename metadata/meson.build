@@ -42,4 +42,3 @@ install_data('shortcuts-inhibit.xml', install_dir: conf_data.get('PLUGIN_XML_DIR
 install_data('wsets.xml', install_dir: conf_data.get('PLUGIN_XML_DIR'))
 install_data('wayfire-shell.xml', install_dir: conf_data.get('PLUGIN_XML_DIR'))
 install_data('xdg-activation.xml', install_dir: conf_data.get('PLUGIN_XML_DIR'))
-install_data('session-lock.xml', install_dir: conf_data.get('PLUGIN_XML_DIR'))

@@ -1,10 +1,10 @@
+#include "subsurface.hpp"
 #include "view/view-impl.hpp"
 #include "wayfire/geometry.hpp"
 #include "wayfire/scene-operations.hpp"
 #include "wayfire/scene.hpp"
 #include "wayfire/signal-definitions.hpp"
 #include "wayfire/unstable/translation-node.hpp"
-#include "wayfire/unstable/wlr-subsurface-controller.hpp"
 #include "wayfire/unstable/wlr-surface-node.hpp"
 #include <memory>
 #include <wayfire/debug.hpp>

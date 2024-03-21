@@ -165,9 +165,10 @@ wf::input_manager_t::input_manager_t()
 
     output_added.set_callback([=] (output_added_signal *ev)
     {
+        auto wo = (wf::output_impl_t*)ev->output;
         if (exclusive_client != nullptr)
         {
-            ev->output->set_inhibited(true);
+            wo->inhibit_plugins();
         }
 
         refresh_device_mappings();
@@ -180,7 +181,14 @@ void wf::input_manager_t::set_exclusive_focus(wl_client *client)
     exclusive_client = client;
     for (auto& wo : wf::get_core().output_layout->get_outputs())
     {
-        wo->set_inhibited(client != nullptr);
+        auto impl = (wf::output_impl_t*)wo;
+        if (client)
+        {
+            impl->inhibit_plugins();
+        } else
+        {
+            impl->uninhibit_plugins();
+        }
     }
 
     /* We no longer have an exclusively focused client, so we should restore
