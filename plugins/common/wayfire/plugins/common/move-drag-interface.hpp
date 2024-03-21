@@ -740,9 +740,11 @@ inline void adjust_view_on_output(drag_done_signal *ev)
         return;
     }
 
-    if (parent->get_output() != ev->focused_output)
+    const bool change_output = parent->get_output() != ev->focused_output;
+    auto old_wset = parent->get_wset();
+    if (change_output)
     {
-        move_view_to_output(parent, ev->focused_output, false);
+        start_move_view_to_wset(parent, ev->focused_output->wset());
     }
 
     // Calculate the position we're leaving the view on
@@ -800,6 +802,11 @@ inline void adjust_view_on_output(drag_done_signal *ev)
     for (auto& v : parent->enumerate_views())
     {
         ev->focused_output->wset()->move_to_workspace(v, target_ws);
+    }
+
+    if (change_output)
+    {
+        emit_view_moved_to_wset(parent, old_wset, ev->focused_output->wset());
     }
 
     wf::get_core().default_wm->focus_raise_view(focus_view);
