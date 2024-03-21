@@ -35,7 +35,7 @@ class drag_manager_t
     wf::signal::connection_t<wf::move_drag::drag_motion_signal> on_drag_motion =
         [=] (wf::move_drag::drag_motion_signal *ev)
     {
-        if (should_show_preview())
+        if (should_show_preview(drag_helper->view, drag_helper->current_output))
         {
             update_preview(drag_helper->current_output, drag_helper->view);
         }
@@ -44,7 +44,7 @@ class drag_manager_t
     wf::signal::connection_t<wf::move_drag::drag_focus_output_signal> on_drag_output_focus =
         [=] (wf::move_drag::drag_focus_output_signal *ev)
     {
-        if (should_show_preview())
+        if (should_show_preview(drag_helper->view, ev->focus_output))
         {
             drag_helper->set_scale(2, 0.5);
             update_preview(ev->focus_output, drag_helper->view);
@@ -54,11 +54,19 @@ class drag_manager_t
     wf::signal::connection_t<wf::move_drag::drag_done_signal> on_drag_done =
         [=] (wf::move_drag::drag_done_signal *ev)
     {
-        if (ev->main_view && tile::view_node_t::get_node(ev->main_view) && ev->focused_output)
+        if (should_show_preview(ev->main_view, ev->focused_output))
         {
             currently_dropping = true;
-            // We did not move the view to another output/wset
-            handle_drop(ev->main_view, ev->focused_output);
+            if (!handle_drop(ev->main_view, ev->focused_output))
+            {
+                if (ev->main_view->get_output() != ev->focused_output)
+                {
+                    // Allow usual movement to the new output.
+                    currently_dropping = false;
+                    move_drag::adjust_view_on_output(ev);
+                }
+            }
+
             currently_dropping = false;
         }
 
@@ -70,16 +78,16 @@ class drag_manager_t
         return currently_dropping;
     }
 
-    bool dragged_view_is_tiled()
+    bool dragged_view_is_tiled(wayfire_toplevel_view view)
     {
-        return drag_helper->view && view_node_t::get_node(drag_helper->view);
+        return view && view_node_t::get_node(view);
     }
 
-    bool should_show_preview()
+    bool should_show_preview(wayfire_toplevel_view view, wf::output_t *output)
     {
-        return dragged_view_is_tiled() && drag_helper->current_output &&
-               (drag_helper->current_output->can_activate_plugin(CAPABILITY_MANAGE_COMPOSITOR) ||
-                   drag_helper->current_output->is_plugin_active("simple-tile"));
+        return dragged_view_is_tiled(view) && output &&
+               (output->can_activate_plugin(CAPABILITY_MANAGE_COMPOSITOR) ||
+                   output->is_plugin_active("simple-tile"));
     }
 
     void hide_preview()
@@ -202,7 +210,7 @@ class drag_manager_t
         }
     }
 
-    void handle_move(wayfire_toplevel_view source, nonstd::observer_ptr<tile::view_node_t> target,
+    void handle_move_retile(wayfire_toplevel_view source, nonstd::observer_ptr<tile::view_node_t> target,
         split_insertion_t split)
     {
         auto source_output = source->get_output();
@@ -271,28 +279,30 @@ class drag_manager_t
         }
     }
 
-    void handle_drop(wayfire_toplevel_view view, wf::output_t *output)
+    bool handle_drop(wayfire_toplevel_view view, wf::output_t *output)
     {
         auto input = get_global_input_coordinates(output);
         auto dropped_at = check_drop_destination(output, input, view);
         if (!dropped_at)
         {
-            return;
+            return false;
         }
 
         auto split = calculate_insert_type(dropped_at, input);
         if (split == INSERT_NONE)
         {
-            return;
+            return false;
         }
 
         if (split == INSERT_SWAP)
         {
-            return handle_swap(view, dropped_at->view);
+            handle_swap(view, dropped_at->view);
         } else
         {
-            return handle_move(view, dropped_at, split);
+            handle_move_retile(view, dropped_at, split);
         }
+
+        return true;
     }
 
     /**
