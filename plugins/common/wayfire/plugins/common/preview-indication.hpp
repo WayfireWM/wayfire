@@ -1,3 +1,5 @@
+#pragma once
+
 #include <wayfire/geometry.hpp>
 #include <wayfire/render-manager.hpp>
 #include <wayfire/workspace-set.hpp>
