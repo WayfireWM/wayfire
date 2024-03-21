@@ -478,11 +478,23 @@ std::string wf::compositor_core_impl_t::get_xwayland_display()
     return xwayland_get_display();
 }
 
+void wf::start_move_view_to_wset(wayfire_toplevel_view v, std::shared_ptr<wf::workspace_set_t> new_wset)
+{
+    emit_view_pre_moved_to_wset_pre(v, v->get_wset(), new_wset);
+    if (v->get_wset())
+    {
+        v->get_wset()->remove_view(v);
+        wf::scene::remove_child(v->get_root_node());
+    }
+
+    wf::scene::add_front(new_wset->get_node(), v->get_root_node());
+    new_wset->add_view(v);
+}
+
 void wf::move_view_to_output(wayfire_toplevel_view v, wf::output_t *new_output, bool reconfigure)
 {
     auto old_output = v->get_output();
     auto old_wset   = v->get_wset();
-    emit_view_pre_moved_to_wset_pre(v, old_wset, new_output->wset());
 
     uint32_t edges;
     bool fullscreen;
@@ -505,15 +517,7 @@ void wf::move_view_to_output(wayfire_toplevel_view v, wf::output_t *new_output, 
 
     assert(new_output);
 
-    if (old_output)
-    {
-        old_output->wset()->remove_view(v);
-        wf::scene::remove_child(v->get_root_node());
-    }
-
-    wf::scene::add_front(new_output->wset()->get_node(), v->get_root_node());
-    new_output->wset()->add_view(v);
-
+    start_move_view_to_wset(v, new_output->wset());
     if (new_output == wf::get_core().seat->get_active_output())
     {
         wf::get_core().seat->focus_view(v);
