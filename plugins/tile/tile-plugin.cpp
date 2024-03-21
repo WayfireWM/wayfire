@@ -459,6 +459,7 @@ class tile_plugin_t : public wf::plugin_interface_t, wf::per_output_tracker_mixi
     {
         if (ev->view->has_data<view_auto_tile_t>() && ev->new_wset)
         {
+            ev->view->erase_data<view_auto_tile_t>();
             stop_controller(ev->new_wset);
             tile_workspace_set_data_t::get(ev->new_wset).attach_view(ev->view);
         }
