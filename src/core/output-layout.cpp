@@ -10,6 +10,7 @@
 #include "../output/output-impl.hpp"
 #include <xf86drmMode.h>
 #include <cstring>
+#include <climits>
 #include <unordered_set>
 #include <drm_fourcc.h>
 #include <wayfire/seat.hpp>
@@ -67,7 +68,7 @@ wlr_output_mode *find_matching_mode(wlr_output *output,
                 return mode;
             }
 
-            const int bestSoFar = std::abs(best->refresh - reference.refresh);
+            const int bestSoFar = best ? std::abs(best->refresh - reference.refresh) : INT_MAX;
             const int current   = std::abs(mode->refresh - reference.refresh);
             if (!best || (bestSoFar > current))
             {
