@@ -52,17 +52,17 @@ class wayfire_move : public wf::per_output_plugin_instance_t,
 
     wf::shared_data::ref_ptr_t<wf::move_drag::core_drag_t> drag_helper;
 
-    bool can_handle_drag()
+    bool can_handle_drag(wayfire_toplevel_view view)
     {
         bool yes = output->can_activate_plugin(&grab_interface, wf::PLUGIN_ACTIVATE_ALLOW_MULTIPLE);
-        yes &= drag_helper->view && (drag_helper->view->get_allowed_actions() & wf::VIEW_ALLOW_MOVE);
+        yes &= view && (view->get_allowed_actions() & wf::VIEW_ALLOW_MOVE);
         return yes;
     }
 
     wf::signal::connection_t<wf::move_drag::drag_focus_output_signal> on_drag_output_focus =
         [=] (wf::move_drag::drag_focus_output_signal *ev)
     {
-        if ((ev->focus_output == output) && can_handle_drag())
+        if ((ev->focus_output == output) && can_handle_drag(drag_helper->view))
         {
             drag_helper->set_scale(1.0);
 
@@ -79,7 +79,7 @@ class wayfire_move : public wf::per_output_plugin_instance_t,
     wf::signal::connection_t<wf::move_drag::snap_off_signal> on_drag_snap_off =
         [=] (wf::move_drag::snap_off_signal *ev)
     {
-        if ((ev->focus_output == output) && can_handle_drag())
+        if ((ev->focus_output == output) && can_handle_drag(drag_helper->view))
         {
             wf::move_drag::adjust_view_on_snap_off(drag_helper->view);
         }
@@ -88,7 +88,8 @@ class wayfire_move : public wf::per_output_plugin_instance_t,
     wf::signal::connection_t<wf::move_drag::drag_done_signal> on_drag_done =
         [=] (wf::move_drag::drag_done_signal *ev)
     {
-        if ((ev->focused_output == output) && can_handle_drag() && !drag_helper->is_view_held_in_place())
+        if ((ev->focused_output == output) && can_handle_drag(ev->main_view) &&
+            !drag_helper->is_view_held_in_place())
         {
             // Mark the last windowed geometry (which is the geometry before the view was grabbed: grabs work
             // not by moving the view, but by translating it with a transformer. Therefore, the view geometry
