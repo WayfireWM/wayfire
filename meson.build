@@ -175,7 +175,7 @@ if get_option('xwayland').enabled() and not wlroots_features['xwayland']
   error('Cannot enable Xwayland in wayfire: wlroots has been built without Xwayland support')
 endif
 
-if get_option('xwayland').enabled()
+if get_option('xwayland').enabled() or (get_option('xwayland').auto() and wlroots_features['xwayland'])
   xcb = dependency('xcb')
   conf_data.set('WF_HAS_XWAYLAND', 1)
 else
