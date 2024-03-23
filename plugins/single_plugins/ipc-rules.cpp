@@ -154,6 +154,7 @@ class ipc_rules_t : public wf::plugin_interface_t, public wf::per_output_tracker
         wf::get_core().connect(&on_title_changed);
         wf::get_core().connect(&on_app_id_changed);
         wf::get_core().connect(&on_plugin_activation_changed);
+        wf::get_core().connect(&on_output_gain_focus);
         init_output_tracking();
     }
 
@@ -564,6 +565,15 @@ class ipc_rules_t : public wf::plugin_interface_t, public wf::per_output_tracker
         data["plugin"] = ev->plugin_name;
         data["state"]  = ev->activated;
         data["output"] = ev->output ? (int)ev->output->get_id() : -1;
+        send_event_to_subscribes(data, data["event"]);
+    };
+
+    wf::signal::connection_t<wf::output_gain_focus_signal> on_output_gain_focus =
+        [=] (wf::output_gain_focus_signal *ev)
+    {
+        nlohmann::json data;
+        data["event"]  = "output-gain-focus";
+        data["output"] = output_to_json(ev->output);
         send_event_to_subscribes(data, data["event"]);
     };
 
