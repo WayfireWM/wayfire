@@ -1,14 +1,30 @@
 #pragma once
 
-#include "wayfire/geometry.hpp"
+#include <any>
 #include <memory>
-#include <vector>
 #include <wayfire/bindings.hpp>
 #include <wayfire/config/option-wrapper.hpp>
 #include <wayfire/config/types.hpp>
 
 namespace wf
 {
+/**
+ * Emitted on core.
+ * This signal gives plugins the ability to add their own activator binding types.
+ *
+ * wf-config parses the default key, button, touch and hotspot bindings.
+ * Every binding which does not fit into one of these categories is classified as an extension binding and
+ * stored as-is in a list of extension_binding_t's. Then, when Wayfire starts and on config reload, this
+ * signal is emitted. Plugins can try to parse the extension bindings and to store a tag in the extension
+ * binding. Later on, when they wish to trigger the binding, they can pass this tag to the bindings
+ * repository.
+ */
+struct parse_activator_extension_signal
+{
+    std::string extension_binding;
+    std::any tag;
+};
+
 /**
  * bindings_repository_t is responsible for managing a list of all bindings in
  * Wayfire, and for calling these bindings on the corresponding events.
@@ -56,6 +72,28 @@ class bindings_repository_t
     /** Handle a gesture from the user. */
     void handle_gesture(const wf::touchgesture_t& gesture);
 
+    /**
+     * Trigger all extension bindings which match the given tag.
+     *
+     * @pass tag The tag to match.
+     * @pass data The data to pass to the extension bindings.
+     */
+    template<class ExtensionTag>
+    bool handle_extension(const ExtensionTag& tag, const wf::activator_data_t& data)
+    {
+        return handle_extension_generic([tag] (const std::any& stored_tag)
+        {
+            const ExtensionTag *stored = std::any_cast<ExtensionTag>(&stored_tag);
+            return stored && (*stored == tag);
+        }, data);
+    }
+
+    /**
+     * Handle an extension call. The callback should return true if the binding matches.
+     */
+    bool handle_extension_generic(std::function<bool(const std::any& stored_tag)> callback,
+        const wf::activator_data_t& data);
+
     /** Erase binding of any type by callback */
     void rem_binding(void *callback);
 
@@ -63,6 +101,11 @@ class bindings_repository_t
      * Enable or disable the repository. The state is reference-counted and starts at 1 (enabled).
      */
     void set_enabled(bool enabled);
+
+    /**
+     * Re-parse all extension bindings.
+     */
+    void reparse_extensions();
 
     struct impl;
     std::unique_ptr<impl> priv;

@@ -210,6 +210,36 @@ void wf::bindings_repository_t::handle_gesture(const wf::touchgesture_t& gesture
     }
 }
 
+bool wf::bindings_repository_t::handle_extension_generic(
+    std::function<bool(const std::any& stored_tag)> callback, const wf::activator_data_t& data)
+{
+    if (!priv->enabled)
+    {
+        return false;
+    }
+
+    std::vector<std::function<bool()>> callbacks;
+    for (auto& binding : this->priv->activators)
+    {
+        for (auto& tag : binding->tags)
+        {
+            if (callback(tag))
+            {
+                callbacks.emplace_back([cb = binding->callback, &data] () { return (*cb)(data); });
+                break;
+            }
+        }
+    }
+
+    bool handled = false;
+    for (auto& cb : callbacks)
+    {
+        handled |= cb();
+    }
+
+    return handled;
+}
+
 void wf::bindings_repository_t::rem_binding(void *callback)
 {
     const auto& erase = [callback] (auto& container)
@@ -243,4 +273,40 @@ void wf::bindings_repository_t::set_enabled(bool enabled)
 {
     priv->enabled += (enabled ? 1 : -1);
     priv->recreate_hotspots();
+}
+
+void wf::bindings_repository_t::impl::reparse_extensions()
+{
+    for (auto& binding : this->activators)
+    {
+        binding->tags.clear();
+    }
+
+    idle_reparse_bindings.run_once([=]
+    {
+        for (auto& binding : this->activators)
+        {
+            auto value = binding->activated_by->get_value();
+            for (auto& ext : value.get_extensions())
+            {
+                parse_activator_extension_signal data;
+                data.extension_binding = ext;
+                wf::get_core().emit(&data);
+
+                if (data.tag.has_value())
+                {
+                    binding->tags.push_back(data.tag);
+                } else
+                {
+                    LOGW("Failed to parse extension binding ", ext, " from option ",
+                        binding->activated_by->get_name());
+                }
+            }
+        }
+    });
+}
+
+void wf::bindings_repository_t::reparse_extensions()
+{
+    priv->reparse_extensions();
 }

@@ -1,6 +1,5 @@
 #pragma once
 
-#include <map>
 #include "wayfire/util.hpp"
 #include <wayfire/config/types.hpp>
 #include <wayfire/output.hpp>
@@ -18,6 +17,7 @@ struct binding_t
 {
     wf::option_sptr_t<Option> activated_by;
     Callback *callback;
+    std::vector<std::any> tags;
 };
 
 template<class Option, class Callback> using binding_container_t =
