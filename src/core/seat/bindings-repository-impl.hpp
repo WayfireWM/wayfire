@@ -26,6 +26,8 @@ struct wf::bindings_repository_t::impl
         });
     }
 
+    void reparse_extensions();
+
     binding_container_t<wf::keybinding_t, key_callback> keys;
     binding_container_t<wf::keybinding_t, axis_callback> axes;
     binding_container_t<wf::buttonbinding_t, button_callback> buttons;
@@ -36,8 +38,11 @@ struct wf::bindings_repository_t::impl
     wf::signal::connection_t<wf::reload_config_signal> on_config_reload = [=] (wf::reload_config_signal *ev)
     {
         recreate_hotspots();
+        reparse_extensions();
     };
 
     wf::wl_idle_call idle_recreate_hotspots;
+    wf::wl_idle_call idle_reparse_bindings;
+
     int enabled = 1;
 };

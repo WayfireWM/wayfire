@@ -225,6 +225,7 @@ void wf::compositor_core_impl_t::post_init()
     this->emit(&backend_started_ev);
     this->state = compositor_state_t::RUNNING;
     plugin_mgr  = std::make_unique<wf::plugin_manager_t>();
+    this->bindings->reparse_extensions();
 
     // Move pointer to the middle of the leftmost, topmost output
     wf::pointf_t p;
