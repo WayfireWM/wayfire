@@ -5,7 +5,7 @@ jobs:
   test_musl_gcc:
     name: "Test with GCC/musl/libstdc++/BFD on Alpine Linux"
     runs-on: ubuntu-latest
-    container: alpine:edge
+    container: alpine:latest
     steps:
     - run: apk --no-cache add git gcc g++ binutils pkgconf meson ninja musl-dev wayland-dev wayland-protocols libinput-dev libevdev-dev libxkbcommon-dev pixman-dev glm-dev libdrm-dev mesa-dev cairo-dev pango-dev eudev-dev libxml2-dev libseat-dev libxcb-dev xcb-util-wm-dev xwayland doctest doctest-dev cmake libdisplay-info-dev hwdata-dev
     - uses: actions/checkout@v1
