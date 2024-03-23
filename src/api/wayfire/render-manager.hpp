@@ -172,6 +172,12 @@ class render_manager
      */
     wf::render_target_t get_target_framebuffer() const;
 
+    /**
+     * Inform Wayfire whether a depth buffer is required for rendering on the default framebuffer for each
+     * output.
+     */
+    void set_require_depth_buffer(bool require);
+
   private:
     class impl;
     std::unique_ptr<impl> pimpl;
