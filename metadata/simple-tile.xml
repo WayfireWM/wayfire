@@ -65,7 +65,7 @@
 			<_long>Number of pixels to shrink of a view when it has no neighbor above or below.</_long>
 			<default>0</default>
 		</option>
-		<option name="animation_duration" type="int">
+		<option name="animation_duration" type="animation">
 			<_short>Resize animation duration</_short>
 			<_long>The duration of the crossfade animation in situations where a tiled view's geometry changes.</_long>
 			<default>0</default>

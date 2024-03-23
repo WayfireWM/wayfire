@@ -53,6 +53,7 @@ class wayfire_alpha : public wf::plugin_interface_t
         min_value.set_callback(min_value_changed);
         wf::get_core().bindings->add_axis(modifier, &axis_cb);
         ipc_repo->register_method("wf/alpha/set-view-alpha", ipc_set_view_alpha);
+        ipc_repo->register_method("wf/alpha/get-view-alpha", ipc_get_view_alpha);
     }
 
     wf::ipc::method_callback ipc_set_view_alpha = [=] (nlohmann::json data) -> nlohmann::json
@@ -71,6 +72,31 @@ class wayfire_alpha : public wf::plugin_interface_t
         }
 
         return wf::ipc::json_ok();
+    };
+
+    wf::ipc::method_callback ipc_get_view_alpha = [=] (nlohmann::json data) -> nlohmann::json
+    {
+        WFJSON_EXPECT_FIELD(data, "view-id", number_unsigned);
+
+        auto view = wf::ipc::find_view_by_id(data["view-id"]);
+        if (!view)
+        {
+            return wf::ipc::json_error("Failed to find view with given id. Maybe it was closed?");
+        }
+
+        auto tmgr = view->get_transformed_node();
+        auto transformer = tmgr->get_transformer<wf::scene::view_2d_transformer_t>("alpha");
+        auto response    = wf::ipc::json_ok();
+
+        if (transformer)
+        {
+            response["alpha"] = transformer->alpha;
+        } else
+        {
+            response["alpha"] = 1.0;
+        }
+
+        return response;
     };
 
     std::shared_ptr<wf::scene::view_2d_transformer_t> ensure_transformer(wayfire_view view)
@@ -158,6 +184,7 @@ class wayfire_alpha : public wf::plugin_interface_t
 
         wf::get_core().bindings->rem_binding(&axis_cb);
         ipc_repo->unregister_method("wf/alpha/set-view-alpha");
+        ipc_repo->unregister_method("wf/alpha/get-view-alpha");
     }
 };
 

@@ -83,7 +83,7 @@ class vswipe : public wf::per_output_plugin_instance_t
     wf::option_wrapper_t<bool> smooth_transition{"vswipe/enable_smooth_transition"};
 
     wf::option_wrapper_t<wf::color_t> background_color{"vswipe/background"};
-    wf::option_wrapper_t<int> animation_duration{"vswipe/duration"};
+    wf::option_wrapper_t<wf::animation_description_t> animation_duration{"vswipe/duration"};
 
     vswipe_smoothing_t smooth_delta{animation_duration};
     wf::option_wrapper_t<int> fingers{"vswipe/fingers"};

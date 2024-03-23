@@ -16,6 +16,9 @@ struct loaded_plugin_t
 
     // A handle returned by dlopen().
     void *so_handle;
+
+    // A path to the .so file of the plugin.
+    std::string so_path;
 };
 
 struct plugin_manager_t

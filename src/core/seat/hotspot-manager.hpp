@@ -87,7 +87,6 @@ class hotspot_manager_t
     void update_hotspots(const container_t& activators);
 
   private:
-    bool enabled = true;
     std::vector<std::unique_ptr<hotspot_instance_t>> hotspots;
 };
 }

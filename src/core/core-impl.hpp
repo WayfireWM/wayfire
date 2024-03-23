@@ -8,9 +8,6 @@
 #include "wayfire/util.hpp"
 #include <wayfire/nonstd/wlroots-full.hpp>
 
-#include <set>
-#include <unordered_map>
-
 namespace wf
 {
 class seat_t;
@@ -38,7 +35,11 @@ class compositor_core_impl_t : public compositor_core_t
      */
     virtual void post_init();
 
+    void fini();
+
     static compositor_core_impl_t& get();
+    static compositor_core_impl_t& allocate_core();
+    static void deallocate_core();
 
     wlr_seat *get_current_seat() override;
     void warp_cursor(wf::pointf_t pos) override;
@@ -69,6 +70,9 @@ class compositor_core_impl_t : public compositor_core_t
     compositor_state_t get_current_state() override;
     const std::shared_ptr<scene::root_node_t>& scene() final;
 
+    compositor_core_impl_t();
+    virtual ~compositor_core_impl_t();
+
   protected:
     wf::wl_listener_wrapper vkbd_created;
     wf::wl_listener_wrapper vptr_created;
@@ -80,15 +84,15 @@ class compositor_core_impl_t : public compositor_core_t
     std::shared_ptr<scene::root_node_t> scene_root;
 
     compositor_state_t state = compositor_state_t::UNKNOWN;
-    compositor_core_impl_t();
-    virtual ~compositor_core_impl_t();
 
   private:
     wf::option_wrapper_t<bool> discard_command_output;
+    static std::unique_ptr<compositor_core_impl_t> static_core;
 };
 
 compositor_core_impl_t& get_core_impl();
-}
 
+void priv_output_layout_fini(wf::output_layout_t *layout);
+}
 
 #endif /* end of include guard: WF_CORE_CORE_IMPL_HPP */

@@ -106,7 +106,6 @@ static void wlr_log_handler(wlr_log_importance level,
     wf::log::log_plain(wlevel, buffer);
 }
 
-#ifdef PRINT_TRACE
 static void signal_handler(int signal)
 {
     std::string error;
@@ -124,6 +123,16 @@ static void signal_handler(int signal)
         error = "Fatal error(SIGABRT)";
         break;
 
+      case SIGINT:
+        LOGI("Got SIGINT, shutting down");
+        wf::get_core().shutdown();
+        return;
+
+      case SIGTERM:
+        LOGI("Got SIGTERM, shutting down");
+        wf::get_core().shutdown();
+        return;
+
       default:
         error = "Unknown";
     }
@@ -132,8 +141,6 @@ static void signal_handler(int signal)
     wf::print_trace(false);
     std::_Exit(-1);
 }
-
-#endif
 
 static std::optional<std::string> choose_socket(wl_display *display)
 {
@@ -227,6 +234,17 @@ void parse_extended_debugging(const std::vector<std::string>& categories)
     }
 }
 
+// Override assert() handler to be more useful and print a trace.
+// extern "C" {
+// void __assert_fail(const char* expr, const char *filename, unsigned int line, const char *assert_func)
+// {
+// LOGE("Assertion failed: ", expr, " at ", filename, ":", line, " in ", assert_func);
+// wf::print_trace(false);
+// std::_Exit(-1);
+// }
+// }
+
+// Override exception handling to be more useful and print a trace.
 // extern "C" {
 // void __cxa_throw(void *ex, void *info, void (*dest)(void*))
 // {
@@ -328,6 +346,9 @@ int main(int argc, char *argv[])
     signal(SIGABRT, signal_handler);
 #endif
 
+    signal(SIGINT, signal_handler);
+    signal(SIGTERM, signal_handler);
+
     std::set_terminate([] ()
     {
         std::cout << "Unhandled exception" << std::endl;
@@ -339,7 +360,7 @@ int main(int argc, char *argv[])
     /* First create display and initialize safe-list's event loop, so that
      * wf objects (which depend on safe-list) can work */
     auto display = wl_display_create();
-    auto& core   = wf::get_core_impl();
+    auto& core   = wf::compositor_core_impl_t::allocate_core();
 
     core.argc = argc;
     core.argv = argv;
@@ -420,9 +441,7 @@ int main(int argc, char *argv[])
     core.post_init();
 
     wl_display_run(core.display);
-
-    /* Teardown */
-    wl_display_destroy_clients(core.display);
-    wl_display_destroy(core.display);
+    wf::compositor_core_impl_t::deallocate_core();
+    LOGI("Shutdown successful!");
     return EXIT_SUCCESS;
 }

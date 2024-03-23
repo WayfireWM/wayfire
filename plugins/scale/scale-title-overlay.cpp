@@ -4,9 +4,7 @@
 #include "wayfire/debug.hpp"
 #include "wayfire/geometry.hpp"
 #include "wayfire/output.hpp"
-#include "wayfire/plugins/common/util.hpp"
 #include "wayfire/plugins/scale-signal.hpp"
-#include "wayfire/render-manager.hpp"
 #include "wayfire/scene-operations.hpp"
 #include "wayfire/signal-definitions.hpp"
 #include "wayfire/view-transform.hpp"
@@ -105,6 +103,7 @@ class title_overlay_node_t : public node_t
     /* Whether we are currently rendering the overlay by this transformer.
      * Set in the pre-render hook and used in the render function. */
     bool overlay_shown = false;
+    wf::wl_idle_call idle_update_title;
 
   private:
     /**
@@ -187,13 +186,20 @@ class title_overlay_node_t : public node_t
         return view == parent;
     }
 
-    wf::effect_hook_t pre_render = [=] () -> void
+    void update_title()
     {
         if (!should_have_overlay())
         {
+            if (overlay_shown)
+            {
+                this->do_push_damage(get_bounding_box());
+            }
+
             overlay_shown = false;
             return;
         }
+
+        auto old_bbox = get_bounding_box();
 
         overlay_shown = true;
         auto box = find_maximal_title_size();
@@ -214,7 +220,6 @@ class title_overlay_node_t : public node_t
             (tex.overflow &&
              (tex.overlay.tex.width < std::floor(box.width * output_scale))))
         {
-            this->do_push_damage(get_bounding_box());
             tex.par.output_scale = output_scale;
             tex.update_overlay_texture({box.width, box.height});
         }
@@ -239,10 +244,9 @@ class title_overlay_node_t : public node_t
             break;
         }
 
+        this->do_push_damage(old_bbox);
         this->do_push_damage(get_bounding_box());
-    };
-
-    wf::output_t *output;
+    }
 
   public:
     title_overlay_node_t(
@@ -262,13 +266,12 @@ class title_overlay_node_t : public node_t
                 wf::cairo_text_t::measure_height(title.par.font_size, true);
         }
 
-        this->output = view->get_output();
-        output->render->add_effect(&pre_render, OUTPUT_EFFECT_PRE);
+        idle_update_title.set_callback([=] () { update_title(); });
+        idle_update_title.run_once();
     }
 
     ~title_overlay_node_t()
     {
-        output->render->rem_effect(&pre_render);
         view->erase_data<view_title_texture_t>();
     }
 
@@ -356,6 +359,7 @@ class title_overlay_render_instance_t : public render_instance_t
         }
 
         OpenGL::render_end();
+        self->idle_update_title.run_once();
     }
 };
 
@@ -412,6 +416,7 @@ add_title_overlay{[this] (scale_transformer_added_signal *signal)
 
         auto node = std::make_shared<title_overlay_node_t>(signal->view, pos, *this);
         wf::scene::add_front(parent, node);
+        wf::scene::damage_node(parent, parent->get_bounding_box());
     }
 },
 

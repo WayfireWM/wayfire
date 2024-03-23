@@ -21,7 +21,7 @@ enum wf_animation_type
 class animation_base
 {
   public:
-    virtual void init(wayfire_view view, int duration, wf_animation_type type);
+    virtual void init(wayfire_view view, wf::animation_description_t duration, wf_animation_type type);
     virtual bool step(); /* return true if continue, false otherwise */
     virtual void reverse(); /* reverse the animation */
     virtual int get_direction();

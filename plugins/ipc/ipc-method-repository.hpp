@@ -17,6 +17,7 @@ class client_interface_t
 {
   public:
     virtual void send_json(nlohmann::json json) = 0;
+    virtual ~client_interface_t() = default;
 };
 
 /**

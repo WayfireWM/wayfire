@@ -23,6 +23,7 @@ namespace wf
 class view_interface_t;
 class toplevel_view_interface_t;
 class window_manager_t;
+class workspace_set_t;
 
 namespace scene
 {
@@ -313,6 +314,14 @@ class compositor_core_t : public wf::object_base_t, public signal::provider_t
  * it to the output geometry so it is at an expected size and position.
  */
 void move_view_to_output(wayfire_toplevel_view v, wf::output_t *new_output, bool reconfigure);
+
+/**
+ * Start a move of a view to a new workspace set (and thus potentially to a new output).
+ * Note that the view will be removed from its current workspace set and added to the new one.
+ * However, the view's geometry will not be adjusted, and neither will the view_moved_to_wset_signal be
+ * emitted (in contrast to move_view_to_output, which emits view_moved_to_wset_signal).
+ */
+void start_move_view_to_wset(wayfire_toplevel_view v, std::shared_ptr<wf::workspace_set_t> new_wset);
 
 /**
  * Simply a convenience function to call wf::compositor_core_t::get()

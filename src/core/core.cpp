@@ -244,10 +244,37 @@ void wf::compositor_core_impl_t::post_init()
 
 void wf::compositor_core_impl_t::shutdown()
 {
+    // We might get multiple signals in some scenarios. Shutdown only on the first instance.
+    if (this->state != compositor_state_t::SHUTDOWN)
+    {
+        wl_display_terminate(wf::get_core().display);
+    }
+}
+
+void wf::compositor_core_impl_t::fini()
+{
     this->state = compositor_state_t::SHUTDOWN;
     core_shutdown_signal ev;
     this->emit(&ev);
-    wl_display_terminate(wf::get_core().display);
+
+    LOGI("Unloading plugins...");
+    plugin_mgr.reset();
+    LOGI("Stopping clients...");
+    wl_display_destroy_clients(static_core->display);
+    LOGI("Freeing resources...");
+    default_wm.reset();
+    bindings.reset();
+    scene_root.reset();
+
+    // General core stuff
+    im_relay.reset();
+    seat.reset();
+    input.reset();
+    priv_output_layout_fini(output_layout.get());
+    output_layout.reset();
+    tx_manager.reset();
+    OpenGL::fini();
+    wl_display_destroy(static_core->display);
 }
 
 wf::compositor_state_t wf::compositor_core_impl_t::get_current_state()
@@ -451,11 +478,23 @@ std::string wf::compositor_core_impl_t::get_xwayland_display()
     return xwayland_get_display();
 }
 
+void wf::start_move_view_to_wset(wayfire_toplevel_view v, std::shared_ptr<wf::workspace_set_t> new_wset)
+{
+    emit_view_pre_moved_to_wset_pre(v, v->get_wset(), new_wset);
+    if (v->get_wset())
+    {
+        v->get_wset()->remove_view(v);
+        wf::scene::remove_child(v->get_root_node());
+    }
+
+    wf::scene::add_front(new_wset->get_node(), v->get_root_node());
+    new_wset->add_view(v);
+}
+
 void wf::move_view_to_output(wayfire_toplevel_view v, wf::output_t *new_output, bool reconfigure)
 {
     auto old_output = v->get_output();
     auto old_wset   = v->get_wset();
-    emit_view_pre_moved_to_wset_pre(v, old_wset, new_output->wset());
 
     uint32_t edges;
     bool fullscreen;
@@ -472,23 +511,13 @@ void wf::move_view_to_output(wayfire_toplevel_view v, wf::output_t *new_output, 
         new_output_g = new_output->get_relative_geometry();
         auto ratio_x = (double)new_output_g.width / old_output_g.width;
         auto ratio_y = (double)new_output_g.height / old_output_g.height;
-        view_g.x     *= ratio_x;
-        view_g.y     *= ratio_y;
-        view_g.width *= ratio_x;
-        view_g.height *= ratio_y;
+        view_g.x *= ratio_x;
+        view_g.y *= ratio_y;
     }
 
     assert(new_output);
 
-    if (old_output)
-    {
-        old_output->wset()->remove_view(v);
-        wf::scene::remove_child(v->get_root_node());
-    }
-
-    wf::scene::add_front(new_output->wset()->get_node(), v->get_root_node());
-    new_output->wset()->add_view(v);
-
+    start_move_view_to_wset(v, new_output->wset());
     if (new_output == wf::get_core().seat->get_active_output())
     {
         wf::get_core().seat->focus_view(v);
@@ -544,6 +573,26 @@ wf::compositor_core_impl_t& wf::get_core_impl()
 {
     return wf::compositor_core_impl_t::get();
 }
+
+wf::compositor_core_impl_t& wf::compositor_core_impl_t::allocate_core()
+{
+    wf::dassert(!static_core, "Core already allocated");
+    static_core = std::make_unique<compositor_core_impl_t>();
+    return *static_core;
+}
+
+void wf::compositor_core_impl_t::deallocate_core()
+{
+    static_core->fini();
+    static_core.reset();
+}
+
+wf::compositor_core_impl_t& wf::compositor_core_impl_t::get()
+{
+    return *static_core;
+}
+
+std::unique_ptr<wf::compositor_core_impl_t> wf::compositor_core_impl_t::static_core;
 
 // TODO: move this to a better location
 wf_runtime_config runtime_config;

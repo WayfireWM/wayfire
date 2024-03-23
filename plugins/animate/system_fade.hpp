@@ -5,7 +5,7 @@
 #include <wayfire/output.hpp>
 #include <wayfire/opengl.hpp>
 #include <wayfire/render-manager.hpp>
-#include "animate.hpp"
+#include <wayfire/util/duration.hpp>
 
 /* animates wake from suspend/startup by fading in the whole output */
 class wf_system_fade
@@ -17,8 +17,8 @@ class wf_system_fade
     wf::effect_hook_t damage_hook, render_hook;
 
   public:
-    wf_system_fade(wf::output_t *out, int dur) :
-        progression(wf::create_option<int>(dur)), output(out)
+    wf_system_fade(wf::output_t *out, wf::animation_description_t dur) :
+        progression(wf::create_option<wf::animation_description_t>(dur)), output(out)
     {
         damage_hook = [=] ()
         { output->render->damage_whole(); };

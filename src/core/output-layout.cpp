@@ -1,7 +1,6 @@
 #include "wayfire/output.hpp"
 #include "wayfire/core.hpp"
 #include "wayfire/output-layout.hpp"
-#include "wayfire/view-helpers.hpp"
 #include "wayfire/view.hpp"
 #include "wayfire/workspace-set.hpp"
 #include "wayfire/render-manager.hpp"
@@ -9,14 +8,12 @@
 #include "wayfire/util.hpp"
 
 #include "../output/output-impl.hpp"
-#include "seat/cursor.hpp"
-#include "core-impl.hpp"
-
 #include <xf86drmMode.h>
-#include <sstream>
 #include <cstring>
+#include <climits>
 #include <unordered_set>
 #include <drm_fourcc.h>
+#include <wayfire/seat.hpp>
 
 #include <wayfire/debug.hpp>
 #include <wayfire/util/log.hpp>
@@ -71,7 +68,9 @@ wlr_output_mode *find_matching_mode(wlr_output *output,
                 return mode;
             }
 
-            if (!best || (best->refresh < mode->refresh))
+            const int bestSoFar = best ? std::abs(best->refresh - reference.refresh) : INT_MAX;
+            const int current   = std::abs(mode->refresh - reference.refresh);
+            if (!best || (bestSoFar > current))
             {
                 best = mode;
             }
@@ -1005,7 +1004,22 @@ class output_layout_t::impl
         on_output_power_mode_set.connect(&output_pw_manager->events.set_mode);
     }
 
-    ~impl() = default;
+    void fini()
+    {
+        // Destroy outputs first
+        this->outputs.clear();
+        noop_output.reset();
+
+        // Disconnect all signals
+        on_new_output.disconnect();
+        on_output_manager_test.disconnect();
+        on_output_manager_apply.disconnect();
+        on_output_power_mode_set.disconnect();
+        on_backend_destroy.disconnect();
+
+        wlr_backend_destroy(noop_backend);
+        wlr_output_layout_destroy(output_layout);
+    }
 
     impl(const impl &) = delete;
     impl(impl &&) = delete;
@@ -1757,5 +1771,10 @@ bool output_layout_t::apply_configuration(
     const output_configuration_t& configuration, bool test_only)
 {
     return pimpl->apply_configuration(configuration, test_only);
+}
+
+void priv_output_layout_fini(wf::output_layout_t *layout)
+{
+    layout->pimpl->fini();
 }
 }

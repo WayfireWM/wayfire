@@ -1,14 +1,14 @@
 #pragma once
 
 #include <wayfire/nonstd/wlroots-full.hpp>
-#include "../view/surface-impl.hpp"
 #include "wayfire/geometry.hpp"
 #include "wayfire/scene.hpp"
 
 namespace wf
 {
-struct drag_icon_t
+class drag_icon_t
 {
+  public:
     wlr_drag_icon *icon;
     wl_listener_wrapper on_map, on_unmap, on_destroy;
 

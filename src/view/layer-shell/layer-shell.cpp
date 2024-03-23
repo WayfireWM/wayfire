@@ -83,7 +83,7 @@ class wayfire_layer_shell_view : public wf::view_interface_t
     /* Just pass to the default wlr surface implementation */
     bool is_mapped() const override
     {
-        return priv->wsurface != nullptr;
+        return priv->is_mapped;
     }
 
     std::string get_app_id() override final

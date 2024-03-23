@@ -50,7 +50,7 @@ class scale_animation_t : public duration_t
 
 struct wf_scale_animation_attribs
 {
-    wf::option_wrapper_t<int> duration{"scale/duration"};
+    wf::option_wrapper_t<wf::animation_description_t> duration{"scale/duration"};
     scale_animation_t scale_animation{duration};
 };
 
@@ -107,6 +107,7 @@ class wayfire_scale : public wf::per_output_plugin_instance_t,
     wayfire_toplevel_view last_selected_view;
     std::map<wayfire_toplevel_view, view_scale_data> scale_data;
     wf::option_wrapper_t<int> spacing{"scale/spacing"};
+    wf::option_wrapper_t<int> outer_margin{"scale/outer_margin"};
     wf::option_wrapper_t<bool> middle_click_close{"scale/middle_click_close"};
     wf::option_wrapper_t<double> inactive_alpha{"scale/inactive_alpha"};
     wf::option_wrapper_t<double> minimized_alpha{"scale/minimized_alpha"};
@@ -801,7 +802,7 @@ class wayfire_scale : public wf::per_output_plugin_instance_t,
             view_data.transformer->translation_y, translation_y);
         view_data.animation.scale_animation.start();
         view_data.fade_animation = wf::animation::simple_animation_t(
-            wf::option_wrapper_t<int>{"scale/duration"});
+            wf::option_wrapper_t<wf::animation_description_t>{"scale/duration"});
         view_data.fade_animation.animate(view_data.transformer->alpha,
             target_alpha);
     }
@@ -919,6 +920,10 @@ class wayfire_scale : public wf::per_output_plugin_instance_t,
         filter_views(views);
 
         auto workarea = output->workarea->get_workarea();
+        workarea.x     += outer_margin;
+        workarea.y     += outer_margin;
+        workarea.width -= outer_margin * 2;
+        workarea.height -= outer_margin * 2;
 
         auto sorted_rows = view_sort(views);
         size_t cnt_rows  = sorted_rows.size();
@@ -1504,17 +1509,16 @@ class wayfire_scale_global : public wf::plugin_interface_t,
     {
         if (auto toplevel = wf::toplevel_cast(ev->view))
         {
-            if (auto old_output = ev->output)
+            auto old_output = ev->output;
+            if (old_output && output_instance.count(old_output))
             {
                 this->output_instance[old_output]->handle_view_disappeared(toplevel);
             }
 
-            if (auto new_output = ev->view->get_output())
+            auto new_output = ev->view->get_output();
+            if (new_output && output_instance.count(new_output) && output_instance[new_output]->active)
             {
-                if (output_instance[new_output]->active)
-                {
-                    this->output_instance[ev->view->get_output()]->handle_new_view(toplevel);
-                }
+                this->output_instance[ev->view->get_output()]->handle_new_view(toplevel);
             }
         }
     };

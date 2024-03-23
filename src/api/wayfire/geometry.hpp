@@ -1,7 +1,7 @@
 #ifndef WF_GEOMETRY_HPP
 #define WF_GEOMETRY_HPP
 
-#include <sstream>
+#include <ostream>
 #include <wayfire/nonstd/wlroots.hpp>
 
 namespace wf
@@ -49,6 +49,11 @@ struct pointf_t
     pointf_t operator -() const
     {
         return pointf_t{-x, -y};
+    }
+
+    point_t round_down() const
+    {
+        return point_t{static_cast<int>(x), static_cast<int>(y)};
     }
 };
 

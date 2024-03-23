@@ -20,7 +20,6 @@
 #include <wayfire/view-transform.hpp>
 #include <wayfire/nonstd/reverse.hpp>
 #include <cmath>
-#include <list>
 
 namespace wf
 {
@@ -97,7 +96,7 @@ class workspace_switch_t
         this->output = output;
         wall = std::make_unique<workspace_wall_t>(output);
         animation = workspace_animation_t{
-            wf::option_wrapper_t<int>{"vswitch/duration"}
+            wf::option_wrapper_t<wf::animation_description_t>{"vswitch/duration"}
         };
     }
 
@@ -347,7 +346,11 @@ class control_bindings_t
         bindings_win.set_callback(on_cfg_reload);
     }
 
-    virtual ~control_bindings_t() = default;
+    virtual ~control_bindings_t()
+    {
+        tear_down();
+    }
+
     control_bindings_t(const control_bindings_t &) = delete;
     control_bindings_t(control_bindings_t &&) = delete;
     control_bindings_t& operator =(const control_bindings_t&) = delete;

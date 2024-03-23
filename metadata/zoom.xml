@@ -15,10 +15,10 @@
 			<default>0.01</default>
 			<precision>0.001</precision>
 		</option>
-		<option name="smoothing_duration" type="int">
+		<option name="smoothing_duration" type="animation">
 			<_short>Smoothing duration</_short>
 			<_long>Sets the smoothing duration in milliseconds.</_long>
-			<default>300</default>
+			<default>300ms linear</default>
 		</option>
 		<option name="interpolation_method" type="int">
 			<_short>Interpolation method</_short>

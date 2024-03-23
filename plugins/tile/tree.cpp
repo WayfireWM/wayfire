@@ -8,7 +8,6 @@
 #include <wayfire/output.hpp>
 #include <wayfire/workspace-set.hpp>
 #include <wayfire/view-transform.hpp>
-#include <algorithm>
 #include <wayfire/plugins/crossfade.hpp>
 #include <wayfire/plugins/common/util.hpp>
 #include <wayfire/toplevel.hpp>
@@ -115,7 +114,7 @@ void split_node_t::recalculate_children(wf::geometry_t available, wf::txn::trans
         return (current / old_child_sum) * total_splittable;
     };
 
-    set_gaps(this->gaps, tx);
+    set_gaps(this->gaps);
 
     /* For each child, assign its percentage of the whole. */
     for (auto& child : this->children)
@@ -165,7 +164,7 @@ void split_node_t::add_child(std::unique_ptr<tree_node_t> child, wf::txn::transa
 
     this->children.emplace(this->children.begin() + index, std::move(child));
 
-    set_gaps(this->gaps, tx);
+    set_gaps(this->gaps);
 
     /* Recalculate geometry */
     recalculate_children(geometry, tx);
@@ -203,7 +202,7 @@ void split_node_t::set_geometry(wf::geometry_t geometry, wf::txn::transaction_up
     recalculate_children(geometry, tx);
 }
 
-void split_node_t::set_gaps(const gap_size_t& gaps, wf::txn::transaction_uptr& tx)
+void split_node_t::set_gaps(const gap_size_t& gaps)
 {
     this->gaps = gaps;
     for (const auto& child : this->children)
@@ -239,7 +238,7 @@ void split_node_t::set_gaps(const gap_size_t& gaps, wf::txn::transaction_uptr& t
             *second_edge = gaps.internal;
         }
 
-        child->set_gaps(child_gaps, tx);
+        child->set_gaps(child_gaps);
     }
 }
 
@@ -335,7 +334,7 @@ class tile_view_animation_t : public wf::grid::grid_animation_t
 view_node_t::view_node_t(wayfire_toplevel_view view)
 {
     this->view = view;
-    LOGI("We store data??");
+    wf::dassert(!view->has_data<view_node_custom_data_t>(), "View already has custom data!");
     view->store_data(std::make_unique<view_node_custom_data_t>(this));
 
     this->on_geometry_changed.set_callback([=] (auto)
@@ -357,7 +356,7 @@ view_node_t::~view_node_t()
     view->erase_data<view_node_custom_data_t>();
 }
 
-void view_node_t::set_gaps(const gap_size_t& size, wf::txn::transaction_uptr& tx)
+void view_node_t::set_gaps(const gap_size_t& size)
 {
     if ((this->gaps.top != size.top) ||
         (this->gaps.bottom != size.bottom) ||
@@ -407,7 +406,7 @@ wf::geometry_t view_node_t::calculate_target_geometry()
 
 bool view_node_t::needs_crossfade()
 {
-    if (animation_duration == 0)
+    if (animation_duration.value().length_ms == 0)
     {
         return false;
     }
@@ -427,7 +426,7 @@ bool view_node_t::needs_crossfade()
 }
 
 static nonstd::observer_ptr<wf::grid::grid_animation_t> ensure_animation(
-    wayfire_toplevel_view view, wf::option_sptr_t<int> duration)
+    wayfire_toplevel_view view, wf::option_sptr_t<wf::animation_description_t> duration)
 {
     if (!view->has_data<wf::grid::grid_animation_t>())
     {
@@ -502,31 +501,34 @@ nonstd::observer_ptr<view_node_t> view_node_t::get_node(wayfire_view view)
 }
 
 /* ----------------- Generic tree operations implementation ----------------- */
-void flatten_tree(std::unique_ptr<tree_node_t>& root, txn::transaction_uptr& tx)
+bool flatten_tree(std::unique_ptr<tree_node_t>& root)
 {
     /* Cannot flatten a view node */
     if (root->as_view_node())
     {
-        return;
+        return true;
+    }
+
+    for (auto it = root->children.begin(); it != root->children.end();)
+    {
+        if (!flatten_tree(*it))
+        {
+            it = root->children.erase(it);
+        } else
+        {
+            ++it;
+        }
+    }
+
+    if (root->children.empty())
+    {
+        return false;
     }
 
     /* No flattening required on this level */
     if (root->children.size() >= 2)
     {
-        for (auto& child : root->children)
-        {
-            flatten_tree(child, tx);
-        }
-
-        return;
-    }
-
-    /* Only the real root of the tree can have no children */
-    assert(!root->parent || root->children.size());
-
-    if (root->children.empty())
-    {
-        return;
+        return true;
     }
 
     nonstd::observer_ptr<tree_node_t> child_ptr = {root->children.front()};
@@ -536,14 +538,14 @@ void flatten_tree(std::unique_ptr<tree_node_t>& root, txn::transaction_uptr& tx)
     {
         if (!root->parent)
         {
-            return;
+            return true;
         }
     }
 
     /* Rewire the tree, skipping the current root */
-    auto child = root->as_split_node()->remove_child(child_ptr, tx);
-    child->parent = root->parent;
-    root = std::move(child); // overwrite root with the child
+    child_ptr->parent = root->parent;
+    root = std::move(root->children.front());
+    return true;
 }
 
 nonstd::observer_ptr<split_node_t> get_root(

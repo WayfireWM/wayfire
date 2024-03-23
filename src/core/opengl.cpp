@@ -6,6 +6,7 @@
 #include "core-impl.hpp"
 #include "config.h"
 #include <wayfire/nonstd/wlroots-full.hpp>
+#include <set>
 
 #include <glm/gtc/matrix_transform.hpp>
 

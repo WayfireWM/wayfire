@@ -51,6 +51,7 @@ wf::plugin_manager_t::~plugin_manager_t()
 
 void wf::plugin_manager_t::destroy_plugin(wf::loaded_plugin_t& p)
 {
+    LOGD("Unloading plugin ", p.so_path);
     p.instance->fini();
     p.instance.reset();
 
@@ -130,6 +131,7 @@ std::optional<wf::loaded_plugin_t> wf::plugin_manager_t::load_plugin_from_file(s
         loaded_plugin_t lp;
         lp.instance  = std::unique_ptr<wf::plugin_interface_t>(new_instance_func());
         lp.so_handle = handle;
+        lp.so_path   = path;
         return lp;
     }
 
@@ -228,20 +230,21 @@ void wf::plugin_manager_t::reload_dynamic_plugins()
 }
 
 template<class T>
-static wf::loaded_plugin_t create_plugin()
+static wf::loaded_plugin_t create_plugin(std::string name)
 {
     wf::loaded_plugin_t lp;
     lp.instance  = std::make_unique<T>();
     lp.so_handle = nullptr;
+    lp.so_path   = name;
     lp.instance->init();
     return lp;
 }
 
 void wf::plugin_manager_t::load_static_plugins()
 {
-    loaded_plugins["_exit"]  = create_plugin<wf::per_output_plugin_t<wayfire_exit>>();
-    loaded_plugins["_focus"] = create_plugin<wayfire_focus>();
-    loaded_plugins["_close"] = create_plugin<wf::per_output_plugin_t<wayfire_close>>();
+    loaded_plugins["_exit"]  = create_plugin<wf::per_output_plugin_t<wayfire_exit>>("_exit");
+    loaded_plugins["_focus"] = create_plugin<wayfire_focus>("_focus");
+    loaded_plugins["_close"] = create_plugin<wf::per_output_plugin_t<wayfire_close>>("_close");
 }
 
 std::vector<std::string> wf::get_plugin_paths()

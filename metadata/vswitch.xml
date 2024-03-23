@@ -107,7 +107,7 @@
 			</entry>
 		</option>
 
-		<option name="duration" type="int">
+		<option name="duration" type="animation">
 			<_short>Duration</_short>
 			<_long>Sets the duration of the workspace switching animation in milliseconds.</_long>
 			<default>300</default>

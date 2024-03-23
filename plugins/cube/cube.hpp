@@ -24,7 +24,7 @@ class cube_animation_t : public duration_t
 
 struct wf_cube_animation_attribs
 {
-    wf::option_wrapper_t<int> animation_duration{"cube/initial_animation"};
+    wf::option_wrapper_t<wf::animation_description_t> animation_duration{"cube/initial_animation"};
     cube_animation_t cube_animation{animation_duration};
 
     glm::mat4 projection, view;

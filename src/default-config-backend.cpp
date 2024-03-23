@@ -7,6 +7,7 @@
 #include <wayfire/plugin.hpp>
 #include <wayfire/core.hpp>
 
+#include <cstring>
 #include <sys/inotify.h>
 #include <filesystem>
 #include <unistd.h>
@@ -20,7 +21,7 @@ static int wd_cfg_dir, wd_cfg_file;
 
 static void add_watch(int fd)
 {
-    wd_cfg_dir  = inotify_add_watch(fd, config_dir.c_str(), IN_CREATE);
+    wd_cfg_dir  = inotify_add_watch(fd, config_dir.c_str(), IN_CREATE | IN_MOVED_TO);
     wd_cfg_file = inotify_add_watch(fd, config_file.c_str(), IN_CLOSE_WRITE);
 }
 
@@ -58,18 +59,24 @@ static int handle_config_updated(int fd, uint32_t mask, void *data)
          ptr += sizeof(inotify_event) + event->len)
     {
         event = reinterpret_cast<inotify_event*>(ptr);
-        // We reload in two main cases:
+        // We reload in two cases:
         //
-        // - Config file itself was modified
-        // - Config file was created inside parent directory
-        should_reload |=
-            (event->wd == wd_cfg_file) || (cfg_file_basename == event->name);
-
-        if ((event->name == cfg_file_basename) && (event->wd == wd_cfg_dir))
+        // 1. The config file itself was modified, or...
+        should_reload |= event->wd == wd_cfg_file;
+        // 2. The config file was moved nto or created inside the parent directory.
+        if (event->len > 0)
         {
-            inotify_rm_watch(fd, wd_cfg_file);
-            wd_cfg_file =
-                inotify_add_watch(fd, (config_dir + "/" + cfg_file_basename).c_str(), IN_CLOSE_WRITE);
+            // This is UB unless event->len > 0.
+            auto name_matches = cfg_file_basename == event->name;
+
+            if (name_matches)
+            {
+                inotify_rm_watch(fd, wd_cfg_file);
+                wd_cfg_file =
+                    inotify_add_watch(fd, (config_dir + "/" + cfg_file_basename).c_str(), IN_CLOSE_WRITE);
+            }
+
+            should_reload |= name_matches;
         }
     }
 

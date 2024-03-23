@@ -68,6 +68,14 @@ struct drag_focus_output_signal
 };
 
 /**
+ * Emitted on core_drag_t when input motion is triggered.
+ */
+struct drag_motion_signal
+{
+    wf::point_t current_position;
+};
+
+/**
  * name: snap-off
  * on: core_drag_t
  * when: Emitted if snap-off is enabled and the view was moved more than the
@@ -161,6 +169,8 @@ class scale_around_grab_t : public wf::scene::floating_inner_node_t
      */
     wf::animation::simple_animation_t scale_factor{wf::create_option(300)};
 
+    wf::animation::simple_animation_t alpha_factor{wf::create_option(300)};
+
     /**
      * A place relative to the view, where it is grabbed.
      *
@@ -234,7 +244,7 @@ class scale_around_grab_t : public wf::scene::floating_inner_node_t
             for (auto& rect : region)
             {
                 target.logic_scissor(wlr_box_from_pixman_box(rect));
-                OpenGL::render_texture(tex, target, bbox);
+                OpenGL::render_texture(tex, target, bbox, glm::vec4{1, 1, 1, (double)self->alpha_factor});
             }
 
             OpenGL::render_end();
@@ -496,6 +506,7 @@ class core_drag_t : public signal::provider_t
                 wf::view_bounding_box_up_to(v, "wobbly"), rel_grab_pos);
             tr->grab_position = *tentative_grab_position;
             tr->scale_factor.animate(options.initial_scale, options.initial_scale);
+            tr->alpha_factor.animate(1, 1);
             v->get_transformed_node()->add_transformer(
                 tr, wf::TRANSFORMER_HIGHLEVEL - 1);
 
@@ -578,6 +589,10 @@ class core_drag_t : public signal::provider_t
         }
 
         update_current_output(to);
+
+        drag_motion_signal data;
+        data.current_position = to;
+        emit(&data);
     }
 
     double distance_to_grab_origin(wf::point_t to) const
@@ -649,11 +664,12 @@ class core_drag_t : public signal::provider_t
         this->tentative_grab_position = {};
     }
 
-    void set_scale(double new_scale)
+    void set_scale(double new_scale, double alpha = 1.0)
     {
         for (auto& view : all_views)
         {
             view.transformer->scale_factor.animate(new_scale);
+            view.transformer->alpha_factor.animate(alpha);
         }
     }
 
@@ -740,9 +756,11 @@ inline void adjust_view_on_output(drag_done_signal *ev)
         return;
     }
 
-    if (parent->get_output() != ev->focused_output)
+    const bool change_output = parent->get_output() != ev->focused_output;
+    auto old_wset = parent->get_wset();
+    if (change_output)
     {
-        move_view_to_output(parent, ev->focused_output, false);
+        start_move_view_to_wset(parent, ev->focused_output->wset());
     }
 
     // Calculate the position we're leaving the view on
@@ -800,6 +818,11 @@ inline void adjust_view_on_output(drag_done_signal *ev)
     for (auto& v : parent->enumerate_views())
     {
         ev->focused_output->wset()->move_to_workspace(v, target_ws);
+    }
+
+    if (change_output)
+    {
+        emit_view_moved_to_wset(parent, old_wset, ev->focused_output->wset());
     }
 
     wf::get_core().default_wm->focus_raise_view(focus_view);

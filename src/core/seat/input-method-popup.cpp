@@ -58,7 +58,6 @@ void wf::text_input_v3_popup::map()
 
     priv->set_mapped_surface_contents(main_surface);
     priv->set_mapped(true);
-    _is_mapped = true;
     on_commit.connect(&surface->events.commit);
 
     update_geometry();
@@ -80,7 +79,6 @@ void wf::text_input_v3_popup::unmap()
 
     emit_view_unmap();
     priv->set_mapped(false);
-    _is_mapped = false;
     on_commit.disconnect();
 }
 
@@ -163,7 +161,7 @@ void wf::text_input_v3_popup::update_geometry()
 
 bool wf::text_input_v3_popup::is_mapped() const
 {
-    return priv->wsurface != nullptr && _is_mapped;
+    return priv->is_mapped;
 }
 
 wf::geometry_t wf::text_input_v3_popup::get_geometry()

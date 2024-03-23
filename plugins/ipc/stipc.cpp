@@ -124,6 +124,8 @@ class headless_input_backend_t
         wlr_pointer_finish(&pointer);
         wlr_keyboard_finish(&keyboard);
         wlr_touch_finish(&touch);
+        wlr_tablet_finish(&tablet);
+        wlr_tablet_pad_finish(&tablet_pad);
         wlr_multi_backend_remove(core.backend, backend);
         wlr_backend_destroy(backend);
     }

@@ -8,7 +8,6 @@
 #include "wayfire/view-transform.hpp"
 
 #include <memory>
-#include <thread>
 #include <wayfire/output.hpp>
 #include <wayfire/core.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -234,14 +233,14 @@ static float fire_duration_mod_for_height(int height)
     return std::min(height / 400.0, 3.0);
 }
 
-void FireAnimation::init(wayfire_view view, int dur, wf_animation_type type)
+void FireAnimation::init(wayfire_view view, wf::animation_description_t dur, wf_animation_type type)
 {
     this->view = view;
 
     auto bbox = view->get_transformed_node()->get_bounding_box();
-    int msec  = dur * fire_duration_mod_for_height(bbox.height);
-    this->progression = wf::animation::simple_animation_t(wf::create_option<int>(
-        msec), wf::animation::smoothing::linear);
+    dur.length_ms    *= fire_duration_mod_for_height(bbox.height);
+    this->progression = wf::animation::simple_animation_t(
+        wf::create_option<wf::animation_description_t>(dur));
     this->progression.animate(0, 1);
 
     if (type & HIDING_ANIMATION)

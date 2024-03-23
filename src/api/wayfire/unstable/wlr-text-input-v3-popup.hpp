@@ -11,6 +11,7 @@ class text_input_v3_im_relay_interface_t
 {
   public:
     virtual wlr_text_input_v3 *find_focused_text_input_v3() = 0;
+    virtual ~text_input_v3_im_relay_interface_t() = default;
 };
 
 /**
@@ -38,7 +39,6 @@ class text_input_v3_popup : public wf::view_interface_t
     wf::geometry_t geometry{0, 0, 0, 0};
     std::shared_ptr<wf::scene::wlr_surface_node_t> main_surface;
     std::shared_ptr<wf::scene::translation_node_t> surface_root_node;
-    bool _is_mapped = false;
 
     virtual wlr_surface *get_keyboard_focus_surface() override
     {

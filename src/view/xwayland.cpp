@@ -90,6 +90,7 @@ class xwayland_view_controller_t
         });
         on_dissociate.set_callback([&] (void*)
         {
+            view->priv->wsurface = nullptr;
             on_map.disconnect();
             on_unmap.disconnect();
         });

@@ -69,9 +69,6 @@ using output_configuration_t = std::map<wlr_output*, output_state_t>;
  * mode, scale, position, transform. */
 class output_layout_t : public wf::signal::provider_t
 {
-    class impl;
-    std::unique_ptr<impl> pimpl;
-
   public:
     output_layout_t(wlr_backend *backend);
     ~output_layout_t();
@@ -142,6 +139,9 @@ class output_layout_t : public wf::signal::provider_t
      */
     bool apply_configuration(const output_configuration_t& configuration,
         bool test_only = false);
+
+    class impl;
+    std::unique_ptr<impl> pimpl;
 };
 }
 

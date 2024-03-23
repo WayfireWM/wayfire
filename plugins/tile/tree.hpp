@@ -3,6 +3,7 @@
 
 #include "wayfire/signal-definitions.hpp"
 #include "wayfire/workspace-set.hpp"
+#include <wayfire/util/duration.hpp>
 #include <wayfire/view.hpp>
 #include <wayfire/option-wrapper.hpp>
 #include <wayfire/txn/transaction.hpp>
@@ -51,7 +52,12 @@ struct tree_node_t
     virtual void set_geometry(wf::geometry_t geometry, wf::txn::transaction_uptr& tx);
 
     /** Set the gaps for the node and subnodes. */
-    virtual void set_gaps(const gap_size_t& gaps, wf::txn::transaction_uptr& tx) = 0;
+    virtual void set_gaps(const gap_size_t& gaps) = 0;
+
+    gap_size_t get_gaps() const
+    {
+        return gaps;
+    }
 
     virtual ~tree_node_t()
     {}
@@ -109,7 +115,7 @@ struct split_node_t : public tree_node_t
      * Set the gaps for the subnodes. The internal gap will override
      * the corresponding edges for each child.
      */
-    void set_gaps(const gap_size_t& gaps, wf::txn::transaction_uptr& tx) override;
+    void set_gaps(const gap_size_t& gaps) override;
 
     split_node_t(split_direction_t direction);
     split_direction_t get_split_direction() const;
@@ -166,7 +172,7 @@ struct view_node_t : public tree_node_t
      * Set the gaps for non-fullscreen mode.
      * The gap sizes will be subtracted from all edges of the view's geometry.
      */
-    void set_gaps(const gap_size_t& gaps, wf::txn::transaction_uptr& tx) override;
+    void set_gaps(const gap_size_t& gaps) override;
 
     /* Return the tree node corresponding to the view, or nullptr if none */
     static nonstd::observer_ptr<view_node_t> get_node(wayfire_view view);
@@ -178,7 +184,7 @@ struct view_node_t : public tree_node_t
     wf::signal::connection_t<view_geometry_changed_signal> on_geometry_changed;
     wf::signal::connection_t<tile_adjust_transformer_signal> on_adjust_transformer;
 
-    wf::option_wrapper_t<int> animation_duration{"simple-tile/animation_duration"};
+    wf::option_wrapper_t<wf::animation_description_t> animation_duration{"simple-tile/animation_duration"};
 
     /**
      * Check whether the crossfade animation should be enabled for the view
@@ -198,8 +204,10 @@ struct view_node_t : public tree_node_t
  *
  * Note: this will potentially invalidate pointers to the tree and modify
  * the given parameter.
+ *
+ * @return True if the tree has any views in it.
  */
-void flatten_tree(std::unique_ptr<tree_node_t>& root, wf::txn::transaction_uptr& tx);
+bool flatten_tree(std::unique_ptr<tree_node_t>& root);
 
 /**
  * Get the root of the tree which node is part of

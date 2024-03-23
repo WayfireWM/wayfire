@@ -244,7 +244,7 @@ class wf_vswitch_global_plugin_t : public wf::per_output_plugin_t<vswitch>
 
     void fini() override
     {
-        per_output_plugin_t::init();
+        per_output_plugin_t::fini();
         ipc_repo->unregister_method("vswitch/set-workspace");
     }
 

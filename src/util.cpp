@@ -5,7 +5,6 @@
 #include <ctime>
 
 #include "wl-listener-wrapper.tpp"
-#include "core/core-impl.hpp"
 
 /* Misc helper functions */
 int64_t wf::timespec_to_msec(const timespec& ts)
@@ -159,16 +158,3 @@ template class wl_timer<false>;
 
 template class wl_timer<true>;
 } // namespace wf
-
-// Implementation of Wayfire core.
-// As is the case for wl_idle_call and wl_timer, this is defined here.
-//
-// Unit tests link to a replacement for util.cpp
-// Thus, they can subclass compositor_core_impl_t and mock all of the provided
-// functions, then return the mock class in the implementation for get()
-wf::compositor_core_impl_t& wf::compositor_core_impl_t::get()
-{
-    static compositor_core_impl_t instance;
-
-    return instance;
-}

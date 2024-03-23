@@ -333,9 +333,6 @@ struct workspace_set_t::impl
 
         if (output)
         {
-            wf::dassert((flags & OLD_OUTPUT_DESTROY) || output->wset().get() != self,
-                "Cannot attach active workspace set to another output!");
-
             output->disconnect(&output_geometry_changed);
             wf::scene::remove_child(wnode);
         }
