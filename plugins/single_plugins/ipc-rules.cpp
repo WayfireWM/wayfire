@@ -490,17 +490,20 @@ class ipc_rules_t : public wf::plugin_interface_t, public wf::per_output_tracker
         send_view_to_subscribes(ev->view, "view-unmapped");
     };
 
-    wf::signal::connection_t<wf::view_set_output_signal> on_view_set_output = [=] (wf::view_set_output_signal *ev)
+    wf::signal::connection_t<wf::view_set_output_signal> on_view_set_output =
+        [=] (wf::view_set_output_signal *ev)
     {
         send_view_to_subscribes(ev->view, "view-set-output");
     };
 
-    wf::signal::connection_t<wf::view_geometry_changed_signal> on_view_geometry_changed = [=] (wf::view_geometry_changed_signal *ev)
+    wf::signal::connection_t<wf::view_geometry_changed_signal> on_view_geometry_changed =
+        [=] (wf::view_geometry_changed_signal *ev)
     {
         send_view_to_subscribes(ev->view, "view-geometry-changed");
     };
 
-    wf::signal::connection_t<wf::view_moved_to_wset_signal> on_view_moved_to_wset = [=] (wf::view_moved_to_wset_signal *ev)
+    wf::signal::connection_t<wf::view_moved_to_wset_signal> on_view_moved_to_wset =
+        [=] (wf::view_moved_to_wset_signal *ev)
     {
         send_view_to_subscribes(ev->view, "view-wset-changed");
     };
@@ -535,7 +538,8 @@ class ipc_rules_t : public wf::plugin_interface_t, public wf::per_output_tracker
         send_view_to_subscribes(ev->view, "view-sticky");
     };
 
-    wf::signal::connection_t<wf::view_change_workspace_signal> _view_workspace = [=] (wf::view_change_workspace_signal *ev)
+    wf::signal::connection_t<wf::view_change_workspace_signal> _view_workspace =
+        [=] (wf::view_change_workspace_signal *ev)
     {
         send_view_to_subscribes(ev->view, "view-workspace-changed");
     };
