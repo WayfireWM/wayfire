@@ -135,12 +135,9 @@ class drag_manager_t
         auto& children = child->parent->children;
         auto it = std::find_if(children.begin(), children.end(),
             [child] (const std::unique_ptr<tree_node_t>& n) { return n.get() == child.get(); });
-        if (it != children.end())
-        {
-            return it - children.begin();
-        }
 
-        return 0;
+        wf::dassert(it != children.end(), "Child not found");
+        return it - children.begin();
     }
 
     static int remove_child(nonstd::observer_ptr<tree_node_t> child)
@@ -176,18 +173,17 @@ class drag_manager_t
         {
             autocommit_transaction_t tx;
 
-            auto tile_a = view_node_t::get_node(a);
-            auto tile_b = view_node_t::get_node(b);
+            auto old_tile_a = view_node_t::get_node(a);
+            auto old_tile_b = view_node_t::get_node(b);
+            auto parent_a   = old_tile_a->parent;
+            auto parent_b   = old_tile_b->parent;
 
-            auto parent_a = tile_a->parent;
-            auto parent_b = tile_b->parent;
-
-            auto geometry_a = tile_a->geometry;
-            auto geometry_b = tile_b->geometry;
-            auto gaps_a     = tile_a->get_gaps();
-            auto gaps_b     = tile_b->get_gaps();
-            int idx_a = remove_child(tile_a);
-            int idx_b = remove_child(tile_b);
+            auto geometry_a = old_tile_a->geometry;
+            auto geometry_b = old_tile_b->geometry;
+            auto gaps_a     = old_tile_a->get_gaps();
+            auto gaps_b     = old_tile_b->get_gaps();
+            int idx_a = remove_child(old_tile_a);
+            int idx_b = remove_child(old_tile_b);
 
             auto new_b = std::make_unique<tile::view_node_t>(b);
             new_b->set_gaps(gaps_a);
@@ -199,8 +195,18 @@ class drag_manager_t
 
             new_a->parent = parent_b;
             new_b->parent = parent_a;
-            parent_a->children.insert(parent_a->children.begin() + idx_a, std::move(new_b));
-            parent_b->children.insert(parent_b->children.begin() + idx_b, std::move(new_a));
+
+            // Insert to the smaller position first, if they both have the same parent.
+            // Otherwise the larger position might not be valid because we removed 2 elements.
+            if ((parent_a != parent_b) || (idx_a < idx_b))
+            {
+                parent_a->children.insert(parent_a->children.begin() + idx_a, std::move(new_b));
+                parent_b->children.insert(parent_b->children.begin() + idx_b, std::move(new_a));
+            } else
+            {
+                parent_b->children.insert(parent_b->children.begin() + idx_b, std::move(new_a));
+                parent_a->children.insert(parent_a->children.begin() + idx_a, std::move(new_b));
+            }
         }
 
         if (output_a != output_b)
