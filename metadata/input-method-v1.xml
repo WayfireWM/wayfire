@@ -4,5 +4,13 @@
 		<_short>Input-Method-V1 Protocol</_short>
 		<_long>An implementation of the input-method-v1 protocol. Needed for proper functioning of input methods like Fcitx5.</_long>
 		<category>Utility</category>
+    <option name="enable_text_input_v1" type="bool">
+      <_short>Enable support for the text-input-v1 protocol, used predominantly by Chromium and Electron apps.</_short>
+      <default>true</default>
+    </option>
+    <option name="enable_text_input_v3" type="bool">
+      <_short>Enable support for the text-input-v3 protocol.</_short>
+      <default>true</default>
+    </option>
 	</plugin>
 </wayfire>
