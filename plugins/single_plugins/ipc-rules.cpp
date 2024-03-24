@@ -500,19 +500,32 @@ class ipc_rules_t : public wf::plugin_interface_t, public wf::per_output_tracker
     wf::signal::connection_t<wf::view_set_output_signal> on_view_set_output =
         [=] (wf::view_set_output_signal *ev)
     {
-        send_view_to_subscribes(ev->view, "view-set-output");
+        nlohmann::json data;
+        data["event"]  = "view-set-output";
+        data["output"] = output_to_json(ev->output);
+        data["view"]   = view_to_json(ev->view);
+        send_event_to_subscribes(data, data["event"]);
     };
 
     wf::signal::connection_t<wf::view_geometry_changed_signal> on_view_geometry_changed =
         [=] (wf::view_geometry_changed_signal *ev)
     {
-        send_view_to_subscribes(ev->view, "view-geometry-changed");
+        nlohmann::json data;
+        data["event"] = "view-geometry-changed";
+        data["old-geometry"] = wf::ipc::geometry_to_json(ev->old_geometry);
+        data["view"] = view_to_json(ev->view);
+        send_event_to_subscribes(data, data["event"]);
     };
 
     wf::signal::connection_t<wf::view_moved_to_wset_signal> on_view_moved_to_wset =
         [=] (wf::view_moved_to_wset_signal *ev)
     {
-        send_view_to_subscribes(ev->view, "view-wset-changed");
+        nlohmann::json data;
+        data["event"]    = "view-wset-changed";
+        data["old-wset"] = wset_to_json(ev->old_wset.get());
+        data["new-wset"] = wset_to_json(ev->new_wset.get());
+        data["view"]     = view_to_json(ev->view);
+        send_event_to_subscribes(data, data["event"]);
     };
 
     wf::signal::connection_t<wf::keyboard_focus_changed_signal> on_kbfocus_changed =
@@ -524,7 +537,12 @@ class ipc_rules_t : public wf::plugin_interface_t, public wf::per_output_tracker
     // Tiled rule handler.
     wf::signal::connection_t<wf::view_tiled_signal> _tiled = [=] (wf::view_tiled_signal *ev)
     {
-        send_view_to_subscribes(ev->view, "view-tiled");
+        nlohmann::json data;
+        data["event"]     = "view-tiled";
+        data["old-edges"] = ev->old_edges;
+        data["new-edges"] = ev->new_edges;
+        data["view"] = view_to_json(ev->view);
+        send_event_to_subscribes(data, data["event"]);
     };
 
     // Minimized rule handler.
@@ -536,7 +554,11 @@ class ipc_rules_t : public wf::plugin_interface_t, public wf::per_output_tracker
     // Fullscreened rule handler.
     wf::signal::connection_t<wf::view_fullscreen_signal> _fullscreened = [=] (wf::view_fullscreen_signal *ev)
     {
-        send_view_to_subscribes(ev->view, "view-fullscreen");
+        nlohmann::json data;
+        data["event"] = "view-fullscreen";
+        data["state"] = ev->state;
+        data["view"]  = view_to_json(ev->view);
+        send_event_to_subscribes(data, data["event"]);
     };
 
     // Stickied rule handler.
