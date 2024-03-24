@@ -413,6 +413,9 @@ class tile_plugin_t : public wf::plugin_interface_t, wf::per_output_tracker_mixi
         {
             wo->erase_data<tile_output_plugin_t>();
         }
+
+        ipc_repo->unregister_method("simple-tile/get-layout");
+        ipc_repo->unregister_method("simple-tile/set-layout");
     }
 
     void stop_controller(std::shared_ptr<wf::workspace_set_t> wset)
