@@ -647,7 +647,8 @@ class ipc_rules_t : public wf::plugin_interface_t, public wf::per_output_tracker
         data["event"]  = "plugin-activation-state-changed";
         data["plugin"] = ev->plugin_name;
         data["state"]  = ev->activated;
-        data["output"] = output_to_json(ev->output);
+        data["output"] = ev->output ? (int)ev->output->get_id() : -1;
+        data["output-data"] = output_to_json(ev->output);
         send_event_to_subscribes(data, data["event"]);
     };
 
@@ -694,8 +695,10 @@ class ipc_rules_t : public wf::plugin_interface_t, public wf::per_output_tracker
         data["event"] = "wset-workspace-changed";
         data["previous-workspace"] = wf::ipc::point_to_json(ev->old_viewport);
         data["new-workspace"] = wf::ipc::point_to_json(ev->new_viewport);
-        data["output"] = output_to_json(ev->output);
-        data["wset"]   = ev->output ? wset_to_json(ev->output->wset().get()) : nullptr;
+        data["output"] = ev->output ? (int)ev->output->get_id() : -1;
+        data["wset"]   = (ev->output && ev->output->wset()) ? (int)ev->output->wset()->get_id() : -1;
+        data["output-data"] = output_to_json(ev->output);
+        data["wset-data"]   = ev->output ? wset_to_json(ev->output->wset().get()) : nullptr;
         send_event_to_subscribes(data, data["event"]);
     };
 
