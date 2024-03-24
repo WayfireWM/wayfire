@@ -548,7 +548,12 @@ class ipc_rules_t : public wf::plugin_interface_t, public wf::per_output_tracker
     wf::signal::connection_t<wf::view_change_workspace_signal> _view_workspace =
         [=] (wf::view_change_workspace_signal *ev)
     {
-        send_view_to_subscribes(ev->view, "view-workspace-changed");
+        nlohmann::json data;
+        data["event"] = "view-workspace-changed";
+        data["from"]  = wf::ipc::point_to_json(ev->from);
+        data["to"]    = wf::ipc::point_to_json(ev->to);
+        data["view"]  = view_to_json(ev->view);
+        send_event_to_subscribes(data, data["event"]);
     };
 
     wf::signal::connection_t<wf::view_title_changed_signal> on_title_changed =
