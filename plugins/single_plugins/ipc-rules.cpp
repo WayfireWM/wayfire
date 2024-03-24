@@ -470,6 +470,11 @@ class ipc_rules_t : public wf::plugin_interface_t, public wf::per_output_tracker
 
     void send_view_to_subscribes(wayfire_view view, std::string event_name)
     {
+        if (clients.empty())
+        {
+            return;
+        }
+
         nlohmann::json event;
         event["event"] = event_name;
         event["view"]  = view_to_json(view);
@@ -500,6 +505,11 @@ class ipc_rules_t : public wf::plugin_interface_t, public wf::per_output_tracker
     wf::signal::connection_t<wf::view_set_output_signal> on_view_set_output =
         [=] (wf::view_set_output_signal *ev)
     {
+        if (clients.empty())
+        {
+            return;
+        }
+
         nlohmann::json data;
         data["event"]  = "view-set-output";
         data["output"] = output_to_json(ev->output);
@@ -510,6 +520,11 @@ class ipc_rules_t : public wf::plugin_interface_t, public wf::per_output_tracker
     wf::signal::connection_t<wf::view_geometry_changed_signal> on_view_geometry_changed =
         [=] (wf::view_geometry_changed_signal *ev)
     {
+        if (clients.empty())
+        {
+            return;
+        }
+
         nlohmann::json data;
         data["event"] = "view-geometry-changed";
         data["old-geometry"] = wf::ipc::geometry_to_json(ev->old_geometry);
@@ -520,6 +535,11 @@ class ipc_rules_t : public wf::plugin_interface_t, public wf::per_output_tracker
     wf::signal::connection_t<wf::view_moved_to_wset_signal> on_view_moved_to_wset =
         [=] (wf::view_moved_to_wset_signal *ev)
     {
+        if (clients.empty())
+        {
+            return;
+        }
+
         nlohmann::json data;
         data["event"]    = "view-wset-changed";
         data["old-wset"] = wset_to_json(ev->old_wset.get());
@@ -537,6 +557,11 @@ class ipc_rules_t : public wf::plugin_interface_t, public wf::per_output_tracker
     // Tiled rule handler.
     wf::signal::connection_t<wf::view_tiled_signal> _tiled = [=] (wf::view_tiled_signal *ev)
     {
+        if (clients.empty())
+        {
+            return;
+        }
+
         nlohmann::json data;
         data["event"]     = "view-tiled";
         data["old-edges"] = ev->old_edges;
@@ -554,6 +579,11 @@ class ipc_rules_t : public wf::plugin_interface_t, public wf::per_output_tracker
     // Fullscreened rule handler.
     wf::signal::connection_t<wf::view_fullscreen_signal> _fullscreened = [=] (wf::view_fullscreen_signal *ev)
     {
+        if (clients.empty())
+        {
+            return;
+        }
+
         nlohmann::json data;
         data["event"] = "view-fullscreen";
         data["state"] = ev->state;
@@ -570,6 +600,11 @@ class ipc_rules_t : public wf::plugin_interface_t, public wf::per_output_tracker
     wf::signal::connection_t<wf::view_change_workspace_signal> _view_workspace =
         [=] (wf::view_change_workspace_signal *ev)
     {
+        if (clients.empty())
+        {
+            return;
+        }
+
         nlohmann::json data;
         data["event"] = "view-workspace-changed";
         data["from"]  = wf::ipc::point_to_json(ev->from);
@@ -593,6 +628,11 @@ class ipc_rules_t : public wf::plugin_interface_t, public wf::per_output_tracker
     wf::signal::connection_t<wf::output_plugin_activated_changed_signal> on_plugin_activation_changed =
         [=] (wf::output_plugin_activated_changed_signal *ev)
     {
+        if (clients.empty())
+        {
+            return;
+        }
+
         nlohmann::json data;
         data["event"]  = "plugin-activation-state-changed";
         data["plugin"] = ev->plugin_name;
@@ -604,6 +644,11 @@ class ipc_rules_t : public wf::plugin_interface_t, public wf::per_output_tracker
     wf::signal::connection_t<wf::output_gain_focus_signal> on_output_gain_focus =
         [=] (wf::output_gain_focus_signal *ev)
     {
+        if (clients.empty())
+        {
+            return;
+        }
+
         nlohmann::json data;
         data["event"]  = "output-gain-focus";
         data["output"] = output_to_json(ev->output);
@@ -613,6 +658,11 @@ class ipc_rules_t : public wf::plugin_interface_t, public wf::per_output_tracker
     wf::signal::connection_t<wf::workspace_set_changed_signal> on_wset_changed =
         [=] (wf::workspace_set_changed_signal *ev)
     {
+        if (clients.empty())
+        {
+            return;
+        }
+
         nlohmann::json data;
         data["event"]    = "output-wset-changed";
         data["new-wset"] = wset_to_json(ev->new_wset.get());
@@ -623,6 +673,11 @@ class ipc_rules_t : public wf::plugin_interface_t, public wf::per_output_tracker
     wf::signal::connection_t<wf::workspace_changed_signal> on_wset_workspace_changed =
         [=] (wf::workspace_changed_signal *ev)
     {
+        if (clients.empty())
+        {
+            return;
+        }
+
         nlohmann::json data;
         data["event"] = "wset-workspace-changed";
         data["previous-workspace"] = wf::ipc::point_to_json(ev->old_viewport);
