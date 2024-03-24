@@ -2,10 +2,7 @@
 #define PLUGIN_H
 
 #include <functional>
-#include <memory>
-#include "wayfire/util.hpp"
-#include "wayfire/bindings.hpp"
-
+#include <string>
 #include <wayfire/nonstd/wlroots.hpp>
 
 class wayfire_config;
@@ -108,7 +105,7 @@ class plugin_interface_t
 using wayfire_plugin_load_func = wf::plugin_interface_t * (*)();
 
 /** The version of Wayfire's API/ABI */
-constexpr uint32_t WAYFIRE_API_ABI_VERSION = 2024'03'24;
+constexpr uint32_t WAYFIRE_API_ABI_VERSION = 2024'03'24'2;
 
 /**
  * Each plugin must also provide a function which returns the Wayfire API/ABI

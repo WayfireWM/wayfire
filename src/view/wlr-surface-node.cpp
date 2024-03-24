@@ -1,12 +1,12 @@
 #include "wayfire/unstable/wlr-surface-node.hpp"
 #include "pixman.h"
-#include "view/view-impl.hpp"
 #include "wayfire/geometry.hpp"
 #include "wayfire/render-manager.hpp"
 #include "wayfire/scene-render.hpp"
 #include "wayfire/scene.hpp"
 #include "wlr-surface-pointer-interaction.hpp"
 #include "wlr-surface-touch-interaction.cpp"
+#include <glm/gtc/matrix_transform.hpp>
 #include <memory>
 #include <sstream>
 #include <string>
@@ -33,6 +33,7 @@ wf::scene::surface_state_t& wf::scene::surface_state_t::operator =(surface_state
     accumulated_damage = other.accumulated_damage;
     size = other.size;
     src_viewport = other.src_viewport;
+    transform    = other.transform;
 
     other.current_buffer = NULL;
     other.texture = NULL;
@@ -59,6 +60,7 @@ void wf::scene::surface_state_t::merge_state(wlr_surface *surface)
         this->current_buffer = &surface->buffer->base;
         this->texture = surface->buffer->texture;
         this->size    = {surface->current.width, surface->current.height};
+        this->transform = {surface->current.transform};
     } else
     {
         this->current_buffer = NULL;
@@ -305,8 +307,29 @@ class wf::scene::wlr_surface_node_t::wlr_surface_render_instance_t : public rend
         wf::geometry_t geometry = self->get_bounding_box();
         wf::texture_t texture{self->current_state.texture, self->current_state.src_viewport};
 
+        glm::mat4 transform = target.get_orthographic_projection();
+
+        if (self->current_state.transform)
+        {
+            const double cx     = geometry.x + geometry.width / 2.0;
+            const double cy     = geometry.y + geometry.height / 2.0;
+            const double aspect = geometry.width * 1.0 / geometry.height;
+
+            // Center the surface in the coordinate system, rotate (preserving aspect ration)
+            // according to transform, go back
+            glm::mat4 surface_transform =
+                glm::translate(glm::mat4(1.0f), glm::vec3(cx, cy, 0.0f)) *
+                glm::scale(glm::mat4(1.0f), glm::vec3(aspect, 1.0f, 1.0f)) *
+                get_output_matrix_from_transform(self->current_state.transform) *
+                glm::scale(glm::mat4(1.0f), glm::vec3(1.0 / aspect, 1.0f, 1.0f)) *
+                glm::translate(glm::mat4(1.0f), glm::vec3(-cx, -cy, 0.0f));
+            transform = transform * surface_transform;
+        }
+
         OpenGL::render_begin(target);
-        OpenGL::render_texture(texture, target, geometry, glm::vec4(1.f), OpenGL::RENDER_FLAG_CACHED);
+        OpenGL::render_transformed_texture(texture, geometry, transform,
+            glm::vec4(1.f), OpenGL::RENDER_FLAG_CACHED);
+
         // use GL_NEAREST for integer scale.
         // GL_NEAREST makes scaled text blocky instead of blurry, which looks better
         // but only for integer scale.

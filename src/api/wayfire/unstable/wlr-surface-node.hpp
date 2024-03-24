@@ -20,6 +20,7 @@ struct surface_state_t
     wf::region_t accumulated_damage;
     wf::dimensions_t size = {0, 0};
     std::optional<wlr_fbox> src_viewport;
+    wl_output_transform transform = WL_OUTPUT_TRANSFORM_NORMAL;
 
     // Read the current surface state, get a lock on the current surface buffer (releasing any old locks),
     // and accumulate damage.
