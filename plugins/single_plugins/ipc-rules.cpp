@@ -589,16 +589,7 @@ class ipc_rules_t : public wf::plugin_interface_t, public wf::per_output_tracker
     // Fullscreened rule handler.
     wf::signal::connection_t<wf::view_fullscreen_signal> _fullscreened = [=] (wf::view_fullscreen_signal *ev)
     {
-        if (clients.empty())
-        {
-            return;
-        }
-
-        nlohmann::json data;
-        data["event"] = "view-fullscreen";
-        data["state"] = ev->state;
-        data["view"]  = view_to_json(ev->view);
-        send_event_to_subscribes(data, data["event"]);
+        send_view_to_subscribes(ev->view, "view-fullscreen");
     };
 
     // Stickied rule handler.
