@@ -18,28 +18,26 @@
 class lock_surface_keyboard_interaction : public wf::keyboard_interaction_t
 {
   public:
-    lock_surface_keyboard_interaction(wlr_surface *surface, wlr_output *output) :
-        surface(surface), output(output)
+    lock_surface_keyboard_interaction(wlr_surface *surface) : surface(surface)
     {}
 
-    void handle_keyboard_enter(wf::seat_t *seat)
+    void handle_keyboard_enter(wf::seat_t *seat) override
     {
         wlr_seat_keyboard_enter(seat->seat, surface, nullptr, 0, nullptr);
     }
 
-    void handle_keyboard_leave(wf::seat_t *seat)
+    void handle_keyboard_leave(wf::seat_t *seat) override
     {
         wlr_seat_keyboard_clear_focus(seat->seat);
     }
 
-    void handle_keyboard_key(wf::seat_t *seat, wlr_keyboard_key_event event)
+    void handle_keyboard_key(wf::seat_t *seat, wlr_keyboard_key_event event) override
     {
         wlr_seat_keyboard_notify_key(seat->seat, event.time_msec, event.keycode, event.state);
     }
 
   private:
     wlr_surface *surface;
-    wlr_output *output;
 };
 
 // Mixin class for common functionality between lock_surface_node and lock_crashed_node.
@@ -77,8 +75,7 @@ class lock_surface_node : public lock_base_node<wf::scene::wlr_surface_node_t>
     lock_surface_node(wlr_session_lock_surface_v1 *lock_surface, wf::output_t *output) :
         lock_base_node(output, lock_surface->surface, true /* autocommit */),
         lock_surface(lock_surface),
-        interaction(std::make_unique<lock_surface_keyboard_interaction>(lock_surface->surface,
-            lock_surface->output))
+        interaction(std::make_unique<lock_surface_keyboard_interaction>(lock_surface->surface))
     {}
 
     void display()
@@ -92,6 +89,7 @@ class lock_surface_node : public lock_base_node<wf::scene::wlr_surface_node_t>
 
     void destroy()
     {
+        wf::scene::damage_node(shared_from_this(), get_bounding_box());
         wf::wlr_surface_controller_t::try_free_controller(this->lock_surface->surface);
         wf::scene::remove_child(shared_from_this());
         const char *name = this->output->handle ? this->output->handle->name : "(deleted)";
@@ -342,6 +340,8 @@ class wf_session_lock_plugin : public wf::plugin_interface_t
             {
                 if (output_state->crashed_node)
                 {
+                    wf::scene::damage_node(output_state->crashed_node,
+                        output_state->crashed_node->get_bounding_box());
                     wf::scene::remove_child(output_state->crashed_node);
                     output_state->crashed_node.reset();
                 }
@@ -413,7 +413,7 @@ class wf_session_lock_plugin : public wf::plugin_interface_t
         });
         new_lock.connect(&manager->events.new_lock);
 
-        destroy.set_callback([this] (void *data)
+        destroy.set_callback([] (void *data)
         {
             LOGC(LSHELL, "session_lock_manager destroyed");
         });
