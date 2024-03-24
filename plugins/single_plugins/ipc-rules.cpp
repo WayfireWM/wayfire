@@ -349,6 +349,7 @@ class ipc_rules_t : public wf::plugin_interface_t, public wf::per_output_tracker
         WFJSON_EXPECT_FIELD(data, "id", number_integer);
         WFJSON_OPTIONAL_FIELD(data, "output_id", number_integer);
         WFJSON_OPTIONAL_FIELD(data, "geometry", object);
+        WFJSON_OPTIONAL_FIELD(data, "sticky", boolean);
 
         auto view = wf::ipc::find_view_by_id(data["id"]);
         if (!view)
@@ -382,6 +383,11 @@ class ipc_rules_t : public wf::plugin_interface_t, public wf::per_output_tracker
             }
 
             toplevel->set_geometry(*geometry);
+        }
+
+        if (data.contains("sticky"))
+        {
+            toplevel->set_sticky(data["sticky"]);
         }
 
         return wf::ipc::json_ok();
