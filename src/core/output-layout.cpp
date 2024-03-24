@@ -59,6 +59,14 @@ wlr_output_mode *find_matching_mode(wlr_output *output,
 {
     wlr_output_mode *mode;
     wlr_output_mode *best = NULL;
+
+    // Pick highest refresh rate by default
+    int target_refresh = reference.refresh;
+    if (target_refresh == 0)
+    {
+        target_refresh = INT_MAX;
+    }
+
     wl_list_for_each(mode, &output->modes, link)
     {
         if ((mode->width == reference.width) && (mode->height == reference.height))
@@ -68,9 +76,15 @@ wlr_output_mode *find_matching_mode(wlr_output *output,
                 return mode;
             }
 
-            const int bestSoFar = best ? std::abs(best->refresh - reference.refresh) : INT_MAX;
-            const int current   = std::abs(mode->refresh - reference.refresh);
-            if (!best || (bestSoFar > current))
+            if ((reference.refresh == 0) && mode->preferred)
+            {
+                // If there is a preferred mode and there is no refresh configured, pick preferred mode.
+                return mode;
+            }
+
+            const int best_so_far = best ? std::abs(best->refresh - target_refresh) : INT_MAX;
+            const int current     = std::abs(mode->refresh - target_refresh);
+            if (!best || (best_so_far > current))
             {
                 best = mode;
             }
