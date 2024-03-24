@@ -307,6 +307,11 @@ class ipc_rules_t : public wf::plugin_interface_t, public wf::per_output_tracker
 
     nlohmann::json output_to_json(wf::output_t *o)
     {
+        if (!o)
+        {
+            return nullptr;
+        }
+
         nlohmann::json response;
         response["id"]   = o->get_id();
         response["name"] = o->to_string();
@@ -395,6 +400,11 @@ class ipc_rules_t : public wf::plugin_interface_t, public wf::per_output_tracker
 
     nlohmann::json wset_to_json(wf::workspace_set_t *wset)
     {
+        if (!wset)
+        {
+            return nullptr;
+        }
+
         nlohmann::json response;
         response["index"] = wset->get_index();
         response["name"]  = wset->to_string();
@@ -665,8 +675,10 @@ class ipc_rules_t : public wf::plugin_interface_t, public wf::per_output_tracker
 
         nlohmann::json data;
         data["event"]    = "output-wset-changed";
-        data["new-wset"] = wset_to_json(ev->new_wset.get());
-        data["output"]   = output_to_json(ev->output);
+        data["new-wset"] = ev->new_wset ? (int)ev->new_wset->get_id() : -1;
+        data["output"]   = ev->output ? (int)ev->output->get_id() : -1;
+        data["new-wset-data"] = wset_to_json(ev->new_wset.get());
+        data["output-data"]   = output_to_json(ev->output);
         send_event_to_subscribes(data, data["event"]);
     };
 
