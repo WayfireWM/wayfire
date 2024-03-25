@@ -173,7 +173,7 @@ class ipc_rules_t : public wf::plugin_interface_t, public wf::per_output_tracker
 
     void handle_new_output(wf::output_t *output) override
     {
-        if (clients.size() > 0)
+        if (!clients.empty())
         {
             connect_output_signals(output);
 
@@ -186,7 +186,7 @@ class ipc_rules_t : public wf::plugin_interface_t, public wf::per_output_tracker
 
     void handle_output_removed(wf::output_t *output) override
     {
-        if (clients.size() > 0)
+        if (!clients.empty())
         {
             nlohmann::json data;
             data["event"]  = "output-removed";
