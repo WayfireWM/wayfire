@@ -64,7 +64,7 @@ wayfire_sources = ['geometry.cpp',
 
 wayfire_dependencies = [wayland_server, wlroots, xkbcommon, libinput,
                        pixman, drm, egl, glesv2, glm, wf_protos, libdl,
-                       wfconfig, libinotify, backtrace, wfutils, xcb, wftouch]
+                       wfconfig, libinotify, backtrace, wfutils, xcb, wftouch, json]
 
 if conf_data.get('BUILD_WITH_IMAGEIO')
     wayfire_dependencies += [jpeg, png]
