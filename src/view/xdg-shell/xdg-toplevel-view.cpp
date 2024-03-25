@@ -92,7 +92,8 @@ void wf::xdg_toplevel_view_base_t::destroy()
     on_set_app_id.disconnect();
     on_ping_timeout.disconnect();
 
-    xdg_toplevel = nullptr;
+    priv->wsurface = nullptr;
+    xdg_toplevel   = nullptr;
 }
 
 void wf::xdg_toplevel_view_base_t::handle_title_changed(std::string new_title)
