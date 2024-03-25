@@ -37,6 +37,11 @@
 				<_long>Whether to show views that are minimized when starting scale.</_long>
 				<default>false</default>
 			</option>
+			<option name="close_on_new_view" type="bool">
+				<_short>Close on new views</_short>
+				<_long>Whether to close scale when a new view is mapped.</_long>
+				<default>false</default>
+			</option>
 		</group>
 		<group>
 			<_short>Appearance</_short>
