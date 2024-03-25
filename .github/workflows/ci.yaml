@@ -7,7 +7,7 @@ jobs:
     runs-on: ubuntu-latest
     container: alpine:latest
     steps:
-    - run: apk --no-cache add git gcc g++ binutils pkgconf meson ninja musl-dev wayland-dev wayland-protocols libinput-dev libevdev-dev libxkbcommon-dev pixman-dev glm-dev libdrm-dev mesa-dev cairo-dev pango-dev eudev-dev libxml2-dev libseat-dev libxcb-dev xcb-util-wm-dev xwayland doctest doctest-dev cmake libdisplay-info-dev hwdata-dev
+    - run: apk --no-cache add git gcc g++ binutils pkgconf meson ninja musl-dev wayland-dev wayland-protocols libinput-dev libevdev-dev libxkbcommon-dev pixman-dev glm-dev libdrm-dev mesa-dev cairo-dev pango-dev eudev-dev libxml2-dev libseat-dev libxcb-dev xcb-util-wm-dev xwayland doctest doctest-dev cmake libdisplay-info-dev hwdata-dev nlohmann-json
     - uses: actions/checkout@v1
     - run: git config --global --add safe.directory /__w/wayfire/wayfire
     - run: git submodule sync --recursive && git submodule update --init --force --recursive
@@ -23,7 +23,7 @@ jobs:
     steps:
     - run: sed -i 's/SigLevel    = Required DatabaseOptional/SigLevel    = Optional TrustAll/' /etc/pacman.conf
     - run: pacman --noconfirm --noprogressbar -Syyu
-    - run: pacman --noconfirm --noprogressbar -Sy git clang lld libc++ pkgconf cmake meson ninja wayland wayland-protocols libinput libxkbcommon pixman glm libdrm libglvnd cairo pango systemd scdoc base-devel seatd hwdata libdisplay-info openmp
+    - run: pacman --noconfirm --noprogressbar -Sy git clang lld libc++ pkgconf cmake meson ninja wayland wayland-protocols libinput libxkbcommon pixman glm libdrm libglvnd cairo pango systemd scdoc base-devel seatd hwdata libdisplay-info openmp nlohmann-json
 
       # Build Wayfire
     - uses: actions/checkout@v1
