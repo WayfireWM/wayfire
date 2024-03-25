@@ -13,6 +13,7 @@
 #include "wayfire/seat.hpp"
 
 #include "text-input-v1-v3.hpp"
+#include "input-method-v1.hpp"
 
 class wayfire_input_method_v1_context
 {
@@ -830,6 +831,9 @@ class wayfire_input_method_v1 : public wf::plugin_interface_t, public wf::text_i
 
     void im_handle_text_input_enable(wayfire_im_text_input_base_t *text_input)
     {
+        wf::input_method_v1_activate_signal data;
+        wf::get_core().emit(&data);
+
         if (!current_im)
         {
             LOGC(IM, "No IM currently connected: ignoring enable request.");
@@ -855,6 +859,9 @@ class wayfire_input_method_v1 : public wf::plugin_interface_t, public wf::text_i
 
     void im_handle_text_input_disable(wayfire_im_text_input_base_t *input)
     {
+        wf::input_method_v1_deactivate_signal data;
+        wf::get_core().emit(&data);
+
         if (!current_im_context || (current_im_context->text_input != input))
         {
             return;

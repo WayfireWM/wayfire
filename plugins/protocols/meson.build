@@ -13,3 +13,5 @@ foreach plugin : protocol_plugins
       install: true,
       install_dir: conf_data.get('PLUGIN_PATH'))
 endforeach
+
+install_headers(['input-method-v1.hpp'], subdir: 'wayfire/plugins/input-method-v1/')
