@@ -96,7 +96,6 @@ class wayfire_input_method_v1_context
 
     void deactivate(bool im_killed = false)
     {
-        this->text_input = NULL;
         wl_resource_set_user_data(context, NULL);
 
         if (im_killed)
@@ -126,9 +125,11 @@ class wayfire_input_method_v1_context
                 wl_resource_set_user_data(active_grab_keyboard, NULL);
             }
 
+            this->text_input = NULL;
             return;
         }
 
+        this->text_input = NULL;
         zwp_input_method_v1_send_deactivate(current_im, context);
 
         if (active_grab_keyboard)
