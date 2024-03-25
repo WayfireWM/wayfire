@@ -1092,10 +1092,16 @@ class wayfire_scale : public wf::per_output_plugin_instance_t,
         layout_slots(get_views());
     };
 
-    void handle_new_view(wayfire_toplevel_view view)
+    void handle_new_view(wayfire_toplevel_view view, bool close_scale)
     {
         if (!should_scale_view(view))
         {
+            return;
+        }
+
+        if (close_scale)
+        {
+            deactivate();
             return;
         }
 
@@ -1106,7 +1112,7 @@ class wayfire_scale : public wf::per_output_plugin_instance_t,
     {
         if (auto toplevel = wf::toplevel_cast(ev->view))
         {
-            handle_new_view(toplevel);
+            handle_new_view(toplevel, true);
         }
     };
 
@@ -1518,7 +1524,7 @@ class wayfire_scale_global : public wf::plugin_interface_t,
             auto new_output = ev->view->get_output();
             if (new_output && output_instance.count(new_output) && output_instance[new_output]->active)
             {
-                this->output_instance[ev->view->get_output()]->handle_new_view(toplevel);
+                this->output_instance[ev->view->get_output()]->handle_new_view(toplevel, false);
             }
         }
     };
