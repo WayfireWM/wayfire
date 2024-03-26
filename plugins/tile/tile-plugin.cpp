@@ -112,10 +112,10 @@ class tile_output_plugin_t : public wf::pointer_interaction_t, public wf::custom
             return;
         }
 
-        input_grab->ungrab_input();
-
         // Deactivate plugin, so that others can react to the events
         output->deactivate_plugin(&grab_interface);
+        input_grab->ungrab_input();
+
         if (!force_stop)
         {
             controller->input_released();
@@ -159,10 +159,10 @@ class tile_output_plugin_t : public wf::pointer_interaction_t, public wf::custom
 
     wf::signal::connection_t<view_unmapped_signal> on_view_unmapped = [=] (wf::view_unmapped_signal *ev)
     {
-        stop_controller(true);
         auto node = wf::tile::view_node_t::get_node(ev->view);
         if (node)
         {
+            stop_controller(true);
             detach_view(node);
         }
     };
