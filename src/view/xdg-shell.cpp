@@ -3,11 +3,13 @@
 #include <wayfire/debug.hpp>
 #include "view/view-impl.hpp"
 #include "wayfire/core.hpp"
+#include "wayfire/seat.hpp"
 #include "wayfire/geometry.hpp"
 #include "wayfire/output.hpp"
 #include "wayfire/scene-operations.hpp"
 #include "wayfire/scene-render.hpp"
 #include "wayfire/scene.hpp"
+#include "wayfire/unstable/wlr-view-keyboard-interaction.hpp"
 #include "wayfire/view-helpers.hpp"
 #include "wayfire/view.hpp"
 #include "xdg-shell.hpp"
@@ -24,16 +26,47 @@
 class wayfire_xdg_popup_node : public wf::scene::translation_node_t
 {
   public:
-    wayfire_xdg_popup_node(uint64_t view_id) : id(view_id)
-    {}
+    wayfire_xdg_popup_node(std::shared_ptr<wayfire_xdg_popup> popup) : id(popup->get_id())
+    {
+        this->_popup = popup;
+        this->kb_interaction = std::make_unique<wf::wlr_view_keyboard_interaction_t>(popup, true);
+    }
 
     std::string stringify() const override
     {
         return "xdg-popup view id=" + std::to_string(id) + " " + stringify_flags();
     }
 
+    wf::keyboard_focus_node_t keyboard_refocus(wf::output_t *output) override
+    {
+        auto popup = _popup.lock();
+        if (!popup)
+        {
+            return {};
+        }
+
+        if (!popup->is_mapped() || !popup->popup->seat || !popup->get_keyboard_focus_surface() ||
+            (output != popup->get_output()))
+        {
+            return {};
+        }
+
+        return wf::keyboard_focus_node_t{
+            .node = this,
+            .importance = wf::focus_importance::REGULAR,
+            .allow_focus_below = false,
+        };
+    }
+
+    wf::keyboard_interaction_t& keyboard_interaction() override
+    {
+        return *kb_interaction;
+    }
+
   private:
     uint64_t id = 0;
+    std::weak_ptr<wayfire_xdg_popup> _popup;
+    std::unique_ptr<wf::wlr_view_keyboard_interaction_t> kb_interaction;
 };
 
 wayfire_xdg_popup::wayfire_xdg_popup(wlr_xdg_popup *popup) : wf::view_interface_t()
@@ -48,9 +81,11 @@ wayfire_xdg_popup::wayfire_xdg_popup(wlr_xdg_popup *popup) : wf::view_interface_
         // Note: we shouldn't close nested popups manually, since the parent popups will destroy them as well.
         this->on_keyboard_focus_changed = [=] (wf::keyboard_focus_changed_signal *ev)
         {
-            if (ev->new_focus != popup_parent->get_surface_root_node())
+            auto view = wf::node_to_view(ev->new_focus);
+            if (!view || (view->get_client() != this->get_client()))
             {
                 this->close();
+                return;
             }
         };
     }
@@ -108,7 +143,7 @@ std::shared_ptr<wayfire_xdg_popup> wayfire_xdg_popup::create(wlr_xdg_popup *popu
 {
     auto self = wf::view_interface_t::create<wayfire_xdg_popup>(popup);
 
-    self->surface_root_node = std::make_shared<wayfire_xdg_popup_node>(self->get_id());
+    self->surface_root_node = std::make_shared<wayfire_xdg_popup_node>(self);
     self->set_surface_root_node(self->surface_root_node);
     self->set_output(self->popup_parent->get_output());
     self->unconstrain();
@@ -136,6 +171,11 @@ void wayfire_xdg_popup::map()
     damage();
     emit_view_map();
     wf::get_core().connect(&on_keyboard_focus_changed);
+
+    if (popup->seat)
+    {
+        wf::get_core().seat->focus_view(self());
+    }
 }
 
 void wayfire_xdg_popup::unmap()

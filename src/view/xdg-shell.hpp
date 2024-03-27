@@ -23,7 +23,6 @@ class wayfire_xdg_popup : public wf::view_interface_t
     wf::signal::connection_t<wf::view_app_id_changed_signal> parent_app_id_changed;
     wf::signal::connection_t<wf::keyboard_focus_changed_signal> on_keyboard_focus_changed;
 
-    wlr_xdg_popup *popup;
     void unconstrain();
     void update_position();
     wayfire_xdg_popup(wlr_xdg_popup *popup);
@@ -34,6 +33,7 @@ class wayfire_xdg_popup : public wf::view_interface_t
     static std::shared_ptr<wayfire_xdg_popup> create(wlr_xdg_popup *popup);
 
     wayfire_view popup_parent;
+    wlr_xdg_popup *popup;
     void map();
     void unmap();
     void commit();
