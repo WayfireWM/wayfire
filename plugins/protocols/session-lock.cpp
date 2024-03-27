@@ -137,6 +137,8 @@ class lock_crashed_node : public lock_base_node<simple_text_node_t>
         set_text_params(params);
         // TODO: make the text smaller and display a useful message instead of a big explosion.
         set_text("💥");
+        auto layer_node = output->node_for_layer(wf::scene::layer::LOCK);
+        wf::scene::add_back(layer_node, shared_from_this());
         wf::get_core().seat->set_active_node(shared_from_this());
     }
 
@@ -161,12 +163,17 @@ class wf_session_lock_plugin : public wf::plugin_interface_t
         ZOMBIE,
     };
 
-
     struct output_state
     {
         std::shared_ptr<lock_surface_node> surface_node;
         wf::wl_listener_wrapper surface_destroy;
         std::shared_ptr<lock_crashed_node> crashed_node;
+
+        output_state(wf::output_t *output)
+        {
+            crashed_node = std::make_shared<lock_crashed_node>(output);
+            crashed_node->set_text("");
+        }
 
         ~output_state()
         {
@@ -276,17 +283,26 @@ class wf_session_lock_plugin : public wf::plugin_interface_t
         ~wayfire_session_lock()
         {
             disconnect_signals();
+            output_changed.disconnect();
+            output_added.disconnect();
+            output_removed.disconnect();
             remove_crashed_nodes();
         }
 
       private:
         void handle_output_added(wf::output_t *output)
         {
-            output_states[output] = std::make_shared<output_state>();
+            output_states[output] = std::make_shared<output_state>(output);
             if (state == LOCKED)
             {
                 lock_output(output, output_states[output]);
             }
+            if (state == ZOMBIE)
+            {
+                output->set_inhibited(true);
+                output_states[output]->crashed_node->display();
+            }
+
         }
 
         void handle_output_removed(wf::output_t *output)
@@ -315,10 +331,7 @@ class wf_session_lock_plugin : public wf::plugin_interface_t
                 output_state->surface_node->display();
             }
 
-            output_state->crashed_node = std::make_shared<lock_crashed_node>(output);
-            output_state->crashed_node->set_text("");
-            auto layer_node = output->node_for_layer(wf::scene::layer::LOCK);
-            wf::scene::add_back(layer_node, output_state->crashed_node);
+            // TODO: if the surface node has not yet been displayed, display... something?
         }
 
         void lock_all()
@@ -368,8 +381,10 @@ class wf_session_lock_plugin : public wf::plugin_interface_t
 
         void disconnect_signals()
         {
-            output_added.disconnect();
-            output_removed.disconnect();
+            // Disconnect lock_session protocol signals and lock timer because the client has gone.
+            // Leave output monitoring signals connected: if the client crashed and this lock is
+            // in ZOMBIE state, it must keep monitoring output changes to add/remove/resize
+            // lock_crashed_nodes.
             new_surface.disconnect();
             unlock.disconnect();
             destroy.disconnect();
@@ -424,14 +439,14 @@ class wf_session_lock_plugin : public wf::plugin_interface_t
     {
         switch (state)
         {
+          case UNLOCKED:
           case LOCKING:
-          case LOCKED:
             break;
 
-          case UNLOCKED:
-            // Screen unlocked.
-            // If a session lock client had previously crashed, destroy it to un-inhibit outputs,
-            // remove lock_crashed_nodes, etc.
+          case LOCKED:
+            // Screen locked.
+            // If a previous lock is in zombie state, delete it, so it stops listening for output
+            // changes, removes lock_crashed_nodes, etc.
             prev_lock.reset();
             break;
 
