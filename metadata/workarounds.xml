@@ -58,5 +58,9 @@
       <_short>Enable support for the newer input-method-v2 protocol. Note that the input-method-v1 protocol works better in many cases.</_short>
       <default>false</default>
     </option>
+    <option name="enable_opaque_region_damage_optimizations" type="bool">
+      <_short>Enable certain damage optimizations which are based on a surfaces' opaque regions. In some cases, this optimization might give unexpected results (i.e background app stops updating) even though this is fine according to Wayland's protocol.</_short>
+      <default>false</default>
+    </option>
 	</plugin>
 </wayfire>

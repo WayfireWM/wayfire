@@ -234,6 +234,7 @@ class wf::scene::wlr_surface_node_t::wlr_surface_render_instance_t : public rend
 
     wf::output_t *visible_on;
     damage_callback push_damage;
+    wf::region_t last_visibility;
 
     wf::signal::connection_t<node_damage_signal> on_surface_damage =
         [=] (node_damage_signal *data)
@@ -249,7 +250,17 @@ class wf::scene::wlr_surface_node_t::wlr_surface_render_instance_t : public rend
             }
         }
 
-        push_damage(data->region);
+        static wf::option_wrapper_t<bool> use_opaque_optimizations{
+            "workarounds/enable_opaque_region_damage_optimizations"
+        };
+
+        if (use_opaque_optimizations)
+        {
+            push_damage(data->region & last_visibility);
+        } else
+        {
+            push_damage(data->region);
+        }
     };
 
   public:
@@ -400,13 +411,23 @@ class wf::scene::wlr_surface_node_t::wlr_surface_render_instance_t : public rend
     {
         auto our_box = self->get_bounding_box();
         on_frame_done.disconnect();
+        last_visibility = visible & our_box;
 
-        if (!(visible & our_box).empty())
+        static wf::option_wrapper_t<bool> use_opaque_optimizations{
+            "workarounds/enable_opaque_region_damage_optimizations"
+        };
+
+        if (!last_visibility.empty())
         {
             // We are visible on the given output => send wl_surface.frame on output frame, so that clients
             // can draw the next frame.
             output->connect(&on_frame_done);
-            // TODO: compute actually visible region and disable damage reporting for that region.
+
+            if (use_opaque_optimizations && self->surface)
+            {
+                pixman_region32_subtract(visible.to_pixman(), visible.to_pixman(),
+                    &self->surface->opaque_region);
+            }
         }
     }
 };
