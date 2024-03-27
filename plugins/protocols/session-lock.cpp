@@ -78,6 +78,12 @@ class lock_surface_node : public lock_base_node<wf::scene::wlr_surface_node_t>
         interaction(std::make_unique<lock_surface_keyboard_interaction>(lock_surface->surface))
     {}
 
+    void configure(wf::dimensions_t size)
+    {
+        wlr_session_lock_surface_v1_configure(lock_surface, size.width, size.height);
+        LOGC(LSHELL, "surface_configure on ", lock_surface->output->name, " ", size);
+    }
+
     void display()
     {
         auto layer_node = output->node_for_layer(wf::scene::layer::LOCK);
@@ -202,6 +208,20 @@ class wf_session_lock_plugin : public wf::plugin_interface_t
             });
             ol->connect(&output_removed);
 
+            output_changed.set_callback([this] (wf::output_configuration_changed_signal *ev)
+            {
+                auto output_state = output_states[ev->output];
+                auto size = ev->output->get_screen_size();
+                if (output_state->surface_node)
+                {
+                    output_state->surface_node->configure(size);
+                }
+                if (output_state->crashed_node)
+                {
+                    output_state->crashed_node->set_size(size);
+                }
+            });
+
             for (auto output : ol->get_outputs())
             {
                 handle_output_added(output);
@@ -219,13 +239,9 @@ class wf_session_lock_plugin : public wf::plugin_interface_t
                     return;
                 }
 
-                auto size = output->get_screen_size();
-                wlr_session_lock_surface_v1_configure(lock_surface, size.width, size.height);
-                LOGC(LSHELL, "surface_configure on ", wo->name, " ", size.width, "x", size.height);
-
-                // TODO: hook into output size changes and reconfigure.
-
                 auto surface_node = std::make_shared<lock_surface_node>(lock_surface, output);
+                surface_node->configure(output->get_screen_size());
+
                 output_states[output]->surface_destroy.set_callback(
                     [this, surface_node, output] (void*)
                 {
@@ -302,11 +318,12 @@ class wf_session_lock_plugin : public wf::plugin_interface_t
                 output->set_inhibited(true);
                 output_states[output]->crashed_node->display();
             }
-
+            output->connect(&output_changed);
         }
 
         void handle_output_removed(wf::output_t *output)
         {
+            output->disconnect(&output_changed);
             output_states.erase(output);
         }
 
@@ -401,6 +418,7 @@ class wf_session_lock_plugin : public wf::plugin_interface_t
         wf::wl_listener_wrapper destroy;
 
         wf::signal::connection_t<wf::output_added_signal> output_added;
+        wf::signal::connection_t<wf::output_configuration_changed_signal> output_changed;
         wf::signal::connection_t<wf::output_removed_signal> output_removed;
 
         lock_state state = UNLOCKED;
