@@ -1,14 +1,10 @@
-#include "view/view-impl.hpp"
 #include "wayfire/geometry.hpp"
 #include "wayfire/scene-operations.hpp"
 #include "wayfire/scene.hpp"
-#include "wayfire/signal-definitions.hpp"
-#include "wayfire/unstable/translation-node.hpp"
 #include "wayfire/unstable/wlr-subsurface-controller.hpp"
 #include "wayfire/unstable/wlr-surface-node.hpp"
 #include <memory>
 #include <wayfire/debug.hpp>
-#include <cassert>
 
 wf::wlr_subsurface_controller_t::wlr_subsurface_controller_t(wlr_subsurface *sub)
 {
@@ -81,13 +77,20 @@ std::string wf::wlr_subsurface_root_node_t::stringify() const
     return "subsurface root node";
 }
 
-void wf::wlr_subsurface_root_node_t::update_offset()
+bool wf::wlr_subsurface_root_node_t::update_offset(bool apply_damage)
 {
     wf::point_t offset = {subsurface->current.x, subsurface->current.y};
-    if (offset != get_offset())
+    const bool changed = offset != get_offset();
+
+    if (changed && apply_damage)
     {
         scene::damage_node(this, get_bounding_box());
         set_offset(offset);
         scene::damage_node(this, get_bounding_box());
+    } else if (changed)
+    {
+        set_offset(offset);
     }
+
+    return changed;
 }

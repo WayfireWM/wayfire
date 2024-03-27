@@ -22,6 +22,8 @@ class wlr_surface_controller_t
     wlr_surface_controller_t(wlr_surface *surface, scene::floating_inner_ptr root_node);
     ~wlr_surface_controller_t();
 
+    void update_subsurface_order_and_position();
+
     scene::floating_inner_ptr root;
     wlr_surface *surface;
 

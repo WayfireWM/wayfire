@@ -16,7 +16,7 @@ class wlr_subsurface_root_node_t : public wf::scene::translation_node_t
   public:
     wlr_subsurface_root_node_t(wlr_subsurface *subsurface);
     std::string stringify() const override;
-    void update_offset();
+    bool update_offset(bool damage = true);
 
   private:
     wlr_subsurface *subsurface;
