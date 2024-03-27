@@ -1,7 +1,5 @@
 #pragma once
 
-#include "wayfire/signal-definitions.hpp"
-#include "wayfire/signal-provider.hpp"
 #include <wayfire/view.hpp>
 #include <wayfire/scene-input.hpp>
 #include <wayfire/compositor-view.hpp>
@@ -18,11 +16,13 @@ namespace wf
 class wlr_view_keyboard_interaction_t : public wf::keyboard_interaction_t
 {
     std::weak_ptr<wf::view_interface_t> view;
+    bool force_enter;
 
   public:
-    wlr_view_keyboard_interaction_t(wayfire_view _view)
+    wlr_view_keyboard_interaction_t(wayfire_view _view, bool force_enter = false)
     {
         this->view = _view->weak_from_this();
+        this->force_enter = force_enter;
     }
 
     void handle_keyboard_enter(wf::seat_t *seat) override
@@ -34,8 +34,16 @@ class wlr_view_keyboard_interaction_t : public wf::keyboard_interaction_t
                 auto pressed_keys = seat->get_pressed_keys();
 
                 auto kbd = wlr_seat_get_keyboard(seat->seat);
-                wlr_seat_keyboard_notify_enter(seat->seat, ptr->get_wlr_surface(),
-                    pressed_keys.data(), pressed_keys.size(), kbd ? &kbd->modifiers : NULL);
+
+                if (force_enter)
+                {
+                    wlr_seat_keyboard_enter(seat->seat, ptr->get_wlr_surface(),
+                        pressed_keys.data(), pressed_keys.size(), kbd ? &kbd->modifiers : NULL);
+                } else
+                {
+                    wlr_seat_keyboard_notify_enter(seat->seat, ptr->get_wlr_surface(),
+                        pressed_keys.data(), pressed_keys.size(), kbd ? &kbd->modifiers : NULL);
+                }
             }
         }
     }
