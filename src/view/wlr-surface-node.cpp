@@ -6,6 +6,7 @@
 #include "wayfire/scene.hpp"
 #include "wlr-surface-pointer-interaction.hpp"
 #include "wlr-surface-touch-interaction.cpp"
+#include "wayfire/output-layout.hpp"
 #include <glm/gtc/matrix_transform.hpp>
 #include <memory>
 #include <sstream>
@@ -131,6 +132,13 @@ wf::scene::wlr_surface_node_t::wlr_surface_node_t(wlr_surface *surface, bool aut
     send_frame_done(false);
 
     current_state.merge_state(surface);
+
+    on_output_remove.set_callback([&] (wf::output_removed_signal *ev)
+    {
+        visibility.erase(ev->output);
+        pending_visibility_delta.erase(ev->output);
+    });
+    wf::get_core().output_layout->connect(&on_output_remove);
 }
 
 void wf::scene::wlr_surface_node_t::apply_state(surface_state_t&& state)
@@ -250,12 +258,7 @@ class wf::scene::wlr_surface_node_t::wlr_surface_render_instance_t : public rend
     {
         if (visible_on)
         {
-            self->visibility[visible_on]++;
-            if (self->surface)
-            {
-                wlr_surface_send_enter(self->surface, visible_on->handle);
-                wlr_fractional_scale_v1_notify_scale(self->surface, visible_on->handle->scale);
-            }
+            self->handle_enter(visible_on);
         }
 
         this->self = self;
@@ -268,12 +271,7 @@ class wf::scene::wlr_surface_node_t::wlr_surface_render_instance_t : public rend
     {
         if (visible_on)
         {
-            self->visibility[visible_on]--;
-            if ((self->visibility[visible_on] == 0) && self->surface)
-            {
-                self->visibility.erase(visible_on);
-                wlr_surface_send_leave(self->surface, visible_on->handle);
-            }
+            self->handle_leave(visible_on);
         }
     }
 
@@ -439,4 +437,44 @@ std::optional<wf::texture_t> wf::scene::wlr_surface_node_t::to_texture() const
     }
 
     return {};
+}
+
+// Idea of handling output enter/leave events: when the event comes, we store the number of enters/leaves
+// for outputs and update them on the next idle. The idea is to cache together multiple events, which may
+// be triggered especially when visibility recomputation happens.
+void wf::scene::wlr_surface_node_t::handle_enter(wf::output_t *output)
+{
+    pending_visibility_delta[output]++;
+    idle_update_outputs.run_once([&] () { update_pending_outputs(); });
+}
+
+void wf::scene::wlr_surface_node_t::handle_leave(wf::output_t *output)
+{
+    pending_visibility_delta[output]--;
+    idle_update_outputs.run_once([&] () { update_pending_outputs(); });
+}
+
+void wf::scene::wlr_surface_node_t::update_pending_outputs()
+{
+    for (auto& [wo, delta] : pending_visibility_delta)
+    {
+        if ((visibility[wo] == 0) && (delta > 0) && surface)
+        {
+            wlr_surface_send_enter(surface, wo->handle);
+            wlr_fractional_scale_v1_notify_scale(surface, wo->handle->scale);
+        }
+
+        visibility[wo] += delta;
+        if ((visibility[wo] == 0) && (delta < 0) && surface)
+        {
+            wlr_surface_send_leave(surface, wo->handle);
+        }
+
+        if (visibility[wo] == 0)
+        {
+            visibility.erase(wo);
+        }
+    }
+
+    pending_visibility_delta.clear();
 }
