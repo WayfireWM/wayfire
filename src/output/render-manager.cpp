@@ -51,6 +51,7 @@ struct swapchain_damage_manager_t
 
         if (update_mask & recompute_instances_on)
         {
+            LOGC(RENDER, "Output ", wo->to_string(), ": regenerating instances.");
             auto root = wf::get_core().scene();
             scene::damage_callback push_damage = [=] (wf::region_t region)
             {
@@ -66,6 +67,7 @@ struct swapchain_damage_manager_t
 
         if (update_mask & recompute_visibility_on)
         {
+            LOGC(RENDER, "Output ", wo->to_string(), ": recomputing visibility.");
             wf::region_t region = this->wo->get_layout_geometry();
             for (auto& inst : render_instances)
             {

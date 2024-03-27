@@ -63,6 +63,8 @@ enum class logging_category : size_t
     LSHELL  = 9,
     // Input-Method-related events
     IM      = 10,
+    // Rendering-related events
+    RENDER  = 11,
     TOTAL,
 };
 
