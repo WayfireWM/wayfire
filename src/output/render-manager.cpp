@@ -42,6 +42,7 @@ struct swapchain_damage_manager_t
     output_t *wo;
 
     bool pending_gamma_lut = false;
+    wf::wl_idle_call idle_recompute_visibility;
 
     void update_scenegraph(uint32_t update_mask)
     {
@@ -67,12 +68,15 @@ struct swapchain_damage_manager_t
 
         if (update_mask & recompute_visibility_on)
         {
-            LOGC(RENDER, "Output ", wo->to_string(), ": recomputing visibility.");
-            wf::region_t region = this->wo->get_layout_geometry();
-            for (auto& inst : render_instances)
+            idle_recompute_visibility.run_once([=] ()
             {
-                inst->compute_visibility(wo, region);
-            }
+                LOGC(RENDER, "Output ", wo->to_string(), ": recomputing visibility.");
+                wf::region_t region = this->wo->get_layout_geometry();
+                for (auto& inst : render_instances)
+                {
+                    inst->compute_visibility(wo, region);
+                }
+            });
         }
     }
 
