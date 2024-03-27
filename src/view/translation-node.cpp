@@ -46,12 +46,29 @@ void wf::scene::translation_node_t::set_offset(wf::point_t offset)
     this->offset = offset;
 }
 
+uint32_t wf::scene::translation_node_t::optimize_update(uint32_t flags)
+{
+    if (flags & (update_flag::CHILDREN_LIST | update_flag::ENABLED))
+    {
+        // If we update the list of children, there is no need to notify the whole scenegraph.
+        // Instead, we can do a local update, and only update visibility.
+        flags &= ~update_flag::CHILDREN_LIST;
+        flags &= ~update_flag::ENABLED;
+        flags |= update_flag::GEOMETRY | update_flag::INPUT_STATE;
+        translation_node_regen_instances_signal data;
+        emit(&data);
+    }
+
+    return flags;
+}
+
 // ----------------------------------------- Render instance -------------------------------------------------
 wf::scene::translation_node_instance_t::translation_node_instance_t(
     translation_node_t *self, damage_callback push_damage, wf::output_t *shown_on)
 {
     this->self = self;
     this->push_damage = push_damage;
+    this->shown_on    = shown_on;
 
     on_node_damage = [=] (wf::scene::node_damage_signal *data)
     {
@@ -59,6 +76,17 @@ wf::scene::translation_node_instance_t::translation_node_instance_t(
     };
     self->connect(&on_node_damage);
 
+    on_regen_instances = [=] (auto)
+    {
+        regen_instances();
+    };
+    self->connect(&on_regen_instances);
+    regen_instances();
+}
+
+void wf::scene::translation_node_instance_t::regen_instances()
+{
+    children.clear();
     auto push_damage_child = [=] (wf::region_t child_damage)
     {
         child_damage += self->get_offset();

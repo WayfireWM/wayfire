@@ -3,18 +3,15 @@
 #include <wayfire/scene.hpp>
 #include <wayfire/view.hpp>
 #include <wayfire/output.hpp>
-#include <set>
 #include <algorithm>
 
 #include "scene-priv.hpp"
-#include "wayfire/debug.hpp"
 #include "wayfire/geometry.hpp"
 #include "wayfire/opengl.hpp"
 #include "wayfire/region.hpp"
 #include "wayfire/scene-input.hpp"
 #include "wayfire/scene-render.hpp"
 #include "wayfire/signal-provider.hpp"
-#include "wayfire/util.hpp"
 #include <wayfire/core.hpp>
 
 namespace wf
@@ -503,6 +500,7 @@ void update(node_ptr changed_node, uint32_t flags)
 
     if (changed_node->parent())
     {
+        flags = changed_node->parent()->optimize_update(flags);
         update(changed_node->parent()->shared_from_this(), flags);
     }
 }

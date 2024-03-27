@@ -8,6 +8,14 @@ namespace wf
 namespace scene
 {
 /**
+ * Emitted on: translation node
+ * The signal means that the translation node wishes to optimize a scenegraph update, and render instances
+ * should update their internal state to match.
+ */
+struct translation_node_regen_instances_signal
+{};
+
+/**
  * A node which simply applies an offset to its children.
  */
 class translation_node_t : public wf::scene::floating_inner_node_t
@@ -34,6 +42,7 @@ class translation_node_t : public wf::scene::floating_inner_node_t
     void gen_render_instances(std::vector<scene::render_instance_uptr>& instances,
         scene::damage_callback damage, wf::output_t *output) override;
     wf::geometry_t get_bounding_box() override;
+    uint32_t optimize_update(uint32_t flags) override;
 
   protected:
     wf::point_t offset = {0, 0};
@@ -46,6 +55,9 @@ class translation_node_instance_t : public render_instance_t
     damage_callback push_damage;
     translation_node_t *self;
     wf::signal::connection_t<wf::scene::node_damage_signal> on_node_damage;
+    wf::signal::connection_t<wf::scene::translation_node_regen_instances_signal> on_regen_instances;
+    wf::output_t *shown_on;
+    void regen_instances();
 
   public:
     translation_node_instance_t(translation_node_t *self,
