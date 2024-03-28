@@ -157,7 +157,7 @@ class vswitch : public wf::per_output_plugin_instance_t
             return false;
         }
 
-        if (view && (view->role != wf::VIEW_ROLE_TOPLEVEL))
+        if (view && ((view->role != wf::VIEW_ROLE_TOPLEVEL) || !view->is_mapped()))
         {
             view = nullptr;
         }
@@ -274,6 +274,11 @@ class wf_vswitch_global_plugin_t : public wf::per_output_plugin_t<vswitch>
             if (!view)
             {
                 return wf::ipc::json_error("Invalid view or view not toplevel!");
+            }
+
+            if (!view->is_mapped())
+            {
+                return wf::ipc::json_error("Cannot grab unmapped view!");
             }
 
             switch_with_views.push_back(view);
