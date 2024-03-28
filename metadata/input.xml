@@ -111,6 +111,29 @@
 				<default>1.0</default>
 				<min>0.0</min>
 			</option>
+			<option name="mouse_scroll_button" type="int">
+				<_short>Mouse scroll button</_short>
+				<_long>Changes the mouse scroll button.</_long>
+				<default>0</default>
+				<min>0</min>
+			</option>
+			<option name="mouse_scroll_method" type="string">
+				<_short>Mouse Scroll method</_short>
+				<_long>Changes the mouse scroll method.</_long>
+				<default>default</default>
+				<desc>
+					<value>default</value>
+					<_name>Default</_name>
+				</desc>
+				<desc>
+					<value>none</value>
+					<_name>None</_name>
+				</desc>
+				<desc>
+					<value>on-button-down</value>
+					<_name>On-button-down</_name>
+				</desc>
+			</option>	
 		</group>
 		<!-- Touchpad -->
 		<group>
