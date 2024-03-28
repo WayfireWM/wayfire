@@ -422,7 +422,7 @@ class wayfire_scale : public wf::per_output_plugin_instance_t,
     {
         if (view == current_focus_view)
         {
-            current_focus_view = toplevel_cast(wf::get_active_view_for_output(output));
+            current_focus_view = nullptr;
         }
 
         if (view == initial_focus_view)
@@ -1236,7 +1236,7 @@ class wayfire_scale : public wf::per_output_plugin_instance_t,
             }
         }
 
-        wf::get_core().default_wm->focus_raise_view(current_focus_view);
+        wf::get_core().default_wm->focus_raise_view(next_focus);
     }
 
     /* Returns true if any scale animation is running */
