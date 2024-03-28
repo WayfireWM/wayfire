@@ -95,6 +95,11 @@ inline std::optional<std::string> verify_json_tree(nlohmann::json& json, json_bu
             return "No view found with id " + std::to_string((uint32_t)json["view-id"]);
         }
 
+        if (!view->toplevel()->pending().mapped)
+        {
+            return "Cannot tile pending-unmapped views!";
+        }
+
         if (data.touched_views.count(view))
         {
             return "View tiled twice!";
