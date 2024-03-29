@@ -387,7 +387,12 @@ enum
      * Adjust the view geometry for the new output and clamp it to the output geometry so it is
      * at an expected size and position.
      */
-    VIEW_TO_OUTPUT_FLAG_RECONFIGURE = 1 << 0,
+    VIEW_TO_OUTPUT_FLAG_RECONFIGURE    = 1 << 0,
+    /**
+     * If the new output has the same workspace geometry as the current output, move the view to the
+     * same workspace as it is currently on.
+     */
+    VIEW_TO_OUTPUT_FLAG_SAME_WORKSPACE = 1 << 1,
 };
 
 /**
