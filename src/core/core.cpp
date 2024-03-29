@@ -626,10 +626,13 @@ void wf::move_view_to_output(wayfire_toplevel_view v, wf::output_t *new_output, 
 
     auto old_output = v->get_output();
     auto old_wset   = v->get_wset();
+    auto old_ws     = old_wset->get_view_main_workspace(v);
+    auto new_wset   = new_output->wset();
 
     uint32_t edges;
     bool fullscreen;
-    bool reconfigure = flags & VIEW_TO_OUTPUT_FLAG_RECONFIGURE;
+    bool reconfigure    = flags & VIEW_TO_OUTPUT_FLAG_RECONFIGURE;
+    bool same_workspace = flags & VIEW_TO_OUTPUT_FLAG_SAME_WORKSPACE;
     wf::geometry_t view_g;
     wf::geometry_t old_output_g;
     wf::geometry_t new_output_g;
@@ -655,7 +658,7 @@ void wf::move_view_to_output(wayfire_toplevel_view v, wf::output_t *new_output, 
 
     assert(new_output);
 
-    start_move_view_to_wset(v, new_output->wset());
+    start_move_view_to_wset(v, new_wset);
     if (new_output == wf::get_core().seat->get_active_output())
     {
         wf::get_core().seat->focus_view(v);
@@ -663,16 +666,31 @@ void wf::move_view_to_output(wayfire_toplevel_view v, wf::output_t *new_output, 
 
     if (reconfigure)
     {
+        std::optional<wf::point_t> new_ws;
+
+        if (same_workspace)
+        {
+            auto new_grid_size = new_wset->get_workspace_grid_size();
+            new_ws = {
+                std::min(old_ws.x, new_grid_size.width),
+                std::min(old_ws.y, new_grid_size.height)
+            };
+        }
+
         if (fullscreen)
         {
-            wf::get_core().default_wm->fullscreen_request(v, new_output, true);
+            wf::get_core().default_wm->fullscreen_request(v, new_output, true, new_ws);
         } else if (edges)
         {
-            wf::get_core().default_wm->tile_request(v, edges);
+            wf::get_core().default_wm->tile_request(v, edges, new_ws);
         } else
         {
             auto new_g = wf::clamp(view_g, new_output->workarea->get_workarea());
             v->set_geometry(new_g);
+            if (new_ws.has_value())
+            {
+                v->get_wset()->move_to_workspace(v, new_ws.value());
+            }
         }
 
         for (auto& dialog : v->enumerate_views())

@@ -263,7 +263,8 @@ void transfer_views(wf::output_t *from, wf::output_t *to)
         auto views = from->wset()->get_views(WSET_SORT_STACKING);
         for (auto& view : views)
         {
-            move_view_to_output(view, to, true);
+            unsigned flags = VIEW_TO_OUTPUT_FLAG_RECONFIGURE | VIEW_TO_OUTPUT_FLAG_SAME_WORKSPACE;
+            move_view_to_output(view, to, flags);
         }
     }
 
