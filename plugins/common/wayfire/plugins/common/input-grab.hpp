@@ -146,7 +146,11 @@ class input_grab_t
             std::to_string((int)layer_below));
         children.insert(idx, grab_node);
         root->set_children_list(children);
-        wf::get_core().transfer_grab(grab_node);
+        if (output == wf::get_core().seat->get_active_output())
+        {
+            wf::get_core().transfer_grab(grab_node);
+        }
+
         scene::update(root, scene::update_flag::CHILDREN_LIST | scene::update_flag::REFOCUS);
 
         // Set cursor to default.
