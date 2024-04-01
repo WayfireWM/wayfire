@@ -488,7 +488,7 @@ class wayfire_xwayland_view : public wf::toplevel_view_interface_t, public wayfi
     bool should_be_decorated() override
     {
         return role == wf::VIEW_ROLE_TOPLEVEL && !has_client_decoration &&
-               !wf::xw::has_type(xw, wf::xw::_NET_WM_WINDOW_TYPE_SPLASH);
+               (xw && !wf::xw::has_type(xw, wf::xw::_NET_WM_WINDOW_TYPE_SPLASH));
     }
 };
 
