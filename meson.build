@@ -28,7 +28,7 @@ pangocairo     = dependency('pangocairo')
 drm            = dependency('libdrm')
 egl            = dependency('egl')
 glesv2         = dependency('glesv2')
-glm            = dependency('glm')
+glm            = dependency('glm', required: false)
 libinput       = dependency('libinput', version: '>=1.7.0')
 pixman         = dependency('pixman-1')
 xkbcommon      = dependency('xkbcommon')
@@ -104,6 +104,12 @@ elif get_option('use_system_wfconfig').auto()
 		wfconfig = subproject('wf-config').get_variable('wfconfig')
 	endif
 endif
+
+if not glm.found() and not meson.get_compiler('cpp').check_header('glm/glm.hpp')
+  error('GLM not found, and directly using the header \'glm/glm.hpp\' is not possible.')
+endif
+
+backtrace = meson.get_compiler('cpp').find_library('execinfo', required: false)
 
 wfutils = subproject('wf-utils').get_variable('wfutils')
 wftouch = subproject('wf-touch').get_variable('wftouch')
