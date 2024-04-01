@@ -124,8 +124,9 @@ class wayfire_grid : public wf::plugin_interface_t, public wf::per_output_tracke
 
     bool can_adjust_view(wayfire_toplevel_view view)
     {
-        uint32_t req_actions = wf::VIEW_ALLOW_MOVE | wf::VIEW_ALLOW_RESIZE;
-        return (view->get_allowed_actions() & req_actions) == req_actions;
+        const uint32_t req_actions = wf::VIEW_ALLOW_MOVE | wf::VIEW_ALLOW_RESIZE;
+        const bool is_floating     = (view->get_allowed_actions() & req_actions) == req_actions;
+        return is_floating && (view->get_output() != nullptr) && view->toplevel()->pending().mapped;
     }
 
     void handle_slot(wayfire_toplevel_view view, int slot, wf::point_t delta = {0, 0})
