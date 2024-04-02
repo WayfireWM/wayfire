@@ -216,6 +216,7 @@ class wf_session_lock_plugin : public wf::plugin_interface_t
                 {
                     output_state->surface_node->configure(size);
                 }
+
                 if (output_state->crashed_node)
                 {
                     output_state->crashed_node->set_size(size);
@@ -313,11 +314,13 @@ class wf_session_lock_plugin : public wf::plugin_interface_t
             {
                 lock_output(output, output_states[output]);
             }
+
             if (state == ZOMBIE)
             {
                 output->set_inhibited(true);
                 output_states[output]->crashed_node->display();
             }
+
             output->connect(&output_changed);
         }
 
