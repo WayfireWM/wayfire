@@ -27,6 +27,9 @@ class xdg_toplevel_t : public toplevel_t, public std::enable_shared_from_this<xd
     wf::geometry_t calculate_base_geometry();
     void request_native_size();
 
+    wf::dimensions_t get_min_size() override;
+    wf::dimensions_t get_max_size() override;
+
   private:
     std::shared_ptr<wf::scene::wlr_surface_node_t> main_surface;
     scene::surface_state_t pending_state;

@@ -246,3 +246,23 @@ wf::dimensions_t wf::xdg_toplevel_t::get_current_wlr_toplevel_size()
     wlr_xdg_surface_get_geometry(toplevel->base, &wm_box);
     return wf::dimensions(wm_box);
 }
+
+wf::dimensions_t wf::xdg_toplevel_t::get_min_size()
+{
+    if (toplevel)
+    {
+        return wf::dimensions_t{toplevel->current.min_width, toplevel->current.min_height};
+    }
+
+    return {0, 0};
+}
+
+wf::dimensions_t wf::xdg_toplevel_t::get_max_size()
+{
+    if (toplevel)
+    {
+        return wf::dimensions_t{toplevel->current.max_width, toplevel->current.max_height};
+    }
+
+    return {0, 0};
+}

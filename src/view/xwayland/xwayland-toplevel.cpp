@@ -287,4 +287,30 @@ wf::dimensions_t wf::xw::xwayland_toplevel_t::get_current_xw_size()
     return size;
 }
 
+wf::dimensions_t wf::xw::xwayland_toplevel_t::get_min_size()
+{
+    if (xw && xw->size_hints)
+    {
+        return wf::dimensions_t{
+            std::max(0, xw->size_hints->min_width),
+            std::max(0, xw->size_hints->min_height)
+        };
+    }
+
+    return {0, 0};
+}
+
+wf::dimensions_t wf::xw::xwayland_toplevel_t::get_max_size()
+{
+    if (xw && xw->size_hints)
+    {
+        return wf::dimensions_t{
+            std::max(0, xw->size_hints->max_width),
+            std::max(0, xw->size_hints->max_height)
+        };
+    }
+
+    return {0, 0};
+}
+
 #endif

@@ -29,6 +29,9 @@ class xwayland_toplevel_t : public wf::toplevel_t, public std::enable_shared_fro
     void commit() override;
     void apply() override;
 
+    wf::dimensions_t get_min_size() override;
+    wf::dimensions_t get_max_size() override;
+
     void set_main_surface(std::shared_ptr<wf::scene::wlr_surface_node_t> main_surface);
     void set_output_offset(wf::point_t output_offset);
 

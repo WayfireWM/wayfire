@@ -103,6 +103,24 @@ class toplevel_t : public wf::txn::transaction_object_t, public wf::object_base_
         return _pending;
     }
 
+    /**
+     * The minimum desirable size of the toplevel if set by the client.
+     * If the client has not indicated a minimum size in either dimension, that dimension will be set to 0.
+     */
+    virtual wf::dimensions_t get_min_size()
+    {
+        return {0, 0};
+    }
+
+    /**
+     * The maximum desirable size of the toplevel if set by the client.
+     * If the client has not indicated a maximum size in either dimension, that dimension will be set to 0.
+     */
+    virtual wf::dimensions_t get_max_size()
+    {
+        return {0, 0};
+    }
+
   protected:
     toplevel_state_t _current;
     toplevel_state_t _pending;
