@@ -653,7 +653,12 @@ class core_drag_t : public signal::provider_t
         wf::get_core().default_wm->set_view_grabbed(view, false);
         view = nullptr;
         all_views.clear();
-        current_output = nullptr;
+        if (current_output)
+        {
+            current_output->render->rem_effect(&on_pre_frame);
+            current_output = nullptr;
+        }
+
         wf::get_core().set_cursor("default");
 
         // Lastly, let the plugins handle what happens on drag end.
