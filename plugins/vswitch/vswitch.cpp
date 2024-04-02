@@ -284,7 +284,14 @@ class wf_vswitch_global_plugin_t : public wf::per_output_plugin_t<vswitch>
             switch_with_views.push_back(view);
         }
 
-        wo->wset()->request_workspace({data["x"], data["y"]}, switch_with_views);
+        if (output_instance[wo]->set_capabilities(wf::CAPABILITY_MANAGE_COMPOSITOR))
+        {
+            wf::point_t new_viewport = {data["x"], data["y"]};
+            wf::point_t cur_viewport = wo->wset()->get_current_workspace();
+            wf::point_t delta = new_viewport - cur_viewport;
+            output_instance[wo]->add_direction(delta);
+        }
+
         return wf::ipc::json_ok();
     };
 };
