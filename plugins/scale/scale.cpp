@@ -103,7 +103,7 @@ class wayfire_scale : public wf::per_output_plugin_instance_t,
     wayfire_toplevel_view initial_focus_view;
     /* View that has active focus. */
     wayfire_toplevel_view current_focus_view;
-    // View over which the last input press happened, might become dangling
+    // View over which the last input press happened
     wayfire_toplevel_view last_selected_view;
     std::map<wayfire_toplevel_view, view_scale_data> scale_data;
     wf::option_wrapper_t<int> spacing{"scale/spacing"};
@@ -429,6 +429,11 @@ class wayfire_scale : public wf::per_output_plugin_instance_t,
         {
             initial_focus_view = nullptr;
         }
+
+        if (view == last_selected_view)
+        {
+            last_selected_view = nullptr;
+        }
     }
 
     /* Remove transformer from view and remove view from the scale_data map */
@@ -453,8 +458,7 @@ class wayfire_scale : public wf::per_output_plugin_instance_t,
     }
 
     /* Process button event */
-    void process_input(uint32_t button, uint32_t state,
-        wf::pointf_t input_position)
+    void process_input(uint32_t button, uint32_t state, wf::pointf_t input_position)
     {
         if (!active)
         {
