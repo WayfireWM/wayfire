@@ -87,11 +87,11 @@ void wf::pointer_t::update_cursor_position(int64_t time_msec)
     seat->priv->update_drag_icon();
 }
 
-void wf::pointer_t::send_leave_to_focus()
+void wf::pointer_t::send_leave_to_focus(wf::scene::node_ptr old_focus)
 {
-    if (cursor_focus)
+    if (old_focus)
     {
-        if (!cursor_focus->wants_raw_input())
+        if (!old_focus->wants_raw_input())
         {
             for (auto button : this->currently_sent_buttons)
             {
@@ -101,11 +101,11 @@ void wf::pointer_t::send_leave_to_focus()
                 event.button    = button;
                 event.state     = WLR_BUTTON_RELEASED;
                 event.time_msec = wf::get_current_time();
-                cursor_focus->pointer_interaction().handle_pointer_button(event);
+                old_focus->pointer_interaction().handle_pointer_button(event);
             }
         }
 
-        cursor_focus->pointer_interaction().handle_pointer_leave();
+        old_focus->pointer_interaction().handle_pointer_leave();
         this->last_focus_coords = {};
     }
 }
@@ -121,8 +121,9 @@ void wf::pointer_t::transfer_grab(scene::node_ptr node)
     }
 
     LOGC(POINTER, "transfer grab ", cursor_focus.get(), " -> ", node.get());
-    send_leave_to_focus();
+    auto old_focus = std::move(cursor_focus);
     cursor_focus = node;
+    send_leave_to_focus(old_focus);
 
     // Send pointer_enter to the grab
     send_enter_to_focus();
@@ -150,26 +151,22 @@ void wf::pointer_t::send_enter_to_focus()
 
 void wf::pointer_t::update_cursor_focus(wf::scene::node_ptr new_focus)
 {
-    bool focus_change = (cursor_focus != new_focus);
-    if (focus_change)
+    if (cursor_focus == new_focus)
     {
-        LOGC(POINTER, "Change cursor focus ", cursor_focus.get(), " -> ", new_focus.get());
+        return;
     }
 
-    // Clear currently sent buttons when switching focus
-    // However, if we are in drag-and-drop mode, do not release
-    // buttons since otherwise we'll cancel DnD
-    if (focus_change)
-    {
-        send_leave_to_focus();
-        currently_sent_buttons.clear();
-    }
-
+    LOGC(POINTER, "Change cursor focus ", cursor_focus.get(), " -> ", new_focus.get());
+    auto old_focus = std::move(cursor_focus);
     cursor_focus = new_focus;
-    if (focus_change && new_focus)
+
+    send_leave_to_focus(old_focus);
+    currently_sent_buttons.clear();
+
+    if (new_focus)
     {
         send_enter_to_focus();
-    } else if (focus_change)
+    } else
     {
         // If there is focused surface, we should reset the cursor image to
         // avoid the last cursor image getting stuck outside of its surface.

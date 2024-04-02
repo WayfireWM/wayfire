@@ -141,9 +141,9 @@ class pointer_t
     void send_motion(uint32_t time_msec);
 
     /**
-     * Send synthetic button release events to the current cursor focus.
+     * Send synthetic button release events to the old cursor focus.
      */
-    void send_leave_to_focus();
+    void send_leave_to_focus(wf::scene::node_ptr old_focus);
 };
 }
 
