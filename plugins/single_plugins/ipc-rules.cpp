@@ -799,7 +799,11 @@ class ipc_rules_t : public wf::plugin_interface_t, public wf::per_output_tracker
         description["activated"]   = toplevel ? toplevel->activated : false;
         description["sticky"]     = toplevel ? toplevel->sticky : false;
         description["wset-index"] = toplevel && toplevel->get_wset() ? toplevel->get_wset()->get_index() : -1;
-        description["focusable"]  = view->is_focusable();
+        description["min-size"]   = wf::ipc::dimensions_to_json(
+            toplevel ? toplevel->toplevel()->get_min_size() : wf::dimensions_t{0, 0});
+        description["max-size"] = wf::ipc::dimensions_to_json(
+            toplevel ? toplevel->toplevel()->get_max_size() : wf::dimensions_t{0, 0});
+        description["focusable"] = view->is_focusable();
         description["type"] = get_view_type(view);
 
         return description;
