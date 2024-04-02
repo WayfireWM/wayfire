@@ -79,18 +79,24 @@ class tile_output_plugin_t : public wf::pointer_interaction_t, public wf::custom
     }
 
     /** Check whether the current pointer focus is tiled view */
-    bool has_tiled_focus()
+    wayfire_toplevel_view get_tiled_focus()
     {
-        auto focus = wf::get_core().get_cursor_focus_view();
+        auto focus = toplevel_cast(wf::get_core().get_cursor_focus_view());
+        if (focus && tile::view_node_t::get_node(focus))
+        {
+            return focus;
+        }
 
-        return focus && tile::view_node_t::get_node(focus);
+        return nullptr;
     }
 
     template<class Controller>
     void start_controller()
     {
+        auto tiled_focus = get_tiled_focus();
+
         /* No action possible in this case */
-        if (has_fullscreen_view() || !has_tiled_focus())
+        if (has_fullscreen_view() || !tiled_focus)
         {
             return;
         }
@@ -101,8 +107,7 @@ class tile_output_plugin_t : public wf::pointer_interaction_t, public wf::custom
         }
 
         input_grab->grab_input(wf::scene::layer::OVERLAY);
-
-        controller = std::make_unique<Controller>(output->wset().get());
+        controller = std::make_unique<Controller>(output->wset().get(), tiled_focus);
     }
 
     void stop_controller(bool force_stop)

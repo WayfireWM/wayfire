@@ -78,7 +78,7 @@ class move_view_controller_t : public tile_controller_t
     /**
      * Start the drag-to-reorder action.
      */
-    move_view_controller_t(wf::workspace_set_t *wset);
+    move_view_controller_t(wf::workspace_set_t *wset, wayfire_toplevel_view view);
     ~move_view_controller_t();
 
     void input_motion() override;
@@ -94,7 +94,7 @@ class resize_view_controller_t : public tile_controller_t
     /**
      * Start the drag-to-resize action.
      */
-    resize_view_controller_t(wf::workspace_set_t *wset);
+    resize_view_controller_t(wf::workspace_set_t *wset, wayfire_toplevel_view view);
     ~resize_view_controller_t();
 
     void input_motion() override;

@@ -103,15 +103,8 @@ nonstd::observer_ptr<view_node_t> find_first_view_in_direction(
 }
 
 /* ------------------------ move_view_controller_t -------------------------- */
-move_view_controller_t::move_view_controller_t(wf::workspace_set_t *set)
+move_view_controller_t::move_view_controller_t(wf::workspace_set_t *set, wayfire_toplevel_view grabbed_view)
 {
-    auto grab = get_global_input_coordinates(set->get_attached_output());
-    auto grabbed_view = find_view_at(get_root(set, set->get_current_workspace()), grab);
-    if (!grabbed_view)
-    {
-        return;
-    }
-
     this->drag_helper->set_pending_drag(wf::get_core().get_cursor_position());
 
     move_drag::drag_options_t drag_options;
@@ -119,7 +112,7 @@ move_view_controller_t::move_view_controller_t(wf::workspace_set_t *set)
     drag_options.enable_snap_off = true;
     drag_options.snap_off_threshold = 20;
     drag_options.join_views = false;
-    this->drag_helper->start_drag(grabbed_view->view, drag_options);
+    this->drag_helper->start_drag(grabbed_view, drag_options);
 }
 
 move_view_controller_t::~move_view_controller_t()
@@ -141,7 +134,7 @@ wf::geometry_t eval(nonstd::observer_ptr<tree_node_t> node)
 }
 
 /* ----------------------- resize tile controller --------------------------- */
-resize_view_controller_t::resize_view_controller_t(wf::workspace_set_t *wset)
+resize_view_controller_t::resize_view_controller_t(wf::workspace_set_t *wset, wayfire_toplevel_view)
 {
     this->last_point   = get_global_input_coordinates(wset->get_attached_output());
     this->grabbed_view = find_view_at(get_root(wset, wset->get_current_workspace()), last_point);

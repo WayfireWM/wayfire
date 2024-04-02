@@ -476,6 +476,7 @@ class core_drag_t : public signal::provider_t
     {
         wf::dassert(tentative_grab_position.has_value(),
             "First, the drag operation should be set as pending!");
+        wf::dassert(grab_view->is_mapped(), "Dragged view should be mapped!");
         auto bbox = wf::view_bounding_box_up_to(grab_view, "wobbly");
         wf::point_t rel_grab_pos = {
             int(bbox.x + relative.x * bbox.width),
