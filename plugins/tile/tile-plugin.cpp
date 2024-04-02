@@ -35,6 +35,12 @@ static bool can_tile_view(wayfire_toplevel_view view)
         return false;
     }
 
+    if ((view->toplevel()->get_min_size() == view->toplevel()->get_max_size()) &&
+        (view->toplevel()->get_min_size().width > 0) && (view->toplevel()->get_min_size().height > 0))
+    {
+        return false;
+    }
+
     return true;
 }
 
