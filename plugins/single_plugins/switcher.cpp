@@ -27,7 +27,6 @@
 #include <glm/gtc/matrix_transform.hpp>
 
 #include <algorithm>
-#include <exception>
 #include <set>
 
 constexpr const char *switcher_transformer = "switcher-3d";
@@ -533,6 +532,11 @@ class WayfireSwitcher : public wf::per_output_plugin_instance_t, public wf::keyb
         {
             return wf::get_focus_timestamp(a.view) > wf::get_focus_timestamp(b.view);
         });
+
+        if (ws_views.empty())
+        {
+            return;
+        }
 
         /* Add a copy of the unfocused view if we have just 2 */
         if (ws_views.size() == 2)
