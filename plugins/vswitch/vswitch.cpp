@@ -267,7 +267,7 @@ class wf_vswitch_global_plugin_t : public wf::per_output_plugin_t<vswitch>
             return wf::ipc::json_error("Workspace coordinates are too big!");
         }
 
-        std::vector<wayfire_toplevel_view> switch_with_views;
+        wayfire_toplevel_view switch_with_view;
         if (data.contains("view-id"))
         {
             auto view = toplevel_cast(wf::ipc::find_view_by_id(data["view-id"]));
@@ -281,7 +281,12 @@ class wf_vswitch_global_plugin_t : public wf::per_output_plugin_t<vswitch>
                 return wf::ipc::json_error("Cannot grab unmapped view!");
             }
 
-            switch_with_views.push_back(view);
+            if (view->get_output() != wo)
+            {
+                return wf::ipc::json_error("Cannot grab view on a different output!");
+            }
+
+            switch_with_view = view;
         }
 
         if (output_instance[wo]->set_capabilities(wf::CAPABILITY_MANAGE_COMPOSITOR))
@@ -289,7 +294,7 @@ class wf_vswitch_global_plugin_t : public wf::per_output_plugin_t<vswitch>
             wf::point_t new_viewport = {data["x"], data["y"]};
             wf::point_t cur_viewport = wo->wset()->get_current_workspace();
             wf::point_t delta = new_viewport - cur_viewport;
-            output_instance[wo]->add_direction(delta);
+            output_instance[wo]->add_direction(delta, switch_with_view);
         }
 
         return wf::ipc::json_ok();
