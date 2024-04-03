@@ -93,7 +93,10 @@ void wf::pointer_t::send_leave_to_focus(wf::scene::node_ptr old_focus)
     {
         if (!old_focus->wants_raw_input())
         {
-            for (auto button : this->currently_sent_buttons)
+            // Make a copy of sent buttons: it could happen that we switch focus multiple times if we have
+            // multiple grabs on multiple outputs.
+            auto send_release = this->currently_sent_buttons;
+            for (auto button : send_release)
             {
                 LOGC(POINTER, "force-release button ", button);
                 wlr_pointer_button_event event;
