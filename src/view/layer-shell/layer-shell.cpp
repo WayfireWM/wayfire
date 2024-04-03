@@ -17,7 +17,6 @@
 #include <wayfire/util/log.hpp>
 #include <wayfire/nonstd/wlroots-full.hpp>
 #include "wayfire/output.hpp"
-#include "wayfire/workspace-set.hpp"
 #include "wayfire/output-layout.hpp"
 #include "../view-impl.hpp"
 #include "wlr-layer-shell-unstable-v1-protocol.h"
@@ -224,18 +223,6 @@ struct wf_layer_shell_manager
         return result;
     }
 
-    layer_t filter_views(wf::output_t *output)
-    {
-        layer_t result;
-        for (int i = 0; i < 4; i++)
-        {
-            auto layer_result = filter_views(output, i);
-            result.insert(result.end(), layer_result.begin(), layer_result.end());
-        }
-
-        return result;
-    }
-
     void set_exclusive_zone(wayfire_layer_shell_view *v)
     {
         int edges = v->lsurface->current.anchor;
@@ -327,10 +314,9 @@ struct wf_layer_shell_manager
         v->configure(box);
     }
 
-    void arrange_layer(wf::output_t *output, int layer)
+    void arrange_exclusive_zone(wf::output_t *output, int layer)
     {
         auto views = filter_views(output, layer);
-
         /* First we need to put all views that have exclusive zone set.
          * The rest are then placed into the free area */
         for (auto v : views)
@@ -345,7 +331,11 @@ struct wf_layer_shell_manager
                 v->remove_anchored(false);
             }
         }
+    }
 
+    void arrange_floating(wf::output_t *output, int layer)
+    {
+        auto views = filter_views(output, layer);
         auto usable_workarea = output->workarea->get_workarea();
         for (auto v : views)
         {
@@ -371,13 +361,24 @@ struct wf_layer_shell_manager
 
     void arrange_layers(wf::output_t *output)
     {
-        auto views = filter_views(output);
+        const auto layers = {
+            ZWLR_LAYER_SHELL_V1_LAYER_OVERLAY,
+            ZWLR_LAYER_SHELL_V1_LAYER_TOP,
+            ZWLR_LAYER_SHELL_V1_LAYER_BOTTOM,
+            ZWLR_LAYER_SHELL_V1_LAYER_BACKGROUND
+        };
 
-        arrange_layer(output, ZWLR_LAYER_SHELL_V1_LAYER_OVERLAY);
-        arrange_layer(output, ZWLR_LAYER_SHELL_V1_LAYER_TOP);
-        arrange_layer(output, ZWLR_LAYER_SHELL_V1_LAYER_BOTTOM);
-        arrange_layer(output, ZWLR_LAYER_SHELL_V1_LAYER_BACKGROUND);
+        for (auto& layer : layers)
+        {
+            arrange_exclusive_zone(output, layer);
+        }
+
         output->workarea->reflow_reserved_areas();
+
+        for (auto& layer : layers)
+        {
+            arrange_floating(output, layer);
+        }
     }
 };
 
