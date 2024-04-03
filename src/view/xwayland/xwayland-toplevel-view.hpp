@@ -392,7 +392,12 @@ class wayfire_xwayland_view : public wf::toplevel_view_interface_t, public wayfi
         do_map(surface, false);
         on_surface_commit.connect(&surface->events.commit);
 
-        wf::get_core().default_wm->focus_request(self());
+        const bool wants_focus = (wlr_xwayland_icccm_input_model(xw) != WLR_ICCCM_INPUT_MODEL_NONE);
+        if (wants_focus)
+        {
+            wf::get_core().default_wm->focus_request(self());
+        }
+
         /* Might trigger repositioning */
         set_toplevel_parent(this->parent);
     }
