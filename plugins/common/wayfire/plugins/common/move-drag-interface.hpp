@@ -306,9 +306,8 @@ inline std::vector<wayfire_toplevel_view> get_target_views(wayfire_toplevel_view
 // coordinates and thus we just need to schedule them for rendering.
 class dragged_view_node_t : public wf::scene::node_t
 {
-    std::vector<dragged_view_t> views;
-
   public:
+    std::vector<dragged_view_t> views;
     dragged_view_node_t(std::vector<dragged_view_t> views) : node_t(false)
     {
         this->views = views;
@@ -322,7 +321,8 @@ class dragged_view_node_t : public wf::scene::node_t
     void gen_render_instances(std::vector<scene::render_instance_uptr>& instances,
         scene::damage_callback push_damage, wf::output_t *output = nullptr) override
     {
-        instances.push_back(std::make_unique<dragged_view_render_instance_t>(this, push_damage, output));
+        instances.push_back(std::make_unique<dragged_view_render_instance_t>(
+            std::dynamic_pointer_cast<dragged_view_node_t>(shared_from_this()), push_damage, output));
     }
 
     wf::geometry_t get_bounding_box() override
@@ -351,8 +351,8 @@ class dragged_view_node_t : public wf::scene::node_t
         };
 
       public:
-        dragged_view_render_instance_t(dragged_view_node_t *self, wf::scene::damage_callback push_damage,
-            wf::output_t *shown_on)
+        dragged_view_render_instance_t(std::shared_ptr<dragged_view_node_t> self,
+            wf::scene::damage_callback push_damage, wf::output_t *shown_on)
         {
             auto push_damage_child = [=] (wf::region_t child_damage)
             {
@@ -477,6 +477,8 @@ class core_drag_t : public signal::provider_t
         wf::dassert(tentative_grab_position.has_value(),
             "First, the drag operation should be set as pending!");
         wf::dassert(grab_view->is_mapped(), "Dragged view should be mapped!");
+        wf::dassert(!this->view, "Drag operation already in progress!");
+
         auto bbox = wf::view_bounding_box_up_to(grab_view, "wobbly");
         wf::point_t rel_grab_pos = {
             int(bbox.x + relative.x * bbox.width),
@@ -625,6 +627,7 @@ class core_drag_t : public signal::provider_t
 
         // Remove overlay hooks and damage outputs BEFORE popping the transformer
         wf::scene::remove_child(render_node);
+        render_node->views.clear();
         render_node = nullptr;
 
         for (auto& v : all_views)
