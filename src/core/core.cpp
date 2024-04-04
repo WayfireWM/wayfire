@@ -615,7 +615,7 @@ void wf::start_move_view_to_wset(wayfire_toplevel_view v, std::shared_ptr<wf::wo
     new_wset->add_view(v);
 }
 
-void wf::move_view_to_output(wayfire_toplevel_view v, wf::output_t *new_output, bool reconfigure)
+void wf::move_view_to_output(wayfire_toplevel_view v, wf::output_t *new_output, uint32_t flags)
 {
     if (v->get_output() == new_output)
     {
@@ -629,6 +629,7 @@ void wf::move_view_to_output(wayfire_toplevel_view v, wf::output_t *new_output, 
 
     uint32_t edges;
     bool fullscreen;
+    bool reconfigure = flags & VIEW_TO_OUTPUT_FLAG_RECONFIGURE;
     wf::geometry_t view_g;
     wf::geometry_t old_output_g;
     wf::geometry_t new_output_g;
