@@ -901,6 +901,7 @@ class WayfireSwitcher : public wf::per_output_plugin_instance_t, public wf::keyb
     {
         if (output->is_plugin_active(grab_interface.name))
         {
+            input_grab->ungrab_input();
             deinit_switcher();
         }
 
