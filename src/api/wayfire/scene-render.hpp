@@ -1,6 +1,5 @@
 #pragma once
 
-#include "wayfire/nonstd/observer_ptr.h"
 #include <memory>
 #include <vector>
 #include <any>
@@ -298,7 +297,7 @@ class simple_render_instance_t : public render_instance_t
   public:
     simple_render_instance_t(Node *self, damage_callback push_damage, wf::output_t *output)
     {
-        this->self = self;
+        this->self = std::dynamic_pointer_cast<Node>(self->shared_from_this());
         this->push_damage = push_damage;
         this->output = output;
         self->connect(&on_self_damage);
@@ -315,7 +314,7 @@ class simple_render_instance_t : public render_instance_t
     }
 
   protected:
-    Node *self;
+    std::shared_ptr<Node> self;
     wf::signal::connection_t<scene::node_damage_signal> on_self_damage = [=] (scene::node_damage_signal *ev)
     {
         push_damage(ev->region);
@@ -324,5 +323,16 @@ class simple_render_instance_t : public render_instance_t
     damage_callback push_damage;
     wf::output_t *output;
 };
+
+/**
+ * Emitted on: node
+ * The signal is used by some nodes to avoid unnecessary scenegraph recomputations.
+ * For example it is used by nodes whose render instances keep a list of children, so that when the children
+ * are updated, these nodes update only their internal list of children and not the entire scenegraph.
+ */
+struct node_regen_instances_signal
+{};
+
+uint32_t optimize_nested_render_instances(wf::scene::node_ptr node, uint32_t flags);
 }
 }

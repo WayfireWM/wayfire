@@ -51,6 +51,11 @@ class transformer_base_node_t : public scene::floating_inner_node_t
   public:
     using floating_inner_node_t::floating_inner_node_t;
 
+    uint32_t optimize_update(uint32_t flags) override
+    {
+        return optimize_nested_render_instances(shared_from_this(), flags);
+    }
+
     // A temporary buffer to render children to.
     wf::render_target_t inner_content;
 
@@ -140,7 +145,7 @@ class transformer_render_instance_t : public render_instance_t
     }
 
     // A pointer to the transformer node this render instance belongs to.
-    NodeType *self;
+    std::shared_ptr<NodeType> self;
 
     // A list of render instances of the next transformer or the view itself.
     std::vector<render_instance_uptr> children;
@@ -182,6 +187,14 @@ class transformer_render_instance_t : public render_instance_t
     virtual void transform_damage_region(wf::region_t& damage)
     {}
 
+    wf::output_t *_shown_on;
+    damage_callback _push_damage;
+
+    wf::signal::connection_t<node_regen_instances_signal> on_regen_instances = [=] (auto)
+    {
+        regen_instances();
+    };
+
   public:
     transformer_render_instance_t(NodeType *self, damage_callback push_damage,
         wf::output_t *shown_on)
@@ -190,18 +203,27 @@ class transformer_render_instance_t : public render_instance_t
             "transformer_render_instance_t should be instantiated with a "
             "subclass of node_t!");
 
-        this->self = self;
+        this->self = std::dynamic_pointer_cast<NodeType>(self->shared_from_this());
+        self->cached_damage |= self->get_children_bounding_box();
+        this->_push_damage   = push_damage;
+        this->_shown_on      = shown_on;
+
+        regen_instances();
+        self->connect(&on_regen_instances);
+    }
+
+    void regen_instances()
+    {
         auto push_damage_child = [=] (wf::region_t region)
         {
             self->cached_damage |= region;
             transform_damage_region(region);
-            push_damage(region);
+            _push_damage(region);
         };
 
-        self->cached_damage |= self->get_children_bounding_box();
         for (auto& ch : self->get_children())
         {
-            ch->gen_render_instances(children, push_damage_child, shown_on);
+            ch->gen_render_instances(children, push_damage_child, _shown_on);
         }
     }
 

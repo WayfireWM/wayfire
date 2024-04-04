@@ -232,7 +232,7 @@ class workspace_wall_t : public wf::signal::provider_t
     {
         class wwall_render_instance_t : public scene::render_instance_t
         {
-            workspace_wall_node_t *self;
+            std::shared_ptr<workspace_wall_node_t> self;
             per_workspace_map_t<std::vector<scene::render_instance_uptr>> instances;
 
             scene::damage_callback push_damage;
@@ -257,7 +257,7 @@ class workspace_wall_t : public wf::signal::provider_t
             wwall_render_instance_t(workspace_wall_node_t *self,
                 scene::damage_callback push_damage)
             {
-                this->self = self;
+                this->self = std::dynamic_pointer_cast<workspace_wall_node_t>(self->shared_from_this());
                 this->push_damage = push_damage;
                 self->connect(&on_wall_damage);
 

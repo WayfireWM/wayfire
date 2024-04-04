@@ -43,7 +43,7 @@ class wayfire_cube : public wf::per_output_plugin_instance_t, public wf::pointer
     {
         class cube_render_instance_t : public wf::scene::render_instance_t
         {
-            cube_render_node_t *self;
+            std::shared_ptr<cube_render_node_t> self;
             wf::scene::damage_callback push_damage;
 
             std::vector<std::vector<wf::scene::render_instance_uptr>> ws_instances;
@@ -59,7 +59,7 @@ class wayfire_cube : public wf::per_output_plugin_instance_t, public wf::pointer
           public:
             cube_render_instance_t(cube_render_node_t *self, wf::scene::damage_callback push_damage)
             {
-                this->self = self;
+                this->self = std::dynamic_pointer_cast<cube_render_node_t>(self->shared_from_this());
                 this->push_damage = push_damage;
                 self->connect(&on_cube_damage);
 

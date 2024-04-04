@@ -88,14 +88,14 @@ class crossfade_node_t : public scene::view_2d_transformer_t
 
 class crossfade_render_instance_t : public scene::render_instance_t
 {
-    crossfade_node_t *self;
+    std::shared_ptr<crossfade_node_t> self;
     wf::signal::connection_t<scene::node_damage_signal> on_damage;
 
   public:
     crossfade_render_instance_t(crossfade_node_t *self,
         scene::damage_callback push_damage)
     {
-        this->self = self;
+        this->self = std::dynamic_pointer_cast<crossfade_node_t>(self->shared_from_this());
         scene::damage_callback push_damage_child = [=] (const wf::region_t&)
         {
             // XXX: we could attempt to calculate a meaningful damage, but

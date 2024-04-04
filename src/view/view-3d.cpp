@@ -184,7 +184,7 @@ class view_2d_render_instance_t :
 
     void transform_damage_region(wf::region_t& damage) override
     {
-        transform_linear_damage(self, damage);
+        transform_linear_damage(self.get(), damage);
     }
 
     void render(const wf::render_target_t& target,
@@ -389,7 +389,7 @@ class view_3d_render_instance_t :
 
     void transform_damage_region(wf::region_t& damage) override
     {
-        transform_linear_damage(self, damage);
+        transform_linear_damage(self.get(), damage);
     }
 
     void render(const wf::render_target_t& target,

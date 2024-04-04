@@ -131,15 +131,14 @@ class fire_node_t : public wf::scene::floating_inner_node_t
 
 class fire_render_instance_t : public wf::scene::render_instance_t
 {
-    fire_node_t *self;
+    std::shared_ptr<fire_node_t> self;
 
   public:
     fire_render_instance_t(fire_node_t *self,
         wf::scene::damage_callback push_damage,
         wf::output_t *output)
     {
-        this->self = self;
-
+        this->self = std::dynamic_pointer_cast<fire_node_t>(self->shared_from_this());
         auto child_damage = [=] (const wf::region_t& damage)
         {
             push_damage(damage | self->get_bounding_box());

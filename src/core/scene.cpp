@@ -283,6 +283,16 @@ wf::geometry_t node_t::get_bounding_box()
     return get_children_bounding_box();
 }
 
+uint32_t node_t::optimize_update(uint32_t flags)
+{
+    if (!this->is_enabled())
+    {
+        return flags | update_flag::MASKED;
+    }
+
+    return flags;
+}
+
 // ------------------------------ output_node_t --------------------------------
 output_node_t::output_node_t(wf::output_t *output) : floating_inner_node_t(true)
 {
@@ -490,6 +500,12 @@ void update(node_ptr changed_node, uint32_t flags)
         flags |= update_flag::INPUT_STATE;
     }
 
+    if (!changed_node->is_enabled() &&
+        !(flags & update_flag::ENABLED))
+    {
+        flags |= update_flag::MASKED;
+    }
+
     if (changed_node == wf::get_core().scene())
     {
         root_node_update_signal data;
@@ -501,6 +517,11 @@ void update(node_ptr changed_node, uint32_t flags)
     if (changed_node->parent())
     {
         flags = changed_node->parent()->optimize_update(flags);
+        if (!changed_node->parent()->is_enabled())
+        {
+            flags |= update_flag::MASKED;
+        }
+
         update(changed_node->parent()->shared_from_this(), flags);
     }
 }
@@ -511,6 +532,22 @@ floating_inner_node_t::~floating_inner_node_t()
     {
         node->_parent = nullptr;
     }
+}
+
+uint32_t optimize_nested_render_instances(wf::scene::node_ptr node, uint32_t flags)
+{
+    if (flags & (update_flag::CHILDREN_LIST | update_flag::ENABLED))
+    {
+        // If we update the list of children, there is no need to notify the whole scenegraph.
+        // Instead, we can do a local update, and only update visibility.
+        flags &= ~update_flag::CHILDREN_LIST;
+        flags &= ~update_flag::ENABLED;
+        flags |= update_flag::GEOMETRY | update_flag::INPUT_STATE;
+        node_regen_instances_signal data;
+        node->emit(&data);
+    }
+
+    return flags;
 }
 } // namespace scene
 }

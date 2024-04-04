@@ -305,14 +305,14 @@ class title_overlay_render_instance_t : public render_instance_t
         push_to_parent(ev->region);
     };
 
-    title_overlay_node_t *self;
+    std::shared_ptr<title_overlay_node_t> self;
     damage_callback push_to_parent;
 
   public:
     title_overlay_render_instance_t(title_overlay_node_t *self,
         damage_callback push_dmg)
     {
-        this->self = self;
+        this->self = std::dynamic_pointer_cast<title_overlay_node_t>(self->shared_from_this());
         this->push_to_parent = push_dmg;
         self->connect(&on_node_damaged);
     }

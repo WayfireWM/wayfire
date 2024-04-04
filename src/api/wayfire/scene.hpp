@@ -126,6 +126,11 @@ enum update_flag
      * A keyboard refocus might be necessary (for example, node removed, keyboard input state changed, etc.).
      */
     REFOCUS       = (1 << 4),
+    /**
+     * The update concerns a disabled node (which was disabled before and after the operation, so many
+     * updates (for example regenerating render instances) are not necessary).
+     */
+    MASKED        = (1 << 5),
 };
 }
 
@@ -344,10 +349,7 @@ class node_t : public std::enable_shared_from_this<node_t>,
      * the update to their parent nodes. In the above example of subsurface reordering, the subsurface root
      * will update all of its render instances manually and not propagate CHILDREN_LIST updates to its parent.
      */
-    virtual uint32_t optimize_update(uint32_t update_flags)
-    {
-        return update_flags;
-    }
+    virtual uint32_t optimize_update(uint32_t update_flags);
 
   public:
     node_t(const node_t&) = delete;

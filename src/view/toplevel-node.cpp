@@ -89,7 +89,7 @@ class toplevel_view_render_instance_t : public wf::scene::translation_node_insta
 
     wf::scene::direct_scanout try_scanout(wf::output_t *output) override
     {
-        wf::toplevel_view_node_t *tnode = dynamic_cast<wf::toplevel_view_node_t*>(self);
+        wf::toplevel_view_node_t *tnode = dynamic_cast<wf::toplevel_view_node_t*>(self.get());
         auto view = tnode->get_view();
 
         if (!view)

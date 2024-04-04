@@ -165,7 +165,7 @@ class simple_decoration_node_t : public wf::scene::node_t, public wf::pointer_in
 
     class decoration_render_instance_t : public wf::scene::render_instance_t
     {
-        simple_decoration_node_t *self;
+        std::shared_ptr<simple_decoration_node_t> self;
         wf::scene::damage_callback push_damage;
 
         wf::signal::connection_t<wf::scene::node_damage_signal> on_surface_damage =
@@ -177,7 +177,7 @@ class simple_decoration_node_t : public wf::scene::node_t, public wf::pointer_in
       public:
         decoration_render_instance_t(simple_decoration_node_t *self, wf::scene::damage_callback push_damage)
         {
-            this->self = self;
+            this->self = std::dynamic_pointer_cast<simple_decoration_node_t>(self->shared_from_this());
             this->push_damage = push_damage;
             self->connect(&on_surface_damage);
         }

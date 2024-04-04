@@ -46,6 +46,11 @@ struct swapchain_damage_manager_t
 
     void update_scenegraph(uint32_t update_mask)
     {
+        if (update_mask & scene::update_flag::MASKED)
+        {
+            return;
+        }
+
         constexpr uint32_t recompute_instances_on = scene::update_flag::CHILDREN_LIST |
             scene::update_flag::ENABLED;
         constexpr uint32_t recompute_visibility_on = recompute_instances_on | scene::update_flag::GEOMETRY;
