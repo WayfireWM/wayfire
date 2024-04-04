@@ -596,6 +596,8 @@ void wobbly_add_geometry(struct wobbly_surface *surface)
 void wobbly_resize(struct wobbly_surface *surface, int width, int height)
 {
     WobblyWindow *ww = surface->ww;
+    width = width > 1 ? width : 1;
+    height = height > 1 ? height : 1;
 
     surface->synced = 0;
     ww->wobbly |= WobblyInitial;
