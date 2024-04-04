@@ -982,7 +982,7 @@ class wayfire_wobbly : public wf::plugin_interface_t
     {
         for (auto& view : wf::get_core().get_all_views())
         {
-            auto wobbly = view->get_transformed_node()->get_transformer<wobbly_transformer_node_t>();
+            auto wobbly = view->get_transformed_node()->get_transformer<wobbly_transformer_node_t>("wobbly");
             if (wobbly)
             {
                 wobbly->destroy_self();
