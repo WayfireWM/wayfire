@@ -277,6 +277,7 @@ glm::mat4 view_3d_transformer_t::calculate_total_transform()
 {
     auto bbox   = get_children_bounding_box();
     float scale = std::max(bbox.width, bbox.height);
+    scale = std::max(scale, 1.0f);
     glm::mat4 depth_scale = glm::scale(glm::mat4(1.0), {1, 1, 2.0 / scale});
     return translation * view_proj * depth_scale * rotation * scaling;
 }
