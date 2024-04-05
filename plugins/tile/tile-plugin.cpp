@@ -146,10 +146,15 @@ class tile_output_plugin_t : public wf::pointer_interaction_t, public wf::custom
         tile_workspace_set_data_t::get(view->get_wset()).attach_view(view, vp);
     }
 
-    void detach_view(nonstd::observer_ptr<tile::view_node_t> view, bool reinsert = true)
+    void detach_view(wayfire_toplevel_view view, bool reinsert = true)
     {
         stop_controller(true);
-        tile_workspace_set_data_t::get(view->view->get_wset()).detach_views({view}, reinsert);
+
+        // Note that stopping the controller might untile the view, or change its tiled node.
+        if (auto node = tile::view_node_t::get_node(view))
+        {
+            tile_workspace_set_data_t::get(view->get_wset()).detach_views({node}, reinsert);
+        }
     }
 
     wf::signal::connection_t<view_mapped_signal> on_view_mapped = [=] (view_mapped_signal *ev)
@@ -165,11 +170,9 @@ class tile_output_plugin_t : public wf::pointer_interaction_t, public wf::custom
 
     wf::signal::connection_t<view_unmapped_signal> on_view_unmapped = [=] (wf::view_unmapped_signal *ev)
     {
-        auto node = wf::tile::view_node_t::get_node(ev->view);
-        if (node)
+        if (wf::tile::view_node_t::get_node(ev->view))
         {
-            stop_controller(true);
-            detach_view(node);
+            detach_view(toplevel_cast(ev->view));
         }
     };
 
@@ -201,7 +204,7 @@ class tile_output_plugin_t : public wf::pointer_interaction_t, public wf::custom
         auto existing_node = wf::tile::view_node_t::get_node(view);
         if (existing_node)
         {
-            detach_view(existing_node);
+            detach_view(view);
             attach_view(view, vp);
         }
     }
@@ -221,7 +224,7 @@ class tile_output_plugin_t : public wf::pointer_interaction_t, public wf::custom
 
         if (ev->view->minimized && existing_node)
         {
-            detach_view(existing_node);
+            detach_view(ev->view);
         }
 
         if (!ev->view->minimized && tile_window_by_default(ev->view))
@@ -267,7 +270,7 @@ class tile_output_plugin_t : public wf::pointer_interaction_t, public wf::custom
             auto existing_node = tile::view_node_t::get_node(view);
             if (existing_node)
             {
-                detach_view(existing_node);
+                detach_view(view);
                 wf::get_core().default_wm->tile_request(view, 0);
             } else
             {
