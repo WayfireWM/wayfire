@@ -126,12 +126,7 @@ class tile_output_plugin_t : public wf::pointer_interaction_t, public wf::custom
         // Deactivate plugin, so that others can react to the events
         output->deactivate_plugin(&grab_interface);
         input_grab->ungrab_input();
-
-        if (!force_stop)
-        {
-            controller->input_released();
-        }
-
+        controller->input_released(force_stop);
         controller = get_default_controller();
     }
 

@@ -123,7 +123,7 @@ void move_view_controller_t::input_motion()
     drag_helper->handle_motion(wf::get_core().get_cursor_position().round_down());
 }
 
-void move_view_controller_t::input_released()
+void move_view_controller_t::input_released(bool force_stop)
 {
     drag_helper->handle_input_released();
 }

@@ -62,7 +62,7 @@ class tile_controller_t
      * Note that a controller may be deleted without receiving input_released(),
      * in which case it should simply stop operation.
      */
-    virtual void input_released()
+    virtual void input_released(bool force_stop)
     {}
 };
 
@@ -82,7 +82,7 @@ class move_view_controller_t : public tile_controller_t
     ~move_view_controller_t();
 
     void input_motion() override;
-    void input_released() override;
+    void input_released(bool force_stop) override;
 
   protected:
     wf::shared_data::ref_ptr_t<wf::move_drag::core_drag_t> drag_helper;
