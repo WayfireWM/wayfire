@@ -366,6 +366,7 @@ class tile_output_plugin_t : public wf::pointer_interaction_t, public wf::custom
     wf::plugin_activation_data_t grab_interface = {
         .name = "simple-tile",
         .capabilities = CAPABILITY_MANAGE_COMPOSITOR,
+        .cancel = [=] { stop_controller(true); },
     };
 
   public:
@@ -388,6 +389,7 @@ class tile_output_plugin_t : public wf::pointer_interaction_t, public wf::custom
         output->rem_binding(&on_resize_view);
         output->rem_binding(&on_toggle_tiled_state);
         output->rem_binding(&on_focus_adjacent);
+        stop_controller(true);
     }
 };
 
