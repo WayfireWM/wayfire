@@ -9,7 +9,6 @@
 #include "../xdg-shell.hpp"
 #include "wayfire/debug.hpp"
 #include "wayfire/geometry.hpp"
-#include "wayfire/nonstd/tracking-allocator.hpp"
 #include "wayfire/scene.hpp"
 #include "wayfire/seat.hpp"
 #include "wayfire/util.hpp"
@@ -290,10 +289,9 @@ bool wf::xdg_toplevel_view_t::is_mapped() const
 
 void wf::xdg_toplevel_view_t::map()
 {
-    auto surf = xdg_toplevel->base->surface;
-    if (uses_csd.count(surf))
+    if (xdg_toplevel && uses_csd.count(xdg_toplevel->base->surface))
     {
-        this->has_client_decoration = uses_csd[surf];
+        this->has_client_decoration = uses_csd[xdg_toplevel->base->surface];
     }
 
     if (!parent)
