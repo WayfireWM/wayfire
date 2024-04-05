@@ -603,16 +603,27 @@ class stipc_plugin_t : public wf::plugin_interface_t
         }
     };
 
+    int delay_counter = 0;
     wf::signal::connection_t<wf::txn::new_transaction_signal> on_new_tx =
         [=] (wf::txn::new_transaction_signal *ev)
     {
         ev->tx->add_object(std::make_shared<never_ready_object>());
-        on_new_tx.disconnect();
+
+        delay_counter--;
+        if (delay_counter <= 0)
+        {
+            on_new_tx.disconnect();
+        }
     };
 
     ipc::method_callback delay_next_tx = [=] (nlohmann::json)
     {
-        wf::get_core().tx_manager->connect(&on_new_tx);
+        if (!on_new_tx.is_connected())
+        {
+            wf::get_core().tx_manager->connect(&on_new_tx);
+        }
+
+        ++delay_counter;
         return wf::ipc::json_ok();
     };
 
