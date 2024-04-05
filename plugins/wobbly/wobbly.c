@@ -776,8 +776,8 @@ void wobbly_force_geometry(struct wobbly_surface *surface,
 
         surface->x = x;
         surface->y = y;
-        surface->width = w;
-        surface->height = h;
+        surface->width = w > 0 ? w : 1;
+        surface->height = h > 0 ? h : 1;
         surface->synced = 0;
 
 	    modelInitSprings(ww->model, w, h);
