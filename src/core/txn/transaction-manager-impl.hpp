@@ -1,7 +1,6 @@
 #include "wayfire/signal-provider.hpp"
 #include "wayfire/txn/transaction.hpp"
 #include <algorithm>
-#include <iterator>
 #include <wayfire/txn/transaction-manager.hpp>
 #include <wayfire/debug.hpp>
 

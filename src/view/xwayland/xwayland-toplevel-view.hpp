@@ -463,8 +463,7 @@ class wayfire_xwayland_view : public wf::toplevel_view_interface_t, public wayfi
         wf::view_implementation::emit_toplevel_state_change_signals({this}, old_state);
         wf::scene::update(this->get_surface_root_node(), wf::scene::update_flag::GEOMETRY);
 
-        if (!wf::get_core().tx_manager->is_object_committed(toplevel) &&
-            !wf::get_core().tx_manager->is_object_pending(toplevel))
+        if (!wf::get_core().tx_manager->is_object_pending(toplevel))
         {
             // Drop self-reference => object might be deleted afterwards
             _self_ref.reset();
