@@ -323,7 +323,8 @@ void wf::xdg_toplevel_view_t::handle_toplevel_state_changed(wf::toplevel_state_t
     wf::view_implementation::emit_toplevel_state_change_signals({this}, old_state);
     scene::update(this->get_surface_root_node(), scene::update_flag::GEOMETRY);
 
-    if (!wtoplevel->current().mapped)
+    if (!wf::get_core().tx_manager->is_object_committed(wtoplevel) &&
+        !wf::get_core().tx_manager->is_object_pending(wtoplevel))
     {
         // Drop self-ref => `this` might get deleted
         _self_ref.reset();
