@@ -70,4 +70,6 @@ class output_impl_t : public output_t
  * Set the last focused timestamp of the view to now.
  */
 void update_focus_timestamp(wayfire_view view);
+
+void priv_render_manager_clear_instances(wf::render_manager *manager);
 }

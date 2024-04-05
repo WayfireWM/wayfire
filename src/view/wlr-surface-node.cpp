@@ -479,21 +479,32 @@ void wf::scene::wlr_surface_node_t::update_pending_outputs()
 {
     for (auto& [wo, delta] : pending_visibility_delta)
     {
-        if ((visibility[wo] == 0) && (delta > 0) && surface)
+        if (delta > 0)
         {
-            wlr_surface_send_enter(surface, wo->handle);
-            wlr_fractional_scale_v1_notify_scale(surface, wo->handle->scale);
-        }
+            visibility[wo] += delta;
+            if (surface)
+            {
+                wlr_surface_send_enter(surface, wo->handle);
+                wlr_fractional_scale_v1_notify_scale(surface, wo->handle->scale);
+            }
+        } else if (delta < 0)
+        {
+            if (!visibility.count(wo))
+            {
+                // output was destroyed, ignore.
+                continue;
+            }
 
-        visibility[wo] += delta;
-        if ((visibility[wo] == 0) && (delta < 0) && surface)
-        {
-            wlr_surface_send_leave(surface, wo->handle);
-        }
+            visibility[wo] += delta;
+            if ((visibility[wo] <= 0) && surface)
+            {
+                wlr_surface_send_leave(surface, wo->handle);
+            }
 
-        if (visibility[wo] == 0)
-        {
-            visibility.erase(wo);
+            if (visibility[wo] <= 0)
+            {
+                visibility.erase(wo);
+            }
         }
     }
 

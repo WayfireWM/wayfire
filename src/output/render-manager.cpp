@@ -1352,6 +1352,11 @@ void render_manager::set_require_depth_buffer(bool require)
 {
     return pimpl->depth_buffer_manager->set_required(require);
 }
+
+void priv_render_manager_clear_instances(wf::render_manager *manager)
+{
+    manager->pimpl->damage_manager->render_instances.clear();
+}
 } // namespace wf
 
 /* End render_manager */

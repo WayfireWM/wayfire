@@ -154,6 +154,8 @@ wf::output_impl_t::~output_impl_t()
         layer_root->set_children_list({});
         scene::remove_child(layer_root);
     }
+
+    priv_render_manager_clear_instances(render.get());
 }
 
 void wf::output_impl_t::set_effective_size(const wf::dimensions_t& size)

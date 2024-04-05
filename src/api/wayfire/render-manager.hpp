@@ -178,7 +178,7 @@ class render_manager
      */
     void set_require_depth_buffer(bool require);
 
-  private:
+  public:
     class impl;
     std::unique_ptr<impl> pimpl;
 };
