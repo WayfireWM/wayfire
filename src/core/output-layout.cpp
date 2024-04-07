@@ -1228,7 +1228,9 @@ class output_layout_t::impl
 
         if (!noop_output)
         {
-            auto handle = wlr_headless_add_output(noop_backend, 1280, 720);
+            // NOOP output should be at least as large as actual screen sizes. Otherwise, when
+            // when windows are temporarily mapped to it, they will be moved/cropped to match it.
+            auto handle = wlr_headless_add_output(noop_backend, 3840, 2160);
             handle->data = WF_NOOP_OUTPUT_MAGIC;
             strcpy(handle->name, "NOOP-1");
 
