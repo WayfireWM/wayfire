@@ -221,6 +221,7 @@ class transformer_render_instance_t : public render_instance_t
             _push_damage(region);
         };
 
+        children.clear();
         for (auto& ch : self->get_children())
         {
             ch->gen_render_instances(children, push_damage_child, _shown_on);
