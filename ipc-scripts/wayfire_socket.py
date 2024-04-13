@@ -56,6 +56,35 @@ class WayfireSocket:
             message["data"]["events"] = events
         return self.send_json(message)
 
+    def register_binding(self, binding: str,
+                         call_method = None, call_data = None,
+                         command = None,
+                         mode = None,
+                         exec_always = False):
+        message = get_msg_template("command/register_binding")
+        message["data"]["binding"] = binding
+        message["data"]["exec_always"] = exec_always
+        if mode and mode != "press" and mode != "normal":
+            message["data"]["mode"] = mode
+
+        if call_method is not None:
+            message["data"]["call_method"] = call_method
+        if call_data is not None:
+            message["data"]["call_data"] = call_data
+        if command is not None:
+            message["data"]["command"] = command
+
+        return self.send_json(message)
+
+    def unregister_binding(self, binding_id: int):
+        message = get_msg_template("command/unregister_binding")
+        message["data"]["binding_id"] = binding_id
+        return self.send_json(message)
+
+    def clear_bindings(self):
+        message = get_msg_template("command/clear_bindings")
+        return self.send_json(message)
+
     def query_output(self, output_id: int):
         message = get_msg_template("window-rules/output-info")
         message["data"]["id"] = output_id
@@ -117,6 +146,23 @@ class WayfireSocket:
         else:
             message['data']['output-id'] = output_id
 
-        print(message)
+        return self.send_json(message)
 
+    def get_option_value(self, option):
+        message = get_msg_template("wayfire/get-config-option")
+        message["data"]["option"] = option
+        return self.send_json(message)
+
+    def set_option_values(self, options):
+        sanitized_options = {}
+        for key, value in options.items():
+            if '/' in key:
+                sanitized_options[key] = value
+            else:
+                for option_name, option_value in value.items():
+                    sanitized_options[key + "/" + option_name] = option_value
+
+        message = get_msg_template("wayfire/set-config-options")
+        print(js.dumps(sanitized_options, indent=4))
+        message["data"] = sanitized_options
         return self.send_json(message)
