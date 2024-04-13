@@ -102,3 +102,21 @@ class WayfireSocket:
         message["data"]["id"] = id
         message["data"]["enabled"] = enabled
         return self.send_json(message)
+
+    def create_headless_output(self, width, height):
+        message = get_msg_template("wayfire/create-headless-output")
+        message["data"]["width"] = width
+        message["data"]["height"] = height
+        return self.send_json(message)
+
+    def destroy_headless_output(self, output_name=None, output_id=None):
+        assert output_name is not None or output_id is not None
+        message = get_msg_template("wayfire/destroy-headless-output")
+        if output_name is not None:
+            message['data']['output'] = output_name
+        else:
+            message['data']['output-id'] = output_id
+
+        print(message)
+
+        return self.send_json(message)
