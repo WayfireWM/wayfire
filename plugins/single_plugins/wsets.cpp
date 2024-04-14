@@ -1,5 +1,4 @@
 #include "wayfire/bindings.hpp"
-#include "wayfire/geometry.hpp"
 #include "wayfire/object.hpp"
 #include "wayfire/seat.hpp"
 #include "wayfire/option-wrapper.hpp"
@@ -31,6 +30,7 @@ class wayfire_wsets_plugin_t : public wf::plugin_interface_t
     void init() override
     {
         method_repository->register_method("wsets/set-output-wset", set_output_wset);
+        method_repository->register_method("wsets/send-view-to-wset", send_view_to_wset);
         setup_bindings();
         wf::get_core().output_layout->connect(&on_new_output);
         for (auto& wo : wf::get_core().output_layout->get_outputs())
@@ -42,6 +42,7 @@ class wayfire_wsets_plugin_t : public wf::plugin_interface_t
     void fini() override
     {
         method_repository->unregister_method("wsets/set-output-wset");
+        method_repository->unregister_method("wsets/send-view-to-wset");
         for (auto& binding : select_callback)
         {
             wf::get_core().bindings->rem_binding(&binding);
@@ -69,13 +70,29 @@ class wayfire_wsets_plugin_t : public wf::plugin_interface_t
     {
         WFJSON_EXPECT_FIELD(data, "output-id", number_integer);
         WFJSON_EXPECT_FIELD(data, "wset-index", number_integer);
-        auto o = wf::ipc::find_output_by_id(data["output-id"]);
+
+        wf::output_t *o = wf::ipc::find_output_by_id(data["output-id"]);
         if (!o)
         {
             return wf::ipc::json_error("output not found");
         }
 
         select_workspace(data["wset-index"], o);
+        return wf::ipc::json_ok();
+    };
+
+    wf::ipc::method_callback send_view_to_wset = [=] (nlohmann::json data)
+    {
+        WFJSON_EXPECT_FIELD(data, "view-id", number_integer);
+        WFJSON_EXPECT_FIELD(data, "wset-index", number_integer);
+
+        wayfire_toplevel_view view = toplevel_cast(wf::ipc::find_view_by_id(data["view-id"]));
+        if (!view)
+        {
+            return wf::ipc::json_error("view not found");
+        }
+
+        send_window_to(data["wset-index"], view);
         return wf::ipc::json_ok();
     };
 
@@ -92,12 +109,6 @@ class wayfire_wsets_plugin_t : public wf::plugin_interface_t
 
             select_callback.push_back([=] (auto)
             {
-                auto wo = wf::get_core().seat->get_active_output();
-                if (!wo->can_activate_plugin(wf::CAPABILITY_MANAGE_COMPOSITOR))
-                {
-                    return false;
-                }
-
                 select_workspace(index);
                 return true;
             });
@@ -116,13 +127,14 @@ class wayfire_wsets_plugin_t : public wf::plugin_interface_t
 
             send_callback.push_back([=] (auto)
             {
-                auto wo = wf::get_core().seat->get_active_output();
-                if (!wo->can_activate_plugin(wf::CAPABILITY_MANAGE_COMPOSITOR))
+                auto wo   = wf::get_core().seat->get_active_output();
+                auto view = toplevel_cast(wf::get_active_view_for_output(wo));
+                if (!view)
                 {
                     return false;
                 }
 
-                send_window_to(index);
+                send_window_to(index, view);
                 return true;
             });
 
@@ -206,11 +218,16 @@ class wayfire_wsets_plugin_t : public wf::plugin_interface_t
         }
     }
 
-    void select_workspace(int index, wf::output_t *wo = wf::get_core().seat->get_active_output())
+    bool select_workspace(int index, wf::output_t *wo = wf::get_core().seat->get_active_output())
     {
         if (!wo)
         {
-            return;
+            return false;
+        }
+
+        if (!wo->can_activate_plugin(wf::CAPABILITY_MANAGE_COMPOSITOR))
+        {
+            return false;
         }
 
         locate_or_create_wset(index);
@@ -235,20 +252,20 @@ class wayfire_wsets_plugin_t : public wf::plugin_interface_t
         // We want to show the overlay even if we remain on the same workspace set
         show_workspace_set_overlay(wo);
         cleanup_wsets();
+        return true;
     }
 
-    void send_window_to(int index)
+    bool send_window_to(int index, wayfire_toplevel_view view)
     {
         auto wo = wf::get_core().seat->get_active_output();
         if (!wo)
         {
-            return;
+            return false;
         }
 
-        auto view = toplevel_cast(wf::get_active_view_for_output(wo));
-        if (!view)
+        if (!wo->can_activate_plugin(wf::CAPABILITY_MANAGE_COMPOSITOR))
         {
-            return;
+            return false;
         }
 
         locate_or_create_wset(index);
@@ -270,6 +287,7 @@ class wayfire_wsets_plugin_t : public wf::plugin_interface_t
         wf::emit_view_moved_to_wset(view, old_wset, target_wset);
 
         wf::get_core().seat->refocus();
+        return true;
     }
 
     wf::signal::connection_t<wf::output_added_signal> on_new_output = [=] (wf::output_added_signal *ev)
