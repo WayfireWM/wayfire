@@ -175,6 +175,10 @@ void wf::pointer_t::update_cursor_focus(wf::scene::node_ptr new_focus)
         // avoid the last cursor image getting stuck outside of its surface.
         wf::get_core().set_cursor("default");
     }
+
+    wf::pointer_focus_changed_signal ev;
+    ev.new_focus = new_focus;
+    wf::get_core().emit(&ev);
 }
 
 wf::scene::node_ptr wf::pointer_t::get_focus() const

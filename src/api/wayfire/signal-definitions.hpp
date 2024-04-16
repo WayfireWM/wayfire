@@ -171,6 +171,23 @@ struct post_input_event_signal
 };
 
 /**
+ * Emitted on core when the pointer focus changes.
+ */
+struct pointer_focus_changed_signal
+{
+    wf::scene::node_ptr new_focus;
+};
+
+/**
+ * Emitted on core when the touch focus changes.
+ */
+struct touch_focus_changed_signal
+{
+    wf::scene::node_ptr new_focus;
+    int32_t finger_id;
+};
+
+/**
  * on: core
  * when: When the config file is reloaded
  */

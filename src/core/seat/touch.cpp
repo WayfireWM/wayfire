@@ -158,6 +158,11 @@ void wf::touch_interface_t::set_touch_focus(wf::scene::node_ptr node,
         auto local = get_node_local_coords(node.get(), point);
         node->touch_interaction().handle_touch_down(time, id, local);
     }
+
+    wf::touch_focus_changed_signal ev;
+    ev.finger_id = id;
+    ev.new_focus = node;
+    wf::get_core().emit(&ev);
 }
 
 void wf::touch_interface_t::transfer_grab(scene::node_ptr grab_node)
