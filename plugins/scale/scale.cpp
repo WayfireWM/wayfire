@@ -217,6 +217,7 @@ class wayfire_scale : public wf::per_output_plugin_instance_t,
         /* Transformers are added only once when scale is activated so
          * this is a good place to connect the geometry-changed handler */
         view->connect(&view_geometry_changed);
+        view->connect(&view_unmapped);
 
         set_tiled_wobbly(view, true);
 
@@ -236,6 +237,7 @@ class wayfire_scale : public wf::per_output_plugin_instance_t,
         data.view = view;
         output->emit(&data);
         view->get_transformed_node()->rem_transformer("scale");
+        view->disconnect(&view_unmapped);
         set_tiled_wobbly(view, false);
     }
 
@@ -439,7 +441,7 @@ class wayfire_scale : public wf::per_output_plugin_instance_t,
     /* Remove transformer from view and remove view from the scale_data map */
     void remove_view(wayfire_toplevel_view view)
     {
-        if (!view)
+        if (!view || !scale_data.count(view))
         {
             return;
         }
@@ -869,7 +871,7 @@ class wayfire_scale : public wf::per_output_plugin_instance_t,
          * transformer and are in scale_data */
         for (auto view : filtered_views)
         {
-            for (auto v : view->enumerate_views(false))
+            for (auto v : view->enumerate_views(true))
             {
                 add_transformer(v);
                 auto& view_data = scale_data[v];
@@ -990,7 +992,7 @@ class wayfire_scale : public wf::per_output_plugin_instance_t,
                 add_transformer(view);
                 auto geom = view->get_geometry();
                 double view_scale = calculate_scale({geom.width, geom.height});
-                for (auto& child : view->enumerate_views(false))
+                for (auto& child : view->enumerate_views(true))
                 {
                     // Ensure a transformer for the view, and make sure that
                     // new views in the view tree start off with the correct
@@ -1122,46 +1124,17 @@ class wayfire_scale : public wf::per_output_plugin_instance_t,
         }
     };
 
-    void handle_view_disappeared(wayfire_toplevel_view view)
+    void handle_view_unmapped(wayfire_toplevel_view view)
     {
-        if (scale_data.count(get_top_parent(view)) != 0)
+        remove_view(view);
+        if (scale_data.empty())
         {
-            /* Note: this signal can be emitted both when a view is removed from an output
-             * (closed or moved to another output) and when it is minimized. We use
-             * should_scale_view() to distinguish between the two cases. This only matters
-             * if we show minimized views. */
-            if (include_minimized && view->minimized && should_scale_view(view))
-            {
-                if (!scale_data.at(view).was_minimized)
-                {
-                    scale_data.at(view).was_minimized = true;
-                    wf::scene::set_node_enabled(view->get_root_node(), true);
-                }
-
-                fade_out(view);
-            } else
-            {
-                remove_view(view);
-                if (scale_data.empty())
-                {
-                    finalize();
-                } else if (!view->parent)
-                {
-                    layout_slots(get_views());
-                }
-            }
+            finalize();
+        } else if (!view->parent)
+        {
+            layout_slots(get_views());
         }
     }
-
-    /* Destroyed view or view moved to another output */
-    wf::signal::connection_t<wf::view_disappeared_signal> view_disappeared =
-        [=] (wf::view_disappeared_signal *ev)
-    {
-        if (auto toplevel = toplevel_cast(ev->view))
-        {
-            handle_view_disappeared(toplevel);
-        }
-    };
 
     /* Workspace changed */
     wf::signal::connection_t<wf::workspace_changed_signal> workspace_changed =
@@ -1203,6 +1176,15 @@ class wayfire_scale : public wf::per_output_plugin_instance_t,
         if (!ev->view->minimized)
         {
             layout_slots(get_views());
+        } else if (include_minimized && scale_data.count(ev->view))
+        {
+            if (!scale_data.at(ev->view).was_minimized)
+            {
+                scale_data.at(ev->view).was_minimized = true;
+                wf::scene::set_node_enabled(ev->view->get_root_node(), true);
+            }
+
+            fade_out(ev->view);
         }
     };
 
@@ -1212,6 +1194,7 @@ class wayfire_scale : public wf::per_output_plugin_instance_t,
         if (auto toplevel = wf::toplevel_cast(ev->view))
         {
             check_focus_view(toplevel);
+            handle_view_unmapped(toplevel);
         }
     };
 
@@ -1364,9 +1347,7 @@ class wayfire_scale : public wf::per_output_plugin_instance_t,
         output->connect(&on_view_mapped);
         output->connect(&workspace_changed);
         output->connect(&workarea_changed);
-        output->connect(&view_disappeared);
         output->connect(&view_minimized);
-        output->connect(&view_unmapped);
 
         fade_out_all_except(current_focus_view);
         fade_in(current_focus_view);
@@ -1381,7 +1362,6 @@ class wayfire_scale : public wf::per_output_plugin_instance_t,
 
         set_hook();
         on_view_mapped.disconnect();
-        view_unmapped.disconnect();
         view_minimized.disconnect();
         workspace_changed.disconnect();
         workarea_changed.disconnect();
@@ -1437,8 +1417,6 @@ class wayfire_scale : public wf::per_output_plugin_instance_t,
         scale_data.clear();
         grab->ungrab_input();
         on_view_mapped.disconnect();
-        view_unmapped.disconnect();
-        view_disappeared.disconnect();
         view_minimized.disconnect();
         workspace_changed.disconnect();
         workarea_changed.disconnect();
@@ -1522,7 +1500,7 @@ class wayfire_scale_global : public wf::plugin_interface_t,
             auto old_output = ev->output;
             if (old_output && output_instance.count(old_output))
             {
-                this->output_instance[old_output]->handle_view_disappeared(toplevel);
+                this->output_instance[old_output]->handle_view_unmapped(toplevel);
             }
 
             auto new_output = ev->view->get_output();
