@@ -92,6 +92,11 @@ class workspace_wall_t : public wf::signal::provider_t
         }
     }
 
+    wf::geometry_t get_viewport() const
+    {
+        return viewport;
+    }
+
     /**
      * Render the selected viewport on the framebuffer.
      *

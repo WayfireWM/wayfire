@@ -372,8 +372,33 @@ class wayfire_expo : public wf::per_output_plugin_instance_t, public wf::keyboar
      */
     void handle_input_press(int32_t x, int32_t y, uint32_t state)
     {
-        if (zoom_animation.running() || !this->state.active)
+        const bool zooming = zoom_animation.running();
+
+        if (!this->state.active)
         {
+            return;
+        }
+
+        if (zooming && !this->state.zoom_in)
+        {
+            if (state == WLR_BUTTON_PRESSED)
+            {
+                // Zoom out of expo, change target workspace only
+                if (update_target_workspace(x, y))
+                {
+                    output->wset()->set_workspace(target_ws);
+
+                    // Calculate animation so that it appears as if we smoothly changed destination
+                    wf::geometry_t cur_viewport    = zoom_animation;
+                    wf::geometry_t target_viewport = wall->get_workspace_rectangle(target_ws);
+                    float cur_a = std::clamp(zoom_animation.progress(), 0.01, 0.99);
+                    wf::geometry_t start_viewport = wf::interpolate(cur_viewport, target_viewport,
+                        1.0 - 1.0 / (1.0 - cur_a));
+                    zoom_animation.set_start(start_viewport);
+                    zoom_animation.set_end(target_viewport);
+                }
+            }
+
             return;
         }
 
@@ -622,26 +647,39 @@ class wayfire_expo : public wf::per_output_plugin_instance_t, public wf::keyboar
         return wf::find_output_view_at(output, localf);
     }
 
-    void update_target_workspace(int x, int y)
+    std::optional<wf::point_t> find_workspace_at(int x, int y)
     {
-        auto og = output->get_layout_geometry();
+        wlr_box box = {x, y, 1, 1};
+        auto og     = output->get_relative_geometry();
+        auto in_grid = wf::origin(wf::scale_box(og, wall->get_viewport(), box));
 
-        input_coordinates_to_global_coordinates(x, y);
-
-        auto grid = get_grid_geometry();
-        if (!(grid & wf::point_t{x, y}))
+        auto grid = output->wset()->get_workspace_grid_size();
+        for (int i = 0; i < grid.width; i++)
         {
-            return;
+            for (int j = 0; j < grid.height; j++)
+            {
+                if (wall->get_workspace_rectangle({i, j}) & in_grid)
+                {
+                    return wf::point_t{i, j};
+                }
+            }
         }
 
-        int tmpx = x / og.width;
-        int tmpy = y / og.height;
-        if ((tmpx != target_ws.x) || (tmpy != target_ws.y))
+        return std::nullopt;
+    }
+
+    bool update_target_workspace(int x, int y)
+    {
+        auto tmp = find_workspace_at(x, y);
+        if (tmp.has_value() && (tmp != target_ws))
         {
             shade_workspace(target_ws, true);
-            target_ws = {tmpx, tmpy};
+            target_ws = tmp.value();
             shade_workspace(target_ws, false);
+            return true;
         }
+
+        return false;
     }
 
     wf::effect_hook_t pre_frame = [=] ()
