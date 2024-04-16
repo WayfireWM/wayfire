@@ -180,6 +180,8 @@ std::vector<wayfire_toplevel_view> wf::toplevel_view_interface_t::enumerate_view
 
 void wf::toplevel_view_interface_t::set_output(wf::output_t *new_output)
 {
+    wf::dassert(!this->parent || this->parent->get_output() == new_output,
+        "Cannot set different output for a view with a parent!");
     wf::view_interface_t::set_output(new_output);
     for (auto& view : this->children)
     {
