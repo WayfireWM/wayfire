@@ -99,7 +99,7 @@ void transform_manager_node_t::_rem_transformer(
 view_2d_transformer_t::view_2d_transformer_t(wayfire_view view) :
     transformer_base_node_t(false)
 {
-    this->view = view;
+    this->view = view->weak_from_this();
 }
 
 static wf::pointf_t get_center(wf::geometry_t view)
@@ -110,14 +110,20 @@ static wf::pointf_t get_center(wf::geometry_t view)
     };
 }
 
-static wf::pointf_t get_center(wayfire_view view)
+static wf::pointf_t get_center(std::weak_ptr<wf::view_interface_t> _view)
 {
-    if (auto toplevel = toplevel_cast(view))
+    if (auto view = _view.lock())
     {
-        return get_center(toplevel->get_geometry());
+        if (auto toplevel = toplevel_cast(view))
+        {
+            return get_center(toplevel->get_geometry());
+        } else
+        {
+            return get_center(view->get_surface_root_node()->get_bounding_box());
+        }
     } else
     {
-        return get_center(view->get_surface_root_node()->get_bounding_box());
+        return {0, 0};
     }
 }
 
@@ -157,7 +163,13 @@ wf::pointf_t view_2d_transformer_t::to_global(const wf::pointf_t& point)
 
 std::string view_2d_transformer_t::stringify() const
 {
-    return "view-2d for " + view->to_string();
+    if (auto _view = view.lock())
+    {
+        return "view-2d for " + _view->to_string();
+    } else
+    {
+        return "view-2d for dead view";
+    }
 }
 
 wf::geometry_t view_2d_transformer_t::get_bounding_box()
@@ -250,7 +262,7 @@ glm::mat4 view_3d_transformer_t::default_proj_matrix()
 view_3d_transformer_t::view_3d_transformer_t(wayfire_view view) :
     scene::transformer_base_node_t(false)
 {
-    this->view = view;
+    this->view = view->weak_from_this();
     view_proj  = default_proj_matrix() * default_view_matrix();
 }
 
@@ -342,7 +354,13 @@ wf::pointf_t view_3d_transformer_t::to_global(const wf::pointf_t& point)
 
 std::string view_3d_transformer_t::stringify() const
 {
-    return "view-2d for " + view->to_string();
+    if (auto _view = view.lock())
+    {
+        return "view-3d for " + _view->to_string();
+    } else
+    {
+        return "view-3d for dead view";
+    }
 }
 
 wf::geometry_t view_3d_transformer_t::get_bounding_box()

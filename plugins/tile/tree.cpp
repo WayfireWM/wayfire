@@ -283,9 +283,14 @@ struct view_node_t::scale_transformer_t : public wf::scene::view_2d_transformer_
     {
         assert(box.width > 0 && box.height > 0);
 
-        this->view->damage();
+        auto _view = view.lock();
+        if (!_view)
+        {
+            return;
+        }
 
-        auto current = toplevel_cast(this->view)->get_geometry();
+        _view->damage();
+        auto current = toplevel_cast(_view.get())->get_geometry();
         if ((current.width <= 0) || (current.height <= 0))
         {
             /* view possibly unmapped?? */
