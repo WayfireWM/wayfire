@@ -83,8 +83,11 @@ endif
 cxx_flags_asan = run_command('/bin/sh', '-c', 'echo $CXXFLAGS $CPPFLAGS | grep fsanitize', check: false)
 if get_option('b_sanitize').contains('address') or cxx_flags_asan.returncode() == 0
   print_trace = false
+  debug_arguments += ['-DHAS_ASAN=1']
   message('Address sanitizer enabled, disabling internal backtrace')
   message('Overriding print_trace build option')
+else
+  debug_arguments += ['-DHAS_ASAN=0']
 endif
 
 if print_trace

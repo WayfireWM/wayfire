@@ -223,6 +223,15 @@ addr2line_result locate_source_file(const demangling_result& dr)
 
 void wf::print_trace(bool fast_mode)
 {
+    if (!fast_mode)
+    {
+    #if HAS_ASAN
+        // We run with asan: just crash and let it print the stacktrace.
+        int *p = 0;
+        *p = 1;
+    #endif
+    }
+
     void *addrlist[MAX_FRAMES];
     int addrlen = backtrace(addrlist, MAX_FRAMES);
     if (addrlen == 0)
