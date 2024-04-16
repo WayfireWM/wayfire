@@ -226,7 +226,7 @@ void wf::ipc::client_t::handle_fd_incoming(uint32_t event_mask)
         }
 
         const uint32_t len = *((uint32_t*)buffer.data());
-        if (len > MAX_MESSAGE_LEN - HEADER_LEN)
+        if (len > MAX_MESSAGE_LEN - HEADER_LEN + 1)
         {
             LOGE("Client tried to pass too long a message!");
             ipc->client_disappeared(this);
