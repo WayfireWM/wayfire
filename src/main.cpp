@@ -106,6 +106,7 @@ static void wlr_log_handler(wlr_log_importance level,
     wf::log::log_plain(wlevel, buffer);
 }
 
+static std::optional<int> exit_because_signal;
 static void signal_handler(int signal)
 {
     std::string error;
@@ -124,12 +125,12 @@ static void signal_handler(int signal)
         break;
 
       case SIGINT:
-        LOGI("Got SIGINT, shutting down");
+        exit_because_signal = SIGINT;
         wf::get_core().shutdown();
         return;
 
       case SIGTERM:
-        LOGI("Got SIGTERM, shutting down");
+        exit_because_signal = SIGTERM;
         wf::get_core().shutdown();
         return;
 
@@ -445,6 +446,14 @@ int main(int argc, char *argv[])
     core.post_init();
 
     wl_display_run(core.display);
+    if (exit_because_signal == SIGINT)
+    {
+        LOGI("Got SIGINT, shutting down");
+    } else if (exit_because_signal == SIGTERM)
+    {
+        LOGI("Got SIGTERM, shutting down");
+    }
+
     wf::compositor_core_impl_t::deallocate_core();
     LOGI("Shutdown successful!");
     return EXIT_SUCCESS;
