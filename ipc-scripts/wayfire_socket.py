@@ -98,6 +98,9 @@ class WayfireSocket:
         message["data"]["id"] = output_id
         return self.send_json(message)
 
+    def list_outputs(self):
+        return self.send_json(get_msg_template("window-rules/list-outputs"))
+
     def list_views(self):
         return self.send_json(get_msg_template("window-rules/list-views"))
 
