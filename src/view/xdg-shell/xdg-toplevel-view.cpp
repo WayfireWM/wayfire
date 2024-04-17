@@ -310,7 +310,7 @@ void wf::xdg_toplevel_view_t::map()
         this->set_output(wf::get_core().seat->get_active_output());
     }
 
-    if (!parent)
+    if (!parent && get_output())
     {
         wf::scene::readd_front(get_output()->wset()->get_node(), get_root_node());
         get_output()->wset()->add_view({this});
