@@ -105,6 +105,13 @@ nonstd::observer_ptr<view_node_t> find_first_view_in_direction(
 /* ------------------------ move_view_controller_t -------------------------- */
 move_view_controller_t::move_view_controller_t(wf::workspace_set_t *set, wayfire_toplevel_view grabbed_view)
 {
+    if (this->drag_helper->view)
+    {
+        // Race conditions are possible: spontaneous move requests from xwayland could trigger move without
+        // a pressed button, and then if the user tries to use simple-tile, it leads to a crash.
+        return;
+    }
+
     this->drag_helper->set_pending_drag(wf::get_core().get_cursor_position());
 
     move_drag::drag_options_t drag_options;
