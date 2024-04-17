@@ -19,6 +19,7 @@
 #include <wayfire/window-manager.hpp>
 #include <wayfire/view-helpers.hpp>
 #include <wayfire/unstable/wlr-view-events.hpp>
+#include "../core/seat/seat-impl.hpp"
 
 
 // --------------------------------------- xdg-toplevel-base impl --------------------------------------------
@@ -200,14 +201,22 @@ wf::xdg_toplevel_view_t::xdg_toplevel_view_t(wlr_xdg_toplevel *tlvl) : xdg_tople
         set_toplevel_parent(toplevel_cast(parent));
     });
 
-    on_request_move.set_callback([&] (void*)
+    on_request_move.set_callback([&] (void *data)
     {
-        wf::get_core().default_wm->move_request({this});
+        auto ev = static_cast<wlr_xdg_toplevel_move_event*>(data);
+        if (ev->serial == wf::get_core().seat->priv->last_press_release_serial)
+        {
+            wf::get_core().default_wm->move_request({this});
+            return;
+        }
     });
     on_request_resize.set_callback([&] (auto data)
     {
         auto ev = static_cast<wlr_xdg_toplevel_resize_event*>(data);
-        wf::get_core().default_wm->resize_request({this}, ev->edges);
+        if (ev->serial == wf::get_core().seat->priv->last_press_release_serial)
+        {
+            wf::get_core().default_wm->resize_request({this}, ev->edges);
+        }
     });
     on_request_minimize.set_callback([&] (void*)
     {

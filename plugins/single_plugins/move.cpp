@@ -224,7 +224,10 @@ class wayfire_move : public wf::per_output_plugin_instance_t,
     wf::signal::connection_t<wf::view_move_request_signal> move_request =
         [=] (wf::view_move_request_signal *ev)
     {
-        initiate(ev->view, last_input_press_position);
+        if (!drag_helper->view)
+        {
+            initiate(ev->view, last_input_press_position);
+        }
     };
 
     /**

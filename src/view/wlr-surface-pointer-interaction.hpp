@@ -1,6 +1,5 @@
 #include <wayfire/view.hpp>
 #include <wayfire/scene.hpp>
-#include "../core/seat/input-manager.hpp"
 #include "../core/core-impl.hpp"
 #include "core/seat/seat-impl.hpp"
 #include "view-impl.hpp"
@@ -175,7 +174,7 @@ class wlr_surface_pointer_interaction_t final : public wf::pointer_interaction_t
     {
         auto& seat = wf::get_core_impl().seat;
         bool drag_was_active = seat->priv->drag_active;
-        wlr_seat_pointer_notify_button(seat->seat,
+        seat->priv->last_press_release_serial = wlr_seat_pointer_notify_button(seat->seat,
             event.time_msec, event.button, event.state);
 
         if (drag_was_active != seat->priv->drag_active)
