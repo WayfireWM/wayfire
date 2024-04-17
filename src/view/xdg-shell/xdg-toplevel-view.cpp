@@ -61,8 +61,9 @@ wf::xdg_toplevel_view_base_t::xdg_toplevel_view_base_t(wlr_xdg_toplevel *topleve
 void wf::xdg_toplevel_view_base_t::map()
 {
     LOGC(VIEWS, "Do map ", self());
-    priv->set_mapped(true);
+    priv->set_mapped(main_surface->get_surface());
     priv->set_mapped_surface_contents(main_surface);
+    priv->set_enabled(true);
     damage();
     emit_view_map();
 }
@@ -72,9 +73,10 @@ void wf::xdg_toplevel_view_base_t::unmap()
     LOGC(VIEWS, "Do unmap ", self());
     damage();
     priv->unset_mapped_surface_contents();
+    priv->set_mapped(nullptr);
 
     emit_view_unmap();
-    priv->set_mapped(false);
+    priv->set_enabled(false);
     wf::scene::update(get_surface_root_node(), wf::scene::update_flag::INPUT_STATE);
 }
 

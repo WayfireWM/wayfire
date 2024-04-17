@@ -49,7 +49,8 @@ void wf::xwayland_view_base_t::do_map(wlr_surface *surface, bool autocommit, boo
         priv->set_mapped_surface_contents(main_surface);
     }
 
-    priv->set_mapped(true);
+    priv->set_mapped(xw->surface);
+    priv->set_enabled(true);
     damage();
 
     if (emit_map)
@@ -63,9 +64,10 @@ void wf::xwayland_view_base_t::do_unmap()
     damage();
     main_surface = nullptr;
     priv->unset_mapped_surface_contents();
+    priv->set_mapped(nullptr);
 
     emit_view_unmap();
-    priv->set_mapped(false);
+    priv->set_enabled(false);
     wf::scene::update(get_surface_root_node(), wf::scene::update_flag::INPUT_STATE);
 }
 

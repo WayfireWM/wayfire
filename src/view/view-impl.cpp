@@ -213,9 +213,6 @@ void wf::view_interface_t::view_priv_impl::set_mapped_surface_contents(
         return;
     }
 
-    wsurface  = content->get_surface();
-    is_mapped = true;
-
     // Locate the proper place to add the surface contents.
     // This is not trivial because we may have added content node before (if we currently are remapping).
     // In those cases, we replace the content with the dummy node.
@@ -230,9 +227,6 @@ void wf::view_interface_t::view_priv_impl::set_mapped_surface_contents(
 
 void wf::view_interface_t::view_priv_impl::unset_mapped_surface_contents()
 {
-    wsurface  = nullptr;
-    is_mapped = false;
-
     replace_node_or_add_front(surface_root_node, current_content, dummy_node);
 
     if (auto wcont = dynamic_cast<scene::wlr_surface_node_t*>(current_content.get()))
@@ -246,9 +240,15 @@ void wf::view_interface_t::view_priv_impl::unset_mapped_surface_contents()
     current_content = nullptr;
 }
 
-void wf::view_interface_t::view_priv_impl::set_mapped(bool mapped)
+void wf::view_interface_t::view_priv_impl::set_mapped(wlr_surface *surface)
 {
-    if (mapped)
+    wsurface  = surface;
+    is_mapped = !!surface;
+}
+
+void wf::view_interface_t::view_priv_impl::set_enabled(bool enabled)
+{
+    if (enabled)
     {
         scene::set_node_enabled(root_node, true);
     } else

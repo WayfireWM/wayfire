@@ -10,11 +10,9 @@
 #include "wayfire/core.hpp"
 #include "wayfire/nonstd/tracking-allocator.hpp"
 #include "wayfire/signal-provider.hpp"
-#include "wayfire/unstable/wlr-surface-controller.hpp"
 #include "wayfire/unstable/wlr-surface-node.hpp"
 #include "wayfire/output.hpp"
 #include "wayfire/scene.hpp"
-#include "wayfire/util.hpp"
 #include "wayfire/view-transform.hpp"
 #include <wayfire/nonstd/wlroots-full.hpp>
 #include <wayfire/compositor-view.hpp>
@@ -46,7 +44,8 @@ class view_interface_t::view_priv_impl
     scene::floating_inner_ptr surface_root_node;
     wf::output_t *output;
 
-    void set_mapped(bool mapped);
+    void set_mapped(wlr_surface *surface);
+    void set_enabled(bool enabled);
     void set_mapped_surface_contents(std::shared_ptr<scene::wlr_surface_node_t> content);
     void unset_mapped_surface_contents();
 

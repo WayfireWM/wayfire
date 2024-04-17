@@ -176,6 +176,11 @@ void wf::xw::xwayland_toplevel_t::apply()
         // If toplevel does no longer exist, we can't change the size anymore.
         _committed.geometry.width  = _current.geometry.width;
         _committed.geometry.height = _current.geometry.height;
+        if (_current.mapped == false)
+        {
+            // Avoid mapping if the view was already destroyed.
+            _committed.mapped = false;
+        }
     }
 
     if (main_surface && main_surface->get_surface())

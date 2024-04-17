@@ -171,7 +171,8 @@ void wayfire_xdg_popup::map()
 
     on_surface_commit.connect(&popup->base->surface->events.commit);
     priv->set_mapped_surface_contents(main_surface);
-    priv->set_mapped(true);
+    priv->set_mapped(main_surface->get_surface());
+    priv->set_enabled(true);
     update_size();
 
     damage();
@@ -196,10 +197,11 @@ void wayfire_xdg_popup::unmap()
     emit_view_pre_unmap();
 
     priv->unset_mapped_surface_contents();
+    priv->set_mapped(nullptr);
     on_surface_commit.disconnect();
 
     emit_view_unmap();
-    priv->set_mapped(false);
+    priv->set_enabled(false);
 }
 
 void wayfire_xdg_popup::commit()

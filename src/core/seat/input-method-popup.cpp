@@ -57,7 +57,8 @@ void wf::text_input_v3_popup::map()
     wf::scene::readd_front(get_output()->node_for_layer(target_layer), get_root_node());
 
     priv->set_mapped_surface_contents(main_surface);
-    priv->set_mapped(true);
+    priv->set_mapped(main_surface->get_surface());
+    priv->set_enabled(true);
     on_commit.connect(&surface->events.commit);
 
     update_geometry();
@@ -78,7 +79,8 @@ void wf::text_input_v3_popup::unmap()
     priv->unset_mapped_surface_contents();
 
     emit_view_unmap();
-    priv->set_mapped(false);
+    priv->set_mapped(nullptr);
+    priv->set_enabled(false);
     on_commit.disconnect();
 }
 

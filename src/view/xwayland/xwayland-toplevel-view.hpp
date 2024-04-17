@@ -464,7 +464,7 @@ class wayfire_xwayland_view : public wf::toplevel_view_interface_t, public wayfi
             map(xw->surface);
         }
 
-        if (is_mapped() && old_state.mapped && !toplevel->current().mapped)
+        if (is_mapped() && !toplevel->current().mapped)
         {
             unmap();
         }

@@ -500,7 +500,8 @@ void wayfire_layer_shell_view::map()
     on_commit_unmapped.disconnect();
 
     priv->set_mapped_surface_contents(main_surface);
-    priv->set_mapped(true);
+    priv->set_mapped(main_surface->get_surface());
+    priv->set_enabled(true);
     on_surface_commit.connect(&lsurface->surface->events.commit);
 
     /* Read initial data */
@@ -524,10 +525,10 @@ void wayfire_layer_shell_view::unmap()
 
     emit_view_pre_unmap();
     priv->unset_mapped_surface_contents();
+    priv->set_mapped(nullptr);
     on_surface_commit.disconnect();
     emit_view_unmap();
-    priv->set_mapped(false);
-
+    priv->set_enabled(false);
     wf_layer_shell_manager::get_instance().handle_unmap(this);
 }
 
