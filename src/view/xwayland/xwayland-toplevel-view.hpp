@@ -459,12 +459,12 @@ class wayfire_xwayland_view : public wf::toplevel_view_interface_t, public wayfi
     void handle_toplevel_state_changed(wf::toplevel_state_t old_state)
     {
         surface_root_node->set_offset(wf::origin(toplevel->calculate_base_geometry()));
-        if (xw && !old_state.mapped && toplevel->current().mapped)
+        if (xw && xw->surface && !old_state.mapped && toplevel->current().mapped)
         {
             map(xw->surface);
         }
 
-        if (old_state.mapped && !toplevel->current().mapped)
+        if (is_mapped() && old_state.mapped && !toplevel->current().mapped)
         {
             unmap();
         }
