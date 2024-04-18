@@ -644,7 +644,14 @@ class wayfire_expo : public wf::per_output_plugin_instance_t, public wf::keyboar
     {
         auto local = input_coordinates_to_output_local_coordinates({gx, gy});
         wf::pointf_t localf = {1.0 * local.x, 1.0 * local.y};
-        return wf::find_output_view_at(output, localf);
+        auto view = wf::find_output_view_at(output, localf);
+        if (view && view->is_mapped())
+        {
+            return view;
+        } else
+        {
+            return nullptr;
+        }
     }
 
     std::optional<wf::point_t> find_workspace_at(int x, int y)

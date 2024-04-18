@@ -141,13 +141,16 @@ class simple_decoration_node_t : public wf::scene::node_t, public wf::pointer_in
 
     std::optional<wf::scene::input_node_t> find_node_at(const wf::pointf_t& at) override
     {
-        wf::pointf_t local = at - wf::pointf_t{get_offset()};
-        if (cached_region.contains_pointf(local))
+        if (auto view = _view.lock())
         {
-            return wf::scene::input_node_t{
-                .node = this,
-                .local_coords = local,
-            };
+            wf::pointf_t local = at - wf::pointf_t{get_offset()};
+            if (cached_region.contains_pointf(local) && view->is_mapped())
+            {
+                return wf::scene::input_node_t{
+                    .node = this,
+                    .local_coords = local,
+                };
+            }
         }
 
         return {};
