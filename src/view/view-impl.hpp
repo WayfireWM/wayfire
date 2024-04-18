@@ -59,6 +59,8 @@ class view_interface_t::view_priv_impl
  */
 void adjust_geometry_for_gravity(wf::toplevel_state_t& desired_state, wf::dimensions_t actual_size);
 
+void adjust_view_output_on_map(wf::toplevel_view_interface_t *self);
+
 /** Emit the map signal for the given view */
 void init_xdg_shell();
 void init_xwayland(bool lazy);

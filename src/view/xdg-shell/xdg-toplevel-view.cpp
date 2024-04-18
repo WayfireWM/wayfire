@@ -307,16 +307,7 @@ void wf::xdg_toplevel_view_t::map()
         this->has_client_decoration = uses_csd[xdg_toplevel->base->surface];
     }
 
-    if (!get_output())
-    {
-        this->set_output(wf::get_core().seat->get_active_output());
-    }
-
-    if (!parent && get_output())
-    {
-        wf::scene::readd_front(get_output()->wset()->get_node(), get_root_node());
-        get_output()->wset()->add_view({this});
-    }
+    adjust_view_output_on_map(this);
 
     xdg_toplevel_view_base_t::map();
     wf::get_core().default_wm->focus_request(self());

@@ -386,17 +386,8 @@ class wayfire_xwayland_view : public wf::toplevel_view_interface_t, public wayfi
     void map(wlr_surface *surface)
     {
         LOGC(VIEWS, "Do map ", self());
-        if (!get_output())
-        {
-            this->set_output(wf::get_core().seat->get_active_output());
-        }
 
-        if (!parent && get_output())
-        {
-            wf::scene::readd_front(get_output()->wset()->get_node(), get_root_node());
-            get_output()->wset()->add_view({this});
-        }
-
+        wf::adjust_view_output_on_map(this);
         do_map(surface, false);
         on_surface_commit.connect(&surface->events.commit);
 

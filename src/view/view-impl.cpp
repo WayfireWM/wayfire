@@ -3,11 +3,13 @@
 #include "wayfire/scene-input.hpp"
 #include "wayfire/scene-render.hpp"
 #include "wayfire/scene.hpp"
+#include "wayfire/seat.hpp"
 #include "wayfire/signal-definitions.hpp"
 #include "wayfire/unstable/wlr-surface-controller.hpp"
 #include "wayfire/unstable/wlr-surface-node.hpp"
 #include "wayfire/view.hpp"
 #include "wayfire/output-layout.hpp"
+#include "wayfire/workspace-set.hpp"
 #include <memory>
 #include <wayfire/util/log.hpp>
 #include <wayfire/view-helpers.hpp>
@@ -20,7 +22,11 @@ void wf::view_implementation::emit_view_map_signal(wayfire_view view, bool has_p
     data.is_positioned = has_position;
 
     view->emit(&data);
-    view->get_output()->emit(&data);
+    if (view->get_output())
+    {
+        view->get_output()->emit(&data);
+    }
+
     wf::get_core().emit(&data);
 }
 
@@ -397,4 +403,30 @@ wf::pointf_t wf::place_popup_at(wlr_surface *parent, wlr_surface *popup, wf::poi
     }
 
     return popup_offset;
+}
+
+void wf::adjust_view_output_on_map(wf::toplevel_view_interface_t *self)
+{
+    wf::output_t *chosen_output = nullptr;
+    if (self->parent)
+    {
+        chosen_output = self->parent->get_output();
+    } else if (self->get_output())
+    {
+        chosen_output = self->get_output();
+    } else
+    {
+        chosen_output = wf::get_core().seat->get_active_output();
+    }
+
+    if (self->get_output() != chosen_output)
+    {
+        self->set_output(chosen_output);
+    }
+
+    if (!self->parent && chosen_output)
+    {
+        wf::scene::readd_front(chosen_output->wset()->get_node(), self->get_root_node());
+        chosen_output->wset()->add_view({self});
+    }
 }

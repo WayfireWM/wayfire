@@ -22,34 +22,41 @@ static void reposition_relative_to_parent(wayfire_toplevel_view view)
 
     auto parent_geometry = view->parent->get_pending_geometry();
     auto wm_geometry     = view->get_pending_geometry();
-    auto scr_size = view->get_output()->get_screen_size();
     // Guess which workspace the parent is on
     wf::point_t center = {
         parent_geometry.x + parent_geometry.width / 2,
         parent_geometry.y + parent_geometry.height / 2,
     };
-    wf::point_t parent_ws = {
-        (int)std::floor(1.0 * center.x / scr_size.width),
-        (int)std::floor(1.0 * center.y / scr_size.height),
-    };
 
-    auto workarea = view->get_output()->render->get_ws_box(
-        view->get_output()->wset()->get_current_workspace() + parent_ws);
     if (view->parent->is_mapped())
     {
         auto parent_g = view->parent->get_pending_geometry();
         wm_geometry.x = parent_g.x + (parent_g.width - wm_geometry.width) / 2;
         wm_geometry.y = parent_g.y + (parent_g.height - wm_geometry.height) / 2;
-    } else
+    }
+
+    if (view->get_output())
     {
-        /* if we have a parent which still isn't mapped, we cannot determine
-         * the view's position, so we center it on the screen */
-        wm_geometry.x = workarea.width / 2 - wm_geometry.width / 2;
-        wm_geometry.y = workarea.height / 2 - wm_geometry.height / 2;
+        auto scr_size = view->get_output()->get_screen_size();
+        wf::point_t parent_ws = {
+            (int)std::floor(1.0 * center.x / scr_size.width),
+            (int)std::floor(1.0 * center.y / scr_size.height),
+        };
+
+        auto workarea = view->get_output()->render->get_ws_box(
+            view->get_output()->wset()->get_current_workspace() + parent_ws);
+        if (!view->parent->is_mapped())
+        {
+            /* if we have a parent which still isn't mapped, we cannot determine
+             * the view's position, so we center it on the screen */
+            wm_geometry.x = workarea.width / 2 - wm_geometry.width / 2;
+            wm_geometry.y = workarea.height / 2 - wm_geometry.height / 2;
+        }
+
+        wm_geometry = wf::clamp(wm_geometry, workarea);
     }
 
     /* make sure view is visible afterwards */
-    wm_geometry = wf::clamp(wm_geometry, workarea);
     view->move(wm_geometry.x, wm_geometry.y);
     if ((wm_geometry.width != view->get_pending_geometry().width) ||
         (wm_geometry.height != view->get_pending_geometry().height))
