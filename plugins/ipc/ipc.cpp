@@ -297,8 +297,14 @@ static bool write_exact(int fd, char *buf, int n)
 void wf::ipc::client_t::send_json(nlohmann::json json)
 {
     std::string buffer = json.dump(-1, ' ', false, nlohmann::detail::error_handler_t::ignore);
-    uint32_t len = buffer.length();
+    if (buffer.length() > MAX_MESSAGE_LEN)
+    {
+        LOGE("Error sending json to client: message too long!");
+        shutdown(fd, SHUT_RDWR);
+        return;
+    }
 
+    uint32_t len = buffer.length();
     write_exact(fd, (char*)&len, 4);
     write_exact(fd, buffer.data(), len);
 }
