@@ -274,7 +274,7 @@ class tile_workspace_set_data_t : public wf::custom_data_t
                     wf::get_core().default_wm->fullscreen_request(view, nullptr, false);
                 }
 
-                if (reinsert)
+                if (reinsert && view->get_output())
                 {
                     wf::scene::readd_front(view->get_output()->wset()->get_node(), view->get_root_node());
                 }

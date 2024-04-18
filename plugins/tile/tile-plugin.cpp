@@ -168,14 +168,6 @@ class tile_output_plugin_t : public wf::pointer_interaction_t, public wf::custom
         }
     };
 
-    wf::signal::connection_t<view_unmapped_signal> on_view_unmapped = [=] (wf::view_unmapped_signal *ev)
-    {
-        if (wf::tile::view_node_t::get_node(ev->view))
-        {
-            detach_view(toplevel_cast(ev->view));
-        }
-    };
-
     wf::signal::connection_t<view_tile_request_signal> on_tile_request = [=] (view_tile_request_signal *ev)
     {
         if (ev->carried_out || !tile::view_node_t::get_node(ev->view))
@@ -375,7 +367,6 @@ class tile_output_plugin_t : public wf::pointer_interaction_t, public wf::custom
         this->output = wo;
         input_grab   = std::make_unique<wf::input_grab_t>("simple-tile", output, nullptr, this, nullptr);
         output->connect(&on_view_mapped);
-        output->connect(&on_view_unmapped);
         output->connect(&on_tile_request);
         output->connect(&on_fullscreen_request);
         output->connect(&on_view_change_workspace);
@@ -406,6 +397,7 @@ class tile_plugin_t : public wf::plugin_interface_t, wf::per_output_tracker_mixi
         wf::get_core().connect(&on_view_pre_moved_to_wset);
         wf::get_core().connect(&on_view_moved_to_wset);
         wf::get_core().connect(&on_focus_changed);
+        wf::get_core().connect(&on_view_unmapped);
         ipc_repo->register_method("simple-tile/get-layout", ipc_get_layout);
         ipc_repo->register_method("simple-tile/set-layout", ipc_set_layout);
         preview_manager = std::make_unique<tile::drag_manager_t>();
@@ -440,6 +432,30 @@ class tile_plugin_t : public wf::plugin_interface_t, wf::per_output_tracker_mixi
             }
         }
     }
+
+    wf::signal::connection_t<view_unmapped_signal> on_view_unmapped = [=] (wf::view_unmapped_signal *ev)
+    {
+        auto toplevel = toplevel_cast(ev->view);
+        if (!toplevel)
+        {
+            return;
+        }
+
+        if (wf::tile::view_node_t::get_node(ev->view))
+        {
+            wf::dassert(toplevel->get_wset() != nullptr);
+
+            auto wo = toplevel->get_output();
+            if (wo && (toplevel->get_wset() == wo->wset()))
+            {
+                wo->get_data<tile_output_plugin_t>()->detach_view(toplevel);
+            } else
+            {
+                tile_workspace_set_data_t::get(toplevel->get_wset()).detach_views(
+                    {wf::tile::view_node_t::get_node(ev->view)});
+            }
+        }
+    };
 
     wf::signal::connection_t<view_pre_moved_to_wset_signal> on_view_pre_moved_to_wset =
         [=] (view_pre_moved_to_wset_signal *ev)
