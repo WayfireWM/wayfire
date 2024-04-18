@@ -188,7 +188,7 @@ int wf::ipc::client_t::read_up_to(int n, int *available)
 
     if (current_buffer_valid < n)
     {
-        // didn't read all n letters
+        // didn't read all n bytes
         return 1;
     }
 
@@ -226,7 +226,7 @@ void wf::ipc::client_t::handle_fd_incoming(uint32_t event_mask)
         }
 
         const uint32_t len = *((uint32_t*)buffer.data());
-        if (len > MAX_MESSAGE_LEN - HEADER_LEN + 1)
+        if (len > MAX_MESSAGE_LEN - HEADER_LEN)
         {
             LOGE("Client tried to pass too long a message!");
             ipc->client_disappeared(this);
@@ -278,17 +278,18 @@ wf::ipc::client_t::~client_t()
     close(this->fd);
 }
 
-static bool write_exact(int fd, char *buf, int n)
+static bool write_exact(int fd, char *buf, ssize_t n)
 {
     while (n > 0)
     {
-        int w = write(fd, buf, n);
+        ssize_t w = write(fd, buf, n);
         if (w <= 0)
         {
             return false;
         }
 
-        n -= w;
+        n   -= w;
+        buf += w;
     }
 
     return true;
@@ -296,17 +297,19 @@ static bool write_exact(int fd, char *buf, int n)
 
 void wf::ipc::client_t::send_json(nlohmann::json json)
 {
-    std::string buffer = json.dump(-1, ' ', false, nlohmann::detail::error_handler_t::ignore);
-    if (buffer.length() > MAX_MESSAGE_LEN)
+    std::string serialized = json.dump(-1, ' ', false, nlohmann::detail::error_handler_t::ignore);
+    if (serialized.length() > MAX_MESSAGE_LEN)
     {
         LOGE("Error sending json to client: message too long!");
         shutdown(fd, SHUT_RDWR);
         return;
     }
 
-    uint32_t len = buffer.length();
-    write_exact(fd, (char*)&len, 4);
-    write_exact(fd, buffer.data(), len);
+    uint32_t len = serialized.length();
+    if (write_exact(fd, (char*)&len, 4))
+    {
+        write_exact(fd, serialized.data(), len);
+    }
 }
 
 namespace wf
