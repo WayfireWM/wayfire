@@ -100,7 +100,7 @@ class wayfire_scale : public wf::per_output_plugin_instance_t,
     wf::point_t initial_workspace;
     bool hook_set;
     /* View that was active before scale began. */
-    wayfire_toplevel_view initial_focus_view;
+    std::weak_ptr<wf::view_interface_t> initial_focus_view;
     /* View that has active focus. */
     wayfire_toplevel_view current_focus_view;
     // View over which the last input press happened
@@ -182,7 +182,7 @@ class wayfire_scale : public wf::per_output_plugin_instance_t,
 
             // vswitch picks the top view, we want the focused one
             std::vector<wayfire_toplevel_view> fixed_views;
-            if (view && !all_workspaces)
+            if (view && current_focus_view && !all_workspaces)
             {
                 fixed_views.push_back(current_focus_view);
             }
@@ -427,11 +427,6 @@ class wayfire_scale : public wf::per_output_plugin_instance_t,
             current_focus_view = nullptr;
         }
 
-        if (view == initial_focus_view)
-        {
-            initial_focus_view = nullptr;
-        }
-
         if (view == last_selected_view)
         {
             last_selected_view = nullptr;
@@ -503,7 +498,7 @@ class wayfire_scale : public wf::per_output_plugin_instance_t,
             fade_in(get_top_parent(view));
 
             // End scale
-            initial_focus_view = nullptr;
+            initial_focus_view.reset();
             deactivate();
             break;
 
@@ -648,9 +643,13 @@ class wayfire_scale : public wf::per_output_plugin_instance_t,
           case KEY_ESC:
             deactivate();
             output->wset()->request_workspace(initial_workspace);
-            wf::get_core().default_wm->focus_raise_view(initial_focus_view);
-            initial_focus_view = nullptr;
 
+            if (auto focus = initial_focus_view.lock())
+            {
+                wf::get_core().default_wm->focus_raise_view(focus);
+            }
+
+            initial_focus_view.reset();
             return;
 
           default:
@@ -1327,9 +1326,23 @@ class wayfire_scale : public wf::per_output_plugin_instance_t,
             return false;
         }
 
-        initial_workspace  = output->wset()->get_current_workspace();
-        initial_focus_view = toplevel_cast(wf::get_active_view_for_output(output));
-        current_focus_view = initial_focus_view ?: views.front();
+        initial_workspace = output->wset()->get_current_workspace();
+
+        auto active_view = wf::get_active_view_for_output(output);
+        if (active_view)
+        {
+            initial_focus_view = active_view->weak_from_this();
+            current_focus_view = toplevel_cast(active_view);
+            if (std::find(views.begin(), views.end(), current_focus_view) == views.end())
+            {
+                current_focus_view = nullptr;
+            }
+        } else
+        {
+            initial_focus_view.reset();
+            current_focus_view = nullptr;
+        }
+
         // Make sure no leftover events from the activation binding
         // trigger an action in scale
         last_selected_view = nullptr;
