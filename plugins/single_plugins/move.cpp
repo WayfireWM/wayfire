@@ -167,7 +167,7 @@ class wayfire_move : public wf::per_output_plugin_instance_t,
         activate_binding = [=] (auto)
         {
             auto view = toplevel_cast(wf::get_core().get_cursor_focus_view());
-            if (view && (view->role != wf::VIEW_ROLE_DESKTOP_ENVIRONMENT))
+            if (view && (view->role != wf::VIEW_ROLE_DESKTOP_ENVIRONMENT) && !drag_helper->view)
             {
                 initiate(view, get_global_input_coords());
             }
