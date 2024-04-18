@@ -263,8 +263,8 @@ class iwobbly_state_t
 
         model->x     = base.x;
         model->y     = base.y;
-        model->width = base.width;
-        model->height = base.height;
+        model->width = std::max(1, base.width);
+        model->height = std::max(1, base.height);
     }
 
   protected:
@@ -661,8 +661,8 @@ class wobbly_transformer_node_t : public wf::scene::transformer_base_node_t
 
         model->x     = g.x;
         model->y     = g.y;
-        model->width = g.width;
-        model->height = g.height;
+        model->width = std::max(1, g.width);
+        model->height = std::max(1, g.height);
 
         model->grabbed = 0;
         model->synced  = 1;
