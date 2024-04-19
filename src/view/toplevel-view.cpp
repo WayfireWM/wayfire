@@ -115,7 +115,7 @@ void wf::toplevel_view_interface_t::set_toplevel_parent(wayfire_toplevel_view ne
         /* Add in the list of the new parent */
         if (new_parent)
         {
-            new_parent->children.insert(new_parent->children.begin(), {this});
+            new_parent->children.insert(new_parent->children.begin(), wayfire_toplevel_view{this});
         }
 
         parent = new_parent;

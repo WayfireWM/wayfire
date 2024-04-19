@@ -282,6 +282,11 @@ class wayfire_xwayland_view : public wf::toplevel_view_interface_t, public wayfi
         wf::toplevel_view_interface_t::set_activated(active);
     }
 
+    void handle_dissociate() override
+    {
+        on_surface_commit.disconnect();
+    }
+
     virtual void destroy() override
     {
         on_set_parent.disconnect();
@@ -293,6 +298,7 @@ class wayfire_xwayland_view : public wf::toplevel_view_interface_t, public wayfi
         on_request_maximize.disconnect();
         on_request_minimize.disconnect();
         on_request_fullscreen.disconnect();
+        on_surface_commit.disconnect();
 
         wayfire_xwayland_view_internal_base::destroy();
     }

@@ -47,6 +47,9 @@ class wayfire_xwayland_view_internal_base : public wf::xwayland_view_base_t
     virtual void handle_client_configure(wlr_xwayland_surface_configure_event *ev)
     {}
 
+    virtual void handle_dissociate()
+    {}
+
     void destroy() override
     {
         wf::xwayland_view_base_t::destroy();
