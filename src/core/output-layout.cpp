@@ -253,7 +253,7 @@ static const char *get_format_name(uint32_t format)
 struct output_layout_output_t
 {
     wlr_output *handle;
-    output_state_t current_state;
+    output_state_t current_state{};
     bool is_externally_managed = false;
     bool is_nested_compositor  = false;
     bool inhibited = false;
