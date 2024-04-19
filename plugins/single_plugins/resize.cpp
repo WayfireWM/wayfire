@@ -305,7 +305,7 @@ class wayfire_resize : public wf::per_output_plugin_instance_t, public wf::point
         int dy     = input.y - grab_start.y;
 
         wf::geometry_t desired = grabbed_geometry;
-        double ratio;
+        double ratio = 1.0;
         if (preserve_aspect)
         {
             ratio = (double)desired.width / desired.height;
