@@ -211,20 +211,14 @@ class xwayland_view_controller_t
 }
 
 static wlr_xwayland *xwayland_handle = nullptr;
+static wf::wl_listener_wrapper on_xwayland_surface_created;
+static wf::wl_listener_wrapper on_xwayland_ready;
 #endif
 
 void wf::init_xwayland(bool lazy)
 {
 #if WF_HAS_XWAYLAND
-    static wf::wl_listener_wrapper on_created;
-    static wf::wl_listener_wrapper on_ready;
-
-    static wf::signal::connection_t<core_shutdown_signal> on_shutdown = [=] (core_shutdown_signal *ev)
-    {
-        wlr_xwayland_destroy(xwayland_handle);
-    };
-
-    on_created.set_callback([] (void *data)
+    on_xwayland_surface_created.set_callback([] (void *data)
     {
         wf::new_xwayland_surface_signal ev;
         ev.surface = (wlr_xwayland_surface*)data;
@@ -237,7 +231,7 @@ void wf::init_xwayland(bool lazy)
         }
     });
 
-    on_ready.set_callback([&] (void *data)
+    on_xwayland_ready.set_callback([&] (void *data)
     {
         if (!wf::xw::load_basic_atoms(xwayland_handle->display_name))
         {
@@ -256,9 +250,21 @@ void wf::init_xwayland(bool lazy)
 
     if (xwayland_handle)
     {
-        on_created.connect(&xwayland_handle->events.new_surface);
-        on_ready.connect(&xwayland_handle->events.ready);
-        wf::get_core().connect(&on_shutdown);
+        on_xwayland_surface_created.connect(&xwayland_handle->events.new_surface);
+        on_xwayland_ready.connect(&xwayland_handle->events.ready);
+    }
+
+#endif
+}
+
+void wf::fini_xwayland()
+{
+#if WF_HAS_XWAYLAND
+    if (xwayland_handle)
+    {
+        on_xwayland_surface_created.disconnect();
+        on_xwayland_ready.disconnect();
+        wlr_xwayland_destroy(xwayland_handle);
     }
 
 #endif

@@ -35,6 +35,7 @@ class compositor_core_impl_t : public compositor_core_t
      */
     virtual void post_init();
 
+    void disconnect_signals();
     void fini();
 
     static compositor_core_impl_t& get();

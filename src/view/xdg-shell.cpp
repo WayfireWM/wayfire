@@ -394,12 +394,11 @@ void create_xdg_popup(wlr_xdg_popup *popup)
 }
 
 static wlr_xdg_shell *xdg_handle = nullptr;
+static wf::wl_listener_wrapper on_xdg_created;
 
 void wf::init_xdg_shell()
 {
-    static wf::wl_listener_wrapper on_xdg_created;
     xdg_handle = wlr_xdg_shell_create(wf::get_core().display, 3);
-
     if (xdg_handle)
     {
         on_xdg_created.set_callback([&] (void *data)
@@ -415,6 +414,11 @@ void wf::init_xdg_shell()
         });
         on_xdg_created.connect(&xdg_handle->events.new_surface);
     }
+}
+
+void wf::fini_xdg_shell()
+{
+    on_xdg_created.disconnect();
 }
 
 bool wayfire_xdg_popup::is_focusable() const

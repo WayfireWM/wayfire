@@ -65,6 +65,9 @@ void adjust_view_output_on_map(wf::toplevel_view_interface_t *self);
 void init_xdg_shell();
 void init_xwayland(bool lazy);
 void init_layer_shell();
+void fini_xdg_shell();
+void fini_xwayland();
+void fini_layer_shell();
 
 std::string xwayland_get_display();
 void xwayland_update_default_cursor();
@@ -74,7 +77,9 @@ void xwayland_bring_to_front(wlr_surface *surface);
 int xwayland_get_pid();
 
 void init_desktop_apis();
+void fini_desktop_apis();
 void init_xdg_decoration_handlers();
+void fini_xdg_decoration_handlers();
 
 pointf_t place_popup_at(wlr_surface *parent, wlr_surface *popup, wf::pointf_t relative);
 }

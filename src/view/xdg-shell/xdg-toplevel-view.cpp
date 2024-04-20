@@ -459,9 +459,9 @@ struct wf_xdg_decoration_t
     }
 };
 
+static wf::wl_listener_wrapper on_org_kde_decoration_created;
 static void init_legacy_decoration()
 {
-    static wf::wl_listener_wrapper decoration_created;
     wf::option_wrapper_t<std::string> deco_mode{"core/preferred_decoration_mode"};
     uint32_t default_mode = WLR_SERVER_DECORATION_MANAGER_MODE_CLIENT;
     if ((std::string)deco_mode == "server")
@@ -471,30 +471,36 @@ static void init_legacy_decoration()
 
     wlr_server_decoration_manager_set_default_mode(wf::get_core().protocols.decorator_manager, default_mode);
 
-    decoration_created.set_callback([&] (void *data)
+    on_org_kde_decoration_created.set_callback([&] (void *data)
     {
         /* will be freed by the destroy request */
         new wf_server_decoration_t((wlr_server_decoration*)(data));
     });
-    decoration_created.connect(&wf::get_core().protocols.decorator_manager->events.new_decoration);
+    on_org_kde_decoration_created.connect(&wf::get_core().protocols.decorator_manager->events.new_decoration);
 }
 
+static wf::wl_listener_wrapper on_xdg_decoration_created;
 static void init_xdg_decoration()
 {
-    static wf::wl_listener_wrapper xdg_decoration_created;
-    xdg_decoration_created.set_callback([&] (void *data)
+    on_xdg_decoration_created.set_callback([&] (void *data)
     {
         /* will be freed by the destroy request */
         new wf_xdg_decoration_t((wlr_xdg_toplevel_decoration_v1*)(data));
     });
 
-    xdg_decoration_created.connect(&wf::get_core().protocols.xdg_decorator->events.new_toplevel_decoration);
+    on_xdg_decoration_created.connect(&wf::get_core().protocols.xdg_decorator->events.new_toplevel_decoration);
 }
 
 void wf::init_xdg_decoration_handlers()
 {
     init_legacy_decoration();
     init_xdg_decoration();
+}
+
+void wf::fini_xdg_decoration_handlers()
+{
+    on_org_kde_decoration_created.disconnect();
+    on_xdg_decoration_created.disconnect();
 }
 
 void wf::xdg_toplevel_view_t::start_map_tx()

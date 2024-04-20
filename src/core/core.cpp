@@ -252,6 +252,19 @@ void wf::compositor_core_impl_t::shutdown()
     }
 }
 
+void wf::compositor_core_impl_t::disconnect_signals()
+{
+    fini_desktop_apis();
+    fini_xdg_decoration_handlers();
+    drm_lease_request.disconnect();
+    input_inhibit_activated.disconnect();
+    input_inhibit_deactivated.disconnect();
+    idle_inhibitor_created.disconnect();
+    vkbd_created.disconnect();
+    vptr_created.disconnect();
+    pointer_constraint_added.disconnect();
+}
+
 void wf::compositor_core_impl_t::fini()
 {
     this->state = compositor_state_t::SHUTDOWN;
@@ -260,6 +273,9 @@ void wf::compositor_core_impl_t::fini()
 
     LOGI("Unloading plugins...");
     plugin_mgr.reset();
+    // Shut down xwayland first, otherwise, wlroots will attempt to restart it when we kill it via
+    // wl_display_destroy_clients().
+    wf::fini_xwayland();
     LOGI("Stopping clients...");
     wl_display_destroy_clients(static_core->display);
     LOGI("Freeing resources...");
@@ -275,6 +291,7 @@ void wf::compositor_core_impl_t::fini()
     output_layout.reset();
     tx_manager.reset();
     OpenGL::fini();
+    disconnect_signals();
     wl_display_destroy(static_core->display);
 }
 

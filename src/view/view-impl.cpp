@@ -430,3 +430,10 @@ void wf::adjust_view_output_on_map(wf::toplevel_view_interface_t *self)
         chosen_output->wset()->add_view({self});
     }
 }
+
+void wf::fini_desktop_apis()
+{
+    fini_xdg_shell();
+    fini_layer_shell();
+    // xwayland destroyed separately by core
+}
