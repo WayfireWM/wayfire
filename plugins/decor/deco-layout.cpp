@@ -196,7 +196,7 @@ wf::region_t decoration_layout_t::calculate_region() const
     return r;
 }
 
-void decoration_layout_t::unset_hover(wf::point_t position)
+void decoration_layout_t::unset_hover(std::optional<wf::point_t> position)
 {
     auto area = find_area_at(position);
     if (area && (area->get_type() == DECORATION_AREA_BUTTON))
@@ -210,7 +210,7 @@ decoration_layout_t::action_response_t decoration_layout_t::handle_motion(
     int x, int y)
 {
     auto previous_area = find_area_at(current_input);
-    auto current_area  = find_area_at({x, y});
+    auto current_area  = find_area_at(wf::point_t{x, y});
 
     if (previous_area == current_area)
     {
@@ -270,7 +270,7 @@ decoration_layout_t::action_response_t decoration_layout_t::handle_press_event(
         }
 
         is_grabbed  = true;
-        grab_origin = current_input;
+        grab_origin = current_input.value_or(wf::point_t{0, 0});
     }
 
     if (!pressed && double_click_at_release)
@@ -313,12 +313,16 @@ decoration_layout_t::action_response_t decoration_layout_t::handle_press_event(
  * Find the layout area at the given coordinates, if any
  * @return The layout area or null on failure
  */
-nonstd::observer_ptr<decoration_area_t> decoration_layout_t::find_area_at(
-    wf::point_t point)
+nonstd::observer_ptr<decoration_area_t> decoration_layout_t::find_area_at(std::optional<wf::point_t> point)
 {
+    if (!point)
+    {
+        return nullptr;
+    }
+
     for (auto& area : this->layout_areas)
     {
-        if (area->get_geometry() & point)
+        if (area->get_geometry() & *point)
         {
             return {area};
         }
@@ -330,10 +334,15 @@ nonstd::observer_ptr<decoration_area_t> decoration_layout_t::find_area_at(
 /** Calculate resize edges based on @current_input */
 uint32_t decoration_layout_t::calculate_resize_edges() const
 {
+    if (!this->current_input.has_value())
+    {
+        return 0;
+    }
+
     uint32_t edges = 0;
     for (auto& area : layout_areas)
     {
-        if (area->get_geometry() & this->current_input)
+        if (area->get_geometry() & *this->current_input)
         {
             if (area->get_type() & DECORATION_AREA_RESIZE_BIT)
             {

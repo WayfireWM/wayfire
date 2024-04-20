@@ -59,7 +59,7 @@ struct decoration_area_t
 
   private:
     decoration_area_type_t type;
-    wf::geometry_t geometry;
+    wf::geometry_t geometry{};
 
     /* For buttons only */
     std::unique_ptr<button_t> button;
@@ -153,7 +153,7 @@ class decoration_layout_t
     /* Position where the grab has started */
     wf::point_t grab_origin;
     /* Last position of the input */
-    wf::point_t current_input;
+    std::optional<wf::point_t> current_input;
     /* double-click timer */
     wf::wl_timer<false> timer;
     bool double_click_at_release = false;
@@ -170,10 +170,10 @@ class decoration_layout_t
      * Find the layout area at the given coordinates, if any
      * @return The layout area or null on failure
      */
-    nonstd::observer_ptr<decoration_area_t> find_area_at(wf::point_t point);
+    nonstd::observer_ptr<decoration_area_t> find_area_at(std::optional<wf::point_t> point);
 
     /** Unset hover state of hovered button at @position, if any */
-    void unset_hover(wf::point_t position);
+    void unset_hover(std::optional<wf::point_t> position);
     wf::option_wrapper_t<std::string> button_order{"decoration/button_order"};
 };
 }
