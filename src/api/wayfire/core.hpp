@@ -218,7 +218,7 @@ class compositor_core_t : public wf::object_base_t, public signal::provider_t
     /**
      * @return The surface which has touch focus, or null if none.
      */
-    virtual wf::scene::node_ptr get_touch_focus() = 0;
+    virtual wf::scene::node_ptr get_touch_focus(int finger_id = 0) = 0;
 
     /** @return The view whose surface is cursor focus */
     wayfire_view get_cursor_focus_view();

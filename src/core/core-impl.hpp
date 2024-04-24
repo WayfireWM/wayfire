@@ -54,7 +54,7 @@ class compositor_core_impl_t : public compositor_core_t
     const wf::touch::gesture_state_t& get_touch_state() override;
 
     wf::scene::node_ptr get_cursor_focus() override;
-    wf::scene::node_ptr get_touch_focus() override;
+    wf::scene::node_ptr get_touch_focus(int finger_id) override;
 
     void add_touch_gesture(
         nonstd::observer_ptr<wf::touch::gesture_t> gesture) override;

@@ -10,6 +10,21 @@
 #include "wayfire/util.hpp"
 #include "wayfire/output-layout.hpp"
 
+class touch_timer_adapter_t : public wf::touch::timer_interface_t
+{
+  public:
+    wf::wl_timer<false> timer;
+    void set_timeout(uint32_t msec, std::function<void()> handler)
+    {
+        timer.set_timeout(msec, handler);
+    }
+
+    void reset()
+    {
+        timer.disconnect();
+    }
+};
+
 wf::touch_interface_t::touch_interface_t(wlr_cursor *cursor, wlr_seat *seat,
     input_surface_selector_t surface_at)
 {
@@ -129,6 +144,7 @@ wf::scene::node_ptr wf::touch_interface_t::get_focus(int finger_id) const
 void wf::touch_interface_t::add_touch_gesture(
     nonstd::observer_ptr<touch::gesture_t> gesture)
 {
+    gesture->set_timer(std::make_unique<touch_timer_adapter_t>());
     this->gestures.emplace_back(gesture);
 }
 
@@ -322,6 +338,7 @@ class multi_action_t : public gesture_action_t
     bool pinch;
     double threshold;
     bool last_pinch_was_pinch_in = false;
+    double move_tolerance = 1e9;
 
     uint32_t target_direction = 0;
     int32_t cnt_fingers = 0;
@@ -329,7 +346,7 @@ class multi_action_t : public gesture_action_t
     action_status_t update_state(const gesture_state_t& state,
         const gesture_event_t& event) override
     {
-        if (event.time - this->start_time > this->get_duration())
+        if (event.type == wf::touch::EVENT_TYPE_TIMEOUT)
         {
             return wf::touch::ACTION_STATUS_CANCELLED;
         }
@@ -355,7 +372,7 @@ class multi_action_t : public gesture_action_t
 
         if (this->pinch)
         {
-            if (glm::length(state.get_center().delta()) >= get_move_tolerance())
+            if (glm::length(state.get_center().delta()) >= move_tolerance)
             {
                 return ACTION_STATUS_CANCELLED;
             }
@@ -384,8 +401,7 @@ class multi_action_t : public gesture_action_t
 
         for (auto& finger : state.fingers)
         {
-            if (finger.second.get_incorrect_drag_distance(this->target_direction) >
-                this->get_move_tolerance())
+            if (finger.second.get_incorrect_drag_distance(this->target_direction) > this->move_tolerance)
             {
                 return ACTION_STATUS_CANCELLED;
             }
@@ -471,19 +487,19 @@ void wf::touch_interface_t::add_default_gestures()
     auto swipe = std::make_unique<multi_action_t>(false,
         0.75 * MAX_SWIPE_DISTANCE / sensitivity);
     swipe->set_duration(GESTURE_BASE_DURATION * sensitivity);
-    swipe->set_move_tolerance(SWIPE_INCORRECT_DRAG_TOLERANCE * sensitivity);
+    swipe->move_tolerance = SWIPE_INCORRECT_DRAG_TOLERANCE * sensitivity;
 
     const double pinch_thresh = 1.0 + (PINCH_THRESHOLD - 1.0) / sensitivity;
     auto pinch = std::make_unique<multi_action_t>(true, pinch_thresh);
     pinch->set_duration(GESTURE_BASE_DURATION * 1.5 * sensitivity);
-    pinch->set_move_tolerance(PINCH_INCORRECT_DRAG_TOLERANCE * sensitivity);
+    pinch->move_tolerance = PINCH_INCORRECT_DRAG_TOLERANCE * sensitivity;
 
     // Edge swipe needs a quick release to be considered edge swipe
     auto edge_swipe = std::make_unique<multi_action_t>(false,
         MAX_SWIPE_DISTANCE / sensitivity);
     auto edge_release = std::make_unique<wf::touch::touch_action_t>(1, false);
     edge_swipe->set_duration(GESTURE_BASE_DURATION * sensitivity);
-    edge_swipe->set_move_tolerance(SWIPE_INCORRECT_DRAG_TOLERANCE * sensitivity);
+    edge_swipe->move_tolerance = SWIPE_INCORRECT_DRAG_TOLERANCE * sensitivity;
     // The release action needs longer duration to handle the case where the
     // gesture is actually longer than the max distance.
     edge_release->set_duration(GESTURE_BASE_DURATION * 1.5 * sensitivity);

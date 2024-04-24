@@ -388,9 +388,9 @@ wayfire_view wf::compositor_core_t::get_view_at(wf::pointf_t point)
     return isec ? node_to_view(isec->node->shared_from_this()) : nullptr;
 }
 
-wf::scene::node_ptr wf::compositor_core_impl_t::get_touch_focus()
+wf::scene::node_ptr wf::compositor_core_impl_t::get_touch_focus(int finger_id)
 {
-    return seat->priv->touch->get_focus();
+    return seat->priv->touch->get_focus(finger_id);
 }
 
 wayfire_view wf::compositor_core_t::get_touch_focus_view()

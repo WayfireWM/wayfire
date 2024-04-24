@@ -15,8 +15,8 @@ namespace wf
 using namespace touch;
 class extra_gestures_plugin_t : public per_output_plugin_instance_t
 {
-    std::unique_ptr<gesture_t> touch_and_hold_move;
-    std::unique_ptr<gesture_t> tap_to_close;
+    gesture_t touch_and_hold_move;
+    gesture_t tap_to_close;
 
     wf::option_wrapper_t<int> move_fingers{"extra-gestures/move_fingers"};
     wf::option_wrapper_t<int> move_delay{"extra-gestures/move_delay"};
@@ -33,11 +33,9 @@ class extra_gestures_plugin_t : public per_output_plugin_instance_t
         build_touch_and_hold_move();
         move_fingers.set_callback([=] () { build_touch_and_hold_move(); });
         move_delay.set_callback([=] () { build_touch_and_hold_move(); });
-        wf::get_core().add_touch_gesture({touch_and_hold_move});
 
         build_tap_to_close();
         close_fingers.set_callback([=] () { build_tap_to_close(); });
-        wf::get_core().add_touch_gesture({tap_to_close});
     }
 
     /**
@@ -71,23 +69,15 @@ class extra_gestures_plugin_t : public per_output_plugin_instance_t
 
     void build_touch_and_hold_move()
     {
-        if (touch_and_hold_move)
-        {
-            wf::get_core().rem_touch_gesture({touch_and_hold_move});
-        }
+        wf::get_core().rem_touch_gesture(&touch_and_hold_move);
 
-        auto touch_down = std::make_unique<wf::touch_action_t>(move_fingers, true);
-        touch_down->set_move_tolerance(50);
-        touch_down->set_duration(100);
-
-        auto hold = std::make_unique<wf::hold_action_t>(move_delay);
-        hold->set_move_tolerance(100);
-
-        std::vector<std::unique_ptr<gesture_action_t>> actions;
-        actions.emplace_back(std::move(touch_down));
-        actions.emplace_back(std::move(hold));
-        touch_and_hold_move = std::make_unique<gesture_t>(std::move(actions),
-            [=] ()
+        touch_and_hold_move = wf::touch::gesture_builder_t()
+            .action(touch_action_t(move_fingers, true)
+            .set_move_tolerance(50)
+            .set_duration(100))
+            .action(hold_action_t(move_delay)
+                .set_move_tolerance(100))
+            .on_completed([=] ()
         {
             execute_view_action([] (wayfire_view view)
             {
@@ -96,38 +86,31 @@ class extra_gestures_plugin_t : public per_output_plugin_instance_t
                     wf::get_core().default_wm->move_request(toplevel);
                 }
             });
-        });
+        }).build();
+
+        wf::get_core().add_touch_gesture(&touch_and_hold_move);
     }
 
     void build_tap_to_close()
     {
-        if (tap_to_close)
-        {
-            wf::get_core().rem_touch_gesture({tap_to_close});
-        }
+        wf::get_core().rem_touch_gesture(&tap_to_close);
 
-        auto touch_down = std::make_unique<wf::touch_action_t>(close_fingers, true);
-        touch_down->set_move_tolerance(50);
-        touch_down->set_duration(150);
-
-        auto touch_up = std::make_unique<wf::touch_action_t>(close_fingers, false);
-        touch_up->set_move_tolerance(50);
-        touch_up->set_duration(150);
-
-        std::vector<std::unique_ptr<gesture_action_t>> actions;
-        actions.emplace_back(std::move(touch_down));
-        actions.emplace_back(std::move(touch_up));
-        tap_to_close = std::make_unique<gesture_t>(std::move(actions),
-            [=] ()
-        {
-            execute_view_action([] (wayfire_view view) { view->close(); });
-        });
+        tap_to_close = wf::touch::gesture_builder_t()
+            .action(touch_action_t(close_fingers, true)
+            .set_move_tolerance(50)
+            .set_duration(150))
+            .action(touch_action_t(close_fingers, false)
+                .set_move_tolerance(50)
+                .set_duration(150))
+            .on_completed([=] () { execute_view_action([] (wayfire_view view) { view->close(); }); })
+            .build();
+        wf::get_core().add_touch_gesture(&tap_to_close);
     }
 
     void fini() override
     {
-        wf::get_core().rem_touch_gesture({touch_and_hold_move});
-        wf::get_core().rem_touch_gesture({tap_to_close});
+        wf::get_core().rem_touch_gesture(&touch_and_hold_move);
+        wf::get_core().rem_touch_gesture(&tap_to_close);
     }
 };
 }

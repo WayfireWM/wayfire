@@ -14,7 +14,7 @@
 		<option name="move_delay" type="int">
 			<_short>Start moving after</_short>
 			<_long>Amount of time in milliseconds to hold fingers before starting interactive move of the view.</_long>
-			<default>500</default>
+			<default>750</default>
 			<min>1</min>
 			<max>10000</max>
 		</option>

@@ -5,7 +5,6 @@
 #include <wayfire/touch/touch.hpp>
 #include "wayfire/scene-input.hpp"
 #include "wayfire/util.hpp"
-#include "wayfire/view.hpp"
 #include <wayfire/signal-definitions.hpp>
 
 // TODO: tests
