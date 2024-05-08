@@ -486,7 +486,7 @@ class wayfire_xwayland_view : public wf::toplevel_view_interface_t, public wayfi
     {
         bool was_decorated = should_be_decorated();
         this->has_client_decoration = use_csd;
-        if ((was_decorated != should_be_decorated()) && is_mapped())
+        if (was_decorated != should_be_decorated())
         {
             wf::view_decoration_state_updated_signal data;
             data.view = {this};
