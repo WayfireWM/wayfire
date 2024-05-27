@@ -111,6 +111,11 @@
 				<default>1.0</default>
 				<min>0.0</min>
 			</option>
+			<option name="mouse_natural_scroll" type="bool">
+				<_short>Mouse natural scroll</_short>
+				<_long>Enables or disables mouse natural (inverted) scrolling.</_long>
+				<default>false</default>
+			</option>
 		</group>
 		<!-- Touchpad -->
 		<group>
