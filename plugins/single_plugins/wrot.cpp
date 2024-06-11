@@ -222,6 +222,13 @@ class wf_wrot : public wf::per_output_plugin_instance_t, public wf::pointer_inte
 
     void handle_pointer_motion(wf::pointf_t pointer_position, uint32_t time_ms) override
     {
+        if (current_view && current_view->get_output())
+        {
+            auto og = current_view->get_output()->get_layout_geometry();
+            pointer_position.x -= og.x;
+            pointer_position.y -= og.y;
+        }
+
         if (current_mode == mode::ROT_2D)
         {
             motion_2d(pointer_position.x, pointer_position.y);
