@@ -730,6 +730,9 @@ void program_t::free_resources()
             GL_CALL(glDeleteProgram(priv->id[i]));
             this->priv->id[i] = 0;
         }
+
+        priv->uniforms[i].clear();
+        priv->attribs[i].clear();
     }
 }
 
