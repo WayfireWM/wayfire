@@ -18,6 +18,8 @@ struct pointing_device_t : public input_device_impl_t
         wf::option_wrapper_t<bool> middle_emulation;
         wf::option_wrapper_t<double> mouse_cursor_speed;
         wf::option_wrapper_t<double> mouse_scroll_speed;
+        wf::option_wrapper_t<int> mouse_scroll_button;
+        wf::option_wrapper_t<std::string> mouse_scroll_method;
         wf::option_wrapper_t<std::string> tablet_motion_mode;
         wf::option_wrapper_t<double> touchpad_cursor_speed;
         wf::option_wrapper_t<double> touchpad_scroll_speed;
