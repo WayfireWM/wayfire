@@ -421,6 +421,11 @@ bool view_node_t::needs_crossfade()
         return true;
     }
 
+    if (!view->get_output())
+    {
+        return false;
+    }
+
     if (view->get_output()->is_plugin_active("simple-tile"))
     {
         // Disable animations while controllers are active
