@@ -728,16 +728,15 @@ class core_drag_t : public signal::provider_t
 
             drag_focus_output_signal data;
             data.previous_focus_output = current_output;
-
             current_output    = output;
             data.focus_output = output;
-            wf::get_core().seat->focus_output(output);
-            emit(&data);
-
             if (output)
             {
-                current_output->render->add_effect(&on_pre_frame, OUTPUT_EFFECT_PRE);
+                wf::get_core().seat->focus_output(output);
+                output->render->add_effect(&on_pre_frame, OUTPUT_EFFECT_PRE);
             }
+
+            emit(&data);
         }
     }
 
