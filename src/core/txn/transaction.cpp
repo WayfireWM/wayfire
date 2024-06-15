@@ -48,6 +48,13 @@ void wf::txn::transaction_t::add_object(transaction_object_sptr object)
 void wf::txn::transaction_t::commit()
 {
     LOGC(TXN, "Committing transaction ", this, " with timeout ", this->timeout);
+    if (this->objects.empty())
+    {
+        // Empty transaction, directly ready.
+        apply(false);
+        return;
+    }
+
     for (auto& obj : this->objects)
     {
         obj->connect(&on_object_ready);
@@ -56,7 +63,11 @@ void wf::txn::transaction_t::commit()
 
     timer_setter(this->timeout, [=] ()
     {
-        apply(true);
+        if (count_ready_objects < (int)this->objects.size())
+        {
+            apply(true);
+        }
+
         return false;
     });
 }

@@ -99,3 +99,42 @@ TEST_CASE("Transaction is applied immediately if all objects are ready")
 {
     run_transaction_test(false, true);
 }
+
+TEST_CASE("Edge cases")
+{
+    setup_wayfire_debugging_state();
+    int applied = 0;
+    wf::signal::connection_t<wf::txn::transaction_applied_signal> on_apply =
+        [&] (wf::txn::transaction_applied_signal *ev)
+    {
+        ++applied;
+    };
+
+    wf::txn::transaction_t::timer_setter_t timer_setter =
+        [&] (uint64_t time, wf::wl_timer<false>::callback_t cb)
+    {
+        REQUIRE(time == 0);
+        cb();
+    };
+
+    wf::txn::transaction_t tx(0, timer_setter);
+    tx.connect(&on_apply);
+
+    SUBCASE("Empty transaction")
+    {}
+
+    SUBCASE("Transaction with timeout=0 without autocommit")
+    {
+        auto object = std::make_shared<txn_test_object_t>(false);
+        tx.add_object(object);
+    }
+
+    SUBCASE("Transaction with timeout=0 and autocommit")
+    {
+        auto object = std::make_shared<txn_test_object_t>(true);
+        tx.add_object(object);
+    }
+
+    tx.commit();
+    REQUIRE(applied == 1);
+}

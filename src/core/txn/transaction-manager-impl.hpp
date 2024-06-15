@@ -123,6 +123,8 @@ struct wf::txn::transaction_manager_t::impl
             return existing.get() == ev->self;
         });
 
+        wf::dassert(it != committed.end(), "Transaction not found in committed list");
+
         done.push_back(std::move(*it));
         committed.erase(it);
         consider_commit();
