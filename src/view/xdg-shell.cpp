@@ -69,6 +69,37 @@ class wayfire_xdg_popup_node : public wf::scene::translation_node_t
     std::unique_ptr<wf::wlr_view_keyboard_interaction_t> kb_interaction;
 };
 
+bool wayfire_xdg_popup::should_close_on_focus_change(wf::keyboard_focus_changed_signal *ev)
+{
+    if (!is_mapped())
+    {
+        return false;
+    }
+
+    auto view = wf::node_to_view(ev->new_focus);
+    const bool focus_client_changes = view && (view->get_client() != this->get_client());
+    const bool has_grab = this->popup->seat != nullptr;
+
+    if (has_grab)
+    {
+        return !view || focus_client_changes;
+    } else
+    {
+        if ((ev->reason == wf::keyboard_focus_reason::UNKNOWN) ||
+            (ev->reason == wf::keyboard_focus_reason::REFOCUS))
+        {
+            return false;
+        }
+
+        if ((ev->new_focus && !view) || focus_client_changes)
+        {
+            return true;
+        }
+    }
+
+    return false;
+}
+
 wayfire_xdg_popup::wayfire_xdg_popup(wlr_xdg_popup *popup) : wf::view_interface_t()
 {
     this->popup_parent = wf::wl_surface_to_wayfire_view(popup->parent->resource).get();
@@ -81,11 +112,9 @@ wayfire_xdg_popup::wayfire_xdg_popup(wlr_xdg_popup *popup) : wf::view_interface_
         // Note: we shouldn't close nested popups manually, since the parent popups will destroy them as well.
         this->on_keyboard_focus_changed = [=] (wf::keyboard_focus_changed_signal *ev)
         {
-            auto view = wf::node_to_view(ev->new_focus);
-            if (!view || (view->get_client() != this->get_client()))
+            if (should_close_on_focus_change(ev))
             {
                 this->close();
-                return;
             }
         };
     }
@@ -97,7 +126,6 @@ wayfire_xdg_popup::wayfire_xdg_popup(wlr_xdg_popup *popup) : wf::view_interface_
 
     on_map.set_callback([&] (void*) { map(); });
     on_unmap.set_callback([&] (void*) { unmap(); });
-    on_destroy.set_callback([&] (void*) { destroy(); });
     on_new_popup.set_callback([&] (void *data)
     {
         create_xdg_popup((wlr_xdg_popup*)data);
@@ -113,7 +141,6 @@ wayfire_xdg_popup::wayfire_xdg_popup(wlr_xdg_popup *popup) : wf::view_interface_
 
     on_map.connect(&popup->base->surface->events.map);
     on_unmap.connect(&popup->base->surface->events.unmap);
-    on_destroy.connect(&popup->base->events.destroy);
     on_new_popup.connect(&popup->base->events.new_popup);
     on_ping_timeout.connect(&popup->base->events.ping_timeout);
     on_reposition.connect(&popup->events.reposition);
@@ -152,6 +179,7 @@ std::shared_ptr<wayfire_xdg_popup> wayfire_xdg_popup::create(wlr_xdg_popup *popu
 
 void wayfire_xdg_popup::map()
 {
+    LOGC(VIEWS, "Trying to map xdg-popup ", self());
     if (!get_output())
     {
         close();
@@ -189,9 +217,12 @@ void wayfire_xdg_popup::unmap()
 {
     if (!is_mapped())
     {
+        LOGC(VIEWS, "Denying unmap of unmapped xdg-popup ", self());
         return;
     }
 
+    auto _self_ref = shared_from_this();
+    LOGC(VIEWS, "Unmapping xdg-popup ", self());
     on_keyboard_focus_changed.disconnect();
     damage();
     emit_view_pre_unmap();
@@ -266,7 +297,6 @@ void wayfire_xdg_popup::destroy()
 {
     on_map.disconnect();
     on_unmap.disconnect();
-    on_destroy.disconnect();
     on_new_popup.disconnect();
     on_ping_timeout.disconnect();
     on_reposition.disconnect();
@@ -275,6 +305,7 @@ void wayfire_xdg_popup::destroy()
 
 void wayfire_xdg_popup::close()
 {
+    LOGC(VIEWS, "Closing xdg-popup ", self(), " ", is_mapped());
     if (is_mapped())
     {
         wlr_xdg_popup_destroy(popup);
@@ -372,7 +403,11 @@ class xdg_popup_controller_t
   public:
     xdg_popup_controller_t(wlr_xdg_popup *popup)
     {
-        on_destroy.set_callback([=] (auto) { delete this; });
+        on_destroy.set_callback([=] (auto)
+        {
+            view->destroy();
+            delete this;
+        });
         on_destroy.connect(&popup->base->events.destroy);
         view = wayfire_xdg_popup::create(popup);
     }

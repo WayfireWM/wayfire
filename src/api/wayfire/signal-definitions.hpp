@@ -3,6 +3,7 @@
 
 #include "wayfire/view.hpp"
 #include "wayfire/output.hpp"
+#include "wayfire/seat.hpp"
 
 /**
  * Documentation of signals emitted from core components.
@@ -201,6 +202,7 @@ struct reload_config_signal
 struct keyboard_focus_changed_signal
 {
     wf::scene::node_ptr new_focus;
+    keyboard_focus_reason reason = keyboard_focus_reason::UNKNOWN;
 };
 
 /**

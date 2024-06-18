@@ -25,7 +25,7 @@
 #include "wayfire/view.hpp"
 
 wf::seat_t::~seat_t() = default;
-void wf::seat_t::set_active_node(wf::scene::node_ptr node)
+void wf::seat_t::set_active_node(wf::scene::node_ptr node, wf::keyboard_focus_reason reason)
 {
     if (node)
     {
@@ -36,7 +36,7 @@ void wf::seat_t::set_active_node(wf::scene::node_ptr node)
     }
 
     auto focus = wf::get_core().scene()->keyboard_refocus(priv->active_output);
-    priv->set_keyboard_focus(focus.node ? focus.node->shared_from_this() : nullptr);
+    priv->set_keyboard_focus(focus.node ? focus.node->shared_from_this() : nullptr, reason);
 }
 
 wf::scene::node_ptr wf::seat_t::get_active_node()
@@ -166,7 +166,7 @@ void wf::seat_t::focus_view(wayfire_view v)
 
     const auto& give_input_focus = [this] (wayfire_view view)
     {
-        set_active_node(view ? view->get_surface_root_node() : nullptr);
+        set_active_node(view ? view->get_surface_root_node() : nullptr, keyboard_focus_reason::USER);
     };
 
     v = select_focus_view(v);
@@ -198,7 +198,7 @@ void wf::seat_t::refocus()
         priv->update_active_view(focus_sptr);
     }
 
-    priv->set_keyboard_focus(focus_sptr);
+    priv->set_keyboard_focus(focus_sptr, keyboard_focus_reason::REFOCUS);
 }
 
 uint32_t wf::seat_t::get_keyboard_modifiers()
@@ -504,10 +504,11 @@ void wf::seat_t::impl::transfer_grab(wf::scene::node_ptr grab_node)
 
     wf::keyboard_focus_changed_signal data;
     data.new_focus = grab_node;
+    data.reason    = keyboard_focus_reason::GRAB;
     wf::get_core().emit(&data);
 }
 
-void wf::seat_t::impl::set_keyboard_focus(wf::scene::node_ptr new_focus)
+void wf::seat_t::impl::set_keyboard_focus(wf::scene::node_ptr new_focus, keyboard_focus_reason reason)
 {
     if (this->keyboard_focus == new_focus)
     {
@@ -528,6 +529,7 @@ void wf::seat_t::impl::set_keyboard_focus(wf::scene::node_ptr new_focus)
 
     wf::keyboard_focus_changed_signal data;
     data.new_focus = new_focus;
+    data.reason    = reason;
     wf::get_core().emit(&data);
 }
 

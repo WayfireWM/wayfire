@@ -8,6 +8,14 @@
 
 namespace wf
 {
+enum class keyboard_focus_reason
+{
+    USER,
+    GRAB,
+    REFOCUS,
+    UNKNOWN,
+};
+
 /**
  * A seat represents a group of input devices (mouse, keyboard, etc.) which logically belong together.
  * Each seat has its own keyboard, touch, pointer and tablet focus.
@@ -52,7 +60,8 @@ class seat_t
      *
      * The new_focus' last focus timestamp will be updated.
      */
-    void set_active_node(wf::scene::node_ptr node);
+    void set_active_node(wf::scene::node_ptr node,
+        wf::keyboard_focus_reason reason = keyboard_focus_reason::UNKNOWN);
 
     /**
      * Get the node which has current keyboard focus.

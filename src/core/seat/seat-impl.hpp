@@ -55,7 +55,7 @@ struct seat_t::impl
     uint32_t get_modifiers();
     void break_mod_bindings();
 
-    void set_keyboard_focus(wf::scene::node_ptr keyboard_focus);
+    void set_keyboard_focus(wf::scene::node_ptr keyboard_focus, wf::keyboard_focus_reason reason);
     wf::scene::node_ptr keyboard_focus;
     // Keys sent to the current keyboard focus
     std::multiset<uint32_t> pressed_keys;
