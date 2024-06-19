@@ -509,15 +509,19 @@ void wf::start_move_view_to_wset(wayfire_toplevel_view v, std::shared_ptr<wf::wo
     new_wset->add_view(v);
 }
 
-void wf::move_view_to_output(wayfire_toplevel_view v, wf::output_t *new_output, bool reconfigure)
+void wf::move_view_to_output(wayfire_toplevel_view v, wf::output_t *new_output, unsigned flags)
 {
     wf::dassert(!v->parent, "Cannot move a dialog to a different output than its parent!");
 
     auto old_output = v->get_output();
     auto old_wset   = v->get_wset();
+    auto old_ws     = old_wset->get_view_main_workspace(v);
+    auto new_wset   = new_output->wset();
 
     uint32_t edges;
     bool fullscreen;
+    bool reconfigure    = flags & VIEW_TO_OUTPUT_FLAG_RECONFIGURE;
+    bool same_workspace = flags & VIEW_TO_OUTPUT_FLAG_SAME_WORKSPACE;
     wf::geometry_t view_g;
     wf::geometry_t old_output_g;
     wf::geometry_t new_output_g;
@@ -537,7 +541,7 @@ void wf::move_view_to_output(wayfire_toplevel_view v, wf::output_t *new_output, 
 
     assert(new_output);
 
-    start_move_view_to_wset(v, new_output->wset());
+    start_move_view_to_wset(v, new_wset);
     if (new_output == wf::get_core().seat->get_active_output())
     {
         wf::get_core().seat->focus_view(v);
@@ -555,6 +559,11 @@ void wf::move_view_to_output(wayfire_toplevel_view v, wf::output_t *new_output, 
         {
             auto new_g = wf::clamp(view_g, new_output->workarea->get_workarea());
             v->set_geometry(new_g);
+            if (same_workspace &&
+                (old_wset->get_workspace_grid_size() == new_wset->get_workspace_grid_size()))
+            {
+                v->get_wset()->move_to_workspace(v, old_ws);
+            }
         }
     }
 
