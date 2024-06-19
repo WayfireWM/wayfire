@@ -47,6 +47,9 @@ struct output_state_t
     /** Only width, height and refresh fields are used. */
     wlr_output_mode mode;
 
+    /** Whether a custom mode was requested for the output. */
+    bool uses_custom_mode = false;
+
     /* The transform of the output */
     wl_output_transform transform = WL_OUTPUT_TRANSFORM_NORMAL;
     /* The scale of the output */
