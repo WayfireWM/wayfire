@@ -337,44 +337,27 @@ class wayfire_xwayland_view : public wf::toplevel_view_interface_t, public wayfi
         toplevel->set_main_surface(main_surface);
         toplevel->pending().mapped = true;
 
-        if (xw->fullscreen)
+        bool map_maximized = xw->maximized_horz || xw->maximized_vert;
+        bool map_fs = xw->fullscreen;
+
+        if (map_maximized || map_fs)
         {
             store_xw_geometry_unmapped();
-            toplevel->pending().fullscreen = true;
-            if (get_output())
-            {
-                toplevel->pending().geometry = get_output()->workarea->get_workarea();
-            }
-
-            wf::get_core().default_wm->fullscreen_request({this}, get_output(), true);
-        } else if (xw->maximized_horz && xw->maximized_vert)
-        {
-            store_xw_geometry_unmapped();
-            toplevel->pending().tiled_edges = wf::TILED_EDGES_ALL;
-            if (get_output())
-            {
-                toplevel->pending().geometry = get_output()->workarea->get_workarea();
-            }
-        } else
-        {
-            wf::geometry_t desired_geometry = {
-                xw->x,
-                xw->y,
-                xw->surface->current.width,
-                xw->surface->current.height
-            };
-
-            if (get_output())
-            {
-                desired_geometry = desired_geometry + -wf::origin(get_output()->get_layout_geometry());
-                desired_geometry =
-                    wf::expand_geometry_by_margins(desired_geometry, toplevel->pending().margins);
-                desired_geometry = wf::clamp(desired_geometry, get_output()->workarea->get_workarea());
-            }
-
-            toplevel->pending().geometry = desired_geometry;
         }
 
+        wf::geometry_t desired_geometry = {
+            xw->x,
+            xw->y,
+            xw->surface->current.width,
+            xw->surface->current.height
+        };
+
+        if (get_output())
+        {
+            desired_geometry = desired_geometry + -wf::origin(get_output()->get_layout_geometry());
+        }
+
+        wf::adjust_view_pending_geometry_on_start_map(this, desired_geometry, map_fs, map_maximized);
         wf::get_core().tx_manager->schedule_object(toplevel);
     }
 

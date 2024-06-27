@@ -508,12 +508,14 @@ void wf::xdg_toplevel_view_t::start_map_tx()
     LOGC(VIEWS, "Start mapping ", self());
     wlr_box box;
     wlr_xdg_surface_get_geometry(xdg_toplevel->base, &box);
+
     auto margins = wtoplevel->pending().margins;
+    box.x = wtoplevel->pending().geometry.x + margins.left;
+    box.y = wtoplevel->pending().geometry.y + margins.top;
 
     wtoplevel->pending().mapped = true;
-    wtoplevel->pending().geometry.width = box.width + margins.left + margins.right;
-    wtoplevel->pending().geometry.height = box.height + margins.top + margins.bottom;
     priv->set_mapped_surface_contents(main_surface);
+    adjust_view_pending_geometry_on_start_map(this, box, pending_fullscreen(), pending_tiled_edges());
     wf::get_core().tx_manager->schedule_object(wtoplevel);
 }
 

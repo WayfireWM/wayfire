@@ -60,6 +60,8 @@ class view_interface_t::view_priv_impl
 void adjust_geometry_for_gravity(wf::toplevel_state_t& desired_state, wf::dimensions_t actual_size);
 
 void adjust_view_output_on_map(wf::toplevel_view_interface_t *self);
+void adjust_view_pending_geometry_on_start_map(wf::toplevel_view_interface_t *self,
+    wf::geometry_t map_geometry_client, bool map_fs, bool map_maximized);
 
 /** Emit the map signal for the given view */
 void init_xdg_shell();

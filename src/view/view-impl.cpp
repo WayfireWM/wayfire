@@ -9,6 +9,8 @@
 #include "wayfire/unstable/wlr-surface-node.hpp"
 #include "wayfire/view.hpp"
 #include "wayfire/output-layout.hpp"
+#include "wayfire/window-manager.hpp"
+#include "wayfire/workarea.hpp"
 #include "wayfire/workspace-set.hpp"
 #include <memory>
 #include <wayfire/util/log.hpp>
@@ -436,4 +438,32 @@ void wf::fini_desktop_apis()
     fini_xdg_shell();
     fini_layer_shell();
     // xwayland destroyed separately by core
+}
+
+void wf::adjust_view_pending_geometry_on_start_map(wf::toplevel_view_interface_t *self,
+    wf::geometry_t map_geometry_client, bool map_fs, bool map_maximized)
+{
+    if (map_fs)
+    {
+        self->toplevel()->pending().fullscreen = true;
+        wf::get_core().default_wm->fullscreen_request(self, self->get_output(), true);
+    } else if (map_maximized)
+    {
+        self->toplevel()->pending().tiled_edges = wf::TILED_EDGES_ALL;
+        if (self->get_output())
+        {
+            self->toplevel()->pending().geometry = self->get_output()->workarea->get_workarea();
+        }
+    } else
+    {
+        auto map_geometry = wf::expand_geometry_by_margins(map_geometry_client,
+            self->toplevel()->pending().margins);
+
+        if (self->get_output())
+        {
+            map_geometry = wf::clamp(map_geometry, self->get_output()->workarea->get_workarea());
+        }
+
+        self->toplevel()->pending().geometry = map_geometry;
+    }
 }
