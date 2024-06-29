@@ -9,25 +9,18 @@
 # Lastly, this script can be run from a terminal for testing purposes, or started as an autostart entry.
 # It is safe to kill/restart the process at any point in time.
 
-import os
-from wayfire_socket import *
+from wayfire.ipc import WayfireSocket
 
-addr = os.getenv('WAYFIRE_SOCKET')
-
-# Important: we connect to Wayfire's IPC two times. The one socket is used for reading events (view-mapped, view-focused, etc).
-# The other is used for sending commands and querying Wayfire.
-# We could use the same socket, but this would complicate reading responses, as events and query responses would be mixed with just one socket.
-events_sock = WayfireSocket(addr)
-commands_sock = WayfireSocket(addr)
-events_sock.watch(['view-mapped'])
+sock = WayfireSocket()
+sock.watch(['view-mapped'])
 
 while True:
-    msg = events_sock.read_message()
+    msg = sock.read_next_event()
     # The view-mapped event is emitted when a new window has been opened.
     if "event" in msg:
         view = msg["view"]
         if view["app-id"] == "gedit":
-            output_data = commands_sock.query_output(view["output"])
+            output_data = sock.query_output(view["output"])
             print(output_data)
             workarea = output_data["workarea"]
 
@@ -37,7 +30,7 @@ while True:
             w = workarea['width'] // 2
             h = workarea['height'] // 2
 
-            commands_sock.configure_view(view["id"], x, y, w, h)
+            sock.configure_view(view["id"], x, y, w, h)
             # sock.assign_slot(view["id"], "slot_br")
-            commands_sock.set_always_on_top(view["id"], True)
-            commands_sock.set_view_alpha(view["id"], 0.5)
+            sock.set_view_always_on_top(view["id"], True)
+            sock.set_view_alpha(view["id"], 0.5)

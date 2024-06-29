@@ -3,31 +3,10 @@
 # A simple script which demonstrates how simple-tile's IPC scripting capabilities can be used to achieve automatic tiling policies.
 # This script in particular listens for the view-mapped event and places new views in a master-stack layout: one view remains on the left,
 # and all other views are piled on top of each other vertically in the right column.
-import os
-from wayfire_socket import *
+from wayfire.ipc import WayfireSocket
 
-addr = os.getenv('WAYFIRE_SOCKET')
-
-events_sock = WayfireSocket(addr)
-commands_sock = WayfireSocket(addr)
-events_sock.watch(['view-mapped'])
-
-def get_tiling_layout(wset, x, y):
-    msg = get_msg_template('simple-tile/get-layout')
-    msg['data']['wset-index'] = wset
-    msg['data']['workspace'] = {}
-    msg['data']['workspace']['x'] = x
-    msg['data']['workspace']['y'] = y
-    return commands_sock.send_json(msg)['layout']
-
-def set_tiling_layout(wset, x, y, layout):
-    msg = get_msg_template('simple-tile/set-layout')
-    msg['data']['wset-index'] = wset
-    msg['data']['workspace'] = {}
-    msg['data']['workspace']['x'] = x
-    msg['data']['workspace']['y'] = y
-    msg['data']['layout'] = layout
-    return commands_sock.send_json(msg)
+sock = WayfireSocket()
+sock.watch(['view-mapped'])
 
 def create_list_views(layout):
     if 'view-id' in layout:
@@ -40,7 +19,7 @@ def create_list_views(layout):
     return list
 
 while True:
-    msg = events_sock.read_message()
+    msg = sock.read_next_event()
     # The view-mapped event is emitted when a new window has been opened.
     if "event" in msg:
         view = msg["view"]
@@ -48,18 +27,18 @@ while True:
             # Tile the new view appropriately
 
             # First, figure out current wset and workspace and existing layout
-            output = commands_sock.query_output(view["output-id"])
+            output = sock.query_output(view["output-id"])
             wset = output['wset-index']
             wsx = output['workspace']['x']
             wsy = output['workspace']['y']
-            layout = get_tiling_layout(wset, wsx, wsy)
+            layout = sock.get_tiling_layout(wset, wsx, wsy)
             all_views = create_list_views(layout)
 
             desired_layout = {}
             if not all_views or (len(all_views) == 1 and all_views[0][0] == view["id"]):
                 # Degenerate case 1: we have just our view
                 desired_layout = { 'vertical-split': [ {'view-id': view["id"], 'weight': 1} ]}
-                set_tiling_layout(wset, wsx, wsy, desired_layout)
+                sock.set_tiling_layout(wset, wsx, wsy, desired_layout)
                 continue
 
             main_view = all_views[0][0]
@@ -74,7 +53,7 @@ while True:
             if not stack_views_old:
                 # Degenerate case 2: the new view is the first on the stack, set 2:1 ratio and place the new view on the right
                 desired_layout = { 'vertical-split': [ {'view-id': main_view, 'weight': 2}, {'view-id': view["id"], 'weight': 1} ]}
-                set_tiling_layout(wset, wsx, wsy, desired_layout)
+                sock.set_tiling_layout(wset, wsx, wsy, desired_layout)
                 continue
 
             stack = [{'view-id': v[0], 'weight': v[2]} for v in stack_views_old]
@@ -87,4 +66,4 @@ while True:
                     ]
             }
 
-            set_tiling_layout(wset, wsx, wsy, desired_layout)
+            sock.set_tiling_layout(wset, wsx, wsy, desired_layout)

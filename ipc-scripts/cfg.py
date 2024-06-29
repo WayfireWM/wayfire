@@ -1,9 +1,7 @@
-import wayfire_socket as ws
-import os
+from wayfire.ipc import WayfireSocket
 import sys
 
-addr = os.getenv('WAYFIRE_SOCKET')
-sock = ws.WayfireSocket(addr)
+sock = WayfireSocket()
 
 if sys.argv[1] == "get":
     opt = sock.get_option_value(sys.argv[2])
