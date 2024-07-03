@@ -6,6 +6,7 @@
 #include "wayfire/render-manager.hpp"
 #include "wayfire/signal-definitions.hpp"
 #include "wayfire/util.hpp"
+#include "wayfire/config-backend.hpp"
 
 #include "../output/output-impl.hpp"
 #include <xf86drmMode.h>

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <optional>
+#include <wayfire/nonstd/wlroots.hpp>
 #include "wayfire/geometry.hpp"
 #include "wayfire/object.hpp"
 #include <wayfire/txn/transaction-object.hpp>

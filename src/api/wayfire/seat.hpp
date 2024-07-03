@@ -17,6 +17,23 @@ enum class keyboard_focus_reason
 };
 
 /**
+ * on: core
+ * when: Keyboard focus is changed (may change to nullptr).
+ */
+struct keyboard_focus_changed_signal
+{
+    wf::scene::node_ptr new_focus;
+    keyboard_focus_reason reason = keyboard_focus_reason::UNKNOWN;
+};
+
+/**
+ * on: core
+ * when: Seat activity has happened after being idle.
+ */
+struct seat_activity_signal
+{};
+
+/**
  * A seat represents a group of input devices (mouse, keyboard, etc.) which logically belong together.
  * Each seat has its own keyboard, touch, pointer and tablet focus.
  * Currently, Wayfire supports only a single seat.

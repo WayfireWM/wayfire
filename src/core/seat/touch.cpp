@@ -9,6 +9,7 @@
 #include "wayfire/output.hpp"
 #include "wayfire/util.hpp"
 #include "wayfire/output-layout.hpp"
+#include <glm/glm.hpp>
 
 class touch_timer_adapter_t : public wf::touch::timer_interface_t
 {

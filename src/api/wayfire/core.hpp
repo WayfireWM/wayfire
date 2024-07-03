@@ -2,10 +2,7 @@
 #define CORE_HPP
 
 #include "wayfire/object.hpp"
-#include "wayfire/scene-input.hpp"
-#include <wayfire/geometry.hpp>
 #include <wayfire/idle.hpp>
-#include <wayfire/config-backend.hpp>
 #include <wayfire/scene.hpp>
 #include <wayfire/signal-provider.hpp>
 
@@ -24,6 +21,7 @@ class view_interface_t;
 class toplevel_view_interface_t;
 class window_manager_t;
 class workspace_set_t;
+class config_backend_t;
 
 namespace scene
 {

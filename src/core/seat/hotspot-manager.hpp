@@ -6,6 +6,7 @@
 #include <wayfire/util/log.hpp>
 #include <wayfire/signal-definitions.hpp>
 #include <wayfire/nonstd/wlroots-full.hpp>
+#include <any>
 
 namespace  wf
 {

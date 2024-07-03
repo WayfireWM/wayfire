@@ -1,4 +1,5 @@
 #include "wayfire/core.hpp"
+#include "wayfire/debug.hpp"
 #include "wayfire/signal-definitions.hpp"
 #include <wayfire/output-layout.hpp>
 #include "wayfire/view.hpp"

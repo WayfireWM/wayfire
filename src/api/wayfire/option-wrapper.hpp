@@ -3,6 +3,7 @@
 #include <wayfire/config/option.hpp>
 #include <wayfire/config/option-wrapper.hpp>
 #include <wayfire/core.hpp>
+#include <wayfire/util/duration.hpp>
 
 namespace wf
 {

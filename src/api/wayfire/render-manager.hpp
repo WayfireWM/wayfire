@@ -1,5 +1,6 @@
 #pragma once
 
+#include "wayfire/opengl.hpp"
 #include <wayfire/output.hpp>
 #include <wayfire/object.hpp>
 #include <wayfire/region.hpp>

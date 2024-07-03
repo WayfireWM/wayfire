@@ -3,7 +3,7 @@
 
 #include <functional>
 #include <string>
-#include <wayfire/nonstd/wlroots.hpp>
+#include <cstdint>
 
 class wayfire_config;
 namespace wf

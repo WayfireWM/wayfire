@@ -1,15 +1,12 @@
 #pragma once
 
-#include "wayfire/opengl.hpp"
 #include <optional>
 #include <memory>
 #include <vector>
-#include <map>
 #include <wayfire/geometry.hpp>
 #include <wayfire/region.hpp>
 #include <wayfire/nonstd/observer_ptr.h>
 #include <wayfire/scene-input.hpp>
-#include <wayfire/scene-render.hpp>
 #include <wayfire/signal-provider.hpp>
 
 namespace wf
@@ -70,6 +67,10 @@ namespace scene
 class node_t;
 using node_ptr = std::shared_ptr<node_t>;
 using node_weak_ptr = std::weak_ptr<node_t>;
+
+class render_instance_t;
+using render_instance_uptr = std::unique_ptr<render_instance_t>;
+using damage_callback = std::function<void (const wf::region_t&)>;
 
 /**
  * Describes the current state of a node.

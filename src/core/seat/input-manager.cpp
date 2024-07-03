@@ -1,5 +1,4 @@
 #include <cassert>
-#include <algorithm>
 #include "pointer.hpp"
 #include "wayfire/core.hpp"
 #include "wayfire/signal-definitions.hpp"
@@ -9,6 +8,7 @@
 #include "input-manager.hpp"
 #include "wayfire/output-layout.hpp"
 #include "wayfire/view.hpp"
+#include "wayfire/config-backend.hpp"
 #include <wayfire/util/log.hpp>
 #include <wayfire/debug.hpp>
 

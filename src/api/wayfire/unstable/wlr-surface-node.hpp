@@ -6,6 +6,7 @@
 #include "wayfire/view-transform.hpp"
 #include <wayfire/scene.hpp>
 #include <wayfire/nonstd/wlroots-full.hpp>
+#include <wayfire/output-layout.hpp>
 
 namespace wf
 {

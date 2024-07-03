@@ -12,6 +12,7 @@
 #include "input-manager.hpp"
 #include "input-method-relay.hpp"
 #include "wayfire/signal-definitions.hpp"
+#include <wayfire/config-backend.hpp>
 
 void wf::keyboard_t::setup_listeners()
 {

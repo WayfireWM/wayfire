@@ -1,6 +1,8 @@
 #pragma once
 
 #include <wayfire/signal-provider.hpp>
+#include <string>
+#include <memory>
 
 namespace wf
 {
