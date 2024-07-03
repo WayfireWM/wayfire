@@ -22,6 +22,7 @@
 #include <wayfire/config/types.hpp>
 #include <wayfire/output-layout.hpp>
 #include <wayfire/bindings-repository.hpp>
+#include <list>
 
 
 class wayfire_wsets_plugin_t : public wf::plugin_interface_t

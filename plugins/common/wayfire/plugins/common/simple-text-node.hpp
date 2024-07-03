@@ -2,6 +2,7 @@
 #include "wayfire/output.hpp"
 #include "wayfire/scene.hpp"
 #include <wayfire/plugins/common/cairo-util.hpp>
+#include <wayfire/scene-render.hpp>
 
 class simple_text_node_t : public wf::scene::node_t
 {

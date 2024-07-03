@@ -20,6 +20,7 @@
 #include "wayfire/scene-render.hpp"
 #include "wayfire/scene.hpp"
 #include "wayfire/signal-provider.hpp"
+#include <list>
 
 using blur_algorithm_provider =
     std::function<nonstd::observer_ptr<wf_blur_base>()>;

@@ -1,6 +1,5 @@
 #include "wayfire/core.hpp"
 #include "wayfire/option-wrapper.hpp"
-#include "wayfire/plugins/common/shared-core-data.hpp"
 #include "wayfire/signal-definitions.hpp"
 #include "wayfire/signal-provider.hpp"
 #include "wayfire/util.hpp"
@@ -11,6 +10,7 @@
 #include <wayfire/nonstd/wlroots-full.hpp>
 #include <wayfire/plugin.hpp>
 #include <wayland-server-protocol.h>
+#include <map>
 
 class wayfire_shortcuts_inhibit : public wf::plugin_interface_t
 {

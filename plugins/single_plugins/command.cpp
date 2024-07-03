@@ -15,6 +15,7 @@
 #include <wayfire/seat.hpp>
 #include <wayfire/util/log.hpp>
 #include <plugins/ipc/ipc-method-repository.hpp>
+#include <list>
 
 /* Initial repeat delay passed */
 static int repeat_delay_timeout_handler(void *callback)

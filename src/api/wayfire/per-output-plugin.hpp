@@ -1,5 +1,3 @@
-#include "wayfire/object.hpp"
-#include "wayfire/signal-definitions.hpp"
 #include "wayfire/signal-provider.hpp"
 #include <wayfire/plugin.hpp>
 #include <wayfire/core.hpp>

@@ -12,6 +12,7 @@
 #include "wayfire/bindings-repository.hpp"
 #include "wayfire/util.hpp"
 #include <memory>
+#include "wayfire/config-backend.hpp" // IWYU pragma: keep
 
 #include "plugin-loader.hpp"
 #include "seat/tablet.hpp"

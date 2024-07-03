@@ -196,7 +196,7 @@ else
   print_trace = false
 endif
 
-add_project_arguments(['-DWF_USE_CONFIG_H'], language: ['cpp', 'c'])
+add_project_arguments(['-DWF_USE_CONFIG_H', '-ftime-trace'], language: ['cpp', 'c'])
 configure_file(input: 'config.h.in',
                output: 'config.h',
                install: true,

@@ -1,9 +1,9 @@
 #pragma once
 #include "wayfire/util.hpp"
-#include "wayfire/signal-definitions.hpp"
 #include "wayfire/view.hpp"
 #include <wayfire/nonstd/wlroots-full.hpp>
 #include <wayfire/unstable/wlr-text-input-v3-popup.hpp>
+#include <wayfire/seat.hpp>
 
 #include <vector>
 #include <memory>

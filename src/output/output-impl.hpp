@@ -5,13 +5,13 @@
 #include "wayfire/plugin.hpp"
 #include "wayfire/scene-render.hpp"
 #include "wayfire/scene.hpp"
-#include "wayfire/signal-definitions.hpp"
-#include "wayfire/signal-provider.hpp"
 
 #include <memory>
 #include <unordered_set>
 #include <wayfire/nonstd/safe-list.hpp>
 #include <wayfire/workspace-set.hpp>
+#include <wayfire/output-layout.hpp>
+#include <map>
 
 namespace wf
 {

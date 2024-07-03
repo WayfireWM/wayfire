@@ -3,7 +3,7 @@
 
 #include "view-impl.hpp"
 #include "wayfire/geometry.hpp"
-#include "wayfire/signal-definitions.hpp"
+#include "wayfire/seat.hpp"
 #include "wayfire/signal-provider.hpp"
 #include "wayfire/view.hpp"
 
