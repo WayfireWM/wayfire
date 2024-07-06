@@ -1,6 +1,7 @@
 #pragma once
 #include <memory>
 #include <functional>
+#include <algorithm>
 #include <wayfire/dassert.hpp>
 #include <wayfire/nonstd/observer_ptr.h>
 #include <wayfire/signal-provider.hpp>

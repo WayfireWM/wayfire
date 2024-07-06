@@ -1,9 +1,43 @@
 #include "wayfire/object.hpp"
-#include "wayfire/nonstd/safe-list.hpp"
 #include <unordered_map>
-#include <set>
-
 #include <wayfire/signal-provider.hpp>
+#include <wayfire/nonstd/safe-list.hpp>
+
+struct wf::signal::provider_t::impl
+{
+    std::unordered_map<std::type_index, wf::safe_list_t<connection_base_t*>> typed_connections;
+};
+
+wf::signal::provider_t::provider_t()
+{
+    this->priv = std::make_unique<impl>();
+}
+
+wf::signal::provider_t::~provider_t()
+{
+    for (auto& [id, connected] : priv->typed_connections)
+    {
+        connected.for_each([&] (connection_base_t *base) { disconnect_other_side(base); });
+    }
+}
+
+void wf::signal::provider_t::disconnect_other_side(connection_base_t *callback)
+{
+    auto it = std::remove(callback->connected_to.begin(), callback->connected_to.end(), this);
+    callback->connected_to.erase(it, callback->connected_to.end());
+}
+
+void wf::signal::provider_t::connect_base(std::type_index idx, connection_base_t *callback)
+{
+    priv->typed_connections[idx].push_back(callback);
+    callback->connected_to.push_back(this);
+}
+
+void wf::signal::provider_t::for_each_connection(
+    std::type_index type, std::function<void(connection_base_t*)> func)
+{
+    priv->typed_connections[type].for_each(func);
+}
 
 void wf::signal::connection_base_t::disconnect()
 {
@@ -11,6 +45,15 @@ void wf::signal::connection_base_t::disconnect()
     for (auto& x : connected_copy)
     {
         x->disconnect(this);
+    }
+}
+
+void wf::signal::provider_t::disconnect(connection_base_t *callback)
+{
+    disconnect_other_side(callback);
+    for (auto& [id, connected] : priv->typed_connections)
+    {
+        connected.remove_all(callback);
     }
 }
 
