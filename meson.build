@@ -145,7 +145,7 @@ cpp = meson.get_compiler('cpp')
 # -E is for RTTI/dynamic_cast across plugins
 add_project_link_arguments(['-rdynamic', '-Wl,-E'], language: 'cpp')
 
-project_args = ['-DWLR_USE_UNSTABLE']
+project_args = ['-DWLR_USE_UNSTABLE', '-ftime-trace']
 # Needed for dlclose to actually free plugin memory on gcc+glibc
 if cpp.has_argument('-fno-gnu-unique')
   project_args += '-fno-gnu-unique'
