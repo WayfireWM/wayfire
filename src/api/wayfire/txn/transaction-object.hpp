@@ -61,12 +61,6 @@ struct object_ready_signal
 /**
  * Emit the object-ready signal on the given object.
  */
-inline void emit_object_ready(wf::txn::transaction_object_t *obj)
-{
-    wf::txn::object_ready_signal data_ready;
-    data_ready.self = obj;
-    obj->emit(&data_ready);
-    return;
-}
+void emit_object_ready(wf::txn::transaction_object_t *obj);
 }
 }

@@ -6,6 +6,7 @@
 class base_t : public wf::signal::provider_t
 {
   public:
+    using wf::signal::provider_t::provider_t;
     static int destroyed;
     virtual ~base_t()
     {
