@@ -632,3 +632,17 @@ std::unique_ptr<wf::compositor_core_impl_t> wf::compositor_core_impl_t::static_c
 
 // TODO: move this to a better location
 wf_runtime_config runtime_config;
+
+#include <wayfire/option-wrapper.hpp>
+
+template class wf::option_wrapper_t<bool>;
+template class wf::option_wrapper_t<int>;
+template class wf::option_wrapper_t<std::string>;
+template class wf::option_wrapper_t<wf::activatorbinding_t>;
+template class wf::option_wrapper_t<wf::animation_description_t>;
+
+template class std::shared_ptr<wf::config::option_t<bool>>;
+template class std::shared_ptr<wf::config::option_t<int>>;
+template class std::shared_ptr<wf::config::option_t<std::string>>;
+template class std::shared_ptr<wf::config::option_t<wf::activatorbinding_t>>;
+template class std::shared_ptr<wf::config::option_t<wf::animation_description_t>>;

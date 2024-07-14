@@ -54,4 +54,20 @@ class option_wrapper_t : public base_option_wrapper_t<Type>
         return wf::get_core().config.get_option(name);
     }
 };
+
+extern template class option_wrapper_t<bool>;
+
+extern template class option_wrapper_t<int>;
+
+extern template class option_wrapper_t<std::string>;
+
+extern template class option_wrapper_t<wf::activatorbinding_t>;
+
+extern template class option_wrapper_t<wf::animation_description_t>;
 }
+
+extern template class std::shared_ptr<wf::config::option_t<bool>>;
+extern template class std::shared_ptr<wf::config::option_t<int>>;
+extern template class std::shared_ptr<wf::config::option_t<std::string>>;
+extern template class std::shared_ptr<wf::config::option_t<wf::activatorbinding_t>>;
+extern template class std::shared_ptr<wf::config::option_t<wf::animation_description_t>>;
