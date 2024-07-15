@@ -1,6 +1,6 @@
 #pragma once
 
-#include <nlohmann/json.hpp>
+#include <nlohmann/json.hpp> // IWYU pragma: keep
 #include <sys/un.h>
 #include <wayfire/object.hpp>
 #include <wayland-server.h>

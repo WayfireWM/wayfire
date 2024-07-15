@@ -1,7 +1,7 @@
 #pragma once
 
 #ifndef WLR_USE_UNSTABLE
-    #define WLR_USE_UNSTABLE
+    #define WLR_USE_UNSTABLE 1
 #endif
 
 /**

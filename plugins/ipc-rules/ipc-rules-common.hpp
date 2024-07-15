@@ -2,7 +2,6 @@
 #include "plugins/ipc/ipc-helpers.hpp"
 #include <wayfire/output.hpp>
 #include <wayfire/workarea.hpp>
-#include <nlohmann/json.hpp>
 #include <wayfire/workspace-set.hpp>
 #include "config.h"
 #include "wayfire/plugins/common/util.hpp"

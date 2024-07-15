@@ -1,6 +1,6 @@
 #pragma once
 
-#include <nlohmann/json.hpp>
+#include <nlohmann/json.hpp> // IWYU pragma: keep
 #include <functional>
 #include <map>
 #include "wayfire/signal-provider.hpp"

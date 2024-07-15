@@ -4,7 +4,6 @@
 #include <wayfire/workspace-set.hpp>
 #include <wayfire/toplevel-view.hpp>
 #include "tree.hpp"
-#include <nlohmann/json.hpp>
 #include "plugins/ipc/ipc-helpers.hpp"
 #include "plugins/ipc/ipc-method-repository.hpp"
 #include "tile-wset.hpp"

@@ -1,3 +1,5 @@
+#pragma once
+
 #include "wayfire/signal-provider.hpp"
 #include <wayfire/plugin.hpp>
 #include <wayfire/core.hpp>
