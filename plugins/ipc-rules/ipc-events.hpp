@@ -4,7 +4,6 @@
 #include <set>
 #include "plugins/ipc/ipc-method-repository.hpp"
 #include <wayfire/per-output-plugin.hpp>
-#include <nlohmann/json.hpp>
 
 namespace wf
 {

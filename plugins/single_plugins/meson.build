@@ -6,7 +6,7 @@ plugins = [
 ]
 
 all_include_dirs = [wayfire_api_inc, wayfire_conf_inc, plugins_common_inc, vswitch_inc, wobbly_inc, grid_inc]
-all_deps = [wlroots, pixman, wfconfig, wftouch, cairo, pango, pangocairo, json]
+all_deps = [wlroots, pixman, wfconfig, wftouch, cairo, pango, pangocairo, json, plugin_pch_dep]
 
 foreach plugin : plugins
   shared_module(plugin, plugin + '.cpp',

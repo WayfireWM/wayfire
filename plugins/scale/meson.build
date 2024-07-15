@@ -1,5 +1,5 @@
 all_include_dirs = [wayfire_api_inc, wayfire_conf_inc, plugins_common_inc, vswitch_inc, wobbly_inc, include_directories('.')]
-all_deps = [wlroots, pixman, wfconfig, wftouch, cairo, pango, pangocairo, json]
+all_deps = [wlroots, pixman, wfconfig, wftouch, cairo, pango, pangocairo, json, plugin_pch_dep]
 
 shared_module('scale', ['scale.cpp', 'scale-title-overlay.cpp'],
         include_directories: all_include_dirs,

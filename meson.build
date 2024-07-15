@@ -4,7 +4,7 @@ project(
 	'cpp',
 	version: '0.10.0',
 	license: 'MIT',
-	meson_version: '>=0.63.0',
+	meson_version: '>=0.64.0',
 	default_options: [
 		'cpp_std=c++17',
 		'c_std=c11',
@@ -203,6 +203,14 @@ configure_file(input: 'config.h.in',
                install: true,
                install_dir: join_paths('include', 'wayfire'),
                configuration: conf_data)
+
+# Detect address sanitizer
+cxx_flags_asan = run_command('/bin/sh', '-c', 'echo $CXXFLAGS $CPPFLAGS | grep fsanitize', check: false)
+if get_option('b_sanitize').contains('address') or cxx_flags_asan.returncode() == 0
+  has_asan = true
+else
+  has_asan = false
+endif
 
 subdir('proto')
 subdir('src')

@@ -1,4 +1,5 @@
 #pragma once
+
 #include <wayfire/signal-definitions.hpp>
 #include <wayfire/core.hpp>
 #include <wayfire/toplevel-view.hpp>
