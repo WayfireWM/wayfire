@@ -462,7 +462,7 @@ struct wf_xdg_decoration_t
 static wf::wl_listener_wrapper on_org_kde_decoration_created;
 static void init_legacy_decoration()
 {
-    wf::option_wrapper_t<std::string> deco_mode{"core/preferred_decoration_mode"};
+    static wf::option_wrapper_t<std::string> deco_mode{"core/preferred_decoration_mode"};
     uint32_t default_mode = WLR_SERVER_DECORATION_MANAGER_MODE_CLIENT;
     if ((std::string)deco_mode == "server")
     {
@@ -477,6 +477,17 @@ static void init_legacy_decoration()
         new wf_server_decoration_t((wlr_server_decoration*)(data));
     });
     on_org_kde_decoration_created.connect(&wf::get_core().protocols.decorator_manager->events.new_decoration);
+    deco_mode.set_callback([&] ()
+    {
+        uint32_t default_mode = WLR_SERVER_DECORATION_MANAGER_MODE_CLIENT;
+        if ((std::string)deco_mode == "server")
+        {
+            default_mode = WLR_SERVER_DECORATION_MANAGER_MODE_SERVER;
+        }
+
+        wlr_server_decoration_manager_set_default_mode(wf::get_core().protocols.decorator_manager,
+            default_mode);
+    });
 }
 
 static wf::wl_listener_wrapper on_xdg_decoration_created;
