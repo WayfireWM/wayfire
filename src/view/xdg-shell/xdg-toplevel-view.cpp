@@ -304,7 +304,7 @@ void wf::xdg_toplevel_view_t::map()
 {
     if (xdg_toplevel && uses_csd.count(xdg_toplevel->base->surface))
     {
-        this->has_client_decoration = uses_csd[xdg_toplevel->base->surface];
+        this->set_decoration_mode(uses_csd[xdg_toplevel->base->surface]);
     }
 
     adjust_view_output_on_map(this);
