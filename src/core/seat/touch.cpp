@@ -9,6 +9,7 @@
 #include "wayfire/output.hpp"
 #include "wayfire/util.hpp"
 #include "wayfire/output-layout.hpp"
+#include <glm/glm.hpp>
 
 wf::touch_interface_t::touch_interface_t(wlr_cursor *cursor, wlr_seat *seat,
     input_surface_selector_t surface_at)

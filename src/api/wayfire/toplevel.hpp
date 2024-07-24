@@ -4,6 +4,7 @@
 #include "wayfire/geometry.hpp"
 #include "wayfire/object.hpp"
 #include <wayfire/txn/transaction-object.hpp>
+#include "wayfire/nonstd/wlroots.hpp" // IWYU pragma: keep
 
 namespace wf
 {
