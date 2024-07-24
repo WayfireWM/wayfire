@@ -9,3 +9,10 @@ workspace_wall = static_library('wayfire-workspace-wall',
      override_options: ['b_lundef=false'],
      install: true)
 
+move_drag_interface = static_library('wayfire-move-drag-interface',
+     ['move-drag-interface.cpp'],
+     include_directories: [wayfire_api_inc, wayfire_conf_inc],
+     dependencies: [wlroots, pixman, wfconfig, plugin_pch_dep],
+     cpp_args: plugin_pch_args,
+     override_options: ['b_lundef=false'],
+     install: true)

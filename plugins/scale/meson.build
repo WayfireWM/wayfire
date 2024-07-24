@@ -5,6 +5,7 @@ shared_module('scale', ['scale.cpp', 'scale-title-overlay.cpp'],
         include_directories: all_include_dirs,
         dependencies: all_deps,
         cpp_args: plugin_pch_args,
+        link_with: [move_drag_interface],
         install: true,
         install_dir: conf_data.get('PLUGIN_PATH'))
 
