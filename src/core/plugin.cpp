@@ -4,6 +4,8 @@
 #include <wayfire/config-backend.hpp>
 #include <wayfire/plugin.hpp>
 #include <libudev.h>
+#include <wayfire/plugin.hpp>
+#include <wayfire/nonstd/wlroots-full.hpp>
 
 void wf::plugin_interface_t::fini()
 {}
@@ -17,13 +19,13 @@ std::shared_ptr<config::section_t> wf::config_backend_t::get_output_section(
     std::string name = output->name;
     name = "output:" + name;
     auto& config = wf::get_core().config;
-    if (!config.get_section(name))
+    if (!config->get_section(name))
     {
-        config.merge_section(
-            config.get_section("output")->clone_with_name(name));
+        config->merge_section(
+            config->get_section("output")->clone_with_name(name));
     }
 
-    return config.get_section(name);
+    return config->get_section(name);
 }
 
 static struct udev_property_and_desc
@@ -66,7 +68,7 @@ std::shared_ptr<config::section_t> wf::config_backend_t::get_input_device_sectio
                     std::string name = prefix + ":" + nonull(value);
                     LOGC(INPUT_DEVICES, "Checking for config section [", name, "] ",
                         pd.property_name, " (", pd.description, ")");
-                    section = config.get_section(name);
+                    section = config->get_section(name);
                     if (section)
                     {
                         LOGC(INPUT_DEVICES, "Using config section [", name, "] for ", nonull(device->name));
@@ -81,24 +83,24 @@ std::shared_ptr<config::section_t> wf::config_backend_t::get_input_device_sectio
     name = prefix + ":" + name;
     LOGC(INPUT_DEVICES, "Checking for config section [", name, "]");
 
-    if (!config.get_section(name))
+    if (!config->get_section(name))
     {
         // For input-device:(*) section, we always use per-device sections.
         // For input:(*) sections, we fall back to the common [input] section.
         if (prefix == "input")
         {
             LOGC(INPUT_DEVICES, "Using default config section [", prefix, "]");
-            section = config.get_section(prefix);
+            section = config->get_section(prefix);
         } else
         {
             LOGC(INPUT_DEVICES, "Creating config section [", name, "]");
-            section = config.get_section(prefix)->clone_with_name(name);
-            config.merge_section(section);
+            section = config->get_section(prefix)->clone_with_name(name);
+            config->merge_section(section);
         }
     } else
     {
         LOGC(INPUT_DEVICES, "Using config section [", name, "]");
-        section = config.get_section(name);
+        section = config->get_section(name);
     }
 
     return section;

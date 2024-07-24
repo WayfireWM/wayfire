@@ -605,7 +605,10 @@ const std::shared_ptr<wf::scene::root_node_t>& wf::compositor_core_impl_t::scene
 }
 
 wf::compositor_core_t::compositor_core_t()
-{}
+{
+    this->config = std::make_unique<wf::config::config_manager_t>();
+}
+
 wf::compositor_core_t::~compositor_core_t()
 {}
 
@@ -654,3 +657,8 @@ std::unique_ptr<wf::compositor_core_impl_t> wf::compositor_core_impl_t::static_c
 
 // TODO: move this to a better location
 wf_runtime_config runtime_config;
+
+std::shared_ptr<wf::config::option_base_t> wf::detail::load_raw_option(const std::string& name)
+{
+    return wf::get_core().config->get_option(name);
+}

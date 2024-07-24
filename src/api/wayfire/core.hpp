@@ -10,7 +10,6 @@
 #include <limits>
 #include <vector>
 #include <wayfire/nonstd/observer_ptr.h>
-#include <wayfire/config/config-manager.hpp>
 
 #include <wayland-server.h>
 #include <wayfire/nonstd/wlroots.hpp>
@@ -37,6 +36,11 @@ namespace touch
 {
 class gesture_t;
 struct gesture_state_t;
+}
+
+namespace config
+{
+class config_manager_t;
 }
 }
 
@@ -80,7 +84,7 @@ class compositor_core_t : public wf::object_base_t, public signal::provider_t
     /**
      * The current configuration used by Wayfire
      */
-    wf::config::config_manager_t config;
+    std::unique_ptr<wf::config::config_manager_t> config;
 
     /**
      * Command line arguments.
