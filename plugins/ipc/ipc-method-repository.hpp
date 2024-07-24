@@ -1,9 +1,9 @@
 #pragma once
 
-#include <nlohmann/json.hpp> // IWYU pragma: keep
 #include <functional>
 #include <map>
 #include "wayfire/signal-provider.hpp"
+#include "json-wrapper.hpp"
 
 namespace wf
 {
@@ -16,7 +16,7 @@ namespace ipc
 class client_interface_t
 {
   public:
-    virtual bool send_json(nlohmann::json json) = 0; // Returns true upon success.
+    virtual bool send_json(json_wrapper_t json) = 0;
     virtual ~client_interface_t() = default;
 };
 
@@ -32,12 +32,12 @@ struct client_disconnected_signal
  * An IPC method has a name and a callback. The callback is a simple function which takes a json object which
  * contains the method's parameters and returns the result of the operation.
  */
-using method_callback = std::function<nlohmann::json(nlohmann::json)>;
+using method_callback = std::function<json_wrapper_t(json_wrapper_t)>;
 
 /**
  * Same as @method_callback, but also supports getting information about the connected ipc client.
  */
-using method_callback_full = std::function<nlohmann::json(nlohmann::json, client_interface_t*)>;
+using method_callback_full = std::function<wf::ipc::json_wrapper_t(json_wrapper_t, client_interface_t*)>;
 
 /**
  * The IPC method repository keeps track of all registered IPC methods. It can be used even without the IPC
@@ -63,7 +63,7 @@ class method_repository_t : public wf::signal::provider_t
      */
     void register_method(std::string method, method_callback handler)
     {
-        this->methods[method] = [handler] (const nlohmann::json& data, client_interface_t*)
+        this->methods[method] = [handler] (const wf::ipc::json_wrapper_t& data, client_interface_t*)
         {
             return handler(data);
         };
@@ -81,7 +81,7 @@ class method_repository_t : public wf::signal::provider_t
      * Call an IPC method with the given name and given parameters.
      * If the method was not registered, a JSON object containing an error will be returned.
      */
-    nlohmann::json call_method(std::string method, nlohmann::json data,
+    wf::ipc::json_wrapper_t call_method(std::string method, json_wrapper_t data,
         client_interface_t *client = nullptr)
     {
         if (this->methods.count(method))
@@ -89,20 +89,20 @@ class method_repository_t : public wf::signal::provider_t
             return this->methods[method](std::move(data), client);
         }
 
-        return {
-            {"error", "No such method found!"}
-        };
+        json_wrapper_t response;
+        response["error"] = "No such method found!";
+        return response;
     }
 
     method_repository_t()
     {
         register_method("list-methods", [this] (auto)
         {
-            nlohmann::json response;
-            response["methods"] = nlohmann::json::array();
+            wf::ipc::json_wrapper_t response;
+            response["methods"] = wf::ipc::json_wrapper_t::array();
             for (auto& [method, _] : methods)
             {
-                response["methods"].push_back(method);
+                response["methods"].append(method);
             }
 
             return response;
@@ -114,35 +114,18 @@ class method_repository_t : public wf::signal::provider_t
 };
 
 // A few helper definitions for IPC method implementations.
-inline nlohmann::json json_ok()
+inline wf::ipc::json_wrapper_t json_ok()
 {
-    return nlohmann::json{
-        {"result", "ok"}
-    };
+    wf::ipc::json_wrapper_t r;
+    r["result"] = "ok";
+    return r;
 }
 
-inline nlohmann::json json_error(std::string msg)
+inline wf::ipc::json_wrapper_t json_error(std::string msg)
 {
-    return nlohmann::json{
-        {"error", std::string(msg)}
-    };
+    wf::ipc::json_wrapper_t r;
+    r["error"] = msg;
+    return r;
 }
-
-#define WFJSON_EXPECT_FIELD(data, field, type) \
-    if (!data.count(field)) \
-    { \
-        return wf::ipc::json_error("Missing \"" field "\""); \
-    } \
-    else if (!data[field].is_ ## type()) \
-    { \
-        return wf::ipc::json_error("Field \"" field "\" does not have the correct type " #type); \
-    }
-
-#define WFJSON_OPTIONAL_FIELD(data, field, type) \
-    if (data.count(field) && !data[field].is_ ## type()) \
-    { \
-        return wf::ipc::json_error("Field \"" + std::string(field) + \
-    "\" does not have the correct type " #type); \
-    }
 }
 }

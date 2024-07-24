@@ -35,8 +35,8 @@ libinput       = dependency('libinput', version: '>=1.7.0')
 pixman         = dependency('pixman-1')
 xkbcommon      = dependency('xkbcommon')
 libdl          = cpp.find_library('dl')
-json           = dependency('nlohmann_json', version: '>= 3.11.2')
 udev           = dependency('libudev')
+json           = dependency('RapidJSON')
 
 # We're not to use system wlroots: So we'll use the subproject
 if get_option('use_system_wlroots').disabled()

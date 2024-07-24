@@ -9,14 +9,14 @@
 #include <wayfire/unstable/wlr-surface-node.hpp>
 #include <wayfire/view-helpers.hpp>
 
-static inline nlohmann::json output_to_json(wf::output_t *o)
+static inline wf::ipc::json_wrapper_t output_to_json(wf::output_t *o)
 {
     if (!o)
     {
-        return nullptr;
+        return wf::ipc::json_wrapper_t::null();
     }
 
-    nlohmann::json response;
+    wf::ipc::json_wrapper_t response;
     response["id"]   = o->get_id();
     response["name"] = o->to_string();
     response["geometry"]   = wf::ipc::geometry_to_json(o->get_layout_geometry());
@@ -165,15 +165,15 @@ static inline std::string get_view_type(wayfire_view view)
     return "unknown";
 }
 
-static inline nlohmann::json view_to_json(wayfire_view view)
+static inline wf::ipc::json_wrapper_t view_to_json(wayfire_view view)
 {
     if (!view)
     {
-        return nullptr;
+        return wf::ipc::json_wrapper_t::null();
     }
 
     auto output = view->get_output();
-    nlohmann::json description;
+    wf::ipc::json_wrapper_t description;
     description["id"]     = view->get_id();
     description["pid"]    = get_view_pid(view);
     description["title"]  = view->get_title();
@@ -206,14 +206,14 @@ static inline nlohmann::json view_to_json(wayfire_view view)
     return description;
 }
 
-static inline nlohmann::json wset_to_json(wf::workspace_set_t *wset)
+static inline wf::ipc::json_wrapper_t wset_to_json(wf::workspace_set_t *wset)
 {
     if (!wset)
     {
-        return nullptr;
+        return wf::ipc::json_wrapper_t::null();
     }
 
-    nlohmann::json response;
+    wf::ipc::json_wrapper_t response;
     response["index"] = wset->get_index();
     response["name"]  = wset->to_string();
 

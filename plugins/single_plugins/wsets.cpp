@@ -68,33 +68,32 @@ class wayfire_wsets_plugin_t : public wf::plugin_interface_t
     std::list<wf::activator_callback> send_callback;
     std::map<int, std::shared_ptr<wf::workspace_set_t>> available_sets;
 
-    wf::ipc::method_callback set_output_wset = [=] (nlohmann::json data)
+    wf::ipc::method_callback set_output_wset = [=] (wf::ipc::json_wrapper_t data)
     {
-        WFJSON_EXPECT_FIELD(data, "output-id", number_integer);
-        WFJSON_EXPECT_FIELD(data, "wset-index", number_integer);
-
-        wf::output_t *o = wf::ipc::find_output_by_id(data["output-id"]);
+        auto output_id  = wf::ipc::json_get_int64(data, "output-id");
+        auto wset_index = wf::ipc::json_get_int64(data, "wset-index");
+        wf::output_t *o = wf::ipc::find_output_by_id(output_id);
         if (!o)
         {
             return wf::ipc::json_error("output not found");
         }
 
-        select_workspace(data["wset-index"], o);
+        select_workspace(wset_index, o);
         return wf::ipc::json_ok();
     };
 
-    wf::ipc::method_callback send_view_to_wset = [=] (nlohmann::json data)
+    wf::ipc::method_callback send_view_to_wset = [=] (wf::ipc::json_wrapper_t data)
     {
-        WFJSON_EXPECT_FIELD(data, "view-id", number_integer);
-        WFJSON_EXPECT_FIELD(data, "wset-index", number_integer);
+        auto view_id    = wf::ipc::json_get_int64(data, "view-id");
+        auto wset_index = wf::ipc::json_get_int64(data, "wset-index");
 
-        wayfire_toplevel_view view = toplevel_cast(wf::ipc::find_view_by_id(data["view-id"]));
+        wayfire_toplevel_view view = toplevel_cast(wf::ipc::find_view_by_id(view_id));
         if (!view)
         {
             return wf::ipc::json_error("view not found");
         }
 
-        send_window_to(data["wset-index"], view);
+        send_window_to(wset_index, view);
         return wf::ipc::json_ok();
     };
 

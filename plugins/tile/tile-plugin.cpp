@@ -505,12 +505,12 @@ class tile_plugin_t : public wf::plugin_interface_t, wf::per_output_tracker_mixi
         output->erase_data<tile_output_plugin_t>();
     }
 
-    ipc::method_callback ipc_get_layout = [=] (const nlohmann::json& params)
+    ipc::method_callback ipc_get_layout = [=] (const wf::ipc::json_wrapper_t& params)
     {
         return tile::handle_ipc_get_layout(params);
     };
 
-    ipc::method_callback ipc_set_layout = [=] (nlohmann::json params) -> nlohmann::json
+    ipc::method_callback ipc_set_layout = [=] (wf::ipc::json_wrapper_t params) -> wf::ipc::json_wrapper_t
     {
         return tile::handle_ipc_set_layout(params);
     };

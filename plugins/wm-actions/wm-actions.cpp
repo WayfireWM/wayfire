@@ -422,24 +422,22 @@ class wayfire_wm_actions_t : public wf::plugin_interface_t,
         ipc_repo->unregister_method("wm-actions/send-to-back");
     }
 
-    nlohmann::json execute_for_view(const nlohmann::json& params,
+    wf::ipc::json_wrapper_t execute_for_view(const wf::ipc::json_wrapper_t& params,
         std::function<void(wayfire_toplevel_view, bool)> view_op)
     {
-        WFJSON_EXPECT_FIELD(params, "view_id", number_integer);
-        WFJSON_EXPECT_FIELD(params, "state", boolean);
-
-        wayfire_toplevel_view view = toplevel_cast(wf::ipc::find_view_by_id(params["view_id"]));
+        uint64_t view_id = wf::ipc::json_get_uint64(params, "view_id");
+        bool state = wf::ipc::json_get_bool(params, "state");
+        wayfire_toplevel_view view = toplevel_cast(wf::ipc::find_view_by_id(view_id));
         if (!view)
         {
             return wf::ipc::json_error("toplevel view id not found!");
         }
 
-        bool state = params["state"];
         view_op(view, state);
         return wf::ipc::json_ok();
     }
 
-    wf::ipc::method_callback ipc_minimize = [=] (const nlohmann::json& js)
+    wf::ipc::method_callback ipc_minimize = [=] (const wf::ipc::json_wrapper_t& js)
     {
         return execute_for_view(js, [=] (wayfire_toplevel_view view, bool state)
         {
@@ -447,7 +445,7 @@ class wayfire_wm_actions_t : public wf::plugin_interface_t,
         });
     };
 
-    wf::ipc::method_callback ipc_maximize = [=] (const nlohmann::json& js)
+    wf::ipc::method_callback ipc_maximize = [=] (const wf::ipc::json_wrapper_t& js)
     {
         return execute_for_view(js, [=] (wayfire_toplevel_view view, bool state)
         {
@@ -455,7 +453,7 @@ class wayfire_wm_actions_t : public wf::plugin_interface_t,
         });
     };
 
-    wf::ipc::method_callback ipc_set_always_on_top = [=] (const nlohmann::json& js)
+    wf::ipc::method_callback ipc_set_always_on_top = [=] (const wf::ipc::json_wrapper_t& js)
     {
         return execute_for_view(js, [=] (wayfire_toplevel_view view, bool state)
         {
@@ -469,7 +467,7 @@ class wayfire_wm_actions_t : public wf::plugin_interface_t,
         });
     };
 
-    wf::ipc::method_callback ipc_set_fullscreen = [=] (const nlohmann::json& js)
+    wf::ipc::method_callback ipc_set_fullscreen = [=] (const wf::ipc::json_wrapper_t& js)
     {
         return execute_for_view(js, [=] (wayfire_toplevel_view view, bool state)
         {
@@ -477,7 +475,7 @@ class wayfire_wm_actions_t : public wf::plugin_interface_t,
         });
     };
 
-    wf::ipc::method_callback ipc_set_sticky = [=] (const nlohmann::json& js)
+    wf::ipc::method_callback ipc_set_sticky = [=] (const wf::ipc::json_wrapper_t& js)
     {
         return execute_for_view(js, [=] (wayfire_toplevel_view view, bool state)
         {
@@ -485,7 +483,7 @@ class wayfire_wm_actions_t : public wf::plugin_interface_t,
         });
     };
 
-    wf::ipc::method_callback ipc_send_to_back = [=] (const nlohmann::json& js)
+    wf::ipc::method_callback ipc_send_to_back = [=] (const wf::ipc::json_wrapper_t& js)
     {
         return execute_for_view(js, [=] (wayfire_toplevel_view view, bool state)
         {

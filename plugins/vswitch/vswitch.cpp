@@ -558,29 +558,29 @@ class wf_vswitch_global_plugin_t : public wf::per_output_plugin_t<vswitch>
         ipc_repo->unregister_method("vswitch/set-workspace");
     }
 
-    wf::ipc::method_callback request_workspace = [=] (const nlohmann::json& data)
+    wf::ipc::method_callback request_workspace = [=] (const wf::ipc::json_wrapper_t& data)
     {
-        WFJSON_EXPECT_FIELD(data, "x", number_unsigned);
-        WFJSON_EXPECT_FIELD(data, "y", number_unsigned);
-        WFJSON_EXPECT_FIELD(data, "output-id", number_unsigned);
-        WFJSON_OPTIONAL_FIELD(data, "view-id", number_unsigned);
+        uint64_t x = wf::ipc::json_get_uint64(data, "x");
+        uint64_t y = wf::ipc::json_get_uint64(data, "y");
+        uint64_t output_id = wf::ipc::json_get_uint64(data, "output-id");
+        std::optional<uint64_t> view_id = wf::ipc::json_get_optional_uint64(data, "view-id");
 
-        auto wo = wf::ipc::find_output_by_id(data["output-id"]);
+        auto wo = wf::ipc::find_output_by_id(output_id);
         if (!wo)
         {
             return wf::ipc::json_error("Invalid output!");
         }
 
         auto grid_size = wo->wset()->get_workspace_grid_size();
-        if ((data["x"] >= grid_size.width) || (data["y"] >= grid_size.height))
+        if ((int(data["x"]) >= grid_size.width) || (int(data["y"]) >= grid_size.height))
         {
             return wf::ipc::json_error("Workspace coordinates are too big!");
         }
 
         wayfire_toplevel_view switch_with_view;
-        if (data.contains("view-id"))
+        if (view_id.has_value())
         {
-            auto view = toplevel_cast(wf::ipc::find_view_by_id(data["view-id"]));
+            auto view = toplevel_cast(wf::ipc::find_view_by_id(view_id.value()));
             if (!view)
             {
                 return wf::ipc::json_error("Invalid view or view not toplevel!");
@@ -601,7 +601,7 @@ class wf_vswitch_global_plugin_t : public wf::per_output_plugin_t<vswitch>
 
         if (output_instance[wo]->set_capabilities(wf::CAPABILITY_MANAGE_COMPOSITOR))
         {
-            wf::point_t new_viewport = {data["x"], data["y"]};
+            wf::point_t new_viewport = {int(x), int(y)};
             wf::point_t cur_viewport = wo->wset()->get_current_workspace();
             wf::point_t delta = new_viewport - cur_viewport;
             output_instance[wo]->add_direction(delta, switch_with_view);

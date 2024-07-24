@@ -3,6 +3,7 @@
 #include "ipc-rules-common.hpp"
 #include <set>
 #include "plugins/ipc/ipc-method-repository.hpp"
+#include "wayfire/seat.hpp"
 #include <wayfire/per-output-plugin.hpp>
 
 namespace wf
@@ -33,7 +34,7 @@ class ipc_rules_events_methods_t : public wf::per_output_tracker_mixin_t<>
             }
         }
 
-        nlohmann::json data;
+        wf::ipc::json_wrapper_t data;
         data["event"]  = "output-added";
         data["output"] = output_to_json(output);
         send_event_to_subscribes(data, data["event"]);
@@ -41,7 +42,7 @@ class ipc_rules_events_methods_t : public wf::per_output_tracker_mixin_t<>
 
     void handle_output_removed(wf::output_t *output) override
     {
-        nlohmann::json data;
+        wf::ipc::json_wrapper_t data;
         data["event"]  = "output-removed";
         data["output"] = output_to_json(output);
         send_event_to_subscribes(data, data["event"]);
@@ -128,15 +129,20 @@ class ipc_rules_events_methods_t : public wf::per_output_tracker_mixin_t<>
     std::map<wf::ipc::client_interface_t*, std::set<std::string>> clients;
 
     wf::ipc::method_callback_full on_client_watch =
-        [=] (nlohmann::json data, wf::ipc::client_interface_t *client)
+        [=] (wf::ipc::json_wrapper_t data, wf::ipc::client_interface_t *client)
     {
         static constexpr const char *EVENTS = "events";
-        WFJSON_OPTIONAL_FIELD(data, EVENTS, array);
-        std::set<std::string> subscribed_to;
-        if (data.contains(EVENTS))
+        if (data.has_member(EVENTS) && !data[EVENTS].is_array())
         {
-            for (auto& sub : data[EVENTS])
+            return wf::ipc::json_error("Event list is not an array!");
+        }
+
+        std::set<std::string> subscribed_to;
+        if (data.has_member(EVENTS))
+        {
+            for (size_t i = 0; i < data[EVENTS].size(); i++)
             {
+                const auto& sub = data[EVENTS][i];
                 if (!sub.is_string())
                 {
                     return wf::ipc::json_error("Event list contains non-string entries!");
@@ -144,7 +150,7 @@ class ipc_rules_events_methods_t : public wf::per_output_tracker_mixin_t<>
 
                 if (signal_map.count(sub))
                 {
-                    subscribed_to.insert((std::string)sub);
+                    subscribed_to.insert(sub);
                 }
             }
         } else
@@ -177,13 +183,13 @@ class ipc_rules_events_methods_t : public wf::per_output_tracker_mixin_t<>
 
     void send_view_to_subscribes(wayfire_view view, std::string event_name)
     {
-        nlohmann::json event;
+        wf::ipc::json_wrapper_t event;
         event["event"] = event_name;
         event["view"]  = view_to_json(view);
         send_event_to_subscribes(event, event_name);
     }
 
-    void send_event_to_subscribes(const nlohmann::json& data, const std::string& event_name)
+    void send_event_to_subscribes(const wf::ipc::json_wrapper_t& data, const std::string& event_name)
     {
         for (auto& [client, events] : clients)
         {
@@ -207,7 +213,7 @@ class ipc_rules_events_methods_t : public wf::per_output_tracker_mixin_t<>
     wf::signal::connection_t<wf::view_set_output_signal> on_view_set_output =
         [=] (wf::view_set_output_signal *ev)
     {
-        nlohmann::json data;
+        wf::ipc::json_wrapper_t data;
         data["event"]  = "view-set-output";
         data["output"] = output_to_json(ev->output);
         data["view"]   = view_to_json(ev->view);
@@ -217,7 +223,7 @@ class ipc_rules_events_methods_t : public wf::per_output_tracker_mixin_t<>
     wf::signal::connection_t<wf::view_geometry_changed_signal> on_view_geometry_changed =
         [=] (wf::view_geometry_changed_signal *ev)
     {
-        nlohmann::json data;
+        wf::ipc::json_wrapper_t data;
         data["event"] = "view-geometry-changed";
         data["old-geometry"] = wf::ipc::geometry_to_json(ev->old_geometry);
         data["view"] = view_to_json(ev->view);
@@ -227,7 +233,7 @@ class ipc_rules_events_methods_t : public wf::per_output_tracker_mixin_t<>
     wf::signal::connection_t<wf::view_moved_to_wset_signal> on_view_moved_to_wset =
         [=] (wf::view_moved_to_wset_signal *ev)
     {
-        nlohmann::json data;
+        wf::ipc::json_wrapper_t data;
         data["event"]    = "view-wset-changed";
         data["old-wset"] = wset_to_json(ev->old_wset.get());
         data["new-wset"] = wset_to_json(ev->new_wset.get());
@@ -244,7 +250,7 @@ class ipc_rules_events_methods_t : public wf::per_output_tracker_mixin_t<>
     // Tiled rule handler.
     wf::signal::connection_t<wf::view_tiled_signal> _tiled = [=] (wf::view_tiled_signal *ev)
     {
-        nlohmann::json data;
+        wf::ipc::json_wrapper_t data;
         data["event"]     = "view-tiled";
         data["old-edges"] = ev->old_edges;
         data["new-edges"] = ev->new_edges;
@@ -273,7 +279,7 @@ class ipc_rules_events_methods_t : public wf::per_output_tracker_mixin_t<>
     wf::signal::connection_t<wf::view_change_workspace_signal> _view_workspace =
         [=] (wf::view_change_workspace_signal *ev)
     {
-        nlohmann::json data;
+        wf::ipc::json_wrapper_t data;
         data["event"] = "view-workspace-changed";
         data["from"]  = wf::ipc::point_to_json(ev->from);
         data["to"]    = wf::ipc::point_to_json(ev->to);
@@ -296,7 +302,7 @@ class ipc_rules_events_methods_t : public wf::per_output_tracker_mixin_t<>
     wf::signal::connection_t<wf::output_plugin_activated_changed_signal> on_plugin_activation_changed =
         [=] (wf::output_plugin_activated_changed_signal *ev)
     {
-        nlohmann::json data;
+        wf::ipc::json_wrapper_t data;
         data["event"]  = "plugin-activation-state-changed";
         data["plugin"] = ev->plugin_name;
         data["state"]  = ev->activated;
@@ -308,7 +314,7 @@ class ipc_rules_events_methods_t : public wf::per_output_tracker_mixin_t<>
     wf::signal::connection_t<wf::output_gain_focus_signal> on_output_gain_focus =
         [=] (wf::output_gain_focus_signal *ev)
     {
-        nlohmann::json data;
+        wf::ipc::json_wrapper_t data;
         data["event"]  = "output-gain-focus";
         data["output"] = output_to_json(ev->output);
         send_event_to_subscribes(data, data["event"]);
@@ -317,7 +323,7 @@ class ipc_rules_events_methods_t : public wf::per_output_tracker_mixin_t<>
     wf::signal::connection_t<wf::workspace_set_changed_signal> on_wset_changed =
         [=] (wf::workspace_set_changed_signal *ev)
     {
-        nlohmann::json data;
+        wf::ipc::json_wrapper_t data;
         data["event"]    = "output-wset-changed";
         data["new-wset"] = ev->new_wset ? (int)ev->new_wset->get_id() : -1;
         data["output"]   = ev->output ? (int)ev->output->get_id() : -1;
@@ -329,14 +335,15 @@ class ipc_rules_events_methods_t : public wf::per_output_tracker_mixin_t<>
     wf::signal::connection_t<wf::workspace_changed_signal> on_wset_workspace_changed =
         [=] (wf::workspace_changed_signal *ev)
     {
-        nlohmann::json data;
+        wf::ipc::json_wrapper_t data;
         data["event"] = "wset-workspace-changed";
         data["previous-workspace"] = wf::ipc::point_to_json(ev->old_viewport);
         data["new-workspace"] = wf::ipc::point_to_json(ev->new_viewport);
         data["output"] = ev->output ? (int)ev->output->get_id() : -1;
         data["wset"]   = (ev->output && ev->output->wset()) ? (int)ev->output->wset()->get_id() : -1;
         data["output-data"] = output_to_json(ev->output);
-        data["wset-data"]   = ev->output ? wset_to_json(ev->output->wset().get()) : nullptr;
+        data["wset-data"]   =
+            ev->output ? wset_to_json(ev->output->wset().get()) : ipc::json_wrapper_t::null();
         send_event_to_subscribes(data, data["event"]);
     };
 };

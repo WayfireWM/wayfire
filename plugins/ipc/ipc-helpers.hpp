@@ -1,5 +1,6 @@
 #pragma once
 
+#include "json-wrapper.hpp"
 #include "wayfire/geometry.hpp"
 #include <wayfire/output.hpp>
 #include <wayfire/view.hpp>
@@ -7,12 +8,50 @@
 #include <wayfire/core.hpp>
 #include <wayfire/output-layout.hpp>
 #include <wayfire/core.hpp>
-#include <nlohmann/json.hpp> // IWYU pragma: keep
 
 namespace wf
 {
 namespace ipc
 {
+#define WFJSON_GETTER_FUNCTION(type, ctype) \
+    inline ctype json_get_ ## type(const wf::ipc::json_wrapper_t& data, std::string field) \
+    { \
+        if (!data.has_member(field)) \
+        { \
+            throw ("Missing \"" + field + "\""); \
+        } \
+        else if (!data[field].is_ ## type()) \
+        { \
+            throw ("Field \"" + field + "\" does not have the correct type, expected " #type); \
+        } \
+\
+        return (ctype)data[field]; \
+    } \
+ \
+    inline std::optional<ctype> json_get_optional_ ## type(const wf::ipc::json_wrapper_t& data, \
+    std::string field) \
+    { \
+        if (!data.has_member(field)) \
+        { \
+            return {}; \
+        } \
+        else if (!data[field].is_ ## type()) \
+        { \
+            throw ("Field \"" + field + "\" does not have the correct type, expected " #type); \
+        } \
+\
+        return (ctype)data[field]; \
+    }
+
+WFJSON_GETTER_FUNCTION(int64, int64_t);
+WFJSON_GETTER_FUNCTION(uint64, uint64_t);
+WFJSON_GETTER_FUNCTION(double, double);
+WFJSON_GETTER_FUNCTION(string, std::string);
+WFJSON_GETTER_FUNCTION(bool, bool);
+
+#undef WFJSON_GETTER_FUNCTION
+
+
 inline wayfire_view find_view_by_id(uint32_t id)
 {
     for (auto view : wf::get_core().get_all_views())
@@ -52,9 +91,9 @@ inline wf::workspace_set_t *find_workspace_set_by_index(int32_t index)
     return nullptr;
 }
 
-inline nlohmann::json geometry_to_json(wf::geometry_t g)
+inline wf::ipc::json_wrapper_t geometry_to_json(wf::geometry_t g)
 {
-    nlohmann::json j;
+    wf::ipc::json_wrapper_t j;
     j["x"]     = g.x;
     j["y"]     = g.y;
     j["width"] = g.width;
@@ -62,16 +101,15 @@ inline nlohmann::json geometry_to_json(wf::geometry_t g)
     return j;
 }
 
-inline std::optional<wf::geometry_t> geometry_from_json(const nlohmann::json& j)
+#define CHECK(field, type) (j.has_member(field) && j[field].is_ ## type())
+
+inline std::optional<wf::geometry_t> geometry_from_json(const wf::ipc::json_wrapper_t& j)
 {
-#define CHECK(field, type) (j.contains(field) && j[field].is_number_ ## type())
-    if (!CHECK("x", integer) || !CHECK("y", integer) ||
-        !CHECK("width", unsigned) || !CHECK("height", unsigned))
+    if (!CHECK("x", int) || !CHECK("y", int) ||
+        !CHECK("width", int) || !CHECK("height", int))
     {
         return {};
     }
-
-#undef CHECK
 
     return wf::geometry_t{
         .x     = j["x"],
@@ -81,23 +119,20 @@ inline std::optional<wf::geometry_t> geometry_from_json(const nlohmann::json& j)
     };
 }
 
-inline nlohmann::json point_to_json(wf::point_t p)
+inline wf::ipc::json_wrapper_t point_to_json(wf::point_t p)
 {
-    nlohmann::json j;
+    wf::ipc::json_wrapper_t j;
     j["x"] = p.x;
     j["y"] = p.y;
     return j;
 }
 
-inline std::optional<wf::point_t> point_from_json(const nlohmann::json& j)
+inline std::optional<wf::point_t> point_from_json(const wf::ipc::json_wrapper_t& j)
 {
-#define CHECK(field, type) (j.contains(field) && j[field].is_number_ ## type())
-    if (!CHECK("x", integer) || !CHECK("y", integer))
+    if (!CHECK("x", int) || !CHECK("y", int))
     {
         return {};
     }
-
-#undef CHECK
 
     return wf::point_t{
         .x = j["x"],
@@ -105,28 +140,27 @@ inline std::optional<wf::point_t> point_from_json(const nlohmann::json& j)
     };
 }
 
-inline nlohmann::json dimensions_to_json(wf::dimensions_t d)
+inline wf::ipc::json_wrapper_t dimensions_to_json(wf::dimensions_t d)
 {
-    nlohmann::json j;
+    wf::ipc::json_wrapper_t j;
     j["width"]  = d.width;
     j["height"] = d.height;
     return j;
 }
 
-inline std::optional<wf::dimensions_t> dimensions_from_json(const nlohmann::json& j)
+inline std::optional<wf::dimensions_t> dimensions_from_json(const wf::ipc::json_wrapper_t& j)
 {
-#define CHECK(field, type) (j.contains(field) && j[field].is_number_ ## type())
-    if (!CHECK("width", integer) || !CHECK("height", integer))
+    if (!CHECK("width", int) || !CHECK("height", int))
     {
         return {};
     }
-
-#undef CHECK
 
     return wf::dimensions_t{
         .width  = j["width"],
         .height = j["height"],
     };
 }
+
+#undef CHECK
 }
 }

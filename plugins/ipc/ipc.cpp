@@ -9,6 +9,7 @@
 #include <sys/socket.h>
 #include <sys/ioctl.h>
 #include <unistd.h>
+#include <cstring>
 
 /**
  * Handle WL_EVENT_READABLE on the socket.
@@ -131,7 +132,7 @@ void wf::ipc::server_t::client_disappeared(client_t *client)
 }
 
 void wf::ipc::server_t::handle_incoming_message(
-    client_t *client, nlohmann::json message)
+    client_t *client, wf::ipc::json_wrapper_t message)
 {
     client->send_json(method_repository->call_method(message["method"], message["data"], client));
 }
@@ -249,18 +250,30 @@ void wf::ipc::client_t::handle_fd_incoming(uint32_t event_mask)
 
         // Finally, received the message, make sure we have a terminating NULL byte
         buffer[current_buffer_valid] = '\0';
-        char *str    = buffer.data() + HEADER_LEN;
-        auto message = nlohmann::json::parse(str, nullptr, false);
-        if (message.is_discarded())
+        char *str = buffer.data() + HEADER_LEN;
+
+        json_wrapper_t message;
+        auto err = json_wrapper_t::parse_string(std::string_view{str, len}, message);
+        if (err.has_value())
         {
-            LOGE("Client's message could not be parsed: ", str);
+            json_wrapper_t error;
+            error["error"] = std::string("Client's message could not be parsed, error: ") + *err;
+            LOGE((std::string)error["error"], ": ", str);
+            this->send_json(error);
             ipc->client_disappeared(this);
             return;
         }
 
-        if (!message.contains("method"))
+        if (!message.has_member("method") || !message["method"].is_string())
         {
-            LOGE("Client's message does not contain a method to be called!");
+            LOGI("Start");
+            json_wrapper_t error;
+            error["error"] = "Client's message does not contain a method to be called!";
+            LOGI("MID");
+            LOGE(error["error"].as_string());
+            LOGI("END");
+
+            this->send_json(error);
             ipc->client_disappeared(this);
             return;
         }
@@ -278,7 +291,7 @@ wf::ipc::client_t::~client_t()
     close(this->fd);
 }
 
-static bool write_exact(int fd, char *buf, ssize_t n)
+static bool write_exact(int fd, const char *buf, ssize_t n)
 {
     while (n > 0)
     {
@@ -295,18 +308,18 @@ static bool write_exact(int fd, char *buf, ssize_t n)
     return true;
 }
 
-bool wf::ipc::client_t::send_json(nlohmann::json json)
+bool wf::ipc::client_t::send_json(wf::ipc::json_wrapper_t json)
 {
-    std::string serialized = json.dump(-1, ' ', false, nlohmann::detail::error_handler_t::ignore);
-    if (serialized.length() > MAX_MESSAGE_LEN)
+    std::string buffer = json.serialize();
+    if (buffer.size() > MAX_MESSAGE_LEN)
     {
         LOGE("Error sending json to client: message too long!");
         shutdown(fd, SHUT_RDWR);
         return false;
     }
 
-    uint32_t len = serialized.length();
-    if (!write_exact(fd, (char*)&len, 4) || !write_exact(fd, serialized.data(), len))
+    uint32_t len = buffer.size();
+    if (!write_exact(fd, (char*)&len, 4) || !write_exact(fd, buffer.data(), len))
     {
         LOGE("Error sending json to client!");
         shutdown(fd, SHUT_RDWR);

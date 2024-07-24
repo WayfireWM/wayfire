@@ -42,9 +42,9 @@ class ipc_rules_utility_methods_t
         method_repository->unregister_method("wayfire/set-config-option");
     }
 
-    wf::ipc::method_callback get_wayfire_configuration_info = [=] (nlohmann::json)
+    wf::ipc::method_callback get_wayfire_configuration_info = [=] (wf::ipc::json_wrapper_t)
     {
-        nlohmann::json response;
+        wf::ipc::json_wrapper_t response;
 
         response["api-version"]    = WAYFIRE_API_ABI_VERSION;
         response["plugin-path"]    = PLUGIN_PATH;
@@ -56,10 +56,10 @@ class ipc_rules_utility_methods_t
         return response;
     };
 
-    wf::ipc::method_callback create_headless_output = [=] (const nlohmann::json& data)
+    wf::ipc::method_callback create_headless_output = [=] (const wf::ipc::json_wrapper_t& data)
     {
-        WFJSON_EXPECT_FIELD(data, "width", number_unsigned);
-        WFJSON_EXPECT_FIELD(data, "height", number_unsigned);
+        auto width  = wf::ipc::json_get_uint64(data, "width");
+        auto height = wf::ipc::json_get_uint64(data, "height");
 
         if (!headless_backend)
         {
@@ -69,7 +69,7 @@ class ipc_rules_utility_methods_t
             wlr_backend_start(headless_backend);
         }
 
-        auto handle = wlr_headless_add_output(headless_backend, data["width"], data["height"]);
+        auto handle = wlr_headless_add_output(headless_backend, width, height);
         auto wo     = wf::get_core().output_layout->find_output(handle);
         our_outputs.insert(wo->get_id());
 
@@ -78,45 +78,44 @@ class ipc_rules_utility_methods_t
         return response;
     };
 
-    wf::ipc::method_callback destroy_headless_output = [=] (const nlohmann::json& data)
+    wf::ipc::method_callback destroy_headless_output = [=] (const wf::ipc::json_wrapper_t& data)
     {
-        WFJSON_OPTIONAL_FIELD(data, "output", string);
-        WFJSON_OPTIONAL_FIELD(data, "output-id", number_unsigned);
+        auto output    = wf::ipc::json_get_optional_string(data, "output");
+        auto output_id = wf::ipc::json_get_optional_uint64(data, "output-id");
 
-        if (!data.count("output") && !data.count("output-id"))
+        if (!output.has_value() && !output_id.has_value())
         {
             return wf::ipc::json_error("Missing `output` or `output-id`!");
         }
 
-        wf::output_t *output = NULL;
-        if (data.count("output"))
+        wf::output_t *wo = NULL;
+        if (output.has_value())
         {
-            output = wf::get_core().output_layout->find_output(data["output"]);
-        } else if (data.count("output-id"))
+            wo = wf::get_core().output_layout->find_output(output.value());
+        } else if (output_id.has_value())
         {
-            output = wf::ipc::find_output_by_id(data["output-id"]);
+            wo = wf::ipc::find_output_by_id(output_id.value());
         }
 
-        if (!output)
+        if (!wo)
         {
             return wf::ipc::json_error("Output not found!");
         }
 
-        if (!our_outputs.count(output->get_id()))
+        if (!our_outputs.count(wo->get_id()))
         {
             return wf::ipc::json_error("Output is not a headless output created from an IPC command!");
         }
 
-        our_outputs.erase(output->get_id());
-        wlr_output_destroy(output->handle);
+        our_outputs.erase(wo->get_id());
+        wlr_output_destroy(wo->handle);
         return wf::ipc::json_ok();
     };
 
-    wf::ipc::method_callback get_config_option = [=] (const nlohmann::json& data)
+    wf::ipc::method_callback get_config_option = [=] (const wf::ipc::json_wrapper_t& data)
     {
-        WFJSON_EXPECT_FIELD(data, "option", string);
-
-        auto option = wf::get_core().config->get_option(data["option"]);
+        auto option_name = wf::ipc::json_get_string(data, "option");
+        auto option = wf::get_core().config->get_option(option_name);
         if (!option)
         {
             return wf::ipc::json_error("Option not found!");
@@ -128,17 +127,17 @@ class ipc_rules_utility_methods_t
         return response;
     };
 
-    std::string json_to_string(const nlohmann::json& data)
+    std::string json_to_string(const wf::ipc::json_wrapper_t& data)
     {
         if (data.is_string())
         {
             return data;
         }
 
-        return data.dump(-1, ' ', false, nlohmann::json::error_handler_t::ignore);
+        return data.serialize();
     }
 
-    std::optional<std::string> add_compound_entry(const nlohmann::json& entry,
+    std::optional<std::string> add_compound_entry(const wf::ipc::json_wrapper_t& entry,
         const std::string& entry_name,
         const wf::config::compound_option_t::entries_t& tuple_entries,
         std::vector<std::vector<std::string>>& values)
@@ -146,7 +145,7 @@ class ipc_rules_utility_methods_t
         values.emplace_back();
         values.back().push_back(entry_name);
 
-        if (!entry.is_structured() && (tuple_entries.size() == 1))
+        if (!entry.is_object() && (tuple_entries.size() == 1))
         {
             auto str_value = json_to_string(entry);
             if (!tuple_entries[0]->is_parsable(str_value))
@@ -177,7 +176,7 @@ class ipc_rules_utility_methods_t
         {
             for (size_t i = 0; i < tuple_entries.size(); i++)
             {
-                if (entry.contains(tuple_entries[i]->get_name()))
+                if (entry.has_member(tuple_entries[i]->get_name()))
                 {
                     auto str_value = json_to_string(entry[tuple_entries[i]->get_name()]);
                     if (!tuple_entries[i]->is_parsable(str_value))
@@ -202,7 +201,7 @@ class ipc_rules_utility_methods_t
         return {};
     }
 
-    std::optional<std::string> parse_compound_json(const nlohmann::json& data,
+    std::optional<std::string> parse_compound_json(const wf::ipc::json_wrapper_t& data,
         std::shared_ptr<config::compound_option_t> option)
     {
         std::vector<std::vector<std::string>> values;
@@ -211,19 +210,19 @@ class ipc_rules_utility_methods_t
 
         if (data.is_array())
         {
-            for (auto& entry : data)
+            for (size_t i = 0; i < data.size(); i++)
             {
                 std::string entry_name = "autogenerated" + std::to_string(counter++);
-                if (auto err = add_compound_entry(entry, entry_name, tuple_entries, values))
+                if (auto err = add_compound_entry(data[i], entry_name, tuple_entries, values))
                 {
                     return err;
                 }
             }
         } else if (data.is_object())
         {
-            for (auto& [key, tuple_items] : data.items())
+            for (auto& key : data.get_member_names())
             {
-                if (auto err = add_compound_entry(tuple_items, key, tuple_entries, values))
+                if (auto err = add_compound_entry(data[key], key, tuple_entries, values))
                 {
                     return err;
                 }
@@ -237,14 +236,15 @@ class ipc_rules_utility_methods_t
         return {};
     }
 
-    wf::ipc::method_callback set_config_options = [=] (const nlohmann::json& data) -> nlohmann::json
+    wf::ipc::method_callback set_config_options = [=] (const wf::ipc::json_wrapper_t& data)
+        -> ipc::json_wrapper_t
     {
         if (!data.is_object())
         {
             return wf::ipc::json_error("Options must be an object!");
         }
 
-        for (auto& [option, value] : data.items())
+        for (auto& option : data.get_member_names())
         {
             auto opt = wf::get_core().config->get_option(option);
             if (!opt)
@@ -254,17 +254,17 @@ class ipc_rules_utility_methods_t
 
             if (auto compound = std::dynamic_pointer_cast<wf::config::compound_option_t>(opt))
             {
-                auto error = parse_compound_json(value, compound);
+                auto error = parse_compound_json(data[option], compound);
                 if (error.has_value())
                 {
                     return wf::ipc::json_error(option + ": " + error.value());
                 }
             } else
             {
-                if (!opt->set_value_str(json_to_string(value)))
+                if (!opt->set_value_str(json_to_string(data[option])))
                 {
                     return wf::ipc::json_error(option + ": Invalid value for option " +
-                        std::string(json_to_string(value)) + "!");
+                        std::string(json_to_string(data[option])) + "!");
                 }
             }
 

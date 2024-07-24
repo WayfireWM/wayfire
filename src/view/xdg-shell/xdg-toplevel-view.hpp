@@ -1,3 +1,5 @@
+#pragma once
+
 #include "view/toplevel-node.hpp"
 #include "wayfire/geometry.hpp"
 #include <wayfire/view.hpp>
