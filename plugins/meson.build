@@ -1,5 +1,3 @@
-subdir('common')
-
 if get_option('custom_pch')
   # Add a workaround for https://github.com/mesonbuild/meson/issues/4350
   # We create a PCH ourselves and manage it for all plugins.
@@ -50,6 +48,8 @@ else
   plugin_pch_args = []
   plugin_pch_dep = declare_dependency()
 endif
+
+subdir('common')
 
 subdir('ipc')
 subdir('protocols')
