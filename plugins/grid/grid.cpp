@@ -102,7 +102,15 @@ class wayfire_grid : public wf::plugin_interface_t, public wf::per_output_tracke
                 return false;
             });
         }
+
+        wf::get_core().connect(&grid_request_signal_cb);
     }
+
+    wf::signal::connection_t<wf::grid::grid_request_signal> grid_request_signal_cb =
+        [=] (wf::grid::grid_request_signal *ev)
+    {
+        ev->carried_out = true;
+    };
 
     void handle_new_output(wf::output_t *output) override
     {

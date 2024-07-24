@@ -490,7 +490,16 @@ class wayfire_move : public wf::per_output_plugin_instance_t,
             slot.preview = nullptr;
         }
 
-        slot.slot_id = new_slot_id;
+        wf::grid::grid_request_signal grid_signal;
+        wf::get_core().emit(&grid_signal);
+
+        if (grid_signal.carried_out || (new_slot_id == wf::grid::slot_t::SLOT_CENTER))
+        {
+            slot.slot_id = new_slot_id;
+        } else
+        {
+            slot.slot_id = new_slot_id = wf::grid::slot_t::SLOT_NONE;
+        }
 
         /* Show a preview overlay */
         if (new_slot_id)

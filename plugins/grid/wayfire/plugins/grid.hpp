@@ -9,6 +9,18 @@ namespace wf
 namespace grid
 {
 /**
+ * name: request
+ * on: core
+ * when: Emitted before move renders a grid indicator and sets the slot.
+ * carried_out: true if a plugin can handle move request to grid.
+ */
+struct grid_request_signal
+{
+    /* True if a plugin handled this signal */
+    bool carried_out = false;
+};
+
+/**
  * The slot where a view can be placed with grid.
  * BL = bottom-left, TR = top-right, etc.
  */
