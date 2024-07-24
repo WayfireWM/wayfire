@@ -9,7 +9,8 @@ all_include_dirs = [wayfire_api_inc, wayfire_conf_inc, plugins_common_inc, vswit
 all_deps = [wlroots, pixman, wfconfig, wftouch, cairo, pango, pangocairo, json, plugin_pch_dep]
 
 extra_libs = {
-    'expo': [workspace_wall],
+    'move': [move_drag_interface],
+    'expo': [workspace_wall, move_drag_interface],
     'vswipe': [workspace_wall],
 }
 

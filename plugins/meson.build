@@ -49,6 +49,7 @@ else
   plugin_pch_dep = declare_dependency()
 endif
 
+wobbly_inc = include_directories('wobbly/')
 subdir('common')
 
 subdir('ipc')

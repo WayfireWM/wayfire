@@ -8,5 +8,4 @@ wobbly = shared_module('wobbly',
                        install: true,
                        install_dir: join_paths(get_option('libdir'), 'wayfire'))
 
-wobbly_inc = include_directories('.')
 install_headers(['wayfire/plugins/wobbly/wobbly-signal.hpp'], subdir: 'wayfire/plugins/wobbly')

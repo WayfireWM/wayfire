@@ -4,6 +4,7 @@ all_deps = [wlroots, pixman, wfconfig, wftouch, cairo, pango, pangocairo, json, 
 shared_module('scale', ['scale.cpp', 'scale-title-overlay.cpp'],
         include_directories: all_include_dirs,
         dependencies: all_deps,
+        link_with: [move_drag_interface],
         install: true,
         install_dir: conf_data.get('PLUGIN_PATH'))
 

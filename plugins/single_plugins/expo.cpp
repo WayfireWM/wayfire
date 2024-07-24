@@ -12,6 +12,7 @@
 #include <wayfire/core.hpp>
 #include <wayfire/output-layout.hpp>
 #include <wayfire/debug.hpp>
+#include "wayfire/plugins/wobbly/wobbly-signal.hpp"
 
 #include <wayfire/plugins/common/workspace-wall.hpp>
 #include <wayfire/plugins/common/geometry-animation.hpp>

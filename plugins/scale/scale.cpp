@@ -16,6 +16,7 @@
 #include <wayfire/touch/touch.hpp>
 #include <wayfire/plugins/scale-signal.hpp>
 #include <wayfire/plugins/wobbly/wobbly-signal.hpp>
+#include <wayfire/window-manager.hpp>
 
 #include <wayfire/plugins/common/move-drag-interface.hpp>
 #include <wayfire/plugins/common/shared-core-data.hpp>

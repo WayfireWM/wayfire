@@ -2,6 +2,13 @@
 #include "wayfire/scene-input.hpp"
 #include "wayfire/scene-operations.hpp"
 #include "wayfire/workspace-stream.hpp"
+#include "wayfire/opengl.hpp"
+#include "wayfire/scene-render.hpp"
+#include "wayfire/scene.hpp"
+#include "wayfire/region.hpp"
+#include "wayfire/core.hpp"
+
+#include <glm/gtc/matrix_transform.hpp>
 
 namespace wf
 {
