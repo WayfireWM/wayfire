@@ -14,6 +14,7 @@ namespace detail
 void option_wrapper_debug_message(const std::string& option_name, const std::runtime_error& err);
 [[noreturn]]
 void option_wrapper_debug_message(const std::string& option_name, const std::logic_error& err);
+std::shared_ptr<config::option_base_t> load_raw_option(const std::string& name);
 }
 
 /**
@@ -49,9 +50,9 @@ class option_wrapper_t : public base_option_wrapper_t<Type>
     {}
 
   protected:
-    std::shared_ptr<config::option_base_t> load_raw_option(const std::string& name)
+    std::shared_ptr<wf::config::option_base_t> load_raw_option(const std::string& name) override
     {
-        return wf::get_core().config.get_option(name);
+        return detail::load_raw_option(name);
     }
 };
 

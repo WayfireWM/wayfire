@@ -8,6 +8,7 @@
 #include <wayfire/nonstd/wlroots-full.hpp>
 #include <wayfire/output-layout.hpp>
 #include <wayfire/config/compound-option.hpp>
+#include <wayfire/config/config-manager.hpp>
 
 extern "C" {
 #include <wlr/backend/headless.h>
@@ -115,7 +116,7 @@ class ipc_rules_utility_methods_t
     {
         WFJSON_EXPECT_FIELD(data, "option", string);
 
-        auto option = wf::get_core().config.get_option(data["option"]);
+        auto option = wf::get_core().config->get_option(data["option"]);
         if (!option)
         {
             return wf::ipc::json_error("Option not found!");
@@ -245,7 +246,7 @@ class ipc_rules_utility_methods_t
 
         for (auto& [option, value] : data.items())
         {
-            auto opt = wf::get_core().config.get_option(option);
+            auto opt = wf::get_core().config->get_option(option);
             if (!opt)
             {
                 return wf::ipc::json_error(option + ": Option not found!");

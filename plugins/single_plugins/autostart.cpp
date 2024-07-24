@@ -2,6 +2,7 @@
 #include <wayfire/core.hpp>
 #include <wayfire/util/log.hpp>
 #include <wayfire/option-wrapper.hpp>
+#include <wayfire/config/config-manager.hpp>
 #include <config.h>
 
 class wayfire_autostart : public wf::plugin_interface_t
@@ -14,7 +15,7 @@ class wayfire_autostart : public wf::plugin_interface_t
     void init() override
     {
         /* Run only once, at startup */
-        auto section = wf::get_core().config.get_section("autostart");
+        auto section = wf::get_core().config->get_section("autostart");
 
         bool panel_manually_started = false;
         bool background_manually_started = false;

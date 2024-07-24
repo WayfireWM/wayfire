@@ -420,7 +420,7 @@ int main(int argc, char *argv[])
 
     LOGD("Using configuration backend: ", config_backend);
     core.config_backend = std::unique_ptr<wf::config_backend_t>(backend);
-    core.config_backend->init(display, core.config, config_file);
+    core.config_backend->init(display, *core.config, config_file);
     core.init();
 
     auto socket = choose_socket(core.display);
