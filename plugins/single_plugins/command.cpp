@@ -1,3 +1,4 @@
+#include "plugins/ipc/ipc-helpers.hpp"
 #include "wayfire/bindings.hpp"
 #include "wayfire/plugin.hpp"
 #include "wayfire/plugins/common/shared-core-data.hpp"
@@ -316,34 +317,32 @@ class wayfire_command : public wf::plugin_interface_t
     }
 
     wf::ipc::method_callback_full on_register_binding =
-        [&] (const nlohmann::json& js, wf::ipc::client_interface_t *client)
+        [&] (const Json::Value& js, wf::ipc::client_interface_t *client)
     {
-        WFJSON_EXPECT_FIELD(js, "binding", string);
-        WFJSON_OPTIONAL_FIELD(js, "mode", string);
-        WFJSON_OPTIONAL_FIELD(js, "exec-always", boolean);
-        WFJSON_OPTIONAL_FIELD(js, "call-method", string);
-        WFJSON_OPTIONAL_FIELD(js, "command", string);
+        auto binding_str = wf::ipc::json_get_string(js, "binding");
+        auto mode_str    = wf::ipc::json_get_optional_string(js, "mode");
+        auto exec_always = wf::ipc::json_get_optional_bool(js, "exec-always").value_or(false);
+        auto call_method = wf::ipc::json_get_optional_string(js, "call-method");
+        auto command     = wf::ipc::json_get_optional_string(js, "command");
 
-        if (js.contains("call-method") && !js.contains("call-data"))
+        if (call_method.has_value() && !js.isMember("call-data"))
         {
             return wf::ipc::json_error("call-method requires call-data!");
         }
 
-        auto binding = wf::option_type::from_string<wf::activatorbinding_t>(js["binding"]);
+        auto binding = wf::option_type::from_string<wf::activatorbinding_t>(binding_str);
         if (!binding)
         {
             return wf::ipc::json_error("Invalid binding!");
         }
 
-        bool exec_always = js.contains("exec-always") && js["exec-always"];
-
         binding_mode mode = BINDING_NORMAL;
-        if (js.contains("mode"))
+        if (mode_str.has_value())
         {
-            if (js["mode"] == "release")
+            if (mode_str == "release")
             {
                 mode = BINDING_RELEASE;
-            } else if (js["mode"] == "repeat")
+            } else if (mode_str == "repeat")
             {
                 mode = BINDING_REPEAT;
             } else
@@ -359,22 +358,22 @@ class wayfire_command : public wf::plugin_interface_t
         wf::activator_callback act_callback;
         bool temporary_binding = false;
 
-        if (js.contains("call-method"))
+        if (call_method.has_value())
         {
             act_callback = [=] (const wf::activator_data_t& data)
             {
                 return on_binding([js, this] ()
                 {
-                    method_repository->call_method(js["call-method"], js["call-data"]);
+                    method_repository->call_method(js["call-method"].asString(), js["call-data"]);
                 }, mode, exec_always, data);
             };
-        } else if (js.contains("command"))
+        } else if (command.has_value())
         {
             act_callback = [=] (const wf::activator_data_t& data)
             {
                 return on_binding([js] ()
                 {
-                    wf::get_core().run(js["command"]);
+                    wf::get_core().run(js["command"].asString());
                 }, mode, exec_always, data);
             };
         } else
@@ -384,7 +383,7 @@ class wayfire_command : public wf::plugin_interface_t
             {
                 return on_binding([client, id] ()
                 {
-                    nlohmann::json event;
+                    Json::Value event;
                     event["event"] = "command-binding";
                     event["binding-id"] = id;
                     client->send_json(event);
@@ -396,17 +395,17 @@ class wayfire_command : public wf::plugin_interface_t
         ipc_bindings.back().client   = temporary_binding ? client : NULL;
         wf::get_core().bindings->add_activator(wf::create_option(*binding), &ipc_bindings.back().callback);
 
-        nlohmann::json response = wf::ipc::json_ok();
+        Json::Value response = wf::ipc::json_ok();
         response["binding-id"] = id;
         return response;
     };
 
-    wf::ipc::method_callback on_unregister_binding = [&] (const nlohmann::json& js)
+    wf::ipc::method_callback on_unregister_binding = [&] (const Json::Value& js)
     {
-        WFJSON_EXPECT_FIELD(js, "binding-id", number_integer);
+        auto binding_id = wf::ipc::json_get_uint64(js, "binding-id");
         ipc_bindings.remove_if([&] (const ipc_binding_t& binding)
         {
-            if (binding_to_id(binding) == js["binding-id"])
+            if (binding_to_id(binding) == binding_id)
             {
                 wf::get_core().bindings->rem_binding((void*)&binding.callback);
                 return true;
@@ -432,7 +431,7 @@ class wayfire_command : public wf::plugin_interface_t
         });
     }
 
-    wf::ipc::method_callback on_clear_ipc_bindings = [&] (const nlohmann::json& js)
+    wf::ipc::method_callback on_clear_ipc_bindings = [&] (const Json::Value& js)
     {
         clear_ipc_bindings([&] (const ipc_binding_t& binding)
         {

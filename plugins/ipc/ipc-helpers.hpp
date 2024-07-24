@@ -1,18 +1,56 @@
 #pragma once
 
 #include "wayfire/geometry.hpp"
+#include <json/value.h>
 #include <wayfire/output.hpp>
 #include <wayfire/view.hpp>
 #include <wayfire/workspace-set.hpp>
 #include <wayfire/core.hpp>
 #include <wayfire/output-layout.hpp>
 #include <wayfire/core.hpp>
-#include <nlohmann/json.hpp> // IWYU pragma: keep
 
 namespace wf
 {
 namespace ipc
 {
+#define WFJSON_GETTER_FUNCTION(type, suffix, rtype) \
+    inline rtype json_get_ ## suffix(const Json::Value& data, std::string field) \
+    { \
+        if (!data.isMember(field)) \
+        { \
+            throw ("Missing \"" + field + "\""); \
+        } \
+        else if (!data[field].is ## type()) \
+        { \
+            throw ("Field \"" + field + "\" does not have the correct type, expected " #type); \
+        } \
+\
+        return data[field].as ## type(); \
+    } \
+ \
+    inline std::optional<rtype> json_get_optional_ ## suffix(const Json::Value& data, std::string field) \
+    { \
+        if (!data.isMember(field)) \
+        { \
+            return {}; \
+        } \
+        else if (!data[field].is ## type()) \
+        { \
+            throw ("Field \"" + field + "\" does not have the correct type, expected " #type); \
+        } \
+\
+        return data[field].as ## type(); \
+    }
+
+WFJSON_GETTER_FUNCTION(Int64, int64, int64_t);
+WFJSON_GETTER_FUNCTION(UInt64, uint64, uint64_t);
+WFJSON_GETTER_FUNCTION(Double, f64, double);
+WFJSON_GETTER_FUNCTION(String, string, std::string);
+WFJSON_GETTER_FUNCTION(Bool, bool, bool);
+
+#undef WFJSON_GETTER_FUNCTION
+
+
 inline wayfire_view find_view_by_id(uint32_t id)
 {
     for (auto view : wf::get_core().get_all_views())
@@ -52,9 +90,9 @@ inline wf::workspace_set_t *find_workspace_set_by_index(int32_t index)
     return nullptr;
 }
 
-inline nlohmann::json geometry_to_json(wf::geometry_t g)
+inline Json::Value geometry_to_json(wf::geometry_t g)
 {
-    nlohmann::json j;
+    Json::Value j;
     j["x"]     = g.x;
     j["y"]     = g.y;
     j["width"] = g.width;
@@ -62,11 +100,11 @@ inline nlohmann::json geometry_to_json(wf::geometry_t g)
     return j;
 }
 
-inline std::optional<wf::geometry_t> geometry_from_json(const nlohmann::json& j)
+inline std::optional<wf::geometry_t> geometry_from_json(const Json::Value& j)
 {
-#define CHECK(field, type) (j.contains(field) && j[field].is_number_ ## type())
-    if (!CHECK("x", integer) || !CHECK("y", integer) ||
-        !CHECK("width", unsigned) || !CHECK("height", unsigned))
+#define CHECK(field, type) (j.isMember(field) && j[field].is ## type())
+    if (!CHECK("x", Int) || !CHECK("y", Int) ||
+        !CHECK("width", Int) || !CHECK("height", Int))
     {
         return {};
     }
@@ -74,25 +112,25 @@ inline std::optional<wf::geometry_t> geometry_from_json(const nlohmann::json& j)
 #undef CHECK
 
     return wf::geometry_t{
-        .x     = j["x"],
-        .y     = j["y"],
-        .width = j["width"],
-        .height = j["height"],
+        .x     = j["x"].asInt(),
+        .y     = j["y"].asInt(),
+        .width = j["width"].asInt(),
+        .height = j["height"].asInt(),
     };
 }
 
-inline nlohmann::json point_to_json(wf::point_t p)
+inline Json::Value point_to_json(wf::point_t p)
 {
-    nlohmann::json j;
+    Json::Value j;
     j["x"] = p.x;
     j["y"] = p.y;
     return j;
 }
 
-inline std::optional<wf::point_t> point_from_json(const nlohmann::json& j)
+inline std::optional<wf::point_t> point_from_json(const Json::Value& j)
 {
-#define CHECK(field, type) (j.contains(field) && j[field].is_number_ ## type())
-    if (!CHECK("x", integer) || !CHECK("y", integer))
+#define CHECK(field, type) (j.isMember(field) && j[field].is ## type())
+    if (!CHECK("x", Int) || !CHECK("y", Int))
     {
         return {};
     }
@@ -100,23 +138,23 @@ inline std::optional<wf::point_t> point_from_json(const nlohmann::json& j)
 #undef CHECK
 
     return wf::point_t{
-        .x = j["x"],
-        .y = j["y"],
+        .x = j["x"].asInt(),
+        .y = j["y"].asInt(),
     };
 }
 
-inline nlohmann::json dimensions_to_json(wf::dimensions_t d)
+inline Json::Value dimensions_to_json(wf::dimensions_t d)
 {
-    nlohmann::json j;
+    Json::Value j;
     j["width"]  = d.width;
     j["height"] = d.height;
     return j;
 }
 
-inline std::optional<wf::dimensions_t> dimensions_from_json(const nlohmann::json& j)
+inline std::optional<wf::dimensions_t> dimensions_from_json(const Json::Value& j)
 {
-#define CHECK(field, type) (j.contains(field) && j[field].is_number_ ## type())
-    if (!CHECK("width", integer) || !CHECK("height", integer))
+#define CHECK(field, type) (j.isMember(field) && j[field].is ## type())
+    if (!CHECK("width", Int) || !CHECK("height", Int))
     {
         return {};
     }
@@ -124,8 +162,8 @@ inline std::optional<wf::dimensions_t> dimensions_from_json(const nlohmann::json
 #undef CHECK
 
     return wf::dimensions_t{
-        .width  = j["width"],
-        .height = j["height"],
+        .width  = j["width"].asInt(),
+        .height = j["height"].asInt(),
     };
 }
 }

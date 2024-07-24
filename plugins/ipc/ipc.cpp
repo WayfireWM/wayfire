@@ -10,6 +10,9 @@
 #include <sys/ioctl.h>
 #include <unistd.h>
 
+#include <json/reader.h>
+#include <json/writer.h>
+
 /**
  * Handle WL_EVENT_READABLE on the socket.
  * Indicates a new connection.
@@ -131,9 +134,9 @@ void wf::ipc::server_t::client_disappeared(client_t *client)
 }
 
 void wf::ipc::server_t::handle_incoming_message(
-    client_t *client, nlohmann::json message)
+    client_t *client, Json::Value message)
 {
-    client->send_json(method_repository->call_method(message["method"], message["data"], client));
+    client->send_json(method_repository->call_method(message["method"].asString(), message["data"], client));
 }
 
 /* --------------------------- Per-client code ------------------------------*/
@@ -249,16 +252,19 @@ void wf::ipc::client_t::handle_fd_incoming(uint32_t event_mask)
 
         // Finally, received the message, make sure we have a terminating NULL byte
         buffer[current_buffer_valid] = '\0';
-        char *str    = buffer.data() + HEADER_LEN;
-        auto message = nlohmann::json::parse(str, nullptr, false);
-        if (message.is_discarded())
+        char *str = buffer.data() + HEADER_LEN;
+
+        Json::Reader reader;
+        Json::Value message;
+
+        if (!reader.parse(str, message, false))
         {
             LOGE("Client's message could not be parsed: ", str);
             ipc->client_disappeared(this);
             return;
         }
 
-        if (!message.contains("method"))
+        if (!message.isMember("method") || !message["method"].isString())
         {
             LOGE("Client's message does not contain a method to be called!");
             ipc->client_disappeared(this);
@@ -295,9 +301,10 @@ static bool write_exact(int fd, char *buf, ssize_t n)
     return true;
 }
 
-void wf::ipc::client_t::send_json(nlohmann::json json)
+void wf::ipc::client_t::send_json(Json::Value json)
 {
-    std::string serialized = json.dump(-1, ' ', false, nlohmann::detail::error_handler_t::ignore);
+    Json::FastWriter writer;
+    std::string serialized = writer.write(json);
     if (serialized.length() > MAX_MESSAGE_LEN)
     {
         LOGE("Error sending json to client: message too long!");

@@ -1,6 +1,6 @@
 #pragma once
 
-#include <nlohmann/json.hpp> // IWYU pragma: keep
+#include <json/value.h>
 #include <functional>
 #include <map>
 #include "wayfire/signal-provider.hpp"
@@ -16,7 +16,7 @@ namespace ipc
 class client_interface_t
 {
   public:
-    virtual void send_json(nlohmann::json json) = 0;
+    virtual void send_json(Json::Value json) = 0;
     virtual ~client_interface_t() = default;
 };
 
@@ -32,12 +32,12 @@ struct client_disconnected_signal
  * An IPC method has a name and a callback. The callback is a simple function which takes a json object which
  * contains the method's parameters and returns the result of the operation.
  */
-using method_callback = std::function<nlohmann::json(nlohmann::json)>;
+using method_callback = std::function<Json::Value(Json::Value)>;
 
 /**
  * Same as @method_callback, but also supports getting information about the connected ipc client.
  */
-using method_callback_full = std::function<nlohmann::json(nlohmann::json, client_interface_t*)>;
+using method_callback_full = std::function<Json::Value(Json::Value, client_interface_t*)>;
 
 /**
  * The IPC method repository keeps track of all registered IPC methods. It can be used even without the IPC
@@ -63,7 +63,7 @@ class method_repository_t : public wf::signal::provider_t
      */
     void register_method(std::string method, method_callback handler)
     {
-        this->methods[method] = [handler] (const nlohmann::json& data, client_interface_t*)
+        this->methods[method] = [handler] (const Json::Value& data, client_interface_t*)
         {
             return handler(data);
         };
@@ -81,7 +81,7 @@ class method_repository_t : public wf::signal::provider_t
      * Call an IPC method with the given name and given parameters.
      * If the method was not registered, a JSON object containing an error will be returned.
      */
-    nlohmann::json call_method(std::string method, nlohmann::json data,
+    Json::Value call_method(std::string method, Json::Value data,
         client_interface_t *client = nullptr)
     {
         if (this->methods.count(method))
@@ -98,11 +98,11 @@ class method_repository_t : public wf::signal::provider_t
     {
         register_method("list-methods", [this] (auto)
         {
-            nlohmann::json response;
-            response["methods"] = nlohmann::json::array();
+            Json::Value response;
+            response["methods"] = Json::arrayValue;
             for (auto& [method, _] : methods)
             {
-                response["methods"].push_back(method);
+                response["methods"].append(method);
             }
 
             return response;
@@ -114,35 +114,18 @@ class method_repository_t : public wf::signal::provider_t
 };
 
 // A few helper definitions for IPC method implementations.
-inline nlohmann::json json_ok()
+inline Json::Value json_ok()
 {
-    return nlohmann::json{
-        {"result", "ok"}
-    };
+    Json::Value r;
+    r["result"] = "ok";
+    return r;
 }
 
-inline nlohmann::json json_error(std::string msg)
+inline Json::Value json_error(std::string msg)
 {
-    return nlohmann::json{
-        {"error", std::string(msg)}
-    };
+    Json::Value r;
+    r["error"] = msg;
+    return r;
 }
-
-#define WFJSON_EXPECT_FIELD(data, field, type) \
-    if (!data.count(field)) \
-    { \
-        return wf::ipc::json_error("Missing \"" field "\""); \
-    } \
-    else if (!data[field].is_ ## type()) \
-    { \
-        return wf::ipc::json_error("Field \"" field "\" does not have the correct type " #type); \
-    }
-
-#define WFJSON_OPTIONAL_FIELD(data, field, type) \
-    if (data.count(field) && !data[field].is_ ## type()) \
-    { \
-        return wf::ipc::json_error("Field \"" + std::string(field) + \
-    "\" does not have the correct type " #type); \
-    }
 }
 }

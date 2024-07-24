@@ -1,4 +1,5 @@
 #pragma once
+#include "plugins/ipc/ipc-helpers.hpp"
 #include "plugins/ipc/ipc-method-repository.hpp"
 #include "wayfire/core.hpp"
 #include "wayfire/debug.hpp"
@@ -49,34 +50,34 @@ class ipc_rules_input_methods_t
         }
     }
 
-    wf::ipc::method_callback list_input_devices = [&] (const nlohmann::json&)
+    wf::ipc::method_callback list_input_devices = [&] (const Json::Value&)
     {
-        auto response = nlohmann::json::array();
+        Json::Value response = Json::arrayValue;
         for (auto& device : wf::get_core().get_input_devices())
         {
-            nlohmann::json d;
+            Json::Value d;
             d["id"]     = (intptr_t)device->get_wlr_handle();
             d["name"]   = nonull(device->get_wlr_handle()->name);
             d["vendor"] = device->get_wlr_handle()->vendor;
             d["product"] = device->get_wlr_handle()->product;
             d["type"]    = wlr_input_device_type_to_string(device->get_wlr_handle()->type);
             d["enabled"] = device->is_enabled();
-            response.push_back(d);
+            response.append(d);
         }
 
         return response;
     };
 
-    wf::ipc::method_callback configure_input_device = [&] (const nlohmann::json& data)
+    wf::ipc::method_callback configure_input_device = [&] (const Json::Value& data)
     {
-        WFJSON_EXPECT_FIELD(data, "id", number_unsigned);
-        WFJSON_EXPECT_FIELD(data, "enabled", boolean);
+        auto id = wf::ipc::json_get_int64(data, "id");
+        auto enabled = wf::ipc::json_get_bool(data, "enabled");
 
         for (auto& device : wf::get_core().get_input_devices())
         {
-            if ((intptr_t)device->get_wlr_handle() == data["id"])
+            if ((intptr_t)device->get_wlr_handle() == id)
             {
-                device->set_enabled(data["enabled"]);
+                device->set_enabled(enabled);
 
                 return wf::ipc::json_ok();
             }

@@ -22,10 +22,10 @@ struct json_builder_data_t
 /**
  * Get a json description of the given tiling tree.
  */
-inline nlohmann::json tree_to_json(const std::unique_ptr<tree_node_t>& root, const wf::point_t& offset,
+inline Json::Value tree_to_json(const std::unique_ptr<tree_node_t>& root, const wf::point_t& offset,
     double rel_size = 1.0)
 {
-    nlohmann::json js;
+    Json::Value js;
     js["percent"]  = rel_size;
     js["geometry"] = wf::ipc::geometry_to_json(root->geometry - offset);
     if (auto view = root->as_view_node())
@@ -37,12 +37,12 @@ inline nlohmann::json tree_to_json(const std::unique_ptr<tree_node_t>& root, con
     auto split = root->as_split_node();
     wf::dassert(split != nullptr, "Expected to be split node");
 
-    nlohmann::json children = nlohmann::json::array();
+    Json::Value children = Json::arrayValue;
     if (split->get_split_direction() == SPLIT_HORIZONTAL)
     {
         for (auto& child : split->children)
         {
-            children.push_back(
+            children.append(
                 tree_to_json(child, offset, 1.0 * child->geometry.height / split->geometry.height));
         }
 
@@ -51,7 +51,7 @@ inline nlohmann::json tree_to_json(const std::unique_ptr<tree_node_t>& root, con
     {
         for (auto& child : split->children)
         {
-            children.push_back(tree_to_json(
+            children.append(tree_to_json(
                 child, offset, 1.0 * child->geometry.width / split->geometry.width));
         }
 
@@ -65,10 +65,10 @@ inline nlohmann::json tree_to_json(const std::unique_ptr<tree_node_t>& root, con
  * Go over the json description and verify that it is a valid tiling tree.
  * @return An error message if the tree is invalid.
  */
-inline std::optional<std::string> verify_json_tree(nlohmann::json& json, json_builder_data_t& data,
+inline std::optional<std::string> verify_json_tree(Json::Value& json, json_builder_data_t& data,
     const wf::dimensions_t& available_geometry)
 {
-    if (!json.is_object())
+    if (!json.isObject())
     {
         return "JSON Tree structure is wrong!";
     }
@@ -81,17 +81,17 @@ inline std::optional<std::string> verify_json_tree(nlohmann::json& json, json_bu
 
     json["width"]  = available_geometry.width;
     json["height"] = available_geometry.height;
-    if (json.count("view-id"))
+    if (json.isMember("view-id"))
     {
-        if (!json["view-id"].is_number_unsigned())
+        if (!json["view-id"].isUInt64())
         {
             return "view-id should be unsigned integer!";
         }
 
-        auto view = toplevel_cast(wf::ipc::find_view_by_id(json["view-id"]));
+        auto view = toplevel_cast(wf::ipc::find_view_by_id(json["view-id"].asUInt()));
         if (!view)
         {
-            return "No view found with id " + std::to_string((uint32_t)json["view-id"]);
+            return "No view found with id " + std::to_string((uint32_t)json["view-id"].asUInt());
         }
 
         if (!view->toplevel()->pending().mapped)
@@ -109,8 +109,8 @@ inline std::optional<std::string> verify_json_tree(nlohmann::json& json, json_bu
         return {};
     }
 
-    const bool is_horiz_split = json.count("horizontal-split") && json["horizontal-split"].is_array();
-    const bool is_vert_split  = json.count("vertical-split") && json["vertical-split"].is_array();
+    const bool is_horiz_split = json.isMember("horizontal-split") && json["horizontal-split"].isArray();
+    const bool is_vert_split  = json.isMember("vertical-split") && json["vertical-split"].isArray();
     if (!is_horiz_split && !is_vert_split)
     {
         return "Node is neither a view, nor a split node!";
@@ -123,25 +123,25 @@ inline std::optional<std::string> verify_json_tree(nlohmann::json& json, json_bu
 
     for (auto& child : children_list)
     {
-        if (!child.count("weight"))
+        if (!child.isMember("weight"))
         {
             return "Expected 'weight' field for each child node!";
         }
 
-        if (!child["weight"].is_number())
+        if (!child["weight"].isDouble())
         {
             return "Expected 'weight' field to be a number!";
         }
 
-        weight_sum += float(child["weight"]);
+        weight_sum += float(child["weight"].asDouble());
     }
 
     int32_t size_sum = 0;
     for (auto& child : children_list)
     {
-        int32_t size = float(child["weight"]) / weight_sum * split_axis;
+        int32_t size = float(child["weight"].asDouble()) / weight_sum * split_axis;
         size_sum += size;
-        if (&child == &children_list.back())
+        if (&child == &*std::prev(children_list.end()))
         {
             // This is needed because of rounding errors, we always round down, but in the end, we need to
             // make sure that the nodes cover the whole screen.
@@ -163,18 +163,18 @@ inline std::optional<std::string> verify_json_tree(nlohmann::json& json, json_bu
     return {};
 }
 
-inline std::unique_ptr<tile::tree_node_t> build_tree_from_json_rec(const nlohmann::json& json,
+inline std::unique_ptr<tile::tree_node_t> build_tree_from_json_rec(const Json::Value& json,
     tile_workspace_set_data_t *wdata, wf::point_t vp)
 {
     std::unique_ptr<tile::tree_node_t> root;
 
-    if (json.count("view-id"))
+    if (json.isMember("view-id"))
     {
-        auto view = toplevel_cast(wf::ipc::find_view_by_id(json["view-id"]));
+        auto view = toplevel_cast(wf::ipc::find_view_by_id(json["view-id"].asUInt()));
         root = wdata->setup_view_tiling(view, vp);
     } else
     {
-        const bool is_horiz_split = json.count("horizontal-split");
+        const bool is_horiz_split = json.isMember("horizontal-split");
         auto& children_list = is_horiz_split ? json["horizontal-split"] : json["vertical-split"];
         auto split_parent   = std::make_unique<tile::split_node_t>(
             is_horiz_split ? tile::SPLIT_HORIZONTAL : tile::SPLIT_VERTICAL);
@@ -190,8 +190,8 @@ inline std::unique_ptr<tile::tree_node_t> build_tree_from_json_rec(const nlohman
 
     root->geometry.x     = 0;
     root->geometry.y     = 0;
-    root->geometry.width = json["width"];
-    root->geometry.height = json["height"];
+    root->geometry.width = json["width"].asUInt();
+    root->geometry.height = json["height"].asUInt();
     return root;
 }
 
@@ -200,7 +200,7 @@ inline std::unique_ptr<tile::tree_node_t> build_tree_from_json_rec(const nlohman
  *
  * Note that the tree description first has to be verified and pre-processed by verify_json_tree().
  */
-inline std::unique_ptr<tile::tree_node_t> build_tree_from_json(const nlohmann::json& json,
+inline std::unique_ptr<tile::tree_node_t> build_tree_from_json(const Json::Value& json,
     tile_workspace_set_data_t *wdata, wf::point_t vp)
 {
     auto root = build_tree_from_json_rec(json, wdata, vp);
@@ -215,16 +215,18 @@ inline std::unique_ptr<tile::tree_node_t> build_tree_from_json(const nlohmann::j
     return root;
 }
 
-inline nlohmann::json handle_ipc_get_layout(const nlohmann::json& params)
+inline Json::Value handle_ipc_get_layout(const Json::Value& params)
 {
-    WFJSON_EXPECT_FIELD(params, "wset-index", number_unsigned);
-    WFJSON_EXPECT_FIELD(params, "workspace", object);
-    WFJSON_EXPECT_FIELD(params["workspace"], "x", number_unsigned);
-    WFJSON_EXPECT_FIELD(params["workspace"], "y", number_unsigned);
+    auto wset_index = wf::ipc::json_get_uint64(params, "wset-index");
 
-    int x   = params["workspace"]["x"].get<int>();
-    int y   = params["workspace"]["y"].get<int>();
-    auto ws = ipc::find_workspace_set_by_index(params["wset-index"].get<int>());
+    if (!params.isMember("workspace") or !params["workspace"].isObject())
+    {
+        return wf::ipc::json_error("Missing 'workspace' field");
+    }
+
+    auto x  = wf::ipc::json_get_int64(params["workspace"], "x");
+    auto y  = wf::ipc::json_get_int64(params["workspace"], "y");
+    auto ws = ipc::find_workspace_set_by_index(wset_index);
     if (ws)
     {
         auto grid_size = ws->get_workspace_grid_size();
@@ -247,17 +249,23 @@ inline nlohmann::json handle_ipc_get_layout(const nlohmann::json& params)
     return wf::ipc::json_error("wset-index not found");
 }
 
-inline nlohmann::json handle_ipc_set_layout(nlohmann::json params)
+inline Json::Value handle_ipc_set_layout(Json::Value params)
 {
-    WFJSON_EXPECT_FIELD(params, "wset-index", number_unsigned);
-    WFJSON_EXPECT_FIELD(params, "workspace", object);
-    WFJSON_EXPECT_FIELD(params["workspace"], "x", number_unsigned);
-    WFJSON_EXPECT_FIELD(params["workspace"], "y", number_unsigned);
-    WFJSON_EXPECT_FIELD(params, "layout", object);
-    int x = params["workspace"]["x"].get<int>();
-    int y = params["workspace"]["y"].get<int>();
+    auto wset_index = wf::ipc::json_get_uint64(params, "wset-index");
+    if (!params.isMember("workspace") or !params["workspace"].isObject())
+    {
+        return wf::ipc::json_error("Missing 'workspace' field");
+    }
 
-    auto ws = ipc::find_workspace_set_by_index(params["wset-index"].get<int>());
+    auto x = wf::ipc::json_get_int64(params["workspace"], "x");
+    auto y = wf::ipc::json_get_int64(params["workspace"], "y");
+
+    if (!params.isMember("layout") || !params["layout"].isObject())
+    {
+        return wf::ipc::json_error("Missing 'layout' field");
+    }
+
+    auto ws = ipc::find_workspace_set_by_index(wset_index);
     if (!ws)
     {
         return wf::ipc::json_error("wset-index not found");
@@ -322,7 +330,8 @@ inline nlohmann::json handle_ipc_set_layout(nlohmann::json params)
         }
 
         // Step 3: set up the new layout
-        tile_ws.roots[x][y] = build_tree_from_json(params["layout"], &tile_ws, {x, y});
+        tile_ws.roots[x][y] = build_tree_from_json(params["layout"], &tile_ws, {static_cast<int>(x),
+            static_cast<int>(y)});
         tile::flatten_tree(tile_ws.roots[x][y]);
         tile_ws.roots[x][y]->set_gaps(tile_ws.get_gaps());
         tile_ws.roots[x][y]->set_geometry(workarea, tx.tx);

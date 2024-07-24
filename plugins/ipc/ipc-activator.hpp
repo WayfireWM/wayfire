@@ -70,24 +70,24 @@ class ipc_activator_t
         return false;
     };
 
-    ipc::method_callback ipc_cb = [=] (const nlohmann::json& data)
+    ipc::method_callback ipc_cb = [=] (const Json::Value& data)
     {
-        WFJSON_OPTIONAL_FIELD(data, "output_id", number_integer);
-        WFJSON_OPTIONAL_FIELD(data, "view_id", number_integer);
-        WFJSON_OPTIONAL_FIELD(data, "output-id", number_integer);
-        WFJSON_OPTIONAL_FIELD(data, "view-id", number_integer);
+        auto output_id = ipc::json_get_optional_int64(data, "output_id");
+        if (!output_id.has_value())
+        {
+            output_id = ipc::json_get_optional_int64(data, "output-id");
+        }
+
+        auto view_id = ipc::json_get_optional_int64(data, "view_id");
+        if (!view_id.has_value())
+        {
+            view_id = ipc::json_get_optional_int64(data, "view-id");
+        }
 
         wf::output_t *wo = wf::get_core().seat->get_active_output();
-        if (data.contains("output_id"))
+        if (output_id.has_value())
         {
-            wo = ipc::find_output_by_id(data["output_id"]);
-            if (!wo)
-            {
-                return ipc::json_error("output id not found!");
-            }
-        } else if (data.contains("output-id"))
-        {
-            wo = ipc::find_output_by_id(data["output-id"]);
+            wo = ipc::find_output_by_id(output_id.value());
             if (!wo)
             {
                 return ipc::json_error("output id not found!");
@@ -95,16 +95,9 @@ class ipc_activator_t
         }
 
         wayfire_view view;
-        if (data.contains("view_id"))
+        if (view_id.has_value())
         {
-            view = ipc::find_view_by_id(data["view_id"]);
-            if (!view)
-            {
-                return ipc::json_error("view id not found!");
-            }
-        } else if (data.contains("view-id"))
-        {
-            view = ipc::find_view_by_id(data["view-id"]);
+            view = ipc::find_view_by_id(view_id.has_value());
             if (!view)
             {
                 return ipc::json_error("view id not found!");

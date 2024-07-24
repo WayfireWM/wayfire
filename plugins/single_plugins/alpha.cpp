@@ -32,7 +32,6 @@
 #include "wayfire/plugins/common/shared-core-data.hpp"
 #include "wayfire/view-helpers.hpp"
 #include "wayfire/view-transform.hpp"
-#include "wayfire/workspace-set.hpp"
 #include "plugins/ipc/ipc-helpers.hpp"
 #include "plugins/ipc/ipc-method-repository.hpp"
 
@@ -56,16 +55,16 @@ class wayfire_alpha : public wf::plugin_interface_t
         ipc_repo->register_method("wf/alpha/get-view-alpha", ipc_get_view_alpha);
     }
 
-    wf::ipc::method_callback ipc_set_view_alpha = [=] (nlohmann::json data) -> nlohmann::json
+    wf::ipc::method_callback ipc_set_view_alpha = [=] (Json::Value data) -> Json::Value
     {
-        WFJSON_EXPECT_FIELD(data, "view-id", number_unsigned);
-        WFJSON_EXPECT_FIELD(data, "alpha", number);
+        auto view_id = wf::ipc::json_get_uint64(data, "view-id");
+        auto alpha   = wf::ipc::json_get_f64(data, "alpha");
 
-        auto view = wf::ipc::find_view_by_id(data["view-id"]);
+        auto view = wf::ipc::find_view_by_id(view_id);
         if (view && view->is_mapped())
         {
             auto tr = ensure_transformer(view);
-            adjust_alpha(view, tr, data["alpha"]);
+            adjust_alpha(view, tr, alpha);
         } else
         {
             return wf::ipc::json_error("Failed to find view with given id. Maybe it was closed?");
@@ -74,11 +73,10 @@ class wayfire_alpha : public wf::plugin_interface_t
         return wf::ipc::json_ok();
     };
 
-    wf::ipc::method_callback ipc_get_view_alpha = [=] (nlohmann::json data) -> nlohmann::json
+    wf::ipc::method_callback ipc_get_view_alpha = [=] (Json::Value data) -> Json::Value
     {
-        WFJSON_EXPECT_FIELD(data, "view-id", number_unsigned);
-
-        auto view = wf::ipc::find_view_by_id(data["view-id"]);
+        auto view_id = wf::ipc::json_get_uint64(data, "view-id");
+        auto view    = wf::ipc::find_view_by_id(view_id);
         if (!view)
         {
             return wf::ipc::json_error("Failed to find view with given id. Maybe it was closed?");
