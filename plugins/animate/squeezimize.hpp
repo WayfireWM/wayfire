@@ -117,8 +117,19 @@ class squeezimize_transformer : public wf::scene::view_2d_transformer_t
                 1.0);
             auto progress   = self->progression.progress();
             int line_height = 1;
-            int max_height  = self->minimize_target.y + self->minimize_target.height + src_box.y +
-                src_box.height;
+            bool upward     = ((src_box.y > self->minimize_target.y) ||
+                ((src_box.y < 0) &&
+                    (self->minimize_target.y < self->output->get_relative_geometry().height / 2)));
+            int max_height;
+            if (upward)
+            {
+                max_height = self->minimize_target.y + self->minimize_target.height + src_box.y +
+                    src_box.height;
+            } else
+            {
+                max_height = self->minimize_target.y + src_box.y;
+            }
+
             OpenGL::render_begin(target);
             for (int i = 0;
                  i < max_height;
@@ -127,9 +138,7 @@ class squeezimize_transformer : public wf::scene::view_2d_transformer_t
                 gl_geometry src_geometry = {(float)src_box.x, (float)src_box.y,
                     (float)src_box.x + src_box.width, (float)src_box.y + src_box.height};
                 float direction;
-                if ((src_box.y > self->minimize_target.y) ||
-                    ((src_box.y < 0) &&
-                     (self->minimize_target.y < self->output->get_relative_geometry().height / 2)))
+                if (upward)
                 {
                     direction = (float)(max_height - i) / max_height;
                 } else
