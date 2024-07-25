@@ -8,6 +8,7 @@
 #include "animate.hpp"
 #include "system_fade.hpp"
 #include "basic_animations.hpp"
+#include "squeezimize.hpp"
 #include "fire/fire.hpp"
 #include "unmapped-view-node.hpp"
 #include "wayfire/plugin.hpp"
@@ -444,10 +445,12 @@ class wayfire_animation : public wf::plugin_interface_t, private wf::per_output_
     {
         if (ev->state)
         {
-            set_animation<zoom_animation>(ev->view, ANIMATION_TYPE_MINIMIZE, default_duration, "minimize");
+            set_animation<squeezimize_animation>(ev->view, ANIMATION_TYPE_MINIMIZE, default_duration,
+                "minimize");
         } else
         {
-            set_animation<zoom_animation>(ev->view, ANIMATION_TYPE_RESTORE, default_duration, "minimize");
+            set_animation<squeezimize_animation>(ev->view, ANIMATION_TYPE_RESTORE, default_duration,
+                "minimize");
         }
 
         // ev->carried_out should remain false, so that core also does the automatic minimize/restore and
