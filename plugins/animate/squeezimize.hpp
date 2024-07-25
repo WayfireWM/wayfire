@@ -62,6 +62,7 @@ class squeezimize_transformer : public wf::scene::view_2d_transformer_t
     bool last_direction = false;
     wf::output_t *output;
     wf::geometry_t minimize_target;
+    wf::geometry_t animation_geometry;
     squeezimize_animation_t progression{squeezimize_duration};
 
     class simple_node_render_instance_t : public wf::scene::transformer_render_instance_t<transformer_base_node_t>
@@ -69,7 +70,7 @@ class squeezimize_transformer : public wf::scene::view_2d_transformer_t
         wf::signal::connection_t<node_damage_signal> on_node_damaged =
             [=] (node_damage_signal *ev)
         {
-            push_to_parent(wf::region_t{self->output->get_relative_geometry()});
+            push_to_parent(ev->region);
         };
 
         squeezimize_transformer *self;
@@ -98,13 +99,13 @@ class squeezimize_transformer : public wf::scene::view_2d_transformer_t
             instructions.push_back(render_instruction_t{
                         .instance = this,
                         .target   = target,
-                        .damage   = damage,
+                        .damage   = damage & self->get_bounding_box(),
                     });
         }
 
         void transform_damage_region(wf::region_t& damage) override
         {
-            damage |= wf::region_t{self->output->get_relative_geometry()};
+            damage |= wf::region_t{self->animation_geometry};
         }
 
         void render(const wf::render_target_t& target,
@@ -147,7 +148,7 @@ class squeezimize_transformer : public wf::scene::view_2d_transformer_t
 
                 auto s1 = 1.0 / (1.0 + pow(2.718, -(direction * 6.0 - 3.0)));
                 s1 *= progress * 0.5;
-                auto squeeze_region = wf::region_t{self->output->get_relative_geometry()};
+                auto squeeze_region = region;
                 auto squeeze_box    = src_box;
                 squeeze_box.y = i;
                 squeeze_box.height = line_height;
@@ -207,7 +208,7 @@ class squeezimize_transformer : public wf::scene::view_2d_transformer_t
     };
 
     squeezimize_transformer(wayfire_view view,
-        wf::geometry_t minimize_target) : wf::scene::view_2d_transformer_t(view)
+        wf::geometry_t minimize_target, wf::geometry_t bbox) : wf::scene::view_2d_transformer_t(view)
     {
         this->view = view;
         this->minimize_target = minimize_target;
@@ -216,17 +217,30 @@ class squeezimize_transformer : public wf::scene::view_2d_transformer_t
             output = view->get_output();
             output->render->add_effect(&pre_hook, wf::OUTPUT_EFFECT_PRE);
         }
+
+        animation_geometry.x     = std::min(bbox.x, minimize_target.x);
+        animation_geometry.y     = std::min(bbox.y, minimize_target.y);
+        animation_geometry.width =
+            std::max(std::max(std::max(bbox.width,
+                minimize_target.width),
+                (minimize_target.x + minimize_target.width) - bbox.x),
+                (bbox.x + bbox.width) - minimize_target.x);
+        animation_geometry.height =
+            std::max(std::max(std::max(bbox.height,
+                minimize_target.height),
+                (minimize_target.y + minimize_target.height) - bbox.y),
+                (bbox.y + bbox.height) - minimize_target.y);
     }
 
     wf::geometry_t get_bounding_box() override
     {
-        return output->get_relative_geometry();
+        return animation_geometry;
     }
 
     wf::effect_hook_t pre_hook = [=] ()
     {
         view->damage();
-        output->render->damage_whole();
+        output->render->damage(animation_geometry);
     };
 
     void gen_render_instances(std::vector<render_instance_uptr>& instances,
@@ -275,11 +289,13 @@ class squeezimize_animation : public animation_base
     {
         this->view = view;
         pop_transformer(view);
+        auto bbox = view->get_bounding_box();
+        LOGI("bbox: ", bbox);
         auto toplevel = wf::toplevel_cast(view);
         wf::dassert(toplevel != nullptr, "We cannot minimize non-toplevel views!");
         auto hint = toplevel->get_minimize_hint();
         auto tmgr = view->get_transformed_node();
-        auto node = std::make_shared<wf::squeezimize::squeezimize_transformer>(view, hint);
+        auto node = std::make_shared<wf::squeezimize::squeezimize_transformer>(view, hint, bbox);
         tmgr->add_transformer(node, wf::TRANSFORMER_2D, transformer_name);
         node->init_animation(type & HIDING_ANIMATION);
     }
