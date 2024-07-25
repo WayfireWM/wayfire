@@ -224,14 +224,6 @@ class squeezimize_transformer : public wf::scene::view_2d_transformer_t
         return output->get_relative_geometry();
     }
 
-    void pop_transformer(wayfire_view view)
-    {
-        if (view->get_transformed_node()->get_transformer(transformer_name))
-        {
-            view->get_transformed_node()->rem_transformer(transformer_name);
-        }
-    }
-
     wf::effect_hook_t pre_hook = [=] ()
     {
         view->damage();
@@ -247,11 +239,6 @@ class squeezimize_transformer : public wf::scene::view_2d_transformer_t
 
     void init_animation(bool squeeze)
     {
-        if (squeeze == last_direction)
-        {
-            return;
-        }
-
         if (this->progression.running())
         {
             this->progression.reverse();
@@ -275,8 +262,6 @@ class squeezimize_transformer : public wf::scene::view_2d_transformer_t
         {
             output->render->rem_effect(&pre_hook);
         }
-
-        pop_transformer(view);
     }
 };
 }
@@ -323,7 +308,14 @@ class squeezimize_animation : public animation_base
 
         if (auto tr = tmgr->get_transformer<wf::squeezimize::squeezimize_transformer>(transformer_name))
         {
-            return tr->progression.running();
+            auto running = tr->progression.running();
+            if (!running)
+            {
+                pop_transformer(view);
+                return false;
+            }
+
+            return running;
         }
 
         return false;
