@@ -125,7 +125,9 @@ class squeezimize_transformer : public wf::scene::view_2d_transformer_t
                 gl_geometry src_geometry = {(float)src_box.x, (float)src_box.y,
                     (float)src_box.x + src_box.width, (float)src_box.y + src_box.height};
                 float direction;
-                if (src_box.y > self->minimize_target.y)
+                if ((src_box.y > self->minimize_target.y) ||
+                    ((src_box.y < 0) &&
+                     (self->minimize_target.y < self->output->get_relative_geometry().height / 2)))
                 {
                     direction = (float)(src_box.height - i) / src_box.height;
                 } else
@@ -143,16 +145,33 @@ class squeezimize_transformer : public wf::scene::view_2d_transformer_t
                     wf::region_t{wf::geometry_t{self->output->get_relative_geometry().x, squeeze_box.y,
                         self->output->get_relative_geometry().width, squeeze_box.height}};
 
-                src_geometry.y1 +=
-                    ((std::clamp(progress, 0.5,
-                        1.0) - 0.5) * 2.0) *
-                    ((self->minimize_target.y + self->minimize_target.height) -
-                        (src_box.y + src_box.height));
-                src_geometry.y2 +=
-                    ((std::clamp(progress, 0.5,
-                        1.0) - 0.5) * 2.0) *
-                    ((self->minimize_target.y + self->minimize_target.height) -
-                        (src_box.y + src_box.height));
+                if ((src_box.y > self->minimize_target.y) ||
+                    ((src_box.y < 0) &&
+                     (self->minimize_target.y < self->output->get_relative_geometry().height / 2)))
+                {
+                    src_geometry.y1 +=
+                        ((std::clamp(progress, 0.5,
+                            1.0) - 0.5) * 2.0) *
+                        ((self->minimize_target.y + self->minimize_target.height) -
+                            (src_box.y + src_box.height));
+                    src_geometry.y2 +=
+                        ((std::clamp(progress, 0.5,
+                            1.0) - 0.5) * 2.0) *
+                        ((self->minimize_target.y + self->minimize_target.height) -
+                            (src_box.y + src_box.height));
+                } else
+                {
+                    src_geometry.y1 +=
+                        ((std::clamp(progress, 0.5,
+                            1.0) - 0.5) * 2.0) *
+                        ((self->minimize_target.y) -
+                            (src_box.y));
+                    src_geometry.y2 +=
+                        ((std::clamp(progress, 0.5,
+                            1.0) - 0.5) * 2.0) *
+                        ((self->minimize_target.y) -
+                            (src_box.y));
+                }
 
                 src_geometry.x1 += s1 * (src_box.width - self->minimize_target.width);
                 src_geometry.x1 +=
