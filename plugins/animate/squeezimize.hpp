@@ -59,14 +59,19 @@ class squeezimize_transformer : public wf::scene::view_2d_transformer_t
     bool last_direction;
     wf::output_t *output;
     wf::geometry_t minimize_target;
-    squeezimize_animation_t progression{wf::create_option<int>(5000)};
+    animation_description_t squeeze_animation{
+        .length_ms = 2000,
+        .easing    = wf::animation::smoothing::linear,
+        .easing_name = "linear"
+    };
+    squeezimize_animation_t progression{wf::create_option<wf::animation_description_t>(squeeze_animation)};
 
     class simple_node_render_instance_t : public wf::scene::transformer_render_instance_t<transformer_base_node_t>
     {
         wf::signal::connection_t<node_damage_signal> on_node_damaged =
             [=] (node_damage_signal *ev)
         {
-            push_to_parent(ev->region);
+            push_to_parent(wf::region_t{self->output->get_relative_geometry()});
         };
 
         squeezimize_transformer *self;
@@ -99,15 +104,23 @@ class squeezimize_transformer : public wf::scene::view_2d_transformer_t
                     });
         }
 
+        void transform_damage_region(wf::region_t& damage) override
+        {
+            damage |= wf::region_t{self->output->get_relative_geometry()};
+        }
+
         void render(const wf::render_target_t& target,
             const wf::region_t& region)
         {
             auto src_box = self->get_children_bounding_box();
             auto src_tex = wf::scene::transformer_render_instance_t<transformer_base_node_t>::get_texture(
                 1.0);
-            auto progress = self->progression.progress();
+            auto progress   = self->progression.progress();
+            int line_height = 1;
             OpenGL::render_begin(target);
-            for (int i = 0; i < src_box.height; i++)
+            for (int i = 0;
+                 i < self->minimize_target.y + self->minimize_target.height + src_box.y + src_box.height;
+                 i += line_height)
             {
                 gl_geometry src_geometry = {(float)src_box.x, (float)src_box.y,
                     (float)src_box.x + src_box.width, (float)src_box.y + src_box.height};
@@ -121,23 +134,25 @@ class squeezimize_transformer : public wf::scene::view_2d_transformer_t
                 }
 
                 auto s1 = 1.0 / (1.0 + pow(2.718, -(direction * 6.0 - 3.0)));
-                s1 *= std::clamp(progress, 0.0, 0.5);
+                s1 *= progress * 0.5;
                 auto squeeze_region = wf::region_t{self->output->get_relative_geometry()};
                 auto squeeze_box    = src_box;
-                squeeze_box.y += i;
-                squeeze_box.height = 1;
-                squeeze_region    &= wf::region_t{squeeze_box};
-                if (src_box.y > self->minimize_target.y)
-                {
-                    src_geometry.y1 -=
-                        ((std::clamp(progress, 0.5, 1.0) - 0.5) * 2.0) * self->minimize_target.height;
-                    src_geometry.y2 -= ((std::clamp(progress, 0.5, 1.0) - 0.5) * 2.0) * src_box.height;
-                } else
-                {
-                    src_geometry.y1 += ((std::clamp(progress, 0.5, 1.0) - 0.5) * 2.0) * src_box.height;
-                    src_geometry.y2 +=
-                        ((std::clamp(progress, 0.5, 1.0) - 0.5) * 2.0) * self->minimize_target.height;
-                }
+                squeeze_box.y = i;
+                squeeze_box.height = line_height;
+                squeeze_region    &=
+                    wf::region_t{wf::geometry_t{self->output->get_relative_geometry().x, squeeze_box.y,
+                        self->output->get_relative_geometry().width, squeeze_box.height}};
+
+                src_geometry.y1 +=
+                    ((std::clamp(progress, 0.5,
+                        1.0) - 0.5) * 2.0) *
+                    ((self->minimize_target.y + self->minimize_target.height) -
+                        (src_box.y + src_box.height));
+                src_geometry.y2 +=
+                    ((std::clamp(progress, 0.5,
+                        1.0) - 0.5) * 2.0) *
+                    ((self->minimize_target.y + self->minimize_target.height) -
+                        (src_box.y + src_box.height));
 
                 src_geometry.x1 += s1 * (src_box.width - self->minimize_target.width);
                 src_geometry.x1 +=
@@ -149,6 +164,7 @@ class squeezimize_transformer : public wf::scene::view_2d_transformer_t
                     std::clamp(progress, 0.0,
                         0.5) * 2.0 * direction *
                     ((self->minimize_target.x + self->minimize_target.width) - src_geometry.x2);
+
                 for (const auto& box : squeeze_region)
                 {
                     target.logic_scissor(wlr_box_from_pixman_box(box));
