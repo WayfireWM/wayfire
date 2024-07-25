@@ -40,6 +40,9 @@
 
 static std::string transformer_name = "animation-squeezimize";
 
+wf::option_wrapper_t<wf::animation_description_t> squeezimize_duration{"animate/squeezimize_duration"};
+wf::option_wrapper_t<int> squeezimize_line_height{"animate/squeezimize_line_height"};
+
 namespace wf
 {
 namespace squeezimize
@@ -59,12 +62,7 @@ class squeezimize_transformer : public wf::scene::view_2d_transformer_t
     bool last_direction = false;
     wf::output_t *output;
     wf::geometry_t minimize_target;
-    animation_description_t squeeze_animation{
-        .length_ms = 2000,
-        .easing    = wf::animation::smoothing::linear,
-        .easing_name = "linear"
-    };
-    squeezimize_animation_t progression{wf::create_option<wf::animation_description_t>(squeeze_animation)};
+    squeezimize_animation_t progression{squeezimize_duration};
 
     class simple_node_render_instance_t : public wf::scene::transformer_render_instance_t<transformer_base_node_t>
     {
@@ -115,9 +113,8 @@ class squeezimize_transformer : public wf::scene::view_2d_transformer_t
             auto src_box = self->get_children_bounding_box();
             auto src_tex = wf::scene::transformer_render_instance_t<transformer_base_node_t>::get_texture(
                 1.0);
-            auto progress   = self->progression.progress();
-            int line_height = 1;
-            bool upward     = ((src_box.y > self->minimize_target.y) ||
+            auto progress = self->progression.progress();
+            bool upward   = ((src_box.y > self->minimize_target.y) ||
                 ((src_box.y < 0) &&
                     (self->minimize_target.y < self->output->get_relative_geometry().height / 2)));
             int max_height;
@@ -129,6 +126,8 @@ class squeezimize_transformer : public wf::scene::view_2d_transformer_t
             {
                 max_height = self->minimize_target.y + src_box.y;
             }
+
+            int line_height = std::min(max_height, int(squeezimize_line_height));
 
             OpenGL::render_begin(target);
             for (int i = 0;
