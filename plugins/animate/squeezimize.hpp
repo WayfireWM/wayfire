@@ -56,7 +56,7 @@ class squeezimize_transformer : public wf::scene::view_2d_transformer_t
 {
   public:
     wayfire_view view;
-    bool last_direction;
+    bool last_direction = false;
     wf::output_t *output;
     wf::geometry_t minimize_target;
     animation_description_t squeeze_animation{
@@ -210,7 +210,6 @@ class squeezimize_transformer : public wf::scene::view_2d_transformer_t
     squeezimize_transformer(wayfire_view view,
         wf::geometry_t minimize_target) : wf::scene::view_2d_transformer_t(view)
     {
-        LOGI("squeezimize_transformer");
         this->view = view;
         this->minimize_target = minimize_target;
         if (view->get_output())
@@ -272,7 +271,6 @@ class squeezimize_transformer : public wf::scene::view_2d_transformer_t
 
     virtual ~squeezimize_transformer()
     {
-        LOGI("~squeezimize_transformer");
         if (output)
         {
             output->render->rem_effect(&pre_hook);
@@ -292,7 +290,6 @@ class squeezimize_animation : public animation_base
     void init(wayfire_view view, wf::animation_description_t dur, wf_animation_type type) override
     {
         this->view = view;
-        LOGI("init");
         pop_transformer(view);
         auto toplevel = wf::toplevel_cast(view);
         wf::dassert(toplevel != nullptr, "We cannot minimize non-toplevel views!");
@@ -326,14 +323,7 @@ class squeezimize_animation : public animation_base
 
         if (auto tr = tmgr->get_transformer<wf::squeezimize::squeezimize_transformer>(transformer_name))
         {
-            auto running = tr->progression.running();
-            if (!running)
-            {
-                pop_transformer(view);
-                return false;
-            }
-
-            return running;
+            return tr->progression.running();
         }
 
         return false;
