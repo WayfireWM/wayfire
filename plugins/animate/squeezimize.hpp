@@ -91,9 +91,11 @@ void main()
     if (upward == 1)
     {
         y = uv.y;
+        uv_squeeze.y += -progress_pt_two * (inv_h - target_box.w);
     } else
     {
         y = 1.0 - uv.y;
+        uv_squeeze.y -= -progress_pt_two * (src_box.y + target_box.y + target_box.w);
     }
 
     float sigmoid = 1.0 / (1.0 + pow(2.718, -((y * inv_h) * 6.0 - 3.0)));
@@ -101,14 +103,6 @@ void main()
 
     uv_squeeze.x += sigmoid * inv_w;
     uv_squeeze.x *= (y * (1.0 / (target_box.z - target_box.x)) * progress_pt_one) + 1.0;
-
-    if (upward == 1)
-    {
-        uv_squeeze.y += -progress_pt_two * (inv_h - target_box.w);
-    } else
-    {
-        uv_squeeze.y -= -progress_pt_two * (src_box.y + target_box.y + target_box.w);
-    }
 
     if (uv_squeeze.x < 0.0 || uv_squeeze.y < 0.0 ||
         uv_squeeze.x > 1.0 || uv_squeeze.y > 1.0)
