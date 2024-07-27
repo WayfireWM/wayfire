@@ -34,6 +34,7 @@
 #include <wayfire/render-manager.hpp>
 #include <wayfire/scene-render.hpp>
 #include <wayfire/util/duration.hpp>
+#include <glm/gtc/matrix_transform.hpp>
 
 #include "animate.hpp"
 
@@ -42,6 +43,74 @@ static std::string transformer_name = "animation-squeezimize";
 
 wf::option_wrapper_t<wf::animation_description_t> squeezimize_duration{"animate/squeezimize_duration"};
 wf::option_wrapper_t<int> squeezimize_line_height{"animate/squeezimize_line_height"};
+
+static const char *squeeze_vert_source =
+    R"(
+#version 100
+
+attribute mediump vec2 position;
+attribute mediump vec2 uv_in;
+
+uniform mat4 matrix;
+
+varying highp vec2 uv;
+
+void main() {
+    uv = uv_in;
+    gl_Position = matrix * vec4(position, 0.0, 1.0);
+}
+)";
+
+static const char *squeeze_frag_source =
+    R"(
+#version 100
+uniform sampler2D _wayfire_texture;
+uniform mediump vec2 _wayfire_uv_base;
+uniform mediump vec2 _wayfire_uv_scale;
+
+mediump vec4 get_pixel(highp vec2 uv) {
+    uv = _wayfire_uv_base + _wayfire_uv_scale * uv;
+    return texture2D(_wayfire_texture, uv);
+}
+
+precision mediump float;
+
+varying highp vec2 uv;
+uniform mediump float progress;
+uniform mediump vec4 src_box;
+uniform mediump vec4 target_box;
+
+void main()
+{
+    vec2 uv_squeeze = uv;
+
+    float inv_w = 1.0 / (src_box.z - src_box.x);
+    float inv_h = 1.0 / (src_box.w - src_box.y);
+    float progress_pt_one = clamp(progress, 0.0, 0.5) * 2.0;
+    float progress_pt_two = (clamp(progress, 0.5, 1.0) - 0.5) * 2.0;
+
+    uv_squeeze.x = (uv.x * inv_w) - (inv_w - 1.0);
+    uv_squeeze.x += inv_w - inv_w * src_box.z;
+    uv_squeeze.y = (uv.y * inv_h) - (inv_h - 1.0);
+    uv_squeeze.y += inv_h * src_box.y;
+
+    float sigmoid = 1.0 / (1.0 + pow(2.718, -((uv.y * inv_h) * 6.0 - 3.0)));
+    sigmoid *= progress_pt_one * (src_box.x - target_box.x);
+
+    uv_squeeze.x += sigmoid * inv_w;
+    uv_squeeze.x *= (uv.y * (1.0 / (target_box.z - target_box.x)) * progress_pt_one) + 1.0;
+
+    uv_squeeze.y += -progress_pt_two * (inv_h - target_box.w);
+
+    if (uv_squeeze.x < 0.0 || uv_squeeze.y < 0.0 ||
+        uv_squeeze.x > 1.0 || uv_squeeze.y > 1.0)
+    {
+        discard;
+    }
+
+    gl_FragColor = get_pixel(uv_squeeze);
+}
+)";
 
 namespace wf
 {
@@ -59,6 +128,7 @@ class squeezimize_transformer : public wf::scene::view_2d_transformer_t
 {
   public:
     wayfire_view view;
+    OpenGL::program_t program;
     bool last_direction = false;
     wf::output_t *output;
     wf::geometry_t minimize_target;
@@ -115,94 +185,54 @@ class squeezimize_transformer : public wf::scene::view_2d_transformer_t
             auto src_tex = wf::scene::transformer_render_instance_t<transformer_base_node_t>::get_texture(
                 1.0);
             auto progress = self->progression.progress();
-            bool upward   = ((src_box.y > self->minimize_target.y) ||
-                ((src_box.y < 0) &&
-                    (self->minimize_target.y < self->output->get_relative_geometry().height / 2)));
-            int max_height;
-            if (upward)
-            {
-                max_height = self->minimize_target.y + self->minimize_target.height + src_box.y +
-                    src_box.height;
-            } else
-            {
-                max_height = self->minimize_target.y + src_box.y;
-            }
+            // bool upward   = ((src_box.y > self->minimize_target.y) ||
+            // ((src_box.y < 0) &&
+            // (self->minimize_target.y < self->output->get_relative_geometry().height / 2)));
+            static const float vertex_data_uv[] = {
+                0.0f, 0.0f,
+                1.0f, 0.0f,
+                1.0f, 1.0f,
+                0.0f, 1.0f,
+            };
 
-            int line_height = std::min(max_height, int(squeezimize_line_height));
+            const float vertex_data_pos[] = {
+                1.0f * self->animation_geometry.x,
+                1.0f * self->animation_geometry.y + self->animation_geometry.height,
+                1.0f * self->animation_geometry.x + self->animation_geometry.width,
+                1.0f * self->animation_geometry.y + self->animation_geometry.height,
+                1.0f * self->animation_geometry.x + self->animation_geometry.width,
+                1.0f * self->animation_geometry.y,
+                1.0f * self->animation_geometry.x, 1.0f * self->animation_geometry.y,
+            };
+
+            const glm::vec4 src_box_pos{
+                float(src_box.x - self->animation_geometry.x) / self->animation_geometry.width,
+                float(src_box.y - self->animation_geometry.y) / self->animation_geometry.height,
+                float((src_box.x - self->animation_geometry.x) + src_box.width) /
+                self->animation_geometry.width,
+                float((src_box.y - self->animation_geometry.y) + src_box.height) /
+                self->animation_geometry.height
+            };
+
+            const glm::vec4 target_box_pos{
+                float(self->minimize_target.x - self->animation_geometry.x) / self->animation_geometry.width,
+                float(self->minimize_target.y - self->animation_geometry.y) / self->animation_geometry.height,
+                float((self->minimize_target.x - self->animation_geometry.x) + self->minimize_target.width) /
+                self->animation_geometry.width,
+                float((self->minimize_target.y - self->animation_geometry.y) + self->minimize_target.height) /
+                self->animation_geometry.height
+            };
 
             OpenGL::render_begin(target);
-            for (int i = 0;
-                 i < max_height;
-                 i += line_height)
-            {
-                gl_geometry src_geometry = {(float)src_box.x, (float)src_box.y,
-                    (float)src_box.x + src_box.width, (float)src_box.y + src_box.height};
-                float direction;
-                if (upward)
-                {
-                    direction = (float)(max_height - i) / max_height;
-                } else
-                {
-                    direction = (float)i / max_height;
-                }
-
-                auto s1 = 1.0 / (1.0 + pow(2.718, -(direction * 6.0 - 3.0)));
-                s1 *= progress * 0.5;
-                auto squeeze_region = region;
-                auto squeeze_box    = src_box;
-                squeeze_box.y = i;
-                squeeze_box.height = line_height;
-                squeeze_region    &=
-                    wf::region_t{wf::geometry_t{self->output->get_relative_geometry().x, squeeze_box.y,
-                        self->output->get_relative_geometry().width, squeeze_box.height}};
-
-                if ((src_box.y > self->minimize_target.y) ||
-                    ((src_box.y < 0) &&
-                     (self->minimize_target.y < self->output->get_relative_geometry().height / 2)))
-                {
-                    src_geometry.y1 +=
-                        ((std::clamp(progress, 0.5,
-                            1.0) - 0.5) * 2.0) *
-                        ((self->minimize_target.y + self->minimize_target.height) -
-                            (src_box.y + src_box.height));
-                    src_geometry.y2 +=
-                        ((std::clamp(progress, 0.5,
-                            1.0) - 0.5) * 2.0) *
-                        ((self->minimize_target.y + self->minimize_target.height) -
-                            (src_box.y + src_box.height));
-                } else
-                {
-                    src_geometry.y1 +=
-                        ((std::clamp(progress, 0.5,
-                            1.0) - 0.5) * 2.0) *
-                        ((self->minimize_target.y) -
-                            (src_box.y));
-                    src_geometry.y2 +=
-                        ((std::clamp(progress, 0.5,
-                            1.0) - 0.5) * 2.0) *
-                        ((self->minimize_target.y) -
-                            (src_box.y));
-                }
-
-                src_geometry.x1 += s1 * (src_box.width - self->minimize_target.width);
-                src_geometry.x1 +=
-                    std::clamp(progress, 0.0,
-                        0.5) * 2.0 * direction *
-                    (self->minimize_target.x - src_geometry.x1);
-                src_geometry.x2 -= s1 * (src_box.width - self->minimize_target.width);
-                src_geometry.x2 +=
-                    std::clamp(progress, 0.0,
-                        0.5) * 2.0 * direction *
-                    ((self->minimize_target.x + self->minimize_target.width) - src_geometry.x2);
-
-                for (const auto& box : squeeze_region)
-                {
-                    target.logic_scissor(wlr_box_from_pixman_box(box));
-                    OpenGL::render_transformed_texture(src_tex, src_geometry, {},
-                        target.get_orthographic_projection(), glm::vec4(1.0), 0);
-                }
-            }
-
+            self->program.use(wf::TEXTURE_TYPE_RGBA);
+            self->program.uniformMatrix4f("matrix", target.get_orthographic_projection());
+            self->program.attrib_pointer("position", 2, 0, vertex_data_pos);
+            self->program.attrib_pointer("uv_in", 2, 0, vertex_data_uv);
+            self->program.uniform1f("progress", progress);
+            self->program.uniform4f("src_box", src_box_pos);
+            self->program.uniform4f("target_box", target_box_pos);
+            self->program.set_active_texture(src_tex);
+            GL_CALL(glDrawArrays(GL_TRIANGLE_FAN, 0, 4));
             OpenGL::render_end();
         }
     };
@@ -230,16 +260,19 @@ class squeezimize_transformer : public wf::scene::view_2d_transformer_t
                 minimize_target.height),
                 (minimize_target.y + minimize_target.height) - bbox.y),
                 (bbox.y + bbox.height) - minimize_target.y);
+        OpenGL::render_begin();
+        program.set_simple(OpenGL::compile_program(squeeze_vert_source,
+            squeeze_frag_source));
+        OpenGL::render_end();
     }
 
     wf::geometry_t get_bounding_box() override
     {
-        return animation_geometry;
+        return this->animation_geometry;
     }
 
     wf::effect_hook_t pre_hook = [=] ()
     {
-        view->damage();
         output->render->damage(animation_geometry);
     };
 
@@ -275,6 +308,8 @@ class squeezimize_transformer : public wf::scene::view_2d_transformer_t
         {
             output->render->rem_effect(&pre_hook);
         }
+
+        program.free_resources();
     }
 };
 }
@@ -289,8 +324,7 @@ class squeezimize_animation : public animation_base
     {
         this->view = view;
         pop_transformer(view);
-        auto bbox = view->get_bounding_box();
-        LOGI("bbox: ", bbox);
+        auto bbox     = view->get_transformed_node()->get_children_bounding_box();
         auto toplevel = wf::toplevel_cast(view);
         wf::dassert(toplevel != nullptr, "We cannot minimize non-toplevel views!");
         auto hint = toplevel->get_minimize_hint();
