@@ -131,7 +131,6 @@ class squeezimize_transformer : public wf::scene::view_2d_transformer_t
   public:
     wayfire_view view;
     OpenGL::program_t program;
-    bool last_direction = false;
     wf::output_t *output;
     wf::geometry_t minimize_target;
     wf::geometry_t animation_geometry;
@@ -287,21 +286,12 @@ class squeezimize_transformer : public wf::scene::view_2d_transformer_t
 
     void init_animation(bool squeeze)
     {
-        if (this->progression.running())
+        if (!squeeze)
         {
             this->progression.reverse();
-        } else
-        {
-            if ((squeeze && !this->progression.get_direction()) ||
-                (!squeeze && this->progression.get_direction()))
-            {
-                this->progression.reverse();
-            }
-
-            this->progression.start();
         }
 
-        last_direction = squeeze;
+        this->progression.start();
     }
 
     virtual ~squeezimize_transformer()
