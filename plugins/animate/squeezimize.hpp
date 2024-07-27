@@ -63,14 +63,8 @@ void main() {
 static const char *squeeze_frag_source =
     R"(
 #version 100
-uniform sampler2D _wayfire_texture;
-uniform mediump vec2 _wayfire_uv_base;
-uniform mediump vec2 _wayfire_uv_scale;
-
-mediump vec4 get_pixel(highp vec2 uv) {
-    uv = _wayfire_uv_base + _wayfire_uv_scale * uv;
-    return texture2D(_wayfire_texture, uv);
-}
+@builtin_ext@
+@builtin@
 
 precision mediump float;
 
@@ -82,9 +76,8 @@ uniform int upward;
 
 void main()
 {
-    vec2 uv_squeeze = uv;
-
     float y;
+    vec2 uv_squeeze;
     float inv_w = 1.0 / (src_box.z - src_box.x);
     float inv_h = 1.0 / (src_box.w - src_box.y);
     float progress_pt_one = clamp(progress, 0.0, 0.5) * 2.0;
@@ -277,8 +270,7 @@ class squeezimize_transformer : public wf::scene::view_2d_transformer_t
                 (minimize_target.y + minimize_target.height) - bbox.y),
                 (bbox.y + bbox.height) - minimize_target.y);
         OpenGL::render_begin();
-        program.set_simple(OpenGL::compile_program(squeeze_vert_source,
-            squeeze_frag_source));
+        program.compile(squeeze_vert_source, squeeze_frag_source);
         OpenGL::render_end();
     }
 
