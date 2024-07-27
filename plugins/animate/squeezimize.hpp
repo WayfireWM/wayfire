@@ -79,11 +79,13 @@ varying highp vec2 uv;
 uniform mediump float progress;
 uniform mediump vec4 src_box;
 uniform mediump vec4 target_box;
+uniform int upward;
 
 void main()
 {
     vec2 uv_squeeze = uv;
 
+    float y;
     float inv_w = 1.0 / (src_box.z - src_box.x);
     float inv_h = 1.0 / (src_box.w - src_box.y);
     float progress_pt_one = clamp(progress, 0.0, 0.5) * 2.0;
@@ -94,13 +96,27 @@ void main()
     uv_squeeze.y = (uv.y * inv_h) - (inv_h - 1.0);
     uv_squeeze.y += inv_h * src_box.y;
 
-    float sigmoid = 1.0 / (1.0 + pow(2.718, -((uv.y * inv_h) * 6.0 - 3.0)));
+    if (upward == 1)
+    {
+        y = uv.y;
+    } else
+    {
+        y = 1.0 - uv.y;
+    }
+
+    float sigmoid = 1.0 / (1.0 + pow(2.718, -((y * inv_h) * 6.0 - 3.0)));
     sigmoid *= progress_pt_one * (src_box.x - target_box.x);
 
     uv_squeeze.x += sigmoid * inv_w;
-    uv_squeeze.x *= (uv.y * (1.0 / (target_box.z - target_box.x)) * progress_pt_one) + 1.0;
+    uv_squeeze.x *= (y * (1.0 / (target_box.z - target_box.x)) * progress_pt_one) + 1.0;
 
-    uv_squeeze.y += -progress_pt_two * (inv_h - target_box.w);
+    if (upward == 1)
+    {
+        uv_squeeze.y += -progress_pt_two * (inv_h - target_box.w);
+    } else
+    {
+        uv_squeeze.y -= -progress_pt_two * (src_box.y + target_box.y + target_box.w);
+    }
 
     if (uv_squeeze.x < 0.0 || uv_squeeze.y < 0.0 ||
         uv_squeeze.x > 1.0 || uv_squeeze.y > 1.0)
@@ -185,9 +201,9 @@ class squeezimize_transformer : public wf::scene::view_2d_transformer_t
             auto src_tex = wf::scene::transformer_render_instance_t<transformer_base_node_t>::get_texture(
                 1.0);
             auto progress = self->progression.progress();
-            // bool upward   = ((src_box.y > self->minimize_target.y) ||
-            // ((src_box.y < 0) &&
-            // (self->minimize_target.y < self->output->get_relative_geometry().height / 2)));
+            int upward    = ((src_box.y > self->minimize_target.y) ||
+                ((src_box.y < 0) &&
+                    (self->minimize_target.y < self->output->get_relative_geometry().height / 2)));
             static const float vertex_data_uv[] = {
                 0.0f, 0.0f,
                 1.0f, 0.0f,
@@ -228,6 +244,7 @@ class squeezimize_transformer : public wf::scene::view_2d_transformer_t
             self->program.uniformMatrix4f("matrix", target.get_orthographic_projection());
             self->program.attrib_pointer("position", 2, 0, vertex_data_pos);
             self->program.attrib_pointer("uv_in", 2, 0, vertex_data_uv);
+            self->program.uniform1i("upward", upward);
             self->program.uniform1f("progress", progress);
             self->program.uniform4f("src_box", src_box_pos);
             self->program.uniform4f("target_box", target_box_pos);
