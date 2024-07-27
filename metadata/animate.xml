@@ -133,12 +133,6 @@
 			<_long>Sets the color of the fire effects, alpha is ignored</_long>
 			<default>#b22303ff</default>
 		</option>
-		<option name="squeezimize_line_height" type="int">
-			<_short>Squeezimize line height</_short>
-			<_long>Sets the height of the squeezimize lines. A higher value means lower quality but better performance.</_long>
-			<default>1</default>
-			<min>1</min>
-		</option>
 		<option name="squeezimize_duration" type="animation">
 			<_short>Squeezimize duration</_short>
 			<_long>Sets the duration of the squeezimize animation in milliseconds.</_long>

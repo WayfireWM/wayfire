@@ -42,7 +42,6 @@
 static std::string transformer_name = "animation-squeezimize";
 
 wf::option_wrapper_t<wf::animation_description_t> squeezimize_duration{"animate/squeezimize_duration"};
-wf::option_wrapper_t<int> squeezimize_line_height{"animate/squeezimize_line_height"};
 
 static const char *squeeze_vert_source =
     R"(
