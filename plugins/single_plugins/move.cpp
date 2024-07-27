@@ -69,6 +69,10 @@ class wayfire_move : public wf::per_output_plugin_instance_t,
             if (!output->is_plugin_active(grab_interface.name))
             {
                 grab_input(drag_helper->view);
+            } else
+            {
+                input_grab->regrab_input();
+                update_slot(calc_slot(get_input_coords()));
             }
         } else
         {
@@ -291,7 +295,7 @@ class wayfire_move : public wf::per_output_plugin_instance_t,
         }
 
         this->input_grab->grab_input(wf::scene::layer::OVERLAY);
-        slot.slot_id = wf::grid::SLOT_NONE;
+        update_slot(wf::grid::SLOT_NONE);
         return true;
     }
 
@@ -343,7 +347,7 @@ class wayfire_move : public wf::per_output_plugin_instance_t,
         drag_helper->set_pending_drag(grab_position);
         drag_helper->start_drag(view, opts);
         drag_helper->handle_motion(get_global_input_coords());
-        slot.slot_id = wf::grid::SLOT_NONE;
+        update_slot(wf::grid::SLOT_NONE);
         return true;
     }
 
