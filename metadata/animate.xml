@@ -47,6 +47,10 @@
 				<_name>Zoom</_name>
 			</desc>
 			<desc>
+				<value>fire</value>
+				<_name>Fire</_name>
+			</desc>
+			<desc>
 				<value>zap</value>
 				<_name>Zap</_name>
 			</desc>
