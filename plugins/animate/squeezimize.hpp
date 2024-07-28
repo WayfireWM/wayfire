@@ -196,6 +196,19 @@ class squeezimize_transformer : public wf::scene::view_2d_transformer_t
                 0.0f, 1.0f,
             };
 
+            self->animation_geometry.x     = std::min(src_box.x, self->minimize_target.x);
+            self->animation_geometry.y     = std::min(src_box.y, self->minimize_target.y);
+            self->animation_geometry.width =
+                std::max(std::max(std::max(src_box.width,
+                    self->minimize_target.width),
+                    (self->minimize_target.x + self->minimize_target.width) - src_box.x),
+                    (src_box.x + src_box.width) - self->minimize_target.x);
+            self->animation_geometry.height =
+                std::max(std::max(std::max(src_box.height,
+                    self->minimize_target.height),
+                    (self->minimize_target.y + self->minimize_target.height) - src_box.y),
+                    (src_box.y + src_box.height) - self->minimize_target.y);
+
             const float vertex_data_pos[] = {
                 1.0f * self->animation_geometry.x,
                 1.0f * self->animation_geometry.y + self->animation_geometry.height,
