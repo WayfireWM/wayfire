@@ -322,7 +322,7 @@ class squeezimize_animation : public animation_base
         auto hint = toplevel->get_minimize_hint();
         auto tmgr = view->get_transformed_node();
         auto node = std::make_shared<wf::squeezimize::squeezimize_transformer>(view, hint, bbox);
-        tmgr->add_transformer(node, wf::TRANSFORMER_2D, transformer_name);
+        tmgr->add_transformer(node, wf::TRANSFORMER_HIGHLEVEL + 1, transformer_name);
         node->init_animation(type & HIDING_ANIMATION);
     }
 
