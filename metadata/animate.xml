@@ -25,6 +25,10 @@
 				<value>fire</value>
 				<_name>Fire</_name>
 			</desc>
+			<desc>
+				<value>zap</value>
+				<_name>Zap</_name>
+			</desc>
 		</option>
 		<option name="close_animation" type="string">
 			<_short>Close animation</_short>
@@ -43,8 +47,8 @@
 				<_name>Zoom</_name>
 			</desc>
 			<desc>
-				<value>fire</value>
-				<_name>Fire</_name>
+				<value>zap</value>
+				<_name>Zap</_name>
 			</desc>
 		</option>
 		<option name="minimize_animation" type="string">
