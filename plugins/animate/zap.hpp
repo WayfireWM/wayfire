@@ -16,7 +16,6 @@ class zap_animation_t : public duration_t
 {
   public:
     using duration_t::duration_t;
-    timed_transition_t zap{*this};
 };
 class zap_animation : public animation_base
 {
