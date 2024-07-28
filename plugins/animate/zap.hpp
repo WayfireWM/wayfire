@@ -54,8 +54,8 @@ class zap_animation : public animation_base
         auto progress_pt_two   = (std::clamp(progress, 1.0 / 3.0, (1.0 / 3.0) * 2.0) - 1.0 / 3.0) * 3.0;
         auto progress_pt_three = (std::clamp(progress, (1.0 / 3.0) * 2.0, 1.0) - (1.0 / 3.0) * 2.0) * 3.0;
         transform->alpha   = progress_pt_one;
-        transform->scale_x = 0.01 + progress_pt_three * 0.99;
-        transform->scale_y = 0.01 + progress_pt_two * 0.99;
+        transform->scale_x = 0.01 + progress_pt_two * 0.99;
+        transform->scale_y = 0.01 + progress_pt_three * 0.99;
 
         return progression.running();
     }
