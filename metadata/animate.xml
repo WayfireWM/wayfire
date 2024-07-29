@@ -63,6 +63,12 @@
 			<_long>Sets the duration of fading (in milliseconds) when Wayfire starts.</_long>
 			<default>600ms linear</default>
 		</option>
+		<!-- Close animation -->
+		<option name="close_duration" type="animation">
+			<_short>Close animation duration</_short>
+			<_long>Sets the duration of animation when closing a window.</_long>
+			<default>400ms</default>
+		</option>
 		<!-- Fade animation -->
 		<option name="fade_enabled_for" type="string">
 			<_short>Fade animation enabled for specified window types</_short>

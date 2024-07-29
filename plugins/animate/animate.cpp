@@ -268,6 +268,7 @@ class wayfire_animation : public wf::plugin_interface_t, private wf::per_output_
     wf::option_wrapper_t<std::string> close_animation{"animate/close_animation"};
 
     wf::option_wrapper_t<wf::animation_description_t> default_duration{"animate/duration"};
+    wf::option_wrapper_t<wf::animation_description_t> close_duration{"animate/close_duration"};
     wf::option_wrapper_t<wf::animation_description_t> fade_duration{"animate/fade_duration"};
     wf::option_wrapper_t<wf::animation_description_t> zoom_duration{"animate/zoom_duration"};
     wf::option_wrapper_t<wf::animation_description_t> fire_duration{"animate/fire_duration"};
@@ -332,7 +333,7 @@ class wayfire_animation : public wf::plugin_interface_t, private wf::per_output_
 
         if (animation_enabled_for.matches(view))
         {
-            return {anim_type, default_duration};
+            return {anim_type, &anim_type == &close_animation ? close_duration : default_duration};
         }
 
         return {"none", wf::animation_description_t{0, {}, ""}};
