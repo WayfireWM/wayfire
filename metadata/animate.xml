@@ -33,6 +33,10 @@
 				<value>spin</value>
 				<_name>Spin</_name>
 			</desc>
+			<desc>
+				<value>helix</value>
+				<_name>Helix</_name>
+			</desc>
 		</option>
 		<option name="close_animation" type="string">
 			<_short>Close animation</_short>
@@ -61,6 +65,10 @@
 			<desc>
 				<value>spin</value>
 				<_name>Spin</_name>
+			</desc>
+			<desc>
+				<value>helix</value>
+				<_name>Helix</_name>
 			</desc>
 		</option>
 		<option name="minimize_animation" type="string">
@@ -168,6 +176,11 @@
 			<_short>Spin rotations</_short>
 			<_long>Number of rotations for the spin animation. Negative values reverse the spin direction.</_long>
 			<default>1</default>
+		</option>
+		<option name="helix_duration" type="animation">
+			<_short>Helix duration</_short>
+			<_long>Sets the duration for the helix animation in milliseconds.</_long>
+			<default>700ms linear</default>
 		</option>
 	</plugin>
 </wayfire>
