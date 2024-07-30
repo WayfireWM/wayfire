@@ -39,7 +39,7 @@
 #include "animate.hpp"
 
 
-static std::string transformer_name = "animation-helix";
+static std::string helix_transformer_name = "animation-helix";
 
 wf::option_wrapper_t<wf::animation_description_t> helix_duration{"animate/helix_duration"};
 
@@ -310,15 +310,15 @@ class helix_animation : public animation_base
         auto bbox = view->get_transformed_node()->get_bounding_box();
         auto tmgr = view->get_transformed_node();
         auto node = std::make_shared<wf::helix::helix_transformer>(view, bbox);
-        tmgr->add_transformer(node, wf::TRANSFORMER_HIGHLEVEL + 1, transformer_name);
+        tmgr->add_transformer(node, wf::TRANSFORMER_HIGHLEVEL + 1, helix_transformer_name);
         node->init_animation(type & HIDING_ANIMATION);
     }
 
     void pop_transformer(wayfire_view view)
     {
-        if (view->get_transformed_node()->get_transformer(transformer_name))
+        if (view->get_transformed_node()->get_transformer(helix_transformer_name))
         {
-            view->get_transformed_node()->rem_transformer(transformer_name);
+            view->get_transformed_node()->rem_transformer(helix_transformer_name);
         }
     }
 
@@ -335,7 +335,7 @@ class helix_animation : public animation_base
             return false;
         }
 
-        if (auto tr = tmgr->get_transformer<wf::helix::helix_transformer>(transformer_name))
+        if (auto tr = tmgr->get_transformer<wf::helix::helix_transformer>(helix_transformer_name))
         {
             auto running = tr->progression.running();
             if (!running)
@@ -354,7 +354,7 @@ class helix_animation : public animation_base
     {
         if (auto tr =
                 view->get_transformed_node()->get_transformer<wf::helix::helix_transformer>(
-                    transformer_name))
+                    helix_transformer_name))
         {
             tr->progression.reverse();
         }
