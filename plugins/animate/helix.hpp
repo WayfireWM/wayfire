@@ -130,7 +130,7 @@ class helix_transformer : public wf::scene::view_2d_transformer_t
             instructions.push_back(render_instruction_t{
                         .instance = this,
                         .target   = target,
-                        .damage   = damage & self->get_bounding_box(),
+                        .damage   = damage & self->animation_geometry,
                     });
         }
 
@@ -149,7 +149,7 @@ class helix_transformer : public wf::scene::view_2d_transformer_t
             auto og = self->output->get_relative_geometry();
             self->animation_geometry = og;
 
-            int line_height = 25;
+            int line_height = 20;
             std::vector<float> uv;
             std::vector<float> vertices;
             glm::mat4 l = glm::lookAt(
@@ -176,7 +176,12 @@ class helix_transformer : public wf::scene::view_2d_transformer_t
                 glm::vec4 v, r;
                 glm::mat4 m(1.0);
                 m = glm::rotate(m, float(M_PI), glm::vec3(1.0, 0.0, 0.0));
-                m = glm::rotate(m, float(M_PI * 2.0 * progress), glm::vec3(0.0, 1.0, 0.0));
+                m =
+                    glm::rotate(m,
+                        float(std::min(M_PI * 2.0,
+                            std::max(0.0,
+                                (M_PI * 3.5 * (1.0 - progress)) - M_PI * 2.0 * (float(i) / src_box.height)) +
+                            M_PI / 2.0)), glm::vec3(0.0, 1.0, 0.0));
                 m = glm::scale(m, glm::vec3(2.0f / og.width, 2.0f / og.height, 1.0));
                 auto x1 = src_box.width / 2.0;
                 auto x2 = -(src_box.width / 2.0);
@@ -222,7 +227,7 @@ class helix_transformer : public wf::scene::view_2d_transformer_t
                         float(2.0f / float(og.height)),
                         0.0));
 
-            auto transform = p * l * t;
+            auto transform = t * p * l;
             OpenGL::render_begin(target);
             for (auto box : region)
             {
