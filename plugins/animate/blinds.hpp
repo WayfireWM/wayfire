@@ -125,7 +125,7 @@ class blinds_transformer : public wf::scene::view_2d_transformer_t
 
         void schedule_instructions(
             std::vector<render_instruction_t>& instructions,
-            const wf::render_target_t& target, wf::region_t& damage)
+            const wf::render_target_t& target, wf::region_t& damage) override
         {
             instructions.push_back(render_instruction_t{
                         .instance = this,
@@ -140,7 +140,7 @@ class blinds_transformer : public wf::scene::view_2d_transformer_t
         }
 
         void render(const wf::render_target_t& target,
-            const wf::region_t& region)
+            const wf::region_t& region) override
         {
             auto src_box = self->get_children_bounding_box();
             auto src_tex = wf::scene::transformer_render_instance_t<transformer_base_node_t>::get_texture(
@@ -234,10 +234,10 @@ class blinds_transformer : public wf::scene::view_2d_transformer_t
                 for (auto box : region)
                 {
                     target.logic_scissor(wlr_box_from_pixman_box(box));
-                    OpenGL::render_transformed_texture(slice.tex, gl_geometry{src_box.x - line_height,
-                        src_box.y + i,
-                        (src_box.x - line_height) + src_box.width + line_height * 2.0,
-                        (src_box.y + i) + (y2 - y1)}, {},
+                    OpenGL::render_transformed_texture(slice.tex, gl_geometry{float(src_box.x - line_height),
+                        float(src_box.y + i),
+                        float((src_box.x - line_height) + src_box.width + line_height * 2.0),
+                        float((src_box.y + i) + (y2 - y1))}, {},
                         target.get_orthographic_projection(), glm::vec4(1.0), 0);
                 }
 
