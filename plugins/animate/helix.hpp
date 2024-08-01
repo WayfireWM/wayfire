@@ -227,7 +227,7 @@ class helix_transformer : public wf::scene::view_2d_transformer_t
                         float(2.0f / float(og.height)),
                         0.0));
 
-            auto transform = t * p * l;
+            auto transform = target.transform * t * p * l;
             OpenGL::render_begin(target);
             for (auto box : region)
             {
