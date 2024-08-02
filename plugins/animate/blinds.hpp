@@ -241,6 +241,7 @@ class blinds_transformer : public wf::scene::view_2d_transformer_t
                         target.get_orthographic_projection(), glm::vec4(1.0), 0);
                 }
 
+                slice.release();
                 OpenGL::render_end();
             }
         }
