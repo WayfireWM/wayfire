@@ -25,6 +25,10 @@
 				<value>fire</value>
 				<_name>Fire</_name>
 			</desc>
+			<desc>
+				<value>helix</value>
+				<_name>Helix</_name>
+			</desc>
 		</option>
 		<option name="close_animation" type="string">
 			<_short>Close animation</_short>
@@ -45,6 +49,10 @@
 			<desc>
 				<value>fire</value>
 				<_name>Fire</_name>
+			</desc>
+			<desc>
+				<value>helix</value>
+				<_name>Helix</_name>
 			</desc>
 		</option>
 		<!-- Preferred animation -->
@@ -115,6 +123,11 @@
 			<_short>Color of the fire</_short>
 			<_long>Sets the color of the fire effects, alpha is ignored</_long>
 			<default>#b22303ff</default>
+		</option>
+		<option name="helix_duration" type="animation">
+			<_short>Helix duration</_short>
+			<_long>Sets the duration for the helix animation in milliseconds.</_long>
+			<default>700ms linear</default>
 		</option>
 	</plugin>
 </wayfire>
