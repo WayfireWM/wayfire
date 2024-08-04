@@ -78,7 +78,7 @@ class grab_node_t : public node_t
      */
     std::string stringify() const override
     {
-        return name + "-input-grab";
+        return name + "-input-grab " + std::string(output ? output->to_string() : "null");
     }
 
     keyboard_interaction_t& keyboard_interaction() override
@@ -155,6 +155,28 @@ class input_grab_t
 
         // Set cursor to default.
         wf::get_core().set_cursor("default");
+    }
+
+    void regrab_input()
+    {
+        const auto& check_focus = [&] (wf::scene::node_ptr focused)
+        {
+            return (focused == nullptr) || (focused == grab_node);
+        };
+
+        if ((wf::get_core().seat->get_active_node() == grab_node) &&
+            check_focus(wf::get_core().get_cursor_focus()) &&
+            check_focus(wf::get_core().get_touch_focus()))
+        {
+            return;
+        }
+
+        if (output == wf::get_core().seat->get_active_output())
+        {
+            wf::get_core().transfer_grab(grab_node);
+        }
+
+        scene::update(wf::get_core().scene(), scene::update_flag::REFOCUS);
     }
 
     /**

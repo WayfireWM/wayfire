@@ -1,5 +1,4 @@
-import wayfire_socket as ws
-import os
+from wayfire.ipc import WayfireSocket
 import argparse
 import tabulate
 
@@ -22,9 +21,7 @@ if args.device is None and args.action != 'list-inputs':
     print('Invalid usage, an input id >= 0 is required!')
     exit(-1)
 
-addr = os.getenv('WAYFIRE_SOCKET')
-sock = ws.WayfireSocket(addr)
-
+sock = WayfireSocket()
 devices = sock.list_input_devices()
 
 def find_device_id(name_or_id_or_type):

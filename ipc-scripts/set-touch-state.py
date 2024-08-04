@@ -1,5 +1,4 @@
-import wayfire_socket as ws
-import os
+from wayfire.ipc import WayfireSocket
 import sys
 
 # This is a small example of how to use the Wayfire socket to set the touchscreen state to on or off.
@@ -11,8 +10,7 @@ if len(sys.argv) != 2 or sys.argv[1] not in ['enabled', 'disabled']:
     exit(-1)
 
 state: bool = sys.argv[1] == 'enabled'
-addr = os.getenv('WAYFIRE_SOCKET')
-sock = ws.WayfireSocket(addr)
+sock = WayfireSocket()
 
 devices = sock.list_input_devices()
 for dev in devices:

@@ -4,6 +4,7 @@
 #include <wayfire/nonstd/reverse.hpp>
 #include <wayfire/nonstd/wlroots-full.hpp>
 #include <wayfire/util.hpp>
+#include <sstream>
 
 #define BUTTON_HEIGHT_PC 0.7
 

@@ -1,11 +1,8 @@
-import wayfire_socket as ws
-import os
+from wayfire.ipc import WayfireSocket
 import json
 import argparse
 
-addr = os.getenv('WAYFIRE_SOCKET')
-sock = ws.WayfireSocket(addr)
-
+sock = WayfireSocket()
 parser = argparse.ArgumentParser()
 subparsers = parser.add_subparsers(dest='action')
 
