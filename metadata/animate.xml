@@ -25,6 +25,10 @@
 				<value>fire</value>
 				<_name>Fire</_name>
 			</desc>
+			<desc>
+				<value>spin</value>
+				<_name>Spin</_name>
+			</desc>
 		</option>
 		<option name="close_animation" type="string">
 			<_short>Close animation</_short>
@@ -45,6 +49,10 @@
 			<desc>
 				<value>fire</value>
 				<_name>Fire</_name>
+			</desc>
+			<desc>
+				<value>spin</value>
+				<_name>Spin</_name>
 			</desc>
 		</option>
 		<!-- Preferred animation -->
