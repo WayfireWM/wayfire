@@ -253,7 +253,7 @@ class helix_transformer : public wf::scene::view_2d_transformer_t
             output->render->add_effect(&pre_hook, wf::OUTPUT_EFFECT_PRE);
         }
 
-        animation_geometry = bbox;
+        animation_geometry = output->get_relative_geometry();
         OpenGL::render_begin();
         program.compile(helix_vert_source, helix_frag_source);
         OpenGL::render_end();
