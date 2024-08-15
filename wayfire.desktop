@@ -4,4 +4,4 @@ Exec=wayfire
 TryExec=wayfire
 Icon=
 Type=Application
-DesktopNames=Wayfire
+DesktopNames=Wayfire;wlroots
