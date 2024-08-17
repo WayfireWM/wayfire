@@ -59,6 +59,7 @@ class wayfire_resize : public wf::per_output_plugin_instance_t, public wf::point
     bool preserve_aspect = false;
     wf::point_t grab_start;
     wf::geometry_t grabbed_geometry;
+    wf::dimensions_t min_size, max_size;
 
     uint32_t edges;
     wf::option_wrapper_t<wf::buttonbinding_t> button{"resize/activate"};
@@ -222,6 +223,8 @@ class wayfire_resize : public wf::per_output_plugin_instance_t, public wf::point
 
         grab_start = get_input_coords();
         grabbed_geometry = view->get_geometry();
+        min_size = view->toplevel()->get_min_size();
+        max_size = view->toplevel()->get_max_size();
         if (view->pending_tiled_edges())
         {
             view->toplevel()->pending().tiled_edges = 0;
@@ -347,6 +350,38 @@ class wayfire_resize : public wf::per_output_plugin_instance_t, public wf::point
         {
             desired.width  = std::max(desired.width, 1);
             desired.height = std::max(desired.height, 1);
+        }
+
+        if (min_size.width > 0)
+        {
+            desired.width =
+                std::max(min_size.width +
+                    (view->toplevel()->pending().margins.left + view->toplevel()->pending().margins.right),
+                    desired.width);
+        }
+
+        if (max_size.width > 0)
+        {
+            desired.width =
+                std::min(max_size.width -
+                    (view->toplevel()->pending().margins.left + view->toplevel()->pending().margins.right),
+                    desired.width);
+        }
+
+        if (min_size.height > 0)
+        {
+            desired.height =
+                std::max(min_size.height +
+                    (view->toplevel()->pending().margins.top + view->toplevel()->pending().margins.bottom),
+                    desired.height);
+        }
+
+        if (max_size.height > 0)
+        {
+            desired.height =
+                std::min(max_size.height -
+                    (view->toplevel()->pending().margins.top + view->toplevel()->pending().margins.bottom),
+                    desired.height);
         }
 
         view->toplevel()->pending().gravity  = calculate_gravity();
