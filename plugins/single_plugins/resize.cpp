@@ -352,6 +352,8 @@ class wayfire_resize : public wf::per_output_plugin_instance_t, public wf::point
             desired.height = std::max(desired.height, 1);
         }
 
+        auto desired_unconstrained = desired;
+
         if (min_size.width > 0)
         {
             desired.width =
@@ -384,9 +386,17 @@ class wayfire_resize : public wf::per_output_plugin_instance_t, public wf::point
                     desired.height);
         }
 
-        view->toplevel()->pending().gravity  = calculate_gravity();
-        view->toplevel()->pending().geometry = desired;
-        wf::get_core().tx_manager->schedule_object(view->toplevel());
+        auto desired_constrained = desired;
+        desired.x += desired_unconstrained.width - desired_constrained.width;
+        desired.y += desired_unconstrained.height - desired_constrained.height;
+
+        if ((view->toplevel()->pending().geometry.width != desired.width) ||
+            (view->toplevel()->pending().geometry.height != desired.height))
+        {
+            view->toplevel()->pending().gravity  = calculate_gravity();
+            view->toplevel()->pending().geometry = desired;
+            wf::get_core().tx_manager->schedule_object(view->toplevel());
+        }
     }
 
     void fini() override
