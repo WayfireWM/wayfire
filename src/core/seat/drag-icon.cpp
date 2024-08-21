@@ -3,89 +3,97 @@
 #include "wayfire/unstable/wlr-surface-node.hpp"
 #include "wayfire/core.hpp"
 #include "wayfire/geometry.hpp"
-#include "wayfire/object.hpp"
 #include "wayfire/opengl.hpp"
 #include "wayfire/region.hpp"
 #include "wayfire/scene-operations.hpp"
 #include "wayfire/scene-render.hpp"
 #include "wayfire/scene.hpp"
-#include "wayfire/debug.hpp"
 #include "../core-impl.hpp"
 #include "wayfire/signal-provider.hpp"
 #include <memory>
-#include <type_traits>
 #include "seat-impl.hpp"
 
 namespace wf
 {
 namespace scene
 {
-class dnd_icon_root_render_instance_t : public render_instance_t
+class dnd_root_icon_root_node_t : public floating_inner_node_t
 {
-    std::vector<render_instance_uptr> children;
-    wf::drag_icon_t *icon;
-    damage_callback push_damage;
-    wf::signal::connection_t<node_damage_signal> on_damage =
-        [=] (node_damage_signal *data)
+    class dnd_icon_root_render_instance_t : public render_instance_t
     {
-        push_damage(data->region);
+        std::vector<render_instance_uptr> children;
+        damage_callback push_damage;
+        wf::signal::connection_t<node_damage_signal> on_damage =
+            [=] (node_damage_signal *data)
+        {
+            push_damage(data->region);
+        };
+
+        std::weak_ptr<dnd_root_icon_root_node_t> _self;
+
+      public:
+        dnd_icon_root_render_instance_t(dnd_root_icon_root_node_t *self, damage_callback push_damage)
+        {
+            this->_self = std::dynamic_pointer_cast<dnd_root_icon_root_node_t>(self->shared_from_this());
+            this->push_damage = push_damage;
+            self->connect(&on_damage);
+
+            auto transformed_push_damage = [this] (wf::region_t region)
+            {
+                if (auto self = _self.lock())
+                {
+                    region += self->icon->get_position();
+                    this->push_damage(region);
+                }
+            };
+
+            for (auto& ch : self->get_children())
+            {
+                if (ch->is_enabled())
+                {
+                    ch->gen_render_instances(children, transformed_push_damage);
+                }
+            }
+        }
+
+        void schedule_instructions(
+            std::vector<render_instruction_t>& instructions,
+            const wf::render_target_t& target, wf::region_t& damage) override
+        {
+            auto self = _self.lock();
+            if (!self)
+            {
+                return;
+            }
+
+            wf::render_target_t our_target = target.translated(-self->get_position());
+
+            damage += -self->get_position();
+            for (auto& ch : this->children)
+            {
+                ch->schedule_instructions(instructions, our_target, damage);
+            }
+
+            damage += self->get_position();
+        }
+
+        void render(const wf::render_target_t& target,
+            const wf::region_t& region) override
+        {
+            wf::dassert(false, "Rendering a drag icon root node?");
+        }
+
+        void compute_visibility(wf::output_t *output, wf::region_t& visible) override
+        {
+            if (auto self = _self.lock())
+            {
+                compute_visibility_from_list(children, output, visible, self->get_position());
+            }
+        }
     };
 
   public:
-    dnd_icon_root_render_instance_t(node_t *self,
-        wf::drag_icon_t *icon, damage_callback push_damage)
-    {
-        this->icon = icon;
-        this->push_damage = push_damage;
-        self->connect(&on_damage);
-
-        auto transformed_push_damage = [icon, push_damage] (wf::region_t region)
-        {
-            region += icon->get_position();
-            push_damage(region);
-        };
-
-        for (auto& ch : self->get_children())
-        {
-            if (ch->is_enabled())
-            {
-                ch->gen_render_instances(children, transformed_push_damage);
-            }
-        }
-    }
-
-    void schedule_instructions(
-        std::vector<render_instruction_t>& instructions,
-        const wf::render_target_t& target, wf::region_t& damage) override
-    {
-        wf::render_target_t our_target = target.translated(-icon->get_position());
-
-        damage += -icon->get_position();
-        for (auto& ch : this->children)
-        {
-            ch->schedule_instructions(instructions, our_target, damage);
-        }
-
-        damage += icon->get_position();
-    }
-
-    void render(const wf::render_target_t& target,
-        const wf::region_t& region) override
-    {
-        wf::dassert(false, "Rendering a drag icon root node?");
-    }
-
-    void compute_visibility(wf::output_t *output, wf::region_t& visible) override
-    {
-        compute_visibility_from_list(children, output, visible, icon->get_position());
-    }
-};
-
-class dnd_root_icon_root_node_t : public floating_inner_node_t
-{
     wf::drag_icon_t *icon;
-
-  public:
     dnd_root_icon_root_node_t(drag_icon_t *icon) : floating_inner_node_t(false)
     {
         this->icon = icon;
@@ -98,7 +106,7 @@ class dnd_root_icon_root_node_t : public floating_inner_node_t
     void gen_render_instances(std::vector<render_instance_uptr>& instances,
         damage_callback push_damage, wf::output_t *output) override
     {
-        instances.push_back(std::make_unique<dnd_icon_root_render_instance_t>(this, icon, push_damage));
+        instances.push_back(std::make_unique<dnd_icon_root_render_instance_t>(this, push_damage));
     }
 
     std::optional<input_node_t> find_node_at(const wf::pointf_t& at) override
@@ -115,6 +123,17 @@ class dnd_root_icon_root_node_t : public floating_inner_node_t
     std::string stringify() const override
     {
         return "dnd-icon " + stringify_flags();
+    }
+
+    wf::point_t get_position()
+    {
+        if (icon)
+        {
+            return icon->get_position();
+        } else
+        {
+            return {0, 0};
+        }
     }
 };
 }
@@ -164,6 +183,7 @@ wf::drag_icon_t::drag_icon_t(wlr_drag_icon *ic) : icon(ic)
 
 wf::drag_icon_t::~drag_icon_t()
 {
+    root_node->icon = nullptr;
     wf::scene::remove_child(root_node);
 }
 
