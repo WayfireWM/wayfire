@@ -522,6 +522,9 @@ void wf::move_view_to_output(wayfire_toplevel_view v, wf::output_t *new_output, 
     wf::geometry_t old_output_g;
     wf::geometry_t new_output_g;
 
+    int delta_x = 0;
+    int delta_y = 0;
+
     if (reconfigure)
     {
         edges = v->pending_tiled_edges();
@@ -533,6 +536,9 @@ void wf::move_view_to_output(wayfire_toplevel_view v, wf::output_t *new_output, 
         auto ratio_y = (double)new_output_g.height / old_output_g.height;
         view_g.x *= ratio_x;
         view_g.y *= ratio_y;
+
+        delta_x = view_g.x - v->get_pending_geometry().x;
+        delta_y = view_g.y - v->get_pending_geometry().y;
     }
 
     assert(new_output);
@@ -555,6 +561,15 @@ void wf::move_view_to_output(wayfire_toplevel_view v, wf::output_t *new_output, 
         {
             auto new_g = wf::clamp(view_g, new_output->workarea->get_workarea());
             v->set_geometry(new_g);
+        }
+
+        for (auto& dialog : v->enumerate_views())
+        {
+            if ((dialog != v) && (delta_x || delta_y))
+            {
+                dialog->move(dialog->get_pending_geometry().x + delta_x,
+                    dialog->get_pending_geometry().y + delta_y);
+            }
         }
     }
 

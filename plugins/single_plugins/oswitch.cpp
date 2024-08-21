@@ -1,5 +1,6 @@
 #include "wayfire/plugin.hpp"
 #include "wayfire/toplevel-view.hpp"
+#include "wayfire/view-helpers.hpp"
 #include <wayfire/output.hpp>
 #include <wayfire/core.hpp>
 #include <wayfire/view.hpp>
@@ -46,8 +47,9 @@ class wayfire_oswitch : public wf::plugin_interface_t
     void switch_to_output_with_window(wf::output_t *target_output)
     {
         auto current_output = wf::get_core().seat->get_active_output();
-        auto view = wf::toplevel_cast(wf::get_active_view_for_output(current_output));
-        LOGI("Found view ", view);
+        auto view =
+            wf::find_topmost_parent(wf::toplevel_cast(wf::get_active_view_for_output(current_output)));
+
         if (view)
         {
             move_view_to_output(view, target_output, true);

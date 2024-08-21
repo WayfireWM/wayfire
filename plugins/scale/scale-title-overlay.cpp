@@ -7,6 +7,7 @@
 #include "wayfire/plugins/scale-signal.hpp"
 #include "wayfire/scene-operations.hpp"
 #include "wayfire/signal-definitions.hpp"
+#include "wayfire/view-helpers.hpp"
 #include "wayfire/view-transform.hpp"
 
 #include <memory>
@@ -16,19 +17,6 @@
 #include <wayfire/plugins/common/simple-texture.hpp>
 #include <wayfire/scene.hpp>
 #include <wayfire/scene-render.hpp>
-
-/**
- * Get the topmost parent of a view.
- */
-static wayfire_toplevel_view find_toplevel_parent(wayfire_toplevel_view view)
-{
-    while (view->parent)
-    {
-        view = view->parent;
-    }
-
-    return view;
-}
 
 /**
  * Class storing an overlay with a view's title, only stored for parent views.
@@ -141,7 +129,7 @@ class title_overlay_node_t : public node_t
     wf::dimensions_t find_maximal_title_size()
     {
         wf::dimensions_t max_size = {0, 0};
-        auto parent = find_toplevel_parent(view);
+        auto parent = find_topmost_parent(view);
 
         for (auto v : parent->enumerate_views())
         {
@@ -169,7 +157,7 @@ class title_overlay_node_t : public node_t
             return false;
         }
 
-        auto parent = find_toplevel_parent(view);
+        auto parent = find_topmost_parent(view);
 
         if ((this->parent.show_view_title_overlay ==
              scale_show_title_t::title_overlay_t::MOUSE) &&
@@ -213,7 +201,7 @@ class title_overlay_node_t : public node_t
          * TODO: check if this wastes too high CPU power when views are being
          * animated and maybe redraw less frequently
          */
-        auto& tex = get_overlay_texture(find_toplevel_parent(view));
+        auto& tex = get_overlay_texture(find_topmost_parent(view));
         if ((tex.overlay.tex.tex == (GLuint) - 1) ||
             (output_scale != tex.par.output_scale) ||
             (tex.overlay.tex.width > box.width * output_scale) ||
@@ -253,7 +241,7 @@ class title_overlay_node_t : public node_t
         wayfire_toplevel_view view_, position pos_, scale_show_title_t& parent_) :
         node_t(false), view(view_), parent(parent_), pos(pos_)
     {
-        auto parent = find_toplevel_parent(view);
+        auto parent = find_topmost_parent(view);
         auto& title = get_overlay_texture(parent);
 
         if (title.overlay.tex.tex != (GLuint) - 1)
@@ -500,7 +488,7 @@ void scale_show_title_t::update_title_overlay_mouse()
     wayfire_toplevel_view v = scale_find_view_at(wf::get_core().get_cursor_position(), output);
     if (v)
     {
-        v = find_toplevel_parent(v);
+        v = wf::find_topmost_parent(v);
 
         if (v->role != wf::VIEW_ROLE_TOPLEVEL)
         {

@@ -11,6 +11,7 @@
 #include "wayfire/scene.hpp"
 #include "wayfire/seat.hpp"
 #include "wayfire/signal-definitions.hpp"
+#include "wayfire/view-helpers.hpp"
 #include <memory>
 #include <wayfire/nonstd/reverse.hpp>
 #include <wayfire/plugins/common/util.hpp>
@@ -279,16 +280,6 @@ struct dragged_view_t
     wf::geometry_t last_bbox;
 };
 
-inline wayfire_toplevel_view get_toplevel(wayfire_toplevel_view view)
-{
-    while (view->parent)
-    {
-        view = view->parent;
-    }
-
-    return view;
-}
-
 inline std::vector<wayfire_toplevel_view> get_target_views(wayfire_toplevel_view grabbed,
     bool join_views)
 {
@@ -492,7 +483,7 @@ class core_drag_t : public signal::provider_t
 
         if (options.join_views)
         {
-            grab_view = get_toplevel(grab_view);
+            grab_view = find_topmost_parent(grab_view);
         }
 
         this->view   = grab_view;
@@ -556,7 +547,7 @@ class core_drag_t : public signal::provider_t
 
         if (options.join_views)
         {
-            view = get_toplevel(view);
+            view = find_topmost_parent(view);
         }
 
         auto bbox = view->get_transformed_node()->get_bounding_box() +
@@ -775,7 +766,7 @@ inline void adjust_view_on_output(drag_done_signal *ev)
 {
     // Any one of the views that are being dragged.
     // They are all part of the same view tree.
-    auto parent = get_toplevel(ev->main_view);
+    auto parent = find_topmost_parent(ev->main_view);
     if (!parent->is_mapped())
     {
         return;

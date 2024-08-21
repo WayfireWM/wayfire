@@ -130,12 +130,7 @@ class wayfire_xwayland_view : public wf::toplevel_view_interface_t, public wayfi
             configure_geometry.x -= og.x;
             configure_geometry.y -= og.y;
 
-            wayfire_toplevel_view view = {this};
-            while (view->parent)
-            {
-                view = view->parent;
-            }
-
+            wayfire_toplevel_view view = wf::find_topmost_parent(wayfire_toplevel_view{this});
             auto vg = view->get_pending_geometry();
 
             // View workspace relative to current workspace

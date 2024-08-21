@@ -335,17 +335,6 @@ class wayfire_scale : public wf::per_output_plugin_instance_t,
         }
     }
 
-    /** Return the topmost parent */
-    wayfire_toplevel_view get_top_parent(wayfire_toplevel_view view)
-    {
-        while (view && view->parent)
-        {
-            view = view->parent;
-        }
-
-        return view;
-    }
-
     /* Fade all views' alpha to inactive alpha except the
      * view argument */
     void fade_out_all_except(wayfire_toplevel_view view)
@@ -353,7 +342,7 @@ class wayfire_scale : public wf::per_output_plugin_instance_t,
         for (auto& e : scale_data)
         {
             auto v = e.first;
-            if (get_top_parent(v) == get_top_parent(view))
+            if (wf::find_topmost_parent(v) == wf::find_topmost_parent(view))
             {
                 continue;
             }
@@ -495,7 +484,7 @@ class wayfire_scale : public wf::per_output_plugin_instance_t,
             // Focus the view under the mouse
             current_focus_view = view;
             fade_out_all_except(view);
-            fade_in(get_top_parent(view));
+            fade_in(wf::find_topmost_parent(view));
 
             // End scale
             initial_focus_view.reset();
@@ -548,11 +537,7 @@ class wayfire_scale : public wf::per_output_plugin_instance_t,
     /* Get the workspace for the center point of the untransformed view geometry */
     wf::point_t get_view_main_workspace(wayfire_toplevel_view view)
     {
-        while (view->parent)
-        {
-            view = view->parent;
-        }
-
+        view = wf::find_topmost_parent(view);
         auto ws     = output->wset()->get_current_workspace();
         auto og     = output->get_layout_geometry();
         auto vg     = view->get_geometry();
@@ -787,7 +772,7 @@ class wayfire_scale : public wf::per_output_plugin_instance_t,
         auto views = get_views();
 
         return std::find(
-            views.begin(), views.end(), get_top_parent(view)) != views.end();
+            views.begin(), views.end(), wf::find_topmost_parent(view)) != views.end();
     }
 
     /* Convenience assignment function */

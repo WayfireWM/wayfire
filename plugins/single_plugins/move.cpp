@@ -262,12 +262,13 @@ class wayfire_move : public wf::per_output_plugin_instance_t,
      */
     wayfire_toplevel_view get_target_view(wayfire_toplevel_view view)
     {
-        while (view && view->parent && join_views)
+        if (join_views)
         {
-            view = view->parent;
+            return wf::find_topmost_parent(view);
+        } else
+        {
+            return view;
         }
-
-        return view;
     }
 
     bool can_move_view(wayfire_toplevel_view view)
@@ -305,7 +306,7 @@ class wayfire_move : public wf::per_output_plugin_instance_t,
         auto target_output = wf::get_core().output_layout->get_output_at(grab_position.x, grab_position.y);
         if (target_output && (view->get_output() != target_output))
         {
-            auto parent = wf::move_drag::get_toplevel(view);
+            auto parent = wf::find_topmost_parent(view);
             auto offset = wf::origin(parent->get_output()->get_layout_geometry()) +
                 -wf::origin(target_output->get_layout_geometry());
 
