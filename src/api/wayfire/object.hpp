@@ -4,6 +4,7 @@
 #include <typeinfo>
 #include <memory>
 #include <string>
+#include <cstdint>
 
 #include <wayfire/nonstd/observer_ptr.h>
 
