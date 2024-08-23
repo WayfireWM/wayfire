@@ -42,7 +42,7 @@ class dnd_root_icon_root_node_t : public floating_inner_node_t
             {
                 if (auto self = _self.lock())
                 {
-                    region += self->icon->get_position();
+                    region += self->get_position();
                     this->push_damage(region);
                 }
             };
@@ -117,7 +117,13 @@ class dnd_root_icon_root_node_t : public floating_inner_node_t
 
     wf::geometry_t get_bounding_box() override
     {
-        return icon->last_box;
+        if (icon)
+        {
+            return icon->last_box;
+        } else
+        {
+            return {0, 0, 0, 0};
+        }
     }
 
     std::string stringify() const override
