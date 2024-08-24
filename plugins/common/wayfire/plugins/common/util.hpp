@@ -7,6 +7,7 @@
 #include "wayfire/scene.hpp"
 #include "wayfire/view.hpp"
 #include "wayfire/output.hpp"
+#include "wayfire/view-helpers.hpp"
 #include "wayfire/toplevel-view.hpp"
 #include "wayfire/workspace-set.hpp"
 #include <memory>
@@ -90,7 +91,7 @@ inline wayfire_toplevel_view find_output_view_at(wf::output_t *output, const wf:
 
             if (auto view = wf::toplevel_cast(wf::node_to_view(node)))
             {
-                if (view->get_wset() == output->wset())
+                if (wf::find_topmost_parent(view)->get_wset() == output->wset())
                 {
                     return view;
                 }
