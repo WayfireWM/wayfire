@@ -257,11 +257,6 @@ class squeezimize_transformer : public wf::scene::view_2d_transformer_t
     {
         this->view = view;
         this->minimize_target = minimize_target;
-        if (view->get_output())
-        {
-            output = view->get_output();
-            output->render->add_effect(&pre_hook, wf::OUTPUT_EFFECT_PRE);
-        }
 
         animation_geometry.x     = std::min(bbox.x, minimize_target.x);
         animation_geometry.y     = std::min(bbox.y, minimize_target.y);
@@ -285,11 +280,6 @@ class squeezimize_transformer : public wf::scene::view_2d_transformer_t
         return this->animation_geometry;
     }
 
-    wf::effect_hook_t pre_hook = [=] ()
-    {
-        output->render->damage(animation_geometry);
-    };
-
     void gen_render_instances(std::vector<render_instance_uptr>& instances,
         damage_callback push_damage, wf::output_t *shown_on) override
     {
@@ -309,11 +299,6 @@ class squeezimize_transformer : public wf::scene::view_2d_transformer_t
 
     virtual ~squeezimize_transformer()
     {
-        if (output)
-        {
-            output->render->rem_effect(&pre_hook);
-        }
-
         program.free_resources();
     }
 };
