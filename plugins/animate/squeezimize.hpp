@@ -128,7 +128,6 @@ class squeezimize_animation_t : public duration_t
 class squeezimize_transformer : public wf::scene::view_2d_transformer_t
 {
   public:
-    wayfire_view view;
     wf::output_t *output;
     OpenGL::program_t program;
     wf::geometry_t minimize_target;
@@ -147,9 +146,9 @@ class squeezimize_transformer : public wf::scene::view_2d_transformer_t
 
       public:
         simple_node_render_instance_t(squeezimize_transformer *self, damage_callback push_damage,
-            wayfire_view view) : wf::scene::transformer_render_instance_t<squeezimize_transformer>(self,
+            wf::output_t *output) : wf::scene::transformer_render_instance_t<squeezimize_transformer>(self,
                 push_damage,
-                view->get_output())
+                output)
         {
             this->push_to_parent = push_damage;
             self->connect(&on_node_damaged);
@@ -255,7 +254,6 @@ class squeezimize_transformer : public wf::scene::view_2d_transformer_t
     squeezimize_transformer(wayfire_view view,
         wf::geometry_t minimize_target, wf::geometry_t bbox) : wf::scene::view_2d_transformer_t(view)
     {
-        this->view = view;
         this->minimize_target = minimize_target;
 
         animation_geometry.x     = std::min(bbox.x, minimize_target.x);
@@ -284,7 +282,7 @@ class squeezimize_transformer : public wf::scene::view_2d_transformer_t
         damage_callback push_damage, wf::output_t *shown_on) override
     {
         instances.push_back(std::make_unique<simple_node_render_instance_t>(
-            this, push_damage, view));
+            this, push_damage, shown_on));
     }
 
     void init_animation(bool squeeze)
