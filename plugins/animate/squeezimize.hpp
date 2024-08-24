@@ -116,7 +116,7 @@ namespace wf
 {
 namespace squeezimize
 {
-static std::string sqeezimize_transformer_name = "animation-squeezimize";
+static std::string squeezimize_transformer_name = "animation-squeezimize";
 using namespace wf::scene;
 using namespace wf::animation;
 class squeezimize_animation_t : public duration_t
@@ -316,13 +316,13 @@ class squeezimize_animation : public animation_base
         auto hint = toplevel->get_minimize_hint();
         auto tmgr = view->get_transformed_node();
         auto node = std::make_shared<wf::squeezimize::squeezimize_transformer>(view, hint, bbox);
-        tmgr->add_transformer(node, wf::TRANSFORMER_HIGHLEVEL + 1, sqeezimize_transformer_name);
+        tmgr->add_transformer(node, wf::TRANSFORMER_HIGHLEVEL + 1, squeezimize_transformer_name);
         node->init_animation(type & HIDING_ANIMATION);
     }
 
     void pop_transformer(wayfire_view view)
     {
-        view->get_transformed_node()->rem_transformer(sqeezimize_transformer_name);
+        view->get_transformed_node()->rem_transformer(squeezimize_transformer_name);
     }
 
     bool step() override
@@ -330,7 +330,7 @@ class squeezimize_animation : public animation_base
         auto tmgr = view->get_transformed_node();
 
         if (auto tr =
-                tmgr->get_transformer<squeezimize_transformer>(sqeezimize_transformer_name))
+                tmgr->get_transformer<squeezimize_transformer>(squeezimize_transformer_name))
         {
             auto running = tr->progression.running();
             if (!running)
@@ -349,7 +349,7 @@ class squeezimize_animation : public animation_base
     {
         if (auto tr =
                 view->get_transformed_node()->get_transformer<squeezimize_transformer>(
-                    sqeezimize_transformer_name))
+                    squeezimize_transformer_name))
         {
             tr->progression.reverse();
         }
