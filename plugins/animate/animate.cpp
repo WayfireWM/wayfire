@@ -448,7 +448,8 @@ class wayfire_animation : public wf::plugin_interface_t, private wf::per_output_
         {
             if (std::string(minimize_animation) == "squeezimize")
             {
-                set_animation<squeezimize_animation>(ev->view, ANIMATION_TYPE_MINIMIZE, default_duration,
+                set_animation<wf::squeezimize::squeezimize_animation>(ev->view, ANIMATION_TYPE_MINIMIZE,
+                    default_duration,
                     "minimize");
             } else if (std::string(minimize_animation) == "zoom")
             {
@@ -459,7 +460,8 @@ class wayfire_animation : public wf::plugin_interface_t, private wf::per_output_
         {
             if (std::string(minimize_animation) == "squeezimize")
             {
-                set_animation<squeezimize_animation>(ev->view, ANIMATION_TYPE_RESTORE, default_duration,
+                set_animation<wf::squeezimize::squeezimize_animation>(ev->view, ANIMATION_TYPE_RESTORE,
+                    default_duration,
                     "minimize");
             } else if (std::string(minimize_animation) == "zoom")
             {
