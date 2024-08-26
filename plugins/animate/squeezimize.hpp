@@ -255,19 +255,31 @@ class squeezimize_transformer : public wf::scene::view_2d_transformer_t
         wf::geometry_t minimize_target, wf::geometry_t bbox) : wf::scene::view_2d_transformer_t(view)
     {
         this->minimize_target = minimize_target;
+        /* If there is no minimize target set, minimize to the bottom center of the output */
+        if ((this->minimize_target.width <= 0) || (this->minimize_target.height <= 0))
+        {
+            if (auto output = view->get_output())
+            {
+                auto og = output->get_relative_geometry();
+                this->minimize_target.x     = og.width / 2 - 50;
+                this->minimize_target.y     = og.height;
+                this->minimize_target.width = 100;
+                this->minimize_target.height = 50;
+            }
+        }
 
-        animation_geometry.x     = std::min(bbox.x, minimize_target.x);
-        animation_geometry.y     = std::min(bbox.y, minimize_target.y);
+        animation_geometry.x     = std::min(bbox.x, this->minimize_target.x);
+        animation_geometry.y     = std::min(bbox.y, this->minimize_target.y);
         animation_geometry.width =
             std::max(std::max(std::max(bbox.width,
-                minimize_target.width),
-                (minimize_target.x + minimize_target.width) - bbox.x),
-                (bbox.x + bbox.width) - minimize_target.x);
+                this->minimize_target.width),
+                (this->minimize_target.x + this->minimize_target.width) - bbox.x),
+                (bbox.x + bbox.width) - this->minimize_target.x);
         animation_geometry.height =
             std::max(std::max(std::max(bbox.height,
-                minimize_target.height),
-                (minimize_target.y + minimize_target.height) - bbox.y),
-                (bbox.y + bbox.height) - minimize_target.y);
+                this->minimize_target.height),
+                (this->minimize_target.y + this->minimize_target.height) - bbox.y),
+                (bbox.y + bbox.height) - this->minimize_target.y);
         OpenGL::render_begin();
         program.compile(squeeze_vert_source, squeeze_frag_source);
         OpenGL::render_end();
