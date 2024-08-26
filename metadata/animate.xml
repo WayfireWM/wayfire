@@ -136,7 +136,7 @@
 		<option name="squeezimize_duration" type="animation">
 			<_short>Squeezimize duration</_short>
 			<_long>Sets the duration of the squeezimize animation in milliseconds.</_long>
-			<default>1000ms linear</default>
+			<default>150ms linear</default>
 		</option>
 	</plugin>
 </wayfire>
