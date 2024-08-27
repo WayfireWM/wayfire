@@ -30,11 +30,11 @@
 #include <wayfire/view-transform.hpp>
 #include <wayfire/output.hpp>
 
-static const std::string spin_transformer_name = "spin-transformer";
 namespace wf
 {
 namespace spin
 {
+static const std::string spin_transformer_name = "spin-transformer";
 using namespace wf::animation;
 class spin_animation_t : public duration_t
 {
