@@ -31,6 +31,9 @@
 #include <wayfire/output.hpp>
 
 static const std::string zap_transformer_name = "zap-transformer";
+
+wf::option_wrapper_t<wf::animation_description_t> zap_duration{"animate/zap_duration"};
+
 namespace wf
 {
 namespace zap
@@ -54,7 +57,7 @@ class zap_animation : public animation_base
         this->view = view;
         this->type = type;
         this->progression =
-            wf::zap::zap_animation_t(wf::create_option<wf::animation_description_t>(dur));
+            wf::zap::zap_animation_t(wf::create_option<wf::animation_description_t>(zap_duration));
 
         if (type & HIDING_ANIMATION)
         {

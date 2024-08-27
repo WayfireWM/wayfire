@@ -146,5 +146,10 @@
 			<_long>Sets the duration of the squeezimize animation in milliseconds.</_long>
 			<default>150ms linear</default>
 		</option>
+		<option name="zap_duration" type="animation">
+			<_short>Zap duration</_short>
+			<_long>Sets the duration for the zap animation in milliseconds.</_long>
+			<default>250ms linear</default>
+		</option>
 	</plugin>
 </wayfire>
