@@ -30,6 +30,9 @@
 #include <wayfire/view-transform.hpp>
 #include <wayfire/output.hpp>
 
+
+wf::option_wrapper_t<wf::animation_description_t> spin_duration{"animate/spin_duration"};
+
 namespace wf
 {
 namespace spin
@@ -54,7 +57,7 @@ class spin_animation : public animation_base
         this->view = view;
         this->type = type;
         this->progression =
-            wf::spin::spin_animation_t(wf::create_option<wf::animation_description_t>(dur));
+            wf::spin::spin_animation_t(wf::create_option<wf::animation_description_t>(spin_duration));
 
         if (type & HIDING_ANIMATION)
         {

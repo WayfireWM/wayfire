@@ -159,5 +159,10 @@
 			<_long>Sets the duration for the zap animation in milliseconds.</_long>
 			<default>250ms linear</default>
 		</option>
+		<option name="spin_duration" type="animation">
+			<_short>Spin duration</_short>
+			<_long>Sets the duration for the spin animation in milliseconds.</_long>
+			<default>250ms linear</default>
+		</option>
 	</plugin>
 </wayfire>
