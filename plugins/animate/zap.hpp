@@ -30,7 +30,6 @@
 #include <wayfire/view-transform.hpp>
 #include <wayfire/output.hpp>
 
-static const std::string zap_transformer_name = "zap-transformer";
 
 wf::option_wrapper_t<wf::animation_description_t> zap_duration{"animate/zap_duration"};
 
@@ -38,6 +37,7 @@ namespace wf
 {
 namespace zap
 {
+static const std::string zap_transformer_name = "zap-transformer";
 using namespace wf::animation;
 class zap_animation_t : public duration_t
 {
