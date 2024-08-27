@@ -32,6 +32,7 @@
 
 
 wf::option_wrapper_t<wf::animation_description_t> spin_duration{"animate/spin_duration"};
+wf::option_wrapper_t<int> spin_rotations{"animate/spin_rotations"};
 
 namespace wf
 {
@@ -77,7 +78,7 @@ class spin_animation : public animation_base
             ->get_transformer<wf::scene::view_2d_transformer_t>(spin_transformer_name);
         auto progress = this->progression.progress();
         transform->alpha   = progress;
-        transform->angle   = progress * M_PI * 4.0;
+        transform->angle   = progress * M_PI * 2.0 * int(spin_rotations);
         transform->scale_x = 0.01 + progress * 0.99;
         transform->scale_y = 0.01 + progress * 0.99;
 

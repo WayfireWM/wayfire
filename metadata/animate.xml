@@ -164,5 +164,10 @@
 			<_long>Sets the duration for the spin animation in milliseconds.</_long>
 			<default>250ms linear</default>
 		</option>
+		<option name="spin_rotations" type="int">
+			<_short>Spin rotations</_short>
+			<_long>Number of rotations for the spin animation. Negative values reverse the spin direction.</_long>
+			<default>1</default>
+		</option>
 	</plugin>
 </wayfire>
