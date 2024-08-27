@@ -11,6 +11,7 @@
 #include "../wm-actions/wm-actions-signals.hpp"
 #include <wayfire/plugins/common/util.hpp>
 #include <wayfire/window-manager.hpp>
+#include <wayfire/workspace-set.hpp>
 
 #include <algorithm>
 #include <cfloat>

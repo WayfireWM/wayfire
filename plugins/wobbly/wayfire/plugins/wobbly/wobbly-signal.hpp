@@ -1,6 +1,8 @@
 #pragma once
+
 #include <wayfire/signal-definitions.hpp>
 #include <wayfire/core.hpp>
+#include <wayfire/toplevel-view.hpp>
 
 enum wobbly_event
 {
@@ -97,13 +99,10 @@ inline void move_wobbly(wayfire_toplevel_view view, int grab_x, int grab_y)
  */
 inline void activate_wobbly(wayfire_toplevel_view view)
 {
-    if (!view->get_transformed_node()->get_transformer("wobbly"))
-    {
-        wobbly_signal sig;
-        sig.view   = view;
-        sig.events = WOBBLY_EVENT_ACTIVATE;
-        wf::get_core().emit(&sig);
-    }
+    wobbly_signal sig;
+    sig.view   = view;
+    sig.events = WOBBLY_EVENT_ACTIVATE;
+    wf::get_core().emit(&sig);
 }
 
 /**

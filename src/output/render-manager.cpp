@@ -19,6 +19,7 @@
 #include <wayfire/util/log.hpp>
 #include <wayfire/nonstd/wlroots-full.hpp>
 #include <wlr/types/wlr_gamma_control_v1.h>
+#include <wayfire/output-layout.hpp>
 
 namespace wf
 {

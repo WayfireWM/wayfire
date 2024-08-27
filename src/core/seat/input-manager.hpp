@@ -1,14 +1,11 @@
 #ifndef INPUT_MANAGER_HPP
 #define INPUT_MANAGER_HPP
 
-#include <map>
+#include <wayfire/output-layout.hpp>
 #include <vector>
-#include <chrono>
 
 #include "seat-impl.hpp"
-#include "wayfire/plugin.hpp"
 #include "wayfire/signal-provider.hpp"
-#include "wayfire/view.hpp"
 #include "wayfire/core.hpp"
 #include "wayfire/signal-definitions.hpp"
 #include <wayfire/option-wrapper.hpp>

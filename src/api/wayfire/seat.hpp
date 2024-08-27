@@ -3,7 +3,6 @@
 #include <memory>
 #include <wayfire/scene.hpp>
 #include <wayfire/nonstd/wlroots.hpp>
-#include <wayfire/nonstd/wlroots-full.hpp>
 #include <wayfire/view.hpp>
 
 namespace wf
@@ -15,6 +14,23 @@ enum class keyboard_focus_reason
     REFOCUS,
     UNKNOWN,
 };
+
+/**
+ * on: core
+ * when: Keyboard focus is changed (may change to nullptr).
+ */
+struct keyboard_focus_changed_signal
+{
+    wf::scene::node_ptr new_focus;
+    keyboard_focus_reason reason = keyboard_focus_reason::UNKNOWN;
+};
+
+/**
+ * on: core
+ * when: Seat activity has happened after being idle.
+ */
+struct seat_activity_signal
+{};
 
 /**
  * A seat represents a group of input devices (mouse, keyboard, etc.) which logically belong together.

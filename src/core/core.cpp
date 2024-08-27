@@ -12,6 +12,7 @@
 #include "wayfire/bindings-repository.hpp"
 #include "wayfire/util.hpp"
 #include <memory>
+#include "wayfire/config-backend.hpp" // IWYU pragma: keep
 
 #include "plugin-loader.hpp"
 #include "seat/tablet.hpp"
@@ -582,7 +583,10 @@ const std::shared_ptr<wf::scene::root_node_t>& wf::compositor_core_impl_t::scene
 }
 
 wf::compositor_core_t::compositor_core_t()
-{}
+{
+    this->config = std::make_unique<wf::config::config_manager_t>();
+}
+
 wf::compositor_core_t::~compositor_core_t()
 {}
 
@@ -631,3 +635,22 @@ std::unique_ptr<wf::compositor_core_impl_t> wf::compositor_core_impl_t::static_c
 
 // TODO: move this to a better location
 wf_runtime_config runtime_config;
+
+std::shared_ptr<wf::config::option_base_t> wf::detail::load_raw_option(const std::string& name)
+{
+    return wf::get_core().config->get_option(name);
+}
+
+#include <wayfire/option-wrapper.hpp>
+
+template class wf::option_wrapper_t<bool>;
+template class wf::option_wrapper_t<int>;
+template class wf::option_wrapper_t<std::string>;
+template class wf::option_wrapper_t<wf::activatorbinding_t>;
+template class wf::option_wrapper_t<wf::animation_description_t>;
+
+template class std::shared_ptr<wf::config::option_t<bool>>;
+template class std::shared_ptr<wf::config::option_t<int>>;
+template class std::shared_ptr<wf::config::option_t<std::string>>;
+template class std::shared_ptr<wf::config::option_t<wf::activatorbinding_t>>;
+template class std::shared_ptr<wf::config::option_t<wf::animation_description_t>>;

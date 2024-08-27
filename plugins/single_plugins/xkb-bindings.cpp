@@ -4,6 +4,7 @@
 #include <wayfire/bindings-repository.hpp>
 #include "wayfire/core.hpp"
 #include "wayfire/seat.hpp"
+#include <map>
 
 namespace wf
 {

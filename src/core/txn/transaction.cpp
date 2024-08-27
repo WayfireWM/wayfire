@@ -118,3 +118,11 @@ std::unique_ptr<wf::txn::transaction_t> wf::txn::transaction_t::create(int64_t t
 
     return std::make_unique<wayfire_default_transaction_t>(timeout);
 }
+
+void wf::txn::emit_object_ready(wf::txn::transaction_object_t *obj)
+{
+    wf::txn::object_ready_signal data_ready;
+    data_ready.self = obj;
+    obj->emit(&data_ready);
+    return;
+}

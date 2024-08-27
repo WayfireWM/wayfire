@@ -8,7 +8,7 @@
 #include "wayfire/view.hpp"
 #include "wayfire/output.hpp"
 #include "wayfire/toplevel-view.hpp"
-#include "wayfire/workspace-set.hpp"
+#include "wayfire/view-transform.hpp"
 #include <memory>
 namespace wf
 {

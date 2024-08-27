@@ -2,10 +2,7 @@
 #define CORE_HPP
 
 #include "wayfire/object.hpp"
-#include "wayfire/scene-input.hpp"
-#include <wayfire/geometry.hpp>
 #include <wayfire/idle.hpp>
-#include <wayfire/config-backend.hpp>
 #include <wayfire/scene.hpp>
 #include <wayfire/signal-provider.hpp>
 
@@ -13,7 +10,6 @@
 #include <limits>
 #include <vector>
 #include <wayfire/nonstd/observer_ptr.h>
-#include <wayfire/config/config-manager.hpp>
 
 #include <wayland-server.h>
 #include <wayfire/nonstd/wlroots.hpp>
@@ -24,6 +20,7 @@ class view_interface_t;
 class toplevel_view_interface_t;
 class window_manager_t;
 class workspace_set_t;
+class config_backend_t;
 
 namespace scene
 {
@@ -39,6 +36,11 @@ namespace touch
 {
 class gesture_t;
 struct gesture_state_t;
+}
+
+namespace config
+{
+class config_manager_t;
 }
 }
 
@@ -82,7 +84,7 @@ class compositor_core_t : public wf::object_base_t, public signal::provider_t
     /**
      * The current configuration used by Wayfire
      */
-    wf::config::config_manager_t config;
+    std::unique_ptr<wf::config::config_manager_t> config;
 
     /**
      * Command line arguments.

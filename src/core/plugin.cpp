@@ -1,10 +1,7 @@
-#include "core-impl.hpp"
 #include "wayfire/debug.hpp"
-#include "wayfire/output.hpp"
-#include "seat/input-manager.hpp"
-#include "wayfire/signal-definitions.hpp"
 #include <wayfire/util/log.hpp>
 #include <wayfire/config-backend.hpp>
+#include <wayfire/plugin.hpp>
 
 void wf::plugin_interface_t::fini()
 {}
@@ -18,13 +15,13 @@ std::shared_ptr<config::section_t> wf::config_backend_t::get_output_section(
     std::string name = output->name;
     name = "output:" + name;
     auto& config = wf::get_core().config;
-    if (!config.get_section(name))
+    if (!config->get_section(name))
     {
-        config.merge_section(
-            config.get_section("output")->clone_with_name(name));
+        config->merge_section(
+            config->get_section("output")->clone_with_name(name));
     }
 
-    return config.get_section(name);
+    return config->get_section(name);
 }
 
 std::shared_ptr<config::section_t> wf::config_backend_t::get_input_device_section(
@@ -33,13 +30,13 @@ std::shared_ptr<config::section_t> wf::config_backend_t::get_input_device_sectio
     std::string name = nonull(device->name);
     name = "input-device:" + name;
     auto& config = wf::get_core().config;
-    if (!config.get_section(name))
+    if (!config->get_section(name))
     {
-        config.merge_section(
-            config.get_section("input-device")->clone_with_name(name));
+        config->merge_section(
+            config->get_section("input-device")->clone_with_name(name));
     }
 
-    return config.get_section(name);
+    return config->get_section(name);
 }
 
 std::vector<std::string> wf::config_backend_t::get_xml_dirs() const

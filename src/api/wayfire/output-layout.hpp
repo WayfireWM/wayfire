@@ -18,6 +18,85 @@
 namespace wf
 {
 class output_t;
+
+/* ----------------------------------------------------------------------------/
+ * Output signals
+ * -------------------------------------------------------------------------- */
+
+/** Base class for all output signals. */
+
+/**
+ * on: output-layout
+ * when: Each time a new output is added.
+ */
+struct output_added_signal
+{
+    wf::output_t *output;
+};
+
+/**
+ * on: output, output-layout(output-)
+ * when: Emitted just before starting the destruction procedure for an output.
+ */
+struct output_pre_remove_signal
+{
+    wf::output_t *output;
+};
+
+/**
+ * on: output-layout
+ * when: Each time a new output is added.
+ */
+struct output_removed_signal
+{
+    wf::output_t *output;
+};
+
+enum output_config_field_t
+{
+    /** Output source changed */
+    OUTPUT_SOURCE_CHANGE    = (1 << 0),
+    /** Output mode changed */
+    OUTPUT_MODE_CHANGE      = (1 << 1),
+    /** Output scale changed */
+    OUTPUT_SCALE_CHANGE     = (1 << 2),
+    /** Output transform changed */
+    OUTPUT_TRANSFORM_CHANGE = (1 << 3),
+    /** Output position changed */
+    OUTPUT_POSITION_CHANGE  = (1 << 4),
+};
+
+struct output_state_t;
+
+/**
+ * on: output-layout
+ * when: Each time the configuration of the output layout changes.
+ */
+struct output_layout_configuration_changed_signal
+{};
+
+/**
+ * on: output
+ * when: Each time the output's source, mode, scale, transform and/or position changes.
+ */
+struct output_configuration_changed_signal
+{
+    wf::output_t *output;
+    output_configuration_changed_signal(const wf::output_state_t& st) : state(st)
+    {}
+
+    /**
+     * Which output attributes actually changed.
+     * A bitwise OR of output_config_field_t.
+     */
+    uint32_t changed_fields;
+
+    /**
+     * The new state of the output.
+     */
+    const wf::output_state_t& state;
+};
+
 /** Represents the source of pixels for this output */
 enum output_image_source_t
 {

@@ -3,13 +3,10 @@
 
 #include <memory>
 #include <type_traits>
-#include <vector>
 #include <wayfire/nonstd/observer_ptr.h>
 
 #include "wayfire/nonstd/tracking-allocator.hpp"
 #include "wayfire/object.hpp"
-#include "wayfire/geometry.hpp"
-#include "wayfire/view-transform.hpp"
 #include <wayfire/nonstd/wlroots.hpp>
 #include <wayfire/signal-provider.hpp>
 #include <wayfire/scene.hpp>
@@ -29,6 +26,7 @@ class output_t;
 namespace scene
 {
 class view_node_t;
+class transform_manager_node_t;
 }
 
 /* abstraction for desktop-apis, no real need for plugins

@@ -1,4 +1,33 @@
+if get_option('custom_pch')
+  cc = meson.get_compiler('cpp')
+  pch_file = meson.current_source_dir() / 'pch/pch.hpp'
+  api_headers = meson.project_source_root() / 'src/api'
+  proto_headers = meson.project_build_root() / 'proto/libwl_protos.a.p/'
+
+  if cc.get_id() == 'clang'
+    pch = custom_target('plugin_pch',
+        input: pch_file,
+        output: 'plugin_pch.hpp.pch',
+        command: cc.cmd_array() + ['@INPUT@', '-c', '-o', '@OUTPUT@',
+          '-std=c++17', '-pthread', '-fPIC',
+          '-I' + api_headers,
+          '-I/usr/include/pixman-1',
+          '-I' + proto_headers])
+
+    plugin_pch_args = ['-include-pch', pch.full_path(), '-pthread']
+    plugin_pch_dep = declare_dependency(sources: pch)
+  elif cc.get_id() == 'gcc'
+    error('TODO: CUSTOM PCH FOR GCC')
+  else
+    error('Unsupported compiler for custom pch: ' + cc.get_id())
+  endif
+else
+  plugin_pch_args = []
+  plugin_pch_dep = declare_dependency()
+endif
+
 subdir('common')
+
 subdir('ipc')
 subdir('protocols')
 subdir('vswitch')

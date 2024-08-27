@@ -3,6 +3,7 @@
 #include "wayfire/signal-provider.hpp"
 #include <wayfire/output.hpp>
 #include <wayfire/signal-definitions.hpp>
+#include <wayfire/output-layout.hpp>
 
 struct wf::output_workarea_manager_t::impl
 {

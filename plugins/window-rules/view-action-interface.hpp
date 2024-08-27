@@ -2,7 +2,7 @@
 #define VIEW_ACTION_INTERFACE_HPP
 
 #include "wayfire/action/action_interface.hpp"
-#include "wayfire/view.hpp"
+#include "wayfire/toplevel-view.hpp"
 #include <string>
 #include <tuple>
 #include <vector>

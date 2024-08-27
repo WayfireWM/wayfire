@@ -1,8 +1,12 @@
 #ifndef WF_GEOMETRY_HPP
 #define WF_GEOMETRY_HPP
 
-#include <ostream>
-#include <wayfire/nonstd/wlroots.hpp>
+#include <iosfwd>
+#include <algorithm>
+
+extern "C" {
+#include <wlr/util/box.h>
+}
 
 namespace wf
 {

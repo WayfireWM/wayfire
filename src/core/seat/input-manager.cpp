@@ -1,17 +1,14 @@
 #include <cassert>
-#include <algorithm>
 #include "pointer.hpp"
 #include "wayfire/core.hpp"
 #include "wayfire/signal-definitions.hpp"
 #include "../core-impl.hpp"
-#include "../../output/output-impl.hpp"
-#include "touch.hpp"
 #include "keyboard.hpp"
 #include "cursor.hpp"
 #include "input-manager.hpp"
 #include "wayfire/output-layout.hpp"
 #include "wayfire/view.hpp"
-#include "wayfire/workspace-set.hpp"
+#include "wayfire/config-backend.hpp"
 #include <wayfire/util/log.hpp>
 #include <wayfire/debug.hpp>
 

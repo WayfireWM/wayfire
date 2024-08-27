@@ -3,6 +3,7 @@
 #include <wayfire/config/option.hpp>
 #include <wayfire/config/option-wrapper.hpp>
 #include <wayfire/core.hpp>
+#include <wayfire/util/duration.hpp>
 
 namespace wf
 {
@@ -13,6 +14,7 @@ namespace detail
 void option_wrapper_debug_message(const std::string& option_name, const std::runtime_error& err);
 [[noreturn]]
 void option_wrapper_debug_message(const std::string& option_name, const std::logic_error& err);
+std::shared_ptr<config::option_base_t> load_raw_option(const std::string& name);
 }
 
 /**
@@ -48,9 +50,25 @@ class option_wrapper_t : public base_option_wrapper_t<Type>
     {}
 
   protected:
-    std::shared_ptr<config::option_base_t> load_raw_option(const std::string& name)
+    std::shared_ptr<wf::config::option_base_t> load_raw_option(const std::string& name) override
     {
-        return wf::get_core().config.get_option(name);
+        return detail::load_raw_option(name);
     }
 };
+
+extern template class option_wrapper_t<bool>;
+
+extern template class option_wrapper_t<int>;
+
+extern template class option_wrapper_t<std::string>;
+
+extern template class option_wrapper_t<wf::activatorbinding_t>;
+
+extern template class option_wrapper_t<wf::animation_description_t>;
 }
+
+extern template class std::shared_ptr<wf::config::option_t<bool>>;
+extern template class std::shared_ptr<wf::config::option_t<int>>;
+extern template class std::shared_ptr<wf::config::option_t<std::string>>;
+extern template class std::shared_ptr<wf::config::option_t<wf::activatorbinding_t>>;
+extern template class std::shared_ptr<wf::config::option_t<wf::animation_description_t>>;

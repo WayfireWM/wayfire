@@ -33,7 +33,7 @@ libinput       = dependency('libinput', version: '>=1.7.0')
 pixman         = dependency('pixman-1')
 xkbcommon      = dependency('xkbcommon')
 libdl          = meson.get_compiler('cpp').find_library('dl')
-json           = dependency('nlohmann_json', version: '>= 3.11.2')
+json           = dependency('jsoncpp')
 
 # We're not to use system wlroots: So we'll use the subproject
 if get_option('use_system_wlroots').disabled()
@@ -145,7 +145,7 @@ cpp = meson.get_compiler('cpp')
 # -E is for RTTI/dynamic_cast across plugins
 add_project_link_arguments(['-rdynamic', '-Wl,-E'], language: 'cpp')
 
-project_args = ['-DWLR_USE_UNSTABLE']
+project_args = ['-DWLR_USE_UNSTABLE', '-ftime-trace']
 # Needed for dlclose to actually free plugin memory on gcc+glibc
 if cpp.has_argument('-fno-gnu-unique')
   project_args += '-fno-gnu-unique'
@@ -196,7 +196,7 @@ else
   print_trace = false
 endif
 
-add_project_arguments(['-DWF_USE_CONFIG_H'], language: ['cpp', 'c'])
+add_project_arguments(['-DWF_USE_CONFIG_H', '-ftime-trace'], language: ['cpp', 'c'])
 configure_file(input: 'config.h.in',
                output: 'config.h',
                install: true,

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <any>
 #include "wayfire/util.hpp"
 #include <wayfire/config/types.hpp>
 #include <wayfire/output.hpp>

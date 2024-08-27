@@ -1,17 +1,12 @@
 #ifndef WF_SAFE_LIST_HPP
 #define WF_SAFE_LIST_HPP
 
-#include <list>
-#include <memory>
 #include <algorithm>
 #include <functional>
 #include <optional>
 #include <type_traits>
 #include <vector>
 #include <assert.h>
-#include <wayfire/util.hpp>
-
-#include "reverse.hpp"
 
 namespace wf
 {

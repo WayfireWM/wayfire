@@ -2,9 +2,6 @@
 
 #include <functional>
 #include <memory>
-#include <unordered_set>
-#include <unordered_map>
-#include <wayfire/nonstd/safe-list.hpp>
 #include <cassert>
 #include <typeindex>
 
@@ -48,7 +45,7 @@ class connection_base_t
 
     // Allow provider to deregister itself
     friend class provider_t;
-    std::unordered_set<provider_t*> connected_to;
+    std::vector<provider_t*> connected_to;
 };
 
 /**
@@ -137,26 +134,17 @@ class provider_t
     template<class SignalType>
     void connect(connection_t<SignalType> *callback)
     {
-        typed_connections[index<SignalType>()].push_back(callback);
-        callback->connected_to.insert(this);
+        connect_base(index<SignalType>(), callback);
     }
 
     /** Unregister a connection. */
-    void disconnect(connection_base_t *callback)
-    {
-        callback->connected_to.erase(this);
-        for (auto& [id, connected] : typed_connections)
-        {
-            connected.remove_all(callback);
-        }
-    }
+    void disconnect(connection_base_t *callback);
 
     /** Emit the given signal. */
     template<class SignalType>
     void emit(SignalType *data)
     {
-        auto& conns = typed_connections[std::type_index(typeid(SignalType))];
-        conns.for_each([&] (connection_base_t *tc)
+        this->for_each_connection(index<SignalType>(), [&] (connection_base_t *tc)
         {
             auto real_type = dynamic_cast<connection_t<SignalType>*>(tc);
             assert(real_type);
@@ -164,19 +152,8 @@ class provider_t
         });
     }
 
-    provider_t()
-    {}
-
-    ~provider_t()
-    {
-        for (auto& [id, connected] : typed_connections)
-        {
-            connected.for_each([&] (connection_base_t *base)
-            {
-                base->connected_to.erase(this);
-            });
-        }
-    }
+    provider_t();
+    ~provider_t();
 
     // Non-movable, non-copyable: connection_t keeps reference to this object.
     // Unclear what happens if this object is duplicated, and plugins usually
@@ -193,8 +170,12 @@ class provider_t
         return std::type_index(typeid(SignalType));
     }
 
-    std::unordered_map<std::type_index, wf::safe_list_t<connection_base_t*>>
-    typed_connections;
+    void connect_base(std::type_index type, connection_base_t *callback);
+    void for_each_connection(std::type_index type, std::function<void(connection_base_t*)> func);
+    void disconnect_other_side(connection_base_t *callback);
+
+    struct impl;
+    std::unique_ptr<impl> priv;
 };
 }
 }
