@@ -224,14 +224,14 @@ class helix_transformer : public wf::scene::view_2d_transformer_t
 
             auto transform = target.transform * t * p * l;
             OpenGL::render_begin(target);
+            self->program.use(wf::TEXTURE_TYPE_RGBA);
+            self->program.uniformMatrix4f("matrix", transform);
+            self->program.attrib_pointer("position", 3, 0, vertices.data());
+            self->program.attrib_pointer("uv_in", 2, 0, uv.data());
+            self->program.set_active_texture(src_tex);
             for (auto box : region)
             {
                 target.logic_scissor(wlr_box_from_pixman_box(box));
-                self->program.use(wf::TEXTURE_TYPE_RGBA);
-                self->program.uniformMatrix4f("matrix", transform);
-                self->program.attrib_pointer("position", 3, 0, vertices.data());
-                self->program.attrib_pointer("uv_in", 2, 0, uv.data());
-                self->program.set_active_texture(src_tex);
                 GL_CALL(glDrawArrays(GL_TRIANGLES, 0, vertices.size() / 3));
             }
 
