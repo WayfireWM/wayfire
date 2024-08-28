@@ -39,8 +39,6 @@
 #include "animate.hpp"
 
 
-static std::string helix_transformer_name = "animation-helix";
-
 wf::option_wrapper_t<wf::animation_description_t> helix_duration{"animate/helix_duration"};
 
 static const char *helix_vert_source =
@@ -80,6 +78,7 @@ namespace wf
 {
 namespace helix
 {
+static std::string helix_transformer_name = "animation-helix";
 using namespace wf::scene;
 using namespace wf::animation;
 class helix_animation_t : public duration_t
