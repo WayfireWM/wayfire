@@ -205,7 +205,7 @@ wf::touch_interaction_t& wf::scene::wlr_surface_node_t::touch_interaction()
 
 void wf::scene::wlr_surface_node_t::send_frame_done(bool delay_until_vblank)
 {
-    if (!surface)
+    if (!wf::get_core().session->active || !surface)
     {
         return;
     }
