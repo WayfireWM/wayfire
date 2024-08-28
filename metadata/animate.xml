@@ -180,7 +180,7 @@
 		<option name="helix_duration" type="animation">
 			<_short>Helix duration</_short>
 			<_long>Sets the duration for the helix animation in milliseconds.</_long>
-			<default>700ms linear</default>
+			<default>250ms linear</default>
 		</option>
 	</plugin>
 </wayfire>
