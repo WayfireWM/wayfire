@@ -89,13 +89,11 @@ class helix_animation_t : public duration_t
 class helix_transformer : public wf::scene::view_2d_transformer_t
 {
   public:
-    wayfire_view view;
     OpenGL::program_t program;
-    wf::output_t *output;
     wf::geometry_t animation_geometry;
     helix_animation_t progression{helix_duration};
 
-    class simple_node_render_instance_t : public wf::scene::transformer_render_instance_t<transformer_base_node_t>
+    class simple_node_render_instance_t : public wf::scene::transformer_render_instance_t<helix_transformer>
     {
         wf::signal::connection_t<node_damage_signal> on_node_damaged =
             [=] (node_damage_signal *ev)
@@ -103,18 +101,15 @@ class helix_transformer : public wf::scene::view_2d_transformer_t
             push_to_parent(ev->region);
         };
 
-        helix_transformer *self;
         wayfire_view view;
         damage_callback push_to_parent;
 
       public:
         simple_node_render_instance_t(helix_transformer *self, damage_callback push_damage,
-            wayfire_view view) : wf::scene::transformer_render_instance_t<transformer_base_node_t>(self,
+            wf::output_t *output) : wf::scene::transformer_render_instance_t<helix_transformer>(self,
                 push_damage,
-                view->get_output())
+                output)
         {
-            this->self = self;
-            this->view = view;
             this->push_to_parent = push_damage;
             self->connect(&on_node_damaged);
         }
@@ -124,7 +119,7 @@ class helix_transformer : public wf::scene::view_2d_transformer_t
 
         void schedule_instructions(
             std::vector<render_instruction_t>& instructions,
-            const wf::render_target_t& target, wf::region_t& damage)
+            const wf::render_target_t& target, wf::region_t& damage) override
         {
             instructions.push_back(render_instruction_t{
                         .instance = this,
@@ -139,13 +134,12 @@ class helix_transformer : public wf::scene::view_2d_transformer_t
         }
 
         void render(const wf::render_target_t& target,
-            const wf::region_t& region)
+            const wf::region_t& region) override
         {
-            auto src_box = self->get_children_bounding_box();
-            auto src_tex = wf::scene::transformer_render_instance_t<transformer_base_node_t>::get_texture(
-                1.0);
+            auto src_box  = self->get_children_bounding_box();
+            auto src_tex  = wf::scene::transformer_render_instance_t<helix_transformer>::get_texture(1.0);
             auto progress = self->progression.progress();
-            auto og = self->output->get_relative_geometry();
+            auto og = self->animation_geometry;
             self->animation_geometry = og;
 
             int line_height = 20;
@@ -245,14 +239,7 @@ class helix_transformer : public wf::scene::view_2d_transformer_t
 
     helix_transformer(wayfire_view view, wf::geometry_t bbox) : wf::scene::view_2d_transformer_t(view)
     {
-        this->view = view;
-        if (view->get_output())
-        {
-            output = view->get_output();
-            output->render->add_effect(&pre_hook, wf::OUTPUT_EFFECT_PRE);
-        }
-
-        animation_geometry = output->get_relative_geometry();
+        animation_geometry = view->get_output()->get_relative_geometry();
         OpenGL::render_begin();
         program.compile(helix_vert_source, helix_frag_source);
         OpenGL::render_end();
@@ -263,17 +250,11 @@ class helix_transformer : public wf::scene::view_2d_transformer_t
         return this->animation_geometry;
     }
 
-    wf::effect_hook_t pre_hook = [=] ()
-    {
-        output->render->damage(animation_geometry);
-        output->render->damage_whole();
-    };
-
     void gen_render_instances(std::vector<render_instance_uptr>& instances,
         damage_callback push_damage, wf::output_t *shown_on) override
     {
         instances.push_back(std::make_unique<simple_node_render_instance_t>(
-            this, push_damage, view));
+            this, push_damage, shown_on));
     }
 
     void init_animation(bool helix)
@@ -288,11 +269,6 @@ class helix_transformer : public wf::scene::view_2d_transformer_t
 
     virtual ~helix_transformer()
     {
-        if (output)
-        {
-            output->render->rem_effect(&pre_hook);
-        }
-
         program.free_resources();
     }
 };
@@ -315,24 +291,12 @@ class helix_animation : public animation_base
 
     void pop_transformer(wayfire_view view)
     {
-        if (view->get_transformed_node()->get_transformer(helix_transformer_name))
-        {
-            view->get_transformed_node()->rem_transformer(helix_transformer_name);
-        }
+        view->get_transformed_node()->rem_transformer(helix_transformer_name);
     }
 
     bool step() override
     {
-        if (!view)
-        {
-            return false;
-        }
-
         auto tmgr = view->get_transformed_node();
-        if (!tmgr)
-        {
-            return false;
-        }
 
         if (auto tr = tmgr->get_transformer<wf::helix::helix_transformer>(helix_transformer_name))
         {
