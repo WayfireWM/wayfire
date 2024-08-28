@@ -182,5 +182,17 @@
 			<_long>Sets the duration for the helix animation in milliseconds.</_long>
 			<default>250ms linear</default>
 		</option>
+		<option name="helix_rotations" type="int">
+			<_short>Helix rotations</_short>
+			<_long>Number of rotations for the helix animation.</_long>
+			<default>1</default>
+			<min>1</min>
+		</option>
+		<option name="helix_strip_height" type="int">
+			<_short>Helix strip height</_short>
+			<_long>Height of each helix strip in pixels.</_long>
+			<default>20</default>
+			<min>10</min>
+		</option>
 	</plugin>
 </wayfire>
