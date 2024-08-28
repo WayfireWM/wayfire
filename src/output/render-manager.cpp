@@ -396,6 +396,11 @@ struct swapchain_damage_manager_t
      */
     void schedule_repaint()
     {
+        if (!wf::get_core().session->active)
+        {
+            return;
+        }
+
         wlr_output_schedule_frame(output);
         force_next_frame = true;
     }
@@ -957,6 +962,11 @@ class wf::render_manager::impl
 
         on_frame.set_callback([&] (void*)
         {
+            if (!wf::get_core().session->active)
+            {
+                return;
+            }
+
             delay_manager->start_frame();
 
             auto repaint_delay = delay_manager->get_delay();
