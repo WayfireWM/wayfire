@@ -4,5 +4,10 @@
 		<_short>IPC protocol</_short>
 		<_long>Allow external programs to interact with Wayfire plugins.</_long>
 		<category>Utility</category>
+		<option name="port" type="int">
+			<_short>Starting port</_short>
+			<_long>Sets the port number that the first instance of wayfire will use for IPC. Each subsequent instance will increment the port number by one.</_long>
+			<default>7777</default>
+		</option>
 	</plugin>
 </wayfire>

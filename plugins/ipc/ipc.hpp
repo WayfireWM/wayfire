@@ -6,6 +6,7 @@
 #include <wayland-server.h>
 #include <wayfire/plugins/common/shared-core-data.hpp>
 #include "ipc-method-repository.hpp"
+#include <netinet/in.h>
 
 namespace wf
 {
@@ -44,7 +45,7 @@ class server_t
 {
   public:
     server_t();
-    void init(std::string socket_path);
+    void init(int port);
     ~server_t();
 
   private:
@@ -60,8 +61,8 @@ class server_t
     /**
      * Setup a socket at the given address, and set it as CLOEXEC and non-blocking.
      */
-    int setup_socket(const char *address);
-    sockaddr_un saddr;
+    int setup_socket(int port);
+    sockaddr_in saddr;
     wl_event_source *source;
     std::vector<std::unique_ptr<client_t>> clients;
 

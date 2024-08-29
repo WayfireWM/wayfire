@@ -4,11 +4,13 @@
 #include <wayfire/util/log.hpp>
 #include <wayfire/core.hpp>
 #include <wayfire/plugin.hpp>
+#include <wayfire/option-wrapper.hpp>
 
 #include <fcntl.h>
 #include <sys/socket.h>
 #include <sys/ioctl.h>
 #include <unistd.h>
+#include <arpa/inet.h>
 
 /**
  * Handle WL_EVENT_READABLE on the socket.
@@ -28,9 +30,9 @@ wf::ipc::server_t::server_t()
     };
 }
 
-void wf::ipc::server_t::init(std::string socket_path)
+void wf::ipc::server_t::init(int port)
 {
-    this->fd = setup_socket(socket_path.c_str());
+    this->fd = setup_socket(port);
     if (fd == -1)
     {
         LOGE("Failed to create debug IPC socket!");
@@ -47,14 +49,13 @@ wf::ipc::server_t::~server_t()
     if (fd != -1)
     {
         close(fd);
-        unlink(saddr.sun_path);
         wl_event_source_remove(source);
     }
 }
 
-int wf::ipc::server_t::setup_socket(const char *address)
+int wf::ipc::server_t::setup_socket(int port)
 {
-    int fd = socket(AF_UNIX, SOCK_STREAM, 0);
+    int fd = socket(AF_INET, SOCK_STREAM, 0);
     if (fd == -1)
     {
         return -1;
@@ -70,17 +71,14 @@ int wf::ipc::server_t::setup_socket(const char *address)
         return -1;
     }
 
-    // Ensure no old instance left after a crash or similar
-    unlink(address);
-
-    saddr.sun_family = AF_UNIX;
-    strncpy(saddr.sun_path, address, sizeof(saddr.sun_path) - 1);
+    saddr.sin_family = AF_INET;
+    saddr.sin_addr.s_addr = INADDR_ANY;
+    saddr.sin_port = htons(port);
 
     int r = bind(fd, (sockaddr*)&saddr, sizeof(saddr));
     if (r != 0)
     {
-        LOGE("Failed to bind debug IPC socket at address ", address, " !");
-        // TODO: shutdown socket?
+        LOGE("Failed to bind IPC socket to localhost!");
         return -1;
     }
 
@@ -318,15 +316,25 @@ class ipc_plugin_t : public wf::plugin_interface_t
 {
   private:
     shared_data::ref_ptr_t<ipc::server_t> server;
+    wf::option_wrapper_t<int> starting_port{"ipc/port"};
 
   public:
     void init() override
     {
-        char *pre_socket   = getenv("_WAYFIRE_SOCKET");
-        const auto& dname  = wf::get_core().wayland_display;
-        std::string socket = pre_socket ?: "/tmp/wayfire-" + dname + ".socket";
-        setenv("WAYFIRE_SOCKET", socket.c_str(), 1);
-        server->init(socket);
+        char *pre_port = getenv("WAYFIRE_IPC_PORT");
+        int port;
+        if (pre_port)
+        {
+            port = atoi(pre_port);
+            port++;
+        } else
+        {
+            port = int(starting_port);
+        }
+
+        std::string socket = std::to_string(port);
+        setenv("WAYFIRE_IPC_PORT", socket.c_str(), 1);
+        server->init(port);
     }
 
     bool is_unloadable() override
