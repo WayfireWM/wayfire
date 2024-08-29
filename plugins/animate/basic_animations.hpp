@@ -6,7 +6,7 @@
 #include <wayfire/view-transform.hpp>
 #include <wayfire/output.hpp>
 
-class fade_animation : public animation_base
+class fade_animation : public wf::animate::animation_base_t
 {
     wayfire_view view;
 
@@ -16,7 +16,7 @@ class fade_animation : public animation_base
 
   public:
 
-    void init(wayfire_view view, wf::animation_description_t dur, wf_animation_type type) override
+    void init(wayfire_view view, wf::animation_description_t dur, wf::animate::animation_type type) override
     {
         this->view = view;
         this->progression =
@@ -24,7 +24,7 @@ class fade_animation : public animation_base
 
         this->progression.animate(start, end);
 
-        if (type & HIDING_ANIMATION)
+        if (type & WF_ANIMATE_HIDING_ANIMATION)
         {
             this->progression.flip();
         }
@@ -50,11 +50,6 @@ class fade_animation : public animation_base
         this->progression.reverse();
     }
 
-    int get_direction() override
-    {
-        return this->progression.get_direction();
-    }
-
     ~fade_animation()
     {
         view->get_transformed_node()->rem_transformer(name);
@@ -73,15 +68,14 @@ class zoom_animation_t : public duration_t
     timed_transition_t offset_y{*this};
 };
 
-class zoom_animation : public animation_base
+class zoom_animation : public fade_animation::animation_base_t
 {
     wayfire_view view;
     zoom_animation_t progression;
     std::string name;
 
   public:
-
-    void init(wayfire_view view, wf::animation_description_t dur, wf_animation_type type) override
+    void init(wayfire_view view, wf::animation_description_t dur, wf::animate::animation_type type) override
     {
         this->view = view;
         this->progression = zoom_animation_t(wf::create_option<wf::animation_description_t>(dur));
@@ -95,7 +89,7 @@ class zoom_animation : public animation_base
             this->progression, 0, 0);
         this->progression.start();
 
-        if (type & MINIMIZE_STATE_ANIMATION)
+        if (type & WF_ANIMATE_MINIMIZE_STATE_ANIMATION)
         {
             auto toplevel = wf::toplevel_cast(view);
             wf::dassert(toplevel != nullptr, "We cannot minimize non-toplevel views!");
@@ -121,7 +115,7 @@ class zoom_animation : public animation_base
             }
         }
 
-        if (type & HIDING_ANIMATION)
+        if (type & WF_ANIMATE_HIDING_ANIMATION)
         {
             progression.alpha.flip();
             progression.zoom.flip();

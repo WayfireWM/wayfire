@@ -232,7 +232,7 @@ static float fire_duration_mod_for_height(int height)
     return std::min(height / 400.0, 3.0);
 }
 
-void FireAnimation::init(wayfire_view view, wf::animation_description_t dur, wf_animation_type type)
+void FireAnimation::init(wayfire_view view, wf::animation_description_t dur, wf::animate::animation_type type)
 {
     this->view = view;
 
@@ -242,7 +242,7 @@ void FireAnimation::init(wayfire_view view, wf::animation_description_t dur, wf_
         wf::create_option<wf::animation_description_t>(dur));
     this->progression.animate(0, 1);
 
-    if (type & HIDING_ANIMATION)
+    if (type & WF_ANIMATE_HIDING_ANIMATION)
     {
         this->progression.flip();
     }

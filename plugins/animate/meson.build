@@ -12,3 +12,5 @@ animiate = shared_module('animate',
                          dependencies: dependencies,
                          install: true,
                          install_dir: join_paths(get_option('libdir'), 'wayfire'))
+
+install_headers(['animate.hpp'], subdir: 'wayfire/plugins/animate')

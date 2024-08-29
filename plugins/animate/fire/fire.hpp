@@ -8,7 +8,7 @@
 class FireTransformer;
 class ParticleSystem;
 
-class FireAnimation : public animation_base
+class FireAnimation : public wf::animate::animation_base_t
 {
     std::string name; // the name of the transformer in the view's table
     wayfire_view view;
@@ -17,7 +17,7 @@ class FireAnimation : public animation_base
   public:
 
     ~FireAnimation();
-    void init(wayfire_view view, wf::animation_description_t, wf_animation_type type) override;
+    void init(wayfire_view view, wf::animation_description_t, wf::animate::animation_type type) override;
     bool step() override; /* return true if continue, false otherwise */
     void reverse() override; /* reverse the animation */
 };

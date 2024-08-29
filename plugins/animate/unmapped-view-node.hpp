@@ -39,6 +39,11 @@ class unmapped_view_snapshot_node : public wf::scene::node_t
         instances.push_back(std::make_unique<rinstance_t>(this, push_damage, shown_on));
     }
 
+    std::string stringify() const override
+    {
+        return "unmapped-view-snapshot-node " + this->stringify_flags();
+    }
+
   private:
     class rinstance_t : public wf::scene::simple_render_instance_t<unmapped_view_snapshot_node>
     {

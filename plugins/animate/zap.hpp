@@ -23,15 +23,11 @@
  */
 
 #include "animate.hpp"
-#include "wayfire/toplevel-view.hpp"
 #include <memory>
 #include <wayfire/plugin.hpp>
 #include <wayfire/opengl.hpp>
 #include <wayfire/view-transform.hpp>
 #include <wayfire/output.hpp>
-
-
-wf::option_wrapper_t<wf::animation_description_t> zap_duration{"animate/zap_duration"};
 
 namespace wf
 {
@@ -44,22 +40,21 @@ class zap_animation_t : public duration_t
   public:
     using duration_t::duration_t;
 };
-class zap_animation : public animation_base
+class zap_animation : public animate::animation_base_t
 {
     wayfire_view view;
-    wf_animation_type type;
+    animate::animation_type type;
     wf::zap::zap_animation_t progression;
 
   public:
 
-    void init(wayfire_view view, wf::animation_description_t dur, wf_animation_type type) override
+    void init(wayfire_view view, wf::animation_description_t dur, animate::animation_type type) override
     {
         this->view = view;
         this->type = type;
-        this->progression =
-            wf::zap::zap_animation_t(wf::create_option<wf::animation_description_t>(zap_duration));
+        this->progression = wf::zap::zap_animation_t(wf::create_option<wf::animation_description_t>(dur));
 
-        if (type & HIDING_ANIMATION)
+        if (type & WF_ANIMATE_HIDING_ANIMATION)
         {
             this->progression.reverse();
         }
@@ -89,11 +84,6 @@ class zap_animation : public animation_base
     void reverse() override
     {
         this->progression.reverse();
-    }
-
-    int get_direction() override
-    {
-        return this->progression.get_direction();
     }
 
     ~zap_animation()

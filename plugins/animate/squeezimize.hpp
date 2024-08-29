@@ -39,8 +39,6 @@
 #include "animate.hpp"
 
 
-wf::option_wrapper_t<wf::animation_description_t> squeezimize_duration{"animate/squeezimize_duration"};
-
 static const char *squeeze_vert_source =
     R"(
 #version 100
@@ -132,7 +130,7 @@ class squeezimize_transformer : public wf::scene::view_2d_transformer_t
     OpenGL::program_t program;
     wf::geometry_t minimize_target;
     wf::geometry_t animation_geometry;
-    squeezimize_animation_t progression{squeezimize_duration};
+    squeezimize_animation_t progression;
 
     class simple_node_render_instance_t : public wf::scene::transformer_render_instance_t<squeezimize_transformer>
     {
@@ -251,9 +249,10 @@ class squeezimize_transformer : public wf::scene::view_2d_transformer_t
         }
     };
 
-    squeezimize_transformer(wayfire_view view,
+    squeezimize_transformer(wayfire_view view, wf::animation_description_t duration,
         wf::geometry_t minimize_target, wf::geometry_t bbox) : wf::scene::view_2d_transformer_t(view)
     {
+        this->progression     = squeezimize_animation_t{wf::create_option<>(duration)};
         this->minimize_target = minimize_target;
         /* If there is no minimize target set, minimize to the bottom center of the output */
         if ((this->minimize_target.width <= 0) || (this->minimize_target.height <= 0))
@@ -313,12 +312,12 @@ class squeezimize_transformer : public wf::scene::view_2d_transformer_t
     }
 };
 
-class squeezimize_animation : public animation_base
+class squeezimize_animation : public animate::animation_base_t
 {
     wayfire_view view;
 
   public:
-    void init(wayfire_view view, wf::animation_description_t dur, wf_animation_type type) override
+    void init(wayfire_view view, wf::animation_description_t dur, animate::animation_type type) override
     {
         this->view = view;
         pop_transformer(view);
@@ -327,9 +326,9 @@ class squeezimize_animation : public animation_base
         wf::dassert(toplevel != nullptr, "We cannot minimize non-toplevel views!");
         auto hint = toplevel->get_minimize_hint();
         auto tmgr = view->get_transformed_node();
-        auto node = std::make_shared<wf::squeezimize::squeezimize_transformer>(view, hint, bbox);
+        auto node = std::make_shared<wf::squeezimize::squeezimize_transformer>(view, dur, hint, bbox);
         tmgr->add_transformer(node, wf::TRANSFORMER_HIGHLEVEL + 1, squeezimize_transformer_name);
-        node->init_animation(type & HIDING_ANIMATION);
+        node->init_animation(type & WF_ANIMATE_HIDING_ANIMATION);
     }
 
     void pop_transformer(wayfire_view view)
