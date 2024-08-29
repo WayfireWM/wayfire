@@ -88,5 +88,10 @@
 			<_long>Whether to pass buttons through to the client when switching the focus via clicking</_long>
 			<default>true</default>
 		</option>
+		<option name="exit" type="key">
+			<_short>Wayfire Shutdown</_short>
+			<_long>Calls the shutdown routines for wayfire.</_long>
+			<default>&lt;ctrl&gt; &lt;alt&gt; KEY_BACKSPACE</default>
+		</option>
 	</plugin>
 </wayfire>

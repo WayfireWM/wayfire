@@ -23,6 +23,8 @@ static void idle_shutdown(void *data)
 
 void wayfire_exit::init()
 {
+    wf::option_wrapper_t<wf::keybinding_t> wayifre_exit_binding{"core/exit"};
+
     key = [] (const wf::keybinding_t&)
     {
         auto output_impl = static_cast<wf::output_impl_t*>(wf::get_core().seat->get_active_output());
@@ -35,8 +37,7 @@ void wayfire_exit::init()
         return true;
     };
 
-    output->add_key(wf::create_option_string<wf::keybinding_t>(
-        "<ctrl> <alt> KEY_BACKSPACE"), &key);
+    output->add_key(wayifre_exit_binding, &key);
 }
 
 void wayfire_exit::fini()
