@@ -6,3 +6,5 @@ shared_module('ipc-rules', ['ipc-rules.cpp'],
         dependencies: all_deps,
         install: true,
         install_dir: conf_data.get('PLUGIN_PATH'))
+
+install_headers(['ipc-rules-common.hpp'], subdir: 'wayfire/plugins/ipc')
