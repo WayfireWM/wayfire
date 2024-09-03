@@ -18,7 +18,8 @@
 static void print_version()
 {
     std::cout << WAYFIRE_VERSION << "-" << wf::version::git_commit <<
-        " (" __DATE__ ") branch " << wf::version::git_branch << std::endl;
+        " (" __DATE__ ") branch " << wf::version::git_branch <<
+        " wlroots-" << WLR_VERSION_STR << std::endl;
     exit(0);
 }
 
