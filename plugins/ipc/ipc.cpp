@@ -306,9 +306,11 @@ void wf::ipc::client_t::send_json(nlohmann::json json)
     }
 
     uint32_t len = serialized.length();
-    if (write_exact(fd, (char*)&len, 4))
+    if (!write_exact(fd, (char*)&len, 4) || !write_exact(fd, serialized.data(), len))
     {
-        write_exact(fd, serialized.data(), len);
+        LOGE("Error sending json to client!");
+        shutdown(fd, SHUT_RDWR);
+        return;
     }
 }
 
