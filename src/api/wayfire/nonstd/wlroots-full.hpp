@@ -84,6 +84,7 @@ extern "C"
 #define static
 #include <wlr/backend.h>
 #include <wlr/backend/drm.h>
+#include <wlr/types/wlr_drm.h>
 #if WLR_HAS_X11_BACKEND
     #include <wlr/backend/x11.h>
 #endif

@@ -272,6 +272,7 @@ int main(int argc, char *argv[])
         {"debug", optional_argument, NULL, 'd'},
         {"damage-debug", no_argument, NULL, 'D'},
         {"damage-rerender", no_argument, NULL, 'R'},
+        {"legacy-wl-drm", no_argument, NULL, 'l'},
         {"help", no_argument, NULL, 'h'},
         {"version", no_argument, NULL, 'v'},
         {0, 0, NULL, 0}
@@ -282,7 +283,7 @@ int main(int argc, char *argv[])
     std::vector<std::string> extended_debug_categories;
 
     int c, i;
-    while ((c = getopt_long(argc, argv, "c:B:d::DhRv", opts, &i)) != -1)
+    while ((c = getopt_long(argc, argv, "c:B:d::DhRlv", opts, &i)) != -1)
     {
         switch (c)
         {
@@ -300,6 +301,10 @@ int main(int argc, char *argv[])
 
           case 'R':
             runtime_config.no_damage_track = true;
+            break;
+
+          case 'l':
+            runtime_config.legacy_wl_drm = true;
             break;
 
           case 'h':
