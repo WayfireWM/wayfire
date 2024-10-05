@@ -222,7 +222,7 @@ class wlr_surface_pointer_interaction_t final : public wf::pointer_interaction_t
     {
         auto seat = wf::get_core_impl().get_current_seat();
         wlr_seat_pointer_notify_axis(seat, ev.time_msec, ev.orientation,
-            ev.delta, ev.delta_discrete, ev.source);
+            ev.delta, ev.delta_discrete, ev.source, WL_POINTER_AXIS_RELATIVE_DIRECTION_IDENTICAL);
     }
 
     void handle_pointer_leave() final

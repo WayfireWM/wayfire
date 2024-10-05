@@ -214,7 +214,7 @@ class wf_wrot : public wf::per_output_plugin_instance_t, public wf::pointer_inte
 
     void handle_pointer_button(const wlr_pointer_button_event& event) override
     {
-        if (event.state == WLR_BUTTON_RELEASED)
+        if (event.state == WL_POINTER_BUTTON_STATE_RELEASED)
         {
             input_released();
         }

@@ -42,11 +42,11 @@ if get_option('use_system_wlroots').disabled()
 
 elif get_option('use_system_wlroots').enabled()
 	use_system_wlroots = true
-	wlroots = dependency('wlroots', version: ['>=0.17.0', '<0.18.0'], required: true)
+	wlroots = dependency('wlroots-0.18', version: ['>=0.18.0', '<0.19.0'], required: true)
 
 elif get_option('use_system_wlroots').auto()
 	message( 'SEARCHING FOR WLROOTS' )
-	wlroots = dependency('wlroots', version: ['>=0.17.0', '<0.18.0'], required: false)
+	wlroots = dependency('wlroots-0.18', version: ['>=0.18.0', '<0.19.0'], required: false)
 	use_system_wlroots = true
 	if not wlroots.found()
 		use_system_wlroots = false

@@ -90,6 +90,9 @@ bool wf::wlr_subsurface_root_node_t::update_offset(bool apply_damage)
     } else if (changed)
     {
         set_offset(offset);
+    } else if (apply_damage)
+    {
+        scene::damage_node(this, get_bounding_box());
     }
 
     return changed;

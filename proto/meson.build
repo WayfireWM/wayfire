@@ -27,7 +27,7 @@ server_protocols = [
     [wl_protocol_dir, 'unstable/xdg-output/xdg-output-unstable-v1.xml'],
     [wl_protocol_dir, 'unstable/pointer-constraints/pointer-constraints-unstable-v1.xml'],
     [wl_protocol_dir, 'unstable/relative-pointer/relative-pointer-unstable-v1.xml'],
-    [wl_protocol_dir, 'unstable/tablet/tablet-unstable-v2.xml'],
+    [wl_protocol_dir, 'stable/tablet/tablet-v2.xml'],
     [wl_protocol_dir, 'unstable/keyboard-shortcuts-inhibit/keyboard-shortcuts-inhibit-unstable-v1.xml'],
     [wl_protocol_dir, 'unstable/input-method/input-method-unstable-v1.xml'],
     [wl_protocol_dir, 'staging/ext-session-lock/ext-session-lock-v1.xml'],

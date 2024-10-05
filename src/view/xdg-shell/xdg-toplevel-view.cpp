@@ -49,7 +49,7 @@ wf::xdg_toplevel_view_base_t::xdg_toplevel_view_base_t(wlr_xdg_toplevel *topleve
         wf::view_implementation::emit_ping_timeout_signal(self());
     });
 
-    on_destroy.connect(&xdg_toplevel->base->events.destroy);
+    on_destroy.connect(&xdg_toplevel->events.destroy);
     on_new_popup.connect(&xdg_toplevel->base->events.new_popup);
     on_ping_timeout.connect(&xdg_toplevel->base->events.ping_timeout);
     on_set_title.connect(&xdg_toplevel->events.set_title);
@@ -556,7 +556,7 @@ class xdg_toplevel_controller_t
     xdg_toplevel_controller_t(wlr_xdg_toplevel *toplevel)
     {
         on_destroy.set_callback([=] (auto) { delete this; });
-        on_destroy.connect(&toplevel->base->events.destroy);
+        on_destroy.connect(&toplevel->events.destroy);
         view = wf::xdg_toplevel_view_t::create(toplevel);
 
         on_map.set_callback([=] (void*)

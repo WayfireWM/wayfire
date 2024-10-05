@@ -1107,9 +1107,9 @@ class wf::render_manager::impl
         }
     }
 
-    void update_bound_output()
+    void update_bound_output(wlr_buffer *buffer)
     {
-        int current_fb = wlr_gles2_renderer_get_current_fbo(output->handle->renderer);
+        int current_fb = wlr_gles2_renderer_get_buffer_fbo(output->handle->renderer, buffer);
         bind_output(current_fb);
 
         postprocessing->set_output_framebuffer(current_fb);
@@ -1144,10 +1144,8 @@ class wf::render_manager::impl
         }
 
         /* Part 2: call the renderer, which sets swap_damage and draws the scenegraph */
-        wlr_renderer_begin_with_buffer(output->handle->renderer, next_frame->buffer);
-        update_bound_output();
+        update_bound_output(next_frame->buffer);
         render_output();
-        wlr_renderer_end(wf::get_core().renderer);
 
         /* Part 3: overlay effects */
         effects->run_effects(OUTPUT_EFFECT_OVERLAY);
@@ -1171,9 +1169,8 @@ class wf::render_manager::impl
          * We render software cursors after everything else
          * for consistency with hardware cursor planes */
         OpenGL::render_begin();
-        wlr_renderer_begin_with_buffer(output->handle->renderer, next_frame->buffer);
-        wlr_output_render_software_cursors(output->handle, swap_damage.to_pixman());
-        wlr_renderer_end(wf::get_core().renderer);
+        wlr_output_add_software_cursors_to_render_pass(output->handle, next_frame->render_pass,
+            swap_damage.to_pixman());
         OpenGL::render_end();
 
         /* Part 6: finalize frame: swap buffers, send frame_done, etc */

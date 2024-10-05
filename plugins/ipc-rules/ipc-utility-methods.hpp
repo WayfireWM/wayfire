@@ -63,7 +63,7 @@ class ipc_rules_utility_methods_t
         if (!headless_backend)
         {
             auto& core = wf::get_core();
-            headless_backend = wlr_headless_backend_create(core.display);
+            headless_backend = wlr_headless_backend_create(core.ev_loop);
             wlr_multi_backend_add(core.backend, headless_backend);
             wlr_backend_start(headless_backend);
         }
