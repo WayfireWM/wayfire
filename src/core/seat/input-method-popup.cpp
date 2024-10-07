@@ -65,6 +65,7 @@ void wf::text_input_v3_popup::map()
 
     damage();
     emit_view_map();
+    relay->connect(&on_text_input_commit);
 }
 
 void wf::text_input_v3_popup::unmap()
@@ -82,6 +83,7 @@ void wf::text_input_v3_popup::unmap()
     priv->set_mapped(nullptr);
     priv->set_enabled(false);
     on_commit.disconnect();
+    relay->disconnect(&on_text_input_commit);
 }
 
 std::string wf::text_input_v3_popup::get_app_id()
@@ -92,6 +94,21 @@ std::string wf::text_input_v3_popup::get_app_id()
 std::string wf::text_input_v3_popup::get_title()
 {
     return "input-method-popup";
+}
+
+void wf::text_input_v3_popup::update_cursor_rect(wlr_box *cursor_rect)
+{
+    if (old_cursor_rect == *cursor_rect)
+    {
+        return;
+    }
+
+    if (is_mapped())
+    {
+        update_geometry();
+    }
+
+    old_cursor_rect = *cursor_rect;
 }
 
 void wf::text_input_v3_popup::update_geometry()
