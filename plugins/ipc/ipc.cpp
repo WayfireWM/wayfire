@@ -324,9 +324,23 @@ class ipc_plugin_t : public wf::plugin_interface_t
   public:
     void init() override
     {
-        char *pre_socket   = getenv("_WAYFIRE_SOCKET");
-        const auto& dname  = wf::get_core().wayland_display;
-        std::string socket = pre_socket ?: "/tmp/wayfire-" + dname + ".socket";
+        char *pre_socket  = getenv("_WAYFIRE_SOCKET");
+        const auto& dname = wf::get_core().wayland_display;
+        pid_t pid = getpid();
+        const char *runtime_dir = getenv("XDG_RUNTIME_DIR");
+
+        std::string socket;
+        if (pre_socket)
+        {
+            socket = pre_socket;
+        } else if (runtime_dir)
+        {
+            socket = std::string(runtime_dir) + "/wayfire-" + dname + "-" + ".socket";
+        } else
+        {
+            socket = "/tmp/wayfire-" + dname + "-" + std::to_string(pid) + ".socket";
+        }
+
         setenv("WAYFIRE_SOCKET", socket.c_str(), 1);
         server->init(socket);
     }
