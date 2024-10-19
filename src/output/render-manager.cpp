@@ -959,7 +959,7 @@ class wf::render_manager::impl
         {
             /* If the session is not active, don't paint.
              * This is the case when e.g. switching to another tty */
-            if (!wf::get_core().session->active)
+            if (wf::get_core().session && !wf::get_core().session->active)
             {
                 return;
             }
