@@ -49,6 +49,12 @@ class input_manager_t
      */
     void configure_input_devices();
 
+    /**
+     * Calibrate a touch device with a matrix. This function does nothing
+     * if called with a device that is not a touch device.
+     */
+    void calibrate_touch_device(wlr_input_device *dev, std::string const & cal);
+
     input_manager_t();
     ~input_manager_t() = default;
 
