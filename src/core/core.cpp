@@ -228,7 +228,7 @@ void wf::compositor_core_impl_t::post_init()
     seat->focus_output(wo);
 
     // Refresh device mappings when we have all outputs and devices
-    input->refresh_device_mappings();
+    input->configure_input_devices();
 
     // Start processing cursor events
     seat->priv->cursor->setup_listeners();
