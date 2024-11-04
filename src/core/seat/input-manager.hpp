@@ -38,10 +38,16 @@ class input_manager_t
     uint32_t locked_mods = 0;
 
     /**
+     * Map a single input device to output as specified in the
+     * config file or by hints in the wlroots backend.
+     */
+    void configure_input_device(wlr_input_device *dev);
+
+    /**
      * Go through all input devices and map them to outputs as specified in the
      * config file or by hints in the wlroots backend.
      */
-    void refresh_device_mappings();
+    void configure_input_devices();
 
     input_manager_t();
     ~input_manager_t() = default;
