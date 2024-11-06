@@ -93,7 +93,7 @@ void wf::input_manager_t::configure_input_device(wlr_input_device *dev)
 {
     auto cursor  = wf::get_core().get_wlr_cursor();
     auto section =
-        wf::get_core().config_backend->get_input_device_section(dev);
+        wf::get_core().config_backend->get_input_device_section("input-device", dev);
 
     auto mapped_output = section->get_option("output")->get_value_str();
     if (mapped_output.empty())
