@@ -52,10 +52,85 @@ void wf::input_manager_t::handle_new_input(wlr_input_device *dev)
     data.device = nonstd::make_observer(input_devices.back().get());
     wf::get_core().emit(&data);
 
-    refresh_device_mappings();
+    configure_input_devices();
 }
 
-void wf::input_manager_t::refresh_device_mappings()
+void wf::input_manager_t::calibrate_touch_device(wlr_input_device *dev, std::string const & cal)
+{
+    if (!wlr_input_device_is_libinput(dev) || (dev->type != WLR_INPUT_DEVICE_TOUCH))
+    {
+        return;
+    }
+
+    float m[6];
+    auto libinput_dev = wlr_libinput_get_device_handle(dev);
+    if (sscanf(cal.c_str(), "%f %f %f %f %f %f",
+        &m[0], &m[1], &m[2], &m[3], &m[4], &m[5]) == 6)
+    {
+        enum libinput_config_status status;
+
+        status = libinput_device_config_calibration_set_matrix(libinput_dev, m);
+        if (status != LIBINPUT_CONFIG_STATUS_SUCCESS)
+        {
+            LOGE("Failed to apply calibration for ", nonull(dev->name));
+            LOGE("    ", m[0], " ", m[1], " ", m[2], " ", m[3], " ", m[4], " ", m[5]);
+        } else
+        {
+            LOGI("Calibrated input device successfully: ", nonull(dev->name));
+            LOGI("    ", m[0], " ", m[1], " ", m[2], " ", m[3], " ", m[4], " ", m[5]);
+        }
+    } else
+    {
+        LOGE("Incorrect calibration configuration for ", nonull(dev->name));
+        LOGI("Setting default matrix calibration: ");
+        libinput_device_config_calibration_get_default_matrix(libinput_dev, m);
+        LOGI("    ", m[0], " ", m[1], " ", m[2], " ", m[3], " ", m[4], " ", m[5]);
+        libinput_device_config_calibration_set_matrix(libinput_dev, m);
+    }
+}
+
+void wf::input_manager_t::configure_input_device(wlr_input_device *dev)
+{
+    auto cursor  = wf::get_core().get_wlr_cursor();
+    auto section =
+        wf::get_core().config_backend->get_input_device_section("input-device", dev);
+
+    auto mapped_output = section->get_option("output")->get_value_str();
+    if (mapped_output.empty())
+    {
+        if (dev->type == WLR_INPUT_DEVICE_POINTER)
+        {
+            mapped_output = nonull(wlr_pointer_from_input_device(
+                dev)->output_name);
+        } else if (dev->type == WLR_INPUT_DEVICE_TOUCH)
+        {
+            mapped_output =
+                nonull(wlr_touch_from_input_device(dev)->output_name);
+        } else
+        {
+            mapped_output = nonull(dev->name);
+        }
+    }
+
+    auto cal = section->get_option("calibration")->get_value_str();
+    if (!cal.empty())
+    {
+        calibrate_touch_device(dev, cal);
+    }
+
+    auto wo = wf::get_core().output_layout->find_output(mapped_output);
+    if (wo)
+    {
+        LOGD("Mapping input ", dev->name, " to output ", wo->to_string(), ".");
+        wlr_cursor_map_input_to_output(cursor, dev, wo->handle);
+    } else
+    {
+        LOGD("Mapping input ", dev->name, " to output null.");
+        wlr_cursor_map_input_to_output(cursor, dev, nullptr);
+    }
+}
+
+void wf::input_manager_t::configure_input_devices()
 {
     // Might trigger motion events which we want to avoid at other stages
     auto state = wf::get_core().get_current_state();
@@ -64,40 +139,9 @@ void wf::input_manager_t::refresh_device_mappings()
         return;
     }
 
-    auto cursor = wf::get_core().get_wlr_cursor();
     for (auto& device : this->input_devices)
     {
-        wlr_input_device *dev = device->get_wlr_handle();
-        auto section =
-            wf::get_core().config_backend->get_input_device_section(dev);
-
-        auto mapped_output = section->get_option("output")->get_value_str();
-        if (mapped_output.empty())
-        {
-            if (dev->type == WLR_INPUT_DEVICE_POINTER)
-            {
-                mapped_output = nonull(wlr_pointer_from_input_device(
-                    dev)->output_name);
-            } else if (dev->type == WLR_INPUT_DEVICE_TOUCH)
-            {
-                mapped_output =
-                    nonull(wlr_touch_from_input_device(dev)->output_name);
-            } else
-            {
-                mapped_output = nonull(dev->name);
-            }
-        }
-
-        auto wo = wf::get_core().output_layout->find_output(mapped_output);
-        if (wo)
-        {
-            LOGD("Mapping input ", dev->name, " to output ", wo->to_string(), ".");
-            wlr_cursor_map_input_to_output(cursor, dev, wo->handle);
-        } else
-        {
-            LOGD("Mapping input ", dev->name, " to output null.");
-            wlr_cursor_map_input_to_output(cursor, dev, nullptr);
-        }
+        configure_input_device(device->get_wlr_handle());
     }
 }
 
@@ -170,7 +214,7 @@ wf::input_manager_t::input_manager_t()
             ev->output->set_inhibited(true);
         }
 
-        refresh_device_mappings();
+        configure_input_devices();
     });
     wf::get_core().output_layout->connect(&output_added);
 }
