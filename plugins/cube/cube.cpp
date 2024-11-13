@@ -272,7 +272,7 @@ class wayfire_cube : public wf::per_output_plugin_instance_t, public wf::pointer
 
     void handle_pointer_button(const wlr_pointer_button_event& event) override
     {
-        if (event.state == WLR_BUTTON_RELEASED)
+        if (event.state == WL_POINTER_BUTTON_STATE_RELEASED)
         {
             input_ungrabbed();
         }
@@ -280,7 +280,7 @@ class wayfire_cube : public wf::per_output_plugin_instance_t, public wf::pointer
 
     void handle_pointer_axis(const wlr_pointer_axis_event& event) override
     {
-        if (event.orientation == WLR_AXIS_ORIENTATION_VERTICAL)
+        if (event.orientation == WL_POINTER_AXIS_VERTICAL_SCROLL)
         {
             pointer_scrolled(event.delta);
         }

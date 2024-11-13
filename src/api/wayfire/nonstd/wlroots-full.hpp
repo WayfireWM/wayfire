@@ -38,6 +38,7 @@ extern "C"
 #include <wlr/types/wlr_damage_ring.h>
 #include <wlr/types/wlr_presentation_time.h>
 #include <wlr/util/region.h>
+#include <wlr/util/transform.h>
 #include <wlr/types/wlr_screencopy_v1.h>
 #include <wlr/types/wlr_export_dmabuf_v1.h>
 #include <wlr/types/wlr_keyboard_shortcuts_inhibit_v1.h>
@@ -112,7 +113,7 @@ extern "C"
     #include <wlr/types/wlr_pointer_constraints_v1.h>
 #endif
 #include <wlr/types/wlr_cursor.h>
-#if __has_include(<tablet-unstable-v2-protocol.h>)
+#if __has_include(<tablet-v2-protocol.h>)
     #include <wlr/types/wlr_tablet_v2.h>
 #endif
 #include <wlr/types/wlr_tablet_tool.h>
@@ -131,7 +132,6 @@ extern "C"
 #include <wlr/types/wlr_virtual_pointer_v1.h>
 #include <wlr/types/wlr_idle_notify_v1.h>
 #include <wlr/types/wlr_idle_inhibit_v1.h>
-#include <wlr/types/wlr_input_inhibitor.h>
 #define delete delete_
 #include <wlr/types/wlr_input_method_v2.h>
 #undef delete

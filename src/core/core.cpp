@@ -96,7 +96,7 @@ void wf::compositor_core_impl_t::init()
 
     /* Legacy DRM */
     if (runtime_config.legacy_wl_drm &&
-        wlr_renderer_get_dmabuf_texture_formats(renderer))
+        wlr_renderer_get_texture_formats(renderer, WLR_BUFFER_CAP_DMABUF))
     {
         wlr_drm_create(display, renderer);
     }
@@ -136,20 +136,6 @@ void wf::compositor_core_impl_t::init()
     {
         LOGE("Failed to create wlr_drm_lease_device_v1; VR will not be available!");
     }
-
-    /* input-inhibit setup */
-    protocols.input_inhibit = wlr_input_inhibit_manager_create(display);
-    input_inhibit_activated.set_callback([&] (void*)
-    {
-        input->set_exclusive_focus(protocols.input_inhibit->active_client);
-    });
-    input_inhibit_activated.connect(&protocols.input_inhibit->events.activate);
-
-    input_inhibit_deactivated.set_callback([&] (void*)
-    {
-        input->set_exclusive_focus(nullptr);
-    });
-    input_inhibit_deactivated.connect(&protocols.input_inhibit->events.deactivate);
 
     /* idle-inhibit setup */
     protocols.idle_notifier = wlr_idle_notifier_v1_create(display);

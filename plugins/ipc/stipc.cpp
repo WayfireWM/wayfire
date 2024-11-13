@@ -94,7 +94,7 @@ class headless_input_backend_t
     headless_input_backend_t()
     {
         auto& core = wf::get_core();
-        backend = wlr_headless_backend_create(core.display);
+        backend = wlr_headless_backend_create(core.ev_loop);
         wlr_multi_backend_add(core.backend, backend);
 
         wlr_pointer_init(&pointer, &pointer_impl, "stipc_pointer");
@@ -140,7 +140,7 @@ class headless_input_backend_t
         wlr_keyboard_notify_key(&keyboard, &ev);
     }
 
-    void do_button(uint32_t button, wlr_button_state state)
+    void do_button(uint32_t button, wl_pointer_button_state state)
     {
         wlr_pointer_button_event ev;
         ev.pointer   = &pointer;
@@ -479,12 +479,12 @@ class stipc_plugin_t : public wf::plugin_interface_t
                 input->do_key(KEY_LEFTMETA, WL_KEYBOARD_KEY_STATE_PRESSED);
             }
 
-            input->do_button(button->code, WLR_BUTTON_PRESSED);
+            input->do_button(button->code, WL_POINTER_BUTTON_STATE_PRESSED);
         }
 
         if ((mode == "release") || (mode == "full"))
         {
-            input->do_button(button->code, WLR_BUTTON_RELEASED);
+            input->do_button(button->code, WL_POINTER_BUTTON_STATE_RELEASED);
             if (button->modifier)
             {
                 input->do_key(KEY_LEFTMETA, WL_KEYBOARD_KEY_STATE_RELEASED);

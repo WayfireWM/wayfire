@@ -332,7 +332,7 @@ class tile_output_plugin_t : public wf::pointer_interaction_t, public wf::custom
 
     void handle_pointer_button(const wlr_pointer_button_event& event) override
     {
-        if (event.state == WLR_BUTTON_RELEASED)
+        if (event.state == WL_POINTER_BUTTON_STATE_RELEASED)
         {
             stop_controller(false);
         }

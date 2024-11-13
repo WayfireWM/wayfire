@@ -57,7 +57,7 @@ class wayfire_zoom_screen : public wf::per_output_plugin_instance_t
             return false;
         }
 
-        if (ev->orientation != WLR_AXIS_ORIENTATION_VERTICAL)
+        if (ev->orientation != WL_POINTER_AXIS_VERTICAL_SCROLL)
         {
             return false;
         }

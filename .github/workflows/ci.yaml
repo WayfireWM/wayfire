@@ -7,7 +7,9 @@ jobs:
     runs-on: ubuntu-latest
     container: alpine:latest
     steps:
-    - run: apk --no-cache add git gcc g++ binutils pkgconf meson ninja musl-dev wayland-dev wayland-protocols libinput-dev libevdev-dev libxkbcommon-dev pixman-dev glm-dev libdrm-dev mesa-dev cairo-dev pango-dev eudev-dev libxml2-dev libseat-dev libxcb-dev xcb-util-wm-dev xwayland doctest doctest-dev cmake libdisplay-info-dev hwdata-dev nlohmann-json
+    - run: apk --no-cache add git gcc g++ binutils pkgconf meson ninja musl-dev wayland-protocols libinput-dev libevdev-dev libxkbcommon-dev pixman-dev glm-dev mesa-dev cairo-dev pango-dev eudev-dev libxml2-dev libseat-dev libxcb-dev xcb-util-wm-dev xwayland doctest doctest-dev cmake libdisplay-info-dev hwdata-dev nlohmann-json
+    - run: git clone https://gitlab.freedesktop.org/wayland/wayland && cd wayland && git checkout 1.23.0 && meson setup build -Ddocumentation=false -Dtests=false --prefix=/usr && ninja -C build && ninja -C build install && cd .. && rm -rf wayland
+    - run: git clone https://gitlab.freedesktop.org/mesa/drm && cd drm && meson setup build --prefix=/usr && ninja -C build && ninja -C build install && cd .. && rm -rf drm
     - uses: actions/checkout@v1
     - run: git config --global --add safe.directory /__w/wayfire/wayfire
     - run: git submodule sync --recursive && git submodule update --init --force --recursive
