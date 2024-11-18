@@ -395,8 +395,8 @@ class wf::scene::wlr_surface_node_t::wlr_surface_render_instance_t : public rend
 
         wlr_output_state state;
         wlr_output_state_init(&state);
-        wlr_presentation_surface_scanned_out_on_output(wlr_surf, output->handle);
         wlr_output_state_set_buffer(&state, &wlr_surf->buffer->base);
+        wlr_presentation_surface_scanned_out_on_output(wlr_surf, output->handle);
 
         if (wlr_output_commit_state(output->handle, &state))
         {

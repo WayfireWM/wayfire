@@ -21,6 +21,71 @@
 
 static void*const WF_NOOP_OUTPUT_MAGIC = (void*)0x1234;
 
+// wlroots wrappers
+namespace wf
+{
+class wlr_output_state_setter_t
+{
+  public:
+    wlr_output_state_setter_t()
+    {
+        wlr_output_state_init(&pending);
+    }
+
+    ~wlr_output_state_setter_t()
+    {
+        wlr_output_state_finish(&pending);
+    }
+
+    wlr_output_state_setter_t(const wlr_output_state_setter_t&) = delete;
+    wlr_output_state_setter_t(wlr_output_state_setter_t&&) = delete;
+    wlr_output_state_setter_t& operator =(const wlr_output_state_setter_t&) = delete;
+    wlr_output_state_setter_t& operator =(wlr_output_state_setter_t&&) = delete;
+
+    void reset()
+    {
+        wlr_output_state_finish(&pending);
+        wlr_output_state_init(&pending);
+    }
+
+    // Commit all pending changes on the output.
+    // Returns true if the output was successfully committed.
+    //
+    // After this operation, the pending output state (@pending) is reset.
+    bool commit(wlr_output *output)
+    {
+        bool r = wlr_output_commit_state(output, &pending);
+        reset();
+        return r;
+    }
+
+    // Test whether the pending state can be applied on the output.
+    bool test(wlr_output *output)
+    {
+        return wlr_output_test_state(output, &pending);
+    }
+
+    // Test whether the pending state can be applied on the output.
+    // If so, commit the state.
+    //
+    // In both cases, reset @pending.
+    bool test_and_commit(wlr_output *output)
+    {
+        if (test(output))
+        {
+            commit(output);
+            return true;
+        } else
+        {
+            reset();
+            return false;
+        }
+    }
+
+    wlr_output_state pending;
+};
+}
+
 static wl_output_transform get_transform_from_string(std::string transform)
 {
     if (transform == "normal")
@@ -258,7 +323,7 @@ static const char *get_format_name(uint32_t format)
 struct output_layout_output_t
 {
     wlr_output *handle;
-    wlr_output_state state;
+    wlr_output_state_setter_t pending_state;
     output_state_t current_state{};
     bool is_externally_managed = false;
     bool is_nested_compositor  = false;
@@ -295,7 +360,6 @@ struct output_layout_output_t
     output_layout_output_t(wlr_output *handle)
     {
         this->handle = handle;
-        wlr_output_state_init(&this->state);
         on_destroy.connect(&handle->events.destroy);
         initialize_config_options();
 
@@ -620,10 +684,7 @@ struct output_layout_output_t
                 (current_bit_depth == current_state.depth))
             {
                 /* Commit the enabling of the output */
-                wlr_output_commit_state(handle, &state);
-                wlr_output_state_finish(&state);
-                wlr_output_state_init(&state);
-
+                pending_state.commit(handle);
                 return;
             }
         }
@@ -632,7 +693,7 @@ struct output_layout_output_t
         auto built_in = find_matching_mode(handle, mode, custom_mode);
         if (built_in)
         {
-            wlr_output_state_set_mode(&state, built_in);
+            wlr_output_state_set_mode(&pending_state.pending, built_in);
         } else
         {
             LOGI("Couldn't find matching mode ",
@@ -640,21 +701,18 @@ struct output_layout_output_t
                 " for output ", handle->name, ". Trying to use custom mode",
                 "(might not work)");
 
-            wlr_output_state_set_custom_mode(&state, mode.width, mode.height, mode.refresh);
+            wlr_output_state_set_custom_mode(&pending_state.pending, mode.width, mode.height, mode.refresh);
         }
 
-        wlr_output_commit_state(handle, &state);
-        wlr_output_state_finish(&state);
-        wlr_output_state_init(&state);
+        pending_state.commit(handle);
 
         const bool adaptive_sync_enabled = (handle->adaptive_sync_status == WLR_OUTPUT_ADAPTIVE_SYNC_ENABLED);
 
         if (adaptive_sync_enabled != current_state.vrr)
         {
-            wlr_output_state_set_adaptive_sync_enabled(&state, current_state.vrr);
-            if (wlr_output_test_state(handle, &state))
+            wlr_output_state_set_adaptive_sync_enabled(&pending_state.pending, current_state.vrr);
+            if (pending_state.test_and_commit(handle))
             {
-                wlr_output_commit_state(handle, &state);
                 LOGD("Changed adaptive sync on output: ", handle->name, " to ", current_state.vrr);
             } else
             {
@@ -662,18 +720,13 @@ struct output_layout_output_t
             }
         }
 
-        wlr_output_state_finish(&state);
-        wlr_output_state_init(&state);
-
         if (current_state.depth != current_bit_depth)
         {
             for (auto fmt : formats_for_depth[current_state.depth])
             {
-                wlr_output_state_set_render_format(&state, fmt);
-                if (wlr_output_test_state(handle, &state))
+                wlr_output_state_set_render_format(&pending_state.pending, fmt);
+                if (pending_state.test_and_commit(handle))
                 {
-                    wlr_output_state_set_render_format(&state, fmt);
-                    wlr_output_commit_state(handle, &state);
                     current_bit_depth = current_state.depth;
                     LOGD("Set output format to ", get_format_name(fmt), " on output ", handle->name);
                     break;
@@ -682,9 +735,6 @@ struct output_layout_output_t
                 LOGD("Failed to set output format ", get_format_name(fmt), " on output ", handle->name);
             }
         }
-
-        wlr_output_state_finish(&state);
-        wlr_output_state_init(&state);
     }
 
     /* Mirroring implementation */
@@ -696,7 +746,8 @@ struct output_layout_output_t
     void render_output(wlr_texture *texture)
     {
         int buffer_age;
-        struct wlr_render_pass *pass = wlr_output_begin_render_pass(handle, &state, &buffer_age, NULL);
+        struct wlr_render_pass *pass = wlr_output_begin_render_pass(handle, &pending_state.pending,
+            &buffer_age, NULL);
         if (pass == NULL)
         {
             return;
@@ -706,9 +757,7 @@ struct output_layout_output_t
         OpenGL::render_transformed_texture(tex, {-1, -1, 2, 2});
 
         wlr_render_pass_submit(pass);
-        wlr_output_commit_state(handle, &state);
-        wlr_output_state_finish(&state);
-        wlr_output_state_init(&state);
+        pending_state.commit(handle);
     }
 
     /* Load output contents and render them */
@@ -745,12 +794,10 @@ struct output_layout_output_t
 
     void set_enabled(bool enabled)
     {
-        wlr_output_state_set_enabled(&state, enabled);
+        wlr_output_state_set_enabled(&pending_state.pending, enabled);
         if (!enabled)
         {
-            wlr_output_commit_state(handle, &state);
-            wlr_output_state_finish(&state);
-            wlr_output_state_init(&state);
+            pending_state.commit(handle);
         }
     }
 
@@ -922,17 +969,15 @@ struct output_layout_output_t
         {
             if (handle->transform != state.transform)
             {
-                wlr_output_state_set_transform(&this->state, state.transform);
+                wlr_output_state_set_transform(&pending_state.pending, state.transform);
             }
 
             if (handle->scale != state.scale)
             {
-                wlr_output_state_set_scale(&this->state, state.scale);
+                wlr_output_state_set_scale(&pending_state.pending, state.scale);
             }
 
-            wlr_output_commit_state(handle, &this->state);
-            wlr_output_state_finish(&this->state);
-            wlr_output_state_init(&this->state);
+            pending_state.commit(handle);
 
             ensure_wayfire_output(get_effective_size());
             output->render->damage_whole();
