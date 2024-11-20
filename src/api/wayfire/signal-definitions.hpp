@@ -810,6 +810,15 @@ struct view_system_bell_signal
 {
     wayfire_view view;
 };
+
+/**
+ * on: input method relay
+ * when: A text input commits
+ */
+struct text_input_commit_signal
+{
+    wlr_box cursor_rect;
+};
 }
 
 #endif

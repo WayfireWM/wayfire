@@ -244,6 +244,11 @@ void window_manager_t::tile_request(wayfire_toplevel_view view,
 void window_manager_t::fullscreen_request(wayfire_toplevel_view view,
     wf::output_t *output, bool state, std::optional<wf::point_t> ws)
 {
+    if (view->toplevel()->pending().fullscreen == state)
+    {
+        return;
+    }
+
     wf::output_t *wo = output ?: (view->get_output() ?: wf::get_core().seat->get_active_output());
     const wf::point_t workspace = ws.value_or(wo->wset()->get_current_workspace());
     wf::dassert(wo != nullptr, "Fullscreening should not happen with null output!");

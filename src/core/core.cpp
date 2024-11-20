@@ -94,6 +94,13 @@ void wf::compositor_core_impl_t::init()
     /* Needed for subsurfaces */
     wlr_subcompositor_create(display);
 
+    /* Legacy DRM */
+    if (runtime_config.legacy_wl_drm &&
+        wlr_renderer_get_dmabuf_texture_formats(renderer))
+    {
+        wlr_drm_create(display, renderer);
+    }
+
     protocols.data_device = wlr_data_device_manager_create(display);
     protocols.primary_selection_v1 =
         wlr_primary_selection_v1_device_manager_create(display);

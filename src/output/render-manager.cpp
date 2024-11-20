@@ -957,6 +957,13 @@ class wf::render_manager::impl
 
         on_frame.set_callback([&] (void*)
         {
+            /* If the session is not active, don't paint.
+             * This is the case when e.g. switching to another tty */
+            if (wf::get_core().session && !wf::get_core().session->active)
+            {
+                return;
+            }
+
             delay_manager->start_frame();
 
             auto repaint_delay = delay_manager->get_delay();

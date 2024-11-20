@@ -773,6 +773,10 @@ class wayfire_input_method_v1 : public wf::plugin_interface_t, public wf::text_i
         if (current_im_context && (current_im_context->text_input == im_text_inputs_v3[input].get()))
         {
             current_im_context->handle_text_input_v3_commit();
+
+            wf::text_input_commit_signal data;
+            data.cursor_rect = input->current.cursor_rectangle;
+            emit(&data);
         }
     }
 

@@ -7,7 +7,7 @@
 		<option name="plugins" type="string">
 			<_short>Plugins</_short>
 			<_long>Loads the specified plugins, space-separated list.</_long>
-			<default>alpha animate autostart command cube decoration expo fast-switcher fisheye foreign-toplevel grid gtk-shell idle invert move oswitch place resize shortcuts-inhibit switcher vswitch wayfire-shell window-rules wobbly wrot zoom</default>
+			<default>alpha animate autostart command cube decoration expo fast-switcher fisheye foreign-toplevel grid gtk-shell idle invert move oswitch place resize session-lock shortcuts-inhibit switcher vswitch wayfire-shell window-rules wobbly wrot zoom</default>
 		</option>
 		<option name="close_top_view" type="activator">
 			<_short>Close view</_short>

@@ -224,9 +224,22 @@ class wayfire_grid : public wf::plugin_interface_t, public wf::per_output_tracke
             return;
         }
 
+        int32_t edges = -1;
+        auto geom     = data->desired_size;
+
+        if (!data->state && data->view->has_data<wf_grid_slot_data>())
+        {
+            uint32_t slot = data->view->get_data_safe<wf_grid_slot_data>()->slot;
+            if (slot > 0)
+            {
+                geom  = wf::grid::get_slot_dimensions(data->view->get_output(), slot);
+                edges = wf::grid::get_tiled_edges_for_slot(slot);
+            }
+        }
+
         data->carried_out = true;
         ensure_grid_view(data->view)->adjust_target_geometry(
-            adjust_for_workspace(data->view->get_wset(), data->desired_size, data->workspace), -1);
+            adjust_for_workspace(data->view->get_wset(), geom, data->workspace), edges);
     };
 
     wf::signal::connection_t<wf::view_tiled_signal> on_tiled = [=] (wf::view_tiled_signal *ev)

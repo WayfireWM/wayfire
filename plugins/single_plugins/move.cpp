@@ -144,8 +144,8 @@ class wayfire_move : public wf::per_output_plugin_instance_t,
         }
     };
 
-    wf::signal::connection_t<wf::input_event_signal<wlr_touch_down_event>> on_raw_touch_down =
-        [=] (wf::input_event_signal<wlr_touch_down_event> *ev)
+    wf::signal::connection_t<wf::post_input_event_signal<wlr_touch_down_event>> on_raw_touch_down =
+        [=] (wf::post_input_event_signal<wlr_touch_down_event> *ev)
     {
         if (ev->event->touch_id == 0)
         {

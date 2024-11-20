@@ -412,6 +412,10 @@ wf::text_input::text_input(wf::input_method_relay *rel, wlr_text_input_v3 *in) :
         }
 
         relay->send_im_state(input);
+
+        wf::text_input_commit_signal sigdata;
+        sigdata.cursor_rect = input->current.cursor_rectangle;
+        relay->emit(&sigdata);
     });
 
     on_text_input_disable.set_callback([&] (void *data)
