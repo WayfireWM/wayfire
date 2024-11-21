@@ -235,6 +235,10 @@ void parse_extended_debugging(const std::vector<std::string>& categories)
         {
             LOGD("Enabling extended debugging for render events");
             wf::log::enabled_categories.set((size_t)wf::log::logging_category::RENDER, 1);
+        } else if (cat == "input-devices")
+        {
+            LOGD("Enabling extended debugging for input-devices");
+            wf::log::enabled_categories.set((size_t)wf::log::logging_category::INPUT_DEVICES, 1);
         } else
         {
             LOGE("Unrecognized debugging category \"", cat, "\"");
