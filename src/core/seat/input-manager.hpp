@@ -41,7 +41,7 @@ class input_manager_t
      * Map a single input device to output as specified in the
      * config file or by hints in the wlroots backend.
      */
-    void configure_input_device(wlr_input_device *dev);
+    void configure_input_device(std::unique_ptr<wf::input_device_impl_t> & device);
 
     /**
      * Go through all input devices and map them to outputs as specified in the
