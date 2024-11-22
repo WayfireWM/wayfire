@@ -55,8 +55,9 @@ void wf::input_manager_t::handle_new_input(wlr_input_device *dev)
     configure_input_devices();
 }
 
-void wf::input_manager_t::configure_input_device(wlr_input_device *dev)
+void wf::input_manager_t::configure_input_device(std::unique_ptr<wf::input_device_impl_t> & device)
 {
+    auto dev     = device->get_wlr_handle();
     auto cursor  = wf::get_core().get_wlr_cursor();
     auto section =
         wf::get_core().config_backend->get_input_device_section(dev);
@@ -76,6 +77,12 @@ void wf::input_manager_t::configure_input_device(wlr_input_device *dev)
         {
             mapped_output = nonull(dev->name);
         }
+    }
+
+    auto cal = section->get_option("calibration")->get_value_str();
+    if (!cal.empty())
+    {
+        device->calibrate_touch_device(cal);
     }
 
     auto wo = wf::get_core().output_layout->find_output(mapped_output);
@@ -101,7 +108,7 @@ void wf::input_manager_t::configure_input_devices()
 
     for (auto& device : this->input_devices)
     {
-        configure_input_device(device->get_wlr_handle());
+        configure_input_device(device);
     }
 }
 
