@@ -44,7 +44,7 @@ static struct udev_property_and_desc
 };
 
 std::shared_ptr<config::section_t> wf::config_backend_t::get_input_device_section(
-    wlr_input_device *device)
+    std::string const & prefix, wlr_input_device *device)
 {
     auto& config = wf::get_core().config;
     std::shared_ptr<wf::config::section_t> section;
@@ -65,7 +65,7 @@ std::shared_ptr<config::section_t> wf::config_backend_t::get_input_device_sectio
                         continue;
                     }
 
-                    std::string name = std::string("input-device:") + nonull(value);
+                    std::string name = prefix + ":" + nonull(value);
                     LOGC(INPUT_DEVICES, "Checking for config section [", name, "] ",
                         pd.property_name, " (", pd.description, ")");
                     section = config.get_section(name);
@@ -80,7 +80,7 @@ std::shared_ptr<config::section_t> wf::config_backend_t::get_input_device_sectio
     }
 
     std::string name = nonull(device->name);
-    name = "input-device:" + name;
+    name = prefix + ":" + name;
     LOGC(INPUT_DEVICES, "Checking for config section [", name, "]");
     section = config.get_section(name);
     if (section)
@@ -90,7 +90,7 @@ std::shared_ptr<config::section_t> wf::config_backend_t::get_input_device_sectio
     }
 
     config.merge_section(
-        config.get_section("input-device")->clone_with_name(name));
+        config.get_section(prefix)->clone_with_name(name));
 
     LOGC(INPUT_DEVICES, "Using config section [", name, "]");
     return config.get_section(name);
