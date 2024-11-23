@@ -11,6 +11,7 @@
 #include "squeezimize.hpp"
 #include "zap.hpp"
 #include "spin.hpp"
+#include "helix.hpp"
 #include "fire/fire.hpp"
 #include "unmapped-view-node.hpp"
 #include "wayfire/plugin.hpp"
@@ -428,6 +429,10 @@ class wayfire_animation : public wf::plugin_interface_t, private wf::per_output_
         {
             set_animation<wf::spin::spin_animation>(ev->view, ANIMATION_TYPE_MAP,
                 animation.duration, animation.animation_name);
+        } else if (animation.animation_name == "helix")
+        {
+            set_animation<wf::helix::helix_animation>(ev->view, ANIMATION_TYPE_MAP,
+                animation.duration, animation.animation_name);
         }
     };
 
@@ -455,6 +460,10 @@ class wayfire_animation : public wf::plugin_interface_t, private wf::per_output_
         } else if (animation.animation_name == "spin")
         {
             set_animation<wf::spin::spin_animation>(ev->view, ANIMATION_TYPE_UNMAP,
+                animation.duration, animation.animation_name);
+        } else if (animation.animation_name == "helix")
+        {
+            set_animation<wf::helix::helix_animation>(ev->view, ANIMATION_TYPE_UNMAP,
                 animation.duration, animation.animation_name);
         }
     };
