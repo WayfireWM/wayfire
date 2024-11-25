@@ -355,9 +355,26 @@ void wf::pointer_t::handle_pointer_axis(wlr_pointer_axis_event *ev,
     }
 
     /* Calculate speed settings */
-    double mult = ev->source == WLR_AXIS_SOURCE_FINGER ?
-        wf::pointing_device_t::config.touchpad_scroll_speed :
-        wf::pointing_device_t::config.mouse_scroll_speed;
+    bool touchpad = ev->source == WLR_AXIS_SOURCE_FINGER;
+    double mult   = 1.0;
+    for (const auto& device : wf::get_core_impl().input->input_devices)
+    {
+        auto dev = device->get_wlr_handle();
+        if ((touchpad && (dev->type != WLR_INPUT_DEVICE_TABLET_TOOL)) ||
+            (!touchpad && (dev->type != WLR_INPUT_DEVICE_POINTER)) ||
+            (dev != &ev->pointer->base))
+        {
+            continue;
+        }
+
+        wf::pointing_device_t *pd = dynamic_cast<wf::pointing_device_t*>(device.get());
+        if (!pd)
+        {
+            break;
+        }
+
+        mult = touchpad ? pd->touchpad_scroll_speed : pd->mouse_scroll_speed;
+    }
 
     ev->delta *= mult;
     ev->delta_discrete *= mult;

@@ -42,29 +42,31 @@ namespace log
 enum class logging_category : size_t
 {
     // Transactions - general
-    TXN     = 0,
+    TXN           = 0,
     // Transactions - individual objects
-    TXNI    = 1,
+    TXNI          = 1,
     // Views - events
-    VIEWS   = 2,
+    VIEWS         = 2,
     // Wlroots messages
-    WLR     = 3,
+    WLR           = 3,
     // Direct scanout
-    SCANOUT = 4,
+    SCANOUT       = 4,
     // Pointer events
-    POINTER = 5,
+    POINTER       = 5,
     // Workspace set events
-    WSET    = 6,
+    WSET          = 6,
     // Keyboard-related events
-    KBD     = 7,
+    KBD           = 7,
     // Xwayland-related events
-    XWL     = 8,
+    XWL           = 8,
     // Layer-shell-related events
-    LSHELL  = 9,
+    LSHELL        = 9,
     // Input-Method-related events
-    IM      = 10,
+    IM            = 10,
     // Rendering-related events
-    RENDER  = 11,
+    RENDER        = 11,
+    // Input-device-related events
+    INPUT_DEVICES = 12,
     TOTAL,
 };
 
