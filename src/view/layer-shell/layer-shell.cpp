@@ -505,17 +505,18 @@ void wayfire_layer_shell_view::map()
     on_surface_commit.connect(&lsurface->surface->events.commit);
 
     /* Read initial data */
-    keyboard_focus_enabled = lsurface->current.keyboard_interactive;
+    auto& state = lsurface->current;
+    keyboard_focus_enabled = state.keyboard_interactive;
 
     wf::scene::add_front(get_output()->node_for_layer(get_layer()), get_root_node());
     wf_layer_shell_manager::get_instance().handle_map(this);
 
-    auto& state = lsurface->current;
     if ((state.keyboard_interactive >= 1) && (state.layer >= ZWLR_LAYER_SHELL_V1_LAYER_TOP))
     {
         wf::get_core().seat->focus_view(self());
     }
 
+    prev_state = state;
     emit_view_map();
 }
 
