@@ -331,6 +331,11 @@ class squeezimize_animation : public animate::animation_base_t
         node->init_animation(type & WF_ANIMATE_HIDING_ANIMATION);
     }
 
+    ~squeezimize_animation()
+    {
+        pop_transformer(this->view);
+    }
+
     void pop_transformer(wayfire_view view)
     {
         view->get_transformed_node()->rem_transformer(squeezimize_transformer_name);
@@ -346,7 +351,6 @@ class squeezimize_animation : public animate::animation_base_t
             auto running = tr->progression.running();
             if (!running)
             {
-                pop_transformer(view);
                 return false;
             }
 
