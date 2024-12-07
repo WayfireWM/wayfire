@@ -126,11 +126,11 @@ class squeezimize_animation_t : public duration_t
 class squeezimize_transformer : public wf::scene::view_2d_transformer_t
 {
   public:
-    wf::output_t *output;
     OpenGL::program_t program;
     wf::geometry_t minimize_target;
     wf::geometry_t animation_geometry;
     squeezimize_animation_t progression;
+    bool upward = false;
 
     class simple_node_render_instance_t : public wf::scene::transformer_render_instance_t<squeezimize_transformer>
     {
@@ -178,9 +178,6 @@ class squeezimize_transformer : public wf::scene::view_2d_transformer_t
             auto src_tex = wf::scene::transformer_render_instance_t<squeezimize_transformer>::get_texture(
                 1.0);
             auto progress = self->progression.progress();
-            int upward    = ((src_box.y > self->minimize_target.y) ||
-                ((src_box.y < 0) &&
-                    (self->minimize_target.y < self->output->get_relative_geometry().height / 2)));
             static const float vertex_data_uv[] = {
                 0.0f, 0.0f,
                 1.0f, 0.0f,
@@ -234,7 +231,7 @@ class squeezimize_transformer : public wf::scene::view_2d_transformer_t
             self->program.uniformMatrix4f("matrix", target.get_orthographic_projection());
             self->program.attrib_pointer("position", 2, 0, vertex_data_pos);
             self->program.attrib_pointer("uv_in", 2, 0, vertex_data_uv);
-            self->program.uniform1i("upward", upward);
+            self->program.uniform1i("upward", self->upward);
             self->program.uniform1f("progress", progress);
             self->program.uniform4f("src_box", src_box_pos);
             self->program.uniform4f("target_box", target_box_pos);
@@ -282,6 +279,11 @@ class squeezimize_transformer : public wf::scene::view_2d_transformer_t
         OpenGL::render_begin();
         program.compile(squeeze_vert_source, squeeze_frag_source);
         OpenGL::render_end();
+
+        auto src_box = view->get_bounding_box();
+        auto output  = view->get_output();
+        this->upward = ((src_box.y > minimize_target.y) ||
+            ((src_box.y < 0) && (minimize_target.y < output->get_relative_geometry().height / 2)));
     }
 
     wf::geometry_t get_bounding_box() override
