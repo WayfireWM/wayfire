@@ -246,7 +246,7 @@ class simple_decoration_node_t : public wf::scene::node_t, public wf::pointer_in
             return;
         }
 
-        handle_action(layout.handle_press_event(ev.state == WLR_BUTTON_PRESSED));
+        handle_action(layout.handle_press_event(ev.state == WL_POINTER_BUTTON_STATE_PRESSED));
     }
 
     void handle_action(wf::decor::decoration_layout_t::action_response_t action)

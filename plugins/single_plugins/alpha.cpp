@@ -151,7 +151,7 @@ class wayfire_alpha : public wf::plugin_interface_t
             return false;
         }
 
-        if (ev->orientation == WLR_AXIS_ORIENTATION_VERTICAL)
+        if (ev->orientation == WL_POINTER_AXIS_VERTICAL_SCROLL)
         {
             update_alpha(view, ev->delta);
 

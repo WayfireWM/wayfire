@@ -185,7 +185,8 @@ class wayfire_command : public wf::plugin_interface_t
     wf::signal::connection_t<wf::input_event_signal<wlr_pointer_button_event>> on_button_event =
         [=] (wf::input_event_signal<wlr_pointer_button_event> *ev)
     {
-        if ((ev->event->button == repeat.pressed_button) && (ev->event->state == WLR_BUTTON_RELEASED))
+        if ((ev->event->button == repeat.pressed_button) &&
+            (ev->event->state == WL_POINTER_BUTTON_STATE_RELEASED))
         {
             reset_repeat();
         }
@@ -194,7 +195,8 @@ class wayfire_command : public wf::plugin_interface_t
     wf::signal::connection_t<wf::input_event_signal<wlr_keyboard_key_event>> on_key_event =
         [=] (wf::input_event_signal<wlr_keyboard_key_event> *ev)
     {
-        if ((ev->event->keycode == repeat.pressed_key) && (ev->event->state == WLR_KEY_RELEASED))
+        if ((ev->event->keycode == repeat.pressed_key) &&
+            (ev->event->state == WL_KEYBOARD_KEY_STATE_RELEASED))
         {
             reset_repeat();
         }
@@ -203,7 +205,8 @@ class wayfire_command : public wf::plugin_interface_t
     wf::signal::connection_t<wf::input_event_signal<wlr_keyboard_key_event>> on_key_event_release =
         [=] (wf::input_event_signal<wlr_keyboard_key_event> *ev)
     {
-        if ((ev->event->keycode == repeat.pressed_key) && (ev->event->state == WLR_KEY_RELEASED))
+        if ((ev->event->keycode == repeat.pressed_key) &&
+            (ev->event->state == WL_KEYBOARD_KEY_STATE_RELEASED))
         {
             repeat.callback();
             repeat.pressed_key = repeat.pressed_button = 0;
@@ -214,7 +217,8 @@ class wayfire_command : public wf::plugin_interface_t
     wf::signal::connection_t<wf::input_event_signal<wlr_pointer_button_event>> on_button_event_release =
         [=] (wf::input_event_signal<wlr_pointer_button_event> *ev)
     {
-        if ((ev->event->button == repeat.pressed_button) && (ev->event->state == WLR_BUTTON_RELEASED))
+        if ((ev->event->button == repeat.pressed_button) &&
+            (ev->event->state == WL_POINTER_BUTTON_STATE_RELEASED))
         {
             repeat.callback();
             repeat.pressed_key = repeat.pressed_button = 0;

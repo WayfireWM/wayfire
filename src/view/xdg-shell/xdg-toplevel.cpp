@@ -152,6 +152,12 @@ void wf::xdg_toplevel_t::handle_surface_commit()
 {
     pending_state.merge_state(toplevel->base->surface);
 
+    if (this->toplevel->base->initial_commit)
+    {
+        wlr_xdg_surface_schedule_configure(this->toplevel->base);
+        return;
+    }
+
     const bool is_committed = wf::get_core().tx_manager->is_object_committed(shared_from_this());
     if (is_committed)
     {

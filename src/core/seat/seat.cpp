@@ -338,7 +338,7 @@ wf::seat_t::seat_t(wl_display *display, std::string name) : seat(wlr_seat_create
 
           case WLR_INPUT_DEVICE_TOUCH:
           case WLR_INPUT_DEVICE_POINTER:
-          case WLR_INPUT_DEVICE_TABLET_TOOL:
+          case WLR_INPUT_DEVICE_TABLET:
             this->priv->cursor->add_new_device(ev->device->get_wlr_handle());
             break;
 

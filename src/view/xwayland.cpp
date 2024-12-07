@@ -297,7 +297,10 @@ void wf::xwayland_bring_to_front(wlr_surface *surface)
 
     if (wlr_xwayland_surface *xwayland_surface = wlr_xwayland_surface_try_from_wlr_surface(surface))
     {
-        wlr_xwayland_surface_restack(xwayland_surface, NULL, XCB_STACK_MODE_ABOVE);
+        if (!xwayland_surface->override_redirect)
+        {
+            wlr_xwayland_surface_restack(xwayland_surface, NULL, XCB_STACK_MODE_ABOVE);
+        }
     }
 
 #endif

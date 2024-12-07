@@ -408,7 +408,7 @@ class xdg_popup_controller_t
             view->destroy();
             delete this;
         });
-        on_destroy.connect(&popup->base->events.destroy);
+        on_destroy.connect(&popup->events.destroy);
         view = wayfire_xdg_popup::create(popup);
     }
 
@@ -433,21 +433,22 @@ static wf::wl_listener_wrapper on_xdg_created;
 
 void wf::init_xdg_shell()
 {
-    xdg_handle = wlr_xdg_shell_create(wf::get_core().display, 3);
+    xdg_handle = wlr_xdg_shell_create(wf::get_core().display, XDG_TOPLEVEL_STATE_SUSPENDED_SINCE_VERSION);
     if (xdg_handle)
     {
         on_xdg_created.set_callback([&] (void *data)
         {
-            auto surf = static_cast<wlr_xdg_surface*>(data);
+            auto surf = static_cast<wlr_xdg_toplevel*>(data);
             wf::new_xdg_surface_signal new_xdg_surf;
-            new_xdg_surf.surface = surf;
-            wf::get_core().emit(&new_xdg_surf);
-            if (new_xdg_surf.use_default_implementation && (surf->role == WLR_XDG_SURFACE_ROLE_TOPLEVEL))
+            new_xdg_surf.surface = surf->base;
+            wf::get_core().emit(
+                &new_xdg_surf);
+            if (new_xdg_surf.use_default_implementation && (surf->base->role == WLR_XDG_SURFACE_ROLE_TOPLEVEL))
             {
-                default_handle_new_xdg_toplevel(surf->toplevel);
+                default_handle_new_xdg_toplevel(surf);
             }
         });
-        on_xdg_created.connect(&xdg_handle->events.new_surface);
+        on_xdg_created.connect(&xdg_handle->events.new_toplevel);
     }
 }
 

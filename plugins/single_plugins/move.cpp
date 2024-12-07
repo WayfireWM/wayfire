@@ -138,7 +138,7 @@ class wayfire_move : public wf::per_output_plugin_instance_t,
     wf::signal::connection_t<wf::input_event_signal<wlr_pointer_button_event>> on_raw_pointer_button =
         [=] (wf::input_event_signal<wlr_pointer_button_event> *ev)
     {
-        if (ev->event->state == WLR_BUTTON_PRESSED)
+        if (ev->event->state == WL_POINTER_BUTTON_STATE_PRESSED)
         {
             last_input_press_position = get_global_input_coords();
         }
@@ -198,7 +198,7 @@ class wayfire_move : public wf::per_output_plugin_instance_t,
 
     void handle_pointer_button(const wlr_pointer_button_event& event) override
     {
-        if (event.state != WLR_BUTTON_RELEASED)
+        if (event.state != WL_POINTER_BUTTON_STATE_RELEASED)
         {
             return;
         }

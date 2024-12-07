@@ -519,7 +519,7 @@ void wf::tablet_pad_t::select_default_tool()
             return;
         }
 
-        if (dev->get_wlr_handle()->type != WLR_INPUT_DEVICE_TABLET_TOOL)
+        if (dev->get_wlr_handle()->type != WLR_INPUT_DEVICE_TABLET)
         {
             continue;
         }

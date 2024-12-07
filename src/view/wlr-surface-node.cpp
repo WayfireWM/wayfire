@@ -361,8 +361,7 @@ class wf::scene::wlr_surface_node_t::wlr_surface_render_instance_t : public rend
     {
         if (self->surface)
         {
-            wlr_presentation_surface_scanned_out_on_output(wf::get_core_impl().protocols.presentation,
-                self->surface, output->handle);
+            wlr_presentation_surface_scanned_out_on_output(self->surface, output->handle);
         }
     }
 
@@ -394,15 +393,18 @@ class wf::scene::wlr_surface_node_t::wlr_surface_render_instance_t : public rend
             return direct_scanout::OCCLUSION;
         }
 
-        wlr_presentation_surface_scanned_out_on_output(
-            wf::get_core().protocols.presentation, wlr_surf, output->handle);
-        wlr_output_attach_buffer(output->handle, &wlr_surf->buffer->base);
+        wlr_output_state state;
+        wlr_output_state_init(&state);
+        wlr_output_state_set_buffer(&state, &wlr_surf->buffer->base);
+        wlr_presentation_surface_scanned_out_on_output(wlr_surf, output->handle);
 
-        if (wlr_output_commit(output->handle))
+        if (wlr_output_commit_state(output->handle, &state))
         {
+            wlr_output_state_finish(&state);
             return direct_scanout::SUCCESS;
         } else
         {
+            wlr_output_state_finish(&state);
             return direct_scanout::OCCLUSION;
         }
     }

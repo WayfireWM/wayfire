@@ -102,7 +102,7 @@ void wf::pointer_t::send_leave_to_focus(wf::scene::node_ptr old_focus)
                 wlr_pointer_button_event event;
                 event.pointer   = NULL;
                 event.button    = button;
-                event.state     = WLR_BUTTON_RELEASED;
+                event.state     = WL_POINTER_BUTTON_STATE_RELEASED;
                 event.time_msec = wf::get_current_time();
                 old_focus->pointer_interaction().handle_pointer_button(event);
             }
@@ -213,7 +213,7 @@ void wf::pointer_t::handle_pointer_button(wlr_pointer_button_event *ev,
     seat->priv->break_mod_bindings();
     bool handled_in_binding = (mode != input_event_processing_mode_t::FULL);
 
-    if (ev->state == WLR_BUTTON_PRESSED)
+    if (ev->state == WL_POINTER_BUTTON_STATE_PRESSED)
     {
         count_pressed_buttons++;
         if (count_pressed_buttons == 1)
@@ -266,12 +266,12 @@ void wf::pointer_t::send_button(wlr_pointer_button_event *ev, bool has_binding)
 
     if (cursor_focus)
     {
-        if ((ev->state == WLR_BUTTON_PRESSED) && cursor_focus)
+        if ((ev->state == WL_POINTER_BUTTON_STATE_PRESSED) && cursor_focus)
         {
             LOGC(POINTER, "normal button press ", ev->button);
             this->currently_sent_buttons.insert(ev->button);
             cursor_focus->pointer_interaction().handle_pointer_button(*ev);
-        } else if ((ev->state == WLR_BUTTON_RELEASED) &&
+        } else if ((ev->state == WL_POINTER_BUTTON_STATE_RELEASED) &&
                    (currently_sent_buttons.count(ev->button) || cursor_focus->wants_raw_input()))
         {
             LOGC(POINTER, "normal button release ", ev->button);
@@ -355,7 +355,7 @@ void wf::pointer_t::handle_pointer_axis(wlr_pointer_axis_event *ev,
     }
 
     /* Calculate speed settings */
-    double mult = ev->source == WLR_AXIS_SOURCE_FINGER ?
+    double mult = ev->source == WL_POINTER_AXIS_SOURCE_FINGER ?
         wf::pointing_device_t::config.touchpad_scroll_speed :
         wf::pointing_device_t::config.mouse_scroll_speed;
 
