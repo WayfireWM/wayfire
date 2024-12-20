@@ -33,6 +33,7 @@ class wayfire_xdg_activation_protocol_impl : public wf::plugin_interface_t
     {
         xdg_activation_request_activate.disconnect();
         xdg_activation_new_token.disconnect();
+        xdg_activation_token_destroy.disconnect();
         last_token = nullptr;
     }
 
@@ -83,40 +84,36 @@ class wayfire_xdg_activation_protocol_impl : public wf::plugin_interface_t
         xdg_activation_new_token.set_callback([this] (void *data)
         {
             auto token = static_cast<struct wlr_xdg_activation_token_v1*>(data);
-            bool reject_token = false;
             if (!token->seat)
             {
                 // note: for a valid seat, wlroots already checks that the serial is valid
                 LOGI("Not registering activation token, seat was not supplied");
-                reject_token = true;
+                return;
             }
 
             if (check_surface && !token->surface)
             {
                 // note: for a valid surface, wlroots already checks that this is the active surface
                 LOGI("Not registering activation token, surface was not supplied");
-                token->seat  = nullptr; // this will ensure that this token will be rejected later
-                reject_token = true;
-            }
-
-            if (reject_token)
-            {
-                if (token == last_token)
-                {
-                    /* corner case: (1) we created a valid token, storing it in last_token (2) it was freed by
-                     * wlroots without using it (3) a new token is created that is allocated the same memory.
-                     * In this case, we explicitly mark it as invalid. In other cases, we do not touch
-                     * last_token, since it can be a valid one and we don't want to cancel it because of a
-                     * rejected request.
-                     */
-                    last_token = nullptr;
-                }
-
-                // we will reject this token also in the activate callback
+                token->seat = nullptr; // this will ensure that this token will be rejected later
                 return;
             }
 
-            last_token = token; // update our token
+            // update our token and connect its destroy signal
+            last_token = token;
+            xdg_activation_token_destroy.disconnect();
+            xdg_activation_token_destroy.connect(&token->events.destroy);
+        });
+
+        xdg_activation_token_destroy.set_callback([this] (void *data)
+        {
+            auto token = static_cast<struct wlr_xdg_activation_token_v1*>(data);
+            if (token == last_token)
+            {
+                last_token = nullptr;
+            }
+
+            xdg_activation_token_destroy.disconnect();
         });
 
         timeout.set_callback(timeout_changed);
@@ -134,8 +131,7 @@ class wayfire_xdg_activation_protocol_impl : public wf::plugin_interface_t
     struct wlr_xdg_activation_v1 *xdg_activation;
     wf::wl_listener_wrapper xdg_activation_request_activate;
     wf::wl_listener_wrapper xdg_activation_new_token;
-    /* last valid token generated -- might be stale if it was destroyed by wlroots, should not be
-     * dereferenced, only compared to other tokens */
+    wf::wl_listener_wrapper xdg_activation_token_destroy;
     struct wlr_xdg_activation_token_v1 *last_token = nullptr;
 
     wf::option_wrapper_t<bool> check_surface{"xdg-activation/check_surface"};
