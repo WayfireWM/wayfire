@@ -7,6 +7,7 @@
 
 #include <vector>
 #include <memory>
+#include <set>
 
 namespace wf
 {
@@ -24,6 +25,8 @@ class input_method_relay : public text_input_v3_im_relay_interface_t
     std::optional<uint32_t> last_done_serial;
     uint32_t next_done_serial = 0;
     void send_im_done();
+
+    std::multiset<uint32_t> pressed_keys;
 
     text_input *find_focusable_text_input();
     void set_focus(wlr_surface*);

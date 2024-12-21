@@ -284,6 +284,19 @@ bool wf::input_method_relay::handle_key(struct wlr_keyboard *kbd, uint32_t time,
         return false;
     }
 
+    if (state == WL_KEYBOARD_KEY_STATE_PRESSED) {
+        pressed_keys.insert(key);
+    } else
+    {
+        // Don't forward the release event if the press event for the same key
+        // has also been forwarded.
+        if (!pressed_keys.count(key))
+        {
+            return false;
+        }
+        pressed_keys.erase(pressed_keys.find(key));
+    }
+
     wlr_input_method_keyboard_grab_v2_set_keyboard(keyboard_grab, kbd);
     wlr_input_method_keyboard_grab_v2_send_key(keyboard_grab, time, key, state);
     return true;
