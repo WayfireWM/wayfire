@@ -274,6 +274,7 @@ int main(int argc, char *argv[])
         {"damage-debug", no_argument, NULL, 'D'},
         {"damage-rerender", no_argument, NULL, 'R'},
         {"legacy-wl-drm", no_argument, NULL, 'l'},
+        {"with-great-power-comes-great-responsibility", no_argument, NULL, 'r'},
         {"help", no_argument, NULL, 'h'},
         {"version", no_argument, NULL, 'v'},
         {0, 0, NULL, 0}
@@ -282,9 +283,10 @@ int main(int argc, char *argv[])
     std::string config_file;
     std::string config_backend = WF_DEFAULT_CONFIG_BACKEND;
     std::vector<std::string> extended_debug_categories;
+    bool allow_root = false;
 
     int c, i;
-    while ((c = getopt_long(argc, argv, "c:B:d::DhRlv", opts, &i)) != -1)
+    while ((c = getopt_long(argc, argv, "c:B:d::DhRlrv", opts, &i)) != -1)
     {
         switch (c)
         {
@@ -306,6 +308,10 @@ int main(int argc, char *argv[])
 
           case 'l':
             runtime_config.legacy_wl_drm = true;
+            break;
+
+          case 'r':
+            allow_root = true;
             break;
 
           case 'h':
@@ -408,7 +414,7 @@ int main(int argc, char *argv[])
     core.egl = wlr_gles2_renderer_get_egl(core.renderer);
     assert(core.egl);
 
-    if (!drop_permissions())
+    if (!allow_root && !drop_permissions())
     {
         wl_display_destroy_clients(core.display);
         wl_display_destroy(core.display);
