@@ -169,6 +169,7 @@ void wf::text_input_v3_popup::update_geometry()
     // make sure top edge is on screen, sliding down and sacrificing down edge if unavoidable
     y = std::max(0, y);
 
+    auto last_offset = surface_root_node->get_offset();
     surface_root_node->set_offset({x, y});
     geometry.x     = x;
     geometry.y     = y;
@@ -176,6 +177,15 @@ void wf::text_input_v3_popup::update_geometry()
     geometry.height = height;
     damage();
     wf::scene::update(get_surface_root_node(), wf::scene::update_flag::GEOMETRY);
+    wf::scene::damage_node(get_surface_root_node(), geometry);
+
+    wf::geometry_t last_geometry{last_offset.x, last_offset.y, last_size.width, last_size.height};
+    if (last_geometry != geometry)
+    {
+        wf::scene::damage_node(get_surface_root_node(), last_geometry);
+    }
+
+    last_size = {width, height};
 }
 
 bool wf::text_input_v3_popup::is_mapped() const

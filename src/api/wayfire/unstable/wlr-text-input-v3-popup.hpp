@@ -39,6 +39,7 @@ class text_input_v3_popup : public wf::view_interface_t
   private:
     wf::geometry_t geometry{0, 0, 0, 0};
     wlr_box old_cursor_rect{0, 0, 0, 0};
+    wf::dimensions_t last_size{0, 0};
     std::shared_ptr<wf::scene::wlr_surface_node_t> main_surface;
     std::shared_ptr<wf::scene::translation_node_t> surface_root_node;
 
