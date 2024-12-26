@@ -383,9 +383,10 @@ class wayfire_animation : public wf::plugin_interface_t, private wf::per_output_
     wf::signal::connection_t<wf::view_minimize_request_signal> on_minimize_request =
         [=] (wf::view_minimize_request_signal *ev)
     {
+        auto animation = get_animation_for_view(minimize_animation, ev->view);
         set_animation(ev->view, minimize_animation,
             ev->state ? wf::animate::ANIMATION_TYPE_MINIMIZE : wf::animate::ANIMATION_TYPE_RESTORE,
-            default_duration);
+            animation.duration);
         // ev->carried_out should remain false, so that core also does the automatic minimize/restore and
         // refocus
     };
