@@ -144,6 +144,11 @@ void wf::view_interface_t::set_surface_root_node(scene::floating_inner_ptr surfa
     priv->dummy_node = std::make_shared<sentinel_node_t>();
     this->priv->surface_root_node = surface_root_node;
 
+    // Plugins may want to add subsurfaces even before the view is mapped for the first time.
+    // This is why we add a dummy node to track the position of the main surface in the order of surfaces
+    // even before mapping the view for the first time.
+    wf::scene::add_front(surface_root_node, priv->dummy_node);
+
     // Set up view content to scene.
     priv->transformed_node->set_children_list({surface_root_node});
 }
