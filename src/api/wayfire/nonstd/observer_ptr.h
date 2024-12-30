@@ -292,7 +292,7 @@ template< class W1, class W2 >
 bool operator<( observer_ptr<W1> p1, observer_ptr<W2> p2 )
 {
     // return std::less<W3>()( p1.get(), p2.get() );
-    // where W3 is the composite pointer type (C++14 §5) of W1* and W2*.
+    // where W3 is the composite pointer type (C++14 Section 5) of W1* and W2*.
     return std::less< typename detail::common_type<W1*,W2*>::type >()( p1.get(), p2.get() );
 }
 
