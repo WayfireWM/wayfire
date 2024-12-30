@@ -2,7 +2,23 @@
 <wayfire>
 	<plugin name="xdg-activation">
 		<_short>XDG Activation Protocol</_short>
-		<_long>An implementation of the xdg-activation-v1 protocol.</_long>
+		<_long>An implementation of the xdg-activation-v1 protocol. This allows the active app to pass the focus to a different view in the same or a different app.</_long>
 		<category>Utility</category>
+		<option name="check_surface" type="bool">
+			<_short>Restrict to valid view</_short>
+			<_long>Whether to reject creating activation requests if no source view exists. Without this option, any view can grab to focus at any time.</_long>
+			<default>false</default>
+		</option>
+		<option name="only_last_request" type="bool">
+			<_short>Restrict to the most recent activation request</_short>
+			<_long>Whether to reject activation requests if a newer request has arrived since their creation.</_long>
+			<default>false</default>
+		</option>
+		<option name="timeout" type="int">
+			<_short>Timeout for activation (in seconds)</_short>
+			<_long>Focus requests will be ignored if at least this amount of time has elapsed between creating and using it.</_long>
+			<default>30</default>
+			<min>0</min>
+		</option>
 	</plugin>
 </wayfire>
