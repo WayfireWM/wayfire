@@ -134,7 +134,7 @@ class lock_crashed_node : public lock_base_node<simple_text_node_t>
         set_size(output->get_screen_size());
     }
 
-    void display()
+    void display(std::string text)
     {
         wf::cairo_text_t::params params(
             1280 /* font_size */,
@@ -142,7 +142,7 @@ class lock_crashed_node : public lock_base_node<simple_text_node_t>
             wf::color_t{0.9, 0.9, 0.9, 1} /* fg_color */);
         set_text_params(params);
         // TODO: make the text smaller and display a useful message instead of a big explosion.
-        set_text("💥");
+        set_text(text);
         auto layer_node = output->node_for_layer(wf::scene::layer::LOCK);
         wf::scene::add_back(layer_node, shared_from_this());
         wf::get_core().seat->set_active_node(shared_from_this());
@@ -253,7 +253,7 @@ class wf_session_lock_plugin : public wf::plugin_interface_t
                         output_states[output]->surface_node.reset();
                         if (output_states[output]->crashed_node)
                         {
-                            output_states[output]->crashed_node->display();
+                            output_states[output]->crashed_node->display("💥");
                         }
                     }
 
@@ -318,7 +318,7 @@ class wf_session_lock_plugin : public wf::plugin_interface_t
             if (state == ZOMBIE)
             {
                 output->set_inhibited(true);
-                output_states[output]->crashed_node->display();
+                output_states[output]->crashed_node->display("💥");
             }
 
             output->connect(&output_changed);
@@ -349,9 +349,11 @@ class wf_session_lock_plugin : public wf::plugin_interface_t
             if (output_state->surface_node)
             {
                 output_state->surface_node->display();
+            } else
+            {
+                // if the surface node has not yet been displayed we show an empty surface
+                output_state->crashed_node->display("");
             }
-
-            // TODO: if the surface node has not yet been displayed, display... something?
         }
 
         void lock_all()
