@@ -243,6 +243,11 @@ wf::xdg_toplevel_view_t::xdg_toplevel_view_t(wlr_xdg_toplevel *tlvl) : xdg_tople
     on_request_minimize.connect(&xdg_toplevel->events.request_minimize);
     on_show_window_menu.connect(&xdg_toplevel->events.request_show_window_menu);
     on_request_fullscreen.connect(&xdg_toplevel->events.request_fullscreen);
+
+    if (xdg_toplevel && uses_csd.count(xdg_toplevel->base->surface))
+    {
+        this->has_client_decoration = uses_csd[xdg_toplevel->base->surface];
+    }
 }
 
 std::shared_ptr<wf::xdg_toplevel_view_t> wf::xdg_toplevel_view_t::create(wlr_xdg_toplevel *toplevel)
@@ -302,11 +307,6 @@ bool wf::xdg_toplevel_view_t::is_mapped() const
 
 void wf::xdg_toplevel_view_t::map()
 {
-    if (xdg_toplevel && uses_csd.count(xdg_toplevel->base->surface))
-    {
-        this->has_client_decoration = uses_csd[xdg_toplevel->base->surface];
-    }
-
     adjust_view_output_on_map(this);
 
     xdg_toplevel_view_base_t::map();
