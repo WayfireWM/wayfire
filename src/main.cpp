@@ -14,6 +14,7 @@
 #include "wayfire/config-backend.hpp"
 #include "core/plugin-loader.hpp"
 #include "core/core-impl.hpp"
+#include <wayfire/nonstd/wlroots.hpp>
 
 static void print_version()
 {
@@ -382,27 +383,40 @@ int main(int argc, char *argv[])
     core.ev_loop = wl_display_get_event_loop(core.display);
     core.backend = wlr_backend_autocreate(core.ev_loop, &core.session);
 
-    int drm_fd = wlr_backend_get_drm_fd(core.backend);
+    int drm_fd = -1;
+    char *drm_device = getenv("WLR_RENDER_DRM_DEVICE");
+    if (drm_device)
+    {
+        drm_fd = open(drm_device, O_RDWR | O_CLOEXEC);
+    } else
+    {
+        drm_fd = wlr_backend_get_drm_fd(core.backend);
+    }
+
     if (drm_fd < 0)
     {
-        char *drm_device = getenv("WLR_RENDER_DRM_DEVICE");
-        if (drm_device)
-        {
-            drm_fd = open(drm_device, O_RDWR | O_CLOEXEC);
-        }
-
-        if (drm_fd < 0)
-        {
-            LOGE("Failed to get DRM file descriptor,",
-                " try specifying a valid WLR_RENDER_DRM_DEVICE!");
-            wl_display_destroy_clients(core.display);
-            wl_display_destroy(core.display);
-            return EXIT_FAILURE;
-        }
+#if WLR_HAS_UDMABUF_ALLOCATOR == 1
+        LOGW("Failed to open DRM render device, consider specifying WLR_RENDER_DRM_DEVICE."
+             "Trying SW rendering instead.");
+#else
+        LOGE("Failed to open DRM render device, consider specifying WLR_RENDER_DRM_DEVICE."
+             "If you want to use software rendering, ensure that wlroots has been compiled with udmabuf "
+             "allocator support (available in wlroots >= 0.19.0) and recompile Wayfire.");
+        wl_display_destroy_clients(core.display);
+        wl_display_destroy(core.display);
+        return EXIT_FAILURE;
+#endif
     }
 
     core.renderer = wlr_gles2_renderer_create_with_drm_fd(drm_fd);
-    assert(core.renderer);
+    if (!core.renderer)
+    {
+        LOGE("Failed to create renderer");
+        wl_display_destroy_clients(core.display);
+        wl_display_destroy(core.display);
+        return EXIT_FAILURE;
+    }
+
     core.allocator = wlr_allocator_autocreate(core.backend, core.renderer);
     assert(core.allocator);
     core.egl = wlr_gles2_renderer_get_egl(core.renderer);
