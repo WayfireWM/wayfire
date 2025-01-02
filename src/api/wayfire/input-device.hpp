@@ -22,6 +22,12 @@ class input_device_t
     bool set_enabled(bool enabled = true);
 
     /**
+     * Calibrate a touch device with a matrix. This function does nothing
+     * if called with a device that is not a touch device.
+     */
+    void calibrate_touch_device(std::string const & cal);
+
+    /**
      * @return true if the compositor should receive events from the device
      */
     bool is_enabled();

@@ -52,10 +52,52 @@ void wf::input_manager_t::handle_new_input(wlr_input_device *dev)
     data.device = nonstd::make_observer(input_devices.back().get());
     wf::get_core().emit(&data);
 
-    refresh_device_mappings();
+    configure_input_devices();
 }
 
-void wf::input_manager_t::refresh_device_mappings()
+void wf::input_manager_t::configure_input_device(std::unique_ptr<wf::input_device_impl_t> & device)
+{
+    auto dev     = device->get_wlr_handle();
+    auto cursor  = wf::get_core().get_wlr_cursor();
+    auto section =
+        wf::get_core().config_backend->get_input_device_section("input-device", dev);
+
+    auto mapped_output = section->get_option("output")->get_value_str();
+    if (mapped_output.empty())
+    {
+        if (dev->type == WLR_INPUT_DEVICE_POINTER)
+        {
+            mapped_output = nonull(wlr_pointer_from_input_device(
+                dev)->output_name);
+        } else if (dev->type == WLR_INPUT_DEVICE_TOUCH)
+        {
+            mapped_output =
+                nonull(wlr_touch_from_input_device(dev)->output_name);
+        } else
+        {
+            mapped_output = nonull(dev->name);
+        }
+    }
+
+    auto cal = section->get_option("calibration")->get_value_str();
+    if (!cal.empty())
+    {
+        device->calibrate_touch_device(cal);
+    }
+
+    auto wo = wf::get_core().output_layout->find_output(mapped_output);
+    if (wo)
+    {
+        LOGD("Mapping input ", dev->name, " to output ", wo->to_string(), ".");
+        wlr_cursor_map_input_to_output(cursor, dev, wo->handle);
+    } else
+    {
+        LOGD("Mapping input ", dev->name, " to output null.");
+        wlr_cursor_map_input_to_output(cursor, dev, nullptr);
+    }
+}
+
+void wf::input_manager_t::configure_input_devices()
 {
     // Might trigger motion events which we want to avoid at other stages
     auto state = wf::get_core().get_current_state();
@@ -64,40 +106,9 @@ void wf::input_manager_t::refresh_device_mappings()
         return;
     }
 
-    auto cursor = wf::get_core().get_wlr_cursor();
     for (auto& device : this->input_devices)
     {
-        wlr_input_device *dev = device->get_wlr_handle();
-        auto section =
-            wf::get_core().config_backend->get_input_device_section(dev);
-
-        auto mapped_output = section->get_option("output")->get_value_str();
-        if (mapped_output.empty())
-        {
-            if (dev->type == WLR_INPUT_DEVICE_POINTER)
-            {
-                mapped_output = nonull(wlr_pointer_from_input_device(
-                    dev)->output_name);
-            } else if (dev->type == WLR_INPUT_DEVICE_TOUCH)
-            {
-                mapped_output =
-                    nonull(wlr_touch_from_input_device(dev)->output_name);
-            } else
-            {
-                mapped_output = nonull(dev->name);
-            }
-        }
-
-        auto wo = wf::get_core().output_layout->find_output(mapped_output);
-        if (wo)
-        {
-            LOGD("Mapping input ", dev->name, " to output ", wo->to_string(), ".");
-            wlr_cursor_map_input_to_output(cursor, dev, wo->handle);
-        } else
-        {
-            LOGD("Mapping input ", dev->name, " to output null.");
-            wlr_cursor_map_input_to_output(cursor, dev, nullptr);
-        }
+        configure_input_device(device);
     }
 }
 
@@ -141,8 +152,6 @@ void load_locked_mods_from_config(xkb_mod_mask_t& locked_mods)
 
 wf::input_manager_t::input_manager_t()
 {
-    wf::pointing_device_t::config.load();
-
     load_locked_mods_from_config(locked_mods);
 
     input_device_created.set_callback([&] (void *data)
@@ -170,7 +179,7 @@ wf::input_manager_t::input_manager_t()
             ev->output->set_inhibited(true);
         }
 
-        refresh_device_mappings();
+        configure_input_devices();
     });
     wf::get_core().output_layout->connect(&output_added);
 }

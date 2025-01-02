@@ -355,9 +355,8 @@ void wf::pointer_t::handle_pointer_axis(wlr_pointer_axis_event *ev,
     }
 
     /* Calculate speed settings */
-    double mult = ev->source == WL_POINTER_AXIS_SOURCE_FINGER ?
-        wf::pointing_device_t::config.touchpad_scroll_speed :
-        wf::pointing_device_t::config.mouse_scroll_speed;
+    wf::pointing_device_t *pd = (wf::pointing_device_t*)ev->pointer->base.data;
+    double mult = pd->get_scroll_speed(&ev->pointer->base, ev->source == WL_POINTER_AXIS_SOURCE_FINGER);
 
     ev->delta *= mult;
     ev->delta_discrete *= mult;
