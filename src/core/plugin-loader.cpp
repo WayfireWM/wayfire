@@ -168,6 +168,19 @@ void wf::plugin_manager_t::reload_dynamic_plugins()
                     continue;
                 }
 
+                auto config_section = wf::get_core().config.get_section(plugin_name);
+                if (config_section == nullptr)
+                {
+                    LOGE(plugin_name,
+                        " has no configuration, skipping. "
+                        "Usual reasons for this include missing or outdated plugin XML files, "
+                        "or mismatch between the versions of Wayfire and wf-config. "
+                        "Make sure that you have the correct versions of all relevant packages and make sure that there ",
+                        "are no conflicting installations of Wayfire using the same prefix. "
+                        "Note that if this plugin was newly installed, you need to restart Wayfire before using it.");
+                    continue;
+                }
+
                 next_plugins.push_back(plugin_path.value());
             } else
             {
