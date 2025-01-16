@@ -28,6 +28,7 @@ namespace wf
  */
 struct swapchain_damage_manager_t
 {
+    wf::option_wrapper_t<bool> force_frame_sync{"workarounds/force_frame_sync"};
     signal::connection_t<scene::root_node_update_signal> root_update;
     std::vector<scene::render_instance_uptr> render_instances;
 
@@ -341,6 +342,14 @@ struct swapchain_damage_manager_t
 
     void swap_buffers(std::unique_ptr<frame_object_t> next_frame, const wf::region_t& swap_damage)
     {
+        /* If force frame sync option is set, call glFinish to block until
+         * the GPU finishes rendering. This can work around some driver
+         * bugs, but may cause more resource usage. */
+        if (force_frame_sync)
+        {
+            GL_CALL(glFinish());
+        }
+
         frame_damage.clear();
 
         if (!wlr_render_pass_submit(next_frame->render_pass))

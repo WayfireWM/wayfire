@@ -68,5 +68,10 @@
 			<_long>Enable certain damage optimizations which are based on a surfaces' opaque regions. In some cases, this optimization might give unexpected results (i.e background app stops updating) even though this is fine according to Wayland's protocol.</_long>
 			<default>false</default>
 		</option>
+		<option name="force_frame_sync" type="bool">
+			<_short>Force frame synchronization.</_short>
+			<_long>This option can be used to workaround driver bugs that cause rendering artifacts, though can cause more resource usage. Leave disabled if unsure.</_long>
+			<default>false</default>
+		</option>
 	</plugin>
 </wayfire>
