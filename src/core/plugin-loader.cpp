@@ -84,7 +84,7 @@ std::pair<void*, void*> wf::get_new_instance_handle(const std::string& path)
     void *handle = dlopen(path.c_str(), RTLD_NOW | RTLD_GLOBAL);
     if (handle == NULL)
     {
-        LOGE("error loading plugin: ", dlerror());
+        LOGE("error loading plugin [", path, "]: ", dlerror());
         return {nullptr, nullptr};
     }
 
