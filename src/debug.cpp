@@ -92,8 +92,13 @@ std::string read_output(std::string command)
         return "";
     }
 
-    fgets(buffer, MAX_FUNCTION_NAME, file);
+    char *line_as_c_str = fgets(buffer, MAX_FUNCTION_NAME, file);
     pclose(file);
+
+    if (!line_as_c_str)
+    {
+        return {};
+    }
 
     std::string line = buffer;
     if (line.size() && (line.back() == '\n'))
