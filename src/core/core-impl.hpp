@@ -66,7 +66,8 @@ class compositor_core_impl_t : public compositor_core_t
     virtual wlr_cursor *get_wlr_cursor() override;
 
     std::string get_xwayland_display() override;
-    pid_t run(std::string command) override;
+    pid_t run(std::string command) override; // Upon success returns the PID of the child process, 0
+                                             // otherwise.
     void shutdown() override;
     compositor_state_t get_current_state() override;
     const std::shared_ptr<scene::root_node_t>& scene() final;

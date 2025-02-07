@@ -20,7 +20,7 @@ class client_t : public client_interface_t
   public:
     client_t(server_t *server, int client_fd);
     ~client_t();
-    void send_json(nlohmann::json json) override;
+    bool send_json(nlohmann::json json) override;
 
   private:
     int fd;

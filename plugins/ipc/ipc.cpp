@@ -295,14 +295,14 @@ static bool write_exact(int fd, char *buf, ssize_t n)
     return true;
 }
 
-void wf::ipc::client_t::send_json(nlohmann::json json)
+bool wf::ipc::client_t::send_json(nlohmann::json json)
 {
     std::string serialized = json.dump(-1, ' ', false, nlohmann::detail::error_handler_t::ignore);
     if (serialized.length() > MAX_MESSAGE_LEN)
     {
         LOGE("Error sending json to client: message too long!");
         shutdown(fd, SHUT_RDWR);
-        return;
+        return false;
     }
 
     uint32_t len = serialized.length();
@@ -310,8 +310,10 @@ void wf::ipc::client_t::send_json(nlohmann::json json)
     {
         LOGE("Error sending json to client!");
         shutdown(fd, SHUT_RDWR);
-        return;
+        return false;
     }
+
+    return true;
 }
 
 namespace wf
