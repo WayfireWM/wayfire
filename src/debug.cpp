@@ -14,6 +14,7 @@
 #endif
 
 #include <cstdio>
+#include <cstring>
 #include <dlfcn.h>
 #include <sys/stat.h>
 #include <iostream>
@@ -82,31 +83,43 @@ demangling_result demangle_function(std::string symbol)
 
 /**
  * Execute the given command and read the first line of its output.
+ *
+ * Returns an empty string in case of an error.
  */
 std::string read_output(std::string command)
 {
-    char buffer[MAX_FUNCTION_NAME];
+    // Open a pipe stream to read the output of the process `command`.
     FILE *file = popen(command.c_str(), "r");
     if (!file)
     {
-        return "";
+        // popen failed.
+        return {};
     }
 
-    char *line_as_c_str = fgets(buffer, MAX_FUNCTION_NAME, file);
+    // Read the first line, up till and including the first newline if any, into a buffer.
+    char buffer[MAX_FUNCTION_NAME + 1]; // +1 for the terminating zero.
+    char *line_as_c_str = fgets(buffer, sizeof(buffer), file);
+
+    // We're done with the pipe stream now.
     pclose(file);
 
     if (!line_as_c_str)
     {
+        // fgets returned an error.
         return {};
     }
 
-    std::string line = buffer;
-    if (line.size() && (line.back() == '\n'))
+    // If fgets returns non-NULL then the string is guaranteed to be zero terminated.
+    size_t len = std::strlen(line_as_c_str);
+
+    // Strip the trailing newline, if any.
+    if ((len > 0) && (line_as_c_str[len - 1] == '\n'))
     {
-        line.pop_back();
+        --len;
+        line_as_c_str[len] = 0;
     }
 
-    return line;
+    return {buffer, len};
 }
 
 /**
