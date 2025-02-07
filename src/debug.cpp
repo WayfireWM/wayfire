@@ -14,6 +14,7 @@
 #endif
 
 #include <cstdio>
+#include <cstring>
 #include <dlfcn.h>
 #include <sys/stat.h>
 #include <iostream>
@@ -85,22 +86,34 @@ demangling_result demangle_function(std::string symbol)
  */
 std::string read_output(std::string command)
 {
-    char buffer[MAX_FUNCTION_NAME];
+    // Prepare a buffer of size MAX_FUNCTION_NAME, pre-filled with zeroes.
+    std::string line(MAX_FUNCTION_NAME, 0);
+    char const* line_as_c_str = nullptr;
+
     FILE *file = popen(command.c_str(), "r");
-    if (!file)
+    if (file)
     {
-        return "";
+        // Read the first line of the command output.
+        char* line_as_c_str = fgets(line.data(), line.length(), file);
+        pclose(file);
+        if (line_as_c_str)
+        {
+            // If fgets returns non-NULL, the buffer is guaranteed nul terminated.
+            size_t len = std::strlen(line_as_c_str);
+            // Remove a possible trailing newline.
+            if (len > 0 && line_as_c_str[len - 1] == '\n')
+                --len;
+            // Reduce line to the correct length.
+            line.resize(len);
+        }
+    }
+    if (!line_as_c_str)
+    {
+        // Set the length of line to zero if nothing was read or if there was an error.
+        line.clear();
     }
 
-    fgets(buffer, MAX_FUNCTION_NAME, file);
-    pclose(file);
-
-    std::string line = buffer;
-    if (line.size() && (line.back() == '\n'))
-    {
-        line.pop_back();
-    }
-
+    line.shrink_to_fit();
     return line;
 }
 
