@@ -533,7 +533,13 @@ class stipc_plugin_t : public wf::plugin_interface_t
         }
 
         auto response = wf::ipc::json_ok();
-        response["pid"] = wf::get_core().run(data["cmd"]);
+        pid_t pid     = wf::get_core().run(data["cmd"]);
+        if (!pid)
+        {
+            return wf::ipc::json_error("failed to run command");
+        }
+
+        response["pid"] = pid;
         return response;
     };
 

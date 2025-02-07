@@ -88,25 +88,29 @@ std::string read_output(std::string command)
 {
     // Prepare a buffer of size MAX_FUNCTION_NAME, pre-filled with zeroes.
     std::string line(MAX_FUNCTION_NAME, 0);
-    char const* line_as_c_str = nullptr;
+    char const *line_as_c_str = nullptr;
 
     FILE *file = popen(command.c_str(), "r");
     if (file)
     {
         // Read the first line of the command output.
-        char* line_as_c_str = fgets(line.data(), line.length(), file);
+        char *line_as_c_str = fgets(line.data(), line.length(), file);
         pclose(file);
         if (line_as_c_str)
         {
             // If fgets returns non-NULL, the buffer is guaranteed nul terminated.
             size_t len = std::strlen(line_as_c_str);
             // Remove a possible trailing newline.
-            if (len > 0 && line_as_c_str[len - 1] == '\n')
+            if ((len > 0) && (line_as_c_str[len - 1] == '\n'))
+            {
                 --len;
+            }
+
             // Reduce line to the correct length.
             line.resize(len);
         }
     }
+
     if (!line_as_c_str)
     {
         // Set the length of line to zero if nothing was read or if there was an error.
