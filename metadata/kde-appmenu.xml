@@ -1,0 +1,8 @@
+<?xml version="1.0"?>
+<wayfire>
+	<plugin name="kde-appmenu">
+		<_short>KDE Appmenu support</_short>
+		<_long>An implementation of the KDE Appmenu protocol for global menus.</_long>
+		<category>Utility</category>
+	</plugin>
+</wayfire>
