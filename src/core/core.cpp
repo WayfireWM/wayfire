@@ -424,6 +424,10 @@ std::vector<wayfire_view> wf::compositor_core_t::get_all_views()
     return wf::tracking_allocator_t<view_interface_t>::get().get_all();
 }
 
+/**
+ * Upon successful execution, returns the PID of the child process.
+ * Returns 0 in case of failure.
+ */
 pid_t wf::compositor_core_impl_t::run(std::string command)
 {
     static constexpr size_t READ_END  = 0;
