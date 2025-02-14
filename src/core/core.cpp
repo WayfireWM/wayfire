@@ -437,7 +437,7 @@ pid_t wf::compositor_core_impl_t::run(std::string command)
     int ret = pipe2(pipe_fd, O_CLOEXEC);
     if (ret == -1)
     {
-        LOGE("pipe2: ", strerror(errno));
+        LOGE("wf::compositor_core_impl_t::run: failed to create pipe2: ", strerror(errno));
         return 0;
     }
 
@@ -497,10 +497,12 @@ pid_t wf::compositor_core_impl_t::run(std::string command)
                 child_pid = 0;
                 if (ret == -1)
                 {
-                    LOGE("read: ", strerror(errno));
+                    LOGE("wf::compositor_core_impl_t::run(\"", command,
+                        "\"): failed to read PID from pipe end: ", strerror(errno));
                 } else
                 {
-                    LOGE("short read of PID from pipe");
+                    LOGE("wf::compositor_core_impl_t::run(\"", command,
+                        "\"): short read of PID from pipe end, got ", std::to_string(ret), " bytes");
                 }
             }
         }
