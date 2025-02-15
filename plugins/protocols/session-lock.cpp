@@ -144,7 +144,12 @@ class lock_crashed_node : public lock_base_node<simple_text_node_t>
         // TODO: make the text smaller and display a useful message instead of a big explosion.
         set_text(text);
         auto layer_node = output->node_for_layer(wf::scene::layer::LOCK);
-        wf::scene::add_back(layer_node, shared_from_this());
+        if (!is_displayed)
+        {
+            wf::scene::add_back(layer_node, shared_from_this());
+            is_displayed = true;
+        }
+
         wf::get_core().seat->set_active_node(shared_from_this());
     }
 
@@ -161,6 +166,9 @@ class lock_crashed_node : public lock_base_node<simple_text_node_t>
         result.local_coords = at;
         return result;
     }
+
+  private:
+    bool is_displayed = false;
 };
 
 class wf_session_lock_plugin : public wf::plugin_interface_t
@@ -290,6 +298,12 @@ class wf_session_lock_plugin : public wf::plugin_interface_t
             {
                 disconnect_signals();
                 set_state(state == UNLOCKED ? DESTROYED : ZOMBIE);
+                if (state == ZOMBIE)
+                {
+                    // ensure that the crashed node is displayed in this case as well
+                    lock_all();
+                }
+
                 LOGC(LSHELL, "session lock destroyed");
             });
             destroy.connect(&lock->events.destroy);
@@ -315,15 +329,9 @@ class wf_session_lock_plugin : public wf::plugin_interface_t
         void handle_output_added(wf::output_t *output)
         {
             output_states[output] = std::make_shared<output_state>(output);
-            if (state == LOCKED)
+            if ((state == LOCKED) || (state == ZOMBIE))
             {
                 lock_output(output, output_states[output]);
-            }
-
-            if (state == ZOMBIE)
-            {
-                output->set_inhibited(true);
-                output_states[output]->crashed_node->display_crashed();
             }
 
             output->connect(&output_changed);
@@ -351,7 +359,10 @@ class wf_session_lock_plugin : public wf::plugin_interface_t
         void lock_output(wf::output_t *output, std::shared_ptr<output_state> output_state)
         {
             output->set_inhibited(true);
-            if (output_state->surface_node)
+            if (state == ZOMBIE)
+            {
+                output_state->crashed_node->display_crashed();
+            } else if (output_state->surface_node)
             {
                 output_state->surface_node->display();
             } else
@@ -368,8 +379,12 @@ class wf_session_lock_plugin : public wf::plugin_interface_t
                 lock_output(output, output_state);
             }
 
-            wlr_session_lock_v1_send_locked(lock);
-            set_state(LOCKED);
+            if (state != ZOMBIE)
+            {
+                wlr_session_lock_v1_send_locked(lock);
+                set_state(LOCKED);
+            }
+
             LOGC(LSHELL, "lock");
         }
 
