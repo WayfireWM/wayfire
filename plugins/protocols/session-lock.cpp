@@ -148,6 +148,11 @@ class lock_crashed_node : public lock_base_node<simple_text_node_t>
         wf::get_core().seat->set_active_node(shared_from_this());
     }
 
+    void display_crashed()
+    {
+        display("💥");
+    }
+
     // Ensure pointer interaction is not passed to views behind this node.
     std::optional<wf::scene::input_node_t> find_node_at(const wf::pointf_t& at) override
     {
@@ -253,7 +258,7 @@ class wf_session_lock_plugin : public wf::plugin_interface_t
                         output_states[output]->surface_node.reset();
                         if (output_states[output]->crashed_node)
                         {
-                            output_states[output]->crashed_node->display("💥");
+                            output_states[output]->crashed_node->display_crashed();
                         }
                     }
 
@@ -318,7 +323,7 @@ class wf_session_lock_plugin : public wf::plugin_interface_t
             if (state == ZOMBIE)
             {
                 output->set_inhibited(true);
-                output_states[output]->crashed_node->display("💥");
+                output_states[output]->crashed_node->display_crashed();
             }
 
             output->connect(&output_changed);
