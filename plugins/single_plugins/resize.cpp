@@ -302,7 +302,7 @@ class wayfire_resize : public wf::per_output_plugin_instance_t, public wf::point
     {
         // Min size, if not set to something larger, is 1x1 + decoration size
         wf::dimensions_t min_size = view->toplevel()->get_min_size();
-        min_size.width = std::max(1, min_size.width);
+        min_size.width  = std::max(1, min_size.width);
         min_size.height = std::max(1, min_size.height);
         min_size = wf::expand_dimensions_by_margins(min_size,
             view->toplevel()->pending().margins);
@@ -335,7 +335,7 @@ class wayfire_resize : public wf::per_output_plugin_instance_t, public wf::point
 
         // Sanitize values in case desired.width/height gets negative for example.
         // Or if min size is set but no max size.
-        max_size.width = std::max(max_size.width, min.width);
+        max_size.width  = std::max(max_size.width, min.width);
         max_size.height = std::max(max_size.height, min.height);
 
         return max_size;
@@ -413,7 +413,7 @@ class wayfire_resize : public wf::per_output_plugin_instance_t, public wf::point
             }
         } else
         {
-            desired.width = std::clamp(desired.width, min_size.width, max_size.width);
+            desired.width  = std::clamp(desired.width, min_size.width, max_size.width);
             desired.height = std::clamp(desired.height, min_size.height, max_size.height);
         }
 
