@@ -388,7 +388,7 @@ class wayfire_resize : public wf::per_output_plugin_instance_t, public wf::point
         {
             float new_ratio = 1.0 * desired.width / desired.height;
             if ((new_ratio < ratio) ^ does_shrink(desired.width - grabbed_geometry.width,
-                    desired.height - grabbed_geometry.height))
+                desired.height - grabbed_geometry.height))
             {
                 // If we do not shrink: the window is taller than it should be, so expand width first.
                 // If we do shrink: the window is wider than it should be, so shrink width first.
