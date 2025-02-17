@@ -312,8 +312,7 @@ class wayfire_resize : public wf::per_output_plugin_instance_t, public wf::point
 
     wf::dimensions_t calculate_max_size(wf::dimensions_t min)
     {
-        // Max size is whatever is set by the client, if not set, then desired size to avoid further
-        // special-casing.
+        // Max size is whatever is set by the client, if not set, then it is MAX_INT
         wf::dimensions_t max_size = view->toplevel()->get_max_size();
         if (max_size.width > 0)
         {
@@ -334,7 +333,6 @@ class wayfire_resize : public wf::per_output_plugin_instance_t, public wf::point
         }
 
         // Sanitize values in case desired.width/height gets negative for example.
-        // Or if min size is set but no max size.
         max_size.width  = std::max(max_size.width, min.width);
         max_size.height = std::max(max_size.height, min.height);
 
