@@ -90,25 +90,18 @@ endif
 # We're not to use system wlroots: So we'll use the subproject
 if get_option('use_system_wfconfig').disabled()
 	use_system_wfconfig = false
-	wfconfig_proj = subproject('wf-config')
-	wfconfig = wfconfig_proj.get_variable('wfconfig')
-	wfconfig_inc = wfconfig_proj.get_variable('wfconfig_inc')
+	wfconfig = subproject('wf-config').get_variable('wfconfig')
 
 elif get_option('use_system_wfconfig').enabled()
 	use_system_wfconfig = true
 	wfconfig = dependency('wf-config', version: ['>=0.10.0', '<0.11.0'], required: true)
-	wfconfig_inc = include_directories(wfconfig.get_pkgconfig_variable('includedir'))
 
 elif get_option('use_system_wfconfig').auto()
 	wfconfig = dependency('wf-config', version: ['>=0.10.0', '<0.11.0'], required: false)
 	use_system_wfconfig = true
 	if not wfconfig.found()
 		use_system_wfconfig = false
-		wfconfig_proj = subproject('wf-config')
-		wfconfig = wfconfig_proj.get_variable('wfconfig')
-		wfconfig_inc = wfconfig_proj.get_variable('wfconfig_inc')
-	else
-		wfconfig_inc = include_directories(wfconfig.get_pkgconfig_variable('includedir'))
+		wfconfig = subproject('wf-config').get_variable('wfconfig')
 	endif
 endif
 
