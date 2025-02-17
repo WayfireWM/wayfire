@@ -16,6 +16,7 @@
 #include "wayfire/toplevel-view.hpp"
 #include "wayfire/window-manager.hpp"
 #include "wayfire/seat.hpp"
+#include "wayfire/nonstd/reverse.hpp"
 #include "wm-actions-signals.hpp"
 
 class always_on_top_root_node_t : public wf::scene::output_node_t
