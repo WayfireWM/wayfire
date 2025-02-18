@@ -49,7 +49,7 @@ class config_backend_t
      * described in input-device.xml
      */
     virtual std::shared_ptr<config::section_t> get_input_device_section(
-        wlr_input_device *device);
+        std::string const & prefix, wlr_input_device *device);
 
     virtual ~config_backend_t() = default;
 

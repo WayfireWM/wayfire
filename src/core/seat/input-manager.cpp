@@ -60,7 +60,7 @@ void wf::input_manager_t::configure_input_device(std::unique_ptr<wf::input_devic
     auto dev     = device->get_wlr_handle();
     auto cursor  = wf::get_core().get_wlr_cursor();
     auto section =
-        wf::get_core().config_backend->get_input_device_section(dev);
+        wf::get_core().config_backend->get_input_device_section("input-device", dev);
 
     auto mapped_output = section->get_option("output")->get_value_str();
     if (mapped_output.empty())
@@ -152,8 +152,6 @@ void load_locked_mods_from_config(xkb_mod_mask_t& locked_mods)
 
 wf::input_manager_t::input_manager_t()
 {
-    wf::pointing_device_t::config.load();
-
     load_locked_mods_from_config(locked_mods);
 
     input_device_created.set_callback([&] (void *data)
