@@ -578,6 +578,41 @@ bool input_device_t::is_enabled()
     return mode == LIBINPUT_CONFIG_SEND_EVENTS_ENABLED;
 }
 
+void input_device_impl_t::calibrate_touch_device(std::string const & cal)
+{
+    wlr_input_device *dev = handle;
+    if (!wlr_input_device_is_libinput(dev) || (dev->type != WLR_INPUT_DEVICE_TOUCH))
+    {
+        return;
+    }
+
+    float m[6];
+    auto libinput_dev = wlr_libinput_get_device_handle(dev);
+    if (sscanf(cal.c_str(), "%f %f %f %f %f %f",
+        &m[0], &m[1], &m[2], &m[3], &m[4], &m[5]) == 6)
+    {
+        enum libinput_config_status status;
+
+        status = libinput_device_config_calibration_set_matrix(libinput_dev, m);
+        if (status != LIBINPUT_CONFIG_STATUS_SUCCESS)
+        {
+            LOGE("Failed to apply calibration for ", nonull(dev->name));
+            LOGE("    ", m[0], " ", m[1], " ", m[2], " ", m[3], " ", m[4], " ", m[5]);
+        } else
+        {
+            LOGI("Calibrated input device successfully: ", nonull(dev->name));
+            LOGI("    ", m[0], " ", m[1], " ", m[2], " ", m[3], " ", m[4], " ", m[5]);
+        }
+    } else
+    {
+        LOGE("Incorrect calibration configuration for ", nonull(dev->name));
+        LOGI("Setting default matrix calibration: ");
+        libinput_device_config_calibration_get_default_matrix(libinput_dev, m);
+        LOGI("    ", m[0], " ", m[1], " ", m[2], " ", m[3], " ", m[4], " ", m[5]);
+        libinput_device_config_calibration_set_matrix(libinput_dev, m);
+    }
+}
+
 input_device_t::input_device_t(wlr_input_device *handle)
 {
     this->handle = handle;
