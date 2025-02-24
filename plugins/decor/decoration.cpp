@@ -138,19 +138,28 @@ class wayfire_decoration : public wf::plugin_interface_t
         pending.margins = {0, 0, 0, 0};
     }
 
+    bool is_toplevel_decorated(const std::shared_ptr<wf::toplevel_t>& toplevel)
+    {
+        return toplevel->has_data<wf::simple_decorator_t>();
+    }
+
     void update_view_decoration(wayfire_view view)
     {
         if (auto toplevel = wf::toplevel_cast(view))
         {
-            if (should_decorate_view(toplevel))
+            const bool wants_decoration = should_decorate_view(toplevel);
+            if (wants_decoration != is_toplevel_decorated(toplevel->toplevel()))
             {
-                adjust_new_decorations(toplevel);
-            } else
-            {
-                remove_decoration(toplevel);
-            }
+                if (wants_decoration)
+                {
+                    adjust_new_decorations(toplevel);
+                } else
+                {
+                    remove_decoration(toplevel);
+                }
 
-            wf::get_core().tx_manager->schedule_object(toplevel->toplevel());
+                wf::get_core().tx_manager->schedule_object(toplevel->toplevel());
+            }
         }
     }
 };
