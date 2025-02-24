@@ -1,8 +1,5 @@
-#include "core-impl.hpp"
 #include "wayfire/debug.hpp"
-#include "wayfire/output.hpp"
-#include "seat/input-manager.hpp"
-#include "wayfire/signal-definitions.hpp"
+#include <wayfire/nonstd/wlroots-full.hpp>
 #include <wayfire/util/log.hpp>
 #include <wayfire/config-backend.hpp>
 #include <libudev.h>
@@ -82,18 +79,28 @@ std::shared_ptr<config::section_t> wf::config_backend_t::get_input_device_sectio
     std::string name = nonull(device->name);
     name = prefix + ":" + name;
     LOGC(INPUT_DEVICES, "Checking for config section [", name, "]");
-    section = config.get_section(name);
-    if (section)
+
+    if (!config.get_section(name))
+    {
+        // For input-device:(*) section, we always use per-device sections.
+        // For input:(*) sections, we fall back to the common [input] section.
+        if (prefix == "input")
+        {
+            LOGC(INPUT_DEVICES, "Using default config section [", prefix, "]");
+            section = config.get_section(prefix);
+        } else
+        {
+            LOGC(INPUT_DEVICES, "Creating config section [", name, "]");
+            section = config.get_section(prefix)->clone_with_name(name);
+            config.merge_section(section);
+        }
+    } else
     {
         LOGC(INPUT_DEVICES, "Using config section [", name, "]");
-        return section;
+        section = config.get_section(name);
     }
 
-    config.merge_section(
-        config.get_section(prefix)->clone_with_name(name));
-
-    LOGC(INPUT_DEVICES, "Using config section [", name, "]");
-    return config.get_section(name);
+    return section;
 }
 
 std::vector<std::string> wf::config_backend_t::get_xml_dirs() const
