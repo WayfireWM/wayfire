@@ -4,14 +4,11 @@
 #include "wayfire/core.hpp"
 #include "wayfire/signal-definitions.hpp"
 #include "../core-impl.hpp"
-#include "../../output/output-impl.hpp"
-#include "touch.hpp"
 #include "keyboard.hpp"
 #include "cursor.hpp"
 #include "input-manager.hpp"
 #include "wayfire/output-layout.hpp"
 #include "wayfire/view.hpp"
-#include "wayfire/workspace-set.hpp"
 #include <wayfire/util/log.hpp>
 #include <wayfire/debug.hpp>
 
@@ -62,6 +59,12 @@ void wf::input_manager_t::configure_input_device(std::unique_ptr<wf::input_devic
     auto section =
         wf::get_core().config_backend->get_input_device_section("input-device", dev);
 
+    auto calibration_matrix = section->get_option("calibration")->get_value_str();
+    if (!calibration_matrix.empty())
+    {
+        device->calibrate_touch_device(calibration_matrix);
+    }
+
     auto mapped_output = section->get_option("output")->get_value_str();
     if (mapped_output.empty())
     {
@@ -77,12 +80,6 @@ void wf::input_manager_t::configure_input_device(std::unique_ptr<wf::input_devic
         {
             mapped_output = nonull(dev->name);
         }
-    }
-
-    auto cal = section->get_option("calibration")->get_value_str();
-    if (!cal.empty())
-    {
-        device->calibrate_touch_device(cal);
     }
 
     auto wo = wf::get_core().output_layout->find_output(mapped_output);

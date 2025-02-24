@@ -6,6 +6,8 @@
       <default></default>
     </option>
     <option name="calibration" type="string">
+      <_short>Calibration matrix</_short>
+      <_long>Calibration matrix for touch devices, uses udev/libinput format (2x3 matrix, 6 floats separated by space).</_long>
       <default></default>
     </option>
   </object>

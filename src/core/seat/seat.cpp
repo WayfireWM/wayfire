@@ -578,7 +578,7 @@ bool input_device_t::is_enabled()
     return mode == LIBINPUT_CONFIG_SEND_EVENTS_ENABLED;
 }
 
-void input_device_impl_t::calibrate_touch_device(std::string const & cal)
+void input_device_impl_t::calibrate_touch_device(const std::string& calibration_matrix)
 {
     wlr_input_device *dev = handle;
     if (!wlr_input_device_is_libinput(dev) || (dev->type != WLR_INPUT_DEVICE_TOUCH))
@@ -588,7 +588,7 @@ void input_device_impl_t::calibrate_touch_device(std::string const & cal)
 
     float m[6];
     auto libinput_dev = wlr_libinput_get_device_handle(dev);
-    if (sscanf(cal.c_str(), "%f %f %f %f %f %f",
+    if (sscanf(calibration_matrix.c_str(), "%f %f %f %f %f %f",
         &m[0], &m[1], &m[2], &m[3], &m[4], &m[5]) == 6)
     {
         enum libinput_config_status status;

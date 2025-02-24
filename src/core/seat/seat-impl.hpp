@@ -34,7 +34,7 @@ class input_device_impl_t : public wf::input_device_t
      * Calibrate a touch device with a matrix. This function does nothing
      * if called with a device that is not a touch device.
      */
-    void calibrate_touch_device(std::string const & cal);
+    void calibrate_touch_device(const std::string& calibration_matrix);
 };
 
 class pointer_t;

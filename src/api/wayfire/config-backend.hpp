@@ -45,8 +45,8 @@ class config_backend_t
     /**
      * Find the output section for a given input device.
      *
-     * The returned section must be a valid output object as
-     * described in input-device.xml
+     * The returned section must be a valid config object as described
+     * in <@prefix>.xml (typically input.xml or input-device.xml).
      */
     virtual std::shared_ptr<config::section_t> get_input_device_section(
         std::string const & prefix, wlr_input_device *device);
