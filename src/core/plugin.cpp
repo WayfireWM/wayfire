@@ -2,6 +2,7 @@
 #include <wayfire/nonstd/wlroots-full.hpp>
 #include <wayfire/util/log.hpp>
 #include <wayfire/config-backend.hpp>
+#include <wayfire/plugin.hpp>
 #include <libudev.h>
 
 void wf::plugin_interface_t::fini()
