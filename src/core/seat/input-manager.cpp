@@ -85,11 +85,11 @@ void wf::input_manager_t::configure_input_device(std::unique_ptr<wf::input_devic
     auto wo = wf::get_core().output_layout->find_output(mapped_output);
     if (wo)
     {
-        LOGD("Mapping input ", dev->name, " to output ", wo->to_string(), ".");
+        LOGC(INPUT_DEVICES, "Mapping input ", dev->name, " to output ", wo->to_string(), ".");
         wlr_cursor_map_input_to_output(cursor, dev, wo->handle);
     } else
     {
-        LOGD("Mapping input ", dev->name, " to output null.");
+        LOGC(INPUT_DEVICES, "Mapping input ", dev->name, " to output null.");
         wlr_cursor_map_input_to_output(cursor, dev, nullptr);
     }
 }
