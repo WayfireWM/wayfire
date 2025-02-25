@@ -173,7 +173,7 @@ xbps-install -S wayfire
 
 ## Configuration
 
-Copy [`wayfire.ini`] to `~/.config/wayfire.ini`.
+Copy [`wayfire.ini`] to `~/.config/wayfire.ini` or `~/.config/wayfire/wayfire.ini`.
 Before running Wayfire, you may want to change the command to start a terminal.
 See the [Configuration] document for information on the options.
 

@@ -141,9 +141,15 @@ class dynamic_ini_config_t : public wf::config_backend_t
             return env_cfg_file;
         }
 
-        return (getenv("XDG_CONFIG_HOME") ?:
-            (std::string(nonull(getenv("HOME"))) + "/.config")) +
-               "/wayfire.ini";
+        std::string env_cfg_home = getenv("XDG_CONFIG_HOME") ?:
+            (std::string(nonull(getenv("HOME"))) + "/.config");
+
+        std::string vendored_cfg_file = env_cfg_home + "/wayfire/wayfire.ini";
+        if (std::filesystem::exists(vendored_cfg_file)) {
+            return vendored_cfg_file;
+        }
+
+        return env_cfg_home + "/wayfire.ini";
     }
 };
 }

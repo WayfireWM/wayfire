@@ -32,6 +32,8 @@ with an alternative configuration file.
 The default configuration file is searched first in the
 .Ev ${WAYFIRE_CONFIG_FILE}
 environment variable, or paths
+.Pa ${XDG_CONFIG_HOME}/wayfire/wayfire.ini ,
+.Pa ${HOME}/.config/wayfire/wayfire.ini ,
 .Pa ${XDG_CONFIG_HOME}/wayfire.ini ,
 .Pa ${HOME}/.config/wayfire.ini .
 .Pp
