@@ -145,7 +145,8 @@ class dynamic_ini_config_t : public wf::config_backend_t
             (std::string(nonull(getenv("HOME"))) + "/.config");
 
         std::string vendored_cfg_file = env_cfg_home + "/wayfire/wayfire.ini";
-        if (std::filesystem::exists(vendored_cfg_file)) {
+        if (std::filesystem::exists(vendored_cfg_file))
+        {
             return vendored_cfg_file;
         }
 
