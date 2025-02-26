@@ -4,6 +4,7 @@
 #include <filesystem>
 #include <dlfcn.h>
 
+#include "config.h"
 #include "plugin-loader.hpp"
 #include "../core/wm.hpp"
 #include "wayfire/plugin.hpp"
@@ -78,8 +79,54 @@ void wf::plugin_manager_t::destroy_plugin(wf::loaded_plugin_t& p)
     }
 }
 
-std::pair<void*, void*> wf::get_new_instance_handle(const std::string& path)
+static bool check_plugin_api_version(const std::string& path, bool can_unload_so)
 {
+    // First, open everything just locally and in a lazy way.
+    // We want to check just the API/ABI version.
+    // If we load with RTLD_NOW, if the API/ABI version is wrong, we may get a crash just by
+    // dlopen()-ing the plugin.
+    void *handle = dlopen(path.c_str(), RTLD_LOCAL | RTLD_LAZY);
+    if (handle == NULL)
+    {
+        LOGE("error loading plugin [", path, "]: ", dlerror());
+        return false;
+    }
+
+    /* Check plugin version */
+    auto version_func_ptr = dlsym(handle, "getWayfireVersion");
+    if (version_func_ptr == NULL)
+    {
+        LOGE(path, ": missing getWayfireVersion()", path.c_str());
+        dlclose(handle);
+        return false;
+    }
+
+    auto version_func = wf::union_cast<void*, wayfire_plugin_version_func>(version_func_ptr);
+    int32_t plugin_abi_version = version_func();
+
+    if (version_func() != WAYFIRE_API_ABI_VERSION)
+    {
+        LOGE(path, ": API/ABI version mismatch: Wayfire is ",
+            WAYFIRE_API_ABI_VERSION, ",  plugin built with ", plugin_abi_version);
+        dlclose(handle);
+        return false;
+    }
+
+    if (can_unload_so)
+    {
+        dlclose(handle);
+    }
+
+    return true;
+}
+
+std::pair<void*, void*> wf::get_new_instance_handle(const std::string& path, bool can_unload_so)
+{
+    if (!check_plugin_api_version(path, can_unload_so))
+    {
+        return {nullptr, nullptr};
+    }
+
     // RTLD_GLOBAL is required for RTTI/dynamic_cast across plugins
     void *handle = dlopen(path.c_str(), RTLD_NOW | RTLD_GLOBAL);
     if (handle == NULL)
@@ -89,25 +136,6 @@ std::pair<void*, void*> wf::get_new_instance_handle(const std::string& path)
     }
 
     /* Check plugin version */
-    auto version_func_ptr = dlsym(handle, "getWayfireVersion");
-    if (version_func_ptr == NULL)
-    {
-        LOGE(path, ": missing getWayfireVersion()", path.c_str());
-        dlclose(handle);
-        return {nullptr, nullptr};
-    }
-
-    auto version_func = union_cast<void*, wayfire_plugin_version_func>(version_func_ptr);
-    int32_t plugin_abi_version = version_func();
-
-    if (version_func() != WAYFIRE_API_ABI_VERSION)
-    {
-        LOGE(path, ": API/ABI version mismatch: Wayfire is ",
-            WAYFIRE_API_ABI_VERSION, ",  plugin built with ", plugin_abi_version);
-        dlclose(handle);
-        return {nullptr, nullptr};
-    }
-
     auto new_instance_func_ptr = dlsym(handle, "newInstance");
     if (new_instance_func_ptr == NULL)
     {
@@ -123,7 +151,7 @@ std::pair<void*, void*> wf::get_new_instance_handle(const std::string& path)
 
 std::optional<wf::loaded_plugin_t> wf::plugin_manager_t::load_plugin_from_file(std::string path)
 {
-    auto [handle, new_instance_func_ptr] = wf::get_new_instance_handle(path);
+    auto [handle, new_instance_func_ptr] = wf::get_new_instance_handle(path, enable_so_unloading);
     if (new_instance_func_ptr)
     {
         auto new_instance_func = union_cast<void*, wayfire_plugin_load_func>(new_instance_func_ptr);

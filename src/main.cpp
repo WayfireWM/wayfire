@@ -171,7 +171,7 @@ static wf::config_backend_t *load_backend(const std::string& backend)
             wf::get_plugin_path_for_name(plugin_prefixes, backend).value_or("");
     }
 
-    auto [_, init_ptr] = wf::get_new_instance_handle(config_plugin);
+    auto [_, init_ptr] = wf::get_new_instance_handle(config_plugin, false);
 
     if (!init_ptr)
     {

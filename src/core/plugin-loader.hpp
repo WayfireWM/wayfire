@@ -3,7 +3,6 @@
 #include <vector>
 #include <unordered_map>
 #include "wayfire/plugin.hpp"
-#include "config.h"
 #include "wayfire/util.hpp"
 #include <wayfire/option-wrapper.hpp>
 
@@ -62,7 +61,7 @@ B union_cast(A object)
  *
  * @return (dlopen() handle, newInstance pointer)
  */
-std::pair<void*, void*> get_new_instance_handle(const std::string& path);
+std::pair<void*, void*> get_new_instance_handle(const std::string& path, bool can_unload_so);
 
 /**
  * List the locations where wayfire's plugins are installed.
