@@ -39,7 +39,7 @@ jobs:
     - run: git submodule sync --recursive && git submodule update --init --force --recursive
     - run: find /usr/bin/ | grep clang
     - run: (cd subprojects/wlroots && env CC=clang-17 CXX=clang++-17 CXXFLAGS="-stdlib=libc++" LDFLAGS="-fuse-ld=lld -stdlib=libc++" meson build --prefix=/usr && ninja -C build install)
-    - run: env CC=clang-17 CXX=clang++-17 CXXFLAGS="-stdlib=libc++" LDFLAGS="-fuse-ld=lld -stdlib=libc++" meson build -Db_pch=true -Duse_system_wlroots=enabled --unity on
+    - run: env CC=clang-17 CXX=clang++-17 CXXFLAGS="-stdlib=libc++" LDFLAGS="-fuse-ld=lld -stdlib=libc++" meson build -Db_pch=true -Dcustom_pch=true -Duse_system_wlroots=enabled --unity on
     - run: ninja -v -Cbuild
     - run: ninja -v -Cbuild test
   test_code_style:
