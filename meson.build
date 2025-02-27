@@ -13,6 +13,8 @@ project(
 	],
 )
 
+cpp = meson.get_compiler('cpp')
+
 version = '"@0@"'.format(meson.project_version())
 add_project_arguments('-DWAYFIRE_VERSION=@0@'.format(version), language: 'cpp')
 
@@ -32,7 +34,7 @@ glm            = dependency('glm', required: false)
 libinput       = dependency('libinput', version: '>=1.7.0')
 pixman         = dependency('pixman-1')
 xkbcommon      = dependency('xkbcommon')
-libdl          = meson.get_compiler('cpp').find_library('dl')
+libdl          = cpp.find_library('dl')
 json           = dependency('nlohmann_json', version: '>= 3.11.2')
 udev           = dependency('libudev')
 
@@ -106,11 +108,11 @@ elif get_option('use_system_wfconfig').auto()
 	endif
 endif
 
-if not glm.found() and not meson.get_compiler('cpp').check_header('glm/glm.hpp')
+if not glm.found() and not cpp.check_header('glm/glm.hpp')
   error('GLM not found, and directly using the header \'glm/glm.hpp\' is not possible.')
 endif
 
-backtrace = meson.get_compiler('cpp').find_library('execinfo', required: false)
+backtrace = cpp.find_library('execinfo', required: false)
 
 wfutils = subproject('wf-utils').get_variable('wfutils')
 wftouch = subproject('wf-touch').get_variable('wftouch')
@@ -122,7 +124,7 @@ jpeg = dependency('libjpeg', required: false)
 png  = dependency('libpng',  required: false)
 
 # backtrace() is in a separate library on FreeBSD and Linux with musl
-backtrace = meson.get_compiler('cpp').find_library('execinfo', required: false)
+backtrace = cpp.find_library('execinfo', required: false)
 
 conf_data = configuration_data()
 
@@ -139,8 +141,6 @@ if get_option('default_config_backend') == 'default'
 else
   conf_data.set('DEFAULT_CONFIG_BACKEND', get_option('default_config_backend'))
 endif
-
-cpp = meson.get_compiler('cpp')
 
 # needed to dlopen() plugins
 # -E is for RTTI/dynamic_cast across plugins

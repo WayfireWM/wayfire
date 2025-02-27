@@ -3,7 +3,6 @@ subdir('common')
 if get_option('custom_pch')
   # Add a workaround for https://github.com/mesonbuild/meson/issues/4350
   # We create a PCH ourselves and manage it for all plugins.
-  cc = meson.get_compiler('cpp')
   pch_file = meson.current_source_dir() / 'pch/plugin_pch.hpp'
   custom_pch_flags = ['@INPUT@', '-c', '-o', '@OUTPUT@', '-MD', '-MF', '@DEPFILE@',
       '-std=' + get_option('cpp_std'), '-pthread', '-fPIC'] + get_option('cpp_args')
@@ -32,18 +31,18 @@ if get_option('custom_pch')
       input: pch_file,
       output: 'plugin_pch.hpp.gch',
       depfile: 'plugin_pch.hpp.d',
-      command: cc.cmd_array() + custom_pch_flags)
+      command: cpp.cmd_array() + custom_pch_flags)
 
   fs = import('fs')
-  if cc.get_id() == 'clang'
+  if cpp.get_id() == 'clang'
     # In clang, everything is simple, we just tell the compiler which PCH file to use
     plugin_pch_arg = ['-include-pch', pch.full_path(), '-pthread']
-  elif cc.get_id() == 'gcc'
+  elif cpp.get_id() == 'gcc'
     # GCC requires that the .gch and the .hpp file are in the same dir.
     fs.copyfile(pch_file) # copy to build dir where .gch is found
     plugin_pch_arg = ['-I' + fs.parent(pch.full_path()), '-include', fs.name(pch_file), '-pthread', '-fpch-preprocess']
   else
-    error('Unsupported compiler for custom pch: ' + cc.get_id())
+    error('Unsupported compiler for custom pch: ' + cpp.get_id())
   endif
 
   plugin_pch_dep = declare_dependency(sources: pch, compile_args: plugin_pch_arg)
