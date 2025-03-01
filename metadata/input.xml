@@ -208,6 +208,11 @@
 				<_long>Enables or disables natural (inverted) scrolling.</_long>
 				<default>false</default>
 			</option>
+			<option name="tap_and_drag" type="bool">
+				<_short>Tap and drag</_short>
+				<_long>Enables or disables tap-and-drag.</_long>
+				<default>true</default>
+			</option>
 			<option name="drag_lock" type="bool">
 				<_short>Drag lock</_short>
 				<_long>Enables or disables drag lock.</_long>

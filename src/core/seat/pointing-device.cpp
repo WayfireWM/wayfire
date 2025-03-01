@@ -28,6 +28,7 @@ void wf::pointing_device_t::load_options()
     touchpad_dwt_enabled.load_option(section_name + "/disable_touchpad_while_typing");
     touchpad_dwmouse_enabled.load_option(section_name + "/disable_touchpad_while_mouse");
     touchpad_natural_scroll_enabled.load_option(section_name + "/natural_scroll");
+    touchpad_tap_and_drag_enabled.load_option(section_name + "/tap_and_drag");
     touchpad_drag_lock_enabled.load_option(section_name + "/drag_lock");
 
     mouse_accel_profile.load_option(section_name + "/mouse_accel_profile");
@@ -135,6 +136,11 @@ void wf::pointing_device_t::update_options()
             touchpad_dwmouse_enabled ?
             LIBINPUT_CONFIG_SEND_EVENTS_DISABLED_ON_EXTERNAL_MOUSE :
             LIBINPUT_CONFIG_SEND_EVENTS_ENABLED);
+
+        libinput_device_config_tap_set_drag_enabled(dev,
+            touchpad_tap_and_drag_enabled ?
+            LIBINPUT_CONFIG_DRAG_ENABLED :
+            LIBINPUT_CONFIG_DRAG_DISABLED);
 
         libinput_device_config_tap_set_drag_lock_enabled(dev,
             touchpad_drag_lock_enabled ?
