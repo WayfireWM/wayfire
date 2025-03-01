@@ -30,6 +30,7 @@ void wf::pointing_device_t::load_options()
     touchpad_natural_scroll_enabled.load_option(section_name + "/natural_scroll");
     touchpad_tap_and_drag_enabled.load_option(section_name + "/tap_and_drag");
     touchpad_drag_lock_enabled.load_option(section_name + "/drag_lock");
+    touchpad_3fg_drag.load_option(section_name + "/3fg_drag");
 
     mouse_accel_profile.load_option(section_name + "/mouse_accel_profile");
     touchpad_accel_profile.load_option(section_name + "/touchpad_accel_profile");
@@ -146,6 +147,24 @@ void wf::pointing_device_t::update_options()
             touchpad_drag_lock_enabled ?
             LIBINPUT_CONFIG_DRAG_LOCK_ENABLED :
             LIBINPUT_CONFIG_DRAG_LOCK_DISABLED);
+
+        if ((std::string)touchpad_3fg_drag == "default")
+        {
+            libinput_device_config_3fg_drag_set_enabled(dev,
+                libinput_device_config_3fg_drag_get_default_enabled(dev));
+        } else if ((std::string)touchpad_3fg_drag == "none")
+        {
+            libinput_device_config_3fg_drag_set_enabled(dev,
+                LIBINPUT_CONFIG_3FG_DRAG_DISABLED);
+        } else if ((std::string)touchpad_3fg_drag == "3fg-drag")
+        {
+            libinput_device_config_3fg_drag_set_enabled(dev,
+                LIBINPUT_CONFIG_3FG_DRAG_ENABLED_3FG);
+        } else if ((std::string)touchpad_3fg_drag == "4fg-drag")
+        {
+            libinput_device_config_3fg_drag_set_enabled(dev,
+                LIBINPUT_CONFIG_3FG_DRAG_ENABLED_4FG);
+        }
 
         if (libinput_device_config_scroll_has_natural_scroll(dev) > 0)
         {
