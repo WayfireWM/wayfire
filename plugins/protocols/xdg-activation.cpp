@@ -77,7 +77,7 @@ class wayfire_xdg_activation_protocol_impl : public wf::plugin_interface_t
                 return;
             }
 
-            LOGI("Activating view");
+            LOGD("Activating view");
             wf::get_core().default_wm->focus_request(toplevel);
         });
 
@@ -107,11 +107,7 @@ class wayfire_xdg_activation_protocol_impl : public wf::plugin_interface_t
 
         xdg_activation_token_destroy.set_callback([this] (void *data)
         {
-            auto token = static_cast<struct wlr_xdg_activation_token_v1*>(data);
-            if (token == last_token)
-            {
-                last_token = nullptr;
-            }
+            last_token = nullptr;
 
             xdg_activation_token_destroy.disconnect();
         });
