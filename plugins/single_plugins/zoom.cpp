@@ -35,7 +35,7 @@ class wayfire_zoom_screen : public wf::per_output_plugin_instance_t
     {
         float target = progression.end;
         target -= target * delta * speed;
-        target  = wf::clamp(target, 1.0f, 50.0f);
+        target  = std::clamp(target, 1.0f, 50.0f);
 
         if (target != progression.end)
         {

@@ -850,7 +850,7 @@ struct repaint_delay_manager_t
             // We rendered last frame on time
             if (get_current_time() - last_increase >= increase_window)
             {
-                increase_window = clamp(int64_t(increase_window * 0.75),
+                increase_window = std::clamp(int64_t(increase_window * 0.75),
                     MIN_INCREASE_WINDOW, MAX_INCREASE_WINDOW);
                 update_delay(+1);
                 reset_increase_timer();
@@ -870,12 +870,12 @@ struct repaint_delay_manager_t
             // We missed last frame.
             update_delay(-consecutive_decrease);
             // Next decrease should be faster
-            consecutive_decrease = clamp(consecutive_decrease * 2, 1, 32);
+            consecutive_decrease = std::clamp(consecutive_decrease * 2, 1, 32);
 
             // Next increase should be tried after a longer interval
             if (expand_inc_window_on_miss >= 0)
             {
-                increase_window = clamp(increase_window * 2,
+                increase_window = std::clamp(increase_window * 2,
                     MIN_INCREASE_WINDOW, MAX_INCREASE_WINDOW);
             }
 
@@ -912,7 +912,7 @@ struct repaint_delay_manager_t
             max = config_delay;
         }
 
-        delay = clamp(delay + delta, min, max);
+        delay = std::clamp(delay + delta, min, max);
     }
 
     void reset_increase_timer()

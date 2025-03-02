@@ -160,12 +160,12 @@ wf::geometry_t wf::geometry_intersection(const wf::geometry_t& r1,
 
 wf::geometry_t wf::clamp(wf::geometry_t window, wf::geometry_t output)
 {
-    window.width  = wf::clamp(window.width, 0, output.width);
-    window.height = wf::clamp(window.height, 0, output.height);
+    window.width  = std::clamp(window.width, 0, output.width);
+    window.height = std::clamp(window.height, 0, output.height);
 
-    window.x = wf::clamp(window.x,
+    window.x = std::clamp(window.x,
         output.x, output.x + output.width - window.width);
-    window.y = wf::clamp(window.y,
+    window.y = std::clamp(window.y,
         output.y, output.y + output.height - window.height);
 
     return window;
