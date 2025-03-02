@@ -223,7 +223,7 @@ class vswipe : public wf::per_output_plugin_instance_t
         /* Diagonal movement is possible if the slope is not too steep
          * and we have moved enough */
         double slope  = deltas.x / deltas.y;
-        bool diagonal = wf::clamp(slope,
+        bool diagonal = std::clamp(slope,
             1.0 / diagonal_threshold, diagonal_threshold) == slope;
         diagonal &= (deltas.x * deltas.x + deltas.y * deltas.y) >=
             initial_direction_threshold * initial_direction_threshold;
@@ -326,9 +326,9 @@ class vswipe : public wf::per_output_plugin_instance_t
         }
 
         state.swiping = false;
-        const double move_threshold = wf::clamp((double)threshold, 0.0, 1.0);
+        const double move_threshold = std::clamp((double)threshold, 0.0, 1.0);
         const double fast_threshold =
-            wf::clamp((double)delta_threshold, 0.0, 1000.0);
+            std::clamp((double)delta_threshold, 0.0, 1000.0);
 
         wf::point_t target_delta     = {0, 0};
         wf::point_t target_workspace = {state.vx, state.vy};

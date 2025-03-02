@@ -283,7 +283,7 @@ void resize_view_controller_t::adjust_geometry(int32_t& x1, int32_t& len1,
     int maxNegative = std::max(0, len1 - MIN_SIZE);
 
     /* Make sure we don't shrink one dimension too much */
-    delta = clamp(delta, -maxNegative, maxPositive);
+    delta = std::clamp(delta, -maxNegative, maxPositive);
 
     /* Adjust sizes */
     len1 += delta;

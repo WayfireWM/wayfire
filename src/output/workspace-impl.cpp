@@ -65,8 +65,8 @@ struct grid_size_manager_t
 
     wf::point_t closest_valid_ws(wf::point_t workspace)
     {
-        workspace.x = wf::clamp(workspace.x, 0, grid.width - 1);
-        workspace.y = wf::clamp(workspace.y, 0, grid.height - 1);
+        workspace.x = std::clamp(workspace.x, 0, grid.width - 1);
+        workspace.y = std::clamp(workspace.y, 0, grid.height - 1);
         return workspace;
     }
 

@@ -27,10 +27,10 @@ static inline double vswipe_process_delta(const double delta,
 
     // If we're moving further in the limit direction, slow down all the way
     // to extremely slow, but reversing the direction should be easier.
-    const double slowdown = wf::clamp(ease,
+    const double slowdown = std::clamp(ease,
         std::signbit(delta) == std::signbit(sdx_offset) ? 0.005 : 0.2, 1.0);
 
-    return wf::clamp(delta, -speed_cap, speed_cap) * slowdown;
+    return std::clamp(delta, -speed_cap, speed_cap) * slowdown;
 }
 
 static inline int vswipe_finish_target(const double accumulated_dx,
@@ -71,7 +71,7 @@ static inline int vswipe_finish_target(const double accumulated_dx,
 
     if (!free_movement)
     {
-        target_dx = wf::clamp(target_dx, -1, 1);
+        target_dx = std::clamp(target_dx, -1, 1);
     }
 
     return target_dx;

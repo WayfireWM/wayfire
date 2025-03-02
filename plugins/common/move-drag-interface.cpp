@@ -607,8 +607,8 @@ void adjust_view_on_output(drag_done_signal *ev)
     target_ws = target_ws + current_ws;
 
     auto gsize = ev->focused_output->wset()->get_workspace_grid_size();
-    target_ws.x = wf::clamp(target_ws.x, 0, gsize.width - 1);
-    target_ws.y = wf::clamp(target_ws.y, 0, gsize.height - 1);
+    target_ws.x = std::clamp(target_ws.x, 0, gsize.width - 1);
+    target_ws.y = std::clamp(target_ws.y, 0, gsize.height - 1);
 
     // view to focus at the end of drag
     auto focus_view = ev->main_view;

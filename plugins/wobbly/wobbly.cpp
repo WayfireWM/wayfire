@@ -136,13 +136,13 @@ extern "C"
 {
     double wobbly_settings_get_friction()
     {
-        return wf::clamp((double)wobbly_settings::friction,
+        return std::clamp((double)wobbly_settings::friction,
             MINIMAL_FRICTION, MAXIMAL_FRICTION);
     }
 
     double wobbly_settings_get_spring_k()
     {
-        return wf::clamp((double)wobbly_settings::spring_k,
+        return std::clamp((double)wobbly_settings::spring_k,
             MINIMAL_SPRING_K, MAXIMAL_SPRING_K);
     }
 }

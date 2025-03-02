@@ -713,7 +713,7 @@ class wayfire_cube : public wf::per_output_plugin_instance_t, public wf::pointer
         double current_off_y = animation.cube_animation.offset_y;
         double off_y = current_off_y + ydiff * YVelocity;
 
-        off_y = wf::clamp(off_y, -1.5, 1.5);
+        off_y = std::clamp(off_y, -1.5, 1.5);
         animation.cube_animation.offset_y.set(current_off_y, off_y);
         animation.cube_animation.offset_z.restart_with_end(
             animation.cube_animation.offset_z.end);
