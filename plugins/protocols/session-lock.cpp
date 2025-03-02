@@ -144,10 +144,9 @@ class lock_crashed_node : public lock_base_node<simple_text_node_t>
         // TODO: make the text smaller and display a useful message instead of a big explosion.
         set_text(text);
         auto layer_node = output->node_for_layer(wf::scene::layer::LOCK);
-        if (!is_displayed)
+        if (parent() == nullptr)
         {
             wf::scene::add_back(layer_node, shared_from_this());
-            is_displayed = true;
         }
 
         wf::get_core().seat->set_active_node(shared_from_this());
@@ -166,9 +165,6 @@ class lock_crashed_node : public lock_base_node<simple_text_node_t>
         result.local_coords = at;
         return result;
     }
-
-  private:
-    bool is_displayed = false;
 };
 
 class wf_session_lock_plugin : public wf::plugin_interface_t
