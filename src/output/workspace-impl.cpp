@@ -234,16 +234,24 @@ struct workspace_set_t::impl
             if (view->get_output() && view->toplevel()->current().fullscreen)
             {
                 view->set_geometry(new_geometry);
-            } else if (view->toplevel()->current().tiled_edges)
+            } else if (view->toplevel()->current() == maximization_t::full)
             {
                 // Do nothing. This is taken care of, by the grid plugin.
                 // If the user does not have grid enabled, we ignore it anyways.
             } else
             {
-                view->set_geometry({
-                        int(px * new_geometry.width), int(py * new_geometry.height),
-                        wm.width, wm.height
-                    });
+                wf::geometry_t& new_geometry = wm;
+                if (view->toplevel()->current() < maximization_t::vertical)
+                {
+                    new_geometry.y = int(py * new_geometry.height);
+                }
+
+                if (view->toplevel()->current() < maximization_t::horizontal)
+                {
+                    new_geometry.x = int(px * new_geometry.width);
+                }
+
+                view->set_geometry(new_geometry);
             }
         }
 

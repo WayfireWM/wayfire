@@ -82,8 +82,9 @@ void wf::xdg_toplevel_t::commit()
         auto version = wl_resource_get_version(toplevel->resource);
         if (version >= XDG_TOPLEVEL_STATE_TILED_LEFT_SINCE_VERSION)
         {
+            // TODO: support unidirectional maximization.
             this->target_configure =
-                wlr_xdg_toplevel_set_maximized(this->toplevel, (_pending.tiled_edges == TILED_EDGES_ALL));
+                wlr_xdg_toplevel_set_maximized(this->toplevel, _pending == maximization_t::full);
         } else
         {
             this->target_configure = wlr_xdg_toplevel_set_maximized(this->toplevel, !!_pending.tiled_edges);
