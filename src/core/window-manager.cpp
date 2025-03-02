@@ -211,12 +211,34 @@ void window_manager_t::tile_request(wayfire_toplevel_view view,
 
     const wf::point_t workspace = ws.value_or(view->get_output()->wset()->get_current_workspace());
 
-    view_tile_request_signal data;
-    data.view  = view;
-    data.edges = tiled_edges;
-    data.workspace    = workspace;
-    data.desired_size = tiled_edges ? view->get_output()->workarea->get_workarea() :
+    // Handle partial maximization.
+
+    wf::geometry_t const current_geometry = view->get_pending_geometry();
+    // This assumes that the edge of workarea is where we need to expand to when maximizing.
+    wf::geometry_t const workarea_geometry = view->get_output()->workarea->get_workarea();
+    // If unmaximizing we need to jump back to last_windowed.
+    wf::geometry_t const last_windowed_geometry =
         get_last_windowed_geometry(view).value_or(wf::geometry_t{0, 0, -1, -1});
+    // Hence, per edge, we need to either stay at current_geometry, jump to workarea_geometry
+    // or jump to last_windowed_geometry. This is a function of being maximized (in which
+    // case the value of `tiled_edges` is enough), or being un-maximized. For the latter
+    // `tiled_edges` must have an unset bit, but the previous state must have had a set bit.
+    uint32_t prev_tiled_edges = view->pending_tiled_edges();
+    //
+    // |            tiled_edges: |        unset  |    set   |
+    // --------------------------+---------------+----------+
+    // | prev_tiled_edges: unset |       current | workarea |
+    // |                     set | last_windowed | workarea |
+    //
+    // A simple way to deal with this is to first take care of the left column (assuming
+    // tiled_edges unset), and then switch to workarea if tiled_edges is set.
+    // Handle unmaximizing:
+    wf::geometry_t desired_size =
+        geometry_switch_if(prev_tiled_edges, last_windowed_geometry, current_geometry);
+    // Handle maximizing:
+    desired_size = geometry_switch_if(tiled_edges, workarea_geometry, desired_size);
+
+    view_tile_request_signal data{view, tiled_edges, desired_size, workspace};
 
     update_last_windowed_geometry(view);
     view->toplevel()->pending().tiled_edges = tiled_edges;
