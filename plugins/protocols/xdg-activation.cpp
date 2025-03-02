@@ -7,6 +7,7 @@
 #include <wayfire/toplevel-view.hpp>
 #include <wayfire/nonstd/wlroots-full.hpp>
 #include <wayfire/window-manager.hpp>
+#include <wayfire/util.hpp>
 #include "config.h"
 
 class wayfire_xdg_activation_protocol_impl : public wf::plugin_interface_t
