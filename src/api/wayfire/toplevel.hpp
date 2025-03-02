@@ -12,13 +12,7 @@ namespace wf
 /**
  * Describes the size of the decoration frame around a toplevel.
  */
-struct decoration_margins_t
-{
-    int left;
-    int right;
-    int bottom;
-    int top;
-};
+using decoration_margins_t = geometry_difference_t;
 
 struct toplevel_state_t
 {
