@@ -127,8 +127,6 @@ class toplevel_t : public wf::txn::transaction_object_t, public wf::object_base_
     toplevel_state_t _current;
     toplevel_state_t _pending;
     toplevel_state_t _committed;
-
-    std::optional<wf::geometry_t> last_windowed_geometry;
 };
 
 // Helper functions when working with toplevel state
