@@ -241,12 +241,26 @@ class simple_decoration_node_t : public wf::scene::node_t, public wf::pointer_in
 
     void handle_pointer_button(const wlr_pointer_button_event& ev) override
     {
-        if (ev.button != BTN_LEFT)
+        auto action = layout.handle_press_event(ev.state == WL_POINTER_BUTTON_STATE_PRESSED);
+        if (action.action == DECORATION_ACTION_TOGGLE_MAXIMIZE)
+        {
+            // Fixup the maximize action.
+            if (ev.button == BTN_MIDDLE)
+            {
+                action.action = DECORATION_ACTION_TOGGLE_MAXIMIZE_VERTICALLY;
+            } else if (ev.button == BTN_RIGHT)
+            {
+                action.action = DECORATION_ACTION_TOGGLE_MAXIMIZE_HORIZONTALLY;
+            } else if (ev.button != BTN_LEFT)
+            {
+                return;
+            }
+        } else if (ev.button != BTN_LEFT)
         {
             return;
         }
 
-        handle_action(layout.handle_press_event(ev.state == WL_POINTER_BUTTON_STATE_PRESSED));
+        handle_action(action);
     }
 
     void handle_action(decoration_layout_t::action_response_t action)
@@ -265,15 +279,29 @@ class simple_decoration_node_t : public wf::scene::node_t, public wf::pointer_in
                 return view->close();
 
               case DECORATION_ACTION_TOGGLE_MAXIMIZE:
-                if (view->pending_tiled_edges())
+              case DECORATION_ACTION_TOGGLE_MAXIMIZE_VERTICALLY:
+              case DECORATION_ACTION_TOGGLE_MAXIMIZE_HORIZONTALLY:
+            {
+                // Get the last maximization state that was requested;
+                // it is this value that needs to be toggled.
+                maximization_t maximization = view->pending_maximization();
+
+                // Toggle the state if appropriate.
+                if (((action.action == DECORATION_ACTION_TOGGLE_MAXIMIZE) ||
+                     (action.action == DECORATION_ACTION_TOGGLE_MAXIMIZE_VERTICALLY)))
                 {
-                    return wf::get_core().default_wm->tile_request(view, 0);
-                } else
-                {
-                    return wf::get_core().default_wm->tile_request(view, wf::TILED_EDGES_ALL);
+                    maximization ^= maximization_t::vertical;
                 }
 
-                break;
+                if (((action.action == DECORATION_ACTION_TOGGLE_MAXIMIZE) ||
+                     (action.action == DECORATION_ACTION_TOGGLE_MAXIMIZE_HORIZONTALLY)))
+                {
+                    maximization ^= maximization_t::horizontal;
+                }
+
+                // Request the new maximize state.
+                return wf::get_core().default_wm->tile_request(view, maximization.as_tiled_edges());
+            }
 
               case DECORATION_ACTION_MINIMIZE:
                 return wf::get_core().default_wm->minimize_request(view, true);
