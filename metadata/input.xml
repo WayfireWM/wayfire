@@ -218,6 +218,27 @@
 				<_long>Enables or disables drag lock.</_long>
 				<default>false</default>
 			</option>
+			<option name="3fg_drag" type="string">
+				<_short>Multi-finger drag</_short>
+				<_long>Enables or disables 3-finger or 4-finger drag. Requires libinput ≥ 1.28.</_long>
+				<default>default</default>
+				<desc>
+					<value>default</value>
+					<_name>Default</_name>
+				</desc>
+				<desc>
+					<value>none</value>
+					<_name>None</_name>
+				</desc>
+				<desc>
+					<value>3fg-drag</value>
+					<_name>Drag using 3 fingers</_name>
+				</desc>
+				<desc>
+					<value>4fg-drag</value>
+					<_name>Drag using 4 fingers</_name>
+				</desc>
+			</option>
 			<option name="touchpad_cursor_speed" type="double">
 				<_short>Touchpad cursor speed</_short>
 				<_long>Changes the touchpad acceleration.</_long>

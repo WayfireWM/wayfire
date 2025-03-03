@@ -33,6 +33,7 @@ struct pointing_device_t : public input_device_impl_t
     wf::option_wrapper_t<bool> mouse_natural_scroll_enabled;
     wf::option_wrapper_t<bool> touchpad_tap_and_drag_enabled;
     wf::option_wrapper_t<bool> touchpad_drag_lock_enabled;
+    wf::option_wrapper_t<std::string> touchpad_3fg_drag;
 };
 }
 
