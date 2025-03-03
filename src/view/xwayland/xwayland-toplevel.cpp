@@ -115,10 +115,11 @@ void wf::xw::xwayland_toplevel_t::commit()
         reconfigure_xwayland_surface();
     }
 
-    if (_pending.tiled_edges != _current.tiled_edges)
+    // TODO: add support for unidirectional maximization.
+    if (static_cast<maximization_t>(_pending) != _current)
     {
         wait_for_client = true;
-        wlr_xwayland_surface_set_maximized(xw, !!_pending.tiled_edges);
+        wlr_xwayland_surface_set_maximized(xw, _pending == maximization_t::full);
     }
 
     if (_pending.fullscreen != _current.fullscreen)
@@ -144,8 +145,9 @@ void wf::xw::xwayland_toplevel_t::reconfigure_xwayland_surface()
         return;
     }
 
-    const wf::geometry_t configure =
-        shrink_geometry_by_margins(_pending.geometry, _pending.margins) + output_offset;
+    // Shrink directions that are not maximized.
+    wf::geometry_t configure =
+        shrink_geometry_by_margins(_pending.geometry, _pending.margins, _pending) + output_offset;
 
     if ((configure.width <= 0) || (configure.height <= 0))
     {
@@ -254,8 +256,8 @@ void wf::xw::xwayland_toplevel_t::handle_surface_commit()
 
 wf::geometry_t wf::xw::xwayland_toplevel_t::calculate_base_geometry()
 {
-    auto geometry = current().geometry;
-    return shrink_geometry_by_margins(geometry, _current.margins);
+    // Shrink as if not maximized at all.
+    return shrink_geometry_by_margins(current().geometry, _current.margins, maximization_t::none);
 }
 
 void wf::xw::xwayland_toplevel_t::apply_pending_state()

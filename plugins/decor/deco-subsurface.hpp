@@ -6,9 +6,10 @@
 #include <wayfire/signal-definitions.hpp>
 #include <wayfire/toplevel-view.hpp>
 
-class simple_decoration_node_t;
-namespace wf
+namespace wf::decor
 {
+class simple_decoration_node_t;
+
 /**
  * A decorator object attached as custom data to a toplevel object.
  */

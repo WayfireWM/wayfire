@@ -11,6 +11,19 @@ std::ostream& operator <<(std::ostream& stream, const wf::geometry_t& geometry)
     return stream;
 }
 
+std::ostream& wf::operator <<(std::ostream& stream, const wf::geometry_difference_t& geometry_difference)
+{
+    stream << '{' << geometry_difference.left << ',' << geometry_difference.right << ',' <<
+        geometry_difference.top << ',' << geometry_difference.bottom << '}';
+
+    return stream;
+}
+
+void wf::rectangle_t::print_on(std::ostream& stream) const
+{
+    stream << '{' << x1_ << ',' << y1_ << ' ' << x2_ << ',' << y2_ << '}';
+}
+
 std::ostream& wf::operator <<(std::ostream& stream, const wf::point_t& point)
 {
     stream << '(' << point.x << ',' << point.y << ')';

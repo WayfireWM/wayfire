@@ -33,13 +33,6 @@ enum view_allowed_actions_t
 };
 
 /**
- * A bitmask consisting of all tiled edges.
- * This corresponds to a maximized state.
- */
-constexpr uint32_t TILED_EDGES_ALL =
-    WLR_EDGE_TOP | WLR_EDGE_BOTTOM | WLR_EDGE_LEFT | WLR_EDGE_RIGHT;
-
-/**
  * Toplevel views are a subtype of views which have an associated toplevel object. As such, they may be moved,
  * resized, etc. freely by plugins and have many additional operations when compared to other view types.
  */
@@ -122,6 +115,11 @@ class toplevel_view_interface_t : public virtual wf::view_interface_t
     inline uint32_t pending_tiled_edges() const
     {
         return toplevel()->pending().tiled_edges;
+    }
+
+    inline maximization_t pending_maximization() const
+    {
+        return toplevel()->pending();
     }
 
     inline bool pending_fullscreen() const

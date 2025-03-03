@@ -14,6 +14,8 @@
 #include "wayfire/toplevel-view.hpp"
 #include "wayfire/toplevel.hpp"
 
+namespace wf::decor
+{
 class wayfire_decoration : public wf::plugin_interface_t
 {
     wf::view_matcher_t ignore_views{"decoration/ignore_views"};
@@ -28,7 +30,7 @@ class wayfire_decoration : public wf::plugin_interface_t
             {
                 // First check whether the toplevel already has decoration
                 // In that case, we should just set the correct margins
-                if (auto deco = toplevel->get_data<wf::simple_decorator_t>())
+                if (auto deco = toplevel->get_data<simple_decorator_t>())
                 {
                     toplevel->pending().margins = deco->get_margins(toplevel->pending());
                     continue;
@@ -111,8 +113,8 @@ class wayfire_decoration : public wf::plugin_interface_t
     {
         auto toplevel = view->toplevel();
 
-        toplevel->store_data(std::make_unique<wf::simple_decorator_t>(view));
-        auto deco     = toplevel->get_data<wf::simple_decorator_t>();
+        toplevel->store_data(std::make_unique<simple_decorator_t>(view));
+        auto deco     = toplevel->get_data<simple_decorator_t>();
         auto& pending = toplevel->pending();
         pending.margins = deco->get_margins(pending);
 
@@ -128,7 +130,7 @@ class wayfire_decoration : public wf::plugin_interface_t
 
     void remove_decoration(wayfire_toplevel_view view)
     {
-        view->toplevel()->erase_data<wf::simple_decorator_t>();
+        view->toplevel()->erase_data<simple_decorator_t>();
         auto& pending = view->toplevel()->pending();
         if (!pending.fullscreen && !pending.tiled_edges)
         {
@@ -140,7 +142,7 @@ class wayfire_decoration : public wf::plugin_interface_t
 
     bool is_toplevel_decorated(const std::shared_ptr<wf::toplevel_t>& toplevel)
     {
-        return toplevel->has_data<wf::simple_decorator_t>();
+        return toplevel->has_data<simple_decorator_t>();
     }
 
     void update_view_decoration(wayfire_view view)
@@ -163,5 +165,6 @@ class wayfire_decoration : public wf::plugin_interface_t
         }
     }
 };
+} // namespace wf::decor
 
-DECLARE_WAYFIRE_PLUGIN(wayfire_decoration);
+DECLARE_WAYFIRE_PLUGIN(wf::decor::wayfire_decoration);
