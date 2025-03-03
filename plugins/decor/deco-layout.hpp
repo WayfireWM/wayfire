@@ -78,7 +78,9 @@ enum decoration_layout_action_t
     /* Button actions */
     DECORATION_ACTION_CLOSE           = 3,
     DECORATION_ACTION_TOGGLE_MAXIMIZE = 4,
-    DECORATION_ACTION_MINIMIZE        = 5,
+    DECORATION_ACTION_TOGGLE_MAXIMIZE_VERTICALLY = 5,
+    DECORATION_ACTION_TOGGLE_MAXIMIZE_HORIZONTALLY = 6,
+    DECORATION_ACTION_MINIMIZE        = 7,
 };
 
 class decoration_theme_t;
