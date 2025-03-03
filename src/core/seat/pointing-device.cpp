@@ -148,6 +148,8 @@ void wf::pointing_device_t::update_options()
             LIBINPUT_CONFIG_DRAG_LOCK_ENABLED :
             LIBINPUT_CONFIG_DRAG_LOCK_DISABLED);
 
+#if HAVE_LIBINPUT_3FG_DRAG
+
         if ((std::string)touchpad_3fg_drag == "default")
         {
             libinput_device_config_3fg_drag_set_enabled(dev,
@@ -165,6 +167,8 @@ void wf::pointing_device_t::update_options()
             libinput_device_config_3fg_drag_set_enabled(dev,
                 LIBINPUT_CONFIG_3FG_DRAG_ENABLED_4FG);
         }
+
+#endif
 
         if (libinput_device_config_scroll_has_natural_scroll(dev) > 0)
         {

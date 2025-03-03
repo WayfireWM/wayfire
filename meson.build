@@ -153,6 +153,11 @@ if cpp.has_argument('-fno-gnu-unique')
 endif
 add_project_arguments(project_args, language: ['cpp', 'c'])
 
+# Compile new libinput features only if they are supported with the libinput installed version
+if cpp.has_function('libinput_device_config_3fg_drag_set_enabled', dependencies: libinput)
+  add_project_arguments('-DHAVE_LIBINPUT_3FG_DRAG=1', language : ['cpp', 'c'])
+endif
+
 # Needed on some older compilers
 if cpp.has_link_argument('-lc++fs')
   add_project_link_arguments(['-lc++fs'], language: 'cpp')
