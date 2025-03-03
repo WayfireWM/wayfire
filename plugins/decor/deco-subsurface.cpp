@@ -27,6 +27,8 @@
 
 #include <cairo.h>
 
+namespace wf::decor
+{
 class simple_decoration_node_t : public wf::scene::node_t, public wf::pointer_interaction_t,
     public wf::touch_interaction_t
 {
@@ -64,8 +66,8 @@ class simple_decoration_node_t : public wf::scene::node_t, public wf::pointer_in
     } title_texture;
 
   public:
-    wf::decor::decoration_theme_t theme;
-    wf::decor::decoration_layout_t layout;
+    decoration_theme_t theme;
+    decoration_layout_t layout;
     wf::region_t cached_region;
 
     wf::dimensions_t size;
@@ -82,12 +84,10 @@ class simple_decoration_node_t : public wf::scene::node_t, public wf::pointer_in
         view->connect(&title_set);
         if (view->parent)
         {
-            theme.set_buttons(wf::decor::button_type_t(wf::decor::BUTTON_TOGGLE_MAXIMIZE |
-                wf::decor::BUTTON_CLOSE));
+            theme.set_buttons(button_type_t(BUTTON_TOGGLE_MAXIMIZE | BUTTON_CLOSE));
         } else
         {
-            theme.set_buttons(wf::decor::button_type_t(wf::decor::BUTTON_MINIMIZE |
-                wf::decor::BUTTON_TOGGLE_MAXIMIZE | wf::decor::BUTTON_CLOSE));
+            theme.set_buttons(button_type_t(BUTTON_MINIMIZE | BUTTON_TOGGLE_MAXIMIZE | BUTTON_CLOSE));
         }
 
         // make sure to hide frame if the view is fullscreen
@@ -125,7 +125,7 @@ class simple_decoration_node_t : public wf::scene::node_t, public wf::pointer_in
         auto renderables = layout.get_renderable_areas();
         for (auto item : renderables)
         {
-            if (item->get_type() == wf::decor::DECORATION_AREA_TITLE)
+            if (item->get_type() == DECORATION_AREA_TITLE)
             {
                 OpenGL::render_begin(fb);
                 fb.logic_scissor(scissor);
@@ -193,10 +193,10 @@ class simple_decoration_node_t : public wf::scene::node_t, public wf::pointer_in
             if (!our_damage.empty())
             {
                 instructions.push_back(wf::scene::render_instruction_t{
-                    .instance = this,
-                    .target   = target,
-                    .damage   = std::move(our_damage),
-                });
+                        .instance = this,
+                        .target   = target,
+                        .damage   = std::move(our_damage),
+                    });
             }
         }
 
@@ -249,22 +249,22 @@ class simple_decoration_node_t : public wf::scene::node_t, public wf::pointer_in
         handle_action(layout.handle_press_event(ev.state == WL_POINTER_BUTTON_STATE_PRESSED));
     }
 
-    void handle_action(wf::decor::decoration_layout_t::action_response_t action)
+    void handle_action(decoration_layout_t::action_response_t action)
     {
         if (auto view = _view.lock())
         {
             switch (action.action)
             {
-              case wf::decor::DECORATION_ACTION_MOVE:
+              case DECORATION_ACTION_MOVE:
                 return wf::get_core().default_wm->move_request(view);
 
-              case wf::decor::DECORATION_ACTION_RESIZE:
+              case DECORATION_ACTION_RESIZE:
                 return wf::get_core().default_wm->resize_request(view, action.edges);
 
-              case wf::decor::DECORATION_ACTION_CLOSE:
+              case DECORATION_ACTION_CLOSE:
                 return view->close();
 
-              case wf::decor::DECORATION_ACTION_TOGGLE_MAXIMIZE:
+              case DECORATION_ACTION_TOGGLE_MAXIMIZE:
                 if (view->pending_tiled_edges())
                 {
                     return wf::get_core().default_wm->tile_request(view, 0);
@@ -275,7 +275,7 @@ class simple_decoration_node_t : public wf::scene::node_t, public wf::pointer_in
 
                 break;
 
-              case wf::decor::DECORATION_ACTION_MINIMIZE:
+              case DECORATION_ACTION_MINIMIZE:
                 return wf::get_core().default_wm->minimize_request(view, true);
                 break;
 
@@ -337,7 +337,7 @@ class simple_decoration_node_t : public wf::scene::node_t, public wf::pointer_in
     }
 };
 
-wf::simple_decorator_t::simple_decorator_t(wayfire_toplevel_view view)
+simple_decorator_t::simple_decorator_t(wayfire_toplevel_view view)
 {
     this->view = view;
     deco = std::make_shared<simple_decoration_node_t>(view);
@@ -368,12 +368,12 @@ wf::simple_decorator_t::simple_decorator_t(wayfire_toplevel_view view)
     };
 }
 
-wf::simple_decorator_t::~simple_decorator_t()
+simple_decorator_t::~simple_decorator_t()
 {
     wf::scene::remove_child(deco);
 }
 
-wf::decoration_margins_t wf::simple_decorator_t::get_margins(const wf::toplevel_state_t& state)
+wf::decoration_margins_t simple_decorator_t::get_margins(const wf::toplevel_state_t& state)
 {
     if (state.fullscreen)
     {
@@ -389,3 +389,4 @@ wf::decoration_margins_t wf::simple_decorator_t::get_margins(const wf::toplevel_
         .top    = titlebar,
     };
 }
+} // namespace wf::decor
