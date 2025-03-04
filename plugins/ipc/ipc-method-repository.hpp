@@ -9,6 +9,18 @@ namespace wf
 {
 namespace ipc
 {
+class ipc_method_exception_t : public std::exception
+{
+  public:
+    ipc_method_exception_t(std::string msg) : msg(msg)
+    {}
+    std::string msg;
+    const char *what() const noexcept override
+    {
+        return msg.c_str();
+    }
+};
+
 /**
  * A client_interface_t represents a client which has connected to the IPC socket.
  * It can be used by plugins to send back data to a specific client.
@@ -86,11 +98,20 @@ class method_repository_t : public wf::signal::provider_t
     {
         if (this->methods.count(method))
         {
-            return this->methods[method](std::move(data), client);
+            try {
+                return this->methods[method](std::move(data), client);
+            } catch (const ipc_method_exception_t& e)
+            {
+                json_wrapper_t response;
+                response["error"] = "Error during execution of the handler for method \"" +
+                    method + "\": " + e.what();
+                return response;
+            }
         }
 
         json_wrapper_t response;
-        response["error"] = "No such method found!";
+        response["error"]  = "No such method found!";
+        response["method"] = method;
         return response;
     }
 

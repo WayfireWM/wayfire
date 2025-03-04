@@ -8,6 +8,7 @@
 #include <wayfire/core.hpp>
 #include <wayfire/output-layout.hpp>
 #include <wayfire/core.hpp>
+#include "ipc-method-repository.hpp"
 
 namespace wf
 {
@@ -18,11 +19,12 @@ namespace ipc
     { \
         if (!data.has_member(field)) \
         { \
-            throw ("Missing \"" + field + "\""); \
+            throw ipc_method_exception_t("Missing \"" + field + "\""); \
         } \
         else if (!data[field].is_ ## type()) \
         { \
-            throw ("Field \"" + field + "\" does not have the correct type, expected " #type); \
+            throw ipc_method_exception_t( \
+    "Field \"" + field + "\" does not have the correct type, expected " #type); \
         } \
 \
         return (ctype)data[field]; \
@@ -37,7 +39,8 @@ namespace ipc
         } \
         else if (!data[field].is_ ## type()) \
         { \
-            throw ("Field \"" + field + "\" does not have the correct type, expected " #type); \
+            throw ipc_method_exception_t( \
+    "Field \"" + field + "\" does not have the correct type, expected " #type); \
         } \
 \
         return (ctype)data[field]; \
