@@ -34,13 +34,13 @@ class wayfire_demo_ipc : public wf::plugin_interface_t
     }
 
     wf::ipc::method_callback_full on_client_watch =
-        [=] (wf::ipc::json_wrapper_t data, wf::ipc::client_interface_t *client)
+        [=] (wf::json_t data, wf::ipc::client_interface_t *client)
     {
         clients.insert(client);
         return wf::ipc::json_ok();
     };
 
-    wf::ipc::method_callback get_view_info = [=] (wf::ipc::json_wrapper_t data)
+    wf::ipc::method_callback get_view_info = [=] (wf::json_t data)
     {
 // WFJSON_EXPECT_FIELD(data, "id", number_integer);
 //
@@ -57,7 +57,7 @@ class wayfire_demo_ipc : public wf::plugin_interface_t
         return wf::ipc::json_error("no such view");
     };
 
-    wf::ipc::method_callback get_output_info = [=] (wf::ipc::json_wrapper_t data)
+    wf::ipc::method_callback get_output_info = [=] (wf::json_t data)
     {
 // WFJSON_EXPECT_FIELD(data, "id", number_integer);
 // auto wo = wf::ipc::find_output_by_id(data["id"]);
@@ -72,7 +72,7 @@ class wayfire_demo_ipc : public wf::plugin_interface_t
         return wf::ipc::json_ok();
     };
 
-    wf::ipc::method_callback set_view_geometry = [=] (wf::ipc::json_wrapper_t data)
+    wf::ipc::method_callback set_view_geometry = [=] (wf::json_t data)
     {
         // WFJSON_EXPECT_FIELD(data, "id", number_integer);
         // WFJSON_EXPECT_FIELD(data, "geometry", object);
@@ -108,7 +108,7 @@ class wayfire_demo_ipc : public wf::plugin_interface_t
 
     wf::signal::connection_t<wf::view_mapped_signal> on_view_mapped = [=] (wf::view_mapped_signal *ev)
     {
-        wf::ipc::json_wrapper_t event;
+        wf::json_t event;
         event["event"] = "view-mapped";
         event["view"]  = view_to_json(ev->view);
         for (auto& client : clients)
@@ -117,9 +117,9 @@ class wayfire_demo_ipc : public wf::plugin_interface_t
         }
     };
 
-    wf::ipc::json_wrapper_t view_to_json(wayfire_view view)
+    wf::json_t view_to_json(wayfire_view view)
     {
-        wf::ipc::json_wrapper_t description;
+        wf::json_t description;
         description["id"]     = view->get_id();
         description["app-id"] = view->get_app_id();
         description["title"]  = view->get_title();

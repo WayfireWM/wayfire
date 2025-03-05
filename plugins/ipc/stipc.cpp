@@ -11,6 +11,7 @@
 #include <wayfire/txn/transaction-manager.hpp>
 #include "src/view/view-impl.hpp"
 #include <variant>
+#include <cstring>
 
 #define WAYFIRE_PLUGIN
 #include <wayfire/debug.hpp>
@@ -313,7 +314,7 @@ class stipc_plugin_t : public wf::plugin_interface_t
         return false;
     }
 
-    ipc::method_callback layout_views = [] (wf::ipc::json_wrapper_t data) -> wf::ipc::json_wrapper_t
+    ipc::method_callback layout_views = [] (wf::json_t data) -> wf::json_t
     {
         auto views = wf::get_core().get_all_views();
         if (!data.has_member("views") || !data["views"].is_array())
@@ -367,7 +368,7 @@ class stipc_plugin_t : public wf::plugin_interface_t
         return wf::ipc::json_ok();
     };
 
-    ipc::method_callback create_wayland_output = [] (wf::ipc::json_wrapper_t)
+    ipc::method_callback create_wayland_output = [] (wf::json_t)
     {
         auto backend = wf::get_core().backend;
 
@@ -384,7 +385,7 @@ class stipc_plugin_t : public wf::plugin_interface_t
         return wf::ipc::json_ok();
     };
 
-    ipc::method_callback destroy_wayland_output = [] (wf::ipc::json_wrapper_t data) -> ipc::json_wrapper_t
+    ipc::method_callback destroy_wayland_output = [] (wf::json_t data) -> json_t
     {
         auto output_str = wf::ipc::json_get_string(data, "output");
         auto output     = wf::get_core().output_layout->find_output(output_str);
@@ -408,7 +409,7 @@ class stipc_plugin_t : public wf::plugin_interface_t
         int code;
     };
 
-    std::variant<key_t, std::string> parse_key(wf::ipc::json_wrapper_t data)
+    std::variant<key_t, std::string> parse_key(wf::json_t data)
     {
         auto combo = wf::ipc::json_get_string(data, "combo");
         if (combo.size() < 4)
@@ -433,7 +434,7 @@ class stipc_plugin_t : public wf::plugin_interface_t
         return key_t{modifier, key};
     }
 
-    ipc::method_callback feed_key = [=] (wf::ipc::json_wrapper_t data)
+    ipc::method_callback feed_key = [=] (wf::json_t data)
     {
         auto key    = wf::ipc::json_get_string(data, "key");
         auto state  = wf::ipc::json_get_bool(data, "state");
@@ -454,7 +455,7 @@ class stipc_plugin_t : public wf::plugin_interface_t
         return wf::ipc::json_ok();
     };
 
-    ipc::method_callback feed_button = [=] (wf::ipc::json_wrapper_t data)
+    ipc::method_callback feed_button = [=] (wf::json_t data)
     {
         auto result = parse_key(data);
         auto button = std::get_if<key_t>(&result);
@@ -486,7 +487,7 @@ class stipc_plugin_t : public wf::plugin_interface_t
         return wf::ipc::json_ok();
     };
 
-    ipc::method_callback move_cursor = [=] (wf::ipc::json_wrapper_t data)
+    ipc::method_callback move_cursor = [=] (wf::json_t data)
     {
         auto x = wf::ipc::json_get_double(data, "x");
         auto y = wf::ipc::json_get_double(data, "y");
@@ -494,7 +495,7 @@ class stipc_plugin_t : public wf::plugin_interface_t
         return wf::ipc::json_ok();
     };
 
-    ipc::method_callback do_touch = [=] (wf::ipc::json_wrapper_t data)
+    ipc::method_callback do_touch = [=] (wf::json_t data)
     {
         auto finger = wf::ipc::json_get_int64(data, "finger");
         auto x = wf::ipc::json_get_double(data, "x");
@@ -503,14 +504,14 @@ class stipc_plugin_t : public wf::plugin_interface_t
         return wf::ipc::json_ok();
     };
 
-    ipc::method_callback do_touch_release = [=] (wf::ipc::json_wrapper_t data)
+    ipc::method_callback do_touch_release = [=] (wf::json_t data)
     {
         auto finger = wf::ipc::json_get_int64(data, "finger");
         input->do_touch_release(finger);
         return wf::ipc::json_ok();
     };
 
-    ipc::method_callback run = [=] (wf::ipc::json_wrapper_t data)
+    ipc::method_callback run = [=] (wf::json_t data)
     {
         auto cmd = wf::ipc::json_get_string(data, "cmd");
         auto response = wf::ipc::json_ok();
@@ -524,20 +525,20 @@ class stipc_plugin_t : public wf::plugin_interface_t
         return response;
     };
 
-    ipc::method_callback ping = [=] (wf::ipc::json_wrapper_t data)
+    ipc::method_callback ping = [=] (wf::json_t data)
     {
         return wf::ipc::json_ok();
     };
 
-    ipc::method_callback get_display = [=] (wf::ipc::json_wrapper_t data)
+    ipc::method_callback get_display = [=] (wf::json_t data)
     {
-        wf::ipc::json_wrapper_t dpy;
+        wf::json_t dpy;
         dpy["wayland"]  = wf::get_core().wayland_display;
         dpy["xwayland"] = wf::get_core().get_xwayland_display();
         return dpy;
     };
 
-    ipc::method_callback do_tool_proximity = [=] (wf::ipc::json_wrapper_t data)
+    ipc::method_callback do_tool_proximity = [=] (wf::json_t data)
     {
         auto proximity_in = wf::ipc::json_get_bool(data, "proximity_in");
         auto x = wf::ipc::json_get_double(data, "x");
@@ -546,7 +547,7 @@ class stipc_plugin_t : public wf::plugin_interface_t
         return wf::ipc::json_ok();
     };
 
-    ipc::method_callback do_tool_button = [=] (wf::ipc::json_wrapper_t data)
+    ipc::method_callback do_tool_button = [=] (wf::json_t data)
     {
         auto button = wf::ipc::json_get_int64(data, "button");
         auto state  = wf::ipc::json_get_bool(data, "state");
@@ -554,7 +555,7 @@ class stipc_plugin_t : public wf::plugin_interface_t
         return wf::ipc::json_ok();
     };
 
-    ipc::method_callback do_tool_axis = [=] (wf::ipc::json_wrapper_t data)
+    ipc::method_callback do_tool_axis = [=] (wf::json_t data)
     {
         auto x = wf::ipc::json_get_double(data, "x");
         auto y = wf::ipc::json_get_double(data, "y");
@@ -563,7 +564,7 @@ class stipc_plugin_t : public wf::plugin_interface_t
         return wf::ipc::json_ok();
     };
 
-    ipc::method_callback do_tool_tip = [=] (wf::ipc::json_wrapper_t data)
+    ipc::method_callback do_tool_tip = [=] (wf::json_t data)
     {
         auto x     = wf::ipc::json_get_double(data, "x");
         auto y     = wf::ipc::json_get_double(data, "y");
@@ -572,7 +573,7 @@ class stipc_plugin_t : public wf::plugin_interface_t
         return wf::ipc::json_ok();
     };
 
-    ipc::method_callback do_pad_button = [=] (wf::ipc::json_wrapper_t data)
+    ipc::method_callback do_pad_button = [=] (wf::json_t data)
     {
         auto button = wf::ipc::json_get_int64(data, "button");
         auto state  = wf::ipc::json_get_bool(data, "state");
@@ -608,7 +609,7 @@ class stipc_plugin_t : public wf::plugin_interface_t
         }
     };
 
-    ipc::method_callback delay_next_tx = [=] (wf::ipc::json_wrapper_t)
+    ipc::method_callback delay_next_tx = [=] (wf::json_t)
     {
         if (!on_new_tx.is_connected())
         {
@@ -619,14 +620,14 @@ class stipc_plugin_t : public wf::plugin_interface_t
         return wf::ipc::json_ok();
     };
 
-    ipc::method_callback get_xwayland_pid = [=] (wf::ipc::json_wrapper_t)
+    ipc::method_callback get_xwayland_pid = [=] (wf::json_t)
     {
         auto response = wf::ipc::json_ok();
         response["pid"] = wf::xwayland_get_pid();
         return response;
     };
 
-    ipc::method_callback get_xwayland_display = [=] (wf::ipc::json_wrapper_t)
+    ipc::method_callback get_xwayland_display = [=] (wf::json_t)
     {
         auto response = wf::ipc::json_ok();
         response["display"] = wf::xwayland_get_display();

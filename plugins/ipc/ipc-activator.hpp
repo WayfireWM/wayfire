@@ -70,7 +70,7 @@ class ipc_activator_t
         return false;
     };
 
-    ipc::method_callback ipc_cb = [=] (const wf::ipc::json_wrapper_t& data)
+    ipc::method_callback ipc_cb = [=] (const wf::json_t& data)
     {
         auto output_id = ipc::json_get_optional_int64(data, "output_id");
         if (!output_id.has_value())

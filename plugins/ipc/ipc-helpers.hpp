@@ -1,6 +1,6 @@
 #pragma once
 
-#include "json-wrapper.hpp"
+#include <wayfire/nonstd/json.hpp>
 #include "wayfire/geometry.hpp"
 #include <wayfire/output.hpp>
 #include <wayfire/view.hpp>
@@ -15,7 +15,7 @@ namespace wf
 namespace ipc
 {
 #define WFJSON_GETTER_FUNCTION(type, ctype) \
-    inline ctype json_get_ ## type(const wf::ipc::json_wrapper_t& data, std::string field) \
+    inline ctype json_get_ ## type(const wf::json_t& data, std::string field) \
     { \
         if (!data.has_member(field)) \
         { \
@@ -30,7 +30,7 @@ namespace ipc
         return (ctype)data[field]; \
     } \
  \
-    inline std::optional<ctype> json_get_optional_ ## type(const wf::ipc::json_wrapper_t& data, \
+    inline std::optional<ctype> json_get_optional_ ## type(const wf::json_t& data, \
     std::string field) \
     { \
         if (!data.has_member(field)) \
@@ -94,9 +94,9 @@ inline wf::workspace_set_t *find_workspace_set_by_index(int32_t index)
     return nullptr;
 }
 
-inline wf::ipc::json_wrapper_t geometry_to_json(wf::geometry_t g)
+inline wf::json_t geometry_to_json(wf::geometry_t g)
 {
-    wf::ipc::json_wrapper_t j;
+    wf::json_t j;
     j["x"]     = g.x;
     j["y"]     = g.y;
     j["width"] = g.width;
@@ -106,7 +106,7 @@ inline wf::ipc::json_wrapper_t geometry_to_json(wf::geometry_t g)
 
 #define CHECK(field, type) (j.has_member(field) && j[field].is_ ## type())
 
-inline std::optional<wf::geometry_t> geometry_from_json(const wf::ipc::json_wrapper_t& j)
+inline std::optional<wf::geometry_t> geometry_from_json(const wf::json_t& j)
 {
     if (!CHECK("x", int) || !CHECK("y", int) ||
         !CHECK("width", int) || !CHECK("height", int))
@@ -122,15 +122,15 @@ inline std::optional<wf::geometry_t> geometry_from_json(const wf::ipc::json_wrap
     };
 }
 
-inline wf::ipc::json_wrapper_t point_to_json(wf::point_t p)
+inline wf::json_t point_to_json(wf::point_t p)
 {
-    wf::ipc::json_wrapper_t j;
+    wf::json_t j;
     j["x"] = p.x;
     j["y"] = p.y;
     return j;
 }
 
-inline std::optional<wf::point_t> point_from_json(const wf::ipc::json_wrapper_t& j)
+inline std::optional<wf::point_t> point_from_json(const wf::json_t& j)
 {
     if (!CHECK("x", int) || !CHECK("y", int))
     {
@@ -143,15 +143,15 @@ inline std::optional<wf::point_t> point_from_json(const wf::ipc::json_wrapper_t&
     };
 }
 
-inline wf::ipc::json_wrapper_t dimensions_to_json(wf::dimensions_t d)
+inline wf::json_t dimensions_to_json(wf::dimensions_t d)
 {
-    wf::ipc::json_wrapper_t j;
+    wf::json_t j;
     j["width"]  = d.width;
     j["height"] = d.height;
     return j;
 }
 
-inline std::optional<wf::dimensions_t> dimensions_from_json(const wf::ipc::json_wrapper_t& j)
+inline std::optional<wf::dimensions_t> dimensions_from_json(const wf::json_t& j)
 {
     if (!CHECK("width", int) || !CHECK("height", int))
     {

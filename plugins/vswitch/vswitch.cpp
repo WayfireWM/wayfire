@@ -558,7 +558,7 @@ class wf_vswitch_global_plugin_t : public wf::per_output_plugin_t<vswitch>
         ipc_repo->unregister_method("vswitch/set-workspace");
     }
 
-    wf::ipc::method_callback request_workspace = [=] (const wf::ipc::json_wrapper_t& data)
+    wf::ipc::method_callback request_workspace = [=] (const wf::json_t& data)
     {
         uint64_t x = wf::ipc::json_get_uint64(data, "x");
         uint64_t y = wf::ipc::json_get_uint64(data, "y");

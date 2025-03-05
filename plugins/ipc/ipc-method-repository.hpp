@@ -3,7 +3,8 @@
 #include <functional>
 #include <map>
 #include "wayfire/signal-provider.hpp"
-#include "json-wrapper.hpp"
+#include <wayfire/nonstd/json.hpp>
+#include <string>
 
 namespace wf
 {
@@ -28,7 +29,7 @@ class ipc_method_exception_t : public std::exception
 class client_interface_t
 {
   public:
-    virtual bool send_json(json_wrapper_t json) = 0;
+    virtual bool send_json(json_t json) = 0;
     virtual ~client_interface_t() = default;
 };
 
@@ -44,12 +45,12 @@ struct client_disconnected_signal
  * An IPC method has a name and a callback. The callback is a simple function which takes a json object which
  * contains the method's parameters and returns the result of the operation.
  */
-using method_callback = std::function<json_wrapper_t(json_wrapper_t)>;
+using method_callback = std::function<json_t(json_t)>;
 
 /**
  * Same as @method_callback, but also supports getting information about the connected ipc client.
  */
-using method_callback_full = std::function<wf::ipc::json_wrapper_t(json_wrapper_t, client_interface_t*)>;
+using method_callback_full = std::function<wf::json_t(json_t, client_interface_t*)>;
 
 /**
  * The IPC method repository keeps track of all registered IPC methods. It can be used even without the IPC
@@ -75,7 +76,7 @@ class method_repository_t : public wf::signal::provider_t
      */
     void register_method(std::string method, method_callback handler)
     {
-        this->methods[method] = [handler] (const wf::ipc::json_wrapper_t& data, client_interface_t*)
+        this->methods[method] = [handler] (const wf::json_t& data, client_interface_t*)
         {
             return handler(data);
         };
@@ -93,7 +94,7 @@ class method_repository_t : public wf::signal::provider_t
      * Call an IPC method with the given name and given parameters.
      * If the method was not registered, a JSON object containing an error will be returned.
      */
-    wf::ipc::json_wrapper_t call_method(std::string method, json_wrapper_t data,
+    wf::json_t call_method(std::string method, json_t data,
         client_interface_t *client = nullptr)
     {
         if (this->methods.count(method))
@@ -102,14 +103,14 @@ class method_repository_t : public wf::signal::provider_t
                 return this->methods[method](std::move(data), client);
             } catch (const ipc_method_exception_t& e)
             {
-                json_wrapper_t response;
+                json_t response;
                 response["error"] = "Error during execution of the handler for method \"" +
                     method + "\": " + e.what();
                 return response;
             }
         }
 
-        json_wrapper_t response;
+        json_t response;
         response["error"]  = "No such method found!";
         response["method"] = method;
         return response;
@@ -119,8 +120,8 @@ class method_repository_t : public wf::signal::provider_t
     {
         register_method("list-methods", [this] (auto)
         {
-            wf::ipc::json_wrapper_t response;
-            response["methods"] = wf::ipc::json_wrapper_t::array();
+            wf::json_t response;
+            response["methods"] = wf::json_t::array();
             for (auto& [method, _] : methods)
             {
                 response["methods"].append(method);
@@ -135,16 +136,16 @@ class method_repository_t : public wf::signal::provider_t
 };
 
 // A few helper definitions for IPC method implementations.
-inline wf::ipc::json_wrapper_t json_ok()
+inline wf::json_t json_ok()
 {
-    wf::ipc::json_wrapper_t r;
+    wf::json_t r;
     r["result"] = "ok";
     return r;
 }
 
-inline wf::ipc::json_wrapper_t json_error(std::string msg)
+inline wf::json_t json_error(std::string msg)
 {
-    wf::ipc::json_wrapper_t r;
+    wf::json_t r;
     r["error"] = msg;
     return r;
 }

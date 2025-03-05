@@ -422,7 +422,7 @@ class wayfire_wm_actions_t : public wf::plugin_interface_t,
         ipc_repo->unregister_method("wm-actions/send-to-back");
     }
 
-    wf::ipc::json_wrapper_t execute_for_view(const wf::ipc::json_wrapper_t& params,
+    wf::json_t execute_for_view(const wf::json_t& params,
         std::function<void(wayfire_toplevel_view, bool)> view_op)
     {
         uint64_t view_id = wf::ipc::json_get_uint64(params, "view_id");
@@ -437,7 +437,7 @@ class wayfire_wm_actions_t : public wf::plugin_interface_t,
         return wf::ipc::json_ok();
     }
 
-    wf::ipc::method_callback ipc_minimize = [=] (const wf::ipc::json_wrapper_t& js)
+    wf::ipc::method_callback ipc_minimize = [=] (const wf::json_t& js)
     {
         return execute_for_view(js, [=] (wayfire_toplevel_view view, bool state)
         {
@@ -445,7 +445,7 @@ class wayfire_wm_actions_t : public wf::plugin_interface_t,
         });
     };
 
-    wf::ipc::method_callback ipc_maximize = [=] (const wf::ipc::json_wrapper_t& js)
+    wf::ipc::method_callback ipc_maximize = [=] (const wf::json_t& js)
     {
         return execute_for_view(js, [=] (wayfire_toplevel_view view, bool state)
         {
@@ -453,7 +453,7 @@ class wayfire_wm_actions_t : public wf::plugin_interface_t,
         });
     };
 
-    wf::ipc::method_callback ipc_set_always_on_top = [=] (const wf::ipc::json_wrapper_t& js)
+    wf::ipc::method_callback ipc_set_always_on_top = [=] (const wf::json_t& js)
     {
         return execute_for_view(js, [=] (wayfire_toplevel_view view, bool state)
         {
@@ -467,7 +467,7 @@ class wayfire_wm_actions_t : public wf::plugin_interface_t,
         });
     };
 
-    wf::ipc::method_callback ipc_set_fullscreen = [=] (const wf::ipc::json_wrapper_t& js)
+    wf::ipc::method_callback ipc_set_fullscreen = [=] (const wf::json_t& js)
     {
         return execute_for_view(js, [=] (wayfire_toplevel_view view, bool state)
         {
@@ -475,7 +475,7 @@ class wayfire_wm_actions_t : public wf::plugin_interface_t,
         });
     };
 
-    wf::ipc::method_callback ipc_set_sticky = [=] (const wf::ipc::json_wrapper_t& js)
+    wf::ipc::method_callback ipc_set_sticky = [=] (const wf::json_t& js)
     {
         return execute_for_view(js, [=] (wayfire_toplevel_view view, bool state)
         {
@@ -483,7 +483,7 @@ class wayfire_wm_actions_t : public wf::plugin_interface_t,
         });
     };
 
-    wf::ipc::method_callback ipc_send_to_back = [=] (const wf::ipc::json_wrapper_t& js)
+    wf::ipc::method_callback ipc_send_to_back = [=] (const wf::json_t& js)
     {
         return execute_for_view(js, [=] (wayfire_toplevel_view view, bool state)
         {

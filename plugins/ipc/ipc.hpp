@@ -19,7 +19,7 @@ class client_t : public client_interface_t
   public:
     client_t(server_t *server, int client_fd);
     ~client_t();
-    bool send_json(wf::ipc::json_wrapper_t json) override;
+    bool send_json(wf::json_t json) override;
 
   private:
     int fd;
@@ -50,7 +50,7 @@ class server_t
     friend class client_t;
     wf::shared_data::ref_ptr_t<wf::ipc::method_repository_t> method_repository;
 
-    void handle_incoming_message(client_t *client, wf::ipc::json_wrapper_t message);
+    void handle_incoming_message(client_t *client, wf::json_t message);
 
     void client_disappeared(client_t *client);
 

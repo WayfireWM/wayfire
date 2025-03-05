@@ -42,9 +42,9 @@ class ipc_rules_utility_methods_t
         method_repository->unregister_method("wayfire/set-config-option");
     }
 
-    wf::ipc::method_callback get_wayfire_configuration_info = [=] (wf::ipc::json_wrapper_t)
+    wf::ipc::method_callback get_wayfire_configuration_info = [=] (wf::json_t)
     {
-        wf::ipc::json_wrapper_t response;
+        wf::json_t response;
 
         response["api-version"]    = WAYFIRE_API_ABI_VERSION;
         response["plugin-path"]    = PLUGIN_PATH;
@@ -56,7 +56,7 @@ class ipc_rules_utility_methods_t
         return response;
     };
 
-    wf::ipc::method_callback create_headless_output = [=] (const wf::ipc::json_wrapper_t& data)
+    wf::ipc::method_callback create_headless_output = [=] (const wf::json_t& data)
     {
         auto width  = wf::ipc::json_get_uint64(data, "width");
         auto height = wf::ipc::json_get_uint64(data, "height");
@@ -78,7 +78,7 @@ class ipc_rules_utility_methods_t
         return response;
     };
 
-    wf::ipc::method_callback destroy_headless_output = [=] (const wf::ipc::json_wrapper_t& data)
+    wf::ipc::method_callback destroy_headless_output = [=] (const wf::json_t& data)
     {
         auto output    = wf::ipc::json_get_optional_string(data, "output");
         auto output_id = wf::ipc::json_get_optional_uint64(data, "output-id");
@@ -112,7 +112,7 @@ class ipc_rules_utility_methods_t
         return wf::ipc::json_ok();
     };
 
-    wf::ipc::method_callback get_config_option = [=] (const wf::ipc::json_wrapper_t& data)
+    wf::ipc::method_callback get_config_option = [=] (const wf::json_t& data)
     {
         auto option_name = wf::ipc::json_get_string(data, "option");
         auto option = wf::get_core().config->get_option(option_name);
@@ -127,17 +127,23 @@ class ipc_rules_utility_methods_t
         return response;
     };
 
-    std::string json_to_string(const wf::ipc::json_wrapper_t& data)
+    std::string json_to_string(const wf::json_t& data)
     {
         if (data.is_string())
         {
             return data;
         }
 
-        return data.serialize();
+        std::string buffer;
+        data.map_serialized([&] (const char *src, size_t size)
+        {
+            buffer = std::string{src, size};
+        });
+
+        return buffer;
     }
 
-    std::optional<std::string> add_compound_entry(const wf::ipc::json_wrapper_t& entry,
+    std::optional<std::string> add_compound_entry(const wf::json_t& entry,
         const std::string& entry_name,
         const wf::config::compound_option_t::entries_t& tuple_entries,
         std::vector<std::vector<std::string>>& values)
@@ -201,7 +207,7 @@ class ipc_rules_utility_methods_t
         return {};
     }
 
-    std::optional<std::string> parse_compound_json(const wf::ipc::json_wrapper_t& data,
+    std::optional<std::string> parse_compound_json(const wf::json_t& data,
         std::shared_ptr<config::compound_option_t> option)
     {
         std::vector<std::vector<std::string>> values;
@@ -236,8 +242,8 @@ class ipc_rules_utility_methods_t
         return {};
     }
 
-    wf::ipc::method_callback set_config_options = [=] (const wf::ipc::json_wrapper_t& data)
-        -> ipc::json_wrapper_t
+    wf::ipc::method_callback set_config_options = [=] (const wf::json_t& data)
+        -> json_t
     {
         if (!data.is_object())
         {

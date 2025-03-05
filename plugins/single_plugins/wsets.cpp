@@ -68,7 +68,7 @@ class wayfire_wsets_plugin_t : public wf::plugin_interface_t
     std::list<wf::activator_callback> send_callback;
     std::map<int, std::shared_ptr<wf::workspace_set_t>> available_sets;
 
-    wf::ipc::method_callback set_output_wset = [=] (wf::ipc::json_wrapper_t data)
+    wf::ipc::method_callback set_output_wset = [=] (wf::json_t data)
     {
         auto output_id  = wf::ipc::json_get_int64(data, "output-id");
         auto wset_index = wf::ipc::json_get_int64(data, "wset-index");
@@ -82,7 +82,7 @@ class wayfire_wsets_plugin_t : public wf::plugin_interface_t
         return wf::ipc::json_ok();
     };
 
-    wf::ipc::method_callback send_view_to_wset = [=] (wf::ipc::json_wrapper_t data)
+    wf::ipc::method_callback send_view_to_wset = [=] (wf::json_t data)
     {
         auto view_id    = wf::ipc::json_get_int64(data, "view-id");
         auto wset_index = wf::ipc::json_get_int64(data, "wset-index");

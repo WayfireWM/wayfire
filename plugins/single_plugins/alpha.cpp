@@ -55,8 +55,8 @@ class wayfire_alpha : public wf::plugin_interface_t
         ipc_repo->register_method("wf/alpha/get-view-alpha", ipc_get_view_alpha);
     }
 
-    wf::ipc::method_callback ipc_set_view_alpha = [=] (wf::ipc::json_wrapper_t data)
-        -> wf::ipc::json_wrapper_t
+    wf::ipc::method_callback ipc_set_view_alpha = [=] (wf::json_t data)
+        -> wf::json_t
     {
         auto view_id = wf::ipc::json_get_uint64(data, "view-id");
         auto alpha   = wf::ipc::json_get_double(data, "alpha");
@@ -74,7 +74,7 @@ class wayfire_alpha : public wf::plugin_interface_t
         return wf::ipc::json_ok();
     };
 
-    wf::ipc::method_callback ipc_get_view_alpha = [=] (wf::ipc::json_wrapper_t data)
+    wf::ipc::method_callback ipc_get_view_alpha = [=] (wf::json_t data)
     {
         auto view_id = wf::ipc::json_get_uint64(data, "view-id");
         auto view    = wf::ipc::find_view_by_id(view_id);

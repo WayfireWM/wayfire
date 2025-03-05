@@ -50,12 +50,12 @@ class ipc_rules_input_methods_t
         }
     }
 
-    wf::ipc::method_callback list_input_devices = [&] (const wf::ipc::json_wrapper_t&)
+    wf::ipc::method_callback list_input_devices = [&] (const wf::json_t&)
     {
-        wf::ipc::json_wrapper_t response = ipc::json_wrapper_t::array();
+        wf::json_t response = json_t::array();
         for (auto& device : wf::get_core().get_input_devices())
         {
-            wf::ipc::json_wrapper_t d;
+            wf::json_t d;
             d["id"]     = (intptr_t)device->get_wlr_handle();
             d["name"]   = nonull(device->get_wlr_handle()->name);
             d["vendor"] = "unknown";
@@ -77,7 +77,7 @@ class ipc_rules_input_methods_t
         return response;
     };
 
-    wf::ipc::method_callback configure_input_device = [&] (const wf::ipc::json_wrapper_t& data)
+    wf::ipc::method_callback configure_input_device = [&] (const wf::json_t& data)
     {
         auto id = wf::ipc::json_get_int64(data, "id");
         auto enabled = wf::ipc::json_get_bool(data, "enabled");

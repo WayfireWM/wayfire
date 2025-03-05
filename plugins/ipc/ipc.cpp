@@ -132,7 +132,7 @@ void wf::ipc::server_t::client_disappeared(client_t *client)
 }
 
 void wf::ipc::server_t::handle_incoming_message(
-    client_t *client, wf::ipc::json_wrapper_t message)
+    client_t *client, wf::json_t message)
 {
     client->send_json(method_repository->call_method(message["method"], message["data"], client));
 }
@@ -252,11 +252,11 @@ void wf::ipc::client_t::handle_fd_incoming(uint32_t event_mask)
         buffer[current_buffer_valid] = '\0';
         char *str = buffer.data() + HEADER_LEN;
 
-        json_wrapper_t message;
-        auto err = json_wrapper_t::parse_string(std::string_view{str, len}, message);
+        json_t message;
+        auto err = json_t::parse_string(std::string_view{str, len}, message);
         if (err.has_value())
         {
-            json_wrapper_t error;
+            json_t error;
             error["error"] = std::string("Client's message could not be parsed, error: ") + *err;
             LOGE((std::string)error["error"], ": ", str);
             this->send_json(error);
@@ -267,7 +267,7 @@ void wf::ipc::client_t::handle_fd_incoming(uint32_t event_mask)
         if (!message.has_member("method") || !message["method"].is_string())
         {
             LOGI("Start");
-            json_wrapper_t error;
+            json_t error;
             error["error"] = "Client's message does not contain a method to be called!";
             LOGI("MID");
             LOGE(error["error"].as_string());
@@ -308,25 +308,30 @@ static bool write_exact(int fd, const char *buf, ssize_t n)
     return true;
 }
 
-bool wf::ipc::client_t::send_json(wf::ipc::json_wrapper_t json)
+bool wf::ipc::client_t::send_json(wf::json_t json)
 {
-    std::string buffer = json.serialize();
-    if (buffer.size() > MAX_MESSAGE_LEN)
+    bool status = false;
+    json.map_serialized([&] (const char *buffer, size_t size)
     {
-        LOGE("Error sending json to client: message too long!");
-        shutdown(fd, SHUT_RDWR);
-        return false;
-    }
+        if (size > MAX_MESSAGE_LEN)
+        {
+            LOGE("Error sending json to client: message too long!");
+            shutdown(fd, SHUT_RDWR);
+            return;
+        }
 
-    uint32_t len = buffer.size();
-    if (!write_exact(fd, (char*)&len, 4) || !write_exact(fd, buffer.data(), len))
-    {
-        LOGE("Error sending json to client!");
-        shutdown(fd, SHUT_RDWR);
-        return false;
-    }
+        uint32_t len = size;
+        if (!write_exact(fd, (char*)&len, 4) || !write_exact(fd, buffer, len))
+        {
+            LOGE("Error sending json to client!");
+            shutdown(fd, SHUT_RDWR);
+            return;
+        }
 
-    return true;
+        status = true;
+    });
+
+    return status;
 }
 
 namespace wf

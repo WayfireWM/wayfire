@@ -322,7 +322,7 @@ class wayfire_command : public wf::plugin_interface_t
     }
 
     wf::ipc::method_callback_full on_register_binding =
-        [&] (const wf::ipc::json_wrapper_t& js, wf::ipc::client_interface_t *client)
+        [&] (const wf::json_t& js, wf::ipc::client_interface_t *client)
     {
         auto binding_str = wf::ipc::json_get_string(js, "binding");
         auto mode_str    = wf::ipc::json_get_optional_string(js, "mode");
@@ -389,7 +389,7 @@ class wayfire_command : public wf::plugin_interface_t
             {
                 return on_binding([client, id] () -> bool
                 {
-                    wf::ipc::json_wrapper_t event;
+                    wf::json_t event;
                     event["event"] = "command-binding";
                     event["binding-id"] = id;
                     return client->send_json(event);
@@ -401,12 +401,12 @@ class wayfire_command : public wf::plugin_interface_t
         ipc_bindings.back().client   = temporary_binding ? client : NULL;
         wf::get_core().bindings->add_activator(wf::create_option(*binding), &ipc_bindings.back().callback);
 
-        wf::ipc::json_wrapper_t response = wf::ipc::json_ok();
+        wf::json_t response = wf::ipc::json_ok();
         response["binding-id"] = id;
         return response;
     };
 
-    wf::ipc::method_callback on_unregister_binding = [&] (const wf::ipc::json_wrapper_t& js)
+    wf::ipc::method_callback on_unregister_binding = [&] (const wf::json_t& js)
     {
         auto binding_id = wf::ipc::json_get_uint64(js, "binding-id");
         ipc_bindings.remove_if([&] (const ipc_binding_t& binding)
@@ -437,7 +437,7 @@ class wayfire_command : public wf::plugin_interface_t
         });
     }
 
-    wf::ipc::method_callback on_clear_ipc_bindings = [&] (const wf::ipc::json_wrapper_t& js)
+    wf::ipc::method_callback on_clear_ipc_bindings = [&] (const wf::json_t& js)
     {
         clear_ipc_bindings([&] (const ipc_binding_t& binding)
         {

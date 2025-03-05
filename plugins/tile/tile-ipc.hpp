@@ -22,11 +22,11 @@ struct json_builder_data_t
 /**
  * Get a json description of the given tiling tree.
  */
-inline wf::ipc::json_wrapper_t tree_to_json(const std::unique_ptr<tree_node_t>& root,
+inline wf::json_t tree_to_json(const std::unique_ptr<tree_node_t>& root,
     const wf::point_t& offset,
     double rel_size = 1.0)
 {
-    wf::ipc::json_wrapper_t js;
+    wf::json_t js;
     js["percent"]  = rel_size;
     js["geometry"] = wf::ipc::geometry_to_json(root->geometry - offset);
     if (auto view = root->as_view_node())
@@ -38,7 +38,7 @@ inline wf::ipc::json_wrapper_t tree_to_json(const std::unique_ptr<tree_node_t>& 
     auto split = root->as_split_node();
     wf::dassert(split != nullptr, "Expected to be split node");
 
-    wf::ipc::json_wrapper_t children = wf::ipc::json_wrapper_t::array();
+    wf::json_t children = wf::json_t::array();
     if (split->get_split_direction() == SPLIT_HORIZONTAL)
     {
         for (auto& child : split->children)
@@ -66,7 +66,7 @@ inline wf::ipc::json_wrapper_t tree_to_json(const std::unique_ptr<tree_node_t>& 
  * Go over the json description and verify that it is a valid tiling tree.
  * @return An error message if the tree is invalid.
  */
-inline std::optional<std::string> verify_json_tree(const wf::ipc::json_reference_t& json,
+inline std::optional<std::string> verify_json_tree(const json_reference_t& json,
     json_builder_data_t& data, const wf::dimensions_t& available_geometry)
 {
     if (!json.is_object())
@@ -163,7 +163,7 @@ inline std::optional<std::string> verify_json_tree(const wf::ipc::json_reference
     return {};
 }
 
-inline std::unique_ptr<tile::tree_node_t> build_tree_from_json_rec(const wf::ipc::json_reference_t& json,
+inline std::unique_ptr<tile::tree_node_t> build_tree_from_json_rec(const json_reference_t& json,
     tile_workspace_set_data_t *wdata, wf::point_t vp)
 {
     std::unique_ptr<tile::tree_node_t> root;
@@ -200,7 +200,7 @@ inline std::unique_ptr<tile::tree_node_t> build_tree_from_json_rec(const wf::ipc
  *
  * Note that the tree description first has to be verified and pre-processed by verify_json_tree().
  */
-inline std::unique_ptr<tile::tree_node_t> build_tree_from_json(const wf::ipc::json_wrapper_t& json,
+inline std::unique_ptr<tile::tree_node_t> build_tree_from_json(const wf::json_t& json,
     tile_workspace_set_data_t *wdata, wf::point_t vp)
 {
     auto root = build_tree_from_json_rec(json, wdata, vp);
@@ -215,7 +215,7 @@ inline std::unique_ptr<tile::tree_node_t> build_tree_from_json(const wf::ipc::js
     return root;
 }
 
-inline wf::ipc::json_wrapper_t handle_ipc_get_layout(const ipc::json_wrapper_t& params)
+inline wf::json_t handle_ipc_get_layout(const json_t& params)
 {
     auto wset_index = wf::ipc::json_get_uint64(params, "wset-index");
 
@@ -249,7 +249,7 @@ inline wf::ipc::json_wrapper_t handle_ipc_get_layout(const ipc::json_wrapper_t& 
     return wf::ipc::json_error("wset-index not found");
 }
 
-inline wf::ipc::json_wrapper_t handle_ipc_set_layout(ipc::json_wrapper_t params)
+inline wf::json_t handle_ipc_set_layout(json_t params)
 {
     auto wset_index = wf::ipc::json_get_uint64(params, "wset-index");
     if (!params.has_member("workspace") or !params["workspace"].is_object())
