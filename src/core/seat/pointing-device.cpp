@@ -57,6 +57,9 @@ static void set_libinput_accel_profile(libinput_device *dev, std::string name)
     {
         libinput_device_config_accel_set_profile(dev,
             LIBINPUT_CONFIG_ACCEL_PROFILE_FLAT);
+    } else
+    {
+        LOGE("Invalid libinput acceleration profile.");
     }
 }
 
@@ -105,6 +108,9 @@ void wf::pointing_device_t::update_options()
         {
             libinput_device_config_click_set_method(dev,
                 LIBINPUT_CONFIG_CLICK_METHOD_CLICKFINGER);
+        } else
+        {
+            LOGE("Invalid libinput click method.");
         }
 
         if ((std::string)touchpad_scroll_method == "default")
@@ -127,6 +133,9 @@ void wf::pointing_device_t::update_options()
         {
             libinput_device_config_scroll_set_method(dev,
                 LIBINPUT_CONFIG_SCROLL_ON_BUTTON_DOWN);
+        } else
+        {
+            LOGE("Invalid libinput scroll method.");
         }
 
         libinput_device_config_dwt_set_enabled(dev,
@@ -148,27 +157,40 @@ void wf::pointing_device_t::update_options()
             LIBINPUT_CONFIG_DRAG_LOCK_ENABLED :
             LIBINPUT_CONFIG_DRAG_LOCK_DISABLED);
 
-#if HAVE_LIBINPUT_3FG_DRAG
-
         if ((std::string)touchpad_3fg_drag == "default")
         {
+#if HAVE_LIBINPUT_3FG_DRAG
             libinput_device_config_3fg_drag_set_enabled(dev,
                 libinput_device_config_3fg_drag_get_default_enabled(dev));
+#endif
         } else if ((std::string)touchpad_3fg_drag == "none")
         {
+#if HAVE_LIBINPUT_3FG_DRAG
             libinput_device_config_3fg_drag_set_enabled(dev,
                 LIBINPUT_CONFIG_3FG_DRAG_DISABLED);
+#else
+            LOGW("Multi-finger drag not implemented with current libinput version.");
+#endif
         } else if ((std::string)touchpad_3fg_drag == "3fg-drag")
         {
+#if HAVE_LIBINPUT_3FG_DRAG
             libinput_device_config_3fg_drag_set_enabled(dev,
                 LIBINPUT_CONFIG_3FG_DRAG_ENABLED_3FG);
+#else
+            LOGW("Multi-finger drag not implemented with current libinput version.");
+#endif
         } else if ((std::string)touchpad_3fg_drag == "4fg-drag")
         {
+#if HAVE_LIBINPUT_3FG_DRAG
             libinput_device_config_3fg_drag_set_enabled(dev,
                 LIBINPUT_CONFIG_3FG_DRAG_ENABLED_4FG);
-        }
-
+#else
+            LOGW("Multi-finger drag not implemented with current libinput version.");
 #endif
+        } else
+        {
+            LOGE("Invalid libinput multi-finger drag value.");
+        }
 
         if (libinput_device_config_scroll_has_natural_scroll(dev) > 0)
         {
