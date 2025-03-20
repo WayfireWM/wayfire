@@ -40,10 +40,10 @@
 			<_long>Disables window decoration for windows matching the specified criteria.</_long>
 			<default>none</default>
 		</option>
-		<option name="override_client_side" type="bool">
-			<_short>Override client side decorations</_short>
-			<_long>Specifies whether to add decorations around windows even if server side decorations aren't requested.</_long>
-			<default>false</default>
+		<option name="forced_views" type="string">
+			<_short>Force decorations for specified window types</_short>
+			<_long>Forces window decoration for windows matching the specified criteria, overriding client decoration preference.</_long>
+			<default>none</default>
 		</option>
 	</plugin>
 </wayfire>

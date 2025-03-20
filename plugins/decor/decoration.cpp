@@ -17,9 +17,7 @@
 class wayfire_decoration : public wf::plugin_interface_t
 {
     wf::view_matcher_t ignore_views{"decoration/ignore_views"};
-	wf::option_wrapper_t<bool> override_client_side{
-		"decoration/override_client_side"
-	};
+    wf::view_matcher_t forced_views{"decoration/forced_views"};
 
     wf::signal::connection_t<wf::txn::new_transaction_signal> on_new_tx =
         [=] (wf::txn::new_transaction_signal *ev)
@@ -105,10 +103,22 @@ class wayfire_decoration : public wf::plugin_interface_t
         return ignore_views.matches(view);
     }
 
+    /**
+     * Uses view_matcher_t to match whether to force decorations onto the
+     * given view
+     *
+     * @param view The view to match
+     * @return Whether the given view should be decorated?
+     */
+    bool force_decoration_of_view(wayfire_view view)
+    {
+        return forced_views.matches(view);
+    }
+
     bool should_decorate_view(wayfire_toplevel_view view)
     {
 		return !ignore_decoration_of_view(view) &&
-		       (override_client_side || view->should_be_decorated());
+		       (force_decoration_of_view(view) || view->should_be_decorated());
     }
 
     void adjust_new_decorations(wayfire_toplevel_view view)
