@@ -117,8 +117,8 @@ class wayfire_decoration : public wf::plugin_interface_t
 
     bool should_decorate_view(wayfire_toplevel_view view)
     {
-		return !ignore_decoration_of_view(view) &&
-		       (force_decoration_of_view(view) || view->should_be_decorated());
+        return !ignore_decoration_of_view(view) &&
+               (force_decoration_of_view(view) || view->should_be_decorated());
     }
 
     void adjust_new_decorations(wayfire_toplevel_view view)
