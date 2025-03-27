@@ -36,7 +36,15 @@ pixman         = dependency('pixman-1')
 xkbcommon      = dependency('xkbcommon')
 libdl          = cpp.find_library('dl')
 udev           = dependency('libudev')
-json           = dependency('yyjson')
+json           = dependency('yyjson', required: false)
+
+if not json.found()
+	cmake = import('cmake')
+	cmake_opts = cmake.subproject_options()
+	cmake_opts.add_cmake_defines({'CMAKE_POSITION_INDEPENDENT_CODE': true})
+	sub_proj = cmake.subproject('yyjson', options: cmake_opts)
+	json = sub_proj.dependency('yyjson')
+endif
 
 # We're not to use system wlroots: So we'll use the subproject
 if get_option('use_system_wlroots').disabled()
