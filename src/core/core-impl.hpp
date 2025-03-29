@@ -16,7 +16,8 @@ class input_method_relay;
 class compositor_core_impl_t : public compositor_core_t
 {
   public:
-    wlr_egl *egl;
+    // If NULL, we are not running in GLES mode.
+    wlr_egl *egl = NULL;
     wlr_compositor *compositor;
 
     std::unique_ptr<wf::input_manager_t> input;

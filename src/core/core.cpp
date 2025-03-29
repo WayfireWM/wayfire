@@ -76,6 +76,11 @@ struct wlr_idle_inhibitor_t : public wf::idle_inhibitor_t
     }
 };
 
+bool wf::compositor_core_t::is_gles2() const
+{
+    return wlr_renderer_is_gles2(renderer);
+}
+
 void wf::compositor_core_impl_t::init()
 {
     this->scene_root = std::make_shared<scene::root_node_t>();
@@ -207,7 +212,11 @@ void wf::compositor_core_impl_t::init()
 
     this->bindings = std::make_unique<bindings_repository_t>();
     image_io::init();
-    OpenGL::init();
+    if (is_gles2())
+    {
+        OpenGL::init();
+    }
+
     this->state = compositor_state_t::START_BACKEND;
 }
 

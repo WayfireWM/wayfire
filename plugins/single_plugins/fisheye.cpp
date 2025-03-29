@@ -22,6 +22,7 @@
  * SOFTWARE.
  */
 
+#include "wayfire/dassert.hpp"
 #include <wayfire/per-output-plugin.hpp>
 #include <wayfire/output.hpp>
 #include <wayfire/opengl.hpp>
@@ -116,6 +117,9 @@ class wayfire_fisheye : public wf::per_output_plugin_instance_t
   public:
     void init() override
     {
+        wf::dassert(wf::get_core().is_gles2(),
+            "Either disable the fisheye plugin or start Wayfire with GLES renderer!");
+
         hook_set = active = false;
         output->add_activator(wf::option_wrapper_t<wf::activatorbinding_t>{"fisheye/toggle"}, &toggle_cb);
 
@@ -179,7 +183,7 @@ class wayfire_fisheye : public wf::per_output_plugin_instance_t
 
         OpenGL::render_begin(dest);
         program.use(wf::TEXTURE_TYPE_RGBA);
-        GL_CALL(glBindTexture(GL_TEXTURE_2D, source.tex));
+        GL_CALL(glBindTexture(GL_TEXTURE_2D, source.get_tex()));
         GL_CALL(glActiveTexture(GL_TEXTURE0));
 
         program.uniform2f("u_mouse", oc.x, oc.y);

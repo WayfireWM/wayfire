@@ -923,6 +923,9 @@ class wayfire_wobbly : public wf::plugin_interface_t
   public:
     void init() override
     {
+        wf::dassert(wf::get_core().is_gles2(),
+            "Either disable the wobbly plugin or start Wayfire with GLES renderer!");
+
         wf::get_core().connect(&wobbly_changed);
         OpenGL::render_begin();
         program.compile(wobbly_graphics::vertex_source, wobbly_graphics::frag_source);

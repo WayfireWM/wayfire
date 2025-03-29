@@ -418,7 +418,10 @@ int main(int argc, char *argv[])
 #endif
     }
 
-    core.renderer = wlr_gles2_renderer_create_with_drm_fd(drm_fd);
+    core.renderer = wlr_vk_renderer_create_with_drm_fd(drm_fd);
+    // core.renderer = wlr_renderer_autocreate(core.backend);
+    // core.renderer = wlr_pixman_renderer_create();
+    // core.renderer = wlr_gles2_renderer_create_with_drm_fd(drm_fd);
     if (!core.renderer)
     {
         LOGE("Failed to create renderer");
@@ -429,8 +432,12 @@ int main(int argc, char *argv[])
 
     core.allocator = wlr_allocator_autocreate(core.backend, core.renderer);
     assert(core.allocator);
-    core.egl = wlr_gles2_renderer_get_egl(core.renderer);
-    assert(core.egl);
+
+    if (core.is_gles2())
+    {
+        core.egl = wlr_gles2_renderer_get_egl(core.renderer);
+        assert(core.egl);
+    }
 
     if (!allow_root && !drop_permissions())
     {
