@@ -40,7 +40,16 @@ namespace wf
  */
 struct framebuffer_t
 {
-    GLuint tex = -1, fb = -1;
+    GLuint tex = -1;
+    GLuint fb  = -1;
+
+    // The wlr_buffer backing the framebuffer.
+    // May not be available depending on the renderer.
+    wlr_buffer *buffer = NULL;
+
+    // The wlr_texture creating from this framebuffer.
+    wlr_texture *texture = NULL;
+
     int32_t viewport_width = 0, viewport_height = 0;
 
     /* The functions below assume they are called between
@@ -50,6 +59,9 @@ struct framebuffer_t
      * If tex and/or fb haven't been set, it creates them
      * Return true if texture was created/invalidated */
     bool allocate(int width, int height);
+
+    GLuint get_tex() const;
+    GLuint get_fb() const;
 
     /* Make the framebuffer current, and adjust viewport to its size */
     void bind() const;

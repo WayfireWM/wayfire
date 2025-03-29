@@ -12,7 +12,7 @@
 #include "wayfire/util.hpp"
 #include "../core/opengl-priv.hpp"
 #include "../main.hpp"
-#include "wayfire/workspace-set.hpp"
+#include "wayfire/workspace-set.hpp" // IWYU pragma: keep
 #include <algorithm>
 #include <wayfire/nonstd/reverse.hpp>
 #include <wayfire/nonstd/safe-list.hpp>
@@ -239,8 +239,6 @@ struct swapchain_damage_manager_t
             wlr_output_state_finish(&state);
         }
 
-        wlr_render_pass *render_pass = NULL;
-
         frame_object_t(const frame_object_t&) = delete;
         frame_object_t(frame_object_t&&) = delete;
         frame_object_t& operator =(const frame_object_t&) = delete;
@@ -330,18 +328,11 @@ struct swapchain_damage_manager_t
         // creeps into the current frame damage, if we had skipped a frame.
         accumulate_damage(next_frame->buffer_age);
 
-        next_frame->render_pass = wlr_renderer_begin_buffer_pass(output->renderer, next_frame->buffer, NULL);
-        if (!next_frame->render_pass)
-        {
-            LOGE("Failed to start a render pass!");
-            wlr_buffer_unlock(next_frame->buffer);
-            return {};
-        }
-
         return next_frame;
     }
 
-    void swap_buffers(std::unique_ptr<frame_object_t> next_frame, const wf::region_t& swap_damage)
+    void swap_buffers(std::unique_ptr<frame_object_t> next_frame, wlr_render_pass *pass,
+        const wf::region_t& swap_damage)
     {
         /* If force frame sync option is set, call glFinish to block until
          * the GPU finishes rendering. This can work around some driver
@@ -353,7 +344,7 @@ struct swapchain_damage_manager_t
 
         frame_damage.clear();
 
-        if (!wlr_render_pass_submit(next_frame->render_pass))
+        if (!wlr_render_pass_submit(pass))
         {
             LOGE("Failed to submit render pass!");
             wlr_buffer_unlock(next_frame->buffer);
@@ -1082,19 +1073,9 @@ class wf::render_manager::impl
      * Render an output. Either calls the built-in renderer, or the render hook
      * of a plugin
      */
-    void render_output()
+    std::pair<wlr_render_pass*, wf::region_t> render_output(
+        std::unique_ptr<swapchain_damage_manager_t::frame_object_t>& next_frame)
     {
-        if (runtime_config.damage_debug)
-        {
-            /* Clear the screen to yellow, so that the repainted parts are visible */
-            swap_damage |= damage_manager->get_wlr_damage_box();
-
-            OpenGL::render_begin(output->handle->width, output->handle->height,
-                postprocessing->output_fb);
-            OpenGL::clear({1, 1, 0, 1});
-            OpenGL::render_end();
-        }
-
         scene::render_pass_params_t params;
         params.instances = &damage_manager->render_instances;
         params.damage    = damage_manager->get_ws_damage(
@@ -1103,22 +1084,42 @@ class wf::render_manager::impl
 
         params.target = postprocessing->get_target_framebuffer().translated(
             wf::origin(output->get_layout_geometry()));
+
+        // TODO: remove this, it should come directly from the buffer manager
+        params.target.buffer    = next_frame->buffer;
         params.background_color = background_color_opt;
         params.reference_output = this->output;
+        params.renderer = output->handle->renderer;
 
-        this->swap_damage = scene::run_render_pass(params,
+        auto [pass, total_damage] = scene::run_render_pass_partial(params,
             scene::RPASS_CLEAR_BACKGROUND | scene::RPASS_EMIT_SIGNALS);
-        swap_damage += -wf::origin(output->get_layout_geometry());
-        swap_damage  = swap_damage * output->handle->scale;
-        swap_damage &= damage_manager->get_wlr_damage_box();
+        total_damage += -wf::origin(output->get_layout_geometry());
+        total_damage  = total_damage * output->handle->scale;
+        total_damage &= damage_manager->get_wlr_damage_box();
+
         if (runtime_config.damage_debug)
         {
-            swap_damage |= damage_manager->get_wlr_damage_box();
+            /* Clear the screen to yellow, so that the repainted parts are visible */
+            wf::region_t yellow = damage_manager->get_wlr_damage_box();
+            yellow ^= total_damage;
+
+            total_damage |= damage_manager->get_wlr_damage_box();
+            wf::geometry_t full_box = {0, 0, output->handle->width, output->handle->height};
+            clear_with_wlr_pass(pass,
+                full_box, {1, 1, 0, 1}, full_box);
         }
+
+        return {pass, total_damage};
     }
 
     void update_bound_output(wlr_buffer *buffer)
     {
+        if (!wf::get_core().is_gles2())
+        {
+            // TODO: what do we do in Vulkan / Pixman cases here?
+            return;
+        }
+
         int current_fb = wlr_gles2_renderer_get_buffer_fbo(output->handle->renderer, buffer);
         bind_output(current_fb);
 
@@ -1155,7 +1156,9 @@ class wf::render_manager::impl
 
         /* Part 2: call the renderer, which sets swap_damage and draws the scenegraph */
         update_bound_output(next_frame->buffer);
-        render_output();
+
+        auto [pass, swap_dmg] = render_output(next_frame);
+        this->swap_damage     = swap_dmg;
 
         /* Part 3: overlay effects */
         effects->run_effects(OUTPUT_EFFECT_OVERLAY);
@@ -1169,22 +1172,19 @@ class wf::render_manager::impl
         postprocessing->run_post_effects();
         if (output_inhibit_counter)
         {
-            OpenGL::render_begin(output->handle->width, output->handle->height,
-                postprocessing->output_fb);
-            OpenGL::clear({0, 0, 0, 1});
-            OpenGL::render_end();
+            wf::geometry_t full_box = {0, 0, output->handle->width, output->handle->height};
+            clear_with_wlr_pass(pass,
+                full_box, {0, 0, 0, 1}, full_box);
         }
 
         /* Part 5: render sw cursors
          * We render software cursors after everything else
          * for consistency with hardware cursor planes */
-        OpenGL::render_begin();
-        wlr_output_add_software_cursors_to_render_pass(output->handle, next_frame->render_pass,
+        wlr_output_add_software_cursors_to_render_pass(output->handle, pass,
             swap_damage.to_pixman());
-        OpenGL::render_end();
 
         /* Part 6: finalize frame: swap buffers, send frame_done, etc */
-        damage_manager->swap_buffers(std::move(next_frame), swap_damage);
+        damage_manager->swap_buffers(std::move(next_frame), pass, swap_damage);
         OpenGL::unbind_output(output);
         swap_damage.clear();
         post_paint();
@@ -1203,7 +1203,24 @@ class wf::render_manager::impl
     }
 };
 
-wf::region_t scene::run_render_pass(
+void clear_with_wlr_pass(wlr_render_pass *pass, const wf::geometry_t& box, const wf::color_t& color,
+    const wf::region_t& damage)
+{
+    wlr_render_rect_options opts;
+    opts.blend_mode = WLR_RENDER_BLEND_MODE_NONE;
+    opts.box   = box;
+    opts.clip  = const_cast<wf::region_t&>(damage).to_pixman();
+    opts.color = {
+        .r = static_cast<float>(color.r),
+        .g = static_cast<float>(color.g),
+        .b = static_cast<float>(color.b),
+        .a = static_cast<float>(color.a),
+    };
+
+    wlr_render_pass_add_rect(pass, &opts);
+}
+
+std::pair<wlr_render_pass*, wf::region_t> scene::run_render_pass_partial(
     const render_pass_params_t& params, uint32_t flags)
 {
     auto accumulated_damage = params.damage;
@@ -1225,23 +1242,29 @@ wf::region_t scene::run_render_pass(
             params.target, accumulated_damage);
     }
 
+    auto pass = wlr_renderer_begin_buffer_pass(
+        params.renderer ?: wf::get_core().renderer,
+        params.target.buffer,
+        params.pass_opts);
+
+    if (!pass)
+    {
+        LOGE("Error: failed to start wlr render pass!");
+        return {nullptr, accumulated_damage};
+    }
+
     // Clear visible background areas
     if (flags & RPASS_CLEAR_BACKGROUND)
     {
-        OpenGL::render_begin(params.target);
-        for (const auto& rect : accumulated_damage)
-        {
-            params.target.logic_scissor(wlr_box_from_pixman_box(rect));
-            OpenGL::clear(params.background_color, GL_COLOR_BUFFER_BIT);
-        }
-
-        OpenGL::render_end();
+        clear_with_wlr_pass(pass,
+            params.target.framebuffer_box_from_geometry_box(params.target.geometry),
+            params.background_color, accumulated_damage);
     }
 
     // Render instances
     for (auto& instr : wf::reverse(instructions))
     {
-        instr.instance->render(instr.target, instr.damage, instr.data);
+        instr.instance->render(pass, instr.target, instr.damage, instr.data);
         if (params.reference_output)
         {
             instr.instance->presentation_feedback(params.reference_output);
@@ -1255,6 +1278,14 @@ wf::region_t scene::run_render_pass(
         wf::get_core().emit(&end_ev);
     }
 
+    return {pass, swap_damage};
+}
+
+wf::region_t scene::run_render_pass(
+    const render_pass_params_t& params, uint32_t flags)
+{
+    auto [pass, swap_damage] = run_render_pass_partial(params, flags);
+    wlr_render_pass_submit(pass);
     return swap_damage;
 }
 

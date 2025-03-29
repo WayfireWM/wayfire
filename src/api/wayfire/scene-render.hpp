@@ -52,6 +52,47 @@ struct render_instruction_t
     std::any data = {};
 };
 
+class render_instance_t;
+using render_instance_uptr = std::unique_ptr<render_instance_t>;
+
+/**
+ * A struct containing the information necessary to execute a render pass.
+ */
+struct render_pass_params_t
+{
+    /** The instances which are to be rendered in this render pass. */
+    std::vector<render_instance_uptr> *instances;
+
+    /** The rendering target. */
+    render_target_t target;
+
+    /** The total damage accumulated from the instances since the last repaint. */
+    region_t damage;
+
+    /**
+     * The background color visible below all instances, if
+     * RPASS_CLEAR_BACKGROUND is specified.
+     */
+    color_t background_color;
+
+    /**
+     * The output the instances were rendered, used for sending presentation
+     * feedback.
+     */
+    output_t *reference_output = nullptr;
+
+    /**
+     * The wlroots renderer to use for this pass.
+     * In case that it is not set, wf::get_core().renderer will be used.
+     */
+    wlr_renderer *renderer = nullptr;
+
+    /**
+     * Additional options for the wlroots buffer pass.
+     */
+    wlr_buffer_pass_options *pass_opts = nullptr;
+};
+
 /**
  * When (parts) of the scenegraph have to be rendered, they have to be
  * 'instantiated' first. The instantiation of a (sub)tree of the scenegraph
@@ -122,6 +163,15 @@ class render_instance_t
     }
 
     /**
+     * Render instances may want to use wlroots' render pass.
+     */
+    virtual void render(wlr_render_pass *pass, const wf::render_target_t& target,
+        const wf::region_t& region, const std::any& custom_data)
+    {
+        render(target, region, custom_data);
+    }
+
+    /**
      * Notify the render instance that it has been presented on an output.
      * Note that a render instance may get multiple presentation_feedback calls
      * for the same rendered frame.
@@ -155,8 +205,6 @@ class render_instance_t
     virtual void compute_visibility(wf::output_t *output, wf::region_t& visible)
     {}
 };
-
-using render_instance_uptr = std::unique_ptr<render_instance_t>;
 
 using damage_callback = std::function<void (const wf::region_t&)>;
 
@@ -224,50 +272,33 @@ enum render_pass_flags
 };
 
 /**
- * A struct containing the information necessary to execute a render pass.
- */
-struct render_pass_params_t
-{
-    /** The instances which are to be rendered in this render pass. */
-    std::vector<render_instance_uptr> *instances;
-
-    /** The rendering target. */
-    render_target_t target;
-
-    /** The total damage accumulated from the instances since the last repaint. */
-    region_t damage;
-
-    /**
-     * The background color visible below all instances, if
-     * RPASS_CLEAR_BACKGROUND is specified.
-     */
-    color_t background_color;
-
-    /**
-     * The output the instances were rendered, used for sending presentation
-     * feedback.
-     */
-    output_t *reference_output = nullptr;
-};
-
-/**
  * A helper function to execute a render pass.
  *
  * The render pass goes as described below:
  *
- * 1. Emit render-pass-begin.
- * 2. Render instructions are generated from the given instances.
- * 3. Any remaining background areas are painted in @background_color.
- * 4. Render instructions are executed back-to-forth.
- * 5. Emit render-pass-end.
+ * 1. Optionally, emit render-pass-begin.
+ * 2. Render instructions are generated from the given instances. During this phase, the instances may
+ *    start and execute sub-passes.
+ * 3. The wlroots render pass begins.
+ * 4. Optionally, clear visible background areas with @background_color.
+ * 5. Render instructions are executed back-to-forth.
+ * 6. Optionally, emit render-pass-end.
+ * 7. The wlroots render pass is submitted.
  *
- * By specifying @flags, steps 1, 3, and 5 can be disabled.
+ * By specifying @flags, steps 1, 4, and 6 can be enabled and disabled.
  *
  * @return The full damage which was rendered on the screen. It may be more (or
  *  less) than @accumulated_damage because plugins are allowed to modify the
  *  damage in render-pass-begin.
  */
 wf::region_t run_render_pass(
+    const render_pass_params_t& params, uint32_t flags);
+
+/**
+ * Same as @run_render_pass, but does not submit the wlroots render pass.
+ * Instead, it returns the render pass so that the caller may add additional render commands to it.
+ */
+std::pair<wlr_render_pass*, wf::region_t> run_render_pass_partial(
     const render_pass_params_t& params, uint32_t flags);
 
 /**
@@ -335,4 +366,7 @@ struct node_regen_instances_signal
 
 uint32_t optimize_nested_render_instances(wf::scene::node_ptr node, uint32_t flags);
 }
+
+void clear_with_wlr_pass(wlr_render_pass *pass, const wf::geometry_t& box, const wf::color_t& color,
+    const wf::region_t& damage);
 }

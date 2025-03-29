@@ -1,10 +1,10 @@
 #include <wayfire/util/log.hpp>
 #include <map>
 #include "opengl-priv.hpp"
+#include "wayfire/dassert.hpp"
 #include "wayfire/geometry.hpp"
 #include "wayfire/output.hpp"
 #include "core-impl.hpp"
-#include "config.h"
 #include <wayfire/nonstd/wlroots-full.hpp>
 #include <set>
 
@@ -284,6 +284,7 @@ static bool egl_is_current(struct wlr_egl *egl)
 
 void render_begin()
 {
+    wf::dassert(wf::get_core().is_gles2(), "Wayfire not running with GLES renderer, no GL calls allowed!");
     if (!egl_is_current(wf::get_core_impl().egl))
     {
         egl_make_current(wf::get_core_impl().egl);
@@ -577,7 +578,7 @@ wf::texture_t::texture_t(GLuint tex)
 
 wf::texture_t::texture_t(wlr_texture *texture, std::optional<wlr_fbox> viewport)
 {
-    assert(wlr_texture_is_gles2(texture));
+    wf::dassert(wlr_texture_is_gles2(texture));
     wlr_gles2_texture_attribs attribs;
     wlr_gles2_texture_get_attribs(texture, &attribs);
 
@@ -671,7 +672,7 @@ program_t::program_t()
 void program_t::set_simple(GLuint program_id, wf::texture_type_t type)
 {
     free_resources();
-    assert(type < wf::TEXTURE_TYPE_ALL);
+    wf::dassert(type < wf::TEXTURE_TYPE_ALL);
     this->priv->id[type] = program_id;
 }
 

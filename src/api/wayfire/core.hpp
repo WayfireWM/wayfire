@@ -301,6 +301,11 @@ class compositor_core_t : public wf::object_base_t, public signal::provider_t
     virtual const std::shared_ptr<scene::root_node_t>& scene() = 0;
 
     /**
+     * Checks whether the current renderer is a GLES2 renderer.
+     */
+    bool is_gles2() const;
+
+    /**
      * Returns a reference to the only core instance.
      */
     static compositor_core_t& get();
