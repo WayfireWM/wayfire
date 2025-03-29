@@ -1,3 +1,4 @@
+#include "wayfire/dassert.hpp"
 #include <wayfire/per-output-plugin.hpp>
 #include <wayfire/output.hpp>
 #include <wayfire/opengl.hpp>
@@ -59,6 +60,9 @@ class wayfire_invert_screen : public wf::per_output_plugin_instance_t
   public:
     void init() override
     {
+        wf::dassert(wf::get_core().is_gles2(),
+            "Either disable the invert plugin or start Wayfire with GLES renderer!");
+
         wf::option_wrapper_t<wf::activatorbinding_t> toggle_key{"invert/toggle"};
 
         hook = [=] (const wf::framebuffer_t& source,
