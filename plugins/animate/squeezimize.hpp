@@ -228,7 +228,7 @@ class squeezimize_transformer : public wf::scene::view_2d_transformer_t
 
             OpenGL::render_begin(target);
             self->program.use(wf::TEXTURE_TYPE_RGBA);
-            self->program.uniformMatrix4f("matrix", target.get_orthographic_projection());
+            self->program.uniformMatrix4f("matrix", wf::gles::render_target_orthographic_projection(target));
             self->program.attrib_pointer("position", 2, 0, vertex_data_pos);
             self->program.attrib_pointer("uv_in", 2, 0, vertex_data_uv);
             self->program.uniform1i("upward", self->upward);
@@ -238,7 +238,7 @@ class squeezimize_transformer : public wf::scene::view_2d_transformer_t
             self->program.set_active_texture(src_tex);
             for (const auto& box : damage)
             {
-                target.logic_scissor(wlr_box_from_pixman_box(box));
+                wf::gles::render_target_logic_scissor(target, wlr_box_from_pixman_box(box));
                 GL_CALL(glDrawArrays(GL_TRIANGLE_FAN, 0, 4));
             }
 

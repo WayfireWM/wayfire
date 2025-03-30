@@ -2,7 +2,6 @@
 #include <wayfire/core.hpp>
 #include <wayfire/opengl.hpp>
 #include <config.h>
-#include <map>
 
 namespace wf
 {
@@ -43,8 +42,8 @@ void decoration_theme_t::render_background(const wf::render_target_t& fb,
 {
     wf::color_t color = active ? active_color : inactive_color;
     OpenGL::render_begin(fb);
-    fb.logic_scissor(scissor);
-    OpenGL::render_rectangle(rectangle, color, fb.get_orthographic_projection());
+    wf::gles::render_target_logic_scissor(fb, scissor);
+    OpenGL::render_rectangle(rectangle, color, wf::gles::render_target_orthographic_projection(fb));
     OpenGL::render_end();
 }
 

@@ -351,12 +351,12 @@ class scale_title_filter : public wf::per_output_plugin_instance_t
             0.5f + tex_wr / 2.f, 0.5f + tex_hr / 2.f};
 
         auto damage = output->render->get_scheduled_damage() & geometry;
-        auto ortho  = out_fb.get_orthographic_projection();
+        auto ortho  = wf::gles::render_target_orthographic_projection(out_fb);
 
         OpenGL::render_begin(out_fb);
         for (auto& box : damage)
         {
-            out_fb.logic_scissor(wlr_box_from_pixman_box(box));
+            wf::gles::render_target_logic_scissor(out_fb, wlr_box_from_pixman_box(box));
             OpenGL::render_transformed_texture(tex.tex, gl_geom, tex_geom, ortho,
                 glm::vec4(1.f),
                 OpenGL::TEXTURE_TRANSFORM_INVERT_Y |

@@ -145,7 +145,7 @@ void wf_cube_background_cubemap::render_frame(const wf::render_target_t& fb,
         (double)attribs.cube_animation.offset_z};
 
     auto view = glm::lookAt(glm::vec3(0., 0., 0.), look_at, glm::vec3(0., 1., 0.));
-    auto vp   = fb.transform * attribs.projection * view;
+    auto vp   = wf::gles::output_transform(fb) * attribs.projection * view;
 
     model = vp * model;
     program.uniformMatrix4f("cubeMapMatrix", model);

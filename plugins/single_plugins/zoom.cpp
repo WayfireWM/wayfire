@@ -67,11 +67,11 @@ class wayfire_zoom_screen : public wf::per_output_plugin_instance_t
         return true;
     };
 
-    wf::post_hook_t render_hook = [=] (const wf::framebuffer_t& source,
-                                       const wf::framebuffer_t& destination)
+    wf::post_hook_t render_hook = [=] (const wf::auxilliary_buffer_t& source,
+                                       const wf::render_buffer_t& destination)
     {
-        auto w = destination.viewport_width;
-        auto h = destination.viewport_height;
+        auto w = destination.get_size().width;
+        auto h = destination.get_size().height;
         auto oc = output->get_cursor_position();
         double x, y;
         wlr_box b = output->get_relative_geometry();
@@ -99,9 +99,10 @@ class wayfire_zoom_screen : public wf::per_output_plugin_instance_t
             (interpolation_method ==
                 (int)interpolation_method_t::NEAREST) ? GL_NEAREST : GL_LINEAR;
 
-        OpenGL::render_begin(source);
-        GL_CALL(glBindFramebuffer(GL_READ_FRAMEBUFFER, source.fb));
-        GL_CALL(glBindFramebuffer(GL_DRAW_FRAMEBUFFER, destination.fb));
+        OpenGL::render_begin(destination);
+        GL_CALL(glBindFramebuffer(GL_READ_FRAMEBUFFER,
+            wf::gles::get_render_buffer_fb_id(source.get_renderbuffer())));
+        GL_CALL(glBindFramebuffer(GL_DRAW_FRAMEBUFFER, wf::gles::get_render_buffer_fb_id(destination)));
         GL_CALL(glBlitFramebuffer(x1, y1, x1 + tw, y1 + th, 0, 0, w, h,
             GL_COLOR_BUFFER_BIT, interpolation));
         OpenGL::render_end();

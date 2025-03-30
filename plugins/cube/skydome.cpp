@@ -154,7 +154,7 @@ void wf_cube_background_skydome::render_frame(const wf::render_target_t& fb,
         glm::vec3(0., 0., -attribs.cube_animation.offset_z),
         glm::vec3(0., 1., 0.));
 
-    auto vp = fb.transform * attribs.projection * view * rotation;
+    auto vp = wf::gles::output_transform(fb) * attribs.projection * view * rotation;
     program.uniformMatrix4f("VP", vp);
 
     program.attrib_pointer("position", 3, 0, vertices.data());

@@ -1,8 +1,8 @@
 #include "wayfire/opengl.hpp"
 #include "wayfire/output.hpp"
 #include "wayfire/scene.hpp"
-#include <wayfire/plugins/common/cairo-util.hpp>
 #include <wayfire/scene-render.hpp>
+#include <wayfire/plugins/common/cairo-util.hpp>
 
 class simple_text_node_t : public wf::scene::node_t
 {
@@ -18,7 +18,7 @@ class simple_text_node_t : public wf::scene::node_t
             auto g = self->get_bounding_box();
             for (auto box : region)
             {
-                target.logic_scissor(wlr_box_from_pixman_box(box));
+                wf::gles::render_target_logic_scissor(target, wlr_box_from_pixman_box(box));
                 OpenGL::render_texture(self->cr_text.tex.tex, target, g, glm::vec4(1.0f),
                     OpenGL::TEXTURE_TRANSFORM_INVERT_Y);
             }

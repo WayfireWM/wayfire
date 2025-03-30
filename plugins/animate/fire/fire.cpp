@@ -191,8 +191,8 @@ class fire_render_instance_t : public wf::scene::render_instance_t
 
         for (auto& box : region)
         {
-            target_fb.logic_scissor(wlr_box_from_pixman_box(box));
-            self->ps->render(target_fb.get_orthographic_projection() * translate);
+            wf::gles::render_target_logic_scissor(target_fb, wlr_box_from_pixman_box(box));
+            self->ps->render(wf::gles::render_target_orthographic_projection(target_fb) * translate);
         }
 
         OpenGL::render_end();

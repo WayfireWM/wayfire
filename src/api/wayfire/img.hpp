@@ -15,7 +15,7 @@ bool load_from_file(std::string name, GLuint target);
 void write_to_file(std::string name, uint8_t *pixels, int w, int h,
     std::string type, bool invert = false);
 
-void write_to_file(std::string name, wf::framebuffer_t buffer);
+void write_to_file(std::string name, const wf::render_buffer_t& buffer);
 
 /* Initializes all backends, called at startup */
 void init();

@@ -40,7 +40,7 @@ class wf_system_fade
 
         OpenGL::render_begin(fb);
         OpenGL::render_rectangle(geometry, color,
-            fb.get_orthographic_projection());
+            wf::gles::render_target_orthographic_projection(fb));
         OpenGL::render_end();
 
         if (!progression.running())

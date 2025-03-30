@@ -7,6 +7,7 @@
 
 #include "wayfire/nonstd/tracking-allocator.hpp"
 #include "wayfire/object.hpp"
+#include "wayfire/render.hpp"
 #include <wayfire/nonstd/wlroots.hpp>
 #include <wayfire/signal-provider.hpp>
 #include <wayfire/scene.hpp>
@@ -161,7 +162,7 @@ class view_interface_t : public wf::signal::provider_t, public wf::object_base_t
     /**
      * A snapshot of the view is a copy of the view's contents into a framebuffer.
      */
-    virtual void take_snapshot(wf::render_target_t& target);
+    virtual void take_snapshot(wf::auxilliary_buffer_t& buffer);
 
     /**
      * @return the wl_client associated with this surface, or null if the
