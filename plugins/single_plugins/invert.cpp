@@ -65,8 +65,8 @@ class wayfire_invert_screen : public wf::per_output_plugin_instance_t
 
         wf::option_wrapper_t<wf::activatorbinding_t> toggle_key{"invert/toggle"};
 
-        hook = [=] (const wf::framebuffer_t& source,
-                    const wf::framebuffer_t& destination)
+        hook = [=] (wf::auxilliary_buffer_t& source,
+                    const wf::render_buffer_t& destination)
         {
             render(source, destination);
         };
@@ -99,8 +99,7 @@ class wayfire_invert_screen : public wf::per_output_plugin_instance_t
         output->add_activator(toggle_key, &toggle_cb);
     }
 
-    void render(const wf::framebuffer_t& source,
-        const wf::framebuffer_t& destination)
+    void render(wf::auxilliary_buffer_t& source, const wf::render_buffer_t& destination)
     {
         static const float vertexData[] = {
             -1.0f, -1.0f,
@@ -119,7 +118,7 @@ class wayfire_invert_screen : public wf::per_output_plugin_instance_t
         OpenGL::render_begin(destination);
 
         program.use(wf::TEXTURE_TYPE_RGBA);
-        GL_CALL(glBindTexture(GL_TEXTURE_2D, source.tex));
+        GL_CALL(glBindTexture(GL_TEXTURE_2D, wf::texture_t::from_aux(source).tex_id));
         GL_CALL(glActiveTexture(GL_TEXTURE0));
 
         program.attrib_pointer("position", 2, 0, vertexData);

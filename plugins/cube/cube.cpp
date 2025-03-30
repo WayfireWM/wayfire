@@ -48,7 +48,7 @@ class wayfire_cube : public wf::per_output_plugin_instance_t, public wf::pointer
 
             std::vector<std::vector<wf::scene::render_instance_uptr>> ws_instances;
             std::vector<wf::region_t> ws_damage;
-            std::vector<wf::render_target_t> framebuffers;
+            std::vector<wf::auxilliary_buffer_t> framebuffers;
 
             wf::signal::connection_t<wf::scene::node_damage_signal> on_cube_damage =
                 [=] (wf::scene::node_damage_signal *ev)
@@ -82,15 +82,7 @@ class wayfire_cube : public wf::per_output_plugin_instance_t, public wf::pointer
             }
 
             ~cube_render_instance_t()
-            {
-                OpenGL::render_begin();
-                for (auto& buf : framebuffers)
-                {
-                    buf.release();
-                }
-
-                OpenGL::render_end();
-            }
+            {}
 
             void schedule_instructions(
                 std::vector<wf::scene::render_instruction_t>& instructions,
@@ -112,22 +104,19 @@ class wayfire_cube : public wf::per_output_plugin_instance_t, public wf::pointer
             {
                 for (int i = 0; i < (int)ws_instances.size(); i++)
                 {
-                    framebuffers[i].geometry = self->workspaces[i]->get_bounding_box();
-                    framebuffers[i].scale    = self->cube->output->handle->scale;
-                    framebuffers[i].wl_transform = WL_OUTPUT_TRANSFORM_NORMAL;
-                    framebuffers[i].transform    = get_output_matrix_from_transform(
-                        framebuffers[i].wl_transform);
+                    const float scale = self->cube->output->handle->scale;
+                    auto bbox = self->workspaces[i]->get_bounding_box();
+                    framebuffers[i].allocate(wf::dimensions(bbox), scale);
 
-                    auto size = framebuffers[i].framebuffer_box_from_geometry_box(framebuffers[i].geometry);
-                    OpenGL::render_begin();
-                    framebuffers[i].allocate(size.width, size.height);
-                    OpenGL::render_end();
+                    wf::render_target_t target{framebuffers[i]};
+                    target.geometry = self->workspaces[i]->get_bounding_box();
+                    target.scale    = self->cube->output->handle->scale;
 
                     wf::scene::render_pass_params_t params;
                     params.instances = &ws_instances[i];
                     params.damage    = ws_damage[i];
                     params.reference_output = self->cube->output;
-                    params.target = framebuffers[i];
+                    params.target = target;
                     wf::scene::run_render_pass(params, wf::scene::RPASS_CLEAR_BACKGROUND |
                         wf::scene::RPASS_EMIT_SIGNALS);
 
@@ -562,7 +551,7 @@ class wayfire_cube : public wf::per_output_plugin_instance_t, public wf::pointer
         auto scale_matrix = glm::scale(glm::mat4(1.0),
             glm::vec3(1. / zoom_factor, 1. / zoom_factor, 1. / zoom_factor));
 
-        return dest.transform * animation.projection * animation.view * scale_matrix;
+        return wf::gles::output_transform(dest) * animation.projection * animation.view * scale_matrix;
     }
 
     /* Calculate the base model matrix for the i-th side of the cube */
@@ -590,7 +579,7 @@ class wayfire_cube : public wf::per_output_plugin_instance_t, public wf::pointer
 
     /* Render the sides of the cube, using the given culling mode - cw or ccw */
     void render_cube(GLuint front_face, glm::mat4 fb_transform,
-        const std::vector<wf::render_target_t>& buffers)
+        std::vector<wf::auxilliary_buffer_t>& buffers)
     {
         GL_CALL(glFrontFace(front_face));
         static const GLuint indexData[] = {0, 1, 2, 0, 2, 3};
@@ -599,7 +588,7 @@ class wayfire_cube : public wf::per_output_plugin_instance_t, public wf::pointer
         for (int i = 0; i < get_num_faces(); i++)
         {
             int index = (cws.x + i) % get_num_faces();
-            GL_CALL(glBindTexture(GL_TEXTURE_2D, buffers[index].tex));
+            GL_CALL(glBindTexture(GL_TEXTURE_2D, wf::texture_t::from_aux(buffers[index]).tex_id));
 
             auto model = calculate_model_matrix(i);
             program.uniformMatrix4f("model", model);
@@ -617,7 +606,7 @@ class wayfire_cube : public wf::per_output_plugin_instance_t, public wf::pointer
         }
     }
 
-    void render(const wf::render_target_t& dest, const std::vector<wf::render_target_t>& buffers)
+    void render(const wf::render_target_t& dest, std::vector<wf::auxilliary_buffer_t>& buffers)
     {
         if (program.get_program_id(wf::TEXTURE_TYPE_RGBA) == 0)
         {
@@ -666,8 +655,8 @@ class wayfire_cube : public wf::per_output_plugin_instance_t, public wf::pointer
          * that are on the back, and then we render those at the front, so we
          * don't have to use depth testing and we also can support alpha cube. */
         GL_CALL(glEnable(GL_CULL_FACE));
-        render_cube(GL_CCW, dest.transform, buffers);
-        render_cube(GL_CW, dest.transform, buffers);
+        render_cube(GL_CCW, wf::gles::output_transform(dest), buffers);
+        render_cube(GL_CW, wf::gles::output_transform(dest), buffers);
         GL_CALL(glDisable(GL_CULL_FACE));
 
         GL_CALL(glDisable(GL_DEPTH_TEST));

@@ -126,7 +126,7 @@ class scale_around_grab_t : public wf::scene::transformer_base_node_t
             OpenGL::render_begin(target);
             for (auto& rect : region)
             {
-                target.logic_scissor(wlr_box_from_pixman_box(rect));
+                wf::gles::render_target_logic_scissor(target, wlr_box_from_pixman_box(rect));
                 OpenGL::render_texture(tex, target, bbox, glm::vec4{1, 1, 1, (double)self->alpha_factor});
             }
 

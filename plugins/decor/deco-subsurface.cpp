@@ -128,7 +128,7 @@ class simple_decoration_node_t : public wf::scene::node_t, public wf::pointer_in
             if (item->get_type() == wf::decor::DECORATION_AREA_TITLE)
             {
                 OpenGL::render_begin(fb);
-                fb.logic_scissor(scissor);
+                wf::gles::render_target_logic_scissor(fb, scissor);
                 render_title(fb, item->get_geometry() + origin);
                 OpenGL::render_end();
             } else // button
