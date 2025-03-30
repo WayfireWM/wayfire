@@ -1,7 +1,7 @@
 #ifndef WF_OPENGL_HPP
 #define WF_OPENGL_HPP
 
-#include "wayfire/region.hpp"
+#include "wayfire/render.hpp"
 #include <GLES3/gl3.h>
 
 #include <wayfire/config/types.hpp>
@@ -33,127 +33,38 @@ struct gl_geometry
 
 namespace wf
 {
-/**
- * A simple class for managing framebuffers.
- * It can handle allocation and deallocation (not done automatically) of
- * framebuffers and their backing textures.
- */
-struct framebuffer_t
+// Extra functions for plugins dealing with render targets with OpenGL ES rendering.
+namespace gles
 {
-    GLuint tex = -1;
-    GLuint fb  = -1;
+GLuint get_render_buffer_fb_id(const render_buffer_t& buffer);
+void bind_render_buffer(const render_buffer_t& buffer);
+/* Set the GL scissor to the given box, after inverting it to match GL coordinate
+ * space */
+void scissor_render_buffer(const render_buffer_t& buffer, wlr_box box);
 
-    // The wlr_buffer backing the framebuffer.
-    // May not be available depending on the renderer.
-    wlr_buffer *buffer = NULL;
+/* Returns a matrix which contains an orthographic projection from "geometry"
+ * coordinates to the framebuffer coordinates. */
+glm::mat4 render_target_orthographic_projection(const render_target_t& target);
 
-    // The wlr_texture creating from this framebuffer.
-    wlr_texture *texture = NULL;
+/* Returns a matrix which contains an orthographic projection from OpenGL [-1, 1]
+ * coordinates coordinates to the framebuffer coordinates (includes rotation,
+ * subbuffer, etc). */
+glm::mat4 render_target_gl_to_framebuffer(const render_target_t& target);
 
-    int32_t viewport_width = 0, viewport_height = 0;
-
-    /* The functions below assume they are called between
-     * OpenGL::render_begin() and OpenGL::render_end() */
-
-    /* will invalidate texture contents if width or height changes.
-     * If tex and/or fb haven't been set, it creates them
-     * Return true if texture was created/invalidated */
-    bool allocate(int width, int height);
-
-    GLuint get_tex() const;
-    GLuint get_fb() const;
-
-    /* Make the framebuffer current, and adjust viewport to its size */
-    void bind() const;
-
-    /* Set the GL scissor to the given box, after inverting it to match GL
-     * coordinate space */
-    void scissor(wlr_box box) const;
-
-    /* Will destroy the texture and framebuffer
-     * Warning: will destroy tex/fb even if they have been allocated outside of
-     * allocate() */
-    void release();
-
-    /* Reset the framebuffer, WITHOUT freeing resources.
-     * There is no need to call reset() after release() */
-    void reset();
-};
+glm::mat4 output_transform(const render_target_t& target);
 
 /**
- * A render target contains a framebuffer and information on how to map
- * coordinates from the logical coordinate space (output-local coordinates, etc.)
- * to framebuffer coordinates.
+ * Set the scissor region to the given box.
  *
- * A render target may or not cover the full framebuffer.
+ * In contrast to framebuffer_t::scissor(), this method takes its argument
+ * as a box with "logical" coordinates, not raw framebuffer coordinates.
+ *
+ * @param box The scissor box, in the same coordinate system as the
+ *   framebuffer's geometry.
  */
-struct render_target_t : public framebuffer_t
-{
-    // Describes the logical coordinates of the render area, in whatever
-    // coordinate system the render target needs.
-    wf::geometry_t geometry = {0, 0, 0, 0};
-
-    wl_output_transform wl_transform = WL_OUTPUT_TRANSFORM_NORMAL;
-    // The scale of a framebuffer is a hint at how bigger the actual framebuffer
-    // is compared to the logical geometry. It is useful for plugins utilizing
-    // auxiliary buffers in logical coordinates, so that they know they should
-    // render with higher resolution and still get a crisp image on the screen.
-    float scale = 1.0;
-
-    // If set, the subbuffer indicates a subrectangle of the framebuffer which
-    // is used instead of the full buffer. In that case, the logical @geometry
-    // is mapped only to that subrectangle and not to the full framebuffer.
-    // Note: (0,0) is top-left for subbuffer.
-    std::optional<wf::geometry_t> subbuffer;
-
-    /* Transform contains output rotation, and possibly
-     * other framebuffer transformations, if has_nonstandard_transform is set */
-    glm::mat4 transform = glm::mat4(1.0);
-
-    /**
-     * Get a render target which is the same as this, but whose geometry is
-     * translated by @offset.
-     */
-    render_target_t translated(wf::point_t offset) const;
-
-    /**
-     * Get the geometry of the given box after projecting it onto the framebuffer.
-     * In the values returned, (0,0) is top-left.
-     *
-     * The resulting geometry is affected by the framebuffer geometry, scale and
-     * transform.
-     */
-    wlr_box framebuffer_box_from_geometry_box(wlr_box box) const;
-
-    /**
-     * Get the geometry of the given region after projecting it onto the framebuffer. This is the same as
-     * iterating over the rects in the region and transforming them with framebuffer_box_from_geometry_box.
-     */
-    wf::region_t framebuffer_region_from_geometry_region(const wf::region_t& region) const;
-
-    /* Returns a matrix which contains an orthographic projection from "geometry"
-     * coordinates to the framebuffer coordinates. */
-    glm::mat4 get_orthographic_projection() const;
-
-    /* Returns a matrix which contains an orthographic projection from OpenGL [-1, 1] coordinates
-     * coordinates to the framebuffer coordinates (includes rotation, subbuffer, etc). */
-    glm::mat4 gl_to_framebuffer() const;
-
-    /**
-     * Set the scissor region to the given box.
-     *
-     * In contrast to framebuffer_t::scissor(), this method takes its argument
-     * as a box with "logical" coordinates, not raw framebuffer coordinates.
-     *
-     * @param box The scissor box, in the same coordinate system as the
-     *   framebuffer's geometry.
-     */
-    void logic_scissor(wlr_box box) const;
-};
+void render_target_logic_scissor(const render_target_t& target, wlr_box box);
 }
 
-namespace wf
-{
 /** Represents the different types(formats) of textures in Wayfire. */
 enum texture_type_t
 {
@@ -194,6 +105,8 @@ struct texture_t
     texture_t(GLuint tex);
     /** Initialize a texture with the attributes of the wlr texture */
     explicit texture_t(wlr_texture*, std::optional<wlr_fbox> viewport = {});
+
+    static texture_t from_aux(auxilliary_buffer_t& buffer, std::optional<wlr_fbox> viewport = {});
 };
 }
 
@@ -207,7 +120,7 @@ namespace OpenGL
  * The other functions below assume they are called between render_begin()
  * and render_end() */
 void render_begin(); // use if you just want to bind GL context but won't draw
-void render_begin(const wf::framebuffer_t& fb);
+void render_begin(const wf::render_buffer_t& fb);
 void render_begin(int32_t viewport_width, int32_t viewport_height, uint32_t fb);
 
 /* Call this to indicate an end of the rendering.

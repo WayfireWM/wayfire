@@ -327,7 +327,8 @@ class wf::scene::wlr_surface_node_t::wlr_surface_render_instance_t : public rend
         // but only for integer scale.
         opts.filter_mode = ((target.scale - floor(target.scale)) < 0.001) ?
             WLR_SCALE_FILTER_NEAREST : WLR_SCALE_FILTER_BILINEAR;
-        opts.transform = self->current_state.transform;
+        opts.transform = wlr_output_transform_compose(
+            self->current_state.transform, target.wl_transform);
         opts.clip    = damage.to_pixman();
         opts.src_box = self->current_state.src_viewport.value_or(wlr_fbox{0, 0, 0, 0});
         opts.dst_box = target.framebuffer_box_from_geometry_box(self->get_bounding_box());

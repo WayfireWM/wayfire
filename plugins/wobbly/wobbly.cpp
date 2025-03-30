@@ -894,9 +894,9 @@ class wobbly_render_instance_t :
         OpenGL::render_begin(target_fb);
         for (auto& box : damage)
         {
-            target_fb.logic_scissor(wlr_box_from_pixman_box(box));
+            wf::gles::render_target_logic_scissor(target_fb, wlr_box_from_pixman_box(box));
             wobbly_graphics::render_triangles(self->wobbly_program, tex,
-                target_fb.get_orthographic_projection(),
+                wf::gles::render_target_orthographic_projection(target_fb),
                 vert.data(), uv.data(),
                 self->model->x_cells * self->model->y_cells * 2);
         }

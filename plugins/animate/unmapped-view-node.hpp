@@ -11,7 +11,7 @@ namespace wf
 {
 class unmapped_view_snapshot_node : public wf::scene::node_t
 {
-    wf::render_target_t snapshot;
+    wf::auxilliary_buffer_t snapshot;
     wf::geometry_t bbox;
 
   public:
@@ -19,13 +19,6 @@ class unmapped_view_snapshot_node : public wf::scene::node_t
     {
         view->take_snapshot(snapshot);
         bbox = view->get_surface_root_node()->get_bounding_box();
-    }
-
-    ~unmapped_view_snapshot_node()
-    {
-        OpenGL::render_begin();
-        snapshot.release();
-        OpenGL::render_end();
     }
 
     wf::geometry_t get_bounding_box() override
@@ -54,8 +47,9 @@ class unmapped_view_snapshot_node : public wf::scene::node_t
             OpenGL::render_begin(target);
             for (auto& box : region)
             {
-                target.logic_scissor(wlr_box_from_pixman_box(box));
-                OpenGL::render_texture(self->snapshot.tex, target, self->get_bounding_box());
+                wf::gles::render_target_logic_scissor(target, wlr_box_from_pixman_box(box));
+                OpenGL::render_texture(wf::texture_t::from_aux(self->snapshot),
+                    target, self->get_bounding_box());
             }
 
             OpenGL::render_end();
