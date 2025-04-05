@@ -2,6 +2,7 @@
 #include <wayfire/util/log.hpp>
 #include "wayfire/img.hpp"
 #include "wayfire/opengl.hpp"
+#include "wayfire/core.hpp"
 
 #include <config.h>
 
@@ -408,16 +409,23 @@ void write_to_file(std::string name, uint8_t *pixels, int w, int h, std::string 
     }
 }
 
-void write_to_file(std::string name, wf::framebuffer_t fb)
+void write_to_file(std::string name, const wf::render_buffer_t& fb)
 {
-    std::vector<char> buffer(fb.viewport_width * fb.viewport_height * 4);
+    if (!wf::get_core().is_gles2())
+    {
+        // TODO: we can convert the fb to a texture and use wlr_texture_read_pixels
+        LOGE("Write to file not implemented for vk/pixman yet!");
+        return;
+    }
+
+    std::vector<char> buffer(fb.get_size().width * fb.get_size().height * 4);
     OpenGL::render_begin();
-    GL_CALL(glBindFramebuffer(GL_READ_FRAMEBUFFER, fb.fb));
-    GL_CALL(glReadPixels(0, 0, fb.viewport_width, fb.viewport_height,
+    GL_CALL(glBindFramebuffer(GL_READ_FRAMEBUFFER, wf::gles::get_render_buffer_fb_id(fb)));
+    GL_CALL(glReadPixels(0, 0, fb.get_size().width, fb.get_size().height,
         GL_RGBA, GL_UNSIGNED_BYTE, buffer.data()));
     OpenGL::render_end();
     write_to_file(name, (uint8_t*)buffer.data(),
-        fb.viewport_width, fb.viewport_height, "png", false);
+        fb.get_size().width, fb.get_size().height, "png", false);
 }
 
 void init()

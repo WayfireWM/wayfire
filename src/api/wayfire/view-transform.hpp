@@ -57,7 +57,7 @@ class transformer_base_node_t : public scene::floating_inner_node_t
     }
 
     // A temporary buffer to render children to.
-    wf::render_target_t inner_content;
+    wf::auxilliary_buffer_t inner_content;
 
     // Damage from the children, which is the region of @inner_content that
     // should be repainted on the next frame to have a valid copy of the
@@ -67,41 +67,29 @@ class transformer_base_node_t : public scene::floating_inner_node_t
     wf::texture_t get_updated_contents(const wf::geometry_t& bbox, float scale,
         std::vector<scene::render_instance_uptr>& children)
     {
-        int target_width  = scale * bbox.width;
-        int target_height = scale * bbox.height;
-
-        OpenGL::render_begin();
-        inner_content.scale = scale;
-        if (inner_content.allocate(target_width, target_height))
+        if (inner_content.allocate(wf::dimensions(bbox), scale))
         {
             cached_damage |= bbox;
         }
 
-        inner_content.geometry = bbox;
-        OpenGL::render_end();
+        wf::render_target_t target{inner_content};
+        target.scale    = scale;
+        target.geometry = bbox;
 
         render_pass_params_t params;
         params.instances = &children;
-        params.target    = inner_content;
+        params.target    = target;
         params.damage    = cached_damage;
         params.background_color = {0.0f, 0.0f, 0.0f, 0.0f};
         scene::run_render_pass(params, RPASS_CLEAR_BACKGROUND);
 
         cached_damage.clear();
-        return wf::texture_t{inner_content.tex};
+        return wf::texture_t::from_aux(inner_content);
     }
 
     void release_buffers()
     {
-        if (inner_content.fb != (uint) - 1)
-        {
-            // Release the inner_content buffer, because we are on
-            // the zero-copy path and we do not need an auxiliary
-            // buffer to render to.
-            OpenGL::render_begin();
-            inner_content.release();
-            OpenGL::render_end();
-        }
+        inner_content.free();
     }
 
     ~transformer_base_node_t()
