@@ -1,6 +1,8 @@
 #include "main.hpp"
 #include <string>
 #include <unistd.h>
+#include "core/core-impl.hpp"
+#include "core/plugin-loader.hpp"
 #include <wayfire/config/option-types.hpp>
 #include <wayfire/util/log.hpp>
 #include <wayfire/debug.hpp>
@@ -441,7 +443,16 @@ void wf::detail::option_wrapper_debug_message(const std::string & option_name, c
         "Usual reasons for this include missing or outdated plugin XML files, ",
         "a bug in the plugin itself, or mismatch between the versions of Wayfire and wf-config. ",
         "Make sure that you have the correct versions of all relevant packages and make sure that there ",
-        "are no conflicting installations of Wayfire using the same prefix.");
+        "are no conflicting installations of Wayfire using the same prefix. ",
+        "If this plugin was recently installed or updated, you need to restart Wayfire before using it.");
+
+    auto& core = wf::get_core_impl();
+    if (core.plugin_mgr->is_loading_plugin())
+    {
+        // re-throw the exception, will be caught in plugin_manager_t::reload_dynamic_plugins()
+        throw err;
+    }
+
     wf::print_trace(false);
     std::_Exit(0);
 }
@@ -449,7 +460,16 @@ void wf::detail::option_wrapper_debug_message(const std::string & option_name, c
 void wf::detail::option_wrapper_debug_message(const std::string & option_name, const std::logic_error & err)
 {
     LOGE("Wayfire encountered error loading option \"", option_name, "\": ", err.what(), ". ",
-        "This usually indicates a bug in the plugin.");
+        "This usually indicates a bug in the plugin. ",
+        "If this plugin was recently installed or updated, you need to restart Wayfire before using it.");
+
+    auto& core = wf::get_core_impl();
+    if (core.plugin_mgr->is_loading_plugin())
+    {
+        // re-throw the exception, will be caught in plugin_manager_t::reload_dynamic_plugins()
+        throw err;
+    }
+
     wf::print_trace(false);
     std::_Exit(0);
 }
