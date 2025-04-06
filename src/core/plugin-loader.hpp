@@ -27,6 +27,10 @@ struct plugin_manager_t
 
     void reload_dynamic_plugins();
     wf::wl_idle_call idle_reload_plugins;
+    bool is_loading_plugin() const
+    {
+        return is_loading;
+    }
 
   private:
     wf::option_wrapper_t<std::string> plugins_opt;
@@ -38,6 +42,8 @@ struct plugin_manager_t
     std::optional<loaded_plugin_t> load_plugin_from_file(std::string path);
     void load_static_plugins();
     void destroy_plugin(loaded_plugin_t& plugin);
+
+    bool is_loading = false;
 };
 
 /** Helper functions */

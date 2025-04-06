@@ -168,6 +168,8 @@ std::optional<wf::loaded_plugin_t> wf::plugin_manager_t::load_plugin_from_file(s
 
 void wf::plugin_manager_t::reload_dynamic_plugins()
 {
+    is_loading = true;
+
     std::string plugin_list = plugins_opt;
     if (plugin_list == "none")
     {
@@ -238,10 +240,15 @@ void wf::plugin_manager_t::reload_dynamic_plugins()
             continue;
         }
 
-        std::optional<wf::loaded_plugin_t> ptr = load_plugin_from_file(plugin);
-        if (ptr)
+        try {
+            std::optional<wf::loaded_plugin_t> ptr = load_plugin_from_file(plugin);
+            if (ptr)
+            {
+                pending_initialize.emplace_back(plugin, std::move(*ptr));
+            }
+        } catch (...)
         {
-            pending_initialize.emplace_back(plugin, std::move(*ptr));
+            LOGE("Failed to load plugin \"", plugin_name, "\". ");
         }
     }
 
@@ -252,9 +259,17 @@ void wf::plugin_manager_t::reload_dynamic_plugins()
 
     for (auto& [plugin, ptr] : pending_initialize)
     {
-        ptr.instance->init();
-        loaded_plugins[plugin] = std::move(ptr);
+        try {
+            ptr.instance->init();
+            loaded_plugins[plugin] = std::move(ptr);
+        } catch (...)
+        {
+            // note: destructor will be called when exiting this function
+            LOGE("Failed to init plugin \"", plugin_name, "\". ");
+        }
     }
+
+    is_loading = false;
 }
 
 template<class T>
