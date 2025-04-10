@@ -419,11 +419,15 @@ void write_to_file(std::string name, const wf::render_buffer_t& fb)
     }
 
     std::vector<char> buffer(fb.get_size().width * fb.get_size().height * 4);
-    OpenGL::render_begin();
-    GL_CALL(glBindFramebuffer(GL_READ_FRAMEBUFFER, wf::gles::get_render_buffer_fb_id(fb)));
-    GL_CALL(glReadPixels(0, 0, fb.get_size().width, fb.get_size().height,
-        GL_RGBA, GL_UNSIGNED_BYTE, buffer.data()));
-    OpenGL::render_end();
+
+    wf::gles::maybe_run_in_context([&]
+    {
+        GLuint fb_id = wf::gles::ensure_render_buffer_fb_id(fb);
+        GL_CALL(glBindFramebuffer(GL_READ_FRAMEBUFFER, fb_id));
+        GL_CALL(glReadPixels(0, 0, fb.get_size().width, fb.get_size().height,
+            GL_RGBA, GL_UNSIGNED_BYTE, buffer.data()));
+    });
+
     write_to_file(name, (uint8_t*)buffer.data(),
         fb.get_size().width, fb.get_size().height, "png", false);
 }

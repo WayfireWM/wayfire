@@ -306,8 +306,7 @@ class wf::scene::wlr_surface_node_t::wlr_surface_render_instance_t : public rend
         }
     }
 
-    void render(wlr_render_pass *pass, const wf::render_target_t& target,
-        const wf::region_t& region, const std::any&) override
+    void render(const wf::scene::render_instruction_t& data) override
     {
         if (!self->current_state.current_buffer)
         {
@@ -315,7 +314,7 @@ class wf::scene::wlr_surface_node_t::wlr_surface_render_instance_t : public rend
         }
 
         const float alpha   = 1.0;
-        wf::region_t damage = target.framebuffer_region_from_geometry_region(region);
+        wf::region_t damage = data.target.framebuffer_region_from_geometry_region(data.damage);
 
         wlr_render_texture_options opts{};
         opts.texture = self->current_state.texture;
@@ -325,15 +324,14 @@ class wf::scene::wlr_surface_node_t::wlr_surface_render_instance_t : public rend
         // use GL_NEAREST for integer scale.
         // GL_NEAREST makes scaled text blocky instead of blurry, which looks better
         // but only for integer scale.
-        opts.filter_mode = ((target.scale - floor(target.scale)) < 0.001) ?
+        opts.filter_mode = ((data.target.scale - floor(data.target.scale)) < 0.001) ?
             WLR_SCALE_FILTER_NEAREST : WLR_SCALE_FILTER_BILINEAR;
         opts.transform = wlr_output_transform_compose(
-            self->current_state.transform, target.wl_transform);
+            self->current_state.transform, data.target.wl_transform);
         opts.clip    = damage.to_pixman();
         opts.src_box = self->current_state.src_viewport.value_or(wlr_fbox{0, 0, 0, 0});
-        opts.dst_box = target.framebuffer_box_from_geometry_box(self->get_bounding_box());
-
-        wlr_render_pass_add_texture(pass, &opts);
+        opts.dst_box = data.target.framebuffer_box_from_geometry_box(self->get_bounding_box());
+        wlr_render_pass_add_texture(data.pass->get_wlr_pass(), &opts);
     }
 
     void presentation_feedback(wf::output_t *output) override

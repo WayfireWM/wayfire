@@ -152,10 +152,9 @@ class WayfireSwitcher : public wf::per_output_plugin_instance_t, public wf::keyb
                 damage ^= bbox;
             }
 
-            void render(const wf::render_target_t& target,
-                const wf::region_t& region, const std::any& tag) override
+            void render(const wf::scene::render_instruction_t& data) override
             {
-                self->switcher->render(target.translated(-wf::origin(self->get_bounding_box())));
+                self->switcher->render(data);
             }
         };
 
@@ -671,12 +670,12 @@ class WayfireSwitcher : public wf::per_output_plugin_instance_t, public wf::keyb
         std::vector<wf::scene::render_instance_uptr> instances;
         view->get_transformed_node()->gen_render_instances(instances, [] (auto) {});
 
-        wf::scene::render_pass_params_t params;
+        wf::render_pass_params_t params;
         params.instances = &instances;
         params.damage    = view->get_transformed_node()->get_bounding_box();
         params.reference_output = this->output;
         params.target = buffer;
-        wf::scene::run_render_pass(params, 0);
+        wf::render_pass_t::run(params);
     }
 
     void render_view(const SwitcherView& sv, const wf::render_target_t& buffer)
@@ -699,26 +698,25 @@ class WayfireSwitcher : public wf::per_output_plugin_instance_t, public wf::keyb
         render_view_scene(sv.view, buffer);
     }
 
-    void render(const wf::render_target_t& fb)
+    void render(const wf::scene::render_instruction_t& data)
     {
-        OpenGL::render_begin(fb);
-        OpenGL::clear({0, 0, 0, 1});
-        OpenGL::render_end();
+        data.pass->clear(data.target.geometry, {0, 0, 0, 1});
 
+        auto local_target = data.target.translated(-wf::origin(render_node->get_bounding_box()));
         for (auto view : get_background_views())
         {
-            render_view_scene(view, fb);
+            render_view_scene(view, local_target);
         }
 
         /* Render in the reverse order because we don't use depth testing */
         for (auto& view : wf::reverse(views))
         {
-            render_view(view, fb);
+            render_view(view, local_target);
         }
 
         for (auto view : get_overlay_views())
         {
-            render_view_scene(view, fb);
+            render_view_scene(view, local_target);
         }
     }
 

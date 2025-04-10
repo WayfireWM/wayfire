@@ -1,6 +1,6 @@
 #pragma once
 
-#include <string>
+#include <wayfire/scene-render.hpp>
 #include <wayfire/util.hpp>
 #include <wayfire/opengl.hpp>
 #include <wayfire/render-manager.hpp>
@@ -67,12 +67,10 @@ class button_t
      * Render the button on the given framebuffer at the given coordinates.
      * Precondition: set_button_type() has been called, otherwise result is no-op
      *
-     * @param buffer The target framebuffer
+     * @param data The render data
      * @param geometry The geometry of the button, in logical coordinates
-     * @param scissor The scissor rectangle to render.
      */
-    void render(const wf::render_target_t& buffer, wf::geometry_t geometry,
-        wf::geometry_t scissor);
+    void render(const scene::render_instruction_t& data, wf::geometry_t geometry);
 
   private:
     const decoration_theme_t& theme;

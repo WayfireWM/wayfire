@@ -11,7 +11,7 @@ struct simple_texture_t
 
     /**
      * Destroy the GL texture.
-     * This will call OpenGL::render_begin()/end() internally.
+     * This will be done in an GLES context.
      */
     void release()
     {
@@ -20,9 +20,11 @@ struct simple_texture_t
             return;
         }
 
-        OpenGL::render_begin();
-        GL_CALL(glDeleteTextures(1, &tex));
-        OpenGL::render_end();
+        wf::gles::maybe_run_in_context([&]
+        {
+            GL_CALL(glDeleteTextures(1, &tex));
+        });
+
         this->tex = -1;
     }
 

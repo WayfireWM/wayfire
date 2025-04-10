@@ -42,17 +42,17 @@ class unmapped_view_snapshot_node : public wf::scene::node_t
     {
       public:
         using simple_render_instance_t::simple_render_instance_t;
-        void render(const wf::render_target_t& target, const wf::region_t& region)
+        void render(const wf::scene::render_instruction_t& data)
         {
-            OpenGL::render_begin(target);
-            for (auto& box : region)
+            data.pass->custom_gles_subpass(data.target, [&]
             {
-                wf::gles::render_target_logic_scissor(target, wlr_box_from_pixman_box(box));
-                OpenGL::render_texture(wf::texture_t::from_aux(self->snapshot),
-                    target, self->get_bounding_box());
-            }
-
-            OpenGL::render_end();
+                for (auto box : data.damage)
+                {
+                    gles::render_target_logic_scissor(data.target, wlr_box_from_pixman_box(box));
+                    OpenGL::render_texture(wf::texture_t::from_aux(self->snapshot),
+                        data.target, self->get_bounding_box());
+                }
+            });
         }
     };
 };

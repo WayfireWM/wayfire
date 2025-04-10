@@ -110,15 +110,14 @@ class workspace_stream_node_t::workspace_stream_instance_t : public scene::
         }
     }
 
-    void render(wlr_render_pass *pass, const wf::render_target_t& target,
-        const wf::region_t& region, const std::any& any) override
+    void render(const wf::scene::render_instruction_t& data) override
     {
         static wf::option_wrapper_t<wf::color_t> background_color_opt{
             "core/background_color"
         };
 
         auto color = self->background.value_or(background_color_opt);
-        clear_with_wlr_pass(pass, target.geometry, color, region);
+        data.pass->clear(data.damage, color);
     }
 
     void presentation_feedback(wf::output_t *output) override

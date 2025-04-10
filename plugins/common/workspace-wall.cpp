@@ -160,12 +160,13 @@ class workspace_wall_t::workspace_wall_node_t : public scene::node_t
                         aux.geometry  = self->workspaces[i][j]->get_bounding_box();
                         aux.scale     = self->wall->output->handle->scale;
 
-                        scene::render_pass_params_t params;
+                        render_pass_params_t params;
                         params.instances = &instances[i][j];
                         params.damage    = std::move(visible_damage);
                         params.reference_output = self->wall->output;
                         params.target = aux;
-                        scene::run_render_pass(params, scene::RPASS_EMIT_SIGNALS);
+                        params.flags  = RPASS_EMIT_SIGNALS;
+                        wf::render_pass_t::run(params);
 
                         self->aux_buffer_damage[i][j] ^= visible_damage;
                     }
@@ -196,14 +197,11 @@ class workspace_wall_t::workspace_wall_node_t : public scene::node_t
             };
         }
 
-        void render(wlr_render_pass *pass, const wf::render_target_t& target,
-            const wf::region_t& region, const std::any&) override
+        void render(const wf::scene::render_instruction_t& data) override
         {
-            auto damage = target.framebuffer_region_from_geometry_region(region);
-            clear_with_wlr_pass(pass,
-                target.framebuffer_box_from_geometry_box(target.geometry),
-                self->wall->background_color, damage);
+            data.pass->clear(data.damage, self->wall->background_color);
 
+            auto damage = data.target.framebuffer_region_from_geometry_region(data.damage);
             for (int i = 0; i < (int)self->workspaces.size(); i++)
             {
                 for (int j = 0; j < (int)self->workspaces[i].size(); j++)
@@ -224,7 +222,7 @@ class workspace_wall_t::workspace_wall_node_t : public scene::node_t
                     opts.blend_mode  = WLR_RENDER_BLEND_MODE_PREMULTIPLIED;
                     opts.filter_mode = WLR_SCALE_FILTER_BILINEAR;
                     opts.clip = damage.to_pixman();
-                    opts.transform = target.wl_transform;
+                    opts.transform = data.target.wl_transform;
 
                     if (!subbox.has_value())
                     {
@@ -239,12 +237,13 @@ class workspace_wall_t::workspace_wall_node_t : public scene::node_t
                     }
 
                     opts.dst_box =
-                        target.framebuffer_box_from_geometry_box(render_geometry);
-                    wlr_render_pass_add_texture(pass, &opts);
+                        data.target.framebuffer_box_from_geometry_box(render_geometry);
+                    wlr_render_pass_add_texture(data.pass->get_wlr_pass(), &opts);
+                    // TODO: add dim factor!
                 }
             }
 
-            self->wall->render_wall(target, region);
+            self->wall->render_wall(data.target, data.damage);
         }
 
         void compute_visibility(wf::output_t *output, wf::region_t& visible) override

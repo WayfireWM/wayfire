@@ -11,19 +11,18 @@ class simple_text_node_t : public wf::scene::node_t
       public:
         using simple_render_instance_t::simple_render_instance_t;
 
-        void render(const wf::render_target_t& target, const wf::region_t& region)
+        void render(const wf::scene::render_instruction_t& data)
         {
-            OpenGL::render_begin(target);
-
             auto g = self->get_bounding_box();
-            for (auto box : region)
+            data.pass->custom_gles_subpass(data.target, [&]
             {
-                wf::gles::render_target_logic_scissor(target, wlr_box_from_pixman_box(box));
-                OpenGL::render_texture(self->cr_text.tex.tex, target, g, glm::vec4(1.0f),
-                    OpenGL::TEXTURE_TRANSFORM_INVERT_Y);
-            }
-
-            OpenGL::render_end();
+                for (auto box : data.damage)
+                {
+                    wf::gles::render_target_logic_scissor(data.target, wlr_box_from_pixman_box(box));
+                    OpenGL::render_texture(self->cr_text.tex.tex, data.target, g, glm::vec4(1.0f),
+                        OpenGL::TEXTURE_TRANSFORM_INVERT_Y);
+                }
+            });
         }
     };
 
