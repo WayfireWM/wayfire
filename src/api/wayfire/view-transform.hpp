@@ -51,10 +51,7 @@ class transformer_base_node_t : public scene::floating_inner_node_t
   public:
     using floating_inner_node_t::floating_inner_node_t;
 
-    uint32_t optimize_update(uint32_t flags) override
-    {
-        return optimize_nested_render_instances(shared_from_this(), flags);
-    }
+    uint32_t optimize_update(uint32_t flags) override;
 
     // A temporary buffer to render children to.
     wf::auxilliary_buffer_t inner_content;
@@ -65,37 +62,10 @@ class transformer_base_node_t : public scene::floating_inner_node_t
     wf::region_t cached_damage;
 
     wf::texture_t get_updated_contents(const wf::geometry_t& bbox, float scale,
-        std::vector<scene::render_instance_uptr>& children)
-    {
-        if (inner_content.allocate(wf::dimensions(bbox), scale))
-        {
-            cached_damage |= bbox;
-        }
+        std::vector<scene::render_instance_uptr>& children);
 
-        wf::render_target_t target{inner_content};
-        target.scale    = scale;
-        target.geometry = bbox;
-
-        render_pass_params_t params;
-        params.instances = &children;
-        params.target    = target;
-        params.damage    = cached_damage;
-        params.background_color = {0.0f, 0.0f, 0.0f, 0.0f};
-        scene::run_render_pass(params, RPASS_CLEAR_BACKGROUND);
-
-        cached_damage.clear();
-        return wf::texture_t::from_aux(inner_content);
-    }
-
-    void release_buffers()
-    {
-        inner_content.free();
-    }
-
-    ~transformer_base_node_t()
-    {
-        release_buffers();
-    }
+    void release_buffers();
+    ~transformer_base_node_t();
 };
 
 /**
@@ -234,8 +204,7 @@ class transformer_render_instance_t : public render_instance_t
         }
     }
 
-    void render(const wf::render_target_t& target,
-        const wf::region_t& damage) override
+    void render(const wf::scene::render_instruction_t& data) override
     {
         wf::dassert(false, "Rendering not implemented for view transformer?");
     }

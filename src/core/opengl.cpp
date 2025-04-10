@@ -24,6 +24,9 @@ const char *gl_error_string(const GLenum err)
 
       case GL_OUT_OF_MEMORY:
         return "GL_OUT_OF_MEMORY";
+
+      case GL_INVALID_FRAMEBUFFER_OPERATION:
+        return "GL_INVALID_FRAMEBUFFER_OPERATION";
     }
 
     return "UNKNOWN GL ERROR";
@@ -107,23 +110,23 @@ GLuint compile_program(std::string vertex_source, std::string frag_source)
 
 void init()
 {
-    render_begin();
-    // enable_gl_synchronous_debug()
-    program.compile(default_vertex_shader_source,
-        default_fragment_shader_source);
-
-    color_program.set_simple(compile_program(default_vertex_shader_source,
-        color_rect_fragment_source));
-
-    render_end();
+    wf::gles::maybe_run_in_context([&]
+    {
+        // enable_gl_synchronous_debug()
+        program.compile(default_vertex_shader_source,
+            default_fragment_shader_source);
+        color_program.set_simple(compile_program(default_vertex_shader_source,
+            color_rect_fragment_source));
+    });
 }
 
 void fini()
 {
-    render_begin();
-    program.free_resources();
-    color_program.free_resources();
-    render_end();
+    wf::gles::maybe_run_in_context([&]
+    {
+        program.free_resources();
+        color_program.free_resources();
+    });
 }
 
 namespace
@@ -140,6 +143,8 @@ void unbind_output()
 {
     current_output_fb = 0;
 }
+
+bool exit_on_gles_error = false;
 
 std::vector<GLfloat> vertexData;
 std::vector<GLfloat> coordData;
@@ -258,6 +263,13 @@ void render_rectangle(wf::geometry_t geometry, wf::color_t color,
     color_program.deactivate();
 }
 
+void clear(wf::color_t col, uint32_t mask)
+{
+    GL_CALL(glClearColor(col.r, col.g, col.b, col.a));
+    GL_CALL(glClear(mask));
+}
+}
+
 static bool egl_make_current(struct wlr_egl *egl)
 {
     if (!eglMakeCurrent(wlr_egl_get_display(egl), EGL_NO_SURFACE, EGL_NO_SURFACE,
@@ -275,43 +287,26 @@ static bool egl_is_current(struct wlr_egl *egl)
     return eglGetCurrentContext() == wlr_egl_get_context(egl);
 }
 
-void render_begin()
+bool wf::gles::ensure_context(bool fail_on_error)
 {
-    wf::dassert(wf::get_core().is_gles2(), "Wayfire not running with GLES renderer, no GL calls allowed!");
+    bool is_gles2 = wf::get_core().is_gles2();
+    if (fail_on_error && !is_gles2)
+    {
+        wf::dassert(false,
+            "Wayfire not running with GLES renderer, no GL calls allowed!");
+    }
+
+    if (!is_gles2)
+    {
+        return false;
+    }
+
     if (!egl_is_current(wf::get_core_impl().egl))
     {
         egl_make_current(wf::get_core_impl().egl);
     }
 
-    GL_CALL(glEnable(GL_BLEND));
-    GL_CALL(glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA));
-}
-
-void render_begin(const wf::render_buffer_t& fb)
-{
-    render_begin();
-    wf::gles::bind_render_buffer(fb);
-}
-
-void render_begin(int32_t width, int32_t height, uint32_t fb)
-{
-    render_begin();
-
-    GL_CALL(glBindFramebuffer(GL_DRAW_FRAMEBUFFER, fb));
-    GL_CALL(glViewport(0, 0, width, height));
-}
-
-void clear(wf::color_t col, uint32_t mask)
-{
-    GL_CALL(glClearColor(col.r, col.g, col.b, col.a));
-    GL_CALL(glClear(mask));
-}
-
-void render_end()
-{
-    GL_CALL(glBindFramebuffer(GL_FRAMEBUFFER, current_output_fb));
-    GL_CALL(glDisable(GL_SCISSOR_TEST));
-}
+    return true;
 }
 
 [[maybe_unused]]
@@ -336,35 +331,21 @@ static std::string framebuffer_status_to_str(GLuint status)
     }
 }
 
-static bool needs_wlroots_y_invert(const wf::render_buffer_t& buffer)
-{
-    /**
-     * When rendering to wlroot's final framebuffer, we need to consider that it is inverted.
-     */
-    return wf::gles::get_render_buffer_fb_id(buffer) == OpenGL::current_output_fb;
-}
-
-GLuint wf::gles::get_render_buffer_fb_id(const render_buffer_t& buffer)
+GLuint wf::gles::ensure_render_buffer_fb_id(const render_buffer_t& buffer)
 {
     return wlr_gles2_renderer_get_buffer_fbo(wf::get_core().renderer, buffer.get_buffer());
 }
 
 void wf::gles::bind_render_buffer(const wf::render_buffer_t& buffer)
 {
-    GL_CALL(glBindFramebuffer(GL_DRAW_FRAMEBUFFER, get_render_buffer_fb_id(buffer)));
+    GL_CALL(glBindFramebuffer(GL_DRAW_FRAMEBUFFER, ensure_render_buffer_fb_id(buffer)));
     GL_CALL(glViewport(0, 0, buffer.get_size().width, buffer.get_size().height));
 }
 
 void wf::gles::scissor_render_buffer(const wf::render_buffer_t& buffer, wlr_box box)
 {
     GL_CALL(glEnable(GL_SCISSOR_TEST));
-    if (needs_wlroots_y_invert(buffer))
-    {
-        GL_CALL(glScissor(box.x, box.y, box.width, box.height));
-    } else
-    {
-        GL_CALL(glScissor(box.x, buffer.get_size().height - box.y - box.height, box.width, box.height));
-    }
+    GL_CALL(glScissor(box.x, box.y, box.width, box.height));
 }
 
 glm::mat4 wf::gles::render_target_orthographic_projection(const wf::render_target_t& target)
@@ -392,7 +373,7 @@ glm::mat4 wf::gles::render_target_gl_to_framebuffer(const wf::render_target_t& t
         float half_h = target.get_size().height / 2.0;
 
         float translate_x = ((sub.x + sub.width / 2.0) - half_w) / half_w;
-        float translate_y = (half_h - sub.y - sub.height / 2.0) / half_h;
+        float translate_y = ((sub.y + sub.height / 2.0) - half_h) / half_h;
 
         glm::mat4 scale = glm::scale(glm::mat4(1.0),
             glm::vec3(scale_x, scale_y, 1.0));
@@ -407,13 +388,8 @@ glm::mat4 wf::gles::render_target_gl_to_framebuffer(const wf::render_target_t& t
 
 glm::mat4 wf::gles::output_transform(const render_target_t& target)
 {
-    if (needs_wlroots_y_invert(target))
-    {
-        return get_output_matrix_from_transform(
-            wlr_output_transform_compose(target.wl_transform, WL_OUTPUT_TRANSFORM_FLIPPED_180));
-    }
-
-    return get_output_matrix_from_transform(target.wl_transform);
+    return get_output_matrix_from_transform(
+        wlr_output_transform_compose(target.wl_transform, WL_OUTPUT_TRANSFORM_FLIPPED_180));
 }
 
 void wf::gles::render_target_logic_scissor(const wf::render_target_t& target, wlr_box box)
@@ -509,7 +485,14 @@ wf::texture_t::texture_t(wlr_texture *texture, std::optional<wlr_fbox> viewport)
 texture_t texture_t::from_aux(auxilliary_buffer_t& buffer, std::optional<wlr_fbox> viewport)
 {
     wf::texture_t tex{buffer.get_texture(), viewport};
-    tex.invert_y = false;
+    gles::run_in_context([&]
+    {
+        GL_CALL(glBindTexture(tex.target, tex.tex_id));
+        GL_CALL(glTexParameteri(tex.target, GL_TEXTURE_MIN_FILTER, GL_LINEAR));
+        GL_CALL(glTexParameteri(tex.target, GL_TEXTURE_MAG_FILTER, GL_LINEAR));
+        GL_CALL(glBindTexture(tex.target, 0));
+    });
+
     return tex;
 }
 } // namespace wf

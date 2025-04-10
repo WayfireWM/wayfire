@@ -15,6 +15,7 @@
 #include <unordered_set>
 #include <drm_fourcc.h>
 #include <wayfire/seat.hpp>
+#include <wayfire/opengl.hpp>
 
 #include <wayfire/debug.hpp>
 #include <wayfire/util/log.hpp>
@@ -1255,6 +1256,8 @@ class output_layout_t::impl
 
             return;
         }
+
+        LOGI("Adding with ", get_core().renderer);
 
         if (!wlr_output_init_render(output,
             get_core().allocator, get_core().renderer))

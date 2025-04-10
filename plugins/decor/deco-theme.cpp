@@ -37,14 +37,20 @@ void decoration_theme_t::set_buttons(button_type_t flags)
  * @param scissor The GL scissor rectangle to use.
  * @param active Whether to use active or inactive colors
  */
-void decoration_theme_t::render_background(const wf::render_target_t& fb,
-    wf::geometry_t rectangle, const wf::geometry_t& scissor, bool active) const
+void decoration_theme_t::render_background(const wf::scene::render_instruction_t& data,
+    wf::geometry_t rectangle, bool active) const
 {
     wf::color_t color = active ? active_color : inactive_color;
-    OpenGL::render_begin(fb);
-    wf::gles::render_target_logic_scissor(fb, scissor);
-    OpenGL::render_rectangle(rectangle, color, wf::gles::render_target_orthographic_projection(fb));
-    OpenGL::render_end();
+
+    data.pass->custom_gles_subpass(data.target, [&]
+    {
+        for (auto box : data.damage)
+        {
+            gles::render_target_logic_scissor(data.target, wlr_box_from_pixman_box(box));
+            OpenGL::render_rectangle(rectangle, color,
+                wf::gles::render_target_orthographic_projection(data.target));
+        }
+    });
 }
 
 /**

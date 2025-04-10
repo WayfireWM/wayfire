@@ -38,10 +38,11 @@ class wf_system_fade
         auto fb = output->render->get_target_framebuffer();
         auto geometry = output->get_relative_geometry();
 
-        OpenGL::render_begin(fb);
-        OpenGL::render_rectangle(geometry, color,
-            wf::gles::render_target_orthographic_projection(fb));
-        OpenGL::render_end();
+        wf::gles::run_in_context([&]
+        {
+            OpenGL::render_rectangle(geometry, color,
+                wf::gles::render_target_orthographic_projection(fb));
+        });
 
         if (!progression.running())
         {

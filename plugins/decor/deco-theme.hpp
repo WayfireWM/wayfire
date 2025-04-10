@@ -1,5 +1,6 @@
 #pragma once
 #include <wayfire/render-manager.hpp>
+#include <wayfire/scene-render.hpp>
 #include "deco-button.hpp"
 
 namespace wf
@@ -27,13 +28,12 @@ class decoration_theme_t
     /**
      * Fill the given rectangle with the background color(s).
      *
-     * @param fb The target framebuffer, must have been bound already.
+     * @param data The render data (pass, target, damage)
      * @param rectangle The rectangle to redraw.
-     * @param scissor The GL scissor rectangle to use.
      * @param active Whether to use active or inactive colors
      */
-    void render_background(const wf::render_target_t& fb, wf::geometry_t rectangle,
-        const wf::geometry_t& scissor, bool active) const;
+    void render_background(const wf::scene::render_instruction_t& data,
+        wf::geometry_t rectangle, bool active) const;
 
     /**
      * Render the given text on a cairo_surface_t with the given size.

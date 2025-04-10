@@ -305,9 +305,8 @@ class title_overlay_render_instance_t : public render_instance_t
         self->connect(&on_node_damaged);
     }
 
-    void schedule_instructions(
-        std::vector<render_instruction_t>& instructions,
-        const wf::render_target_t& target, wf::region_t& damage)
+    void schedule_instructions(std::vector<render_instruction_t>& instructions,
+        const wf::render_target_t& target, wf::region_t& damage) override
     {
         if (!self->overlay_shown || !self->view->has_data<view_title_texture_t>())
         {
@@ -322,8 +321,7 @@ class title_overlay_render_instance_t : public render_instance_t
                 });
     }
 
-    void render(const wf::render_target_t& target,
-        const wf::region_t& region)
+    void render(const wf::scene::render_instruction_t& data) override
     {
         auto& title = *self->view->get_data<view_title_texture_t>();
         auto tr     = self->view->get_transformed_node()
@@ -337,16 +335,17 @@ class title_overlay_render_instance_t : public render_instance_t
             return;
         }
 
-        auto ortho = wf::gles::render_target_orthographic_projection(target);
-        OpenGL::render_begin(target);
-        for (const auto& box : region)
+        auto ortho = wf::gles::render_target_orthographic_projection(data.target);
+        data.pass->custom_gles_subpass(data.target, [&]
         {
-            wf::gles::render_target_logic_scissor(target, wlr_box_from_pixman_box(box));
-            OpenGL::render_transformed_texture(tex, self->geometry, ortho,
-                {1.0f, 1.0f, 1.0f, tr->alpha}, OpenGL::TEXTURE_TRANSFORM_INVERT_Y);
-        }
+            for (auto box : data.damage)
+            {
+                gles::render_target_logic_scissor(data.target, wlr_box_from_pixman_box(box));
+                OpenGL::render_transformed_texture(tex, self->geometry, ortho,
+                    {1.0f, 1.0f, 1.0f, tr->alpha}, OpenGL::TEXTURE_TRANSFORM_INVERT_Y);
+            }
+        });
 
-        OpenGL::render_end();
         self->idle_update_title.run_once();
     }
 };

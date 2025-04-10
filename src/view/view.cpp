@@ -106,12 +106,13 @@ void wf::view_interface_t::take_snapshot(wf::auxilliary_buffer_t& buffer)
     std::vector<scene::render_instance_uptr> instances;
     root_node->gen_render_instances(instances, [] (auto) {}, get_output());
 
-    scene::render_pass_params_t params;
+    render_pass_params_t params;
     params.background_color = {0, 0, 0, 0};
     params.damage    = bbox;
     params.target    = target;
     params.instances = &instances;
-    scene::run_render_pass(params, scene::RPASS_CLEAR_BACKGROUND);
+    params.flags     = RPASS_CLEAR_BACKGROUND;
+    render_pass_t::run(params);
 }
 
 wf::view_interface_t::view_interface_t()

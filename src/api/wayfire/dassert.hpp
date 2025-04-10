@@ -25,7 +25,7 @@ inline void dassert(bool condition, std::string message = "")
     {
         LOGE(message);
         print_trace(false);
-        std::exit(0);
+        std::_Exit(-1);
     }
 }
 }

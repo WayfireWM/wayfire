@@ -3,7 +3,6 @@
 #include "wayfire/unstable/wlr-surface-node.hpp"
 #include "wayfire/core.hpp"
 #include "wayfire/geometry.hpp"
-#include "wayfire/opengl.hpp"
 #include "wayfire/region.hpp"
 #include "wayfire/scene-operations.hpp"
 #include "wayfire/scene-render.hpp"
@@ -77,8 +76,7 @@ class dnd_root_icon_root_node_t : public floating_inner_node_t
             damage += self->get_position();
         }
 
-        void render(const wf::render_target_t& target,
-            const wf::region_t& region) override
+        void render(const wf::scene::render_instruction_t& target) override
         {
             wf::dassert(false, "Rendering a drag icon root node?");
         }

@@ -99,13 +99,15 @@ class wayfire_zoom_screen : public wf::per_output_plugin_instance_t
             (interpolation_method ==
                 (int)interpolation_method_t::NEAREST) ? GL_NEAREST : GL_LINEAR;
 
-        OpenGL::render_begin(destination);
-        GL_CALL(glBindFramebuffer(GL_READ_FRAMEBUFFER,
-            wf::gles::get_render_buffer_fb_id(source.get_renderbuffer())));
-        GL_CALL(glBindFramebuffer(GL_DRAW_FRAMEBUFFER, wf::gles::get_render_buffer_fb_id(destination)));
-        GL_CALL(glBlitFramebuffer(x1, y1, x1 + tw, y1 + th, 0, 0, w, h,
-            GL_COLOR_BUFFER_BIT, interpolation));
-        OpenGL::render_end();
+        wf::gles::run_in_context([&]
+        {
+            GLuint source_fb_id = wf::gles::ensure_render_buffer_fb_id(source.get_renderbuffer());
+            GLuint destination_fb_id = wf::gles::ensure_render_buffer_fb_id(destination);
+            GL_CALL(glBindFramebuffer(GL_READ_FRAMEBUFFER, source_fb_id));
+            GL_CALL(glBindFramebuffer(GL_DRAW_FRAMEBUFFER, destination_fb_id));
+            GL_CALL(glBlitFramebuffer(x1, y1, x1 + tw, y1 + th, 0, 0, w, h,
+                GL_COLOR_BUFFER_BIT, interpolation));
+        });
 
         if (!progression.running() && (progression - 1 <= 0.01))
         {

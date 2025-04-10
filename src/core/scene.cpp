@@ -7,7 +7,6 @@
 
 #include "scene-priv.hpp"
 #include "wayfire/geometry.hpp"
-#include "wayfire/opengl.hpp"
 #include "wayfire/region.hpp"
 #include "wayfire/scene-input.hpp"
 #include "wayfire/scene-render.hpp"
@@ -222,8 +221,7 @@ class default_render_instance_t : public render_instance_t
         // nothing to render here
     }
 
-    void render(const wf::render_target_t& target,
-        const wf::region_t& region) override
+    void render(const wf::scene::render_instruction_t& data) override
     {
         wf::dassert(false, "Rendering an inner node?");
     }

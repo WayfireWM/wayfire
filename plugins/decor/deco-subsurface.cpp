@@ -107,9 +107,9 @@ class simple_decoration_node_t : public wf::scene::node_t, public wf::pointer_in
             glm::vec4(1.0f), OpenGL::TEXTURE_TRANSFORM_INVERT_Y);
     }
 
-    void render_scissor_box(const wf::render_target_t& fb, wf::point_t origin,
-        const wlr_box& scissor)
+    void render(const wf::scene::render_instruction_t& data)
     {
+        auto origin = get_offset();
         /* Clear background */
         wlr_box geometry{origin.x, origin.y, size.width, size.height};
 
@@ -119,7 +119,7 @@ class simple_decoration_node_t : public wf::scene::node_t, public wf::pointer_in
             activated = view->activated;
         }
 
-        theme.render_background(fb, geometry, scissor, activated);
+        theme.render_background(data, geometry, activated);
 
         /* Draw title & buttons */
         auto renderables = layout.get_renderable_areas();
@@ -127,14 +127,17 @@ class simple_decoration_node_t : public wf::scene::node_t, public wf::pointer_in
         {
             if (item->get_type() == wf::decor::DECORATION_AREA_TITLE)
             {
-                OpenGL::render_begin(fb);
-                wf::gles::render_target_logic_scissor(fb, scissor);
-                render_title(fb, item->get_geometry() + origin);
-                OpenGL::render_end();
+                data.pass->custom_gles_subpass(data.target, [&]
+                {
+                    for (auto box : data.damage)
+                    {
+                        wf::gles::render_target_logic_scissor(data.target, wlr_box_from_pixman_box(box));
+                        render_title(data.target, item->get_geometry() + origin);
+                    }
+                });
             } else // button
             {
-                item->as_button().render(fb,
-                    item->get_geometry() + origin, scissor);
+                item->as_button().render(data, item->get_geometry() + origin);
             }
         }
     }
@@ -200,13 +203,9 @@ class simple_decoration_node_t : public wf::scene::node_t, public wf::pointer_in
             }
         }
 
-        void render(const wf::render_target_t& target,
-            const wf::region_t& region) override
+        void render(const wf::scene::render_instruction_t& data) override
         {
-            for (const auto& box : region)
-            {
-                self->render_scissor_box(target, self->get_offset(), wlr_box_from_pixman_box(box));
-            }
+            self->render(data);
         }
     };
 

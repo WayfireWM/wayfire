@@ -201,9 +201,10 @@ struct cairo_text_t
         g_object_unref(layout);
 
         cairo_surface_flush(surface);
-        OpenGL::render_begin();
-        cairo_surface_upload_to_texture(surface, tex);
-        OpenGL::render_end();
+        wf::gles::run_in_context([&]
+        {
+            cairo_surface_upload_to_texture(surface, tex);
+        });
 
         return ret;
     }

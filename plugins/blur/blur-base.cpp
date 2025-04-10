@@ -74,18 +74,20 @@ wf_blur_base::wf_blur_base(std::string name)
     this->degrade_opt.set_callback(options_changed);
     this->iterations_opt.set_callback(options_changed);
 
-    OpenGL::render_begin();
-    blend_program.compile(blur_blend_vertex_shader, blur_blend_fragment_shader);
-    OpenGL::render_end();
+    wf::gles::maybe_run_in_context([&]
+    {
+        blend_program.compile(blur_blend_vertex_shader, blur_blend_fragment_shader);
+    });
 }
 
 wf_blur_base::~wf_blur_base()
 {
-    OpenGL::render_begin();
-    program[0].free_resources();
-    program[1].free_resources();
-    blend_program.free_resources();
-    OpenGL::render_end();
+    wf::gles::maybe_run_in_context([&]
+    {
+        program[0].free_resources();
+        program[1].free_resources();
+        blend_program.free_resources();
+    });
 }
 
 int wf_blur_base::calculate_blur_radius()
@@ -104,8 +106,11 @@ void wf_blur_base::render_iteration(wf::region_t blur_region,
 
     out.allocate({width, height});
 
+    GLuint tex_id = wf::texture_t::from_aux(in).tex_id;
+
     wf::gles::bind_render_buffer(out.get_renderbuffer());
-    GL_CALL(glBindTexture(GL_TEXTURE_2D, wf::texture_t::from_aux(in).tex_id));
+    GL_CALL(glActiveTexture(GL_TEXTURE0));
+    GL_CALL(glBindTexture(GL_TEXTURE_2D, tex_id));
     for (auto& b : blur_region)
     {
         wf::gles::scissor_render_buffer(out.get_renderbuffer(), wlr_box_from_pixman_box(b));
@@ -159,20 +164,18 @@ wlr_box wf_blur_base::copy_region(wf::auxilliary_buffer_t& result,
     subbox = sanitize(subbox, degrade_opt, source_box);
     int degraded_width  = subbox.width / degrade_opt;
     int degraded_height = subbox.height / degrade_opt;
-
-    OpenGL::render_begin(source);
     result.allocate({degraded_width, degraded_height});
 
-    GL_CALL(glBindFramebuffer(GL_READ_FRAMEBUFFER, wf::gles::get_render_buffer_fb_id(source)));
-    GL_CALL(glBindFramebuffer(GL_DRAW_FRAMEBUFFER,
-        wf::gles::get_render_buffer_fb_id(result.get_renderbuffer())));
+    GLuint src_fb = wf::gles::ensure_render_buffer_fb_id(source);
+    GLuint dst_fb = wf::gles::ensure_render_buffer_fb_id(result.get_renderbuffer());
+    GL_CALL(glBindFramebuffer(GL_READ_FRAMEBUFFER, src_fb));
+    GL_CALL(glBindFramebuffer(GL_DRAW_FRAMEBUFFER, dst_fb));
 
     GL_CALL(glBlitFramebuffer(
-        subbox.x, source.get_size().height - subbox.y - subbox.height,
-        subbox.x + subbox.width, source.get_size().height - subbox.y,
+        subbox.x, subbox.y,
+        subbox.x + subbox.width, subbox.y + subbox.height,
         0, 0, degraded_width, degraded_height,
-        GL_COLOR_BUFFER_BIT, GL_LINEAR));
-    OpenGL::render_end();
+        GL_COLOR_BUFFER_BIT, GL_NEAREST));
 
     return subbox;
 }
@@ -202,7 +205,6 @@ void wf_blur_base::prepare_blur(const wf::render_target_t& target_fb, const wf::
     blur_damage *= 1.0 / degrade;
 
     int r = blur_fb0(blur_damage, fb[0].get_size().width, fb[0].get_size().height);
-
     /* Make sure the result is always fb[0], because that's what is used in render()
      * */
     if (r != 0)
@@ -221,7 +223,6 @@ static wf::pointf_t get_center(wf::geometry_t g)
 void wf_blur_base::render(wf::texture_t src_tex, wlr_box src_box, const wf::region_t& damage,
     const wf::render_target_t& background_source_fb, const wf::render_target_t& target_fb)
 {
-    OpenGL::render_begin(target_fb);
     blend_program.use(src_tex.type);
 
     /* Use shader and enable vertex and texcoord data */
@@ -264,7 +265,7 @@ void wf_blur_base::render(wf::texture_t src_tex, wlr_box src_box, const wf::regi
     const wf::pointf_t center_view     = get_center(view_box);
     const wf::pointf_t center_prepared = get_center(blurred_box);
     const auto translate_x = 1.0 * (center_view.x - center_prepared.x) / view_box.width;
-    const auto translate_y = -1.0 * (center_view.y - center_prepared.y) / view_box.height;
+    const auto translate_y = 1.0 * (center_view.y - center_prepared.y) / view_box.height;
     glm::mat4 fix_center   = glm::translate(glm::mat4(1.0), glm::vec3{translate_x, translate_y, 0.0});
     glm::mat4 composite    = scale * fix_center * fb_fix;
     blend_program.uniformMatrix4f("background_uv_matrix", composite);
@@ -278,6 +279,7 @@ void wf_blur_base::render(wf::texture_t src_tex, wlr_box src_box, const wf::regi
     blend_program.set_active_texture(src_tex);
     GL_CALL(glActiveTexture(GL_TEXTURE0 + 1));
     GL_CALL(glBindTexture(GL_TEXTURE_2D, wf::texture_t::from_aux(fb[0]).tex_id));
+
     /* Render it to target_fb */
     wf::gles::bind_render_buffer(target_fb);
 
@@ -295,7 +297,6 @@ void wf_blur_base::render(wf::texture_t src_tex, wlr_box src_box, const wf::regi
     GL_CALL(glActiveTexture(GL_TEXTURE0));
     GL_CALL(glBindTexture(GL_TEXTURE_2D, 0));
     blend_program.deactivate();
-    OpenGL::render_end();
 }
 
 std::unique_ptr<wf_blur_base> create_blur_from_name(std::string algorithm_name)

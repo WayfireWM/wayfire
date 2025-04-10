@@ -58,7 +58,6 @@ class translation_node_instance_t : public render_instance_t
     // Implementation of render_instance_t
     void schedule_instructions(std::vector<wf::scene::render_instruction_t>& instructions,
         const wf::render_target_t& target, wf::region_t& damage) override;
-    void render(const wf::render_target_t& target, const wf::region_t& region) override;
     void presentation_feedback(wf::output_t *output) override;
     wf::scene::direct_scanout try_scanout(wf::output_t *output) override;
     void compute_visibility(wf::output_t *output, wf::region_t& visible) override;

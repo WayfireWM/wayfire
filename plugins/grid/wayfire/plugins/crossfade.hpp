@@ -60,12 +60,13 @@ class crossfade_node_t : public scene::view_2d_transformer_t
         std::vector<scene::render_instance_uptr> instances;
         root_node->gen_render_instances(instances, [] (auto) {}, view->get_output());
 
-        scene::render_pass_params_t params;
+        render_pass_params_t params;
         params.background_color = {0, 0, 0, 0};
         params.damage    = bbox;
         params.target    = target;
         params.instances = &instances;
-        scene::run_render_pass(params, scene::RPASS_CLEAR_BACKGROUND);
+        params.flags     = RPASS_CLEAR_BACKGROUND;
+        wf::render_pass_t::run(params);
     }
 
     std::string stringify() const override
@@ -112,8 +113,7 @@ class crossfade_render_instance_t : public scene::render_instance_t
                 });
     }
 
-    void render(const wf::render_target_t& target,
-        const wf::region_t& region) override
+    void render(const wf::scene::render_instruction_t& data) override
     {
         double ra;
         const double N = 2;
@@ -125,15 +125,15 @@ class crossfade_render_instance_t : public scene::render_instance_t
             ra = std::pow((self->overlay_alpha - 0.5) * 2, N) / 2.0 + 0.5;
         }
 
-        OpenGL::render_begin(target);
-        for (auto& box : region)
+        data.pass->custom_gles_subpass(data.target, [&]
         {
-            wf::gles::render_target_logic_scissor(target, wlr_box_from_pixman_box(box));
-            OpenGL::render_texture(wf::texture_t::from_aux(self->original_buffer), target,
-                self->displayed_geometry, glm::vec4{1.0f, 1.0f, 1.0f, 1.0 - ra});
-        }
-
-        OpenGL::render_end();
+            for (auto box : data.damage)
+            {
+                gles::render_target_logic_scissor(data.target, wlr_box_from_pixman_box(box));
+                OpenGL::render_texture(wf::texture_t::from_aux(self->original_buffer), data.target,
+                    self->displayed_geometry, glm::vec4{1.0f, 1.0f, 1.0f, 1.0 - ra});
+            }
+        });
     }
 };
 

@@ -176,20 +176,25 @@ class blur_render_instance_t : public transformer_render_instance_t<blur_node_t>
 
         saved_pixels->pixels.allocate(target.get_size());
 
-        OpenGL::render_begin(saved_pixels->pixels.get_renderbuffer());
-        GL_CALL(glBindFramebuffer(GL_READ_FRAMEBUFFER, wf::gles::get_render_buffer_fb_id(target)));
-
-        /* Copy pixels in padded_region from target_fb to saved_pixels. */
-        for (const auto& box : saved_pixels->region)
+        wf::gles::maybe_run_in_context([&]
         {
-            GL_CALL(glBlitFramebuffer(
-                box.x1, target.get_size().height - box.y2,
-                box.x2, target.get_size().height - box.y1,
-                box.x1, box.y1, box.x2, box.y2,
-                GL_COLOR_BUFFER_BIT, GL_LINEAR));
-        }
+            GLuint target_fb = wf::gles::ensure_render_buffer_fb_id(target);
 
-        OpenGL::render_end();
+            wf::gles::bind_render_buffer(saved_pixels->pixels.get_renderbuffer());
+            GL_CALL(glBindFramebuffer(GL_READ_FRAMEBUFFER, target_fb));
+
+            /* Copy pixels in padded_region from target_fb to saved_pixels. */
+            for (const auto& box : saved_pixels->region)
+            {
+                GL_CALL(glBlitFramebuffer(
+                    box.x1, box.y1,
+                    box.x2, box.y2,
+                    box.x1, box.y1,
+                    box.x2, box.y2,
+                    GL_COLOR_BUFFER_BIT, GL_LINEAR));
+            }
+        });
+
         instructions.push_back(render_instruction_t{
                     .instance = this,
                     .target   = target,
@@ -197,40 +202,45 @@ class blur_render_instance_t : public transformer_render_instance_t<blur_node_t>
                 });
     }
 
-    void render(const wf::render_target_t& target, const wf::region_t& damage) override
+    void render(const wf::scene::render_instruction_t& data) override
     {
-        auto tex = get_texture(target.scale);
+        auto tex = get_texture(data.target.scale);
         auto bounding_box = self->get_bounding_box();
-        if (!damage.empty())
+
+        data.pass->custom_gles_subpass([&]
         {
-            auto translucent_damage = calculate_translucent_damage(target, damage);
-            self->provider()->prepare_blur(target, translucent_damage);
-            self->provider()->render(tex, bounding_box, damage, target, target);
-        }
+            if (!data.damage.empty())
+            {
+                auto translucent_damage = calculate_translucent_damage(data.target, data.damage);
+                self->provider()->prepare_blur(data.target, translucent_damage);
+                self->provider()->render(tex, bounding_box, data.damage, data.target, data.target);
+            }
 
-        OpenGL::render_begin(target);
-        // Setup framebuffer I/O. target_fb contains the frame
-        // rendered with expanded damage and artifacts on the edges.
-        // saved_pixels has the the padded region of pixels to overwrite the
-        // artifacts that blurring has left behind.
-        GL_CALL(glBindFramebuffer(GL_READ_FRAMEBUFFER,
-            wf::gles::get_render_buffer_fb_id(saved_pixels->pixels.get_renderbuffer())));
+            GLuint saved_fb = wf::gles::ensure_render_buffer_fb_id(saved_pixels->pixels.get_renderbuffer());
 
-        /* Copy pixels back from saved_pixels to target_fb. */
-        for (const auto& box : saved_pixels->region)
-        {
-            GL_CALL(glBlitFramebuffer(
-                box.x1, box.y1, box.x2, box.y2,
-                box.x1, target.get_size().height - box.y2,
-                box.x2, target.get_size().height - box.y1,
-                GL_COLOR_BUFFER_BIT, GL_LINEAR));
-        }
+            wf::gles::bind_render_buffer(data.target);
+            // Setup framebuffer I/O. target_fb contains the frame
+            // rendered with expanded damage and artifacts on the edges.
+            // saved_pixels has the the padded region of pixels to overwrite the
+            // artifacts that blurring has left behind.
+            GL_CALL(glBindFramebuffer(GL_READ_FRAMEBUFFER, saved_fb));
 
-        /* Reset stuff */
-        saved_pixels->region.clear();
-        self->release_saved_pixel_buffer(saved_pixels);
-        saved_pixels = NULL;
-        OpenGL::render_end();
+            /* Copy pixels back from saved_pixels to target_fb. */
+            for (const auto& box : saved_pixels->region)
+            {
+                GL_CALL(glBlitFramebuffer(
+                    box.x1, box.y1,
+                    box.x2, box.y2,
+                    box.x1, box.y1,
+                    box.x2, box.y2,
+                    GL_COLOR_BUFFER_BIT, GL_LINEAR));
+            }
+
+            /* Reset stuff */
+            saved_pixels->region.clear();
+            self->release_saved_pixel_buffer(saved_pixels);
+            saved_pixels = NULL;
+        });
     }
 
     direct_scanout try_scanout(wf::output_t *output) override
@@ -259,17 +269,18 @@ class wayfire_blur : public wf::plugin_interface_t
     // This is needed, because when blurring, the pixels that changed
     // affect a larger area than the really damaged region, e.g. the region
     // that comes from client damage.
-    wf::signal::connection_t<wf::scene::render_pass_begin_signal>
-    on_render_pass_begin = [=] (wf::scene::render_pass_begin_signal *ev)
+    wf::signal::connection_t<wf::render_pass_begin_signal>
+    on_render_pass_begin = [=] (wf::render_pass_begin_signal *ev)
     {
         if (!provider)
         {
             return;
         }
 
-        const int padding = calculate_damage_padding(ev->target, provider()->calculate_blur_radius());
+        const int padding =
+            calculate_damage_padding(ev->pass.get_target(), provider()->calculate_blur_radius());
         ev->damage.expand_edges(padding);
-        ev->damage &= ev->target.geometry;
+        ev->damage &= ev->pass.get_target().geometry;
     };
 
   public:

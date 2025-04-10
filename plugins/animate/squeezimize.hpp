@@ -171,8 +171,7 @@ class squeezimize_transformer : public wf::scene::view_2d_transformer_t
             damage |= wf::region_t{self->animation_geometry};
         }
 
-        void render(const wf::render_target_t& target,
-            const wf::region_t& damage) override
+        void render(const render_instruction_t& data) override
         {
             auto src_box = self->get_children_bounding_box();
             auto src_tex = wf::scene::transformer_render_instance_t<squeezimize_transformer>::get_texture(
@@ -226,23 +225,24 @@ class squeezimize_transformer : public wf::scene::view_2d_transformer_t
                 self->animation_geometry.height
             };
 
-            OpenGL::render_begin(target);
-            self->program.use(wf::TEXTURE_TYPE_RGBA);
-            self->program.uniformMatrix4f("matrix", wf::gles::render_target_orthographic_projection(target));
-            self->program.attrib_pointer("position", 2, 0, vertex_data_pos);
-            self->program.attrib_pointer("uv_in", 2, 0, vertex_data_uv);
-            self->program.uniform1i("upward", self->upward);
-            self->program.uniform1f("progress", progress);
-            self->program.uniform4f("src_box", src_box_pos);
-            self->program.uniform4f("target_box", target_box_pos);
-            self->program.set_active_texture(src_tex);
-            for (const auto& box : damage)
+            data.pass->custom_gles_subpass(data.target, [&]
             {
-                wf::gles::render_target_logic_scissor(target, wlr_box_from_pixman_box(box));
-                GL_CALL(glDrawArrays(GL_TRIANGLE_FAN, 0, 4));
-            }
-
-            OpenGL::render_end();
+                self->program.use(wf::TEXTURE_TYPE_RGBA);
+                self->program.uniformMatrix4f("matrix",
+                    wf::gles::render_target_orthographic_projection(data.target));
+                self->program.attrib_pointer("position", 2, 0, vertex_data_pos);
+                self->program.attrib_pointer("uv_in", 2, 0, vertex_data_uv);
+                self->program.uniform1i("upward", self->upward);
+                self->program.uniform1f("progress", progress);
+                self->program.uniform4f("src_box", src_box_pos);
+                self->program.uniform4f("target_box", target_box_pos);
+                self->program.set_active_texture(src_tex);
+                for (auto box : data.damage)
+                {
+                    gles::render_target_logic_scissor(data.target, wlr_box_from_pixman_box(box));
+                    GL_CALL(glDrawArrays(GL_TRIANGLE_FAN, 0, 4));
+                }
+            });
         }
     };
 
@@ -276,9 +276,11 @@ class squeezimize_transformer : public wf::scene::view_2d_transformer_t
                 this->minimize_target.height),
                 (this->minimize_target.y + this->minimize_target.height) - bbox.y),
                 (bbox.y + bbox.height) - this->minimize_target.y);
-        OpenGL::render_begin();
-        program.compile(squeeze_vert_source, squeeze_frag_source);
-        OpenGL::render_end();
+
+        wf::gles::maybe_run_in_context([&]
+        {
+            program.compile(squeeze_vert_source, squeeze_frag_source);
+        });
 
         auto src_box = view->get_bounding_box();
         auto output  = view->get_output();
@@ -310,7 +312,10 @@ class squeezimize_transformer : public wf::scene::view_2d_transformer_t
 
     virtual ~squeezimize_transformer()
     {
-        program.free_resources();
+        wf::gles::maybe_run_in_context([&]
+        {
+            program.free_resources();
+        });
     }
 };
 

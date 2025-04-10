@@ -1,6 +1,9 @@
 #include <wayfire/render.hpp>
 #include "core/core-impl.hpp"
 #include "wayfire/dassert.hpp"
+#include "wayfire/nonstd/reverse.hpp"
+#include "wayfire/opengl.hpp"
+#include <wayfire/scene-render.hpp>
 #include <drm_fourcc.h>
 
 wf::render_buffer_t::render_buffer_t(wlr_buffer *buffer, wf::dimensions_t size)
@@ -81,6 +84,7 @@ void wf::auxilliary_buffer_t::free()
     }
 
     buffer.buffer = NULL;
+    buffer.size   = {0, 0};
 }
 
 wlr_buffer*wf::auxilliary_buffer_t::get_buffer() const
@@ -155,4 +159,170 @@ wf::region_t wf::render_target_t::framebuffer_region_from_geometry_region(const 
     }
 
     return result;
+}
+
+wf::render_pass_t::render_pass_t(const render_pass_params_t& p)
+{
+    this->params = p;
+    this->params.renderer = p.renderer ?: wf::get_core().renderer;
+    wf::dassert(p.target.get_buffer(), "Cannot run a render pass without a valid target!");
+}
+
+wf::region_t wf::render_pass_t::run(const wf::render_pass_params_t& params)
+{
+    wf::render_pass_t pass{params};
+    auto damage = pass.run_partial();
+    pass.submit();
+    return damage;
+}
+
+wf::region_t wf::render_pass_t::run_partial()
+{
+    auto accumulated_damage = params.damage;
+    if (params.flags & RPASS_EMIT_SIGNALS)
+    {
+        // Emit render_pass_begin
+        render_pass_begin_signal ev{*this, accumulated_damage};
+        wf::get_core().emit(&ev);
+    }
+
+    wf::region_t swap_damage = accumulated_damage;
+
+    // Gather instructions
+    std::vector<wf::scene::render_instruction_t> instructions;
+    if (params.instances)
+    {
+        for (auto& inst : *params.instances)
+        {
+            inst->schedule_instructions(instructions,
+                params.target, accumulated_damage);
+        }
+    }
+
+    this->pass = wlr_renderer_begin_buffer_pass(
+        params.renderer ?: wf::get_core().renderer,
+        params.target.get_buffer(),
+        params.pass_opts);
+
+    if (!pass)
+    {
+        LOGE("Error: failed to start wlr render pass!");
+        return accumulated_damage;
+    }
+
+    // Clear visible background areas
+    if (params.flags & RPASS_CLEAR_BACKGROUND)
+    {
+        clear(accumulated_damage, params.background_color);
+    }
+
+    // Render instances
+    for (auto& instr : wf::reverse(instructions))
+    {
+        instr.pass = this;
+        instr.instance->render(instr);
+        if (params.reference_output)
+        {
+            instr.instance->presentation_feedback(params.reference_output);
+        }
+    }
+
+    if (params.flags & RPASS_EMIT_SIGNALS)
+    {
+        render_pass_end_signal end_ev{*this};
+        wf::get_core().emit(&end_ev);
+    }
+
+    return swap_damage;
+}
+
+wf::render_target_t wf::render_pass_t::get_target() const
+{
+    return params.target;
+}
+
+wlr_renderer*wf::render_pass_t::get_wlr_renderer() const
+{
+    return params.renderer;
+}
+
+wlr_render_pass*wf::render_pass_t::get_wlr_pass()
+{
+    return pass;
+}
+
+void wf::render_pass_t::clear(const wf::region_t& region, const wf::color_t& color)
+{
+    auto box    = wf::construct_box({0, 0}, params.target.get_size());
+    auto damage = params.target.framebuffer_region_from_geometry_region(region);
+
+    wlr_render_rect_options opts;
+    opts.blend_mode = WLR_RENDER_BLEND_MODE_NONE;
+    opts.box   = box;
+    opts.clip  = const_cast<wf::region_t&>(damage).to_pixman();
+    opts.color = {
+        .r = static_cast<float>(color.r),
+        .g = static_cast<float>(color.g),
+        .b = static_cast<float>(color.b),
+        .a = static_cast<float>(color.a),
+    };
+
+    wlr_render_pass_add_rect(pass, &opts);
+}
+
+bool wf::render_pass_t::submit()
+{
+    bool status = wlr_render_pass_submit(pass);
+    this->pass = NULL;
+    return status;
+}
+
+wf::render_pass_t::~render_pass_t()
+{
+    if (this->pass)
+    {
+        LOGW("Dropping unsubmitted render pass!");
+    }
+}
+
+wf::render_pass_t::render_pass_t(render_pass_t&& other)
+{
+    *this = std::move(other);
+}
+
+wf::render_pass_t& wf::render_pass_t::operator =(render_pass_t&& other)
+{
+    if (this == &other)
+    {
+        return *this;
+    }
+
+    this->pass   = other.pass;
+    other.pass   = NULL;
+    this->params = other.params;
+    return *this;
+}
+
+bool wf::render_pass_t::prepare_gles_subpass()
+{
+    return prepare_gles_subpass(params.target);
+}
+
+bool wf::render_pass_t::prepare_gles_subpass(const wf::render_target_t& target)
+{
+    bool is_gles = wf::gles::maybe_run_in_context([&]
+    {
+        GL_CALL(glEnable(GL_BLEND));
+        GL_CALL(glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA));
+        wf::gles::bind_render_buffer(target);
+    });
+
+    return is_gles;
+}
+
+void wf::render_pass_t::finish_gles_subpass()
+{
+    // Bind the framebuffer again so that the wlr pass can continue as usual.
+    wf::gles::bind_render_buffer(params.target);
+    GL_CALL(glDisable(GL_SCISSOR_TEST));
 }

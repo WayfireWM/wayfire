@@ -6,7 +6,7 @@
 #include <wayfire/config/types.hpp>
 #include <wayfire/region.hpp>
 #include <wayfire/geometry.hpp>
-#include <wayfire/opengl.hpp>
+#include <wayfire/render.hpp>
 #include <wayfire/signal-provider.hpp>
 
 namespace wf
@@ -46,51 +46,11 @@ enum class direct_scanout
  */
 struct render_instruction_t
 {
+    render_pass_t *pass = NULL; // auto-filled by the render pass scheduling instructions
     render_instance_t *instance = NULL;
-    wf::render_target_t target;
+    render_target_t target;
     wf::region_t damage;
     std::any data = {};
-};
-
-class render_instance_t;
-using render_instance_uptr = std::unique_ptr<render_instance_t>;
-
-/**
- * A struct containing the information necessary to execute a render pass.
- */
-struct render_pass_params_t
-{
-    /** The instances which are to be rendered in this render pass. */
-    std::vector<render_instance_uptr> *instances;
-
-    /** The rendering target. */
-    render_target_t target;
-
-    /** The total damage accumulated from the instances since the last repaint. */
-    region_t damage;
-
-    /**
-     * The background color visible below all instances, if
-     * RPASS_CLEAR_BACKGROUND is specified.
-     */
-    color_t background_color;
-
-    /**
-     * The output the instances were rendered, used for sending presentation
-     * feedback.
-     */
-    output_t *reference_output = nullptr;
-
-    /**
-     * The wlroots renderer to use for this pass.
-     * In case that it is not set, wf::get_core().renderer will be used.
-     */
-    wlr_renderer *renderer = nullptr;
-
-    /**
-     * Additional options for the wlroots buffer pass.
-     */
-    wlr_buffer_pass_options *pass_opts = nullptr;
 };
 
 /**
@@ -136,40 +96,17 @@ class render_instance_t
         const wf::render_target_t& target, wf::region_t& damage) = 0;
 
     /**
-     * Render the node on the given render target and the given damage region.
-     * The node should not paint outside of @region.
+     * Render the node with the given parameters.
+     * Typically, this would be called by a render pass after calling schedule_instructions().
+     *
+     * The node should not paint outside of the specified region.
      * All coordinates are to be given in the node's parent coordinate system.
      *
-     * Note: render() should not be called outside of a render pass.
-     *
-     * @param target The render target to render the node to, as calculated in
-     *   @schedule_instructions.
-     * @param region The region to repaint, as calculated in
-     *   @schedule_instructions.
+     * @param data The data required to repaint the node, including the current render pass, the render
+     *             target, damaged region, etc.
      */
-    virtual void render(const wf::render_target_t& target,
-        const wf::region_t& region)
+    virtual void render(const render_instruction_t& data)
     {}
-
-    /**
-     * Render instances may also pass custom data to their render callbacks.
-     * However, since few of them do this, it is enough to override the version
-     * without custom data.
-     */
-    virtual void render(const wf::render_target_t& target,
-        const wf::region_t& region, const std::any& custom_data)
-    {
-        render(target, region);
-    }
-
-    /**
-     * Render instances may want to use wlroots' render pass.
-     */
-    virtual void render(wlr_render_pass *pass, const wf::render_target_t& target,
-        const wf::region_t& region, const std::any& custom_data)
-    {
-        render(target, region, custom_data);
-    }
 
     /**
      * Notify the render instance that it has been presented on an output.
@@ -227,79 +164,6 @@ inline void damage_node(NodePtr node, wf::region_t damage)
     data.region = damage;
     node->emit(&data);
 }
-
-/**
- * Signal that a render pass starts.
- * emitted on: core.
- */
-struct render_pass_begin_signal
-{
-    render_pass_begin_signal(wf::region_t& damage, wf::render_target_t target) :
-        damage(damage), target(target)
-    {}
-
-    /**
-     * The initial damage for this render pass.
-     * Plugins may expand it further.
-     */
-    wf::region_t& damage;
-
-    /**
-     * The target buffer for rendering.
-     */
-    wf::render_target_t target;
-};
-
-/**
- * Signal that is emitted once a render pass ends.
- * emitted on: core.
- */
-struct render_pass_end_signal
-{
-    wf::render_target_t target;
-};
-
-enum render_pass_flags
-{
-    /**
-     * Do not emit render-pass-{begin, end} signals.
-     */
-    RPASS_EMIT_SIGNALS     = (1 << 0),
-    /**
-     * Do not clear the background areas.
-     */
-    RPASS_CLEAR_BACKGROUND = (1 << 1),
-};
-
-/**
- * A helper function to execute a render pass.
- *
- * The render pass goes as described below:
- *
- * 1. Optionally, emit render-pass-begin.
- * 2. Render instructions are generated from the given instances. During this phase, the instances may
- *    start and execute sub-passes.
- * 3. The wlroots render pass begins.
- * 4. Optionally, clear visible background areas with @background_color.
- * 5. Render instructions are executed back-to-forth.
- * 6. Optionally, emit render-pass-end.
- * 7. The wlroots render pass is submitted.
- *
- * By specifying @flags, steps 1, 4, and 6 can be enabled and disabled.
- *
- * @return The full damage which was rendered on the screen. It may be more (or
- *  less) than @accumulated_damage because plugins are allowed to modify the
- *  damage in render-pass-begin.
- */
-wf::region_t run_render_pass(
-    const render_pass_params_t& params, uint32_t flags);
-
-/**
- * Same as @run_render_pass, but does not submit the wlroots render pass.
- * Instead, it returns the render pass so that the caller may add additional render commands to it.
- */
-std::pair<wlr_render_pass*, wf::region_t> run_render_pass_partial(
-    const render_pass_params_t& params, uint32_t flags);
 
 /**
  * A helper function for direct scanout implementations.
@@ -366,7 +230,4 @@ struct node_regen_instances_signal
 
 uint32_t optimize_nested_render_instances(wf::scene::node_ptr node, uint32_t flags);
 }
-
-void clear_with_wlr_pass(wlr_render_pass *pass, const wf::geometry_t& box, const wf::color_t& color,
-    const wf::region_t& damage);
 }
