@@ -93,7 +93,7 @@ class wf_blur_base
   protected:
     /* used to store temporary results in blur algorithms, cleaned up in base
      * destructor */
-    wf::framebuffer_t fb[2];
+    wf::auxilliary_buffer_t fb[2];
     wf::geometry_t prepared_geometry;
 
     /* the program created by the given algorithm, cleaned up in base destructor */
@@ -114,12 +114,12 @@ class wf_blur_base
     /* renders the in texture to the out framebuffer.
      * assumes a properly bound and initialized GL program */
     void render_iteration(wf::region_t blur_region,
-        wf::framebuffer_t& in, wf::framebuffer_t& out,
+        wf::auxilliary_buffer_t& in, wf::auxilliary_buffer_t& out,
         int width, int height);
 
     /* copy the source pixels from region, storing into result
      * returns the result geometry, in framebuffer coords */
-    wlr_box copy_region(wf::framebuffer_t& result,
+    wlr_box copy_region(wf::auxilliary_buffer_t& result,
         const wf::render_target_t& source, const wf::region_t& region);
 
     /* blur fb[0]

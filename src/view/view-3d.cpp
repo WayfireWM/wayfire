@@ -216,13 +216,13 @@ class view_2d_render_instance_t :
         auto translate = glm::translate(glm::mat4(1.0),
             glm::vec3{self->translation_x + midpoint.x,
                 self->translation_y + midpoint.y, 0.0});
-        auto ortho = target.get_orthographic_projection();
+        auto ortho = wf::gles::render_target_orthographic_projection(target);
         auto full_matrix = ortho * translate * rotate * scale * center_at;
 
         OpenGL::render_begin(target);
         for (auto& box : region)
         {
-            target.logic_scissor(wlr_box_from_pixman_box(box));
+            wf::gles::render_target_logic_scissor(target, wlr_box_from_pixman_box(box));
             // OpenGL::clear({1, 0, 0, 1});
             OpenGL::render_transformed_texture(tex, bbox, full_matrix,
                 glm::vec4{1.0, 1.0, 1.0, self->alpha});
@@ -424,13 +424,13 @@ class view_3d_render_instance_t :
                     1.0
                 });
 
-        transform = target.gl_to_framebuffer() * scale * translate * transform;
+        transform = wf::gles::render_target_gl_to_framebuffer(target) * scale * translate * transform;
         auto tex = get_texture(target.scale);
 
         OpenGL::render_begin(target);
         for (auto& box : damage)
         {
-            target.logic_scissor(wlr_box_from_pixman_box(box));
+            wf::gles::render_target_logic_scissor(target, wlr_box_from_pixman_box(box));
             OpenGL::render_transformed_texture(tex, quad.geometry, {},
                 transform, self->color);
         }
