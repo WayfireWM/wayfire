@@ -883,25 +883,25 @@ class wobbly_render_instance_t :
         damage |= self->get_bounding_box();
     }
 
-    void render(const wf::render_target_t& target_fb,
-        const wf::region_t& damage) override
+    void render(const wf::scene::render_instruction_t& data) override
     {
         std::vector<float> vert, uv;
         auto subbox = self->get_children_bounding_box();
 
         wobbly_graphics::prepare_geometry(self->model.get(), subbox, vert, uv);
-        auto tex = get_texture(target_fb.scale);
-        OpenGL::render_begin(target_fb);
-        for (auto& box : damage)
-        {
-            wf::gles::render_target_logic_scissor(target_fb, wlr_box_from_pixman_box(box));
-            wobbly_graphics::render_triangles(self->wobbly_program, tex,
-                wf::gles::render_target_orthographic_projection(target_fb),
-                vert.data(), uv.data(),
-                self->model->x_cells * self->model->y_cells * 2);
-        }
+        auto tex = get_texture(data.target.scale);
 
-        OpenGL::render_end();
+        data.pass->custom_gles_subpass(data.target, [&]
+        {
+            for (auto box : data.damage)
+            {
+                wf::gles::render_target_logic_scissor(data.target, wlr_box_from_pixman_box(box));
+                wobbly_graphics::render_triangles(self->wobbly_program, tex,
+                    wf::gles::render_target_orthographic_projection(data.target),
+                    vert.data(), uv.data(),
+                    self->model->x_cells * self->model->y_cells * 2);
+            }
+        });
     }
 };
 
@@ -923,13 +923,11 @@ class wayfire_wobbly : public wf::plugin_interface_t
   public:
     void init() override
     {
-        wf::dassert(wf::get_core().is_gles2(),
-            "Either disable the wobbly plugin or start Wayfire with GLES renderer!");
-
         wf::get_core().connect(&wobbly_changed);
-        OpenGL::render_begin();
-        program.compile(wobbly_graphics::vertex_source, wobbly_graphics::frag_source);
-        OpenGL::render_end();
+        wf::gles::run_in_context([&]
+        {
+            program.compile(wobbly_graphics::vertex_source, wobbly_graphics::frag_source);
+        });
     }
 
     void adjust_wobbly(wobbly_signal *data)
@@ -1008,9 +1006,10 @@ class wayfire_wobbly : public wf::plugin_interface_t
             }
         }
 
-        OpenGL::render_begin();
-        program.free_resources();
-        OpenGL::render_end();
+        wf::gles::run_in_context([&]
+        {
+            program.free_resources();
+        });
     }
 
   private:

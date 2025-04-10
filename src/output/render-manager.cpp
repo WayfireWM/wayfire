@@ -10,7 +10,6 @@
 #include "wayfire/view.hpp"
 #include "wayfire/output.hpp"
 #include "wayfire/util.hpp"
-#include "../core/opengl-priv.hpp"
 #include "../main.hpp"
 #include "wayfire/workspace-set.hpp" // IWYU pragma: keep
 #include <algorithm>
@@ -331,7 +330,7 @@ struct swapchain_damage_manager_t
         return next_frame;
     }
 
-    void swap_buffers(std::unique_ptr<frame_object_t> next_frame, wlr_render_pass *pass,
+    void swap_buffers(std::unique_ptr<frame_object_t> next_frame, wf::render_pass_t pass,
         const wf::region_t& swap_damage)
     {
         /* If force frame sync option is set, call glFinish to block until
@@ -343,8 +342,7 @@ struct swapchain_damage_manager_t
         }
 
         frame_damage.clear();
-
-        if (!wlr_render_pass_submit(pass))
+        if (!pass.submit())
         {
             LOGE("Failed to submit render pass!");
             wlr_buffer_unlock(next_frame->buffer);
@@ -612,6 +610,7 @@ class depth_buffer_manager_t
             return;
         }
 
+        LOGE("Ensuring depth");
         attach_buffer(find_buffer(fb), fb, width, height);
     }
 
@@ -660,13 +659,13 @@ class depth_buffer_manager_t
 
     void free_all_buffers()
     {
-        OpenGL::render_begin();
-        for (auto& b : buffers)
+        wf::gles::maybe_run_in_context([&]
         {
-            free_buffer(b);
-        }
-
-        OpenGL::render_end();
+            for (auto& b : buffers)
+            {
+                free_buffer(b);
+            }
+        });
     }
 
     void attach_buffer(depth_buffer_t& buffer, int fb, int width, int height)
@@ -906,6 +905,7 @@ class wf::render_manager::impl
     std::unique_ptr<repaint_delay_manager_t> delay_manager;
 
     wf::option_wrapper_t<wf::color_t> background_color_opt;
+    std::unique_ptr<wf::render_pass_t> current_pass;
 
     impl(output_t *o) : output(o), env_allow_scanout(check_scanout_enabled())
     {
@@ -1021,10 +1021,10 @@ class wf::render_manager::impl
      * Render an output. Either calls the built-in renderer, or the render hook
      * of a plugin
      */
-    std::pair<wlr_render_pass*, wf::region_t> render_output(
+    wf::region_t start_output_pass(
         std::unique_ptr<swapchain_damage_manager_t::frame_object_t>& next_frame)
     {
-        scene::render_pass_params_t params;
+        render_pass_params_t params;
         params.instances = &damage_manager->render_instances;
         params.damage    = damage_manager->get_ws_damage(
             output->wset()->get_current_workspace());
@@ -1035,9 +1035,10 @@ class wf::render_manager::impl
         params.background_color = background_color_opt;
         params.reference_output = this->output;
         params.renderer = output->handle->renderer;
+        params.flags    = RPASS_CLEAR_BACKGROUND | RPASS_EMIT_SIGNALS;
 
-        auto [pass, total_damage] = scene::run_render_pass_partial(params,
-            scene::RPASS_CLEAR_BACKGROUND | scene::RPASS_EMIT_SIGNALS);
+        this->current_pass = std::make_unique<render_pass_t>(params);
+        auto total_damage = current_pass->run_partial();
 
         total_damage += -wf::origin(output->get_layout_geometry());
         total_damage  = total_damage * output->handle->scale;
@@ -1050,12 +1051,10 @@ class wf::render_manager::impl
             yellow ^= total_damage;
 
             total_damage |= damage_manager->get_wlr_damage_box();
-            wf::geometry_t full_box = {0, 0, output->handle->width, output->handle->height};
-            clear_with_wlr_pass(pass,
-                full_box, {1, 1, 0, 1}, full_box);
+            current_pass->clear(yellow, {1, 1, 0, 1});
         }
 
-        return {pass, total_damage};
+        return total_damage;
     }
 
     void update_bound_output(wlr_buffer *buffer)
@@ -1066,12 +1065,9 @@ class wf::render_manager::impl
 
         if (wf::get_core().is_gles2())
         {
-            int current_fb = wlr_gles2_renderer_get_buffer_fbo(output->handle->renderer, buffer);
-            OpenGL::bind_output(current_fb);
-
             const auto& default_fb = postprocessing->get_target_framebuffer();
-            depth_buffer_manager->ensure_depth_buffer(
-                gles::get_render_buffer_fb_id(default_fb),
+            GLuint default_fb_id   = gles::ensure_render_buffer_fb_id(default_fb);
+            depth_buffer_manager->ensure_depth_buffer(default_fb_id,
                 default_fb.get_size().width, default_fb.get_size().height);
         }
     }
@@ -1103,9 +1099,7 @@ class wf::render_manager::impl
 
         /* Part 2: call the renderer, which sets swap_damage and draws the scenegraph */
         update_bound_output(next_frame->buffer);
-
-        auto [pass, swap_dmg] = render_output(next_frame);
-        this->swap_damage     = swap_dmg;
+        this->swap_damage = start_output_pass(next_frame);
 
         /* Part 3: overlay effects */
         effects->run_effects(OUTPUT_EFFECT_OVERLAY);
@@ -1119,24 +1113,17 @@ class wf::render_manager::impl
         postprocessing->run_post_effects();
         if (output_inhibit_counter)
         {
-            wf::geometry_t full_box = {0, 0, output->handle->width, output->handle->height};
-            clear_with_wlr_pass(pass,
-                full_box, {0, 0, 0, 1}, full_box);
+            current_pass->clear(current_pass->get_target().geometry, {0, 0, 0, 1});
         }
 
         /* Part 5: render sw cursors
          * We render software cursors after everything else
          * for consistency with hardware cursor planes */
-        wlr_output_add_software_cursors_to_render_pass(output->handle, pass,
+        wlr_output_add_software_cursors_to_render_pass(output->handle, current_pass->get_wlr_pass(),
             swap_damage.to_pixman());
 
         /* Part 6: finalize frame: swap buffers, send frame_done, etc */
-        damage_manager->swap_buffers(std::move(next_frame), pass, swap_damage);
-
-        if (wf::get_core().is_gles2())
-        {
-            OpenGL::unbind_output();
-        }
+        damage_manager->swap_buffers(std::move(next_frame), std::move(*current_pass.release()), swap_damage);
 
         postprocessing->set_current_buffer(nullptr);
 
@@ -1156,93 +1143,6 @@ class wf::render_manager::impl
         }
     }
 };
-
-void clear_with_wlr_pass(wlr_render_pass *pass, const wf::geometry_t& box, const wf::color_t& color,
-    const wf::region_t& damage)
-{
-    wlr_render_rect_options opts;
-    opts.blend_mode = WLR_RENDER_BLEND_MODE_NONE;
-    opts.box   = box;
-    opts.clip  = const_cast<wf::region_t&>(damage).to_pixman();
-    opts.color = {
-        .r = static_cast<float>(color.r),
-        .g = static_cast<float>(color.g),
-        .b = static_cast<float>(color.b),
-        .a = static_cast<float>(color.a),
-    };
-
-    wlr_render_pass_add_rect(pass, &opts);
-}
-
-std::pair<wlr_render_pass*, wf::region_t> scene::run_render_pass_partial(
-    const render_pass_params_t& params, uint32_t flags)
-{
-    auto accumulated_damage = params.damage;
-
-    if (flags & RPASS_EMIT_SIGNALS)
-    {
-        // Emit render_pass_begin
-        scene::render_pass_begin_signal ev{accumulated_damage, params.target};
-        wf::get_core().emit(&ev);
-    }
-
-    wf::region_t swap_damage = accumulated_damage;
-
-    // Gather instructions
-    std::vector<wf::scene::render_instruction_t> instructions;
-    for (auto& inst : *params.instances)
-    {
-        inst->schedule_instructions(instructions,
-            params.target, accumulated_damage);
-    }
-
-    auto pass = wlr_renderer_begin_buffer_pass(
-        params.renderer ?: wf::get_core().renderer,
-        params.target.get_buffer(),
-        params.pass_opts);
-
-    if (!pass)
-    {
-        LOGE("Error: failed to start wlr render pass!");
-        return {nullptr, accumulated_damage};
-    }
-
-    // Clear visible background areas
-    if (flags & RPASS_CLEAR_BACKGROUND)
-    {
-        clear_with_wlr_pass(pass,
-            params.target.framebuffer_box_from_geometry_box(params.target.geometry),
-            params.background_color,
-            params.target.framebuffer_region_from_geometry_region(accumulated_damage));
-    }
-
-    // Render instances
-    for (auto& instr : wf::reverse(instructions))
-    {
-        instr.instance->render(pass, instr.target, instr.damage, instr.data);
-        if (params.reference_output)
-        {
-            instr.instance->presentation_feedback(params.reference_output);
-        }
-    }
-
-    if (flags & RPASS_EMIT_SIGNALS)
-    {
-        render_pass_end_signal end_ev;
-        end_ev.target = params.target;
-        wf::get_core().emit(&end_ev);
-    }
-
-    return {pass, swap_damage};
-}
-
-wf::region_t scene::run_render_pass(
-    const render_pass_params_t& params, uint32_t flags)
-{
-    auto [pass, swap_damage] = run_render_pass_partial(params, flags);
-    wlr_render_pass_submit(pass);
-    return swap_damage;
-}
 
 scene::direct_scanout scene::try_scanout_from_list(
     const std::vector<scene::render_instance_uptr>& instances,
@@ -1355,6 +1255,11 @@ wf::render_target_t render_manager::get_target_framebuffer() const
 void render_manager::set_require_depth_buffer(bool require)
 {
     return pimpl->depth_buffer_manager->set_required(require);
+}
+
+wf::render_pass_t*render_manager::get_current_pass()
+{
+    return pimpl->current_pass.get();
 }
 
 void priv_render_manager_clear_instances(wf::render_manager *manager)

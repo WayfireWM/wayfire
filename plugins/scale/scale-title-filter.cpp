@@ -353,17 +353,17 @@ class scale_title_filter : public wf::per_output_plugin_instance_t
         auto damage = output->render->get_scheduled_damage() & geometry;
         auto ortho  = wf::gles::render_target_orthographic_projection(out_fb);
 
-        OpenGL::render_begin(out_fb);
-        for (auto& box : damage)
+        output->render->get_current_pass()->custom_gles_subpass(out_fb, [&]
         {
-            wf::gles::render_target_logic_scissor(out_fb, wlr_box_from_pixman_box(box));
-            OpenGL::render_transformed_texture(tex.tex, gl_geom, tex_geom, ortho,
-                glm::vec4(1.f),
-                OpenGL::TEXTURE_TRANSFORM_INVERT_Y |
-                OpenGL::TEXTURE_USE_TEX_GEOMETRY);
-        }
-
-        OpenGL::render_end();
+            for (auto box : damage)
+            {
+                wf::gles::render_target_logic_scissor(out_fb, wlr_box_from_pixman_box(box));
+                OpenGL::render_transformed_texture(tex.tex, gl_geom, tex_geom, ortho,
+                    glm::vec4(1.f),
+                    OpenGL::TEXTURE_TRANSFORM_INVERT_Y |
+                    OpenGL::TEXTURE_USE_TEX_GEOMETRY);
+            }
+        });
     }
 
     /* clear everything rendered by this plugin and deactivate rendering */

@@ -15,20 +15,22 @@ wf_cube_background_cubemap::wf_cube_background_cubemap()
 
 wf_cube_background_cubemap::~wf_cube_background_cubemap()
 {
-    OpenGL::render_begin();
-    program.free_resources();
-    GL_CALL(glDeleteTextures(1, &tex));
-    GL_CALL(glDeleteBuffers(1, &vbo_cube_vertices));
-    GL_CALL(glDeleteBuffers(1, &ibo_cube_indices));
-    OpenGL::render_end();
+    wf::gles::run_in_context([&]
+    {
+        program.free_resources();
+        GL_CALL(glDeleteTextures(1, &tex));
+        GL_CALL(glDeleteBuffers(1, &vbo_cube_vertices));
+        GL_CALL(glDeleteBuffers(1, &ibo_cube_indices));
+    });
 }
 
 void wf_cube_background_cubemap::create_program()
 {
-    OpenGL::render_begin();
-    program.set_simple(
-        OpenGL::compile_program(cubemap_vertex, cubemap_fragment));
-    OpenGL::render_end();
+    wf::gles::run_in_context([&]
+    {
+        program.set_simple(
+            OpenGL::compile_program(cubemap_vertex, cubemap_fragment));
+    });
 }
 
 void wf_cube_background_cubemap::reload_texture()
@@ -40,42 +42,43 @@ void wf_cube_background_cubemap::reload_texture()
 
     last_background_image = background_image;
 
-    OpenGL::render_begin();
-    if (tex == (uint32_t)-1)
+    wf::gles::run_in_context([&]
     {
-        GL_CALL(glGenTextures(1, &tex));
-        GL_CALL(glGenBuffers(1, &vbo_cube_vertices));
-        GL_CALL(glGenBuffers(1, &ibo_cube_indices));
-    }
+        if (tex == (uint32_t)-1)
+        {
+            GL_CALL(glGenTextures(1, &tex));
+            GL_CALL(glGenBuffers(1, &vbo_cube_vertices));
+            GL_CALL(glGenBuffers(1, &ibo_cube_indices));
+        }
 
-    GL_CALL(glBindTexture(GL_TEXTURE_CUBE_MAP, tex));
-    if (!image_io::load_from_file(last_background_image, GL_TEXTURE_CUBE_MAP))
-    {
-        LOGE("Failed to load cubemap background image from \"%s\".",
-            last_background_image.c_str());
+        GL_CALL(glBindTexture(GL_TEXTURE_CUBE_MAP, tex));
+        if (!image_io::load_from_file(last_background_image, GL_TEXTURE_CUBE_MAP))
+        {
+            LOGE("Failed to load cubemap background image from \"%s\".",
+                last_background_image.c_str());
 
-        GL_CALL(glDeleteTextures(1, &tex));
-        GL_CALL(glDeleteBuffers(1, &vbo_cube_vertices));
-        GL_CALL(glDeleteBuffers(1, &ibo_cube_indices));
-        tex = -1;
-    }
+            GL_CALL(glDeleteTextures(1, &tex));
+            GL_CALL(glDeleteBuffers(1, &vbo_cube_vertices));
+            GL_CALL(glDeleteBuffers(1, &ibo_cube_indices));
+            tex = -1;
+        }
 
-    if (tex != (uint32_t)-1)
-    {
-        GL_CALL(glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER,
-            GL_LINEAR));
-        GL_CALL(glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER,
-            GL_LINEAR));
-        GL_CALL(glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S,
-            GL_CLAMP_TO_EDGE));
-        GL_CALL(glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T,
-            GL_CLAMP_TO_EDGE));
-        GL_CALL(glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R,
-            GL_CLAMP_TO_EDGE));
-    }
+        if (tex != (uint32_t)-1)
+        {
+            GL_CALL(glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER,
+                GL_LINEAR));
+            GL_CALL(glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER,
+                GL_LINEAR));
+            GL_CALL(glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S,
+                GL_CLAMP_TO_EDGE));
+            GL_CALL(glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T,
+                GL_CLAMP_TO_EDGE));
+            GL_CALL(glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R,
+                GL_CLAMP_TO_EDGE));
+        }
 
-    GL_CALL(glBindTexture(GL_TEXTURE_CUBE_MAP, 0));
-    OpenGL::render_end();
+        GL_CALL(glBindTexture(GL_TEXTURE_CUBE_MAP, 0));
+    });
 }
 
 void wf_cube_background_cubemap::render_frame(const wf::render_target_t& fb,
@@ -83,13 +86,10 @@ void wf_cube_background_cubemap::render_frame(const wf::render_target_t& fb,
 {
     reload_texture();
 
-    OpenGL::render_begin(fb);
     if (tex == (uint32_t)-1)
     {
         GL_CALL(glClearColor(TEX_ERROR_FLAG_COLOR));
         GL_CALL(glClear(GL_COLOR_BUFFER_BIT));
-        OpenGL::render_end();
-
         return;
     }
 
@@ -156,5 +156,4 @@ void wf_cube_background_cubemap::render_frame(const wf::render_target_t& fb,
     GL_CALL(glDepthMask(GL_TRUE));
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-    OpenGL::render_end();
 }

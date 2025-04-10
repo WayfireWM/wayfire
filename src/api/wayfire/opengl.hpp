@@ -36,7 +36,7 @@ namespace wf
 // Extra functions for plugins dealing with render targets with OpenGL ES rendering.
 namespace gles
 {
-GLuint get_render_buffer_fb_id(const render_buffer_t& buffer);
+GLuint ensure_render_buffer_fb_id(const render_buffer_t& buffer);
 void bind_render_buffer(const render_buffer_t& buffer);
 /* Set the GL scissor to the given box, after inverting it to match GL coordinate
  * space */
@@ -63,6 +63,35 @@ glm::mat4 output_transform(const render_target_t& target);
  *   framebuffer's geometry.
  */
 void render_target_logic_scissor(const render_target_t& target, wlr_box box);
+
+/**
+ * Ensure that the default EGL/GLES context is current.
+ */
+bool ensure_context(bool fail_on_error = false);
+
+/**
+ * Run code in the default EGL/GLES context, if we are running with GLES rendering.
+ */
+template<class F>
+bool maybe_run_in_context(F&& code, bool fail_on_error = false)
+{
+    if (ensure_context(fail_on_error))
+    {
+        code();
+        return true;
+    }
+
+    return false;
+}
+
+/**
+ * Run code in the default EGL/GLES context, print an error and exit otherwise.
+ */
+template<class F>
+bool run_in_context(F&& code)
+{
+    return maybe_run_in_context(code, true);
+}
 }
 
 /** Represents the different types(formats) of textures in Wayfire. */
@@ -112,22 +141,6 @@ struct texture_t
 
 namespace OpenGL
 {
-/* "Begin" rendering to the given framebuffer and the given viewport.
- * All rendering operations should happen between render_begin and render_end,
- * because
- * that's the only time we're guaranteed we have a valid GLES context
- *
- * The other functions below assume they are called between render_begin()
- * and render_end() */
-void render_begin(); // use if you just want to bind GL context but won't draw
-void render_begin(const wf::render_buffer_t& fb);
-void render_begin(int32_t viewport_width, int32_t viewport_height, uint32_t fb);
-
-/* Call this to indicate an end of the rendering.
- * Resets bound framebuffer and scissor box.
- * render_end() must be called for each render_begin() */
-void render_end();
-
 /* Clear the currently bound framebuffer with the given color */
 void clear(wf::color_t color, uint32_t mask = GL_COLOR_BUFFER_BIT);
 
@@ -247,7 +260,7 @@ void render_rectangle(wf::geometry_t box, wf::color_t color, glm::mat4 matrix);
  * It contains multiple programs for the different texture types.
  *
  * All of the program_t's functions should only be used inside a rendering
- * block guarded by render_begin/end()
+ * block (see render_pass_t::custom_gles_subpass or wf::gles::(maybe_)run_in_context)
  */
 class program_t
 {

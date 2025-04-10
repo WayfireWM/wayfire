@@ -126,6 +126,11 @@ class render_manager
     wf::region_t get_swap_damage();
 
     /**
+     * @return The current render pass, NULL if no rendering operations are currently active on the output.
+     */
+    wf::render_pass_t *get_current_pass();
+
+    /**
      * @return The damaged region on the current output for the current
      * frame. Note that a larger region might actually be repainted due to
      * double buffering.

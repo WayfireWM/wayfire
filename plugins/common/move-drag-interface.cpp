@@ -117,20 +117,19 @@ class scale_around_grab_t : public wf::scene::transformer_base_node_t
             region |= self->get_bounding_box();
         }
 
-        void render(const wf::render_target_t& target,
-            const wf::region_t& region) override
+        void render(const wf::scene::render_instruction_t& data) override
         {
             auto bbox = self->get_bounding_box();
-            auto tex  = this->get_texture(target.scale);
-
-            OpenGL::render_begin(target);
-            for (auto& rect : region)
+            auto tex  = this->get_texture(data.target.scale);
+            data.pass->custom_gles_subpass([&]
             {
-                wf::gles::render_target_logic_scissor(target, wlr_box_from_pixman_box(rect));
-                OpenGL::render_texture(tex, target, bbox, glm::vec4{1, 1, 1, (double)self->alpha_factor});
-            }
-
-            OpenGL::render_end();
+                for (auto& rect : data.damage)
+                {
+                    wf::gles::render_target_logic_scissor(data.target, wlr_box_from_pixman_box(rect));
+                    OpenGL::render_texture(tex, data.target, bbox,
+                        glm::vec4{1, 1, 1, (double)self->alpha_factor});
+                }
+            });
         }
     };
 
