@@ -157,10 +157,19 @@ std::optional<wf::loaded_plugin_t> wf::plugin_manager_t::load_plugin_from_file(s
         auto new_instance_func = union_cast<void*, wayfire_plugin_load_func>(new_instance_func_ptr);
 
         loaded_plugin_t lp;
-        lp.instance  = std::unique_ptr<wf::plugin_interface_t>(new_instance_func());
-        lp.so_handle = handle;
-        lp.so_path   = path;
-        return lp;
+        try {
+            lp.instance  = std::unique_ptr<wf::plugin_interface_t>(new_instance_func());
+            lp.so_handle = handle;
+            lp.so_path   = path;
+            return lp;
+        } catch (...)
+        {
+            LOGE("Failed to load plugin \"", path, "\". ");
+            if (enable_so_unloading)
+            {
+                dlclose(handle);
+            }
+        }
     }
 
     return {};
@@ -240,15 +249,10 @@ void wf::plugin_manager_t::reload_dynamic_plugins()
             continue;
         }
 
-        try {
-            std::optional<wf::loaded_plugin_t> ptr = load_plugin_from_file(plugin);
-            if (ptr)
-            {
-                pending_initialize.emplace_back(plugin, std::move(*ptr));
-            }
-        } catch (...)
+        std::optional<wf::loaded_plugin_t> ptr = load_plugin_from_file(plugin);
+        if (ptr)
         {
-            LOGE("Failed to load plugin \"", plugin_name, "\". ");
+            pending_initialize.emplace_back(plugin, std::move(*ptr));
         }
     }
 
@@ -264,7 +268,8 @@ void wf::plugin_manager_t::reload_dynamic_plugins()
             loaded_plugins[plugin] = std::move(ptr);
         } catch (...)
         {
-            // note: destructor will be called when exiting this function
+            // this will call fini(), the destructor and optionally unload the .so
+            destroy_plugin(ptr);
             LOGE("Failed to init plugin \"", plugin_name, "\". ");
         }
     }
