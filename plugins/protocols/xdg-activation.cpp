@@ -8,6 +8,7 @@
 #include <wayfire/nonstd/wlroots-full.hpp>
 #include <wayfire/window-manager.hpp>
 #include <wayfire/util.hpp>
+#include <wayfire/seat.hpp>
 #include "config.h"
 
 class wayfire_xdg_activation_protocol_impl : public wf::plugin_interface_t
@@ -28,6 +29,7 @@ class wayfire_xdg_activation_protocol_impl : public wf::plugin_interface_t
 
         xdg_activation_request_activate.connect(&xdg_activation->events.request_activate);
         xdg_activation_new_token.connect(&xdg_activation->events.new_token);
+        wf::get_core().connect(&on_run_command);
     }
 
     void fini() override
@@ -35,6 +37,7 @@ class wayfire_xdg_activation_protocol_impl : public wf::plugin_interface_t
         xdg_activation_request_activate.disconnect();
         xdg_activation_new_token.disconnect();
         xdg_activation_token_destroy.disconnect();
+        xdg_activation_token_self_destroy.disconnect();
         on_view_mapped.disconnect();
         last_token = nullptr;
         if (last_view)
@@ -43,6 +46,8 @@ class wayfire_xdg_activation_protocol_impl : public wf::plugin_interface_t
             last_view->disconnect(&on_view_deactivated);
             last_view = nullptr;
         }
+
+        wf::get_core().disconnect(&on_run_command);
     }
 
     bool is_unloadable() override
@@ -57,19 +62,23 @@ class wayfire_xdg_activation_protocol_impl : public wf::plugin_interface_t
         {
             auto event = static_cast<const struct wlr_xdg_activation_v1_request_activate_event*>(data);
 
-            if (!event->token->seat)
+            if (event->token != last_self_token)
             {
-                LOGI("Denying focus request, token was rejected at creation");
-                return;
-            }
+                if (!event->token->seat)
+                {
+                    LOGI("Denying focus request, token was rejected at creation");
+                    return;
+                }
 
-            if (only_last_token && (event->token != last_token))
-            {
-                LOGI("Denying focus request, token is expired");
-                return;
+                if (only_last_token && (event->token != last_token))
+                {
+                    LOGI("Denying focus request, token is expired");
+                    return;
+                }
             }
 
             last_token = nullptr; // avoid reusing the same token
+            last_self_token = nullptr;
 
             if (prevent_focus_stealing && !last_view)
             {
@@ -167,6 +176,13 @@ class wayfire_xdg_activation_protocol_impl : public wf::plugin_interface_t
             xdg_activation_token_destroy.disconnect();
         });
 
+        xdg_activation_token_self_destroy.set_callback([this] (void *data)
+        {
+            last_self_token = nullptr;
+
+            xdg_activation_token_self_destroy.disconnect();
+        });
+
         timeout.set_callback(timeout_changed);
     }
 
@@ -226,11 +242,59 @@ class wayfire_xdg_activation_protocol_impl : public wf::plugin_interface_t
         wf::get_core().default_wm->focus_request(signal->view);
     };
 
+    wf::signal::connection_t<wf::command_run_signal> on_run_command = [this] (auto signal)
+    {
+        if (wf::get_core().default_wm->focus_on_map)
+        {
+            // no need to do anything if views are focused anyway
+            return;
+        }
+
+        if (last_self_token)
+        {
+            // TODO: invalidate our last token !
+            last_self_token = nullptr;
+        }
+
+        auto active_view = wf::get_core().seat->get_active_view();
+        if (active_view && (active_view->role == wf::VIEW_ROLE_DESKTOP_ENVIRONMENT))
+        {
+            active_view = nullptr;
+        }
+
+        auto active_toplevel = active_view ? wf::toplevel_cast(active_view) : nullptr;
+
+        if (!active_toplevel)
+        {
+            // if there is no active view, we don't need a token
+            return;
+        }
+
+        if (last_view)
+        {
+            // TODO: we need a separate last_view actually !
+            last_view->disconnect(&on_view_unmapped);
+            last_view->disconnect(&on_view_deactivated);
+        }
+
+        last_view = active_toplevel;
+        last_view->connect(&on_view_unmapped);
+        last_view->connect(&on_view_deactivated);
+        last_self_token = wlr_xdg_activation_token_v1_create(xdg_activation);
+        xdg_activation_token_self_destroy.disconnect();
+        xdg_activation_token_self_destroy.connect(&last_self_token->events.destroy);
+        const char *token_id = wlr_xdg_activation_token_v1_get_name(last_self_token);
+        signal->env.emplace_back("XDG_ACTIVATION_TOKEN", token_id);
+        signal->env.emplace_back("DESKTOP_STARTUP_ID", token_id);
+    };
+
     struct wlr_xdg_activation_v1 *xdg_activation;
     wf::wl_listener_wrapper xdg_activation_request_activate;
     wf::wl_listener_wrapper xdg_activation_new_token;
     wf::wl_listener_wrapper xdg_activation_token_destroy;
+    wf::wl_listener_wrapper xdg_activation_token_self_destroy;
     struct wlr_xdg_activation_token_v1 *last_token = nullptr;
+    struct wlr_xdg_activation_token_v1 *last_self_token = nullptr;
     wayfire_toplevel_view last_view = nullptr; // view that created the token
 
     wf::option_wrapper_t<bool> check_surface{"xdg-activation/check_surface"};
