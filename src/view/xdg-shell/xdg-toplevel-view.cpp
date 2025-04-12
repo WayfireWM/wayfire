@@ -310,7 +310,19 @@ void wf::xdg_toplevel_view_t::map()
     adjust_view_output_on_map(this);
 
     xdg_toplevel_view_base_t::map();
-    wf::get_core().default_wm->focus_request(self());
+
+    /* We only focus a newly mapped view if the corresponding option is
+     * set or if there is no currently active view. */
+    auto active_view = wf::get_core().seat->get_active_view();
+    if (active_view && (active_view->role == wf::VIEW_ROLE_DESKTOP_ENVIRONMENT))
+    {
+        active_view = nullptr;
+    }
+
+    if (wf::get_core().default_wm->focus_on_map || (active_view == nullptr))
+    {
+        wf::get_core().default_wm->focus_request(self());
+    }
 
     /* Might trigger repositioning */
     set_toplevel_parent(this->parent);
