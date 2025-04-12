@@ -35,6 +35,7 @@ class wayfire_xdg_activation_protocol_impl : public wf::plugin_interface_t
         xdg_activation_request_activate.disconnect();
         xdg_activation_new_token.disconnect();
         xdg_activation_token_destroy.disconnect();
+        on_view_mapped.disconnect();
         last_token = nullptr;
         if (last_view)
         {
@@ -70,33 +71,49 @@ class wayfire_xdg_activation_protocol_impl : public wf::plugin_interface_t
 
             last_token = nullptr; // avoid reusing the same token
 
-            if (last_view)
-            {
-                last_view->disconnect(&on_view_unmapped);
-                last_view->disconnect(&on_view_deactivated);
-                last_view = nullptr;
-            } else if (prevent_focus_stealing)
+            if (prevent_focus_stealing && !last_view)
             {
                 LOGI("Denying focus request, requesting view has been deactivated");
                 return;
             }
 
+            bool should_focus = true;
             wayfire_view view = wf::wl_surface_to_wayfire_view(event->surface->resource);
             if (!view)
             {
                 LOGE("Could not get view");
-                return;
+                should_focus = false;
             }
 
             auto toplevel = wf::toplevel_cast(view);
             if (!toplevel)
             {
                 LOGE("Could not get toplevel view");
-                return;
+                should_focus = false;
             }
 
-            LOGD("Activating view");
-            wf::get_core().default_wm->focus_request(toplevel);
+            if (should_focus)
+            {
+                if (toplevel->toplevel()->current().mapped)
+                {
+                    LOGD("Activating view");
+                    wf::get_core().default_wm->focus_request(toplevel);
+                } else
+                {
+                    /* This toplevel is not mapped yet, we want to focus it
+                     * when it it first mapped. */
+                    on_view_mapped.disconnect();
+                    view->connect(&on_view_mapped);
+                    return; // avoid disconnecting last_view's signals
+                }
+            }
+
+            if (last_view)
+            {
+                last_view->disconnect(&on_view_unmapped);
+                last_view->disconnect(&on_view_deactivated);
+                last_view = nullptr;
+            }
         });
 
         xdg_activation_new_token.set_callback([this] (void *data)
@@ -187,6 +204,26 @@ class wayfire_xdg_activation_protocol_impl : public wf::plugin_interface_t
         last_view->disconnect(&on_view_unmapped);
         last_view->disconnect(&on_view_deactivated);
         last_view = nullptr;
+    };
+
+    wf::signal::connection_t<wf::view_mapped_signal> on_view_mapped = [this] (auto signal)
+    {
+        signal->view->disconnect(&on_view_mapped);
+
+        // re-check focus stealing prevention
+        if (last_view)
+        {
+            last_view->disconnect(&on_view_unmapped);
+            last_view->disconnect(&on_view_deactivated);
+            last_view = nullptr;
+        } else if (prevent_focus_stealing)
+        {
+            LOGI("Denying focus request, requesting view has been deactivated");
+            return;
+        }
+
+        LOGD("Activating view");
+        wf::get_core().default_wm->focus_request(signal->view);
     };
 
     struct wlr_xdg_activation_v1 *xdg_activation;
