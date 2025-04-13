@@ -239,14 +239,22 @@ addr2line_result locate_source_file(const demangling_result& dr)
     };
 }
 
+    #if HAS_ASAN
+extern "C"
+{
+    void __sanitizer_print_stack_trace(void);
+}
+    #endif
+
 void wf::print_trace(bool fast_mode)
 {
     if (!fast_mode)
     {
     #if HAS_ASAN
-        // We run with asan: just crash and let it print the stacktrace.
-        int *p = 0;
-        *p = 1;
+        // We run with asan: use __sanitizer_print_stack_trace to cause ASAN to print a nice stacktrace,
+        // which is better than what we can come up with.
+        __sanitizer_print_stack_trace();
+        return;
     #endif
     }
 
