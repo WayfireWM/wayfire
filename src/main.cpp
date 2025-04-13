@@ -11,6 +11,7 @@
 
 #include <wayland-server.h>
 
+#include "core/opengl-priv.hpp"
 #include "wayfire/config-backend.hpp"
 #include "core/plugin-loader.hpp"
 #include "core/core-impl.hpp"
@@ -282,6 +283,7 @@ int main(int argc, char *argv[])
         {"with-great-power-comes-great-responsibility", no_argument, NULL, 'r'},
         {"help", no_argument, NULL, 'h'},
         {"version", no_argument, NULL, 'v'},
+        {"exit-on-gles-error", no_argument, NULL, '$'},
         {0, 0, NULL, 0}
     };
 
@@ -321,6 +323,10 @@ int main(int argc, char *argv[])
 
           case 'h':
             print_help();
+            break;
+
+          case '$':
+            OpenGL::exit_on_gles_error = true;
             break;
 
           case 'd':
