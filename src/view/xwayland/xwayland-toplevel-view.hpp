@@ -455,6 +455,9 @@ class wayfire_xwayland_view : public wf::toplevel_view_interface_t, public wayfi
             if (wf::get_core().default_wm->focus_on_map || (active_view == nullptr))
             {
                 wf::get_core().default_wm->focus_request(self());
+            } else if (active_view)
+            {
+                wf::view_bring_to_front(active_view);
             }
         }
 
