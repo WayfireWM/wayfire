@@ -43,6 +43,12 @@ void gl_call(const char *func, uint32_t line, const char *glfunc)
 
     LOGE("gles2: function ", glfunc, " in ", func, " line ", line, ": ",
         gl_error_string(err));
+
+    if (OpenGL::exit_on_gles_error)
+    {
+        wf::print_trace(false);
+        std::_Exit(-1);
+    }
 }
 
 namespace OpenGL
