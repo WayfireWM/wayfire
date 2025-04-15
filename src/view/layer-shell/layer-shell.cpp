@@ -106,6 +106,7 @@ class wayfire_layer_shell_view : public wf::view_interface_t
         last_bounding_box = get_bounding_box();
         damage |= last_bounding_box;
         wf::scene::damage_node(get_root_node(), last_bounding_box);
+        wf::scene::update(get_root_node(), wf::scene::update_flag::GEOMETRY);
     }
 
     wlr_surface *get_keyboard_focus_surface() override
