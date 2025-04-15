@@ -337,11 +337,11 @@ class title_overlay_render_instance_t : public render_instance_t
             return;
         }
 
-        auto ortho = target.get_orthographic_projection();
+        auto ortho = wf::gles::render_target_orthographic_projection(target);
         OpenGL::render_begin(target);
         for (const auto& box : region)
         {
-            target.logic_scissor(wlr_box_from_pixman_box(box));
+            wf::gles::render_target_logic_scissor(target, wlr_box_from_pixman_box(box));
             OpenGL::render_transformed_texture(tex, self->geometry, ortho,
                 {1.0f, 1.0f, 1.0f, tr->alpha}, OpenGL::TEXTURE_TRANSFORM_INVERT_Y);
         }

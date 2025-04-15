@@ -1,8 +1,6 @@
-#include "view/view-impl.hpp"
 #include "wayfire/geometry.hpp"
 #include "wayfire/scene-render.hpp"
 #include "wayfire/scene-operations.hpp"
-#include "wayfire/workspace-set.hpp"
 #include "wayfire/scene.hpp"
 #include "wayfire/view.hpp"
 #include <wayfire/core.hpp>
@@ -11,6 +9,7 @@
 #include <wayfire/compositor-view.hpp>
 #include <wayfire/view-helpers.hpp>
 #include <wayfire/signal-definitions.hpp>
+#include <wayfire/workspace-set.hpp>
 #include <cstring>
 
 #include <glm/gtc/matrix_transform.hpp>
@@ -20,7 +19,8 @@ static void render_colored_rect(const wf::render_target_t& fb,
     int x, int y, int w, int h, const wf::color_t& color)
 {
     wf::color_t premultiply{color.r * color.a, color.g * color.a, color.b * color.a, color.a};
-    OpenGL::render_rectangle({x, y, w, h}, premultiply, fb.get_orthographic_projection());
+    OpenGL::render_rectangle({x, y, w, h}, premultiply,
+        wf::gles::render_target_orthographic_projection(fb));
 }
 
 class wf::color_rect_view_t::color_rect_node_t : public wf::scene::floating_inner_node_t
@@ -45,7 +45,7 @@ class wf::color_rect_view_t::color_rect_node_t : public wf::scene::floating_inne
             OpenGL::render_begin(target);
             for (const auto& box : region)
             {
-                target.logic_scissor(wlr_box_from_pixman_box(box));
+                wf::gles::render_target_logic_scissor(target, wlr_box_from_pixman_box(box));
 
                 /* Draw the border, making sure border parts don't overlap, otherwise
                  * we will get wrong corners if border has alpha != 1.0 */
