@@ -378,7 +378,21 @@ class wayfire_xwayland_view : public wf::toplevel_view_interface_t, public wayfi
         const bool wants_focus = (wlr_xwayland_icccm_input_model(xw) != WLR_ICCCM_INPUT_MODEL_NONE);
         if (wants_focus)
         {
-            wf::get_core().default_wm->focus_request(self());
+            /* We only focus a newly mapped view if the corresponding option is
+             * set or if there is no currently active view. */
+            auto active_view = wf::get_core().seat->get_active_view();
+            if (active_view && (active_view->role == wf::VIEW_ROLE_DESKTOP_ENVIRONMENT))
+            {
+                active_view = nullptr;
+            }
+
+            if (wf::get_core().default_wm->focus_on_map || (active_view == nullptr))
+            {
+                wf::get_core().default_wm->focus_request(self());
+            } else if (active_view)
+            {
+                wf::view_bring_to_front(active_view);
+            }
         }
 
         /* Might trigger repositioning */
