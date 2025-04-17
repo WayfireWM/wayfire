@@ -70,19 +70,11 @@ class ipc_activator_t
         return false;
     };
 
+
     ipc::method_callback ipc_cb = [=] (const wf::json_t& data)
     {
-        auto output_id = ipc::json_get_optional_int64(data, "output_id");
-        if (!output_id.has_value())
-        {
-            output_id = ipc::json_get_optional_int64(data, "output-id");
-        }
-
-        auto view_id = ipc::json_get_optional_int64(data, "view_id");
-        if (!view_id.has_value())
-        {
-            view_id = ipc::json_get_optional_int64(data, "view-id");
-        }
+        auto output_id = ipc::get_output_id(data);
+        auto view_id   = ipc::get_view_id(data);
 
         wf::output_t *wo = wf::get_core().seat->get_active_output();
         if (output_id.has_value())
@@ -97,7 +89,7 @@ class ipc_activator_t
         wayfire_view view;
         if (view_id.has_value())
         {
-            view = ipc::find_view_by_id(view_id.has_value());
+            view = ipc::find_view_by_id(view_id.value());
             if (!view)
             {
                 return ipc::json_error("view id not found!");

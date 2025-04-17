@@ -425,9 +425,9 @@ class wayfire_wm_actions_t : public wf::plugin_interface_t,
     wf::json_t execute_for_view(const wf::json_t& params,
         std::function<void(wayfire_toplevel_view, bool)> view_op)
     {
-        uint64_t view_id = wf::ipc::json_get_uint64(params, "view_id");
-        bool state = wf::ipc::json_get_bool(params, "state");
-        wayfire_toplevel_view view = toplevel_cast(wf::ipc::find_view_by_id(view_id));
+        auto view_id = wf::ipc::get_view_id(params);
+        bool state   = wf::ipc::json_get_bool(params, "state");
+        wayfire_toplevel_view view = toplevel_cast(wf::ipc::find_view_by_id(view_id.value()));
         if (!view)
         {
             return wf::ipc::json_error("toplevel view id not found!");

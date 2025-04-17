@@ -560,12 +560,12 @@ class wf_vswitch_global_plugin_t : public wf::per_output_plugin_t<vswitch>
 
     wf::ipc::method_callback request_workspace = [=] (const wf::json_t& data)
     {
-        uint64_t x = wf::ipc::json_get_uint64(data, "x");
-        uint64_t y = wf::ipc::json_get_uint64(data, "y");
-        uint64_t output_id = wf::ipc::json_get_uint64(data, "output-id");
-        std::optional<uint64_t> view_id = wf::ipc::json_get_optional_uint64(data, "view-id");
+        uint64_t x     = wf::ipc::json_get_uint64(data, "x");
+        uint64_t y     = wf::ipc::json_get_uint64(data, "y");
+        auto output_id = wf::ipc::get_output_id(data);
+        auto view_id   = wf::ipc::get_view_id(data);
 
-        auto wo = wf::ipc::find_output_by_id(output_id);
+        auto wo = wf::ipc::find_output_by_id(output_id.value());
         if (!wo)
         {
             return wf::ipc::json_error("Invalid output!");
