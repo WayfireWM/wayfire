@@ -351,6 +351,11 @@ struct wf_layer_shell_manager
 
     void arrange_unmapped_view(wayfire_layer_shell_view *view)
     {
+        if (!view->get_output())
+        {
+            return;
+        }
+
         if (view->lsurface->pending.exclusive_zone < 1)
         {
             return pin_view(view, view->get_output()->workarea->get_workarea());
@@ -440,9 +445,6 @@ std::shared_ptr<wayfire_layer_shell_view> wayfire_layer_shell_view::create(wlr_l
     }
 
     lsurface->output = self->get_output()->handle;
-
-    // Initial configure
-    self->on_commit_unmapped.emit(NULL);
 
     return self;
 }
@@ -603,6 +605,11 @@ void wayfire_layer_shell_view::close()
 
 void wayfire_layer_shell_view::configure(wf::geometry_t box)
 {
+    if (!lsurface)
+    {
+        return;
+    }
+
     auto state = &lsurface->current;
     if ((state->anchor & both_horiz) == both_horiz)
     {
