@@ -130,7 +130,7 @@ class crossfade_render_instance_t : public scene::render_instance_t
             for (auto box : data.damage)
             {
                 gles::render_target_logic_scissor(data.target, wlr_box_from_pixman_box(box));
-                OpenGL::render_texture(wf::texture_t::from_aux(self->original_buffer), data.target,
+                OpenGL::render_texture(wf::gles_texture_t::from_aux(self->original_buffer), data.target,
                     self->displayed_geometry, glm::vec4{1.0f, 1.0f, 1.0f, 1.0 - ra});
             }
         });

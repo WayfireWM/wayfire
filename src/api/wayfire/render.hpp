@@ -12,6 +12,8 @@ namespace wf
 {
 class output_t;
 
+
+
 /**
  * A simple wrapper for buffers which are used as render targets.
  * Note that a renderbuffer does not assume any ownership of the buffer.

@@ -106,7 +106,7 @@ void wf_blur_base::render_iteration(wf::region_t blur_region,
 
     out.allocate({width, height});
 
-    GLuint tex_id = wf::texture_t::from_aux(in).tex_id;
+    GLuint tex_id = wf::gles_texture_t::from_aux(in).tex_id;
 
     wf::gles::bind_render_buffer(out.get_renderbuffer());
     GL_CALL(glActiveTexture(GL_TEXTURE0));
@@ -220,7 +220,7 @@ static wf::pointf_t get_center(wf::geometry_t g)
     return {g.x + g.width / 2.0, g.y + g.height / 2.0};
 }
 
-void wf_blur_base::render(wf::texture_t src_tex, wlr_box src_box, const wf::region_t& damage,
+void wf_blur_base::render(wf::gles_texture_t src_tex, wlr_box src_box, const wf::region_t& damage,
     const wf::render_target_t& background_source_fb, const wf::render_target_t& target_fb)
 {
     blend_program.use(src_tex.type);
@@ -278,7 +278,7 @@ void wf_blur_base::render(wf::texture_t src_tex, wlr_box src_box, const wf::regi
 
     blend_program.set_active_texture(src_tex);
     GL_CALL(glActiveTexture(GL_TEXTURE0 + 1));
-    GL_CALL(glBindTexture(GL_TEXTURE_2D, wf::texture_t::from_aux(fb[0]).tex_id));
+    GL_CALL(glBindTexture(GL_TEXTURE_2D, wf::gles_texture_t::from_aux(fb[0]).tex_id));
 
     /* Render it to target_fb */
     wf::gles::bind_render_buffer(target_fb);

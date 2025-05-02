@@ -94,7 +94,7 @@ wf::region_t wf::layer_shell_node_t::get_opaque_region() const
     return {};
 }
 
-std::optional<wf::texture_t> wf::layer_shell_node_t::to_texture() const
+std::optional<wf::gles_texture_t> wf::layer_shell_node_t::to_texture() const
 {
     auto view = _view.lock();
     if (!view || !view->is_mapped() || (get_children().size() != 1))

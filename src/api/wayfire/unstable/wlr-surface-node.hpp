@@ -64,7 +64,7 @@ class wlr_surface_node_t : public node_t, public zero_copy_texturable_node_t
     void gen_render_instances(std::vector<render_instance_uptr>& instances, damage_callback damage,
         wf::output_t *output) override;
     wf::geometry_t get_bounding_box() override;
-    std::optional<wf::texture_t> to_texture() const override;
+    std::optional<wf::gles_texture_t> to_texture() const override;
 
     wlr_surface *get_surface() const;
     void apply_state(surface_state_t&& state);

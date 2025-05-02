@@ -150,7 +150,7 @@ class wf_blur_base
      * @param background_source_fb The framebuffer used to prepare the background blur.
      * @param target_fb The target to draw to.
      */
-    void render(wf::texture_t src_tex, wlr_box src_box, const wf::region_t& damage,
+    void render(wf::gles_texture_t src_tex, wlr_box src_box, const wf::region_t& damage,
         const wf::render_target_t& background_source_fb, const wf::render_target_t& target_fb);
 };
 

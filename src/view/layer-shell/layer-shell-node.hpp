@@ -25,7 +25,7 @@ class layer_shell_node_t : public wf::scene::translation_node_t,
     void gen_render_instances(std::vector<scene::render_instance_uptr>& instances,
         scene::damage_callback push_damage, wf::output_t *output) override;
 
-    std::optional<wf::texture_t> to_texture() const override;
+    std::optional<wf::gles_texture_t> to_texture() const override;
     wf::region_t get_opaque_region() const override;
 
   protected:

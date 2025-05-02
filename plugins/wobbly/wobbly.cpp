@@ -105,7 +105,8 @@ void prepare_geometry(wobbly_surface *model, wf::geometry_t src_box,
 }
 
 /* Requires bound opengl context */
-void render_triangles(OpenGL::program_t *program, wf::texture_t tex, glm::mat4 mat, float *pos, float *uv,
+void render_triangles(OpenGL::program_t *program, wf::gles_texture_t tex, glm::mat4 mat, float *pos,
+    float *uv,
     int cnt)
 {
     program->use(tex.type);

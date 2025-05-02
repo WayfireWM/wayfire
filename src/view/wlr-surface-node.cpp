@@ -429,11 +429,11 @@ wlr_surface*wf::scene::wlr_surface_node_t::get_surface() const
     return this->surface;
 }
 
-std::optional<wf::texture_t> wf::scene::wlr_surface_node_t::to_texture() const
+std::optional<wf::gles_texture_t> wf::scene::wlr_surface_node_t::to_texture() const
 {
     if (this->current_state.current_buffer && (this->current_state.transform == WL_OUTPUT_TRANSFORM_NORMAL))
     {
-        return wf::texture_t{current_state.texture, current_state.src_viewport};
+        return wf::gles_texture_t{current_state.texture, current_state.src_viewport};
     }
 
     return {};
