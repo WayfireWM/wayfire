@@ -6,7 +6,6 @@
 #include <map>
 #include "wayfire/core.hpp"
 #include "wayfire/geometry.hpp"
-#include "wayfire/opengl.hpp"
 #include "wayfire/region.hpp"
 #include "wayfire/scene-render.hpp"
 #include "wayfire/scene.hpp"

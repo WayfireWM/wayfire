@@ -6,7 +6,6 @@
 #include <wayfire/workspace-set.hpp>
 #include <wayfire/render-manager.hpp>
 #include <wayfire/signal-definitions.hpp>
-#include <wayfire/opengl.hpp>
 #include <set>
 #include <algorithm>
 #include <wayfire/nonstd/reverse.hpp>

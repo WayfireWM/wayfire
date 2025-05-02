@@ -1,5 +1,6 @@
 #include "wayfire/plugin.hpp"
 #include "wayfire/toplevel-view.hpp"
+#include "wayfire/util.hpp"
 #include "wayfire/view-helpers.hpp"
 #include <wayfire/output.hpp>
 #include <wayfire/core.hpp>

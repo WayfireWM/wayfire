@@ -455,6 +455,9 @@ wf::gles_texture_t::gles_texture_t(GLuint tex)
     this->tex_id = tex;
 }
 
+wf::gles_texture_t::gles_texture_t(wf::texture_t tex) : wf::gles_texture_t(tex.texture, tex.source_box)
+{}
+
 wf::gles_texture_t::gles_texture_t(wlr_texture *texture, std::optional<wlr_fbox> viewport)
 {
     wf::dassert(wlr_texture_is_gles2(texture));

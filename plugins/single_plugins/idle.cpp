@@ -4,9 +4,10 @@
 #include "wayfire/output.hpp"
 #include "wayfire/core.hpp"
 #include "wayfire/output-layout.hpp"
-#include "wayfire/workspace-set.hpp"
+#include "wayfire/util.hpp"
 #include "wayfire/signal-definitions.hpp"
 #include "wayfire/seat.hpp"
+#include "wayfire/toplevel-view.hpp"
 #include "../cube/cube-control-signal.hpp"
 
 #include <cmath>

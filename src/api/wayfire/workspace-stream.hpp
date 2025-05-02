@@ -2,8 +2,7 @@
 
 #include "wayfire/scene-render.hpp"
 #include "wayfire/scene.hpp"
-#include "wayfire/signal-provider.hpp"
-#include <wayfire/opengl.hpp>
+#include <wayfire/render.hpp>
 #include <wayfire/object.hpp>
 #include <wayfire/region.hpp>
 

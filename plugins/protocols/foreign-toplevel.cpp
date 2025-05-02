@@ -2,6 +2,7 @@
 #include "wayfire/debug.hpp"
 #include "wayfire/signal-definitions.hpp"
 #include <wayfire/output-layout.hpp>
+#include "wayfire/util.hpp"
 #include "wayfire/view.hpp"
 #include <memory>
 #include <wayfire/plugin.hpp>

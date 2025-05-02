@@ -204,11 +204,10 @@ class blur_render_instance_t : public transformer_render_instance_t<blur_node_t>
 
     void render(const wf::scene::render_instruction_t& data) override
     {
-        auto tex = get_texture(data.target.scale);
         auto bounding_box = self->get_bounding_box();
-
         data.pass->custom_gles_subpass([&]
         {
+            auto tex = wf::gles_texture_t{get_texture(data.target.scale)};
             if (!data.damage.empty())
             {
                 auto translucent_damage = calculate_translucent_damage(data.target, data.damage);

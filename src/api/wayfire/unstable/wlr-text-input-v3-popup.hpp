@@ -4,6 +4,7 @@
 #include <wayfire/unstable/translation-node.hpp>
 #include <wayfire/nonstd/wlroots-full.hpp>
 #include <wayfire/view.hpp>
+#include <wayfire/signal-definitions.hpp>
 
 namespace wf
 {

@@ -5,6 +5,7 @@
 #include "wayfire/plugins/ipc/ipc-method-repository.hpp"
 #include "wayfire/seat.hpp"
 #include <wayfire/per-output-plugin.hpp>
+#include <wayfire/signal-definitions.hpp>
 
 namespace wf
 {

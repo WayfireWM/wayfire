@@ -15,7 +15,6 @@
 #include <unordered_set>
 #include <drm_fourcc.h>
 #include <wayfire/seat.hpp>
-#include <wayfire/opengl.hpp>
 
 #include <wayfire/debug.hpp>
 #include <wayfire/util/log.hpp>
@@ -747,6 +746,7 @@ struct output_layout_output_t
     /** Render the output using texture as source */
     void render_output(wlr_texture *texture)
     {
+        // TODO: use render-manager's functions, apply gamma, use our normal pass functions.
         int buffer_age;
         struct wlr_render_pass *pass = wlr_output_begin_render_pass(handle, &pending_state.pending,
             &buffer_age, NULL);
@@ -755,8 +755,17 @@ struct output_layout_output_t
             return;
         }
 
-        wf::gles_texture_t tex{texture};
-        OpenGL::render_transformed_texture(tex, {-1, -1, 2, 2});
+        // Render other output as a fullscreen texture.
+        wlr_render_texture_options opts{};
+        opts.texture = texture;
+        opts.alpha   = NULL;
+        opts.blend_mode  = WLR_RENDER_BLEND_MODE_NONE;
+        opts.filter_mode = WLR_SCALE_FILTER_BILINEAR;
+        opts.clip    = NULL;
+        opts.src_box = {0, 0, 0, 0};
+        opts.dst_box = {0, 0, handle->width, handle->height};
+        opts.transform = WL_OUTPUT_TRANSFORM_NORMAL;
+        wlr_render_pass_add_texture(pass, &opts);
 
         wlr_render_pass_submit(pass);
         pending_state.commit(handle);

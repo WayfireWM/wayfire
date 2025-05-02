@@ -125,7 +125,7 @@ void wf::toplevel_view_node_t::gen_render_instances(
     instances.push_back(std::make_unique<toplevel_view_render_instance_t>(this, push_damage, output));
 }
 
-std::optional<wf::gles_texture_t> wf::toplevel_view_node_t::to_texture() const
+std::optional<wf::texture_t> wf::toplevel_view_node_t::to_texture() const
 {
     auto view = _view.lock();
     if (!view || !view->is_mapped() || (get_children().size() != 1))
