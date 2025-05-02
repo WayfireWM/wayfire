@@ -292,6 +292,25 @@ void wf::render_pass_t::add_texture(const wf::texture_t& texture, const wf::rend
     wlr_render_pass_add_texture(get_wlr_pass(), &opts);
 }
 
+void wf::render_pass_t::add_rect(const wf::color_t& color, const wf::render_target_t& adjusted_target,
+    const wf::geometry_t& geometry, const wf::region_t& damage)
+{
+    wf::region_t fb_damage = adjusted_target.framebuffer_region_from_geometry_region(damage);
+    wlr_render_rect_options opts;
+    opts.color = {
+        .r = static_cast<float>(color.r),
+        .g = static_cast<float>(color.g),
+        .b = static_cast<float>(color.b),
+        .a = static_cast<float>(color.a),
+    };
+    opts.blend_mode = WLR_RENDER_BLEND_MODE_PREMULTIPLIED;
+    opts.clip = fb_damage.to_pixman();
+    opts.box  = adjusted_target.framebuffer_box_from_geometry_box(geometry);
+    wf::dassert(opts.box.width >= 0);
+    wf::dassert(opts.box.height >= 0);
+    wlr_render_pass_add_rect(pass, &opts);
+}
+
 bool wf::render_pass_t::submit()
 {
     bool status = wlr_render_pass_submit(pass);
