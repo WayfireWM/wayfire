@@ -270,6 +270,28 @@ void wf::render_pass_t::clear(const wf::region_t& region, const wf::color_t& col
     wlr_render_pass_add_rect(pass, &opts);
 }
 
+void wf::render_pass_t::add_texture(const wf::texture_t& texture, const wf::render_target_t& adjusted_target,
+    const wf::geometry_t& geometry, const wf::region_t& damage, float alpha)
+{
+    wf::region_t fb_damage = adjusted_target.framebuffer_region_from_geometry_region(damage);
+
+    wlr_render_texture_options opts{};
+    opts.texture = texture.texture;
+    opts.alpha   = &alpha;
+    opts.blend_mode = WLR_RENDER_BLEND_MODE_PREMULTIPLIED;
+
+    // use GL_NEAREST for integer scale.
+    // GL_NEAREST makes scaled text blocky instead of blurry, which looks better
+    // but only for integer scale.
+    opts.filter_mode = ((adjusted_target.scale - floor(adjusted_target.scale)) < 0.001) ?
+        WLR_SCALE_FILTER_NEAREST : WLR_SCALE_FILTER_BILINEAR;
+    opts.transform = wlr_output_transform_compose(texture.transform, adjusted_target.wl_transform);
+    opts.clip    = fb_damage.to_pixman();
+    opts.src_box = texture.source_box.value_or(wlr_fbox{0, 0, 0, 0});
+    opts.dst_box = adjusted_target.framebuffer_box_from_geometry_box(geometry);
+    wlr_render_pass_add_texture(get_wlr_pass(), &opts);
+}
+
 bool wf::render_pass_t::submit()
 {
     bool status = wlr_render_pass_submit(pass);

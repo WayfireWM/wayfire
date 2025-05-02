@@ -313,25 +313,7 @@ class wf::scene::wlr_surface_node_t::wlr_surface_render_instance_t : public rend
             return;
         }
 
-        const float alpha   = 1.0;
-        wf::region_t damage = data.target.framebuffer_region_from_geometry_region(data.damage);
-
-        wlr_render_texture_options opts{};
-        opts.texture = self->current_state.texture;
-        opts.alpha   = &alpha;
-        opts.blend_mode = WLR_RENDER_BLEND_MODE_PREMULTIPLIED;
-
-        // use GL_NEAREST for integer scale.
-        // GL_NEAREST makes scaled text blocky instead of blurry, which looks better
-        // but only for integer scale.
-        opts.filter_mode = ((data.target.scale - floor(data.target.scale)) < 0.001) ?
-            WLR_SCALE_FILTER_NEAREST : WLR_SCALE_FILTER_BILINEAR;
-        opts.transform = wlr_output_transform_compose(
-            self->current_state.transform, data.target.wl_transform);
-        opts.clip    = damage.to_pixman();
-        opts.src_box = self->current_state.src_viewport.value_or(wlr_fbox{0, 0, 0, 0});
-        opts.dst_box = data.target.framebuffer_box_from_geometry_box(self->get_bounding_box());
-        wlr_render_pass_add_texture(data.pass->get_wlr_pass(), &opts);
+        data.pass->add_texture(*self->to_texture(), data.target, self->get_bounding_box(), data.damage);
     }
 
     void presentation_feedback(wf::output_t *output) override

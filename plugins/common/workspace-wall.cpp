@@ -216,29 +216,18 @@ class workspace_wall_t::workspace_wall_node_t : public scene::node_t
                     const glm::vec4 color = glm::vec4(dim, dim, dim, 1.0);
                     const auto& subbox    = self->aux_buffer_current_subbox[i][j];
 
-                    wlr_render_texture_options opts{};
-                    opts.texture = buffer.get_texture();
-                    opts.alpha   = NULL;
-                    opts.blend_mode  = WLR_RENDER_BLEND_MODE_PREMULTIPLIED;
-                    opts.filter_mode = WLR_SCALE_FILTER_BILINEAR;
-                    opts.clip = damage.to_pixman();
-                    opts.transform = data.target.wl_transform;
-
-                    if (!subbox.has_value())
+                    std::optional<wlr_fbox> source_box = {};
+                    if (subbox.has_value())
                     {
-                        opts.src_box = {0, 0, 0, 0};
-                    } else
-                    {
-                        opts.src_box = {
+                        source_box = {
                             1.0 * subbox->x,
                             1.0 * subbox->y,
                             1.0 * subbox->width,
                             1.0 * subbox->height};
                     }
 
-                    opts.dst_box =
-                        data.target.framebuffer_box_from_geometry_box(render_geometry);
-                    wlr_render_pass_add_texture(data.pass->get_wlr_pass(), &opts);
+                    data.pass->add_texture(wf::texture_t{buffer.get_texture(), source_box},
+                        data.target, render_geometry, data.damage);
                     // TODO: add dim factor!
                 }
             }

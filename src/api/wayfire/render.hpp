@@ -291,6 +291,15 @@ class render_pass_t
     void clear(const wf::region_t& region, const wf::color_t& color);
 
     /**
+     * Add a texture rendering operation to the pass.
+     */
+    void add_texture(const wf::texture_t& texture,
+        const wf::render_target_t& adjusted_target,
+        const wf::geometry_t& geometry,
+        const wf::region_t& damage,
+        float alpha = 1.0);
+
+    /**
      * Get the wlr_renderer used in this pass.
      */
     wlr_renderer *get_wlr_renderer() const;
