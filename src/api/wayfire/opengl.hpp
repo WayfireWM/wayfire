@@ -108,7 +108,7 @@ enum texture_type_t
     TEXTURE_TYPE_ALL      = 3,
 };
 
-struct texture_t
+struct gles_texture_t
 {
     /* Texture type */
     texture_type_t type = TEXTURE_TYPE_RGBA;
@@ -129,13 +129,13 @@ struct texture_t
     gl_geometry viewport_box;
 
     /* tex_id will be initialized later */
-    texture_t();
+    gles_texture_t();
     /** Initialize a non-inverted RGBA texture with the given texture id */
-    texture_t(GLuint tex);
+    gles_texture_t(GLuint tex);
     /** Initialize a texture with the attributes of the wlr texture */
-    explicit texture_t(wlr_texture*, std::optional<wlr_fbox> viewport = {});
+    explicit gles_texture_t(wlr_texture*, std::optional<wlr_fbox> viewport = {});
 
-    static texture_t from_aux(auxilliary_buffer_t& buffer, std::optional<wlr_fbox> viewport = {});
+    static gles_texture_t from_aux(auxilliary_buffer_t& buffer, std::optional<wlr_fbox> viewport = {});
 };
 }
 
@@ -180,7 +180,7 @@ enum rendering_flags_t
  * @param color     A color multiplier for each channel of the texture.
  * @param bits      A bitwise OR of texture_rendering_flags_t.
  */
-void render_transformed_texture(wf::texture_t texture,
+void render_transformed_texture(wf::gles_texture_t texture,
     const gl_geometry& g,
     const gl_geometry& texg,
     glm::mat4 transform = glm::mat4(1.0),
@@ -197,7 +197,7 @@ void render_transformed_texture(wf::texture_t texture,
  * @param bits      A bitwise OR of texture_rendering_flags_t. In this variant,
  *                    TEX_GEOMETRY flag is ignored.
  */
-void render_transformed_texture(wf::texture_t texture,
+void render_transformed_texture(wf::gles_texture_t texture,
     const wf::geometry_t& geometry,
     glm::mat4 transform = glm::mat4(1.0),
     glm::vec4 color     = glm::vec4(1.f),
@@ -215,7 +215,7 @@ void render_transformed_texture(wf::texture_t texture,
  * @param bits      A bitwise OR of texture_rendering_flags_t. In this variant,
  *                    TEX_GEOMETRY flag is ignored.
  */
-void render_texture(wf::texture_t texture,
+void render_texture(wf::gles_texture_t texture,
     const wf::render_target_t& framebuffer,
     const wf::geometry_t& geometry,
     glm::vec4 color = glm::vec4(1.f),
@@ -346,7 +346,7 @@ class program_t
      * Set the active texture, and modify the builtin Y-inversion uniforms.
      * Will not work with custom programs.
      */
-    void set_active_texture(const wf::texture_t& texture);
+    void set_active_texture(const wf::gles_texture_t& texture);
 
     /**
      * Deactivate the vertex attributes activated by attrib_pointer and

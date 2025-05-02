@@ -587,7 +587,7 @@ class wayfire_cube : public wf::per_output_plugin_instance_t, public wf::pointer
         for (int i = 0; i < get_num_faces(); i++)
         {
             int index = (cws.x + i) % get_num_faces();
-            GL_CALL(glBindTexture(GL_TEXTURE_2D, wf::texture_t::from_aux(buffers[index]).tex_id));
+            GL_CALL(glBindTexture(GL_TEXTURE_2D, wf::gles_texture_t::from_aux(buffers[index]).tex_id));
 
             auto model = calculate_model_matrix(i);
             program.uniformMatrix4f("model", model);

@@ -49,7 +49,7 @@ class unmapped_view_snapshot_node : public wf::scene::node_t
                 for (auto box : data.damage)
                 {
                     gles::render_target_logic_scissor(data.target, wlr_box_from_pixman_box(box));
-                    OpenGL::render_texture(wf::texture_t::from_aux(self->snapshot),
+                    OpenGL::render_texture(wf::gles_texture_t::from_aux(self->snapshot),
                         data.target, self->get_bounding_box());
                 }
             });

@@ -155,7 +155,7 @@ bool exit_on_gles_error = false;
 std::vector<GLfloat> vertexData;
 std::vector<GLfloat> coordData;
 
-void render_transformed_texture(wf::texture_t tex,
+void render_transformed_texture(wf::gles_texture_t tex,
     const gl_geometry& g, const gl_geometry& texg,
     glm::mat4 model, glm::vec4 color, uint32_t bits)
 {
@@ -222,7 +222,7 @@ void clear_cached()
     program.deactivate();
 }
 
-void render_transformed_texture(wf::texture_t texture,
+void render_transformed_texture(wf::gles_texture_t texture,
     const wf::geometry_t& geometry, glm::mat4 transform,
     glm::vec4 color, uint32_t bits)
 {
@@ -236,7 +236,7 @@ void render_transformed_texture(wf::texture_t texture,
     render_transformed_texture(texture, gg, {}, transform, color, bits);
 }
 
-void render_texture(wf::texture_t texture,
+void render_texture(wf::gles_texture_t texture,
     const wf::render_target_t& framebuffer,
     const wf::geometry_t& geometry, glm::vec4 color, uint32_t bits)
 {
@@ -448,14 +448,14 @@ glm::mat4 get_output_matrix_from_transform(wl_output_transform transform)
 
 namespace wf
 {
-wf::texture_t::texture_t()
+wf::gles_texture_t::gles_texture_t()
 {}
-wf::texture_t::texture_t(GLuint tex)
+wf::gles_texture_t::gles_texture_t(GLuint tex)
 {
     this->tex_id = tex;
 }
 
-wf::texture_t::texture_t(wlr_texture *texture, std::optional<wlr_fbox> viewport)
+wf::gles_texture_t::gles_texture_t(wlr_texture *texture, std::optional<wlr_fbox> viewport)
 {
     wf::dassert(wlr_texture_is_gles2(texture));
     wlr_gles2_texture_attribs attribs;
@@ -488,9 +488,9 @@ wf::texture_t::texture_t(wlr_texture *texture, std::optional<wlr_fbox> viewport)
     }
 }
 
-texture_t texture_t::from_aux(auxilliary_buffer_t& buffer, std::optional<wlr_fbox> viewport)
+gles_texture_t gles_texture_t::from_aux(auxilliary_buffer_t& buffer, std::optional<wlr_fbox> viewport)
 {
-    wf::texture_t tex{buffer.get_texture(), viewport};
+    wf::gles_texture_t tex{buffer.get_texture(), viewport};
     gles::run_in_context([&]
     {
         GL_CALL(glBindTexture(tex.target, tex.tex_id));
@@ -700,7 +700,7 @@ void program_t::attrib_divisor(const std::string& attrib, int divisor)
     GL_CALL(glVertexAttribDivisor(loc, divisor));
 }
 
-void program_t::set_active_texture(const wf::texture_t& texture)
+void program_t::set_active_texture(const wf::gles_texture_t& texture)
 {
     GL_CALL(glActiveTexture(GL_TEXTURE0));
     GL_CALL(glBindTexture(texture.target, texture.tex_id));
