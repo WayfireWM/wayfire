@@ -1,6 +1,5 @@
 #include "wayfire/plugins/common/move-drag-interface.hpp"
 #include "wayfire/debug.hpp"
-#include "wayfire/opengl.hpp"
 #include "wayfire/region.hpp"
 #include "wayfire/scene-input.hpp"
 #include "wayfire/scene-operations.hpp"
@@ -120,17 +119,8 @@ class scale_around_grab_t : public wf::scene::transformer_base_node_t
         void render(const wf::scene::render_instruction_t& data) override
         {
             auto bbox = self->get_bounding_box();
-            data.pass->custom_gles_subpass([&]
-            {
-                auto tex = wf::gles_texture_t{this->get_texture(data.target.scale)};
-                wf::gles::bind_render_buffer(data.target);
-                for (auto& rect : data.damage)
-                {
-                    wf::gles::render_target_logic_scissor(data.target, wlr_box_from_pixman_box(rect));
-                    OpenGL::render_texture(tex, data.target, bbox,
-                        glm::vec4{1, 1, 1, (double)self->alpha_factor});
-                }
-            });
+            auto tex  = this->get_texture(data.target.scale);
+            data.pass->add_texture(tex, data.target, bbox, data.damage, self->alpha_factor);
         }
     };
 
