@@ -12,7 +12,15 @@ namespace wf
 {
 class output_t;
 
-
+/**
+ * A simple, non-owning wrapper for a wlr_texture + source box.
+ */
+struct texture_t
+{
+    wlr_texture *texture = NULL;
+    std::optional<wlr_fbox> source_box = {};
+    wl_output_transform transform = WL_OUTPUT_TRANSFORM_NORMAL;
+};
 
 /**
  * A simple wrapper for buffers which are used as render targets.

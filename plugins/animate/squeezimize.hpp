@@ -173,9 +173,7 @@ class squeezimize_transformer : public wf::scene::view_2d_transformer_t
 
         void render(const render_instruction_t& data) override
         {
-            auto src_box = self->get_children_bounding_box();
-            auto src_tex = wf::scene::transformer_render_instance_t<squeezimize_transformer>::get_texture(
-                1.0);
+            auto src_box  = self->get_children_bounding_box();
             auto progress = self->progression.progress();
             static const float vertex_data_uv[] = {
                 0.0f, 0.0f,
@@ -227,6 +225,7 @@ class squeezimize_transformer : public wf::scene::view_2d_transformer_t
 
             data.pass->custom_gles_subpass(data.target, [&]
             {
+                auto src_tex = wf::gles_texture_t{this->get_texture(1.0)};
                 self->program.use(wf::TEXTURE_TYPE_RGBA);
                 self->program.uniformMatrix4f("matrix",
                     wf::gles::render_target_orthographic_projection(data.target));

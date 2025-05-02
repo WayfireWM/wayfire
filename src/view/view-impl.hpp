@@ -4,7 +4,6 @@
 #include <memory>
 #include <wayfire/nonstd/safe-list.hpp>
 #include <wayfire/view.hpp>
-#include <wayfire/opengl.hpp>
 #include <wayfire/toplevel.hpp>
 
 #include "wayfire/core.hpp"

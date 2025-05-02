@@ -134,6 +134,7 @@ struct gles_texture_t
     gles_texture_t(GLuint tex);
     /** Initialize a texture with the attributes of the wlr texture */
     explicit gles_texture_t(wlr_texture*, std::optional<wlr_fbox> viewport = {});
+    explicit gles_texture_t(wf::texture_t tex);
 
     static gles_texture_t from_aux(auxilliary_buffer_t& buffer, std::optional<wlr_fbox> viewport = {});
 };

@@ -4,14 +4,11 @@
 #include <map>
 #include <vector>
 #include <memory>
-#include <functional>
 
 #include <wayfire/config/types.hpp>
 #include <wayfire/nonstd/wlroots.hpp>
 #include "geometry.hpp"
-#include "wayfire/object.hpp"
 #include "wayfire/signal-provider.hpp"
-#include "wayfire/util.hpp"
 
 #define RENDER_BIT_DEPTH_DEFAULT 8
 

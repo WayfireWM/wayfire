@@ -203,7 +203,6 @@ class view_2d_render_instance_t :
     {
         // Untransformed bounding box
         auto bbox = self->get_children_bounding_box();
-        auto tex  = this->get_texture(data.target.scale);
 
         auto midpoint  = get_center(self->view);
         auto center_at = glm::translate(glm::mat4(1.0),
@@ -220,6 +219,8 @@ class view_2d_render_instance_t :
 
         data.pass->custom_gles_subpass([&]
         {
+            auto tex = wf::gles_texture_t{this->get_texture(data.target.scale)};
+            wf::gles::bind_render_buffer(data.target);
             for (auto& box : data.damage)
             {
                 wf::gles::render_target_logic_scissor(data.target, wlr_box_from_pixman_box(box));
@@ -424,9 +425,10 @@ class view_3d_render_instance_t :
 
         transform =
             wf::gles::render_target_gl_to_framebuffer(data.target) * scale * translate * transform;
-        auto tex = get_texture(data.target.scale);
         data.pass->custom_gles_subpass([&]
         {
+            auto tex = wf::gles_texture_t{get_texture(data.target.scale)};
+            wf::gles::bind_render_buffer(data.target);
             for (auto& box : data.damage)
             {
                 wf::gles::render_target_logic_scissor(data.target, wlr_box_from_pixman_box(box));
@@ -465,7 +467,7 @@ uint32_t transformer_base_node_t::optimize_update(uint32_t flags)
     return optimize_nested_render_instances(shared_from_this(), flags);
 }
 
-wf::gles_texture_t transformer_base_node_t::get_updated_contents(const wf::geometry_t& bbox, float scale,
+wf::texture_t transformer_base_node_t::get_updated_contents(const wf::geometry_t& bbox, float scale,
     std::vector<scene::render_instance_uptr>& children)
 {
     if (inner_content.allocate(wf::dimensions(bbox), scale))
@@ -486,7 +488,7 @@ wf::gles_texture_t transformer_base_node_t::get_updated_contents(const wf::geome
     wf::render_pass_t::run(params);
 
     cached_damage.clear();
-    return wf::gles_texture_t::from_aux(inner_content);
+    return wf::texture_t{inner_content.get_texture(), {}};
 }
 
 void transformer_base_node_t::release_buffers()
