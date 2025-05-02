@@ -755,7 +755,7 @@ struct output_layout_output_t
             return;
         }
 
-        wf::texture_t tex{texture};
+        wf::gles_texture_t tex{texture};
         OpenGL::render_transformed_texture(tex, {-1, -1, 2, 2});
 
         wlr_render_pass_submit(pass);

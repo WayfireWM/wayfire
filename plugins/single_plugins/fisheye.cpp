@@ -181,7 +181,7 @@ class wayfire_fisheye : public wf::per_output_plugin_instance_t
         {
             wf::gles::bind_render_buffer(dest);
             program.use(wf::TEXTURE_TYPE_RGBA);
-            GL_CALL(glBindTexture(GL_TEXTURE_2D, wf::texture_t::from_aux(source).tex_id));
+            GL_CALL(glBindTexture(GL_TEXTURE_2D, wf::gles_texture_t::from_aux(source).tex_id));
             GL_CALL(glActiveTexture(GL_TEXTURE0));
 
             program.uniform2f("u_mouse", oc.x, oc.y);

@@ -465,7 +465,7 @@ uint32_t transformer_base_node_t::optimize_update(uint32_t flags)
     return optimize_nested_render_instances(shared_from_this(), flags);
 }
 
-wf::texture_t transformer_base_node_t::get_updated_contents(const wf::geometry_t& bbox, float scale,
+wf::gles_texture_t transformer_base_node_t::get_updated_contents(const wf::geometry_t& bbox, float scale,
     std::vector<scene::render_instance_uptr>& children)
 {
     if (inner_content.allocate(wf::dimensions(bbox), scale))
@@ -486,7 +486,7 @@ wf::texture_t transformer_base_node_t::get_updated_contents(const wf::geometry_t
     wf::render_pass_t::run(params);
 
     cached_damage.clear();
-    return wf::texture_t::from_aux(inner_content);
+    return wf::gles_texture_t::from_aux(inner_content);
 }
 
 void transformer_base_node_t::release_buffers()
