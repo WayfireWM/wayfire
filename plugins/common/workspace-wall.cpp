@@ -213,8 +213,7 @@ class workspace_wall_t::workspace_wall_node_t : public scene::node_t
                     auto& buffer = self->aux_buffers[i][j];
 
                     float dim = self->wall->get_color_for_workspace({i, j});
-                    const glm::vec4 color = glm::vec4(dim, dim, dim, 1.0);
-                    const auto& subbox    = self->aux_buffer_current_subbox[i][j];
+                    const auto& subbox = self->aux_buffer_current_subbox[i][j];
 
                     std::optional<wlr_fbox> source_box = {};
                     if (subbox.has_value())
@@ -228,7 +227,8 @@ class workspace_wall_t::workspace_wall_node_t : public scene::node_t
 
                     data.pass->add_texture(wf::texture_t{buffer.get_texture(), source_box},
                         data.target, render_geometry, data.damage);
-                    // TODO: add dim factor!
+                    data.pass->add_rect({0, 0, 0, 1.0 - dim}, data.target,
+                        render_geometry, data.damage);
                 }
             }
 
