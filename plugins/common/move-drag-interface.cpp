@@ -120,9 +120,10 @@ class scale_around_grab_t : public wf::scene::transformer_base_node_t
         void render(const wf::scene::render_instruction_t& data) override
         {
             auto bbox = self->get_bounding_box();
-            auto tex  = this->get_texture(data.target.scale);
             data.pass->custom_gles_subpass([&]
             {
+                auto tex = wf::gles_texture_t{this->get_texture(data.target.scale)};
+                wf::gles::bind_render_buffer(data.target);
                 for (auto& rect : data.damage)
                 {
                     wf::gles::render_target_logic_scissor(data.target, wlr_box_from_pixman_box(rect));

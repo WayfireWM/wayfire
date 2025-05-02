@@ -6,6 +6,7 @@
 #include "wayfire/scene-render.hpp"
 #include "wayfire/scene.hpp"
 #include "wayfire/toplevel-view.hpp"
+#include "wayfire/util.hpp"
 #include "wayfire/view-helpers.hpp"
 #include <memory>
 #include <wayfire/signal-definitions.hpp>

@@ -3,6 +3,7 @@
 #include "wayfire/core.hpp"
 #include "wayfire/debug.hpp"
 #include "wayfire/geometry.hpp"
+#include "wayfire/opengl.hpp"
 #include "wayfire/region.hpp"
 #include "wayfire/scene-render.hpp"
 #include "wayfire/scene.hpp"
@@ -338,7 +339,10 @@ struct swapchain_damage_manager_t
          * bugs, but may cause more resource usage. */
         if (force_frame_sync)
         {
-            GL_CALL(glFinish());
+            wf::gles::maybe_run_in_context([&]
+            {
+                GL_CALL(glFinish());
+            });
         }
 
         frame_damage.clear();
