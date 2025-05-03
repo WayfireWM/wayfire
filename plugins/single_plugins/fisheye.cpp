@@ -116,7 +116,13 @@ class wayfire_fisheye : public wf::per_output_plugin_instance_t
   public:
     void init() override
     {
-        wf::gles::run_in_context([&]
+        if (!wf::get_core().is_gles2())
+        {
+            LOGE("Fisheye plugin requires OpenGL ES renderer!");
+            return;
+        }
+
+        wf::gles::maybe_run_in_context([&]
         {
             program.set_simple(OpenGL::compile_program(vertex_shader, fragment_shader));
         });
@@ -177,7 +183,7 @@ class wayfire_fisheye : public wf::per_output_plugin_instance_t
             -1.0f, 1.0f
         };
 
-        wf::gles::run_in_context([&]
+        wf::gles::maybe_run_in_context([&]
         {
             wf::gles::bind_render_buffer(dest);
             program.use(wf::TEXTURE_TYPE_RGBA);
@@ -217,7 +223,7 @@ class wayfire_fisheye : public wf::per_output_plugin_instance_t
             finalize();
         }
 
-        wf::gles::run_in_context([&]
+        wf::gles::maybe_run_in_context([&]
         {
             program.free_resources();
         });
