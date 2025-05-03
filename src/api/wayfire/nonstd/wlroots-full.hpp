@@ -28,6 +28,7 @@ extern "C"
 #include <wlr/render/wlr_renderer.h>
 #include <wlr/render/swapchain.h>
 #include <wlr/render/allocator.h>
+#include <wlr/render/color.h>
 
 #if __has_include(<wlr/render/gles2.h>)
     #include <wlr/render/gles2.h>

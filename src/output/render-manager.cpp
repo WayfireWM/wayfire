@@ -1,5 +1,6 @@
 #include "wayfire/render-manager.hpp"
 #include "pixman.h"
+#include "wayfire/config-backend.hpp"
 #include "wayfire/core.hpp"
 #include "wayfire/debug.hpp"
 #include "wayfire/geometry.hpp"
@@ -14,6 +15,8 @@
 #include "../main.hpp"
 #include "wayfire/workspace-set.hpp" // IWYU pragma: keep
 #include <algorithm>
+#include <filesystem>
+#include <fstream>
 #include <wayfire/nonstd/reverse.hpp>
 #include <wayfire/nonstd/safe-list.hpp>
 #include <wayfire/util/log.hpp>
@@ -910,6 +913,7 @@ class wf::render_manager::impl
 
     wf::option_wrapper_t<wf::color_t> background_color_opt;
     std::unique_ptr<wf::render_pass_t> current_pass;
+    wf::option_wrapper_t<std::string> icc_profile;
 
     impl(output_t *o) : output(o), env_allow_scanout(check_scanout_enabled())
     {
@@ -960,6 +964,65 @@ class wf::render_manager::impl
         });
 
         damage_manager->schedule_repaint();
+
+        auto section = wf::get_core().config_backend->get_output_section(output->handle);
+        icc_profile.load_option(section->get_name() + "/icc_profile");
+        icc_profile.set_callback([=] ()
+        {
+            reload_icc_profile();
+            damage_manager->damage_whole_idle();
+        });
+
+        reload_icc_profile();
+    }
+
+    wlr_color_transform *icc_color_transform = NULL;
+    wlr_buffer_pass_options pass_opts;
+
+    void reload_icc_profile()
+    {
+        if (icc_profile.value().empty())
+        {
+            set_icc_transform(nullptr);
+            return;
+        }
+
+        auto path = std::filesystem::path{icc_profile.value()};
+        if (std::filesystem::is_regular_file(path))
+        {
+            // Read binary file into vector<char> buffer
+            std::ifstream file(icc_profile.value(), std::ios::binary);
+            std::vector<char> buffer((std::istreambuf_iterator<char>(file)),
+                std::istreambuf_iterator<char>());
+
+            auto transform = wlr_color_transform_init_linear_to_icc(buffer.data(), buffer.size());
+            if (!transform)
+            {
+                LOGE("Failed to load ICC transform from ", icc_profile.value());
+                set_icc_transform(nullptr);
+                return;
+            } else
+            {
+                LOGI("Loaded ICC transform from ", icc_profile.value(), " for output ", output->to_string());
+            }
+
+            set_icc_transform(transform);
+        }
+    }
+
+    void set_icc_transform(wlr_color_transform *transform)
+    {
+        if (icc_color_transform)
+        {
+            wlr_color_transform_unref(icc_color_transform);
+        }
+
+        icc_color_transform = transform;
+    }
+
+    ~impl()
+    {
+        set_icc_transform(nullptr);
     }
 
     const bool env_allow_scanout;
@@ -1041,6 +1104,9 @@ class wf::render_manager::impl
         params.renderer = output->handle->renderer;
         params.flags    = RPASS_CLEAR_BACKGROUND | RPASS_EMIT_SIGNALS;
 
+        pass_opts.timer = NULL; // TODO: do we care about this? could be useful for dynamic frame scheduling
+        pass_opts.color_transform = icc_color_transform;
+        params.pass_opts   = &pass_opts;
         this->current_pass = std::make_unique<render_pass_t>(params);
         auto total_damage = current_pass->run_partial();
 
