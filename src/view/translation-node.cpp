@@ -111,12 +111,6 @@ void wf::scene::translation_node_instance_t::schedule_instructions(
     }
 }
 
-void wf::scene::translation_node_instance_t::render(
-    const wf::render_target_t& target, const wf::region_t& region)
-{
-    wf::dassert(false, "Rendering a translation node?");
-}
-
 void wf::scene::translation_node_instance_t::presentation_feedback(wf::output_t *output)
 {
     for (auto& ch : this->children)

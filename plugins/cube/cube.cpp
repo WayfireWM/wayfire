@@ -48,7 +48,7 @@ class wayfire_cube : public wf::per_output_plugin_instance_t, public wf::pointer
 
             std::vector<std::vector<wf::scene::render_instance_uptr>> ws_instances;
             std::vector<wf::region_t> ws_damage;
-            std::vector<wf::render_target_t> framebuffers;
+            std::vector<wf::auxilliary_buffer_t> framebuffers;
 
             wf::signal::connection_t<wf::scene::node_damage_signal> on_cube_damage =
                 [=] (wf::scene::node_damage_signal *ev)
@@ -82,15 +82,7 @@ class wayfire_cube : public wf::per_output_plugin_instance_t, public wf::pointer
             }
 
             ~cube_render_instance_t()
-            {
-                OpenGL::render_begin();
-                for (auto& buf : framebuffers)
-                {
-                    buf.release();
-                }
-
-                OpenGL::render_end();
-            }
+            {}
 
             void schedule_instructions(
                 std::vector<wf::scene::render_instruction_t>& instructions,
@@ -98,43 +90,39 @@ class wayfire_cube : public wf::per_output_plugin_instance_t, public wf::pointer
             {
                 instructions.push_back(wf::scene::render_instruction_t{
                     .instance = this,
-                    .target   = target,
+                    .target   = target.translated(-wf::origin(self->get_bounding_box())),
                     .damage   = damage & self->get_bounding_box(),
                 });
 
                 auto bbox = self->get_bounding_box();
 
                 damage ^= bbox;
-            }
 
-            void render(const wf::render_target_t& target,
-                const wf::region_t& region, const std::any& tag) override
-            {
                 for (int i = 0; i < (int)ws_instances.size(); i++)
                 {
-                    framebuffers[i].geometry = self->workspaces[i]->get_bounding_box();
-                    framebuffers[i].scale    = self->cube->output->handle->scale;
-                    framebuffers[i].wl_transform = WL_OUTPUT_TRANSFORM_NORMAL;
-                    framebuffers[i].transform    = get_output_matrix_from_transform(
-                        framebuffers[i].wl_transform);
+                    const float scale = self->cube->output->handle->scale;
+                    auto bbox = self->workspaces[i]->get_bounding_box();
+                    framebuffers[i].allocate(wf::dimensions(bbox), scale);
 
-                    auto size = framebuffers[i].framebuffer_box_from_geometry_box(framebuffers[i].geometry);
-                    OpenGL::render_begin();
-                    framebuffers[i].allocate(size.width, size.height);
-                    OpenGL::render_end();
+                    wf::render_target_t target{framebuffers[i]};
+                    target.geometry = self->workspaces[i]->get_bounding_box();
+                    target.scale    = self->cube->output->handle->scale;
 
-                    wf::scene::render_pass_params_t params;
+                    wf::render_pass_params_t params;
                     params.instances = &ws_instances[i];
                     params.damage    = ws_damage[i];
                     params.reference_output = self->cube->output;
-                    params.target = framebuffers[i];
-                    wf::scene::run_render_pass(params, wf::scene::RPASS_CLEAR_BACKGROUND |
-                        wf::scene::RPASS_EMIT_SIGNALS);
+                    params.target = target;
+                    params.flags  = wf::RPASS_CLEAR_BACKGROUND | wf::RPASS_EMIT_SIGNALS;
 
+                    wf::render_pass_t::run(params);
                     ws_damage[i].clear();
                 }
+            }
 
-                self->cube->render(target.translated(-wf::origin(self->get_bounding_box())), framebuffers);
+            void render(const wf::scene::render_instruction_t& data) override
+            {
+                self->cube->render(data, framebuffers);
             }
 
             void compute_visibility(wf::output_t *output, wf::region_t& visible) override
@@ -250,6 +238,12 @@ class wayfire_cube : public wf::per_output_plugin_instance_t, public wf::pointer
   public:
     void init() override
     {
+        if (!wf::get_core().is_gles2())
+        {
+            LOGE("cube: Wayfire does not support GLES2, disabling cube plugin");
+            return;
+        }
+
         input_grab = std::make_unique<wf::input_grab_t>("cube", output, nullptr, this, nullptr);
         input_grab->set_wants_raw_input(true);
 
@@ -264,10 +258,10 @@ class wayfire_cube : public wf::per_output_plugin_instance_t, public wf::pointer
         reload_background();
 
         output->connect(&on_cube_control);
-
-        OpenGL::render_begin();
-        load_program();
-        OpenGL::render_end();
+        wf::gles::run_in_context([&]
+        {
+            load_program();
+        });
     }
 
     void handle_pointer_button(const wlr_pointer_button_event& event) override
@@ -560,7 +554,7 @@ class wayfire_cube : public wf::per_output_plugin_instance_t, public wf::pointer
         auto scale_matrix = glm::scale(glm::mat4(1.0),
             glm::vec3(1. / zoom_factor, 1. / zoom_factor, 1. / zoom_factor));
 
-        return dest.transform * animation.projection * animation.view * scale_matrix;
+        return wf::gles::output_transform(dest) * animation.projection * animation.view * scale_matrix;
     }
 
     /* Calculate the base model matrix for the i-th side of the cube */
@@ -588,7 +582,7 @@ class wayfire_cube : public wf::per_output_plugin_instance_t, public wf::pointer
 
     /* Render the sides of the cube, using the given culling mode - cw or ccw */
     void render_cube(GLuint front_face, glm::mat4 fb_transform,
-        const std::vector<wf::render_target_t>& buffers)
+        std::vector<wf::auxilliary_buffer_t>& buffers)
     {
         GL_CALL(glFrontFace(front_face));
         static const GLuint indexData[] = {0, 1, 2, 0, 2, 3};
@@ -597,7 +591,7 @@ class wayfire_cube : public wf::per_output_plugin_instance_t, public wf::pointer
         for (int i = 0; i < get_num_faces(); i++)
         {
             int index = (cws.x + i) % get_num_faces();
-            GL_CALL(glBindTexture(GL_TEXTURE_2D, buffers[index].tex));
+            GL_CALL(glBindTexture(GL_TEXTURE_2D, wf::gles_texture_t::from_aux(buffers[index]).tex_id));
 
             auto model = calculate_model_matrix(i);
             program.uniformMatrix4f("model", model);
@@ -615,62 +609,61 @@ class wayfire_cube : public wf::per_output_plugin_instance_t, public wf::pointer
         }
     }
 
-    void render(const wf::render_target_t& dest, const std::vector<wf::render_target_t>& buffers)
+    void render(const wf::scene::render_instruction_t& data, std::vector<wf::auxilliary_buffer_t>& buffers)
     {
-        if (program.get_program_id(wf::TEXTURE_TYPE_RGBA) == 0)
+        data.pass->custom_gles_subpass([&]
         {
-            load_program();
-        }
+            if (program.get_program_id(wf::TEXTURE_TYPE_RGBA) == 0)
+            {
+                load_program();
+            }
 
-        OpenGL::render_begin(dest);
-        GL_CALL(glClear(GL_DEPTH_BUFFER_BIT));
-        OpenGL::render_end();
-        background->render_frame(dest, animation);
+            GL_CALL(glClear(GL_DEPTH_BUFFER_BIT));
+            background->render_frame(data.target, animation);
 
-        auto vp = calculate_vp_matrix(dest);
+            auto vp = calculate_vp_matrix(data.target);
 
-        OpenGL::render_begin(dest);
-        program.use(wf::TEXTURE_TYPE_RGBA);
-        GL_CALL(glEnable(GL_DEPTH_TEST));
-        GL_CALL(glDepthFunc(GL_LESS));
+            program.use(wf::TEXTURE_TYPE_RGBA);
+            GL_CALL(glEnable(GL_DEPTH_TEST));
+            GL_CALL(glDepthFunc(GL_LESS));
 
-        static GLfloat vertexData[] = {
-            -0.5, 0.5,
-            0.5, 0.5,
-            0.5, -0.5,
-            -0.5, -0.5
-        };
+            static GLfloat vertexData[] = {
+                -0.5, 0.5,
+                0.5, 0.5,
+                0.5, -0.5,
+                -0.5, -0.5
+            };
 
-        static GLfloat coordData[] = {
-            0.0f, 1.0f,
-            1.0f, 1.0f,
-            1.0f, 0.0f,
-            0.0f, 0.0f
-        };
+            static GLfloat coordData[] = {
+                0.0f, 1.0f,
+                1.0f, 1.0f,
+                1.0f, 0.0f,
+                0.0f, 0.0f
+            };
 
-        program.attrib_pointer("position", 2, 0, vertexData);
-        program.attrib_pointer("uvPosition", 2, 0, coordData);
-        program.uniformMatrix4f("VP", vp);
-        if (tessellation_support)
-        {
-            program.uniform1i("deform", use_deform);
-            program.uniform1i("light", use_light);
-            program.uniform1f("ease",
-                animation.cube_animation.ease_deformation);
-        }
+            program.attrib_pointer("position", 2, 0, vertexData);
+            program.attrib_pointer("uvPosition", 2, 0, coordData);
+            program.uniformMatrix4f("VP", vp);
+            if (tessellation_support)
+            {
+                program.uniform1i("deform", use_deform);
+                program.uniform1i("light", use_light);
+                program.uniform1f("ease",
+                    animation.cube_animation.ease_deformation);
+            }
 
-        /* We render the cube in two stages, based on winding.
-         * By using two stages, we ensure that we first render the cube sides
-         * that are on the back, and then we render those at the front, so we
-         * don't have to use depth testing and we also can support alpha cube. */
-        GL_CALL(glEnable(GL_CULL_FACE));
-        render_cube(GL_CCW, dest.transform, buffers);
-        render_cube(GL_CW, dest.transform, buffers);
-        GL_CALL(glDisable(GL_CULL_FACE));
+            /* We render the cube in two stages, based on winding.
+             * By using two stages, we ensure that we first render the cube sides
+             * that are on the back, and then we render those at the front, so we
+             * don't have to use depth testing and we also can support alpha cube. */
+            GL_CALL(glEnable(GL_CULL_FACE));
+            render_cube(GL_CCW, wf::gles::output_transform(data.target), buffers);
+            render_cube(GL_CW, wf::gles::output_transform(data.target), buffers);
+            GL_CALL(glDisable(GL_CULL_FACE));
 
-        GL_CALL(glDisable(GL_DEPTH_TEST));
-        program.deactivate();
-        OpenGL::render_end();
+            GL_CALL(glDisable(GL_DEPTH_TEST));
+            program.deactivate();
+        });
     }
 
     wf::effect_hook_t pre_hook = [=] ()
@@ -764,9 +757,10 @@ class wayfire_cube : public wf::per_output_plugin_instance_t, public wf::pointer
             deactivate();
         }
 
-        OpenGL::render_begin();
-        program.free_resources();
-        OpenGL::render_end();
+        wf::gles::maybe_run_in_context([&]
+        {
+            program.free_resources();
+        });
     }
 };
 

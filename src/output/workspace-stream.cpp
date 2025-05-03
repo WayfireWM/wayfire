@@ -110,23 +110,14 @@ class workspace_stream_node_t::workspace_stream_instance_t : public scene::
         }
     }
 
-    void render(const wf::render_target_t& target,
-        const wf::region_t& region) override
+    void render(const wf::scene::render_instruction_t& data) override
     {
         static wf::option_wrapper_t<wf::color_t> background_color_opt{
             "core/background_color"
         };
 
         auto color = self->background.value_or(background_color_opt);
-
-        OpenGL::render_begin(target);
-        for (auto& box : region)
-        {
-            target.logic_scissor(wlr_box_from_pixman_box(box));
-            OpenGL::clear(color);
-        }
-
-        OpenGL::render_end();
+        data.pass->clear(data.damage, color);
     }
 
     void presentation_feedback(wf::output_t *output) override

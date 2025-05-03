@@ -199,12 +199,20 @@ class view_2d_render_instance_t :
         transform_linear_damage(self.get(), damage);
     }
 
-    void render(const wf::render_target_t& target,
-        const wf::region_t& region) override
+    void render(const wf::scene::render_instruction_t& data) override
     {
+        if (std::abs(self->angle) < 1e-3)
+        {
+            // No rotation, we can use render-agnostic functions.
+            auto tex = this->get_texture(data.target.scale);
+            tex.filter_mode = WLR_SCALE_FILTER_BILINEAR;
+            auto bbox = self->get_bounding_box();
+            data.pass->add_texture(tex, data.target, bbox, data.damage, self->alpha);
+            return;
+        }
+
         // Untransformed bounding box
         auto bbox = self->get_children_bounding_box();
-        auto tex  = this->get_texture(target.scale);
 
         auto midpoint  = get_center(self->view);
         auto center_at = glm::translate(glm::mat4(1.0),
@@ -216,19 +224,21 @@ class view_2d_render_instance_t :
         auto translate = glm::translate(glm::mat4(1.0),
             glm::vec3{self->translation_x + midpoint.x,
                 self->translation_y + midpoint.y, 0.0});
-        auto ortho = target.get_orthographic_projection();
+        auto ortho = wf::gles::render_target_orthographic_projection(data.target);
         auto full_matrix = ortho * translate * rotate * scale * center_at;
 
-        OpenGL::render_begin(target);
-        for (auto& box : region)
+        data.pass->custom_gles_subpass([&]
         {
-            target.logic_scissor(wlr_box_from_pixman_box(box));
-            // OpenGL::clear({1, 0, 0, 1});
-            OpenGL::render_transformed_texture(tex, bbox, full_matrix,
-                glm::vec4{1.0, 1.0, 1.0, self->alpha});
-        }
-
-        OpenGL::render_end();
+            auto tex = wf::gles_texture_t{this->get_texture(data.target.scale)};
+            wf::gles::bind_render_buffer(data.target);
+            for (auto& box : data.damage)
+            {
+                wf::gles::render_target_logic_scissor(data.target, wlr_box_from_pixman_box(box));
+                // OpenGL::clear({1, 0, 0, 1});
+                OpenGL::render_transformed_texture(tex, bbox, full_matrix,
+                    glm::vec4{1.0, 1.0, 1.0, self->alpha});
+            }
+        });
     }
 };
 
@@ -410,32 +420,32 @@ class view_3d_render_instance_t :
         transform_linear_damage(self.get(), damage);
     }
 
-    void render(const wf::render_target_t& target,
-        const wf::region_t& damage) override
+    void render(const wf::scene::render_instruction_t& data) override
     {
         auto bbox = self->get_children_bounding_box();
-        auto quad = center_geometry(target.geometry, bbox, scene::get_center(bbox));
+        auto quad = center_geometry(data.target.geometry, bbox, scene::get_center(bbox));
 
         auto transform = self->calculate_total_transform();
         auto translate = glm::translate(glm::mat4(1.0), {quad.off_x, quad.off_y, 0});
         auto scale     = glm::scale(glm::mat4(1.0), {
-                    2.0 / target.geometry.width,
-                    2.0 / target.geometry.height,
+                    2.0 / data.target.geometry.width,
+                    2.0 / data.target.geometry.height,
                     1.0
                 });
 
-        transform = target.gl_to_framebuffer() * scale * translate * transform;
-        auto tex = get_texture(target.scale);
-
-        OpenGL::render_begin(target);
-        for (auto& box : damage)
+        transform =
+            wf::gles::render_target_gl_to_framebuffer(data.target) * scale * translate * transform;
+        data.pass->custom_gles_subpass([&]
         {
-            target.logic_scissor(wlr_box_from_pixman_box(box));
-            OpenGL::render_transformed_texture(tex, quad.geometry, {},
-                transform, self->color);
-        }
-
-        OpenGL::render_end();
+            auto tex = wf::gles_texture_t{get_texture(data.target.scale)};
+            wf::gles::bind_render_buffer(data.target);
+            for (auto& box : data.damage)
+            {
+                wf::gles::render_target_logic_scissor(data.target, wlr_box_from_pixman_box(box));
+                OpenGL::render_transformed_texture(tex, quad.geometry, {},
+                    transform, self->color);
+            }
+        });
     }
 };
 
@@ -460,6 +470,45 @@ void transform_manager_node_t::end_transform_update()
 {
     wf::scene::damage_node(this, get_bounding_box());
     wf::scene::update(shared_from_this(), wf::scene::update_flag::GEOMETRY);
+}
+
+uint32_t transformer_base_node_t::optimize_update(uint32_t flags)
+{
+    return optimize_nested_render_instances(shared_from_this(), flags);
+}
+
+wf::texture_t transformer_base_node_t::get_updated_contents(const wf::geometry_t& bbox, float scale,
+    std::vector<scene::render_instance_uptr>& children)
+{
+    if (inner_content.allocate(wf::dimensions(bbox), scale))
+    {
+        cached_damage |= bbox;
+    }
+
+    wf::render_target_t target{inner_content};
+    target.scale    = scale;
+    target.geometry = bbox;
+
+    render_pass_params_t params;
+    params.instances = &children;
+    params.target    = target;
+    params.damage    = cached_damage;
+    params.background_color = {0.0f, 0.0f, 0.0f, 0.0f};
+    params.flags = RPASS_CLEAR_BACKGROUND;
+    wf::render_pass_t::run(params);
+
+    cached_damage.clear();
+    return wf::texture_t{inner_content.get_texture(), {}};
+}
+
+void transformer_base_node_t::release_buffers()
+{
+    inner_content.free();
+}
+
+transformer_base_node_t::~transformer_base_node_t()
+{
+    release_buffers();
 }
 } // namespace scene
 }

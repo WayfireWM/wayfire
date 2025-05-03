@@ -1,6 +1,6 @@
 #pragma once
 
-#include "wayfire/opengl.hpp"
+#include <wayfire/render.hpp>
 #include <wayfire/output.hpp>
 #include <wayfire/object.hpp>
 #include <wayfire/region.hpp>
@@ -43,8 +43,8 @@ enum output_effect_type_t
  *
  * @param destination Indicates where the processed image should be stored.
  */
-using post_hook_t = std::function<void (const wf::framebuffer_t& source,
-    const wf::framebuffer_t& destination)>;
+using post_hook_t = std::function<void (wf::auxilliary_buffer_t& source,
+    const wf::render_buffer_t& destination)>;
 
 /**
  * The frame-done signal is emitted on an output when the frame has been completed (regardless of whether new
@@ -124,6 +124,11 @@ class render_manager
      * Otherwise it will return an empty region.
      */
     wf::region_t get_swap_damage();
+
+    /**
+     * @return The current render pass, NULL if no rendering operations are currently active on the output.
+     */
+    wf::render_pass_t *get_current_pass();
 
     /**
      * @return The damaged region on the current output for the current

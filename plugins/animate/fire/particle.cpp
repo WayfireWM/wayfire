@@ -54,9 +54,10 @@ void ParticleSystem::set_initer(ParticleIniter init)
 
 ParticleSystem::~ParticleSystem()
 {
-    OpenGL::render_begin();
-    program.free_resources();
-    OpenGL::render_end();
+    wf::gles::run_in_context([&]
+    {
+        program.free_resources();
+    });
 }
 
 int ParticleSystem::spawn(int num)
@@ -152,11 +153,11 @@ int ParticleSystem::statistic()
 
 void ParticleSystem::create_program()
 {
-    /* Just load the proper context, viewport doesn't matter */
-    OpenGL::render_begin();
-    program.set_simple(OpenGL::compile_program(particle_vert_source,
-        particle_frag_source));
-    OpenGL::render_end();
+    wf::gles::run_in_context([&]
+    {
+        program.set_simple(OpenGL::compile_program(particle_vert_source,
+            particle_frag_source));
+    });
 }
 
 void ParticleSystem::render(glm::mat4 matrix)

@@ -306,55 +306,14 @@ class wf::scene::wlr_surface_node_t::wlr_surface_render_instance_t : public rend
         }
     }
 
-    void render(const wf::render_target_t& target, const wf::region_t& region) override
+    void render(const wf::scene::render_instruction_t& data) override
     {
         if (!self->current_state.current_buffer)
         {
             return;
         }
 
-        wf::geometry_t geometry = self->get_bounding_box();
-        wf::texture_t texture{self->current_state.texture, self->current_state.src_viewport};
-
-        glm::mat4 transform = target.get_orthographic_projection();
-
-        if (self->current_state.transform)
-        {
-            const double cx     = geometry.x + geometry.width / 2.0;
-            const double cy     = geometry.y + geometry.height / 2.0;
-            const double aspect = geometry.width * 1.0 / geometry.height;
-
-            // Center the surface in the coordinate system, rotate (preserving aspect ration)
-            // according to transform, go back
-            glm::mat4 surface_transform =
-                glm::translate(glm::mat4(1.0f), glm::vec3(cx, cy, 0.0f)) *
-                glm::scale(glm::mat4(1.0f), glm::vec3(aspect, 1.0f, 1.0f)) *
-                get_output_matrix_from_transform(self->current_state.transform) *
-                glm::scale(glm::mat4(1.0f), glm::vec3(1.0 / aspect, 1.0f, 1.0f)) *
-                glm::translate(glm::mat4(1.0f), glm::vec3(-cx, -cy, 0.0f));
-            transform = transform * surface_transform;
-        }
-
-        OpenGL::render_begin(target);
-        OpenGL::render_transformed_texture(texture, geometry, transform,
-            glm::vec4(1.f), OpenGL::RENDER_FLAG_CACHED);
-
-        // use GL_NEAREST for integer scale.
-        // GL_NEAREST makes scaled text blocky instead of blurry, which looks better
-        // but only for integer scale.
-        if (target.scale - floor(target.scale) < 0.001)
-        {
-            GL_CALL(glTexParameteri(texture.target, GL_TEXTURE_MAG_FILTER, GL_NEAREST));
-        }
-
-        for (const auto& rect : region)
-        {
-            target.logic_scissor(wlr_box_from_pixman_box(rect));
-            OpenGL::draw_cached();
-        }
-
-        OpenGL::clear_cached();
-        OpenGL::render_end();
+        data.pass->add_texture(*self->to_texture(), data.target, self->get_bounding_box(), data.damage);
     }
 
     void presentation_feedback(wf::output_t *output) override
@@ -454,9 +413,9 @@ wlr_surface*wf::scene::wlr_surface_node_t::get_surface() const
 
 std::optional<wf::texture_t> wf::scene::wlr_surface_node_t::to_texture() const
 {
-    if (this->current_state.current_buffer && (this->current_state.transform == WL_OUTPUT_TRANSFORM_NORMAL))
+    if (this->current_state.current_buffer)
     {
-        return wf::texture_t{current_state.texture, current_state.src_viewport};
+        return wf::texture_t{current_state.texture, current_state.src_viewport, current_state.transform};
     }
 
     return {};
