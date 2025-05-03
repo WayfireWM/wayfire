@@ -41,16 +41,7 @@ void decoration_theme_t::render_background(const wf::scene::render_instruction_t
     wf::geometry_t rectangle, bool active) const
 {
     wf::color_t color = active ? active_color : inactive_color;
-
-    data.pass->custom_gles_subpass(data.target, [&]
-    {
-        for (auto box : data.damage)
-        {
-            gles::render_target_logic_scissor(data.target, wlr_box_from_pixman_box(box));
-            OpenGL::render_rectangle(rectangle, color,
-                wf::gles::render_target_orthographic_projection(data.target));
-        }
-    });
+    data.pass->add_rect(color, data.target, rectangle, data.damage);
 }
 
 /**

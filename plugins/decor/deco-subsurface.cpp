@@ -44,13 +44,16 @@ class simple_decoration_node_t : public wf::scene::node_t, public wf::pointer_in
     {
         if (auto view = _view.lock())
         {
-            int target_width  = width * scale;
-            int target_height = height * scale;
-            if ((title_texture.tex.width != target_width) || (title_texture.tex.height != target_height) ||
+            wf::dimensions_t target_size = {
+                static_cast<int32_t>(width * scale),
+                static_cast<int32_t>(height * scale)
+            };
+
+            if ((title_texture.tex.get_size() != target_size) ||
                 (title_texture.current_text != view->get_title()))
             {
-                auto surface = theme.render_text(view->get_title(), target_width, target_height);
-                cairo_surface_upload_to_texture(surface, title_texture.tex);
+                auto surface = theme.render_text(view->get_title(), target_size.width, target_size.height);
+                title_texture.tex = wf::owned_texture_t{surface};
                 cairo_surface_destroy(surface);
                 title_texture.current_text = view->get_title();
             }
@@ -59,7 +62,7 @@ class simple_decoration_node_t : public wf::scene::node_t, public wf::pointer_in
 
     struct
     {
-        wf::simple_texture_t tex;
+        wf::owned_texture_t tex;
         std::string current_text = "";
     } title_texture;
 
@@ -99,14 +102,6 @@ class simple_decoration_node_t : public wf::scene::node_t, public wf::pointer_in
         return {-current_thickness, -current_titlebar};
     }
 
-    void render_title(const wf::render_target_t& fb,
-        wf::geometry_t geometry)
-    {
-        update_title(geometry.width, geometry.height, fb.scale);
-        OpenGL::render_texture(title_texture.tex.tex, fb, geometry,
-            glm::vec4(1.0f), OpenGL::TEXTURE_TRANSFORM_INVERT_Y);
-    }
-
     void render(const wf::scene::render_instruction_t& data)
     {
         auto origin = get_offset();
@@ -127,14 +122,10 @@ class simple_decoration_node_t : public wf::scene::node_t, public wf::pointer_in
         {
             if (item->get_type() == wf::decor::DECORATION_AREA_TITLE)
             {
-                data.pass->custom_gles_subpass(data.target, [&]
-                {
-                    for (auto box : data.damage)
-                    {
-                        wf::gles::render_target_logic_scissor(data.target, wlr_box_from_pixman_box(box));
-                        render_title(data.target, item->get_geometry() + origin);
-                    }
-                });
+                wf::geometry_t title_geometry = item->get_geometry() + origin;
+                update_title(title_geometry.width, title_geometry.height, data.target.scale);
+                data.pass->add_texture(title_texture.tex.get_texture(), data.target,
+                    title_geometry, data.damage);
             } else // button
             {
                 item->as_button().render(data, item->get_geometry() + origin);

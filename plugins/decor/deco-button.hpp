@@ -5,7 +5,7 @@
 #include <wayfire/opengl.hpp>
 #include <wayfire/render-manager.hpp>
 #include <wayfire/util/duration.hpp>
-#include <wayfire/plugins/common/simple-texture.hpp>
+#include <wayfire/plugins/common/cairo-util.hpp>
 
 #include <cairo.h>
 #include <pango/pango.h>
@@ -36,7 +36,7 @@ class button_t
     button_t(const decoration_theme_t& theme,
         std::function<void()> damage_callback);
 
-    ~button_t() = default;
+    ~button_t();
     button_t(const button_t &) = delete;
     button_t(button_t &&) = delete;
     button_t& operator =(const button_t&) = delete;
@@ -77,7 +77,7 @@ class button_t
 
     /* Whether the button needs repaint */
     button_type_t type;
-    wf::simple_texture_t button_texture;
+    wf::owned_texture_t button_texture;
 
     /* Whether the button is currently being hovered */
     bool is_hovered = false;
