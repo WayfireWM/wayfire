@@ -20,6 +20,7 @@ struct texture_t
     wlr_texture *texture = NULL;
     std::optional<wlr_fbox> source_box = {};
     wl_output_transform transform = WL_OUTPUT_TRANSFORM_NORMAL;
+    std::optional<wlr_scale_filter_mode> filter_mode = {};
 };
 
 /**
