@@ -1,47 +1,112 @@
 #pragma once
 
+#include "wayfire/core.hpp"
 #include "wayfire/geometry.hpp"
 #include <string>
-#include <wayfire/plugins/common/simple-texture.hpp>
 #include <wayfire/config/types.hpp>
 #include <cairo.h>
 #include <pango/pango.h>
 #include <pango/pangocairo.h>
+#include <wayfire/dassert.hpp>
+#include <wayfire/render.hpp>
+
+// TODO: do we need some kind of dependency here?
+#include <drm_fourcc.h>
 
 namespace wf
 {
-struct simple_texture_t;
-}
-
 /**
- * Upload the data from the cairo surface to the OpenGL texture.
- *
- * @param surface The source cairo surface.
- * @param buffer  The buffer to upload data to.
+ * Very basic wrapper around wlr_texture.
+ * It destroys the texture automatically.
  */
-static void cairo_surface_upload_to_texture(
-    cairo_surface_t *surface, wf::simple_texture_t& buffer)
+struct owned_texture_t
 {
-    buffer.width  = cairo_image_surface_get_width(surface);
-    buffer.height = cairo_image_surface_get_height(surface);
-    if (buffer.tex == (GLuint) - 1)
+    owned_texture_t(const owned_texture_t& other) = delete;
+    owned_texture_t& operator =(const owned_texture_t& other) = delete;
+
+    owned_texture_t(owned_texture_t&& other) : owned_texture_t()
     {
-        GL_CALL(glGenTextures(1, &buffer.tex));
+        std::swap(tex, other.tex);
+        std::swap(size, other.size);
     }
 
-    auto src = cairo_image_surface_get_data(surface);
+    owned_texture_t& operator =(owned_texture_t&& other)
+    {
+        if (&other == this)
+        {
+            return *this;
+        }
 
-    GL_CALL(glBindTexture(GL_TEXTURE_2D, buffer.tex));
-    GL_CALL(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR));
-    GL_CALL(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR));
-    GL_CALL(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_R, GL_BLUE));
-    GL_CALL(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_B, GL_RED));
-    GL_CALL(glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA,
-        buffer.width, buffer.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, src));
-}
+        if (tex)
+        {
+            wlr_texture_destroy(tex);
+        }
 
-namespace wf
-{
+        tex = other.tex;
+        other.tex = NULL;
+
+        size = other.size;
+        other.size = {0, 0};
+        return *this;
+    }
+
+    ~owned_texture_t()
+    {
+        if (tex)
+        {
+            wlr_texture_destroy(tex);
+        }
+    }
+
+    wf::texture_t get_texture() const
+    {
+        return wf::texture_t{tex};
+    }
+
+    wf::dimensions_t get_size() const
+    {
+        return size;
+    }
+
+    // Empty texture.
+    owned_texture_t()
+    {}
+
+    // Assumes ownership of the texture!
+    owned_texture_t(wlr_texture *new_tex)
+    {
+        tex = new_tex;
+    }
+
+    owned_texture_t(cairo_surface_t *surface)
+    {
+        int width  = cairo_image_surface_get_width(surface);
+        int height = cairo_image_surface_get_height(surface);
+        int stride = cairo_image_surface_get_stride(surface);
+
+        cairo_format_t fmt = cairo_image_surface_get_format(surface);
+        uint32_t drm_fmt   = 0;
+
+        switch (fmt)
+        {
+          case CAIRO_FORMAT_ARGB32:
+            drm_fmt = WL_SHM_FORMAT_ABGR8888;
+            break;
+
+          default:
+            wf::dassert(false, "Unsupported cairo format!");
+        }
+
+        this->tex = wlr_texture_from_pixels(wf::get_core().renderer, drm_fmt, stride, width, height,
+            cairo_image_surface_get_data(surface));
+        this->size = {width, height};
+    }
+
+  private:
+    wlr_texture *tex = NULL;
+    wf::dimensions_t size = {0, 0};
+};
+
 /**
  * Simple wrapper around rendering text with Cairo. This object can be
  * kept around to avoid reallocation of the cairo surface and OpenGL
@@ -49,8 +114,6 @@ namespace wf
  */
 struct cairo_text_t
 {
-    wf::simple_texture_t tex;
-
     /* parameters used for rendering */
     struct params
     {
@@ -137,12 +200,9 @@ struct cairo_text_t
 
         if ((w != surface_size.width) || (h != surface_size.height))
         {
-            if (par.exact_size || (w > surface_size.width) ||
-                (h > surface_size.height))
+            if (par.exact_size || (w > surface_size.width) || (h > surface_size.height))
             {
-                surface_size.width  = w;
-                surface_size.height = h;
-                cairo_create_surface();
+                cairo_create_surface({w, h});
             }
         }
 
@@ -201,37 +261,11 @@ struct cairo_text_t
         g_object_unref(layout);
 
         cairo_surface_flush(surface);
-        wf::gles::run_in_context([&]
-        {
-            cairo_surface_upload_to_texture(surface, tex);
-        });
-
-        return ret;
-    }
-
-    /**
-     * Standalone function version to render text to an OpenGL texture
-     */
-    static wf::dimensions_t cairo_render_text_to_texture(const std::string& text,
-        const wf::cairo_text_t::params& par, wf::simple_texture_t& tex)
-    {
-        wf::cairo_text_t ct;
-        /* note: we "borrow" the texture from what was supplied (if any) */
-        ct.tex.tex = tex.tex;
-        auto ret = ct.render_text(text, par);
-        if (tex.tex == (GLuint) - 1)
-        {
-            tex.tex = ct.tex.tex;
-        }
-
-        tex.width  = ct.tex.width;
-        tex.height = ct.tex.height;
-        ct.tex.tex = -1;
+        this->tex = owned_texture_t{surface};
         return ret;
     }
 
     cairo_text_t() = default;
-
     ~cairo_text_t()
     {
         cairo_free();
@@ -240,8 +274,8 @@ struct cairo_text_t
     cairo_text_t(const cairo_text_t &) = delete;
     cairo_text_t& operator =(const cairo_text_t&) = delete;
 
-    cairo_text_t(cairo_text_t && o) noexcept : tex(std::move(o.tex)), cr(o.cr),
-        surface(o.surface), surface_size(o.surface_size)
+    cairo_text_t(cairo_text_t && o) noexcept : cr(o.cr), surface(o.surface),
+        surface_size(o.surface_size), tex(std::move(o.tex))
     {
         o.cr = nullptr;
         o.surface = nullptr;
@@ -263,7 +297,6 @@ struct cairo_text_t
 
         o.cr = nullptr;
         o.surface = nullptr;
-
         return *this;
     }
 
@@ -278,21 +311,16 @@ struct cairo_text_t
     static unsigned int measure_height(int font_size, bool bg_rect = true)
     {
         cairo_text_t dummy;
-        dummy.surface_size.width  = 1;
-        dummy.surface_size.height = 1;
-        dummy.cairo_create_surface();
+        dummy.cairo_create_surface({1, 1});
 
         cairo_font_extents_t font_extents;
         /* TODO: font properties could be made parameters! */
-        cairo_select_font_face(dummy.cr, "sans-serif", CAIRO_FONT_SLANT_NORMAL,
-            CAIRO_FONT_WEIGHT_BOLD);
+        cairo_select_font_face(dummy.cr, "sans-serif", CAIRO_FONT_SLANT_NORMAL, CAIRO_FONT_WEIGHT_BOLD);
         cairo_set_font_size(dummy.cr, font_size);
         cairo_font_extents(dummy.cr, &font_extents);
 
-        double ypad = bg_rect ? 0.2 * (font_extents.ascent +
-            font_extents.descent) : 0.0;
-        unsigned int h = (unsigned int)std::ceil(font_extents.ascent +
-            font_extents.descent + 2 * ypad);
+        double ypad    = bg_rect ? 0.2 * (font_extents.ascent + font_extents.descent) : 0.0;
+        unsigned int h = (unsigned int)std::ceil(font_extents.ascent + font_extents.descent + 2 * ypad);
         return h;
     }
 
@@ -301,12 +329,17 @@ struct cairo_text_t
         return surface_size;
     }
 
+    wf::texture_t get_texture() const
+    {
+        return this->tex.get_texture();
+    }
+
   protected:
     /* cairo context and surface for the text */
     cairo_t *cr = nullptr;
     cairo_surface_t *surface = nullptr;
     /* current width and height of the above surface */
-    wf::dimensions_t surface_size = {400, 100};
+    wf::dimensions_t surface_size = {0, 0};
 
 
     void cairo_free()
@@ -325,12 +358,14 @@ struct cairo_text_t
         surface = nullptr;
     }
 
-    void cairo_create_surface()
+    void cairo_create_surface(wf::dimensions_t size = {400, 100})
     {
         cairo_free();
-        surface = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, surface_size.width,
-            surface_size.height);
+        this->surface_size = size;
+        surface = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, surface_size.width, surface_size.height);
         cr = cairo_create(surface);
     }
+
+    owned_texture_t tex;
 };
 }

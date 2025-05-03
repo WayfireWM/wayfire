@@ -1,4 +1,3 @@
-#include "wayfire/opengl.hpp"
 #include "wayfire/output.hpp"
 #include "wayfire/scene.hpp"
 #include <wayfire/scene-render.hpp>
@@ -14,15 +13,7 @@ class simple_text_node_t : public wf::scene::node_t
         void render(const wf::scene::render_instruction_t& data)
         {
             auto g = self->get_bounding_box();
-            data.pass->custom_gles_subpass(data.target, [&]
-            {
-                for (auto box : data.damage)
-                {
-                    wf::gles::render_target_logic_scissor(data.target, wlr_box_from_pixman_box(box));
-                    OpenGL::render_texture(self->cr_text.tex.tex, data.target, g, glm::vec4(1.0f),
-                        OpenGL::TEXTURE_TRANSFORM_INVERT_Y);
-                }
-            });
+            data.pass->add_texture(self->cr_text.get_texture(), data.target, g, data.damage);
         }
     };
 
