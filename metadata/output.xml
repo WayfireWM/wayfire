@@ -22,5 +22,8 @@
       <min>8</min>
       <max>10</max>
     </option>
+    <option name="icc_profile" type="string">
+      <default></default>
+    </option>
   </object>
 </wayfire>
