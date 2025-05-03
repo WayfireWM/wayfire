@@ -1,6 +1,6 @@
 #include <wayfire/per-output-plugin.hpp>
 #include <wayfire/output.hpp>
-#include <wayfire/opengl.hpp>
+#include <wayfire/render.hpp>
 #include <wayfire/render-manager.hpp>
 #include <wayfire/util/duration.hpp>
 
@@ -67,7 +67,7 @@ class wayfire_zoom_screen : public wf::per_output_plugin_instance_t
         return true;
     };
 
-    wf::post_hook_t render_hook = [=] (const wf::auxilliary_buffer_t& source,
+    wf::post_hook_t render_hook = [=] (wf::auxilliary_buffer_t& source,
                                        const wf::render_buffer_t& destination)
     {
         auto w = destination.get_size().width;
@@ -79,36 +79,34 @@ class wayfire_zoom_screen : public wf::per_output_plugin_instance_t
 
         /* get rotation & scale */
         wlr_box box = {int(x), int(y), 1, 1};
-        box = output->render->get_target_framebuffer().
-            framebuffer_box_from_geometry_box(box);
-
-        x = box.x;
-        y = h - box.y;
+        box = output->render->get_target_framebuffer().framebuffer_box_from_geometry_box(box);
+        x   = box.x;
+        y   = box.y;
 
         const float scale = (progression - 1) / progression;
 
         // The target width and height are truncated here so that `x1+tw` and
         // `x1` round to GLint in tandem for glBlitFramebuffer(). This keeps the
         // aspect ratio constant while panning around.
-        const GLint tw = w / progression, th = h / progression;
-
+        const int tw = w / progression, th = h / progression;
         const float x1 = x * scale;
         const float y1 = y * scale;
 
-        const GLenum interpolation =
-            (interpolation_method ==
-                (int)interpolation_method_t::NEAREST) ? GL_NEAREST : GL_LINEAR;
+        wlr_buffer_pass_options opts{};
+        auto pass = wlr_renderer_begin_buffer_pass(wf::get_core().renderer, destination.get_buffer(), &opts);
 
-        wf::gles::run_in_context([&]
-        {
-            GLuint source_fb_id = wf::gles::ensure_render_buffer_fb_id(source.get_renderbuffer());
-            GLuint destination_fb_id = wf::gles::ensure_render_buffer_fb_id(destination);
-            GL_CALL(glBindFramebuffer(GL_READ_FRAMEBUFFER, source_fb_id));
-            GL_CALL(glBindFramebuffer(GL_DRAW_FRAMEBUFFER, destination_fb_id));
-            GL_CALL(glBlitFramebuffer(x1, y1, x1 + tw, y1 + th, 0, 0, w, h,
-                GL_COLOR_BUFFER_BIT, interpolation));
-        });
-
+        wlr_render_texture_options tex{};
+        tex.texture     = source.get_texture();
+        tex.blend_mode  = WLR_RENDER_BLEND_MODE_NONE;
+        tex.src_box     = {x1, y1, 1.0 * tw, 1.0 * th};
+        tex.dst_box     = {0, 0, w, h};
+        tex.filter_mode = (interpolation_method == (int)interpolation_method_t::NEAREST) ?
+            WLR_SCALE_FILTER_NEAREST : WLR_SCALE_FILTER_BILINEAR;
+        tex.transform = WL_OUTPUT_TRANSFORM_NORMAL;
+        tex.alpha     = NULL;
+        tex.clip = NULL;
+        wlr_render_pass_add_texture(pass, &tex);
+        wlr_render_pass_submit(pass);
         if (!progression.running() && (progression - 1 <= 0.01))
         {
             unset_hook();
