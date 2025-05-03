@@ -273,6 +273,15 @@ void wf::render_pass_t::clear(const wf::region_t& region, const wf::color_t& col
 void wf::render_pass_t::add_texture(const wf::texture_t& texture, const wf::render_target_t& adjusted_target,
     const wf::geometry_t& geometry, const wf::region_t& damage, float alpha)
 {
+    if (wlr_renderer_is_gles2(this->get_wlr_renderer()))
+    {
+        // This is a hack to make sure that plugins can do whatever they want and we render on the correct
+        // target. For example, managing auxilliary textures can mess up with the state of the pipeline on
+        // GLES but not on Vulkan, so to make it easier to write plugins, we just bind the render target again
+        // here to ensure that the state is correct.
+        wf::gles::bind_render_buffer(adjusted_target);
+    }
+
     wf::region_t fb_damage = adjusted_target.framebuffer_region_from_geometry_region(damage);
 
     wlr_render_texture_options opts{};
@@ -297,6 +306,11 @@ void wf::render_pass_t::add_texture(const wf::texture_t& texture, const wf::rend
 void wf::render_pass_t::add_rect(const wf::color_t& color, const wf::render_target_t& adjusted_target,
     const wf::geometry_t& geometry, const wf::region_t& damage)
 {
+    if (wlr_renderer_is_gles2(this->get_wlr_renderer()))
+    {
+        wf::gles::bind_render_buffer(adjusted_target);
+    }
+
     wf::region_t fb_damage = adjusted_target.framebuffer_region_from_geometry_region(damage);
     wlr_render_rect_options opts;
     opts.color = {
