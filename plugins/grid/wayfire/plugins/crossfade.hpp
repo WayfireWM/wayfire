@@ -3,7 +3,6 @@
 #include <wayfire/plugins/common/util.hpp>
 #include "wayfire/core.hpp"
 #include "wayfire/geometry.hpp"
-#include "wayfire/opengl.hpp"
 #include "wayfire/region.hpp"
 #include "wayfire/scene-render.hpp"
 #include "wayfire/scene.hpp"
@@ -125,15 +124,8 @@ class crossfade_render_instance_t : public scene::render_instance_t
             ra = std::pow((self->overlay_alpha - 0.5) * 2, N) / 2.0 + 0.5;
         }
 
-        data.pass->custom_gles_subpass(data.target, [&]
-        {
-            for (auto box : data.damage)
-            {
-                gles::render_target_logic_scissor(data.target, wlr_box_from_pixman_box(box));
-                OpenGL::render_texture(wf::gles_texture_t::from_aux(self->original_buffer), data.target,
-                    self->displayed_geometry, glm::vec4{1.0f, 1.0f, 1.0f, 1.0 - ra});
-            }
-        });
+        wf::texture_t tex = wf::texture_t{self->original_buffer.get_texture()};
+        data.pass->add_texture(tex, data.target, self->displayed_geometry, data.damage, 1.0 - ra);
     }
 };
 
