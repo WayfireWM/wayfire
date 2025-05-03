@@ -7,7 +7,6 @@
 #include "wayfire/unstable/wlr-surface-controller.hpp"
 #include "wayfire/output.hpp"
 #include "wayfire/output-layout.hpp"
-#include "wayfire/signal-definitions.hpp"
 
 #include <wayfire/plugin.hpp>
 #include <wayfire/util.hpp>
