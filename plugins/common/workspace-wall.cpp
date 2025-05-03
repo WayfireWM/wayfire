@@ -269,7 +269,10 @@ class workspace_wall_t::workspace_wall_node_t : public scene::node_t
 
                 auto bbox = workspaces[i][j]->get_bounding_box();
 
-                aux_buffers[i][j].allocate(wf::dimensions(bbox), wall->output->handle->scale);
+                aux_buffers[i][j].allocate(wf::dimensions(bbox), wall->output->handle->scale,
+                    wf::buffer_allocation_hints_t{
+                        .needs_alpha = false,
+                    });
                 aux_buffer_damage[i][j] |= bbox;
                 aux_buffer_current_scale[i][j]  = 1.0;
                 aux_buffer_current_subbox[i][j] = std::nullopt;

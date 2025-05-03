@@ -55,6 +55,14 @@ struct render_buffer_t
 };
 
 /**
+ * Hints for choosing a suitable underlying memory layout when allocating a buffer.
+ */
+struct buffer_allocation_hints_t
+{
+    bool needs_alpha = true;
+};
+
+/**
  * A class managing a buffer used for rendering purposes.
  * Typically, such buffers are used to composite several textures together, which are then composited onto
  * a final buffer.
@@ -81,7 +89,7 @@ struct auxilliary_buffer_t
      *              ceil(width * scale) x ceil(height * scale).
      * @return True if the buffer size changed, False if the size didn't change
      */
-    bool allocate(wf::dimensions_t size, float scale = 1.0);
+    bool allocate(wf::dimensions_t size, float scale = 1.0, buffer_allocation_hints_t hints = {});
 
     /**
      * Free the wlr_buffer/wlr_texture backing this framebuffer.

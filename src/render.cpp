@@ -34,7 +34,7 @@ wf::auxilliary_buffer_t::~auxilliary_buffer_t()
     free();
 }
 
-bool wf::auxilliary_buffer_t::allocate(wf::dimensions_t size, float scale)
+bool wf::auxilliary_buffer_t::allocate(wf::dimensions_t size, float scale, buffer_allocation_hints_t hints)
 {
     size.width  = std::ceil(size.width * scale);
     size.height = std::ceil(size.height * scale);
@@ -49,7 +49,9 @@ bool wf::auxilliary_buffer_t::allocate(wf::dimensions_t size, float scale)
     auto renderer = wf::get_core().renderer;
     auto supported_render_formats =
         wlr_renderer_get_texture_formats(wf::get_core().renderer, renderer->render_buffer_caps);
-    auto format = wlr_drm_format_set_get(supported_render_formats, DRM_FORMAT_ABGR8888);
+
+    const uint32_t drm_fmt = hints.needs_alpha ? DRM_FORMAT_ABGR8888 : DRM_FORMAT_XBGR8888;
+    auto format = wlr_drm_format_set_get(supported_render_formats, drm_fmt);
     if (!format)
     {
         LOGE("Failed to find supported render format!");
