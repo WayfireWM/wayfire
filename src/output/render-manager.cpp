@@ -1063,7 +1063,8 @@ class wf::render_manager::impl
     bool do_direct_scanout()
     {
         const bool can_scanout = !output_inhibit_counter && effects->can_scanout() &&
-            postprocessing->can_scanout() && wlr_output_is_direct_scanout_allowed(output->handle);
+            postprocessing->can_scanout() && wlr_output_is_direct_scanout_allowed(output->handle) &&
+            (icc_color_transform == nullptr);
 
         if (!can_scanout || !env_allow_scanout)
         {
