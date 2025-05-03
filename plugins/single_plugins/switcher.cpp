@@ -194,6 +194,12 @@ class WayfireSwitcher : public wf::per_output_plugin_instance_t, public wf::keyb
   public:
     void init() override
     {
+        if (!wf::get_core().is_gles2())
+        {
+            LOGE("Switcher plugin requires OpenGL ES renderer!");
+            return;
+        }
+
         output->add_key(
             wf::option_wrapper_t<wf::keybinding_t>{"switcher/next_view"},
             &next_view_binding);

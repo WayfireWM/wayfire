@@ -923,8 +923,14 @@ class wayfire_wobbly : public wf::plugin_interface_t
   public:
     void init() override
     {
+        if (!wf::get_core().is_gles2())
+        {
+            LOGE("Wobbly requires GLES2 renderer!");
+            return;
+        }
+
         wf::get_core().connect(&wobbly_changed);
-        wf::gles::run_in_context([&]
+        wf::gles::maybe_run_in_context([&]
         {
             program.compile(wobbly_graphics::vertex_source, wobbly_graphics::frag_source);
         });
@@ -1006,7 +1012,7 @@ class wayfire_wobbly : public wf::plugin_interface_t
             }
         }
 
-        wf::gles::run_in_context([&]
+        wf::gles::maybe_run_in_context([&]
         {
             program.free_resources();
         });
