@@ -215,18 +215,18 @@ class workspace_wall_t::workspace_wall_node_t : public scene::node_t
                     float dim = self->wall->get_color_for_workspace({i, j});
                     const auto& subbox = self->aux_buffer_current_subbox[i][j];
 
-                    std::optional<wlr_fbox> source_box = {};
+                    auto tex = wf::texture_t{buffer.get_texture()};
+                    tex.filter_mode = WLR_SCALE_FILTER_BILINEAR;
                     if (subbox.has_value())
                     {
-                        source_box = {
+                        tex.source_box = {
                             1.0 * subbox->x,
                             1.0 * subbox->y,
                             1.0 * subbox->width,
                             1.0 * subbox->height};
                     }
 
-                    data.pass->add_texture(wf::texture_t{buffer.get_texture(), source_box},
-                        data.target, render_geometry, data.damage);
+                    data.pass->add_texture(tex, data.target, render_geometry, data.damage);
                     data.pass->add_rect({0, 0, 0, 1.0 - dim}, data.target,
                         render_geometry, data.damage);
                 }
