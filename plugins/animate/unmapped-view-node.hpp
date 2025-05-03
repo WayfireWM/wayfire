@@ -1,8 +1,6 @@
 #pragma once
 
 #include "wayfire/geometry.hpp"
-#include "wayfire/opengl.hpp"
-#include "wayfire/region.hpp"
 #include "wayfire/scene-render.hpp"
 #include "wayfire/scene.hpp"
 #include <wayfire/view.hpp>
@@ -44,15 +42,8 @@ class unmapped_view_snapshot_node : public wf::scene::node_t
         using simple_render_instance_t::simple_render_instance_t;
         void render(const wf::scene::render_instruction_t& data)
         {
-            data.pass->custom_gles_subpass(data.target, [&]
-            {
-                for (auto box : data.damage)
-                {
-                    gles::render_target_logic_scissor(data.target, wlr_box_from_pixman_box(box));
-                    OpenGL::render_texture(wf::gles_texture_t::from_aux(self->snapshot),
-                        data.target, self->get_bounding_box());
-                }
-            });
+            wf::texture_t texture = wf::texture_t{self->snapshot.get_texture()};
+            data.pass->add_texture(texture, data.target, self->get_bounding_box(), data.damage);
         }
     };
 };

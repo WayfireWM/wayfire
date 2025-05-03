@@ -36,14 +36,7 @@ class wf_system_fade
     {
         wf::color_t color{0, 0, 0, this->progression};
         auto fb = output->render->get_target_framebuffer();
-        auto geometry = output->get_relative_geometry();
-
-        wf::gles::run_in_context([&]
-        {
-            OpenGL::render_rectangle(geometry, color,
-                wf::gles::render_target_orthographic_projection(fb));
-        });
-
+        output->render->get_current_pass()->add_rect(color, fb, fb.geometry, fb.geometry);
         if (!progression.running())
         {
             finish();
