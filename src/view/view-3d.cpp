@@ -201,6 +201,16 @@ class view_2d_render_instance_t :
 
     void render(const wf::scene::render_instruction_t& data) override
     {
+        if (std::abs(self->angle) < 1e-3)
+        {
+            // No rotation, we can use render-agnostic functions.
+            auto tex = this->get_texture(data.target.scale);
+            tex.filter_mode = WLR_SCALE_FILTER_BILINEAR;
+            auto bbox = self->get_bounding_box();
+            data.pass->add_texture(tex, data.target, bbox, data.damage, self->alpha);
+            return;
+        }
+
         // Untransformed bounding box
         auto bbox = self->get_children_bounding_box();
 
