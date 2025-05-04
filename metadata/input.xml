@@ -253,6 +253,13 @@
 				<min>0.1</min>
 				<max>5.0</max>
 			</option>
+			<option name="edge_swipe_threshold" type="int">
+				<_short>Touchscreen edge swipe threshold</_short>
+				<_long>Change the threshold of the built-in edge swipe detection. Higher values mean that a bigger area on the edge is used to trigger the edge swipe.</_long>
+				<default>10</default>
+				<min>5</min>
+				<max>50</max>
+			</option>
 			<option name="touchpad_scroll_speed" type="double">
 				<_short>Touchpad scroll speed</_short>
 				<_long>Changes the touchpad scroll factor.  Scroll speed will be scaled by the given value, which must be non-negative.</_long>
