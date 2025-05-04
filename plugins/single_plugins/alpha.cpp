@@ -58,10 +58,10 @@ class wayfire_alpha : public wf::plugin_interface_t
     wf::ipc::method_callback ipc_set_view_alpha = [=] (wf::json_t data)
         -> wf::json_t
     {
-        auto view_id = wf::ipc::json_get_uint64(data, "view-id");
+        auto view_id = wf::ipc::get_view_id(data);
         auto alpha   = wf::ipc::json_get_double(data, "alpha");
 
-        auto view = wf::ipc::find_view_by_id(view_id);
+        auto view = wf::ipc::find_view_by_id(view_id.value());
         if (view && view->is_mapped())
         {
             auto tr = ensure_transformer(view);

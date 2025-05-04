@@ -94,6 +94,49 @@ inline wf::workspace_set_t *find_workspace_set_by_index(int32_t index)
     return nullptr;
 }
 
+inline std::optional<int64_t> get_view_id(const wf::json_t& data)
+{
+    auto view_id = wf::ipc::json_get_optional_int64(data, "id");
+    if (!view_id.has_value())
+    {
+        view_id = wf::ipc::json_get_optional_int64(data, "view_id");
+    }
+
+    if (!view_id.has_value())
+    {
+        return wf::ipc::json_get_optional_int64(data, "view-id");
+    }
+
+    return view_id;
+}
+
+inline std::optional<int64_t> get_output_id(const wf::json_t& data)
+{
+    auto output_id = wf::ipc::json_get_optional_int64(data, "output_id");
+    if (!output_id.has_value())
+    {
+        output_id = wf::ipc::json_get_optional_int64(data, "output-id");
+    }
+
+    if (!output_id.has_value())
+    {
+        output_id = wf::ipc::json_get_optional_int64(data, "id");
+    }
+
+    return output_id;
+}
+
+inline std::optional<int64_t> get_wset_index(const wf::json_t& data)
+{
+    auto wset_index = wf::ipc::json_get_optional_int64(data, "wset-index");
+    if (!wset_index.has_value())
+    {
+        wset_index = wf::ipc::json_get_optional_int64(data, "id");
+    }
+
+    return wset_index;
+}
+
 inline wf::json_t geometry_to_json(wf::geometry_t g)
 {
     wf::json_t j;

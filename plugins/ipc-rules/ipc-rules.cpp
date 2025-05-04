@@ -76,8 +76,13 @@ class ipc_rules_t : public wf::plugin_interface_t,
 
     wf::ipc::method_callback get_view_info = [=] (wf::json_t data)
     {
-        auto id = wf::ipc::json_get_uint64(data, "id");
-        if (auto view = wf::ipc::find_view_by_id(id))
+        auto view_id = wf::ipc::get_view_id(data);
+        if (!view_id.has_value())
+        {
+            return wf::ipc::json_error("Missing required field: view-id");
+        }
+
+        if (auto view = wf::ipc::find_view_by_id(view_id.value()))
         {
             auto response = wf::ipc::json_ok();
             response["info"] = view_to_json(view);
@@ -120,8 +125,13 @@ class ipc_rules_t : public wf::plugin_interface_t,
 
     wf::ipc::method_callback focus_view = [=] (wf::json_t data)
     {
-        auto id = wf::ipc::json_get_uint64(data, "id");
-        if (auto view = wf::ipc::find_view_by_id(id))
+        auto view_id = wf::ipc::get_view_id(data);
+        if (!view_id.has_value())
+        {
+            return wf::ipc::json_error("Missing required field: view-id");
+        }
+
+        if (auto view = wf::ipc::find_view_by_id(view_id.value()))
         {
             auto response = wf::ipc::json_ok();
             auto toplevel = wf::toplevel_cast(view);
@@ -139,8 +149,13 @@ class ipc_rules_t : public wf::plugin_interface_t,
 
     wf::ipc::method_callback close_view = [=] (wf::json_t data)
     {
-        auto id = wf::ipc::json_get_uint64(data, "id");
-        if (auto view = wf::ipc::find_view_by_id(id))
+        auto view_id = wf::ipc::get_view_id(data);
+        if (!view_id.has_value())
+        {
+            return wf::ipc::json_error("Missing required field: view-id");
+        }
+
+        if (auto view = wf::ipc::find_view_by_id(view_id.value()))
         {
             auto response = wf::ipc::json_ok();
             view->close();
@@ -163,8 +178,13 @@ class ipc_rules_t : public wf::plugin_interface_t,
 
     wf::ipc::method_callback get_output_info = [=] (wf::json_t data)
     {
-        auto id = wf::ipc::json_get_uint64(data, "id");
-        auto wo = wf::ipc::find_output_by_id(id);
+        auto output_id = wf::ipc::get_output_id(data);
+        if (!output_id.has_value())
+        {
+            return wf::ipc::json_error("Missing required field: output-id");
+        }
+
+        auto wo = wf::ipc::find_output_by_id(output_id.value());
         if (!wo)
         {
             return wf::ipc::json_error("output not found");
@@ -176,19 +196,32 @@ class ipc_rules_t : public wf::plugin_interface_t,
 
     wf::ipc::method_callback configure_view = [=] (wf::json_t data)
     {
-        auto id = wf::ipc::json_get_uint64(data, "id");
-        auto output_id = wf::ipc::json_get_optional_uint64(data, "output_id");
+        auto view_id = wf::ipc::get_view_id(data);
+        if (!view_id.has_value())
+        {
+            return wf::ipc::json_error("Missing required field: view-id");
+        }
 
         if (data.has_member("geometry") && !data["geometry"].is_object())
         {
             return wf::ipc::json_error("invalid geometry");
         }
 
-        auto sticky = wf::ipc::json_get_optional_bool(data, "sticky");
-        auto view   = wf::ipc::find_view_by_id(id);
+        auto view = wf::ipc::find_view_by_id(view_id.value());
         if (!view)
         {
             return wf::ipc::json_error("view not found");
+        }
+
+        auto output_id = wf::ipc::json_get_optional_uint64(data, "output-id");
+        if (!output_id.has_value())
+        {
+            // Fallback: Use current output of the view
+
+            if (view && view->get_output())
+            {
+                output_id = view->get_output()->get_id();
+            }
         }
 
         auto toplevel = wf::toplevel_cast(view);
@@ -219,6 +252,7 @@ class ipc_rules_t : public wf::plugin_interface_t,
             toplevel->set_geometry(*geometry);
         }
 
+        auto sticky = wf::ipc::json_get_optional_bool(data, "sticky");
         if (sticky.has_value())
         {
             toplevel->set_sticky(sticky.value());
@@ -240,8 +274,13 @@ class ipc_rules_t : public wf::plugin_interface_t,
 
     wf::ipc::method_callback get_wset_info = [=] (wf::json_t data)
     {
-        auto id = wf::ipc::json_get_uint64(data, "id");
-        auto ws = wf::ipc::find_workspace_set_by_index(id);
+        auto wset_index = wf::ipc::get_wset_index(data);
+        if (!wset_index.has_value())
+        {
+            return wf::ipc::json_error("Missing required field: wset-index");
+        }
+
+        auto ws = wf::ipc::find_workspace_set_by_index(wset_index.value());
         if (!ws)
         {
             return wf::ipc::json_error("workspace set not found");

@@ -1,6 +1,7 @@
 #pragma once
 #include "config.h"
 #include "ipc-rules-common.hpp"
+#include "plugins/ipc/ipc-helpers.hpp"
 #include "plugins/ipc/ipc-method-repository.hpp"
 #include "wayfire/debug.hpp"
 #include <set>
@@ -81,7 +82,7 @@ class ipc_rules_utility_methods_t
     wf::ipc::method_callback destroy_headless_output = [=] (const wf::json_t& data)
     {
         auto output    = wf::ipc::json_get_optional_string(data, "output");
-        auto output_id = wf::ipc::json_get_optional_uint64(data, "output-id");
+        auto output_id = wf::ipc::get_output_id(data);
 
         if (!output.has_value() && !output_id.has_value())
         {
