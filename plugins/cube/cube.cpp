@@ -206,6 +206,9 @@ class wayfire_cube : public wf::per_output_plugin_instance_t, public wf::pointer
     std::string last_background_mode;
     std::unique_ptr<wf_cube_background_base> background;
 
+    wf::pointf_t ts_last_position;
+    uint64_t touch_down_time;
+
     wf::option_wrapper_t<std::string> background_mode{"cube/background_mode"};
 
     void reload_background()
@@ -381,6 +384,9 @@ class wayfire_cube : public wf::per_output_plugin_instance_t, public wf::pointer
         }
 
         wf::get_core().connect(&on_motion_event);
+        wf::get_core().connect(&on_touch_motion);
+        wf::get_core().connect(&on_touch_down);
+        wf::get_core().connect(&on_touch_up);
 
         render_node = std::make_shared<cube_render_node_t>(this);
         wf::scene::add_front(wf::get_core().scene(), render_node);
@@ -429,6 +435,9 @@ class wayfire_cube : public wf::per_output_plugin_instance_t, public wf::pointer
         output->deactivate_plugin(&grab_interface);
         wf::get_core().unhide_cursor();
         on_motion_event.disconnect();
+        on_touch_motion.disconnect();
+        on_touch_down.disconnect();
+        on_touch_up.disconnect();
 
         /* Figure out how much we have rotated and switch workspace */
         int size = get_num_faces();
@@ -689,7 +698,7 @@ class wayfire_cube : public wf::per_output_plugin_instance_t, public wf::pointer
     wf::signal::connection_t<wf::input_event_signal<wlr_pointer_motion_event>> on_motion_event =
         [=] (wf::input_event_signal<wlr_pointer_motion_event> *ev)
     {
-        pointer_moved(ev->event);
+        rotate_cube(ev->event->delta_x, ev->event->delta_y);
 
         ev->event->delta_x    = 0;
         ev->event->delta_y    = 0;
@@ -697,21 +706,41 @@ class wayfire_cube : public wf::per_output_plugin_instance_t, public wf::pointer
         ev->event->unaccel_dy = 0;
     };
 
-    void pointer_moved(wlr_pointer_motion_event *ev)
+    wf::signal::connection_t<wf::input_event_signal<wlr_touch_down_event>> on_touch_down =
+        [=] (wf::input_event_signal<wlr_touch_down_event> *ev)
+    {
+        ts_last_position.x = ev->event->x;
+        ts_last_position.y = ev->event->y;
+        touch_down_time = ev->event->time_msec;
+    };
+
+    wf::signal::connection_t<wf::input_event_signal<wlr_touch_up_event>> on_touch_up =
+        [=] (wf::input_event_signal<wlr_touch_up_event> *ev)
+    {
+        if (wf::get_current_time() - touch_down_time < 100)
+            input_ungrabbed();
+    };
+
+    wf::signal::connection_t<wf::input_event_signal<wlr_touch_motion_event>> on_touch_motion =
+        [=] (wf::input_event_signal<wlr_touch_motion_event> *ev)
+    {
+        rotate_cube(ev->event->x - ts_last_position.x, ev->event->y - ts_last_position.y);
+        ts_last_position.x = ev->event->x;
+        ts_last_position.y = ev->event->y;
+    };
+
+    void rotate_cube(double xDiff, double yDiff)
     {
         if (animation.in_exit)
         {
             return;
         }
 
-        double xdiff = ev->delta_x;
-        double ydiff = ev->delta_y;
-
         animation.cube_animation.zoom.restart_with_end(
             animation.cube_animation.zoom.end);
 
         double current_off_y = animation.cube_animation.offset_y;
-        double off_y = current_off_y + ydiff * YVelocity;
+        double off_y = current_off_y + yDiff * YVelocity;
 
         off_y = wf::clamp(off_y, -1.5, 1.5);
         animation.cube_animation.offset_y.set(current_off_y, off_y);
@@ -720,7 +749,7 @@ class wayfire_cube : public wf::per_output_plugin_instance_t, public wf::pointer
 
         float current_rotation = animation.cube_animation.rotation;
         animation.cube_animation.rotation.restart_with_end(
-            current_rotation + xdiff * XVelocity);
+            current_rotation + xDiff * XVelocity);
 
         animation.cube_animation.ease_deformation.restart_with_end(
             animation.cube_animation.ease_deformation.end);
