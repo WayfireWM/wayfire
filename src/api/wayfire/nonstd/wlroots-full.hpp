@@ -22,6 +22,7 @@ extern "C"
 {
 // Version
 #include <wlr/version.h>
+#include <wlr/config.h>
 // Rendering
 #define static
 #include <wlr/types/wlr_compositor.h>

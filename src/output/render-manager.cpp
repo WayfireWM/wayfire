@@ -987,6 +987,13 @@ class wf::render_manager::impl
             return;
         }
 
+        if (!wf::get_core().is_vulkan())
+        {
+            LOGW("ICC profiles in core are only supported with the vulkan renderer.");
+            set_icc_transform(nullptr);
+            return;
+        }
+
         auto path = std::filesystem::path{icc_profile.value()};
         if (std::filesystem::is_regular_file(path))
         {
