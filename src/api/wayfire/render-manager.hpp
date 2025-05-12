@@ -138,6 +138,11 @@ class render_manager
     wf::region_t get_scheduled_damage();
 
     /**
+     * @return The current wlr_color_transform from the icc_profile option, or NULL if none is set.
+     */
+    wlr_color_transform *get_color_transform();
+
+    /**
      * Damage all workspaces of the output. Should not be used inside render
      * hooks, view transformers, etc.
      */
