@@ -5,16 +5,11 @@
 #include <wayfire/render.hpp>
 #include <wayfire/render-manager.hpp>
 #include <wayfire/util/duration.hpp>
-#include <filesystem>
-#include <fstream>
 #include <wayfire/config-backend.hpp>
 
 class wayfire_passthrough_screen : public wf::per_output_plugin_instance_t
 {
     wlr_renderer *vk_renderer = NULL;
-    wf::option_wrapper_t<std::string> icc_profile;
-    wlr_color_transform *icc_color_transform = NULL;
-    wlr_buffer_pass_options pass_opts;
 
   public:
     void init() override
@@ -27,15 +22,6 @@ class wayfire_passthrough_screen : public wf::per_output_plugin_instance_t
 
         output->render->add_post(&render_hook);
 
-        auto section = wf::get_core().config_backend->get_output_section(output->handle);
-        icc_profile.load_option(section->get_name() + "/icc_profile");
-        icc_profile.set_callback([=] ()
-        {
-            reload_icc_profile();
-            output->render->damage_whole_idle();
-        });
-
-        reload_icc_profile();
         vk_renderer = wlr_vk_renderer_create_with_drm_fd(wlr_renderer_get_drm_fd(wf::get_core().renderer));
     }
 
@@ -63,8 +49,8 @@ class wayfire_passthrough_screen : public wf::per_output_plugin_instance_t
         auto h = destination.get_size().height;
 
         // Begin a buffer pass with the destination buffer
-        pass_opts = {}; // Reset options
-        pass_opts.color_transform = icc_color_transform;
+        wlr_buffer_pass_options pass_opts{}; // Reset options
+        pass_opts.color_transform = output->render->get_color_transform();
         auto pass = wlr_renderer_begin_buffer_pass(vk_renderer, destination.get_buffer(), &pass_opts);
 
         // Set up options to render the source texture to the destination
@@ -88,49 +74,7 @@ class wayfire_passthrough_screen : public wf::per_output_plugin_instance_t
         if (vk_renderer)
         {
             wlr_renderer_destroy(vk_renderer);
-            set_icc_transform(nullptr);
             output->render->rem_post(&render_hook);
-        }
-    }
-
-    void set_icc_transform(wlr_color_transform *transform)
-    {
-        if (icc_color_transform)
-        {
-            wlr_color_transform_unref(icc_color_transform);
-        }
-
-        icc_color_transform = transform;
-    }
-
-    void reload_icc_profile()
-    {
-        if (icc_profile.value().empty())
-        {
-            set_icc_transform(nullptr);
-            return;
-        }
-
-        auto path = std::filesystem::path{icc_profile.value()};
-        if (std::filesystem::is_regular_file(path))
-        {
-            // Read binary file into vector<char> buffer
-            std::ifstream file(icc_profile.value(), std::ios::binary);
-            std::vector<char> buffer((std::istreambuf_iterator<char>(file)),
-                std::istreambuf_iterator<char>());
-
-            auto transform = wlr_color_transform_init_linear_to_icc(buffer.data(), buffer.size());
-            if (!transform)
-            {
-                LOGE("Failed to load ICC transform from ", icc_profile.value());
-                set_icc_transform(nullptr);
-                return;
-            } else
-            {
-                LOGI("Loaded ICC transform from ", icc_profile.value(), " for output ", output->to_string());
-            }
-
-            set_icc_transform(transform);
         }
     }
 };

@@ -915,6 +915,11 @@ class wf::render_manager::impl
     std::unique_ptr<wf::render_pass_t> current_pass;
     wf::option_wrapper_t<std::string> icc_profile;
 
+    wlr_color_transform *get_color_transform()
+    {
+        return icc_color_transform;
+    }
+
     impl(output_t *o) : output(o), env_allow_scanout(check_scanout_enabled())
     {
         damage_manager = std::make_unique<swapchain_damage_manager_t>(o);
@@ -989,9 +994,8 @@ class wf::render_manager::impl
 
         if (!wf::get_core().is_vulkan())
         {
-            LOGW("ICC profiles in core are only supported with the vulkan renderer.");
-            set_icc_transform(nullptr);
-            return;
+            LOGW("ICC profiles in core are only supported with the vulkan renderer. "
+                 "For GLES2, make sure to enable the vk-color-management plugin.");
         }
 
         auto path = std::filesystem::path{icc_profile.value()};
@@ -1323,6 +1327,11 @@ void render_manager::damage(const wf::region_t& region, bool repaint)
 wlr_box render_manager::get_ws_box(wf::point_t ws) const
 {
     return pimpl->damage_manager->get_ws_box(ws);
+}
+
+wlr_color_transform*render_manager::get_color_transform()
+{
+    return pimpl->get_color_transform();
 }
 
 wf::render_target_t render_manager::get_target_framebuffer() const
