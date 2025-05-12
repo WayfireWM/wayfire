@@ -61,6 +61,7 @@ wlroots_features = {
   'xwayland': false,
   'drm_backend': false,
   'gles2_renderer': false,
+  'vulkan_renderer': false,
   'libinput_backend': false,
   'session': false,
   'x11_backend': false,
@@ -73,7 +74,6 @@ endforeach
 
 required_wlroots_features= [
   'drm_backend',
-  'gles2_renderer',
   'session',
   'libinput_backend',
 ]
