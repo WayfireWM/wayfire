@@ -97,7 +97,7 @@ class ipc_activator_t
         wayfire_view view;
         if (view_id.has_value())
         {
-            view = ipc::find_view_by_id(view_id.has_value());
+            view = ipc::find_view_by_id(view_id.value());
             if (!view)
             {
                 return ipc::json_error("view id not found!");
