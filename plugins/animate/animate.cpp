@@ -350,7 +350,7 @@ class wayfire_animation : public wf::plugin_interface_t, private wf::per_output_
     void set_animation(wayfire_view view, std::string animation_name,
         wf::animate::animation_type type, wf::animation_description_t duration)
     {
-        if (animation_name == "none")
+        if ((animation_name == "none") || !effects_registry->effects.count(animation_name))
         {
             return;
         }
