@@ -83,9 +83,14 @@ struct owned_texture_t
         int width  = cairo_image_surface_get_width(surface);
         int height = cairo_image_surface_get_height(surface);
         int stride = cairo_image_surface_get_stride(surface);
-
         cairo_format_t fmt = cairo_image_surface_get_format(surface);
         uint32_t drm_fmt   = 0;
+
+        if ((width <= 0) || (height <= 0))
+        {
+            // empty texture
+            return;
+        }
 
         switch (fmt)
         {
@@ -94,7 +99,7 @@ struct owned_texture_t
             break;
 
           default:
-            wf::dassert(false, "Unsupported cairo format!");
+            wf::dassert(false, "Unsupported cairo format: " + std::to_string(fmt) + "!");
         }
 
         this->tex = wlr_texture_from_pixels(wf::get_core().renderer, drm_fmt, stride, width, height,
