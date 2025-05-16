@@ -548,13 +548,19 @@ class wayfire_cube : public wf::per_output_plugin_instance_t, public wf::pointer
         animation.view = zoom_translate * rotation * view;
     }
 
+    glm::mat4 output_transform(const wf::render_target_t& target)
+    {
+        auto scale = glm::scale(glm::mat4(1.0), {1, -1, 1});
+        return wf::gles::render_target_gl_to_framebuffer(target) * scale;
+    }
+
     glm::mat4 calculate_vp_matrix(const wf::render_target_t& dest)
     {
         float zoom_factor = animation.cube_animation.zoom;
         auto scale_matrix = glm::scale(glm::mat4(1.0),
             glm::vec3(1. / zoom_factor, 1. / zoom_factor, 1. / zoom_factor));
 
-        return wf::gles::output_transform(dest) * animation.projection * animation.view * scale_matrix;
+        return output_transform(dest) * animation.projection * animation.view * scale_matrix;
     }
 
     /* Calculate the base model matrix for the i-th side of the cube */
@@ -581,8 +587,7 @@ class wayfire_cube : public wf::per_output_plugin_instance_t, public wf::pointer
     }
 
     /* Render the sides of the cube, using the given culling mode - cw or ccw */
-    void render_cube(GLuint front_face, glm::mat4 fb_transform,
-        std::vector<wf::auxilliary_buffer_t>& buffers)
+    void render_cube(GLuint front_face, std::vector<wf::auxilliary_buffer_t>& buffers)
     {
         GL_CALL(glFrontFace(front_face));
         static const GLuint indexData[] = {0, 1, 2, 0, 2, 3};
@@ -657,8 +662,8 @@ class wayfire_cube : public wf::per_output_plugin_instance_t, public wf::pointer
              * that are on the back, and then we render those at the front, so we
              * don't have to use depth testing and we also can support alpha cube. */
             GL_CALL(glEnable(GL_CULL_FACE));
-            render_cube(GL_CCW, wf::gles::output_transform(data.target), buffers);
-            render_cube(GL_CW, wf::gles::output_transform(data.target), buffers);
+            render_cube(GL_CCW, buffers);
+            render_cube(GL_CW, buffers);
             GL_CALL(glDisable(GL_CULL_FACE));
 
             GL_CALL(glDisable(GL_DEPTH_TEST));
