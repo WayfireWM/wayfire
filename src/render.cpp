@@ -298,7 +298,8 @@ void wf::render_pass_t::add_texture(const wf::texture_t& texture, const wf::rend
     const auto preferred_filter = ((adjusted_target.scale - floor(adjusted_target.scale)) < 0.001) ?
         WLR_SCALE_FILTER_NEAREST : WLR_SCALE_FILTER_BILINEAR;
     opts.filter_mode = texture.filter_mode.value_or(preferred_filter);
-    opts.transform   = wlr_output_transform_compose(texture.transform, adjusted_target.wl_transform);
+    opts.transform   = wlr_output_transform_compose(wlr_output_transform_invert(texture.transform),
+        adjusted_target.wl_transform);
     opts.clip    = fb_damage.to_pixman();
     opts.src_box = texture.source_box.value_or(wlr_fbox{0, 0, 0, 0});
     opts.dst_box = adjusted_target.framebuffer_box_from_geometry_box(geometry);

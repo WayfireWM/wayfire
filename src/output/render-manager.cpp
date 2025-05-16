@@ -617,7 +617,6 @@ class depth_buffer_manager_t
             return;
         }
 
-        LOGE("Ensuring depth");
         attach_buffer(find_buffer(fb), fb, width, height);
     }
 
