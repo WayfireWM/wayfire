@@ -10,7 +10,6 @@
 #include <wayfire/view-helpers.hpp>
 #include <wayfire/signal-definitions.hpp>
 #include <wayfire/workspace-set.hpp>
-#include <cstring>
 
 #include <glm/gtc/matrix_transform.hpp>
 #include <wayfire/signal-provider.hpp>
@@ -21,7 +20,7 @@ static void render_colored_rect(const wf::scene::render_instruction_t& data,
     wf::color_t premultiply{color.r * color.a, color.g * color.a, color.b * color.a, color.a};
     w = std::max(w, 0);
     h = std::max(h, 0);
-    data.pass->add_rect(premultiply, data.target, {x, y, w, h}, data.damage);
+    data.pass->add_rect(premultiply, data.target, wf::geometry_t{x, y, w, h}, data.damage);
 }
 
 class wf::color_rect_view_t::color_rect_node_t : public wf::scene::floating_inner_node_t

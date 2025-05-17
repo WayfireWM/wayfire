@@ -2,7 +2,6 @@
 #include "wayfire/scene-input.hpp"
 #include "wayfire/scene-operations.hpp"
 #include "wayfire/workspace-stream.hpp"
-#include "wayfire/opengl.hpp"
 #include "wayfire/scene-render.hpp"
 #include "wayfire/scene.hpp"
 #include "wayfire/region.hpp"
@@ -183,20 +182,6 @@ class workspace_wall_t::workspace_wall_node_t : public scene::node_t
             damage ^= self->get_bounding_box();
         }
 
-        static gl_geometry scale_fbox(wf::geometry_t A, wf::geometry_t B, wf::geometry_t box)
-        {
-            const float px  = 1.0 * (box.x - A.x) / A.width;
-            const float py  = 1.0 * (box.y - A.y) / A.height;
-            const float px2 = 1.0 * (box.x + box.width - A.x) / A.width;
-            const float py2 = 1.0 * (box.y + box.height - A.y) / A.height;
-            return gl_geometry{
-                B.x + B.width * px,
-                B.y + B.height * py,
-                B.x + B.width * px2,
-                B.y + B.height * py2,
-            };
-        }
-
         void render(const wf::scene::render_instruction_t& data) override
         {
             data.pass->clear(data.damage, self->wall->background_color);
@@ -206,10 +191,10 @@ class workspace_wall_t::workspace_wall_node_t : public scene::node_t
             {
                 for (int j = 0; j < (int)self->workspaces[i].size(); j++)
                 {
-                    auto box = get_workspace_rect({i, j});
-                    auto A   = self->wall->viewport;
-                    auto B   = self->get_bounding_box();
-                    auto render_geometry = scale_box(A, B, box);
+                    auto box = wf::geometry_to_fbox(get_workspace_rect({i, j}));
+                    auto A   = wf::geometry_to_fbox(self->wall->viewport);
+                    auto B   = wf::geometry_to_fbox(self->get_bounding_box());
+                    auto render_geometry = wf::scale_fbox(A, B, box);
                     auto& buffer = self->aux_buffers[i][j];
 
                     float dim = self->wall->get_color_for_workspace({i, j});

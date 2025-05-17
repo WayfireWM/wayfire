@@ -111,6 +111,17 @@ geometry_t clamp(geometry_t window, geometry_t output);
 // The returned subbox will occupy the same relative part of @B as
 // @box occupies in @A.
 wf::geometry_t scale_box(wf::geometry_t A, wf::geometry_t B, wf::geometry_t box);
+
+// Transform a subbox from coordinate space A to coordinate space B.
+// The returned subbox will occupy the same relative part of @B as
+// @box occupies in @A.
+wlr_fbox scale_fbox(wlr_fbox A, wlr_fbox B, wlr_fbox box);
+
+// Helper function to convert wf::geometry_t to wlr_fbox
+wlr_fbox geometry_to_fbox(const geometry_t& geometry);
+
+// Helper function to convert wlr_fbox to wf::geometry_t
+geometry_t fbox_to_geometry(const wlr_fbox& fbox);
 }
 
 bool operator ==(const wf::geometry_t& a, const wf::geometry_t& b);
