@@ -171,6 +171,15 @@ struct render_target_t : public render_buffer_t
     wlr_box framebuffer_box_from_geometry_box(wlr_box box) const;
 
     /**
+     * Get the geometry of the given fbox after projecting it onto the framebuffer.
+     * In the values returned, (0,0) is top-left.
+     *
+     * The resulting geometry is affected by the framebuffer geometry, scale and
+     * transform.
+     */
+    wlr_fbox framebuffer_box_from_geometry_box(wlr_fbox box) const;
+
+    /**
      * Get the geometry of the given region after projecting it onto the framebuffer. This is the same as
      * iterating over the rects in the region and transforming them with framebuffer_box_from_geometry_box.
      */
@@ -309,11 +318,28 @@ class render_pass_t
         float alpha = 1.0);
 
     /**
+     * Add a texture rendering operation to the pass using wlr_fbox for geometry.
+     */
+    void add_texture(const wf::texture_t& texture,
+        const wf::render_target_t& adjusted_target,
+        const wlr_fbox& geometry,
+        const wf::region_t& damage,
+        float alpha = 1.0);
+
+    /**
      * Add a colored rectangle to the pass.
      */
     void add_rect(const wf::color_t& color,
         const wf::render_target_t& adjusted_target,
         const wf::geometry_t& geometry,
+        const wf::region_t& damage);
+
+    /**
+     * Add a colored rectangle to the pass using wlr_fbox for geometry.
+     */
+    void add_rect(const wf::color_t& color,
+        const wf::render_target_t& adjusted_target,
+        const wlr_fbox& geometry,
         const wf::region_t& damage);
 
     /**

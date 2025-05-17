@@ -123,12 +123,28 @@ wf::render_target_t::render_target_t(const auxilliary_buffer_t& buffer) : render
 
 wlr_box wf::render_target_t::framebuffer_box_from_geometry_box(wlr_box box) const
 {
+    wlr_fbox fbox = geometry_to_fbox(box);
+    wlr_fbox scaled_fbox = framebuffer_box_from_geometry_box(fbox);
+
+    return wlr_box{
+        .x     = (int)std::floor(scaled_fbox.x),
+        .y     = (int)std::floor(scaled_fbox.y),
+        .width = (int)std::ceil(scaled_fbox.x + scaled_fbox.width) - (int)std::floor(scaled_fbox.x),
+        .height = (int)std::ceil(scaled_fbox.y + scaled_fbox.height) - (int)std::floor(scaled_fbox.y),
+    };
+}
+
+wlr_fbox wf::render_target_t::framebuffer_box_from_geometry_box(wlr_fbox box) const
+{
     /* Step 1: Make relative to the framebuffer */
     box.x -= this->geometry.x;
     box.y -= this->geometry.y;
 
     /* Step 2: Apply scale to box */
-    wlr_box scaled = box * scale;
+    box.x     *= scale;
+    box.y     *= scale;
+    box.width *= scale;
+    box.height *= scale;
 
     /* Step 3: rotate */
     wf::dimensions_t size = get_size();
@@ -137,16 +153,16 @@ wlr_box wf::render_target_t::framebuffer_box_from_geometry_box(wlr_box box) cons
         std::swap(size.width, size.height);
     }
 
-    wlr_box result;
+    wlr_fbox result;
     wl_output_transform transform =
         wlr_output_transform_invert((wl_output_transform)wl_transform);
 
-    wlr_box_transform(&result, &scaled, transform, size.width, size.height);
+    wlr_fbox_transform(&result, &box, transform, size.width, size.height);
 
     if (subbuffer)
     {
-        result = scale_box({0, 0, get_size().width, get_size().height},
-            subbuffer.value(), result);
+        result = scale_fbox({0.0, 0.0, (double)get_size().width, (double)get_size().height},
+            geometry_to_fbox(subbuffer.value()), result);
     }
 
     return result;
@@ -273,7 +289,7 @@ void wf::render_pass_t::clear(const wf::region_t& region, const wf::color_t& col
 }
 
 void wf::render_pass_t::add_texture(const wf::texture_t& texture, const wf::render_target_t& adjusted_target,
-    const wf::geometry_t& geometry, const wf::region_t& damage, float alpha)
+    const wlr_fbox& geometry, const wf::region_t& damage, float alpha)
 {
     if (wlr_renderer_is_gles2(this->get_wlr_renderer()))
     {
@@ -302,12 +318,12 @@ void wf::render_pass_t::add_texture(const wf::texture_t& texture, const wf::rend
         adjusted_target.wl_transform);
     opts.clip    = fb_damage.to_pixman();
     opts.src_box = texture.source_box.value_or(wlr_fbox{0, 0, 0, 0});
-    opts.dst_box = adjusted_target.framebuffer_box_from_geometry_box(geometry);
+    opts.dst_box = fbox_to_geometry(adjusted_target.framebuffer_box_from_geometry_box(geometry));
     wlr_render_pass_add_texture(get_wlr_pass(), &opts);
 }
 
 void wf::render_pass_t::add_rect(const wf::color_t& color, const wf::render_target_t& adjusted_target,
-    const wf::geometry_t& geometry, const wf::region_t& damage)
+    const wlr_fbox& geometry, const wf::region_t& damage)
 {
     if (wlr_renderer_is_gles2(this->get_wlr_renderer()))
     {
@@ -324,10 +340,22 @@ void wf::render_pass_t::add_rect(const wf::color_t& color, const wf::render_targ
     };
     opts.blend_mode = WLR_RENDER_BLEND_MODE_PREMULTIPLIED;
     opts.clip = fb_damage.to_pixman();
-    opts.box  = adjusted_target.framebuffer_box_from_geometry_box(geometry);
+    opts.box  = fbox_to_geometry(adjusted_target.framebuffer_box_from_geometry_box(geometry));
     wf::dassert(opts.box.width >= 0);
     wf::dassert(opts.box.height >= 0);
     wlr_render_pass_add_rect(pass, &opts);
+}
+
+void wf::render_pass_t::add_texture(const wf::texture_t& texture, const wf::render_target_t& adjusted_target,
+    const wf::geometry_t& geometry, const wf::region_t& damage, float alpha)
+{
+    add_texture(texture, adjusted_target, geometry_to_fbox(geometry), damage, alpha);
+}
+
+void wf::render_pass_t::add_rect(const wf::color_t& color, const wf::render_target_t& adjusted_target,
+    const wf::geometry_t& geometry, const wf::region_t& damage)
+{
+    add_rect(color, adjusted_target, geometry_to_fbox(geometry), damage);
 }
 
 bool wf::render_pass_t::submit()
