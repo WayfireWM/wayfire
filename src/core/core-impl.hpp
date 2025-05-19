@@ -1,6 +1,7 @@
 #ifndef WF_CORE_CORE_IMPL_HPP
 #define WF_CORE_CORE_IMPL_HPP
 
+#include <sys/resource.h>
 #include "core/plugin-loader.hpp"
 #include "wayfire/core.hpp"
 #include "wayfire/scene-input.hpp"
@@ -86,6 +87,9 @@ class compositor_core_impl_t : public compositor_core_t
     std::shared_ptr<scene::root_node_t> scene_root;
 
     compositor_state_t state = compositor_state_t::UNKNOWN;
+    struct rlimit user_maxfiles;
+    void increase_nofile_limit();
+    void restore_nofile_limit();
 
   private:
     wf::option_wrapper_t<bool> discard_command_output;
