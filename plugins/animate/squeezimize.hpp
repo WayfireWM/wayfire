@@ -276,7 +276,7 @@ class squeezimize_transformer : public wf::scene::view_2d_transformer_t
                 (this->minimize_target.y + this->minimize_target.height) - bbox.y),
                 (bbox.y + bbox.height) - this->minimize_target.y);
 
-        wf::gles::maybe_run_in_context([&]
+        wf::gles::run_in_context_if_gles([&]
         {
             program.compile(squeeze_vert_source, squeeze_frag_source);
         });
@@ -311,7 +311,7 @@ class squeezimize_transformer : public wf::scene::view_2d_transformer_t
 
     virtual ~squeezimize_transformer()
     {
-        wf::gles::maybe_run_in_context([&]
+        wf::gles::run_in_context_if_gles([&]
         {
             program.free_resources();
         });

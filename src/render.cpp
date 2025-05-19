@@ -398,7 +398,7 @@ bool wf::render_pass_t::prepare_gles_subpass()
 
 bool wf::render_pass_t::prepare_gles_subpass(const wf::render_target_t& target)
 {
-    bool is_gles = wf::gles::maybe_run_in_context([&]
+    bool is_gles = wf::gles::run_in_context_if_gles([&]
     {
         GL_CALL(glEnable(GL_BLEND));
         GL_CALL(glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA));

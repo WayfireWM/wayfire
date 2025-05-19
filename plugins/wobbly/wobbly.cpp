@@ -930,7 +930,7 @@ class wayfire_wobbly : public wf::plugin_interface_t
         }
 
         wf::get_core().connect(&wobbly_changed);
-        wf::gles::maybe_run_in_context([&]
+        wf::gles::run_in_context_if_gles([&]
         {
             program.compile(wobbly_graphics::vertex_source, wobbly_graphics::frag_source);
         });
@@ -1012,7 +1012,7 @@ class wayfire_wobbly : public wf::plugin_interface_t
             }
         }
 
-        wf::gles::maybe_run_in_context([&]
+        wf::gles::run_in_context_if_gles([&]
         {
             program.free_resources();
         });

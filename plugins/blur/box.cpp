@@ -74,7 +74,7 @@ class wf_box_blur : public wf_blur_base
 
     wf_box_blur() : wf_blur_base("box")
     {
-        wf::gles::maybe_run_in_context([&]
+        wf::gles::run_in_context_if_gles([&]
         {
             program[0].set_simple(OpenGL::compile_program(box_vertex_shader, box_fragment_shader_horz));
             program[1].set_simple(OpenGL::compile_program(box_vertex_shader, box_fragment_shader_vert));

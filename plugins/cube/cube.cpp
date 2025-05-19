@@ -762,7 +762,7 @@ class wayfire_cube : public wf::per_output_plugin_instance_t, public wf::pointer
             deactivate();
         }
 
-        wf::gles::maybe_run_in_context([&]
+        wf::gles::run_in_context_if_gles([&]
         {
             program.free_resources();
         });

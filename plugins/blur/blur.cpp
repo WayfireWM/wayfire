@@ -176,7 +176,7 @@ class blur_render_instance_t : public transformer_render_instance_t<blur_node_t>
 
         saved_pixels->pixels.allocate(target.get_size());
 
-        wf::gles::maybe_run_in_context([&]
+        wf::gles::run_in_context_if_gles([&]
         {
             GLuint target_fb = wf::gles::ensure_render_buffer_fb_id(target);
 

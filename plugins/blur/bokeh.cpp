@@ -59,7 +59,7 @@ class wf_bokeh_blur : public wf_blur_base
   public:
     wf_bokeh_blur() : wf_blur_base("bokeh")
     {
-        wf::gles::maybe_run_in_context([&]
+        wf::gles::run_in_context_if_gles([&]
         {
             program[0].set_simple(OpenGL::compile_program(bokeh_vertex_shader,
                 bokeh_fragment_shader));
@@ -78,7 +78,7 @@ class wf_bokeh_blur : public wf_blur_base
             -1.0f, 1.0f
         };
 
-        wf::gles::maybe_run_in_context([&]
+        wf::gles::run_in_context_if_gles([&]
         {
             /* Upload data to shader */
             program[0].use(wf::TEXTURE_TYPE_RGBA);
