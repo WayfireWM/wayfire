@@ -107,7 +107,7 @@ using wayfire_plugin_load_func = wf::plugin_interface_t * (*)();
 /**
  * The version is defined as macro as well, to allow conditional compilation.
  */
-#define WAYFIRE_API_ABI_VERSION_MACRO 2025'03'25
+#define WAYFIRE_API_ABI_VERSION_MACRO 2025'05'19
 
 /**
  * The version of Wayfire's API/ABI
