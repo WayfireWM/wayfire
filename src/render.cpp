@@ -36,8 +36,8 @@ wf::auxilliary_buffer_t::~auxilliary_buffer_t()
 
 bool wf::auxilliary_buffer_t::allocate(wf::dimensions_t size, float scale, buffer_allocation_hints_t hints)
 {
-    size.width  = std::ceil(size.width * scale);
-    size.height = std::ceil(size.height * scale);
+    size.width  = std::max(1.0f, std::ceil(size.width * scale));
+    size.height = std::max(1.0f, std::ceil(size.height * scale));
 
     if (buffer.get_size() == size)
     {
