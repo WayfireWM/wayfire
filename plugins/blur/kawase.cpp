@@ -62,7 +62,7 @@ class wf_kawase_blur : public wf_blur_base
   public:
     wf_kawase_blur() : wf_blur_base("kawase")
     {
-        wf::gles::maybe_run_in_context([&]
+        wf::gles::run_in_context_if_gles([&]
         {
             program[0].set_simple(OpenGL::compile_program(kawase_vertex_shader,
                 kawase_fragment_shader_down));

@@ -73,7 +73,7 @@ bool ensure_context(bool fail_on_error = false);
  * Run code in the default EGL/GLES context, if we are running with GLES rendering.
  */
 template<class F>
-bool maybe_run_in_context(F&& code, bool fail_on_error = false)
+bool run_in_context_if_gles(F&& code, bool fail_on_error = false)
 {
     if (ensure_context(fail_on_error))
     {
@@ -90,7 +90,7 @@ bool maybe_run_in_context(F&& code, bool fail_on_error = false)
 template<class F>
 bool run_in_context(F&& code)
 {
-    return maybe_run_in_context(code, true);
+    return run_in_context_if_gles(code, true);
 }
 }
 

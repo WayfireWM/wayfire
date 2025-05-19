@@ -122,7 +122,7 @@ class wayfire_fisheye : public wf::per_output_plugin_instance_t
             return;
         }
 
-        wf::gles::maybe_run_in_context([&]
+        wf::gles::run_in_context_if_gles([&]
         {
             program.set_simple(OpenGL::compile_program(vertex_shader, fragment_shader));
         });
@@ -183,7 +183,7 @@ class wayfire_fisheye : public wf::per_output_plugin_instance_t
             -1.0f, 1.0f
         };
 
-        wf::gles::maybe_run_in_context([&]
+        wf::gles::run_in_context_if_gles([&]
         {
             wf::gles::bind_render_buffer(dest);
             program.use(wf::TEXTURE_TYPE_RGBA);
@@ -223,7 +223,7 @@ class wayfire_fisheye : public wf::per_output_plugin_instance_t
             finalize();
         }
 
-        wf::gles::maybe_run_in_context([&]
+        wf::gles::run_in_context_if_gles([&]
         {
             program.free_resources();
         });

@@ -116,7 +116,7 @@ GLuint compile_program(std::string vertex_source, std::string frag_source)
 
 void init()
 {
-    wf::gles::maybe_run_in_context([&]
+    wf::gles::run_in_context_if_gles([&]
     {
         // enable_gl_synchronous_debug()
         program.compile(default_vertex_shader_source,
@@ -128,7 +128,7 @@ void init()
 
 void fini()
 {
-    wf::gles::maybe_run_in_context([&]
+    wf::gles::run_in_context_if_gles([&]
     {
         program.free_resources();
         color_program.free_resources();

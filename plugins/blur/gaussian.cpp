@@ -72,7 +72,7 @@ class wf_gaussian_blur : public wf_blur_base
   public:
     wf_gaussian_blur() : wf_blur_base("gaussian")
     {
-        wf::gles::maybe_run_in_context([&]
+        wf::gles::run_in_context_if_gles([&]
         {
             program[0].set_simple(OpenGL::compile_program(
                 gaussian_vertex_shader, gaussian_fragment_shader_horz));
@@ -107,7 +107,7 @@ class wf_gaussian_blur : public wf_blur_base
     {
         int i, iterations = iterations_opt;
 
-        wf::gles::maybe_run_in_context([&]
+        wf::gles::run_in_context_if_gles([&]
         {
             GL_CALL(glDisable(GL_BLEND));
             /* Enable our shader and pass some data to it. The shader

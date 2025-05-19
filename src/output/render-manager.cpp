@@ -342,7 +342,7 @@ struct swapchain_damage_manager_t
          * bugs, but may cause more resource usage. */
         if (force_frame_sync)
         {
-            wf::gles::maybe_run_in_context([&]
+            wf::gles::run_in_context_if_gles([&]
             {
                 GL_CALL(glFinish());
             });
@@ -665,7 +665,7 @@ class depth_buffer_manager_t
 
     void free_all_buffers()
     {
-        wf::gles::maybe_run_in_context([&]
+        wf::gles::run_in_context_if_gles([&]
         {
             for (auto& b : buffers)
             {

@@ -74,7 +74,7 @@ wf_blur_base::wf_blur_base(std::string name)
     this->degrade_opt.set_callback(options_changed);
     this->iterations_opt.set_callback(options_changed);
 
-    wf::gles::maybe_run_in_context([&]
+    wf::gles::run_in_context_if_gles([&]
     {
         blend_program.compile(blur_blend_vertex_shader, blur_blend_fragment_shader);
     });
@@ -82,7 +82,7 @@ wf_blur_base::wf_blur_base(std::string name)
 
 wf_blur_base::~wf_blur_base()
 {
-    wf::gles::maybe_run_in_context([&]
+    wf::gles::run_in_context_if_gles([&]
     {
         program[0].free_resources();
         program[1].free_resources();
