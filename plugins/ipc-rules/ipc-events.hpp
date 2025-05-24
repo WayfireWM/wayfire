@@ -118,7 +118,7 @@ class ipc_rules_events_methods_t : public wf::per_output_tracker_mixin_t<>
 
         {"view-tiled", get_generic_output_registration_cb(&_tiled)},
         {"view-minimized", get_generic_output_registration_cb(&_minimized)},
-        {"view-fullscreened", get_generic_output_registration_cb(&_fullscreened)},
+        {"view-fullscreen", get_generic_output_registration_cb(&_fullscreened)},
         {"view-sticky", get_generic_output_registration_cb(&_stickied)},
         {"view-workspace-changed", get_generic_output_registration_cb(&_view_workspace)},
         {"output-wset-changed", get_generic_output_registration_cb(&on_wset_changed)},
