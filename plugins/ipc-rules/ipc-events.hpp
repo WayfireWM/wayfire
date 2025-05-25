@@ -151,6 +151,9 @@ class ipc_rules_events_methods_t : public wf::per_output_tracker_mixin_t<>
                 if (signal_map.count(sub))
                 {
                     subscribed_to.insert(sub);
+                } else
+                {
+                    return wf::ipc::json_error("Event not found: \"" + sub.as_string() + "\"");
                 }
             }
         } else
