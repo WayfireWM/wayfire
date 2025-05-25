@@ -1,17 +1,13 @@
 #include <wayfire/util/log.hpp>
 #include <map>
 #include "opengl-priv.hpp"
+#include "wayfire/dassert.hpp"
 #include "wayfire/geometry.hpp"
-#include "wayfire/output.hpp"
 #include "core-impl.hpp"
-#include "config.h"
 #include <wayfire/nonstd/wlroots-full.hpp>
 #include <set>
-
 #include <glm/gtc/matrix_transform.hpp>
-
 #include "shaders.tpp"
-#include "wayfire/region.hpp"
 
 const char *gl_error_string(const GLenum err)
 {
@@ -28,6 +24,9 @@ const char *gl_error_string(const GLenum err)
 
       case GL_OUT_OF_MEMORY:
         return "GL_OUT_OF_MEMORY";
+
+      case GL_INVALID_FRAMEBUFFER_OPERATION:
+        return "GL_INVALID_FRAMEBUFFER_OPERATION";
     }
 
     return "UNKNOWN GL ERROR";
@@ -44,6 +43,12 @@ void gl_call(const char *func, uint32_t line, const char *glfunc)
 
     LOGE("gles2: function ", glfunc, " in ", func, " line ", line, ": ",
         gl_error_string(err));
+
+    if (OpenGL::exit_on_gles_error)
+    {
+        wf::print_trace(false);
+        std::_Exit(-1);
+    }
 }
 
 namespace OpenGL
@@ -111,47 +116,46 @@ GLuint compile_program(std::string vertex_source, std::string frag_source)
 
 void init()
 {
-    render_begin();
-    // enable_gl_synchronous_debug()
-    program.compile(default_vertex_shader_source,
-        default_fragment_shader_source);
-
-    color_program.set_simple(compile_program(default_vertex_shader_source,
-        color_rect_fragment_source));
-
-    render_end();
+    wf::gles::run_in_context_if_gles([&]
+    {
+        // enable_gl_synchronous_debug()
+        program.compile(default_vertex_shader_source,
+            default_fragment_shader_source);
+        color_program.set_simple(compile_program(default_vertex_shader_source,
+            color_rect_fragment_source));
+    });
 }
 
 void fini()
 {
-    render_begin();
-    program.free_resources();
-    color_program.free_resources();
-    render_end();
+    wf::gles::run_in_context_if_gles([&]
+    {
+        program.free_resources();
+        color_program.free_resources();
+    });
 }
 
 namespace
 {
-wf::output_t *current_output = NULL;
-uint32_t current_output_fb   = 0;
+uint32_t current_output_fb = 0;
 }
 
-void bind_output(wf::output_t *output, uint32_t fb)
+void bind_output(uint32_t fb)
 {
-    current_output    = output;
     current_output_fb = fb;
 }
 
-void unbind_output(wf::output_t *output)
+void unbind_output()
 {
-    current_output    = NULL;
     current_output_fb = 0;
 }
+
+bool exit_on_gles_error = false;
 
 std::vector<GLfloat> vertexData;
 std::vector<GLfloat> coordData;
 
-void render_transformed_texture(wf::texture_t tex,
+void render_transformed_texture(wf::gles_texture_t tex,
     const gl_geometry& g, const gl_geometry& texg,
     glm::mat4 model, glm::vec4 color, uint32_t bits)
 {
@@ -218,7 +222,7 @@ void clear_cached()
     program.deactivate();
 }
 
-void render_transformed_texture(wf::texture_t texture,
+void render_transformed_texture(wf::gles_texture_t texture,
     const wf::geometry_t& geometry, glm::mat4 transform,
     glm::vec4 color, uint32_t bits)
 {
@@ -232,12 +236,12 @@ void render_transformed_texture(wf::texture_t texture,
     render_transformed_texture(texture, gg, {}, transform, color, bits);
 }
 
-void render_texture(wf::texture_t texture,
+void render_texture(wf::gles_texture_t texture,
     const wf::render_target_t& framebuffer,
     const wf::geometry_t& geometry, glm::vec4 color, uint32_t bits)
 {
     render_transformed_texture(texture, geometry,
-        framebuffer.get_orthographic_projection(), color, bits);
+        wf::gles::render_target_orthographic_projection(framebuffer), color, bits);
 }
 
 void render_rectangle(wf::geometry_t geometry, wf::color_t color,
@@ -265,6 +269,13 @@ void render_rectangle(wf::geometry_t geometry, wf::color_t color,
     color_program.deactivate();
 }
 
+void clear(wf::color_t col, uint32_t mask)
+{
+    GL_CALL(glClearColor(col.r, col.g, col.b, col.a));
+    GL_CALL(glClear(mask));
+}
+}
+
 static bool egl_make_current(struct wlr_egl *egl)
 {
     if (!eglMakeCurrent(wlr_egl_get_display(egl), EGL_NO_SURFACE, EGL_NO_SURFACE,
@@ -282,46 +293,30 @@ static bool egl_is_current(struct wlr_egl *egl)
     return eglGetCurrentContext() == wlr_egl_get_context(egl);
 }
 
-void render_begin()
+bool wf::gles::ensure_context(bool fail_on_error)
 {
+    bool is_gles2 = wf::get_core().is_gles2();
+    if (fail_on_error && !is_gles2)
+    {
+        wf::dassert(false,
+            "Wayfire not running with GLES renderer, no GL calls allowed!");
+    }
+
+    if (!is_gles2)
+    {
+        return false;
+    }
+
     if (!egl_is_current(wf::get_core_impl().egl))
     {
         egl_make_current(wf::get_core_impl().egl);
     }
 
-    GL_CALL(glEnable(GL_BLEND));
-    GL_CALL(glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA));
+    return true;
 }
 
-void render_begin(const wf::framebuffer_t& fb)
-{
-    render_begin();
-    fb.bind();
-}
-
-void render_begin(int32_t width, int32_t height, uint32_t fb)
-{
-    render_begin();
-
-    GL_CALL(glBindFramebuffer(GL_DRAW_FRAMEBUFFER, fb));
-    GL_CALL(glViewport(0, 0, width, height));
-}
-
-void clear(wf::color_t col, uint32_t mask)
-{
-    GL_CALL(glClearColor(col.r, col.g, col.b, col.a));
-    GL_CALL(glClear(mask));
-}
-
-void render_end()
-{
-    GL_CALL(glBindFramebuffer(GL_FRAMEBUFFER, current_output_fb));
-    GL_CALL(glDisable(GL_SCISSOR_TEST));
-}
-}
-
-static std::string framebuffer_status_to_str(
-    GLuint status)
+[[maybe_unused]]
+static std::string framebuffer_status_to_str(GLuint status)
 {
     switch (status)
     {
@@ -342,185 +337,70 @@ static std::string framebuffer_status_to_str(
     }
 }
 
-bool wf::framebuffer_t::allocate(int width, int height)
+GLuint wf::gles::ensure_render_buffer_fb_id(const render_buffer_t& buffer)
 {
-    bool first_allocate = false;
-    if (fb == (uint32_t)-1)
-    {
-        first_allocate = true;
-        GL_CALL(glGenFramebuffers(1, &fb));
-    }
-
-    if (tex == (uint32_t)-1)
-    {
-        first_allocate = true;
-        GL_CALL(glGenTextures(1, &tex));
-        GL_CALL(glBindTexture(GL_TEXTURE_2D, tex));
-        GL_CALL(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE));
-        GL_CALL(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE));
-        GL_CALL(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR));
-        GL_CALL(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR));
-    }
-
-    bool is_resize = false;
-    /* Special case: fb = 0. This occurs in the default workspace streams, we don't
-     * resize anything */
-    if (fb != OpenGL::current_output_fb)
-    {
-        if (first_allocate || (width != viewport_width) ||
-            (height != viewport_height))
-        {
-            is_resize = true;
-            GL_CALL(glBindTexture(GL_TEXTURE_2D, tex));
-            GL_CALL(glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height,
-                0, GL_RGBA, GL_UNSIGNED_BYTE, 0));
-        }
-    }
-
-    if (first_allocate)
-    {
-        GL_CALL(glBindFramebuffer(GL_FRAMEBUFFER, fb));
-        GL_CALL(glBindTexture(GL_TEXTURE_2D, tex));
-        GL_CALL(glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
-            GL_TEXTURE_2D, tex, 0));
-
-        auto status = GL_CALL(glCheckFramebufferStatus(GL_FRAMEBUFFER));
-        if (status != GL_FRAMEBUFFER_COMPLETE)
-        {
-            LOGE("Failed to initialize framebuffer: ",
-                framebuffer_status_to_str(status));
-
-            return false;
-        }
-    }
-
-    viewport_width  = width;
-    viewport_height = height;
-
-    GL_CALL(glBindTexture(GL_TEXTURE_2D, 0));
-    GL_CALL(glBindFramebuffer(GL_FRAMEBUFFER, OpenGL::current_output_fb));
-
-    return is_resize || first_allocate;
+    return wlr_gles2_renderer_get_buffer_fbo(wf::get_core().renderer, buffer.get_buffer());
 }
 
-void wf::framebuffer_t::bind() const
+void wf::gles::bind_render_buffer(const wf::render_buffer_t& buffer)
 {
-    GL_CALL(glBindFramebuffer(GL_DRAW_FRAMEBUFFER, fb));
-    GL_CALL(glViewport(0, 0, viewport_width, viewport_height));
+    GL_CALL(glBindFramebuffer(GL_DRAW_FRAMEBUFFER, ensure_render_buffer_fb_id(buffer)));
+    GL_CALL(glViewport(0, 0, buffer.get_size().width, buffer.get_size().height));
 }
 
-void wf::framebuffer_t::scissor(wlr_box box) const
+void wf::gles::scissor_render_buffer(const wf::render_buffer_t& buffer, wlr_box box)
 {
     GL_CALL(glEnable(GL_SCISSOR_TEST));
-    GL_CALL(glScissor(box.x, viewport_height - box.y - box.height,
-        box.width, box.height));
+    GL_CALL(glScissor(box.x, box.y, box.width, box.height));
 }
 
-void wf::framebuffer_t::release()
+glm::mat4 wf::gles::render_target_orthographic_projection(const wf::render_target_t& target)
 {
-    if ((fb != uint32_t(-1)) && (fb != 0))
-    {
-        GL_CALL(glDeleteFramebuffers(1, &fb));
-    }
+    auto ortho = glm::ortho(1.0f * target.geometry.x,
+        1.0f * target.geometry.x + 1.0f * target.geometry.width,
+        1.0f * target.geometry.y + 1.0f * target.geometry.height,
+        1.0f * target.geometry.y);
 
-    if ((tex != uint32_t(-1)) && ((fb != 0) || (tex != 0)))
-    {
-        GL_CALL(glDeleteTextures(1, &tex));
-    }
-
-    reset();
+    return gles::render_target_gl_to_framebuffer(target) * ortho;
 }
 
-void wf::framebuffer_t::reset()
+glm::mat4 wf::gles::render_target_gl_to_framebuffer(const wf::render_target_t& target)
 {
-    fb  = -1;
-    tex = -1;
-    viewport_width = viewport_height = 0;
-}
-
-wlr_box wf::render_target_t::framebuffer_box_from_geometry_box(wlr_box box) const
-{
-    /* Step 1: Make relative to the framebuffer */
-    box.x -= this->geometry.x;
-    box.y -= this->geometry.y;
-
-    /* Step 2: Apply scale to box */
-    wlr_box scaled = box * scale;
-
-    /* Step 3: rotate */
-    int width = viewport_width, height = viewport_height;
-    if (wl_transform & 1)
+    if (target.subbuffer)
     {
-        std::swap(width, height);
-    }
+        auto sub = target.subbuffer.value();
 
-    wlr_box result;
-    wl_output_transform transform =
-        wlr_output_transform_invert((wl_output_transform)wl_transform);
-
-    wlr_box_transform(&result, &scaled, transform, width, height);
-
-    if (subbuffer)
-    {
-        result = scale_box({0, 0, viewport_width, viewport_height},
-            subbuffer.value(), result);
-    }
-
-    return result;
-}
-
-wf::region_t wf::render_target_t::framebuffer_region_from_geometry_region(const wf::region_t& region) const
-{
-    wf::region_t result;
-    for (const auto& rect : region)
-    {
-        result |= framebuffer_box_from_geometry_box(wlr_box_from_pixman_box(rect));
-    }
-
-    return result;
-}
-
-glm::mat4 wf::render_target_t::get_orthographic_projection() const
-{
-    auto ortho = glm::ortho(1.0f * geometry.x,
-        1.0f * geometry.x + 1.0f * geometry.width,
-        1.0f * geometry.y + 1.0f * geometry.height,
-        1.0f * geometry.y);
-
-    return gl_to_framebuffer() * ortho;
-}
-
-glm::mat4 wf::render_target_t::gl_to_framebuffer() const
-{
-    if (subbuffer)
-    {
-        auto sub = subbuffer.value();
-
-        float scale_x = 1.0 * sub.width / viewport_width;
-        float scale_y = 1.0 * sub.height / viewport_height;
+        float scale_x = 1.0 * sub.width / target.get_size().width;
+        float scale_y = 1.0 * sub.height / target.get_size().height;
 
         // Translation is calculated between the midpoint of the whole buffer
         // and the midpoint of the subbuffer, then scaled to NDC.
-        float half_w = viewport_width / 2.0;
-        float half_h = viewport_height / 2.0;
+        float half_w = target.get_size().width / 2.0;
+        float half_h = target.get_size().height / 2.0;
 
         float translate_x = ((sub.x + sub.width / 2.0) - half_w) / half_w;
-        float translate_y = (half_h - sub.y - sub.height / 2.0) / half_h;
+        float translate_y = ((sub.y + sub.height / 2.0) - half_h) / half_h;
 
         glm::mat4 scale = glm::scale(glm::mat4(1.0),
             glm::vec3(scale_x, scale_y, 1.0));
         glm::mat4 translate = glm::translate(glm::mat4(1.0),
             glm::vec3(translate_x, translate_y, 0.0));
 
-        return translate * scale * this->transform;
+        return translate * scale * gles::output_transform(target);
     }
 
-    return this->transform;
+    return gles::output_transform(target);
 }
 
-void wf::render_target_t::logic_scissor(wlr_box box) const
+glm::mat4 wf::gles::output_transform(const render_target_t& target)
 {
-    scissor(framebuffer_box_from_geometry_box(box));
+    return get_output_matrix_from_transform(
+        wlr_output_transform_compose(target.wl_transform, WL_OUTPUT_TRANSFORM_FLIPPED_180));
+}
+
+void wf::gles::render_target_logic_scissor(const wf::render_target_t& target, wlr_box box)
+{
+    wf::gles::scissor_render_buffer(target, target.framebuffer_box_from_geometry_box(box));
 }
 
 wf::render_target_t wf::render_target_t::translated(wf::point_t offset) const
@@ -568,16 +448,19 @@ glm::mat4 get_output_matrix_from_transform(wl_output_transform transform)
 
 namespace wf
 {
-wf::texture_t::texture_t()
+wf::gles_texture_t::gles_texture_t()
 {}
-wf::texture_t::texture_t(GLuint tex)
+wf::gles_texture_t::gles_texture_t(GLuint tex)
 {
     this->tex_id = tex;
 }
 
-wf::texture_t::texture_t(wlr_texture *texture, std::optional<wlr_fbox> viewport)
+wf::gles_texture_t::gles_texture_t(wf::texture_t tex) : wf::gles_texture_t(tex.texture, tex.source_box)
+{}
+
+wf::gles_texture_t::gles_texture_t(wlr_texture *texture, std::optional<wlr_fbox> viewport)
 {
-    assert(wlr_texture_is_gles2(texture));
+    wf::dassert(wlr_texture_is_gles2(texture));
     wlr_gles2_texture_attribs attribs;
     wlr_gles2_texture_get_attribs(texture, &attribs);
 
@@ -606,6 +489,20 @@ wf::texture_t::texture_t(wlr_texture *texture, std::optional<wlr_fbox> viewport)
         viewport_box.y1 = 1.0 - (viewport->y + viewport->height) / height;
         viewport_box.y2 = 1.0 - (viewport->y) / height;
     }
+}
+
+gles_texture_t gles_texture_t::from_aux(auxilliary_buffer_t& buffer, std::optional<wlr_fbox> viewport)
+{
+    wf::gles_texture_t tex{buffer.get_texture(), viewport};
+    gles::run_in_context([&]
+    {
+        GL_CALL(glBindTexture(tex.target, tex.tex_id));
+        GL_CALL(glTexParameteri(tex.target, GL_TEXTURE_MIN_FILTER, GL_LINEAR));
+        GL_CALL(glTexParameteri(tex.target, GL_TEXTURE_MAG_FILTER, GL_LINEAR));
+        GL_CALL(glBindTexture(tex.target, 0));
+    });
+
+    return tex;
 }
 } // namespace wf
 
@@ -671,7 +568,7 @@ program_t::program_t()
 void program_t::set_simple(GLuint program_id, wf::texture_type_t type)
 {
     free_resources();
-    assert(type < wf::TEXTURE_TYPE_ALL);
+    wf::dassert(type < wf::TEXTURE_TYPE_ALL);
     this->priv->id[type] = program_id;
 }
 
@@ -806,7 +703,7 @@ void program_t::attrib_divisor(const std::string& attrib, int divisor)
     GL_CALL(glVertexAttribDivisor(loc, divisor));
 }
 
-void program_t::set_active_texture(const wf::texture_t& texture)
+void program_t::set_active_texture(const wf::gles_texture_t& texture)
 {
     GL_CALL(glActiveTexture(GL_TEXTURE0));
     GL_CALL(glBindTexture(texture.target, texture.tex_id));

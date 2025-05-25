@@ -1,22 +1,15 @@
 #include <memory>
 #include <wayfire/util/log.hpp>
 #include <wayfire/workarea.hpp>
-#include "../core/core-impl.hpp"
 #include "view-impl.hpp"
 #include "wayfire/debug.hpp"
 #include "wayfire/geometry.hpp"
-#include "wayfire/opengl.hpp"
 #include "wayfire/output.hpp"
 #include "wayfire/scene-render.hpp"
 #include "wayfire/scene.hpp"
 #include "wayfire/view.hpp"
 #include "wayfire/view-transform.hpp"
-#include "wayfire/workspace-set.hpp"
-#include "wayfire/render-manager.hpp"
-#include "xdg-shell.hpp"
-#include "../core/seat/input-manager.hpp"
 
-#include <algorithm>
 #include <glm/glm.hpp>
 #include "wayfire/signal-definitions.hpp"
 #include <wayfire/scene-operations.hpp>
@@ -98,28 +91,28 @@ bool wf::view_interface_t::has_transformer()
     return !ch.empty() && ch.front() != get_surface_root_node();
 }
 
-void wf::view_interface_t::take_snapshot(wf::render_target_t& target)
+void wf::view_interface_t::take_snapshot(wf::auxilliary_buffer_t& buffer)
 {
     auto root_node = get_surface_root_node();
     const wf::geometry_t bbox = root_node->get_bounding_box();
     float scale = get_output()->handle->scale;
 
-    OpenGL::render_begin();
-    target.allocate(bbox.width * scale, bbox.height * scale);
-    OpenGL::render_end();
+    buffer.allocate({int(bbox.width * scale), int(bbox.height * scale)});
 
+    wf::render_target_t target{buffer};
     target.geometry = root_node->get_bounding_box();
     target.scale    = scale;
 
     std::vector<scene::render_instance_uptr> instances;
     root_node->gen_render_instances(instances, [] (auto) {}, get_output());
 
-    scene::render_pass_params_t params;
+    render_pass_params_t params;
     params.background_color = {0, 0, 0, 0};
     params.damage    = bbox;
     params.target    = target;
     params.instances = &instances;
-    scene::run_render_pass(params, scene::RPASS_CLEAR_BACKGROUND);
+    params.flags     = RPASS_CLEAR_BACKGROUND;
+    render_pass_t::run(params);
 }
 
 wf::view_interface_t::view_interface_t()

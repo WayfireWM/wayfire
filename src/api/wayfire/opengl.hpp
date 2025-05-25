@@ -1,7 +1,7 @@
 #ifndef WF_OPENGL_HPP
 #define WF_OPENGL_HPP
 
-#include "wayfire/region.hpp"
+#include "wayfire/render.hpp"
 #include <GLES3/gl3.h>
 
 #include <wayfire/config/types.hpp>
@@ -33,115 +33,67 @@ struct gl_geometry
 
 namespace wf
 {
-/**
- * A simple class for managing framebuffers.
- * It can handle allocation and deallocation (not done automatically) of
- * framebuffers and their backing textures.
- */
-struct framebuffer_t
+// Extra functions for plugins dealing with render targets with OpenGL ES rendering.
+namespace gles
 {
-    GLuint tex = -1, fb = -1;
-    int32_t viewport_width = 0, viewport_height = 0;
+GLuint ensure_render_buffer_fb_id(const render_buffer_t& buffer);
+void bind_render_buffer(const render_buffer_t& buffer);
+/* Set the GL scissor to the given box, after inverting it to match GL coordinate
+ * space */
+void scissor_render_buffer(const render_buffer_t& buffer, wlr_box box);
 
-    /* The functions below assume they are called between
-     * OpenGL::render_begin() and OpenGL::render_end() */
+/* Returns a matrix which contains an orthographic projection from "geometry"
+ * coordinates to the framebuffer coordinates. */
+glm::mat4 render_target_orthographic_projection(const render_target_t& target);
 
-    /* will invalidate texture contents if width or height changes.
-     * If tex and/or fb haven't been set, it creates them
-     * Return true if texture was created/invalidated */
-    bool allocate(int width, int height);
+/* Returns a matrix which contains an orthographic projection from OpenGL [-1, 1]
+ * coordinates coordinates to the framebuffer coordinates (includes rotation,
+ * subbuffer, etc). */
+glm::mat4 render_target_gl_to_framebuffer(const render_target_t& target);
 
-    /* Make the framebuffer current, and adjust viewport to its size */
-    void bind() const;
-
-    /* Set the GL scissor to the given box, after inverting it to match GL
-     * coordinate space */
-    void scissor(wlr_box box) const;
-
-    /* Will destroy the texture and framebuffer
-     * Warning: will destroy tex/fb even if they have been allocated outside of
-     * allocate() */
-    void release();
-
-    /* Reset the framebuffer, WITHOUT freeing resources.
-     * There is no need to call reset() after release() */
-    void reset();
-};
+glm::mat4 output_transform(const render_target_t& target);
 
 /**
- * A render target contains a framebuffer and information on how to map
- * coordinates from the logical coordinate space (output-local coordinates, etc.)
- * to framebuffer coordinates.
+ * Set the scissor region to the given box.
  *
- * A render target may or not cover the full framebuffer.
+ * In contrast to framebuffer_t::scissor(), this method takes its argument
+ * as a box with "logical" coordinates, not raw framebuffer coordinates.
+ *
+ * @param box The scissor box, in the same coordinate system as the
+ *   framebuffer's geometry.
  */
-struct render_target_t : public framebuffer_t
+void render_target_logic_scissor(const render_target_t& target, wlr_box box);
+
+/**
+ * Ensure that the default EGL/GLES context is current.
+ */
+bool ensure_context(bool fail_on_error = false);
+
+/**
+ * Run code in the default EGL/GLES context, if we are running with GLES rendering.
+ */
+template<class F>
+bool run_in_context_if_gles(F&& code, bool fail_on_error = false)
 {
-    // Describes the logical coordinates of the render area, in whatever
-    // coordinate system the render target needs.
-    wf::geometry_t geometry = {0, 0, 0, 0};
+    if (ensure_context(fail_on_error))
+    {
+        code();
+        return true;
+    }
 
-    wl_output_transform wl_transform = WL_OUTPUT_TRANSFORM_NORMAL;
-    // The scale of a framebuffer is a hint at how bigger the actual framebuffer
-    // is compared to the logical geometry. It is useful for plugins utilizing
-    // auxiliary buffers in logical coordinates, so that they know they should
-    // render with higher resolution and still get a crisp image on the screen.
-    float scale = 1.0;
-
-    // If set, the subbuffer indicates a subrectangle of the framebuffer which
-    // is used instead of the full buffer. In that case, the logical @geometry
-    // is mapped only to that subrectangle and not to the full framebuffer.
-    // Note: (0,0) is top-left for subbuffer.
-    std::optional<wf::geometry_t> subbuffer;
-
-    /* Transform contains output rotation, and possibly
-     * other framebuffer transformations, if has_nonstandard_transform is set */
-    glm::mat4 transform = glm::mat4(1.0);
-
-    /**
-     * Get a render target which is the same as this, but whose geometry is
-     * translated by @offset.
-     */
-    render_target_t translated(wf::point_t offset) const;
-
-    /**
-     * Get the geometry of the given box after projecting it onto the framebuffer.
-     * In the values returned, (0,0) is top-left.
-     *
-     * The resulting geometry is affected by the framebuffer geometry, scale and
-     * transform.
-     */
-    wlr_box framebuffer_box_from_geometry_box(wlr_box box) const;
-
-    /**
-     * Get the geometry of the given region after projecting it onto the framebuffer. This is the same as
-     * iterating over the rects in the region and transforming them with framebuffer_box_from_geometry_box.
-     */
-    wf::region_t framebuffer_region_from_geometry_region(const wf::region_t& region) const;
-
-    /* Returns a matrix which contains an orthographic projection from "geometry"
-     * coordinates to the framebuffer coordinates. */
-    glm::mat4 get_orthographic_projection() const;
-
-    /* Returns a matrix which contains an orthographic projection from OpenGL [-1, 1] coordinates
-     * coordinates to the framebuffer coordinates (includes rotation, subbuffer, etc). */
-    glm::mat4 gl_to_framebuffer() const;
-
-    /**
-     * Set the scissor region to the given box.
-     *
-     * In contrast to framebuffer_t::scissor(), this method takes its argument
-     * as a box with "logical" coordinates, not raw framebuffer coordinates.
-     *
-     * @param box The scissor box, in the same coordinate system as the
-     *   framebuffer's geometry.
-     */
-    void logic_scissor(wlr_box box) const;
-};
+    return false;
 }
 
-namespace wf
+/**
+ * Run code in the default EGL/GLES context, print an error and exit otherwise.
+ */
+template<class F>
+bool run_in_context(F&& code)
 {
+    return run_in_context_if_gles(code, true);
+}
+}
+
 /** Represents the different types(formats) of textures in Wayfire. */
 enum texture_type_t
 {
@@ -156,7 +108,7 @@ enum texture_type_t
     TEXTURE_TYPE_ALL      = 3,
 };
 
-struct texture_t
+struct gles_texture_t
 {
     /* Texture type */
     texture_type_t type = TEXTURE_TYPE_RGBA;
@@ -177,32 +129,19 @@ struct texture_t
     gl_geometry viewport_box;
 
     /* tex_id will be initialized later */
-    texture_t();
+    gles_texture_t();
     /** Initialize a non-inverted RGBA texture with the given texture id */
-    texture_t(GLuint tex);
+    gles_texture_t(GLuint tex);
     /** Initialize a texture with the attributes of the wlr texture */
-    explicit texture_t(wlr_texture*, std::optional<wlr_fbox> viewport = {});
+    explicit gles_texture_t(wlr_texture*, std::optional<wlr_fbox> viewport = {});
+    explicit gles_texture_t(wf::texture_t tex);
+
+    static gles_texture_t from_aux(auxilliary_buffer_t& buffer, std::optional<wlr_fbox> viewport = {});
 };
 }
 
 namespace OpenGL
 {
-/* "Begin" rendering to the given framebuffer and the given viewport.
- * All rendering operations should happen between render_begin and render_end,
- * because
- * that's the only time we're guaranteed we have a valid GLES context
- *
- * The other functions below assume they are called between render_begin()
- * and render_end() */
-void render_begin(); // use if you just want to bind GL context but won't draw
-void render_begin(const wf::framebuffer_t& fb);
-void render_begin(int32_t viewport_width, int32_t viewport_height, uint32_t fb);
-
-/* Call this to indicate an end of the rendering.
- * Resets bound framebuffer and scissor box.
- * render_end() must be called for each render_begin() */
-void render_end();
-
 /* Clear the currently bound framebuffer with the given color */
 void clear(wf::color_t color, uint32_t mask = GL_COLOR_BUFFER_BIT);
 
@@ -242,7 +181,7 @@ enum rendering_flags_t
  * @param color     A color multiplier for each channel of the texture.
  * @param bits      A bitwise OR of texture_rendering_flags_t.
  */
-void render_transformed_texture(wf::texture_t texture,
+void render_transformed_texture(wf::gles_texture_t texture,
     const gl_geometry& g,
     const gl_geometry& texg,
     glm::mat4 transform = glm::mat4(1.0),
@@ -259,7 +198,7 @@ void render_transformed_texture(wf::texture_t texture,
  * @param bits      A bitwise OR of texture_rendering_flags_t. In this variant,
  *                    TEX_GEOMETRY flag is ignored.
  */
-void render_transformed_texture(wf::texture_t texture,
+void render_transformed_texture(wf::gles_texture_t texture,
     const wf::geometry_t& geometry,
     glm::mat4 transform = glm::mat4(1.0),
     glm::vec4 color     = glm::vec4(1.f),
@@ -277,7 +216,7 @@ void render_transformed_texture(wf::texture_t texture,
  * @param bits      A bitwise OR of texture_rendering_flags_t. In this variant,
  *                    TEX_GEOMETRY flag is ignored.
  */
-void render_texture(wf::texture_t texture,
+void render_texture(wf::gles_texture_t texture,
     const wf::render_target_t& framebuffer,
     const wf::geometry_t& geometry,
     glm::vec4 color = glm::vec4(1.f),
@@ -322,7 +261,7 @@ void render_rectangle(wf::geometry_t box, wf::color_t color, glm::mat4 matrix);
  * It contains multiple programs for the different texture types.
  *
  * All of the program_t's functions should only be used inside a rendering
- * block guarded by render_begin/end()
+ * block (see render_pass_t::custom_gles_subpass or wf::gles::(maybe_)run_in_context)
  */
 class program_t
 {
@@ -408,7 +347,7 @@ class program_t
      * Set the active texture, and modify the builtin Y-inversion uniforms.
      * Will not work with custom programs.
      */
-    void set_active_texture(const wf::texture_t& texture);
+    void set_active_texture(const wf::gles_texture_t& texture);
 
     /**
      * Deactivate the vertex attributes activated by attrib_pointer and

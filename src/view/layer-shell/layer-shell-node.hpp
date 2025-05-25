@@ -1,7 +1,5 @@
 #pragma once
 
-#include "wayfire/geometry.hpp"
-#include "wayfire/signal-provider.hpp"
 #include <wayfire/view.hpp>
 #include <memory>
 #include <wayfire/unstable/translation-node.hpp>

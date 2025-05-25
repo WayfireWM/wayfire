@@ -59,10 +59,11 @@ class wf_bokeh_blur : public wf_blur_base
   public:
     wf_bokeh_blur() : wf_blur_base("bokeh")
     {
-        OpenGL::render_begin();
-        program[0].set_simple(OpenGL::compile_program(bokeh_vertex_shader,
-            bokeh_fragment_shader));
-        OpenGL::render_end();
+        wf::gles::run_in_context_if_gles([&]
+        {
+            program[0].set_simple(OpenGL::compile_program(bokeh_vertex_shader,
+                bokeh_fragment_shader));
+        });
     }
 
     int blur_fb0(const wf::region_t& blur_region, int width, int height) override
@@ -77,24 +78,25 @@ class wf_bokeh_blur : public wf_blur_base
             -1.0f, 1.0f
         };
 
-        OpenGL::render_begin();
-        /* Upload data to shader */
-        program[0].use(wf::TEXTURE_TYPE_RGBA);
-        program[0].uniform2f("halfpixel", 0.5f / width, 0.5f / height);
-        program[0].uniform1f("offset", offset);
-        program[0].uniform1i("iterations", iterations);
+        wf::gles::run_in_context_if_gles([&]
+        {
+            /* Upload data to shader */
+            program[0].use(wf::TEXTURE_TYPE_RGBA);
+            program[0].uniform2f("halfpixel", 0.5f / width, 0.5f / height);
+            program[0].uniform1f("offset", offset);
+            program[0].uniform1i("iterations", iterations);
 
-        program[0].attrib_pointer("position", 2, 0, vertexData);
-        GL_CALL(glDisable(GL_BLEND));
-        render_iteration(blur_region, fb[0], fb[1], width, height);
+            program[0].attrib_pointer("position", 2, 0, vertexData);
+            GL_CALL(glDisable(GL_BLEND));
+            render_iteration(blur_region, fb[0], fb[1], width, height);
 
-        /* Reset gl state */
-        GL_CALL(glEnable(GL_BLEND));
-        GL_CALL(glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA));
+            /* Reset gl state */
+            GL_CALL(glEnable(GL_BLEND));
+            GL_CALL(glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA));
 
-        program[0].deactivate();
-        GL_CALL(glBindTexture(GL_TEXTURE_2D, 0));
-        OpenGL::render_end();
+            program[0].deactivate();
+            GL_CALL(glBindTexture(GL_TEXTURE_2D, 0));
+        });
 
         return 1;
     }

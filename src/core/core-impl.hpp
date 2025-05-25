@@ -1,6 +1,7 @@
 #ifndef WF_CORE_CORE_IMPL_HPP
 #define WF_CORE_CORE_IMPL_HPP
 
+#include <sys/resource.h>
 #include "core/plugin-loader.hpp"
 #include "wayfire/core.hpp"
 #include "wayfire/scene-input.hpp"
@@ -16,7 +17,8 @@ class input_method_relay;
 class compositor_core_impl_t : public compositor_core_t
 {
   public:
-    wlr_egl *egl;
+    // If NULL, we are not running in GLES mode.
+    wlr_egl *egl = NULL;
     wlr_compositor *compositor;
 
     std::unique_ptr<wf::input_manager_t> input;
@@ -85,6 +87,9 @@ class compositor_core_impl_t : public compositor_core_t
     std::shared_ptr<scene::root_node_t> scene_root;
 
     compositor_state_t state = compositor_state_t::UNKNOWN;
+    struct rlimit user_maxfiles;
+    void increase_nofile_limit();
+    void restore_nofile_limit();
 
   private:
     wf::option_wrapper_t<bool> discard_command_output;

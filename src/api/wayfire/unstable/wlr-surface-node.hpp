@@ -1,7 +1,6 @@
 #pragma once
 
 #include "wayfire/geometry.hpp"
-#include "wayfire/signal-definitions.hpp"
 #include "wayfire/util.hpp"
 #include "wayfire/view-transform.hpp"
 #include <wayfire/scene.hpp>

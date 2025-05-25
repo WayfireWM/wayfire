@@ -2,7 +2,6 @@
 #include <wayfire/core.hpp>
 #include <wayfire/opengl.hpp>
 #include <config.h>
-#include <map>
 
 namespace wf
 {
@@ -38,14 +37,11 @@ void decoration_theme_t::set_buttons(button_type_t flags)
  * @param scissor The GL scissor rectangle to use.
  * @param active Whether to use active or inactive colors
  */
-void decoration_theme_t::render_background(const wf::render_target_t& fb,
-    wf::geometry_t rectangle, const wf::geometry_t& scissor, bool active) const
+void decoration_theme_t::render_background(const wf::scene::render_instruction_t& data,
+    wf::geometry_t rectangle, bool active) const
 {
     wf::color_t color = active ? active_color : inactive_color;
-    OpenGL::render_begin(fb);
-    fb.logic_scissor(scissor);
-    OpenGL::render_rectangle(rectangle, color, fb.get_orthographic_projection());
-    OpenGL::render_end();
+    data.pass->add_rect(color, data.target, rectangle, data.damage);
 }
 
 /**

@@ -116,6 +116,17 @@ class wayfire_fisheye : public wf::per_output_plugin_instance_t
   public:
     void init() override
     {
+        if (!wf::get_core().is_gles2())
+        {
+            LOGE("Fisheye plugin requires OpenGL ES renderer!");
+            return;
+        }
+
+        wf::gles::run_in_context_if_gles([&]
+        {
+            program.set_simple(OpenGL::compile_program(vertex_shader, fragment_shader));
+        });
+
         hook_set = active = false;
         output->add_activator(wf::option_wrapper_t<wf::activatorbinding_t>{"fisheye/toggle"}, &toggle_cb);
 
@@ -127,11 +138,6 @@ class wayfire_fisheye : public wf::per_output_plugin_instance_t
                 this->progression.animate(zoom);
             }
         });
-
-        OpenGL::render_begin();
-        program.set_simple(
-            OpenGL::compile_program(vertex_shader, fragment_shader));
-        OpenGL::render_end();
     }
 
     wf::activator_callback toggle_cb = [=] (auto)
@@ -160,8 +166,8 @@ class wayfire_fisheye : public wf::per_output_plugin_instance_t
         return true;
     };
 
-    wf::post_hook_t render_hook = [=] (const wf::framebuffer_t& source,
-                                       const wf::framebuffer_t& dest)
+    wf::post_hook_t render_hook = [=] (wf::auxilliary_buffer_t& source,
+                                       const wf::render_buffer_t& dest)
     {
         auto oc     = output->get_cursor_position();
         wlr_box box = {(int)oc.x, (int)oc.y, 1, 1};
@@ -177,23 +183,25 @@ class wayfire_fisheye : public wf::per_output_plugin_instance_t
             -1.0f, 1.0f
         };
 
-        OpenGL::render_begin(dest);
-        program.use(wf::TEXTURE_TYPE_RGBA);
-        GL_CALL(glBindTexture(GL_TEXTURE_2D, source.tex));
-        GL_CALL(glActiveTexture(GL_TEXTURE0));
+        wf::gles::run_in_context_if_gles([&]
+        {
+            wf::gles::bind_render_buffer(dest);
+            program.use(wf::TEXTURE_TYPE_RGBA);
+            GL_CALL(glBindTexture(GL_TEXTURE_2D, wf::gles_texture_t::from_aux(source).tex_id));
+            GL_CALL(glActiveTexture(GL_TEXTURE0));
 
-        program.uniform2f("u_mouse", oc.x, oc.y);
-        program.uniform2f("u_resolution", dest.viewport_width, dest.viewport_height);
-        program.uniform1f("u_radius", radius);
-        program.uniform1f("u_zoom", progression);
+            program.uniform2f("u_mouse", oc.x, oc.y);
+            program.uniform2f("u_resolution", dest.get_size().width, dest.get_size().height);
+            program.uniform1f("u_radius", radius);
+            program.uniform1f("u_zoom", progression);
 
-        program.attrib_pointer("position", 2, 0, vertexData);
+            program.attrib_pointer("position", 2, 0, vertexData);
 
-        GL_CALL(glDrawArrays(GL_TRIANGLE_FAN, 0, 4));
-        GL_CALL(glBindTexture(GL_TEXTURE_2D, 0));
+            GL_CALL(glDrawArrays(GL_TRIANGLE_FAN, 0, 4));
+            GL_CALL(glBindTexture(GL_TEXTURE_2D, 0));
 
-        program.deactivate();
-        OpenGL::render_end();
+            program.deactivate();
+        });
 
         if (!active && !progression.running())
         {
@@ -215,9 +223,10 @@ class wayfire_fisheye : public wf::per_output_plugin_instance_t
             finalize();
         }
 
-        OpenGL::render_begin();
-        program.free_resources();
-        OpenGL::render_end();
+        wf::gles::run_in_context_if_gles([&]
+        {
+            program.free_resources();
+        });
 
         output->rem_binding(&toggle_cb);
     }

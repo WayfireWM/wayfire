@@ -3,7 +3,6 @@
 #include <wayfire/plugins/common/util.hpp>
 #include "wayfire/core.hpp"
 #include "wayfire/geometry.hpp"
-#include "wayfire/opengl.hpp"
 #include "wayfire/region.hpp"
 #include "wayfire/scene-render.hpp"
 #include "wayfire/scene.hpp"
@@ -36,7 +35,7 @@ class crossfade_node_t : public scene::view_2d_transformer_t
   public:
     wayfire_view view;
     // The contents of the view before the change.
-    wf::render_target_t original_buffer;
+    wf::auxilliary_buffer_t original_buffer;
 
   public:
     wf::geometry_t displayed_geometry;
@@ -49,32 +48,24 @@ class crossfade_node_t : public scene::view_2d_transformer_t
 
         auto root_node = view->get_surface_root_node();
         const wf::geometry_t bbox = root_node->get_bounding_box();
+        const wf::geometry_t g    = view->get_geometry();
+        const float scale = view->get_output()->handle->scale;
+        original_buffer.allocate(wf::dimensions(g), scale);
 
-        original_buffer.geometry = view->get_geometry();
-        original_buffer.scale    = view->get_output()->handle->scale;
-
-        OpenGL::render_begin();
-        auto w = original_buffer.scale * original_buffer.geometry.width;
-        auto h = original_buffer.scale * original_buffer.geometry.height;
-        original_buffer.allocate(w, h);
-        OpenGL::render_end();
+        wf::render_target_t target{original_buffer};
+        target.geometry = view->get_geometry();
+        target.scale    = view->get_output()->handle->scale;
 
         std::vector<scene::render_instance_uptr> instances;
         root_node->gen_render_instances(instances, [] (auto) {}, view->get_output());
 
-        scene::render_pass_params_t params;
+        render_pass_params_t params;
         params.background_color = {0, 0, 0, 0};
         params.damage    = bbox;
-        params.target    = original_buffer;
+        params.target    = target;
         params.instances = &instances;
-        scene::run_render_pass(params, scene::RPASS_CLEAR_BACKGROUND);
-    }
-
-    ~crossfade_node_t()
-    {
-        OpenGL::render_begin();
-        original_buffer.release();
-        OpenGL::render_end();
+        params.flags     = RPASS_CLEAR_BACKGROUND;
+        wf::render_pass_t::run(params);
     }
 
     std::string stringify() const override
@@ -121,8 +112,7 @@ class crossfade_render_instance_t : public scene::render_instance_t
                 });
     }
 
-    void render(const wf::render_target_t& target,
-        const wf::region_t& region) override
+    void render(const wf::scene::render_instruction_t& data) override
     {
         double ra;
         const double N = 2;
@@ -134,15 +124,8 @@ class crossfade_render_instance_t : public scene::render_instance_t
             ra = std::pow((self->overlay_alpha - 0.5) * 2, N) / 2.0 + 0.5;
         }
 
-        OpenGL::render_begin(target);
-        for (auto& box : region)
-        {
-            target.logic_scissor(wlr_box_from_pixman_box(box));
-            OpenGL::render_texture({self->original_buffer.tex}, target,
-                self->displayed_geometry, glm::vec4{1.0f, 1.0f, 1.0f, 1.0 - ra});
-        }
-
-        OpenGL::render_end();
+        wf::texture_t tex = wf::texture_t{self->original_buffer.get_texture()};
+        data.pass->add_texture(tex, data.target, self->displayed_geometry, data.damage, 1.0 - ra);
     }
 };
 

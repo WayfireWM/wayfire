@@ -22,13 +22,27 @@ extern "C"
 {
 // Version
 #include <wlr/version.h>
+#include <wlr/config.h>
 // Rendering
 #define static
 #include <wlr/types/wlr_compositor.h>
 #include <wlr/render/wlr_renderer.h>
 #include <wlr/render/swapchain.h>
 #include <wlr/render/allocator.h>
-#include <wlr/render/gles2.h>
+#include <wlr/render/color.h>
+
+#if __has_include(<wlr/render/gles2.h>)
+    #include <wlr/render/gles2.h>
+#endif
+
+#if __has_include(<wlr/render/vulkan.h>)
+    #include <wlr/render/vulkan.h>
+#endif
+
+#if __has_include(<wlr/render/pixman.h>)
+    #include <wlr/render/pixman.h>
+#endif
+
 #include <wlr/render/egl.h>
 #include <wlr/types/wlr_matrix.h>
 #undef static

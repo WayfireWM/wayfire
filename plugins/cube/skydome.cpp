@@ -21,21 +21,22 @@ wf_cube_background_skydome::wf_cube_background_skydome(wf::output_t *output)
 
 wf_cube_background_skydome::~wf_cube_background_skydome()
 {
-    OpenGL::render_begin();
-    program.free_resources();
-    if (tex != (GLuint) - 1)
+    wf::gles::run_in_context([&]
     {
-        GL_CALL(glDeleteTextures(1, &tex));
-    }
-
-    OpenGL::render_end();
+        program.free_resources();
+        if (tex != (GLuint) - 1)
+        {
+            GL_CALL(glDeleteTextures(1, &tex));
+        }
+    });
 }
 
 void wf_cube_background_skydome::load_program()
 {
-    OpenGL::render_begin();
-    program.set_simple(OpenGL::compile_program(cube_vertex_2_0, cube_fragment_2_0));
-    OpenGL::render_end();
+    wf::gles::run_in_context([&]
+    {
+        program.set_simple(OpenGL::compile_program(cube_vertex_2_0, cube_fragment_2_0));
+    });
 }
 
 void wf_cube_background_skydome::reload_texture()
@@ -46,8 +47,6 @@ void wf_cube_background_skydome::reload_texture()
     }
 
     last_background_image = background_image;
-    OpenGL::render_begin();
-
     if (tex == (uint32_t)-1)
     {
         GL_CALL(glGenTextures(1, &tex));
@@ -70,8 +69,6 @@ void wf_cube_background_skydome::reload_texture()
     }
 
     GL_CALL(glBindTexture(GL_TEXTURE_2D, 0));
-
-    OpenGL::render_end();
 }
 
 void wf_cube_background_skydome::fill_vertices()
@@ -143,7 +140,7 @@ void wf_cube_background_skydome::render_frame(const wf::render_target_t& fb,
         return;
     }
 
-    OpenGL::render_begin(fb);
+    wf::gles::bind_render_buffer(fb);
     program.use(wf::TEXTURE_TYPE_RGBA);
 
     auto rotation = glm::rotate(glm::mat4(1.0),
@@ -154,7 +151,7 @@ void wf_cube_background_skydome::render_frame(const wf::render_target_t& fb,
         glm::vec3(0., 0., -attribs.cube_animation.offset_z),
         glm::vec3(0., 1., 0.));
 
-    auto vp = fb.transform * attribs.projection * view * rotation;
+    auto vp = wf::gles::output_transform(fb) * attribs.projection * view * rotation;
     program.uniformMatrix4f("VP", vp);
 
     program.attrib_pointer("position", 3, 0, vertices.data());
@@ -175,5 +172,4 @@ void wf_cube_background_skydome::render_frame(const wf::render_target_t& fb,
         GL_UNSIGNED_INT, indices.data()));
 
     program.deactivate();
-    OpenGL::render_end();
 }

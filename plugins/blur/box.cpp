@@ -29,7 +29,6 @@ static const char *box_fragment_shader_horz =
 precision mediump float;
 
 uniform sampler2D bg_texture;
-uniform int mode;
 
 varying highp vec2 blurcoord[5];
 
@@ -52,7 +51,6 @@ static const char *box_fragment_shader_vert =
 precision mediump float;
 
 uniform sampler2D bg_texture;
-uniform int mode;
 
 varying highp vec2 blurcoord[5];
 
@@ -76,12 +74,11 @@ class wf_box_blur : public wf_blur_base
 
     wf_box_blur() : wf_blur_base("box")
     {
-        OpenGL::render_begin();
-        program[0].set_simple(OpenGL::compile_program(
-            box_vertex_shader, box_fragment_shader_horz));
-        program[1].set_simple(OpenGL::compile_program(
-            box_vertex_shader, box_fragment_shader_vert));
-        OpenGL::render_end();
+        wf::gles::run_in_context_if_gles([&]
+        {
+            program[0].set_simple(OpenGL::compile_program(box_vertex_shader, box_fragment_shader_horz));
+            program[1].set_simple(OpenGL::compile_program(box_vertex_shader, box_fragment_shader_vert));
+        });
     }
 
     void upload_data(int i, int width, int height)
@@ -103,14 +100,12 @@ class wf_box_blur : public wf_blur_base
     void blur(const wf::region_t& blur_region, int i, int width, int height)
     {
         program[i].use(wf::TEXTURE_TYPE_RGBA);
-        render_iteration(blur_region, fb[i], fb[!i], width, height);
+        render_iteration(blur_region, fb[i], fb[1 - i], width, height);
     }
 
     int blur_fb0(const wf::region_t& blur_region, int width, int height) override
     {
         int i, iterations = iterations_opt;
-
-        OpenGL::render_begin();
         GL_CALL(glDisable(GL_BLEND));
         /* Enable our shader and pass some data to it. The shader
          * does box blur on the background texture in two passes,
@@ -122,7 +117,6 @@ class wf_box_blur : public wf_blur_base
         {
             /* Blur horizontally */
             blur(blur_region, 0, width, height);
-
             /* Blur vertically */
             blur(blur_region, 1, width, height);
         }
@@ -133,7 +127,6 @@ class wf_box_blur : public wf_blur_base
 
         program[0].deactivate();
         GL_CALL(glBindTexture(GL_TEXTURE_2D, 0));
-        OpenGL::render_end();
 
         return 0;
     }
