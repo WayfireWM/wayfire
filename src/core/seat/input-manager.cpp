@@ -34,6 +34,9 @@ static std::unique_ptr<wf::input_device_impl_t> create_wf_device_for_device(
       case WLR_INPUT_DEVICE_TABLET_PAD:
         return std::make_unique<wf::tablet_pad_t>(device);
 
+      case WLR_INPUT_DEVICE_TOUCH:
+        return std::make_unique<wf::touchscreen_device_t>(device);
+
       default:
         return std::make_unique<wf::input_device_impl_t>(device);
     }
@@ -41,57 +44,20 @@ static std::unique_ptr<wf::input_device_impl_t> create_wf_device_for_device(
 
 void wf::input_manager_t::handle_new_input(wlr_input_device *dev)
 {
-    LOGI("handle new input: ", dev->name,
-        ", default mapping: ", dev->name);
+    LOGI("handle new input: ", dev->name);
     input_devices.push_back(create_wf_device_for_device(dev));
 
     wf::input_device_added_signal data;
     data.device = nonstd::make_observer(input_devices.back().get());
     wf::get_core().emit(&data);
-
-    configure_input_devices();
+    configure_input_device(input_devices.back());
 }
 
 void wf::input_manager_t::configure_input_device(std::unique_ptr<wf::input_device_impl_t> & device)
 {
-    auto dev     = device->get_wlr_handle();
-    auto cursor  = wf::get_core().get_wlr_cursor();
-    auto section =
-        wf::get_core().config_backend->get_input_device_section("input-device", dev);
-
-    auto calibration_matrix = section->get_option("calibration")->get_value_str();
-    if (!calibration_matrix.empty())
-    {
-        device->calibrate_touch_device(calibration_matrix);
-    }
-
-    auto mapped_output = section->get_option("output")->get_value_str();
-    if (mapped_output.empty())
-    {
-        if (dev->type == WLR_INPUT_DEVICE_POINTER)
-        {
-            mapped_output = nonull(wlr_pointer_from_input_device(
-                dev)->output_name);
-        } else if (dev->type == WLR_INPUT_DEVICE_TOUCH)
-        {
-            mapped_output =
-                nonull(wlr_touch_from_input_device(dev)->output_name);
-        } else
-        {
-            mapped_output = nonull(dev->name);
-        }
-    }
-
-    auto wo = wf::get_core().output_layout->find_output(mapped_output);
-    if (wo)
-    {
-        LOGC(INPUT_DEVICES, "Mapping input ", dev->name, " to output ", wo->to_string(), ".");
-        wlr_cursor_map_input_to_output(cursor, dev, wo->handle);
-    } else
-    {
-        LOGC(INPUT_DEVICES, "Mapping input ", dev->name, " to output null.");
-        wlr_cursor_map_input_to_output(cursor, dev, nullptr);
-    }
+    auto section = wf::get_core().config_backend->get_input_device_section("input-device",
+        device->get_wlr_handle());
+    device->reconfigure_device(section);
 }
 
 void wf::input_manager_t::configure_input_devices()

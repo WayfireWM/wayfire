@@ -1,5 +1,6 @@
 #include "seat-impl.hpp"
 #include "cursor.hpp"
+#include "wayfire/config-backend.hpp"
 #include "wayfire/geometry.hpp"
 #include "../core-impl.hpp"
 #include "../view/view-impl.hpp"
@@ -578,14 +579,22 @@ bool input_device_t::is_enabled()
     return mode == LIBINPUT_CONFIG_SEND_EVENTS_ENABLED;
 }
 
-void input_device_impl_t::calibrate_touch_device(const std::string& calibration_matrix)
+void touchscreen_device_t::reconfigure_device(std::shared_ptr<wf::config::section_t> device_section)
 {
-    wlr_input_device *dev = handle;
-    if (!wlr_input_device_is_libinput(dev) || (dev->type != WLR_INPUT_DEVICE_TOUCH))
+    calibrate(device_section);
+    map_to_output(device_section);
+}
+
+void touchscreen_device_t::calibrate(std::shared_ptr<wf::config::section_t> device_section)
+{
+    auto section = wf::get_core().config_backend->get_input_device_section("input-device", get_wlr_handle());
+    auto calibration_matrix = section->get_option("calibration")->get_value_str();
+    if (calibration_matrix.empty())
     {
         return;
     }
 
+    wlr_input_device *dev = handle;
     float m[6];
     auto libinput_dev = wlr_libinput_get_device_handle(dev);
     if (sscanf(calibration_matrix.c_str(), "%f %f %f %f %f %f",
@@ -633,6 +642,33 @@ wf::input_device_impl_t::input_device_impl_t(wlr_input_device *dev) :
 wf::input_device_impl_t::~input_device_impl_t()
 {
     this->handle->data = NULL;
+}
+
+void wf::input_device_impl_t::map_to_output(std::shared_ptr<wf::config::section_t> section)
+{
+    auto mapped_output = section->get_option("output")->get_value_str();
+    auto cursor = wf::get_core_impl().get_wlr_cursor();
+    if (mapped_output.empty())
+    {
+        if (handle->type == WLR_INPUT_DEVICE_POINTER)
+        {
+            mapped_output = nonull(wlr_pointer_from_input_device(handle)->output_name);
+        } else if (handle->type == WLR_INPUT_DEVICE_TOUCH)
+        {
+            mapped_output = nonull(wlr_touch_from_input_device(handle)->output_name);
+        }
+    }
+
+    auto wo = wf::get_core().output_layout->find_output(mapped_output);
+    if (wo)
+    {
+        LOGC(INPUT_DEVICES, "Mapping input ", handle->name, " to output ", wo->to_string(), ".");
+        wlr_cursor_map_input_to_output(cursor, handle, wo->handle);
+    } else
+    {
+        LOGC(INPUT_DEVICES, "Mapping input ", handle->name, " to output null.");
+        wlr_cursor_map_input_to_output(cursor, handle, nullptr);
+    }
 }
 
 static wf::pointf_t to_local_recursive(wf::scene::node_t *node, wf::pointf_t point)
