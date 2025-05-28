@@ -149,7 +149,7 @@ void wf::compositor_core_impl_t::init()
         drm_lease_request.connect(&protocols.drm_v1->events.request);
     } else
     {
-        LOGE("Failed to create wlr_drm_lease_device_v1; VR will not be available!");
+        LOGI("Not using wlr_drm_lease_device_v1; VR will not be available!");
     }
 
     /* idle-inhibit setup */
