@@ -18,6 +18,12 @@ cpp = meson.get_compiler('cpp')
 version = '"@0@"'.format(meson.project_version())
 add_project_arguments('-DWAYFIRE_VERSION=@0@'.format(version), language: 'cpp')
 
+if get_option('custom_pch') and cpp.get_id() == 'clang'
+  # For clang, we need to ensure that we don't add timestamp to PCH.
+  # Otherwise, that breaks ccache (see https://ccache.dev/manual/latest.html#_precompiled_headers)
+  add_project_arguments(['-Xclang', '-fno-pch-timestamp'], language: 'cpp')
+endif
+
 wayfire_api_inc  = include_directories('src/api')
 
 wayland_server = dependency('wayland-server')
