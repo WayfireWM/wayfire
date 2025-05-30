@@ -17,7 +17,6 @@
 #include <wayfire/render-manager.hpp>
 #include <wayfire/opengl.hpp>
 #include <wayfire/plugins/common/cairo-util.hpp>
-#include <wayfire/plugins/common/simple-texture.hpp>
 #include <wayfire/plugins/common/key-repeat.hpp>
 
 class scale_title_filter;
@@ -305,8 +304,8 @@ class scale_title_filter : public wf::per_output_plugin_instance_t
             render_active = true;
         }
 
-        auto surface_size = min(new_size, {filter_overlay.tex.width,
-            filter_overlay.tex.height});
+        auto surface_size = min(new_size, {filter_overlay.get_size().width,
+            filter_overlay.get_size().height});
         auto damage = max(surface_size, overlay_size);
 
         output->render->damage({
@@ -330,8 +329,8 @@ class scale_title_filter : public wf::per_output_plugin_instance_t
             update_overlay();
         }
 
-        const wf::simple_texture_t& tex = filter_overlay.tex;
-        if (tex.tex == (GLuint) - 1)
+        auto tex = filter_overlay.get_texture();
+        if (!tex.texture)
         {
             return;
         }
@@ -342,28 +341,16 @@ class scale_title_filter : public wf::per_output_plugin_instance_t
             (int)(overlay_size.width / output_scale),
             (int)(overlay_size.height / output_scale)
         };
-        gl_geometry gl_geom{(float)geometry.x, (float)geometry.y,
-            (float)(geometry.x + geometry.width),
-            (float)(geometry.y + geometry.height)};
-        float tex_wr = (float)overlay_size.width / (float)tex.width;
-        float tex_hr = (float)overlay_size.height / (float)tex.height;
-        gl_geometry tex_geom{0.5f - tex_wr / 2.f, 0.5f - tex_hr / 2.f,
-            0.5f + tex_wr / 2.f, 0.5f + tex_hr / 2.f};
+
+        tex.source_box = wlr_fbox{
+            filter_overlay.get_size().width / 2.0 - overlay_size.width / 2.0,
+            filter_overlay.get_size().height / 2.0 - overlay_size.height / 2.0,
+            overlay_size.width * 1.0,
+            overlay_size.height * 1.0,
+        };
 
         auto damage = output->render->get_scheduled_damage() & geometry;
-        auto ortho  = out_fb.get_orthographic_projection();
-
-        OpenGL::render_begin(out_fb);
-        for (auto& box : damage)
-        {
-            out_fb.logic_scissor(wlr_box_from_pixman_box(box));
-            OpenGL::render_transformed_texture(tex.tex, gl_geom, tex_geom, ortho,
-                glm::vec4(1.f),
-                OpenGL::TEXTURE_TRANSFORM_INVERT_Y |
-                OpenGL::TEXTURE_USE_TEX_GEOMETRY);
-        }
-
-        OpenGL::render_end();
+        output->render->get_current_pass()->add_texture(tex, out_fb, geometry, damage);
     }
 
     /* clear everything rendered by this plugin and deactivate rendering */
@@ -372,16 +359,7 @@ class scale_title_filter : public wf::per_output_plugin_instance_t
         if (render_active)
         {
             output->render->rem_effect(&render_hook);
-            auto dim = output->get_screen_size();
-            int surface_width  = filter_overlay.tex.width;
-            int surface_height = filter_overlay.tex.height;
-
-            output->render->damage({
-                dim.width / 2 - (int)(surface_width / output_scale / 2),
-                dim.height / 2 - (int)(surface_height / output_scale / 2),
-                (int)(surface_width / output_scale),
-                (int)(surface_height / output_scale)
-            });
+            output->render->damage_whole();
             render_active = false;
         }
     }

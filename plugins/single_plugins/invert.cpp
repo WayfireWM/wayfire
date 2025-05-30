@@ -59,10 +59,16 @@ class wayfire_invert_screen : public wf::per_output_plugin_instance_t
   public:
     void init() override
     {
+        if (!wf::get_core().is_gles2())
+        {
+            LOGE("Invert plugin requires OpenGL ES renderer!");
+            return;
+        }
+
         wf::option_wrapper_t<wf::activatorbinding_t> toggle_key{"invert/toggle"};
 
-        hook = [=] (const wf::framebuffer_t& source,
-                    const wf::framebuffer_t& destination)
+        hook = [=] (wf::auxilliary_buffer_t& source,
+                    const wf::render_buffer_t& destination)
         {
             render(source, destination);
         };
@@ -87,16 +93,15 @@ class wayfire_invert_screen : public wf::per_output_plugin_instance_t
             return true;
         };
 
-        OpenGL::render_begin();
-        program.set_simple(
-            OpenGL::compile_program(vertex_shader, fragment_shader));
-        OpenGL::render_end();
+        wf::gles::run_in_context([&]
+        {
+            program.set_simple(OpenGL::compile_program(vertex_shader, fragment_shader));
+        });
 
         output->add_activator(toggle_key, &toggle_cb);
     }
 
-    void render(const wf::framebuffer_t& source,
-        const wf::framebuffer_t& destination)
+    void render(wf::auxilliary_buffer_t& source, const wf::render_buffer_t& destination)
     {
         static const float vertexData[] = {
             -1.0f, -1.0f,
@@ -112,23 +117,24 @@ class wayfire_invert_screen : public wf::per_output_plugin_instance_t
             0.0f, 1.0f
         };
 
-        OpenGL::render_begin(destination);
+        wf::gles::run_in_context([&]
+        {
+            wf::gles::bind_render_buffer(destination);
+            program.use(wf::TEXTURE_TYPE_RGBA);
+            GL_CALL(glBindTexture(GL_TEXTURE_2D, wf::gles_texture_t::from_aux(source).tex_id));
+            GL_CALL(glActiveTexture(GL_TEXTURE0));
 
-        program.use(wf::TEXTURE_TYPE_RGBA);
-        GL_CALL(glBindTexture(GL_TEXTURE_2D, source.tex));
-        GL_CALL(glActiveTexture(GL_TEXTURE0));
+            program.attrib_pointer("position", 2, 0, vertexData);
+            program.attrib_pointer("uvPosition", 2, 0, coordData);
+            program.uniform1i("preserve_hue", preserve_hue);
 
-        program.attrib_pointer("position", 2, 0, vertexData);
-        program.attrib_pointer("uvPosition", 2, 0, coordData);
-        program.uniform1i("preserve_hue", preserve_hue);
+            GL_CALL(glDisable(GL_BLEND));
+            GL_CALL(glDrawArrays(GL_TRIANGLE_FAN, 0, 4));
+            GL_CALL(glEnable(GL_BLEND));
+            GL_CALL(glBindTexture(GL_TEXTURE_2D, 0));
 
-        GL_CALL(glDisable(GL_BLEND));
-        GL_CALL(glDrawArrays(GL_TRIANGLE_FAN, 0, 4));
-        GL_CALL(glEnable(GL_BLEND));
-        GL_CALL(glBindTexture(GL_TEXTURE_2D, 0));
-
-        program.deactivate();
-        OpenGL::render_end();
+            program.deactivate();
+        });
     }
 
     void fini() override
@@ -138,9 +144,10 @@ class wayfire_invert_screen : public wf::per_output_plugin_instance_t
             output->render->rem_post(&hook);
         }
 
-        OpenGL::render_begin();
-        program.free_resources();
-        OpenGL::render_end();
+        wf::gles::run_in_context_if_gles([&]
+        {
+            program.free_resources();
+        });
 
         output->rem_binding(&toggle_cb);
     }

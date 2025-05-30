@@ -181,21 +181,20 @@ class fire_render_instance_t : public wf::scene::render_instance_t
         }
     }
 
-    void render(const wf::render_target_t& target_fb,
-        const wf::region_t& region) override
+    void render(const wf::scene::render_instruction_t& data) override
     {
-        OpenGL::render_begin(target_fb);
         auto bbox = self->get_children_bounding_box();
         auto translate =
             glm::translate(glm::mat4(1.0), {bbox.x, bbox.y, 0});
 
-        for (auto& box : region)
+        data.pass->custom_gles_subpass(data.target, [&]
         {
-            target_fb.logic_scissor(wlr_box_from_pixman_box(box));
-            self->ps->render(target_fb.get_orthographic_projection() * translate);
-        }
-
-        OpenGL::render_end();
+            for (auto box : data.damage)
+            {
+                wf::gles::render_target_logic_scissor(data.target, wlr_box_from_pixman_box(box));
+                self->ps->render(wf::gles::render_target_orthographic_projection(data.target) * translate);
+            }
+        });
     }
 
     void presentation_feedback(wf::output_t *output) override

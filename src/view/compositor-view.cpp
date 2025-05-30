@@ -1,8 +1,6 @@
-#include "view/view-impl.hpp"
 #include "wayfire/geometry.hpp"
 #include "wayfire/scene-render.hpp"
 #include "wayfire/scene-operations.hpp"
-#include "wayfire/workspace-set.hpp"
 #include "wayfire/scene.hpp"
 #include "wayfire/view.hpp"
 #include <wayfire/core.hpp>
@@ -11,16 +9,18 @@
 #include <wayfire/compositor-view.hpp>
 #include <wayfire/view-helpers.hpp>
 #include <wayfire/signal-definitions.hpp>
-#include <cstring>
+#include <wayfire/workspace-set.hpp>
 
 #include <glm/gtc/matrix_transform.hpp>
 #include <wayfire/signal-provider.hpp>
 
-static void render_colored_rect(const wf::render_target_t& fb,
+static void render_colored_rect(const wf::scene::render_instruction_t& data,
     int x, int y, int w, int h, const wf::color_t& color)
 {
     wf::color_t premultiply{color.r * color.a, color.g * color.a, color.b * color.a, color.a};
-    OpenGL::render_rectangle({x, y, w, h}, premultiply, fb.get_orthographic_projection());
+    w = std::max(w, 0);
+    h = std::max(h, 0);
+    data.pass->add_rect(premultiply, data.target, wf::geometry_t{x, y, w, h}, data.damage);
 }
 
 class wf::color_rect_view_t::color_rect_node_t : public wf::scene::floating_inner_node_t
@@ -29,7 +29,7 @@ class wf::color_rect_view_t::color_rect_node_t : public wf::scene::floating_inne
     {
       public:
         using simple_render_instance_t::simple_render_instance_t;
-        void render(const wf::render_target_t& target, const wf::region_t& region) override
+        void render(const wf::scene::render_instruction_t& data) override
         {
             auto view = self->_view.lock();
             if (!view)
@@ -42,32 +42,24 @@ class wf::color_rect_view_t::color_rect_node_t : public wf::scene::floating_inne
             auto _border_color = view->_border_color;
             auto _color = view->_color;
 
-            OpenGL::render_begin(target);
-            for (const auto& box : region)
-            {
-                target.logic_scissor(wlr_box_from_pixman_box(box));
+            /* Draw the border, making sure border parts don't overlap, otherwise
+             * we will get wrong corners if border has alpha != 1.0 */
+            // top
+            render_colored_rect(data, geometry.x, geometry.y, geometry.width, border,
+                _border_color);
+            // bottom
+            render_colored_rect(data, geometry.x, geometry.y + geometry.height - border,
+                geometry.width, border, _border_color);
+            // left
+            render_colored_rect(data, geometry.x, geometry.y + border, border,
+                geometry.height - 2 * border, _border_color);
+            // right
+            render_colored_rect(data, geometry.x + geometry.width - border,
+                geometry.y + border, border, geometry.height - 2 * border, _border_color);
 
-                /* Draw the border, making sure border parts don't overlap, otherwise
-                 * we will get wrong corners if border has alpha != 1.0 */
-                // top
-                render_colored_rect(target, geometry.x, geometry.y, geometry.width, border,
-                    _border_color);
-                // bottom
-                render_colored_rect(target, geometry.x, geometry.y + geometry.height - border,
-                    geometry.width, border, _border_color);
-                // left
-                render_colored_rect(target, geometry.x, geometry.y + border, border,
-                    geometry.height - 2 * border, _border_color);
-                // right
-                render_colored_rect(target, geometry.x + geometry.width - border,
-                    geometry.y + border, border, geometry.height - 2 * border, _border_color);
-
-                /* Draw the inside of the rect */
-                render_colored_rect(target, geometry.x + border, geometry.y + border,
-                    geometry.width - 2 * border, geometry.height - 2 * border, _color);
-            }
-
-            OpenGL::render_end();
+            /* Draw the inside of the rect */
+            render_colored_rect(data, geometry.x + border, geometry.y + border,
+                geometry.width - 2 * border, geometry.height - 2 * border, _color);
         }
     };
 

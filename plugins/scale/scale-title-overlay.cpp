@@ -14,7 +14,6 @@
 #include <wayfire/opengl.hpp>
 #include <wayfire/util/log.hpp>
 #include <wayfire/plugins/common/cairo-util.hpp>
-#include <wayfire/plugins/common/simple-texture.hpp>
 #include <wayfire/scene.hpp>
 #include <wayfire/scene-render.hpp>
 
@@ -42,16 +41,13 @@ struct view_title_texture_t : public wf::custom_data_t
     void update_overlay_texture()
     {
         auto res = overlay.render_text(view->get_title(), par);
-        overflow = res.width > overlay.tex.width;
+        overflow = res.width > overlay.get_size().width;
     }
 
     wf::signal::connection_t<wf::view_title_changed_signal> view_changed_title =
         [=] (wf::view_title_changed_signal *ev)
     {
-        if (overlay.tex.tex != (GLuint) - 1)
-        {
-            update_overlay_texture();
-        }
+        update_overlay_texture();
     };
 
     view_title_texture_t(wayfire_toplevel_view v, int font_size, const wf::color_t& bg_color,
@@ -202,18 +198,18 @@ class title_overlay_node_t : public node_t
          * animated and maybe redraw less frequently
          */
         auto& tex = get_overlay_texture(find_topmost_parent(view));
-        if ((tex.overlay.tex.tex == (GLuint) - 1) ||
+        if ((tex.overlay.get_texture().texture == nullptr) ||
             (output_scale != tex.par.output_scale) ||
-            (tex.overlay.tex.width > box.width * output_scale) ||
+            (tex.overlay.get_size().width > box.width * output_scale) ||
             (tex.overflow &&
-             (tex.overlay.tex.width < std::floor(box.width * output_scale))))
+             (tex.overlay.get_size().width < std::floor(box.width * output_scale))))
         {
             tex.par.output_scale = output_scale;
             tex.update_overlay_texture({box.width, box.height});
         }
 
-        geometry.width  = tex.overlay.tex.width / output_scale;
-        geometry.height = tex.overlay.tex.height / output_scale;
+        geometry.width  = tex.overlay.get_size().width / output_scale;
+        geometry.height = tex.overlay.get_size().height / output_scale;
 
         auto bbox = get_scaled_bbox(view);
         geometry.x = bbox.x + bbox.width / 2 - geometry.width / 2;
@@ -244,10 +240,10 @@ class title_overlay_node_t : public node_t
         auto parent = find_topmost_parent(view);
         auto& title = get_overlay_texture(parent);
 
-        if (title.overlay.tex.tex != (GLuint) - 1)
+        if (title.overlay.get_texture().texture != nullptr)
         {
             text_height = (unsigned int)std::ceil(
-                title.overlay.tex.height / title.par.output_scale);
+                title.overlay.get_size().height / title.par.output_scale);
         } else
         {
             text_height =
@@ -305,9 +301,8 @@ class title_overlay_render_instance_t : public render_instance_t
         self->connect(&on_node_damaged);
     }
 
-    void schedule_instructions(
-        std::vector<render_instruction_t>& instructions,
-        const wf::render_target_t& target, wf::region_t& damage)
+    void schedule_instructions(std::vector<render_instruction_t>& instructions,
+        const wf::render_target_t& target, wf::region_t& damage) override
     {
         if (!self->overlay_shown || !self->view->has_data<view_title_texture_t>())
         {
@@ -322,31 +317,21 @@ class title_overlay_render_instance_t : public render_instance_t
                 });
     }
 
-    void render(const wf::render_target_t& target,
-        const wf::region_t& region)
+    void render(const wf::scene::render_instruction_t& data) override
     {
         auto& title = *self->view->get_data<view_title_texture_t>();
         auto tr     = self->view->get_transformed_node()
             ->get_transformer<wf::scene::view_2d_transformer_t>("scale");
 
-        GLuint tex = title.overlay.tex.tex;
-
-        if (tex == (GLuint) - 1)
+        if (!title.overlay.get_texture().texture)
         {
             /* this should not happen */
             return;
         }
 
-        auto ortho = target.get_orthographic_projection();
-        OpenGL::render_begin(target);
-        for (const auto& box : region)
-        {
-            target.logic_scissor(wlr_box_from_pixman_box(box));
-            OpenGL::render_transformed_texture(tex, self->geometry, ortho,
-                {1.0f, 1.0f, 1.0f, tr->alpha}, OpenGL::TEXTURE_TRANSFORM_INVERT_Y);
-        }
+        data.pass->add_texture(title.overlay.get_texture(), data.target, self->geometry, data.damage,
+            tr->alpha);
 
-        OpenGL::render_end();
         self->idle_update_title.run_once();
     }
 };

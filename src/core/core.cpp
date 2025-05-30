@@ -76,6 +76,20 @@ struct wlr_idle_inhibitor_t : public wf::idle_inhibitor_t
     }
 };
 
+bool wf::compositor_core_t::is_gles2() const
+{
+    return wlr_renderer_is_gles2(renderer);
+}
+
+bool wf::compositor_core_t::is_vulkan() const
+{
+#if WLR_HAS_VULKAN_RENDERER
+    return wlr_renderer_is_vk(renderer);
+#else
+    return false;
+#endif
+}
+
 void wf::compositor_core_impl_t::init()
 {
     this->scene_root = std::make_shared<scene::root_node_t>();
@@ -135,7 +149,7 @@ void wf::compositor_core_impl_t::init()
         drm_lease_request.connect(&protocols.drm_v1->events.request);
     } else
     {
-        LOGE("Failed to create wlr_drm_lease_device_v1; VR will not be available!");
+        LOGI("Not using wlr_drm_lease_device_v1; VR will not be available!");
     }
 
     /* idle-inhibit setup */
@@ -207,8 +221,40 @@ void wf::compositor_core_impl_t::init()
 
     this->bindings = std::make_unique<bindings_repository_t>();
     image_io::init();
-    OpenGL::init();
+    if (is_gles2())
+    {
+        OpenGL::init();
+    }
+
+    increase_nofile_limit();
+
     this->state = compositor_state_t::START_BACKEND;
+}
+
+void wf::compositor_core_impl_t::increase_nofile_limit()
+{
+    if (getrlimit(RLIMIT_NOFILE, &user_maxfiles) != 0)
+    {
+        LOGE("Failed to getrlimit(RLIMIT_NOFILE), not increasing maximum open file descriptors. Might cause"
+             " crashes with many open views.");
+    } else
+    {
+        struct rlimit max_files = user_maxfiles;
+        max_files.rlim_cur = user_maxfiles.rlim_max;
+        if (setrlimit(RLIMIT_NOFILE, &max_files) != 0)
+        {
+            LOGE("Failed to setrlimit(RLIMIT_NOFILE), not increasing maximum open file descriptors. Might "
+                 "cause crashes with many open views.");
+        }
+    }
+}
+
+void wf::compositor_core_impl_t::restore_nofile_limit()
+{
+    if (setrlimit(RLIMIT_NOFILE, &user_maxfiles) != 0)
+    {
+        LOGE("Failed to setrlimit(RLIMIT_NOFILE), could not restore maximum open file descriptors.");
+    }
 }
 
 void wf::compositor_core_impl_t::post_init()
@@ -447,6 +493,7 @@ pid_t wf::compositor_core_impl_t::run(std::string command)
     pid_t pid = fork();
     if (!pid)
     {
+        restore_nofile_limit();
         pid = fork();
         if (!pid)
         {

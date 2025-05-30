@@ -44,13 +44,16 @@ class simple_decoration_node_t : public wf::scene::node_t, public wf::pointer_in
     {
         if (auto view = _view.lock())
         {
-            int target_width  = width * scale;
-            int target_height = height * scale;
-            if ((title_texture.tex.width != target_width) || (title_texture.tex.height != target_height) ||
+            wf::dimensions_t target_size = {
+                static_cast<int32_t>(width * scale),
+                static_cast<int32_t>(height * scale)
+            };
+
+            if ((title_texture.tex.get_size() != target_size) ||
                 (title_texture.current_text != view->get_title()))
             {
-                auto surface = theme.render_text(view->get_title(), target_width, target_height);
-                cairo_surface_upload_to_texture(surface, title_texture.tex);
+                auto surface = theme.render_text(view->get_title(), target_size.width, target_size.height);
+                title_texture.tex = wf::owned_texture_t{surface};
                 cairo_surface_destroy(surface);
                 title_texture.current_text = view->get_title();
             }
@@ -59,7 +62,7 @@ class simple_decoration_node_t : public wf::scene::node_t, public wf::pointer_in
 
     struct
     {
-        wf::simple_texture_t tex;
+        wf::owned_texture_t tex;
         std::string current_text = "";
     } title_texture;
 
@@ -99,17 +102,9 @@ class simple_decoration_node_t : public wf::scene::node_t, public wf::pointer_in
         return {-current_thickness, -current_titlebar};
     }
 
-    void render_title(const wf::render_target_t& fb,
-        wf::geometry_t geometry)
+    void render(const wf::scene::render_instruction_t& data)
     {
-        update_title(geometry.width, geometry.height, fb.scale);
-        OpenGL::render_texture(title_texture.tex.tex, fb, geometry,
-            glm::vec4(1.0f), OpenGL::TEXTURE_TRANSFORM_INVERT_Y);
-    }
-
-    void render_scissor_box(const wf::render_target_t& fb, wf::point_t origin,
-        const wlr_box& scissor)
-    {
+        auto origin = get_offset();
         /* Clear background */
         wlr_box geometry{origin.x, origin.y, size.width, size.height};
 
@@ -119,7 +114,7 @@ class simple_decoration_node_t : public wf::scene::node_t, public wf::pointer_in
             activated = view->activated;
         }
 
-        theme.render_background(fb, geometry, scissor, activated);
+        theme.render_background(data, geometry, activated);
 
         /* Draw title & buttons */
         auto renderables = layout.get_renderable_areas();
@@ -127,14 +122,16 @@ class simple_decoration_node_t : public wf::scene::node_t, public wf::pointer_in
         {
             if (item->get_type() == wf::decor::DECORATION_AREA_TITLE)
             {
-                OpenGL::render_begin(fb);
-                fb.logic_scissor(scissor);
-                render_title(fb, item->get_geometry() + origin);
-                OpenGL::render_end();
+                wf::geometry_t title_geometry = item->get_geometry() + origin;
+                update_title(title_geometry.width, title_geometry.height, data.target.scale);
+                if (title_texture.tex.get_texture().texture != NULL)
+                {
+                    data.pass->add_texture(title_texture.tex.get_texture(), data.target,
+                        title_geometry, data.damage);
+                }
             } else // button
             {
-                item->as_button().render(fb,
-                    item->get_geometry() + origin, scissor);
+                item->as_button().render(data, item->get_geometry() + origin);
             }
         }
     }
@@ -200,13 +197,9 @@ class simple_decoration_node_t : public wf::scene::node_t, public wf::pointer_in
             }
         }
 
-        void render(const wf::render_target_t& target,
-            const wf::region_t& region) override
+        void render(const wf::scene::render_instruction_t& data) override
         {
-            for (const auto& box : region)
-            {
-                self->render_scissor_box(target, self->get_offset(), wlr_box_from_pixman_box(box));
-            }
+            self->render(data);
         }
     };
 

@@ -72,12 +72,13 @@ class wf_gaussian_blur : public wf_blur_base
   public:
     wf_gaussian_blur() : wf_blur_base("gaussian")
     {
-        OpenGL::render_begin();
-        program[0].set_simple(OpenGL::compile_program(
-            gaussian_vertex_shader, gaussian_fragment_shader_horz));
-        program[1].set_simple(OpenGL::compile_program(
-            gaussian_vertex_shader, gaussian_fragment_shader_vert));
-        OpenGL::render_end();
+        wf::gles::run_in_context_if_gles([&]
+        {
+            program[0].set_simple(OpenGL::compile_program(
+                gaussian_vertex_shader, gaussian_fragment_shader_horz));
+            program[1].set_simple(OpenGL::compile_program(
+                gaussian_vertex_shader, gaussian_fragment_shader_vert));
+        });
     }
 
     void upload_data(int i, int width, int height)
@@ -106,30 +107,31 @@ class wf_gaussian_blur : public wf_blur_base
     {
         int i, iterations = iterations_opt;
 
-        OpenGL::render_begin();
-        GL_CALL(glDisable(GL_BLEND));
-        /* Enable our shader and pass some data to it. The shader
-         * does gaussian blur on the background texture in two passes,
-         * one horizontal and one vertical */
-        upload_data(0, width, height);
-        upload_data(1, width, height);
-
-        for (i = 0; i < iterations; i++)
+        wf::gles::run_in_context_if_gles([&]
         {
-            /* Blur horizontally */
-            blur(blur_region, 0, width, height);
+            GL_CALL(glDisable(GL_BLEND));
+            /* Enable our shader and pass some data to it. The shader
+             * does gaussian blur on the background texture in two passes,
+             * one horizontal and one vertical */
+            upload_data(0, width, height);
+            upload_data(1, width, height);
 
-            /* Blur vertically */
-            blur(blur_region, 1, width, height);
-        }
+            for (i = 0; i < iterations; i++)
+            {
+                /* Blur horizontally */
+                blur(blur_region, 0, width, height);
 
-        /* Reset gl state */
-        GL_CALL(glEnable(GL_BLEND));
-        GL_CALL(glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA));
+                /* Blur vertically */
+                blur(blur_region, 1, width, height);
+            }
 
-        GL_CALL(glBindTexture(GL_TEXTURE_2D, 0));
-        program[1].deactivate();
-        OpenGL::render_end();
+            /* Reset gl state */
+            GL_CALL(glEnable(GL_BLEND));
+            GL_CALL(glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA));
+
+            GL_CALL(glBindTexture(GL_TEXTURE_2D, 0));
+            program[1].deactivate();
+        });
 
         return 0;
     }

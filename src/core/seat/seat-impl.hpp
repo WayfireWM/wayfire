@@ -1,5 +1,6 @@
 #pragma once
 
+#include <wayfire/config/section.hpp>
 #include <wayfire/signal-definitions.hpp>
 #include <wayfire/nonstd/wlroots-full.hpp>
 #include <wayfire/seat.hpp>
@@ -30,11 +31,22 @@ class input_device_impl_t : public wf::input_device_t
 
     bool is_im_keyboard = false;
 
+    virtual void reconfigure_device(std::shared_ptr<wf::config::section_t> device_section)
+    {}
+
     /**
-     * Calibrate a touch device with a matrix. This function does nothing
-     * if called with a device that is not a touch device.
+     * Map the device to the output configured in the config file.
      */
-    void calibrate_touch_device(const std::string& calibration_matrix);
+    void map_to_output(std::shared_ptr<wf::config::section_t> device_section);
+};
+
+struct touchscreen_device_t : public input_device_impl_t
+{
+    using input_device_impl_t::input_device_impl_t;
+    void reconfigure_device(std::shared_ptr<wf::config::section_t> device_section) override;
+
+  private:
+    void calibrate(std::shared_ptr<wf::config::section_t> device_section);
 };
 
 class pointer_t;

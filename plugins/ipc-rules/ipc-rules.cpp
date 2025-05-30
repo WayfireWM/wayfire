@@ -10,6 +10,7 @@
 #include "wayfire/plugins/common/shared-core-data.hpp"
 #include "wayfire/window-manager.hpp"
 #include <wayfire/debug.hpp>
+#include <wayfire/signal-definitions.hpp>
 
 #include "ipc-rules-common.hpp"
 #include "ipc-input-methods.hpp"

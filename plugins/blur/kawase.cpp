@@ -62,12 +62,13 @@ class wf_kawase_blur : public wf_blur_base
   public:
     wf_kawase_blur() : wf_blur_base("kawase")
     {
-        OpenGL::render_begin();
-        program[0].set_simple(OpenGL::compile_program(kawase_vertex_shader,
-            kawase_fragment_shader_down));
-        program[1].set_simple(OpenGL::compile_program(kawase_vertex_shader,
-            kawase_fragment_shader_up));
-        OpenGL::render_end();
+        wf::gles::run_in_context_if_gles([&]
+        {
+            program[0].set_simple(OpenGL::compile_program(kawase_vertex_shader,
+                kawase_fragment_shader_down));
+            program[1].set_simple(OpenGL::compile_program(kawase_vertex_shader,
+                kawase_fragment_shader_up));
+        });
     }
 
     int blur_fb0(const wf::region_t& blur_region, int width, int height) override
@@ -84,7 +85,6 @@ class wf_kawase_blur : public wf_blur_base
             -1.0f, 1.0f
         };
 
-        OpenGL::render_begin();
         program[0].use(wf::TEXTURE_TYPE_RGBA);
 
         /* Downsample */
@@ -132,8 +132,6 @@ class wf_kawase_blur : public wf_blur_base
 
         program[1].deactivate();
         GL_CALL(glBindTexture(GL_TEXTURE_2D, 0));
-        OpenGL::render_end();
-
         return 0;
     }
 

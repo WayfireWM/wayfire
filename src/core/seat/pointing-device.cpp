@@ -221,3 +221,8 @@ double wf::pointing_device_t::get_scroll_speed(wlr_input_device *dev, bool touch
 
     return touchpad ? touchpad_scroll_speed : mouse_scroll_speed;
 }
+
+void wf::pointing_device_t::reconfigure_device(std::shared_ptr<wf::config::section_t> device_section)
+{
+    map_to_output(device_section);
+}

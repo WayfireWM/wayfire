@@ -182,17 +182,54 @@ wf::geometry_t wf::construct_box(
 wf::geometry_t wf::scale_box(
     wf::geometry_t A, wf::geometry_t B, wf::geometry_t box)
 {
-    // Figure out damage relative to the viewport
-    double px  = 1.0 * (box.x - A.x) / A.width;
-    double py  = 1.0 * (box.y - A.y) / A.height;
-    double px2 = 1.0 * (box.x + box.width - A.x) / A.width;
-    double py2 = 1.0 * (box.y + box.height - A.y) / A.height;
+    wlr_fbox scaled_fbox = scale_fbox(geometry_to_fbox(A), geometry_to_fbox(B), geometry_to_fbox(box));
+    int x  = (int)std::floor(scaled_fbox.x);
+    int y  = (int)std::floor(scaled_fbox.y);
+    int x2 = (int)std::ceil(scaled_fbox.x + scaled_fbox.width);
+    int y2 = (int)std::floor(scaled_fbox.y + scaled_fbox.height);
 
-    int x = int(std::floor(B.x + B.width * px));
-    int y = int(std::floor(B.y + B.height * py));
+    return wf::geometry_t{
+        .x     = x,
+        .y     = y,
+        .width = x2 - x,
+        .height = y2 - y,
+    };
+}
 
-    int x2 = int(std::ceil(B.x + B.width * px2));
-    int y2 = int(std::floor(B.y + B.height * py2));
+wlr_fbox wf::scale_fbox(wlr_fbox A, wlr_fbox B, wlr_fbox box)
+{
+    double scale_x = B.width / A.width;
+    double scale_y = B.height / A.height;
+
+    double x     = B.x + scale_x * (box.x - A.x);
+    double y     = B.y + scale_y * (box.y - A.y);
+    double width = scale_x * box.width;
+    double height = scale_y * box.height;
+
+    return wlr_fbox{
+        .x     = x,
+        .y     = y,
+        .width = width,
+        .height = height,
+    };
+}
+
+wlr_fbox wf::geometry_to_fbox(const geometry_t& geometry)
+{
+    return wlr_fbox{
+        .x     = (double)geometry.x,
+        .y     = (double)geometry.y,
+        .width = (double)geometry.width,
+        .height = (double)geometry.height,
+    };
+}
+
+wf::geometry_t wf::fbox_to_geometry(const wlr_fbox& fbox)
+{
+    int x  = (int)std::floor(fbox.x);
+    int y  = (int)std::floor(fbox.y);
+    int x2 = (int)std::ceil(fbox.x + fbox.width);
+    int y2 = (int)std::ceil(fbox.y + fbox.height);
 
     return wf::geometry_t{
         .x     = x,

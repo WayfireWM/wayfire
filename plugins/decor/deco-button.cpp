@@ -63,15 +63,9 @@ void button_t::set_pressed(bool is_pressed)
     add_idle_damage();
 }
 
-void button_t::render(const wf::render_target_t& fb, wf::geometry_t geometry,
-    wf::geometry_t scissor)
+void button_t::render(const scene::render_instruction_t& data, wf::geometry_t geometry)
 {
-    OpenGL::render_begin(fb);
-    fb.logic_scissor(scissor);
-    OpenGL::render_texture(button_texture.tex, fb, geometry, {1, 1, 1, 1},
-        OpenGL::TEXTURE_TRANSFORM_INVERT_Y);
-    OpenGL::render_end();
-
+    data.pass->add_texture(button_texture.get_texture(), data.target, geometry, data.damage);
     if (this->hover.running())
     {
         add_idle_damage();
@@ -94,9 +88,7 @@ void button_t::update_texture()
     };
 
     auto surface = theme.get_button_surface(type, state);
-    OpenGL::render_begin();
-    cairo_surface_upload_to_texture(surface, this->button_texture);
-    OpenGL::render_end();
+    this->button_texture = owned_texture_t{surface};
     cairo_surface_destroy(surface);
 }
 
@@ -108,5 +100,8 @@ void button_t::add_idle_damage()
         update_texture();
     });
 }
-}
+
+button_t::~button_t()
+{}
+} // namespace decor
 }

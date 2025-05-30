@@ -1,7 +1,7 @@
+#include "wayfire/nonstd/wlroots-full.hpp"
 #include <wayfire/idle.hpp>
 #include <wayfire/util/log.hpp>
-#include "core/seat/input-manager.hpp"
-#include "core-impl.hpp"
+#include <wayfire/signal-definitions.hpp>
 
 unsigned int wf::idle_inhibitor_t::inhibitors = 0;
 
