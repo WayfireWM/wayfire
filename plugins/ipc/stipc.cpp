@@ -112,7 +112,7 @@ class headless_input_backend_t
         wl_signal_emit_mutable(&backend->events.new_input, &tablet.base);
         wl_signal_emit_mutable(&backend->events.new_input, &tablet_pad.base);
 
-        if (core.get_current_state() == compositor_state_t::RUNNING)
+        if (core.get_current_state() >= compositor_state_t::RUNNING)
         {
             wlr_backend_start(backend);
         }

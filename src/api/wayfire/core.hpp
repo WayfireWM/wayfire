@@ -63,10 +63,13 @@ enum class compositor_state_t
     /**
      * The compositor core has finished initializing.
      * Now the wlroots backends are being started, which results in
-     * adding of new input and output devices, as well as starting the
-     * plugins on each output.
+     * adding of new input and output devices.
      */
     START_BACKEND,
+    /**
+     * Both core and wlroots have finished initialization. Now plugins are being started.
+     */
+    START_PLUGINS,
     /**
      * The compositor has loaded the initial devices and plugins and is
      * running the main loop.

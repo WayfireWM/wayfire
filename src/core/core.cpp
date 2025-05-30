@@ -263,7 +263,7 @@ void wf::compositor_core_impl_t::post_init()
 
     core_backend_started_signal backend_started_ev;
     this->emit(&backend_started_ev);
-    this->state = compositor_state_t::RUNNING;
+    this->state = compositor_state_t::START_PLUGINS;
     plugin_mgr  = std::make_unique<wf::plugin_manager_t>();
     this->bindings->reparse_extensions();
 
@@ -279,12 +279,21 @@ void wf::compositor_core_impl_t::post_init()
 
     // Start processing cursor events
     seat->priv->cursor->setup_listeners();
+    this->state = compositor_state_t::RUNNING;
     core_startup_finished_signal startup_ev;
     this->emit(&startup_ev);
 }
 
 void wf::compositor_core_impl_t::shutdown()
 {
+    if (this->state < compositor_state_t::RUNNING)
+    {
+        // During initialization, shut down is a bit more complicated. We can deallocate core, but since we
+        // have not started the event loop, we can exit immediately.
+        deallocate_core();
+        std::exit(0);
+    }
+
     // We might get multiple signals in some scenarios. Shutdown only on the first instance.
     if (this->state != compositor_state_t::SHUTDOWN)
     {
@@ -313,12 +322,15 @@ void wf::compositor_core_impl_t::fini()
 
     LOGI("Unloading plugins...");
     plugin_mgr.reset();
+    _clear_data();
+
     // Shut down xwayland first, otherwise, wlroots will attempt to restart it when we kill it via
     // wl_display_destroy_clients().
     wf::fini_xwayland();
     LOGI("Stopping clients...");
     wl_display_destroy_clients(static_core->display);
     LOGI("Freeing resources...");
+    priv_output_layout_fini(output_layout.get());
     default_wm.reset();
     bindings.reset();
     scene_root.reset();
@@ -327,7 +339,6 @@ void wf::compositor_core_impl_t::fini()
     im_relay.reset();
     seat.reset();
     input.reset();
-    priv_output_layout_fini(output_layout.get());
     output_layout.reset();
     tx_manager.reset();
     OpenGL::fini();
