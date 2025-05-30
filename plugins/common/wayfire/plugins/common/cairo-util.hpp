@@ -95,7 +95,7 @@ struct owned_texture_t
         switch (fmt)
         {
           case CAIRO_FORMAT_ARGB32:
-            drm_fmt = WL_SHM_FORMAT_ABGR8888;
+            drm_fmt = DRM_FORMAT_ABGR8888;
             break;
 
           default:
