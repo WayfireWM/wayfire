@@ -1,4 +1,5 @@
 #include "drm_fourcc.h"
+#include "wayfire/img.hpp"
 #include <wayfire/nonstd/wlroots-full.hpp>
 #include <wayfire/per-output-plugin.hpp>
 #include <wayfire/plugin.hpp>
@@ -17,12 +18,9 @@ class wayfire_test_plugin : public wf::per_output_plugin_instance_t
     static constexpr int buffer_size = 512;
 
     // OpenGL program and locations
-    GLuint program_id   = 0;
-    GLint transform_loc = -1;
-    GLint color_loc     = -1;
-    GLint tex_loc = -1;
+    GLuint program_id = 0;
+    GLint tex_loc     = -1;
     GLint position_loc = -1;
-    GLint texcoord_loc = -1;
 
     // Helper function to create an OpenGL program
     GLuint create_opengl_program()
@@ -31,13 +29,11 @@ class wayfire_test_plugin : public wf::per_output_plugin_instance_t
             R"(
             #version 300 es
             layout (location = 0) in vec2 position;
-            layout (location = 1) in vec2 texcoord;
-            uniform mat4 transform;
             out vec2 v_texcoord;
             void main()
             {
-                gl_Position = transform * vec4(position, 0.0, 1.0);
-                v_texcoord = texcoord;
+                gl_Position = vec4(position, 0.0, 1.0);
+                v_texcoord = (position + 1.0) / 2.0;
             }
         )";
 
@@ -47,11 +43,10 @@ class wayfire_test_plugin : public wf::per_output_plugin_instance_t
             precision mediump float;
             in vec2 v_texcoord;
             uniform sampler2D tex;
-            uniform vec4 color;
             out vec4 out_color;
             void main()
             {
-                out_color = color * texture(tex, v_texcoord);
+                out_color = texture(tex, v_texcoord);
             }
         )";
 
@@ -69,14 +64,15 @@ class wayfire_test_plugin : public wf::per_output_plugin_instance_t
         }
 
         // Get uniform and attribute locations
-        transform_loc = GL_CALL(glGetUniformLocation(program_id, "transform"));
-        color_loc     = GL_CALL(glGetUniformLocation(program_id, "color"));
         tex_loc = GL_CALL(glGetUniformLocation(program_id, "tex"));
         position_loc = GL_CALL(glGetAttribLocation(program_id, "position"));
-        texcoord_loc = GL_CALL(glGetAttribLocation(program_id, "texcoord"));
 
-        benchmark_render_to_buffer();
-        benchmark_render_to_buffer_opengl();
+        for (int i = 0; i < 2; i++)
+        {
+            benchmark_render_to_buffer();
+            benchmark_render_to_buffer_opengl();
+        }
+
         wf::get_core().shutdown();
     }
 
@@ -134,28 +130,20 @@ class wayfire_test_plugin : public wf::per_output_plugin_instance_t
         }
 
         auto tex = wf::gles_texture_t{random_texture};
-        glm::mat4 transform = glm::ortho(0.0f, (float)buffer_size, (float)buffer_size, 0.0f); // Orthographic
-        glm::vec4 color     = {1.0, 1.0, 1.0, 1.0}; // White color
-        auto start_time     = std::chrono::high_resolution_clock::now();
+        auto start_time = std::chrono::high_resolution_clock::now();
 
         wf::gles::run_in_context([&]
         {
-            // Vertex data for a quad
-            float vertices[] = {
-                // positions // texture coords
-                0.0f, (float)buffer_size, 0.0f, 0.0f, // bottom-left
-                (float)buffer_size, (float)buffer_size, 1.0f, 0.0f, // bottom-right
-                0.0f, 0.0f, 0.0f, 1.0f, // top-left
+            // Vertex data for a fullscreen quad in NDC
+            float positions[] = {
+                -1.0f, -1.0f, // bottom-left
+                1.0f, -1.0f, // bottom-right
+                -1.0f, 1.0f, // top-left
 
-                (float)buffer_size, (float)buffer_size, 1.0f, 0.0f, // bottom-right
-                (float)buffer_size, 0.0f, 1.0f, 1.0f, // top-right
-                0.0f, 0.0f, 0.0f, 1.0f // top-left
+                1.0f, -1.0f, // bottom-right
+                1.0f, 1.0f, // top-right
+                -1.0f, 1.0f // top-left
             };
-
-            GLuint VBO;
-            GL_CALL(glGenBuffers(1, &VBO));
-            GL_CALL(glBindBuffer(GL_ARRAY_BUFFER, VBO));
-            GL_CALL(glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW));
 
             for (int i = 0; i < 100000; ++i)
             {
@@ -166,34 +154,31 @@ class wayfire_test_plugin : public wf::per_output_plugin_instance_t
                 GL_CALL(glUseProgram(program_id));
 
                 // Set uniform values
-                GL_CALL(glUniformMatrix4fv(transform_loc, 1, GL_FALSE, glm::value_ptr(transform)));
-                GL_CALL(glUniform4fv(color_loc, 1, glm::value_ptr(color)));
                 GL_CALL(glActiveTexture(GL_TEXTURE0));
                 GL_CALL(glBindTexture(GL_TEXTURE_2D, tex.tex_id));
+                GL_CALL(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE));
+                GL_CALL(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE));
+                GL_CALL(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR));
+                GL_CALL(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR));
                 GL_CALL(glUniform1i(tex_loc, 0));
 
                 // Set attribute pointers
                 GL_CALL(glEnableVertexAttribArray(position_loc));
-                GL_CALL(glVertexAttribPointer(position_loc, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float),
-                    (void*)0));
-                GL_CALL(glEnableVertexAttribArray(texcoord_loc));
-                GL_CALL(glVertexAttribPointer(texcoord_loc, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float),
-                    (void*)(2 * sizeof(float))));
+                GL_CALL(glVertexAttribPointer(position_loc, 2, GL_FLOAT, GL_FALSE, 0, positions));
 
                 // Draw the quad
                 GL_CALL(glDrawArrays(GL_TRIANGLES, 0, 6));
 
                 // Unbind
                 GL_CALL(glDisableVertexAttribArray(position_loc));
-                GL_CALL(glDisableVertexAttribArray(texcoord_loc));
                 GL_CALL(glBindTexture(GL_TEXTURE_2D, 0));
                 GL_CALL(glUseProgram(0));
                 GL_CALL(glBindFramebuffer(GL_FRAMEBUFFER, 0)); // Unbind the FBO
             }
 
-            // Delete the VBO
-            GL_CALL(glDeleteBuffers(1, &VBO));
             GL_CALL(glFinish());
+
+            image_io::write_to_file("/tmp/result" + name + ".png", fb_id, buffer_size, buffer_size);
         });
 
         auto end_time = std::chrono::high_resolution_clock::now();
