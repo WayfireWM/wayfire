@@ -409,6 +409,26 @@ void write_to_file(std::string name, uint8_t *pixels, int w, int h, std::string 
     }
 }
 
+void write_to_file(std::string name, GLuint target, int width, int height)
+{
+    if (!wf::get_core().is_gles2())
+    {
+        // TODO: we can convert the fb to a texture and use wlr_texture_read_pixels
+        LOGE("Write to file not implemented for vk/pixman yet!");
+        return;
+    }
+
+    std::vector<char> buffer(width * height * 4);
+
+    wf::gles::run_in_context([&]
+    {
+        GL_CALL(glBindFramebuffer(GL_READ_FRAMEBUFFER, target));
+        GL_CALL(glReadPixels(0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, buffer.data()));
+    });
+
+    write_to_file(name, (uint8_t*)buffer.data(), width, height, "png", false);
+}
+
 void write_to_file(std::string name, const wf::render_buffer_t& fb)
 {
     if (!wf::get_core().is_gles2())
@@ -418,18 +438,8 @@ void write_to_file(std::string name, const wf::render_buffer_t& fb)
         return;
     }
 
-    std::vector<char> buffer(fb.get_size().width * fb.get_size().height * 4);
-
-    wf::gles::run_in_context_if_gles([&]
-    {
-        GLuint fb_id = wf::gles::ensure_render_buffer_fb_id(fb);
-        GL_CALL(glBindFramebuffer(GL_READ_FRAMEBUFFER, fb_id));
-        GL_CALL(glReadPixels(0, 0, fb.get_size().width, fb.get_size().height,
-            GL_RGBA, GL_UNSIGNED_BYTE, buffer.data()));
-    });
-
-    write_to_file(name, (uint8_t*)buffer.data(),
-        fb.get_size().width, fb.get_size().height, "png", false);
+    GLuint fb_id = wf::gles::ensure_render_buffer_fb_id(fb);
+    write_to_file(name, fb_id, fb.get_size().width, fb.get_size().height);
 }
 
 void init()
