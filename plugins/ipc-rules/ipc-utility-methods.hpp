@@ -32,6 +32,7 @@ class ipc_rules_utility_methods_t
         method_repository->register_method("wayfire/get-config-option", get_config_option);
         method_repository->register_method("wayfire/set-config-options", set_config_options);
         method_repository->register_method("wayfire/get-keyboard-state", get_kb_state);
+        method_repository->register_method("wayfire/set-keyboard-state", set_kb_state);
     }
 
     void fini_utility_methods(ipc::method_repository_t *method_repository)
@@ -42,6 +43,7 @@ class ipc_rules_utility_methods_t
         method_repository->unregister_method("wayfire/get-config-option");
         method_repository->unregister_method("wayfire/set-config-option");
         method_repository->unregister_method("wayfire/get-keyboard-state");
+        method_repository->unregister_method("wayfire/set-keyboard-state");
     }
 
     wf::ipc::method_callback get_wayfire_configuration_info = [=] (wf::json_t)
@@ -289,6 +291,27 @@ class ipc_rules_utility_methods_t
         auto seat     = wf::get_core().get_current_seat();
         auto keyboard = wlr_seat_get_keyboard(seat);
         return get_keyboard_state(keyboard);
+    };
+
+    wf::ipc::method_callback set_kb_state = [=] (const wf::json_t& data) -> json_t
+    {
+        auto seat     = wf::get_core().get_current_seat();
+        auto keyboard = wlr_seat_get_keyboard(seat);
+        uint32_t index = wf::ipc::json_get_uint64(data, "layout-index");
+
+        if (!keyboard)
+        {
+            return wf::ipc::json_error("no keyboard currently in use!");
+        }
+
+        if (index >= xkb_keymap_num_layouts(keyboard->keymap))
+        {
+            return wf::ipc::json_error("invalid layout index!");
+        }
+
+        wlr_keyboard_notify_modifiers(keyboard, keyboard->modifiers.depressed,
+            keyboard->modifiers.latched, keyboard->modifiers.locked, index);
+        return wf::ipc::json_ok();
     };
 };
 }
