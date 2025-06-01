@@ -31,6 +31,7 @@ class ipc_rules_utility_methods_t
         method_repository->register_method("wayfire/destroy-headless-output", destroy_headless_output);
         method_repository->register_method("wayfire/get-config-option", get_config_option);
         method_repository->register_method("wayfire/set-config-options", set_config_options);
+        method_repository->register_method("wayfire/get-keyboard-state", get_kb_state);
     }
 
     void fini_utility_methods(ipc::method_repository_t *method_repository)
@@ -40,6 +41,7 @@ class ipc_rules_utility_methods_t
         method_repository->unregister_method("wayfire/destroy-headless-output");
         method_repository->unregister_method("wayfire/get-config-option");
         method_repository->unregister_method("wayfire/set-config-option");
+        method_repository->unregister_method("wayfire/get-keyboard-state");
     }
 
     wf::ipc::method_callback get_wayfire_configuration_info = [=] (wf::json_t)
@@ -280,6 +282,13 @@ class ipc_rules_utility_methods_t
         reload_config_signal event;
         wf::get_core().emit(&event);
         return wf::ipc::json_ok();
+    };
+
+    wf::ipc::method_callback get_kb_state = [=] (const wf::json_t& data) -> json_t
+    {
+        auto seat     = wf::get_core().get_current_seat();
+        auto keyboard = wlr_seat_get_keyboard(seat);
+        return get_keyboard_state(keyboard);
     };
 };
 }

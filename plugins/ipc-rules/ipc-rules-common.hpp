@@ -228,3 +228,32 @@ static inline wf::json_t wset_to_json(wf::workspace_set_t *wset)
     response["workspace"]["grid_height"] = wset->get_workspace_grid_size().height;
     return response;
 }
+
+static inline wf::json_t get_keyboard_state(wlr_keyboard *keyboard)
+{
+    const auto& get_layout_name = [&] (xkb_layout_index_t layout)
+    {
+        auto layout_name = xkb_keymap_layout_get_name(keyboard->keymap, layout);
+        return layout_name ? layout_name : "unknown";
+    };
+
+    wf::json_t state;
+    state["possible-layouts"] = wf::json_t::array();
+    if (keyboard)
+    {
+        auto layout = xkb_state_serialize_layout(keyboard->xkb_state, XKB_STATE_LAYOUT_EFFECTIVE);
+        state["layout"] = get_layout_name(layout);
+        state["layout-index"] = layout;
+
+        auto n_layouts = xkb_keymap_num_layouts(keyboard->keymap);
+        for (size_t i = 0; i < n_layouts; i++)
+        {
+            state["possible-layouts"].append(get_layout_name(i));
+        }
+    } else
+    {
+        state["layout"] = "unknown";
+    }
+
+    return state;
+}

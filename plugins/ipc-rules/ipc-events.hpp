@@ -115,6 +115,7 @@ class ipc_rules_events_methods_t : public wf::per_output_tracker_mixin_t<>
         {"view-app-id-changed", get_generic_core_registration_cb(&on_app_id_changed)},
         {"plugin-activation-state-changed", get_generic_core_registration_cb(&on_plugin_activation_changed)},
         {"output-gain-focus", get_generic_core_registration_cb(&on_output_gain_focus)},
+        {"keyboard-modifier-state-changed", get_generic_core_registration_cb(&on_keyboard_modifiers)},
 
         {"view-tiled", get_generic_output_registration_cb(&_tiled)},
         {"view-minimized", get_generic_output_registration_cb(&_minimized)},
@@ -317,6 +318,22 @@ class ipc_rules_events_methods_t : public wf::per_output_tracker_mixin_t<>
         wf::json_t data;
         data["event"]  = "output-gain-focus";
         data["output"] = output_to_json(ev->output);
+        send_event_to_subscribes(data, data["event"]);
+    };
+
+    wf::signal::connection_t<wf::input_event_signal<mwlr_keyboard_modifiers_event>> on_keyboard_modifiers =
+        [=] (wf::input_event_signal<mwlr_keyboard_modifiers_event> *ev)
+    {
+        auto seat     = wf::get_core().get_current_seat();
+        auto keyboard = wlr_seat_get_keyboard(seat);
+        if (ev->device != &keyboard->base)
+        {
+            return;
+        }
+
+        wf::json_t data;
+        data["event"] = "keyboard-modifier-state-changed";
+        data["state"] = get_keyboard_state(keyboard);
         send_event_to_subscribes(data, data["event"]);
     };
 

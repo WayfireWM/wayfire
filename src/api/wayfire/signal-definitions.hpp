@@ -101,7 +101,7 @@ enum class input_event_processing_mode_t
  *   pointer_motion, pointer_motion_absolute, pointer_button, pointer_axis,
  *   pointer_swipe_begin, pointer_swipe_update, pointer_swipe_end, pointer_pinch_begin, pointer_pinch_update,
  *   pointer_pinch_end, pointer_hold_begin, pointer_hold_end,
- *   keyboard_key,
+ *   keyboard_key, keyboard_modifiers (mwlr_keyboard_modifiers),
  *   touch_down, touch_up, touch_motion,
  *   tablet_proximity, tablet_axis, tablet_button, tablet_tip
  *
