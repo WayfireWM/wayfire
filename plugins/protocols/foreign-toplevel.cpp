@@ -63,6 +63,25 @@ class wayfire_foreign_toplevel
         wlr_foreign_toplevel_handle_v1_destroy(handle);
     }
 
+    void toplevel_send_state()
+    {
+        wlr_foreign_toplevel_handle_v1_set_maximized(handle,
+            view->pending_tiled_edges() == wf::TILED_EDGES_ALL);
+        wlr_foreign_toplevel_handle_v1_set_activated(handle, view->activated);
+        wlr_foreign_toplevel_handle_v1_set_minimized(handle, view->minimized);
+        wlr_foreign_toplevel_handle_v1_set_fullscreen(handle, view->pending_fullscreen());
+
+        /* update parent as well */
+        auto it = view_to_toplevel->find(view->parent);
+        if (it == view_to_toplevel->end())
+        {
+            wlr_foreign_toplevel_handle_v1_set_parent(handle, nullptr);
+        } else
+        {
+            wlr_foreign_toplevel_handle_v1_set_parent(handle, it->second->handle);
+        }
+    }
+
   private:
     void toplevel_send_title()
     {
@@ -105,25 +124,6 @@ class wayfire_foreign_toplevel
         }
 
         wlr_foreign_toplevel_handle_v1_set_app_id(handle, app_id.c_str());
-    }
-
-    void toplevel_send_state()
-    {
-        wlr_foreign_toplevel_handle_v1_set_maximized(handle,
-            view->pending_tiled_edges() == wf::TILED_EDGES_ALL);
-        wlr_foreign_toplevel_handle_v1_set_activated(handle, view->activated);
-        wlr_foreign_toplevel_handle_v1_set_minimized(handle, view->minimized);
-        wlr_foreign_toplevel_handle_v1_set_fullscreen(handle, view->pending_fullscreen());
-
-        /* update parent as well */
-        auto it = view_to_toplevel->find(view->parent);
-        if (it == view_to_toplevel->end())
-        {
-            wlr_foreign_toplevel_handle_v1_set_parent(handle, nullptr);
-        } else
-        {
-            wlr_foreign_toplevel_handle_v1_set_parent(handle, it->second->handle);
-        }
     }
 
     void toplevel_update_output(wf::output_t *output, bool enter)
@@ -258,6 +258,7 @@ class wayfire_foreign_toplevel_protocol_impl : public wf::plugin_interface_t
         toplevel_manager = wlr_foreign_toplevel_manager_v1_create(wf::get_core().display);
         wf::get_core().connect(&on_view_mapped);
         wf::get_core().connect(&on_view_unmapped);
+        wf::get_core().output_layout->connect(&on_new_output);
     }
 
     void fini() override
@@ -269,6 +270,20 @@ class wayfire_foreign_toplevel_protocol_impl : public wf::plugin_interface_t
     }
 
   private:
+    wf::signal::connection_t<wf::output_added_signal> on_new_output = [=] (wf::output_added_signal *ev)
+    {
+        for (auto& view : wf::get_core().get_all_views())
+        {
+            if (auto toplevel = wf::toplevel_cast(view))
+            {
+                if (handle_for_view[toplevel])
+                {
+                    handle_for_view[toplevel]->toplevel_send_state();
+                }
+            }
+        }
+    };
+
     wf::signal::connection_t<wf::view_mapped_signal> on_view_mapped = [=] (wf::view_mapped_signal *ev)
     {
         if (auto toplevel = wf::toplevel_cast(ev->view))
