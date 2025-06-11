@@ -43,3 +43,7 @@ install_data('wsets.xml', install_dir: conf_data.get('PLUGIN_XML_DIR'))
 install_data('wayfire-shell.xml', install_dir: conf_data.get('PLUGIN_XML_DIR'))
 install_data('xdg-activation.xml', install_dir: conf_data.get('PLUGIN_XML_DIR'))
 install_data('session-lock.xml', install_dir: conf_data.get('PLUGIN_XML_DIR'))
+
+devenv = environment()
+devenv.append('WAYFIRE_PLUGIN_XML_PATH', meson.current_source_dir())
+meson.add_devenv(devenv)

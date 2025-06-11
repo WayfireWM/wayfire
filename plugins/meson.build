@@ -52,18 +52,27 @@ endif
 wobbly_inc = include_directories('wobbly/')
 subdir('common')
 
-subdir('ipc')
-subdir('protocols')
-subdir('vswitch')
-subdir('wobbly')
-subdir('grid')
-subdir('decor')
-subdir('animate')
-subdir('cube')
-subdir('window-rules')
-subdir('blur')
-subdir('tile')
-subdir('wm-actions')
-subdir('scale')
-subdir('single_plugins')
-subdir('ipc-rules')
+plugins = [
+  'ipc',
+  'protocols',
+  'vswitch',
+  'wobbly',
+  'grid',
+  'decor',
+  'animate',
+  'cube',
+  'window-rules',
+  'blur',
+  'tile',
+  'wm-actions',
+  'scale',
+  'single_plugins',
+  'ipc-rules',
+]
+
+devenv = environment()
+foreach plugin : plugins
+  devenv.append('WAYFIRE_PLUGIN_PATH', meson.current_build_dir() + '/' + plugin)
+  subdir(plugin)
+endforeach
+meson.add_devenv(devenv)

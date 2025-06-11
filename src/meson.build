@@ -165,3 +165,7 @@ pkgconfig.generate(
                    'icondir=${prefix}/share/wayfire/icons',
                    'pkgdatadir='+pkgdatadir]
     )
+
+devenv = environment()
+devenv.set('WAYFIRE_DEFAULT_CONFIG_BACKEND', meson.current_build_dir() + '/libdefault-config-backend.so')
+meson.add_devenv(devenv)

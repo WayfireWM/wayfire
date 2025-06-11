@@ -290,6 +290,10 @@ int main(int argc, char *argv[])
     std::vector<std::string> extended_debug_categories;
     bool allow_root = false;
 
+    if (char *default_config_backend = getenv("WAYFIRE_DEFAULT_CONFIG_BACKEND")) {
+        config_backend = default_config_backend;
+    }
+
     int c, i;
     while ((c = getopt_long(argc, argv, "c:B:d::DhRlrv", opts, &i)) != -1)
     {
