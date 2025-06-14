@@ -290,7 +290,8 @@ int main(int argc, char *argv[])
     std::vector<std::string> extended_debug_categories;
     bool allow_root = false;
 
-    if (char *default_config_backend = getenv("WAYFIRE_DEFAULT_CONFIG_BACKEND")) {
+    if (char *default_config_backend = getenv("WAYFIRE_DEFAULT_CONFIG_BACKEND"))
+    {
         config_backend = default_config_backend;
     }
 
