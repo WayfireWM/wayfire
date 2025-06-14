@@ -127,6 +127,37 @@ class ipc_rules_utility_methods_t
         }
 
         auto response = wf::ipc::json_ok();
+
+        std::shared_ptr<wf::config::compound_option_t> compound_option =
+            std::dynamic_pointer_cast<wf::config::compound_option_t>(option);
+
+        if (compound_option)
+        {
+            wf::config::compound_option_t::stored_type_t values = compound_option->get_value_untyped();
+
+            auto values_json   = wf::json_t::array();
+            auto defaults_json = wf::json_t::array();
+            for (size_t i = 0; i < values.size(); i++)
+            {
+                auto values_json_ith   = wf::json_t::array();
+                auto defaults_json_ith = wf::json_t::array();
+                for (size_t j = 0; j < values[i].size(); j++)
+                {
+                    values_json_ith.append(values[i][j]);
+                    defaults_json_ith.append("");
+                }
+
+                values_json.append(values_json_ith);
+                defaults_json.append(defaults_json_ith);
+            }
+
+            response["value"]   = values_json;
+            response["default"] = defaults_json;
+
+            return response;
+        }
+
+        // Normal option - can be converted into a string
         response["value"]   = option->get_value_str();
         response["default"] = option->get_default_value_str();
         return response;
