@@ -153,6 +153,14 @@ public_api_requirements = [
     'wf-config',
 ]
 
+if wlroots_features['gles2_renderer']
+  public_api_requirements += glesv2
+endif
+
+if wlroots_features['vulkan_renderer']
+  public_api_requirements += vulkan
+endif
+
 pkgconfig = import('pkgconfig')
 pkgconfig.generate(
     version:      meson.project_version(),

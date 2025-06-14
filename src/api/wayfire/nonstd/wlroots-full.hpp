@@ -32,11 +32,11 @@ extern "C"
 #include <wlr/render/allocator.h>
 #include <wlr/render/color.h>
 
-#if __has_include(<wlr/render/gles2.h>)
+#if WLR_HAS_GLES2_RENDERER
     #include <wlr/render/gles2.h>
 #endif
 
-#if __has_include(<wlr/render/vulkan.h>)
+#if WLR_HAS_VULKAN_RENDERER
     #include <wlr/render/vulkan.h>
 #endif
 
