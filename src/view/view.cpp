@@ -96,11 +96,10 @@ void wf::view_interface_t::take_snapshot(wf::auxilliary_buffer_t& buffer)
     auto root_node = get_surface_root_node();
     const wf::geometry_t bbox = root_node->get_bounding_box();
     float scale = get_output()->handle->scale;
-
-    buffer.allocate({int(bbox.width * scale), int(bbox.height * scale)});
+    buffer.allocate(wf::dimensions(bbox), scale);
 
     wf::render_target_t target{buffer};
-    target.geometry = root_node->get_bounding_box();
+    target.geometry = bbox;
     target.scale    = scale;
 
     std::vector<scene::render_instance_uptr> instances;
