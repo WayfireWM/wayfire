@@ -156,6 +156,9 @@ class wayfire_xdg_activation_protocol_impl : public wf::plugin_interface_t
             if (view)
             {
                 last_view = wf::toplevel_cast(view); // might return nullptr
+                //!! does not work for:
+                // (1) layer-shell views
+                // (2) (some) menus
                 if (last_view)
                 {
                     last_view->connect(&on_view_unmapped);
