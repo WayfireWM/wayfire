@@ -38,6 +38,7 @@ class screensaver_animation_t : public duration_t
 class wayfire_idle
 {
     wf::option_wrapper_t<int> dpms_timeout{"idle/dpms_timeout"};
+    wf::option_wrapper_t<bool> disable_initially{"idle/disable_initially"};
     bool is_idle = false;
 
   public:
@@ -56,6 +57,12 @@ class wayfire_idle
         {
             create_dpms_timeout();
         };
+
+        if (disable_initially)
+        {
+            return;
+        }
+
         create_dpms_timeout();
         wf::get_core().connect(&on_seat_activity);
     }
@@ -201,11 +208,6 @@ class wayfire_idle_plugin : public wf::per_output_plugin_instance_t
   public:
     void init() override
     {
-        if (disable_initially)
-        {
-            global_idle->hotkey_inhibitor.emplace();
-        }
-
         output->add_activator(wf::option_wrapper_t<wf::activatorbinding_t>{"idle/toggle"}, &toggle);
         output->connect(&fullscreen_state_changed);
         disable_on_fullscreen.set_callback(disable_on_fullscreen_changed);
@@ -219,20 +221,28 @@ class wayfire_idle_plugin : public wf::per_output_plugin_instance_t
             has_fullscreen = toplevel->pending_fullscreen();
         }
 
+        wf::get_core().connect(&inhibit_changed);
+
+        on_seat_activity = [=] (void*)
+        {
+            create_screensaver_timeout();
+        };
+
+        if (disable_initially)
+        {
+            return;
+        }
+
         update_fullscreen();
 
         screensaver_timeout.set_callback([=] ()
         {
             create_screensaver_timeout();
         });
+
         create_screensaver_timeout();
 
-        on_seat_activity = [=] (void*)
-        {
-            create_screensaver_timeout();
-        };
         wf::get_core().connect(&on_seat_activity);
-        wf::get_core().connect(&inhibit_changed);
     }
 
     void create_screensaver_timeout()
