@@ -617,7 +617,7 @@ class wf_vswitch_global_plugin_t : public wf::per_output_plugin_t<vswitch>
         uint64_t x = wf::ipc::json_get_uint64(data, "x");
         uint64_t y = wf::ipc::json_get_uint64(data, "y");
         uint64_t output_id = wf::ipc::json_get_uint64(data, "output-id");
-        uint64_t view_id = wf::ipc::json_get_uint64(data, "view-id");
+        uint64_t view_id   = wf::ipc::json_get_uint64(data, "view-id");
 
         auto wo = wf::ipc::find_output_by_id(output_id);
         if (!wo)
@@ -631,13 +631,7 @@ class wf_vswitch_global_plugin_t : public wf::per_output_plugin_t<vswitch>
             return wf::ipc::json_error("Workspace coordinates are too big!");
         }
 
-        wayfire_toplevel_view switch_with_view;
-        if (!view_id.has_value())
-        {
-            return wf::ipc::json_error("view-id not specified!");
-        }
-
-        auto view = toplevel_cast(wf::ipc::find_view_by_id(view_id.value()));
+        auto view = wf::toplevel_cast(wf::ipc::find_view_by_id(view_id));
         if (!view)
         {
             return wf::ipc::json_error("Invalid view or view not toplevel!");
