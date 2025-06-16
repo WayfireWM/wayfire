@@ -28,25 +28,41 @@ class workspace_animation_t : public duration_t
  * A mall helper function to move a view and it's children to workspace @to_ws.
  * @relative flag tells you if the to_ws is relative value or not.
  */
-static void move_view(wf::output_t *output, wayfire_toplevel_view view, wf::point_t to_ws,
-    bool relative = false)
+static bool move_view(wayfire_toplevel_view view, wf::point_t to_ws, bool relative = false)
 {
-    wf::view_change_workspace_signal signal;
-    signal.view = view;
-    signal.from = output->wset()->get_current_workspace();
-    signal.to   = (relative ? signal.from : wf::point_t{0, 0}) + to_ws;
+    // Get the wset and output.
+    auto wset = view->get_wset();
 
-    auto size  = output->get_screen_size();
-    auto delta = signal.to - signal.from;
-
-    for (auto& v : view->enumerate_views(false))
+    // If wset is nullptr, do nothing.
+    if (!wset)
     {
-        auto origin = wf::origin(v->get_pending_geometry());
-        v->move(origin.x + delta.x * size.width, origin.y + delta.y * size.height);
+        return false;
     }
 
-    output->emit(&signal);
+    // Coordinated for moving the view.
+    // We need from, becuase to_ws can be relative
+    wf::point_t from, to;
+    from = wset->get_view_main_workspace(view);
+    to   = (relative ? from : wf::point_t{0, 0}) + to_ws;
+
+    // Move all the views of this view's tree, including unmapped ones.
+    for (auto& v : view->enumerate_views(false))
+    {
+        wset->move_to_workspace(v, to);
+    }
+
+    if (auto output = view->get_output())
+    {
+        wf::view_change_workspace_signal signal;
+        signal.view = view;
+        signal.from = from;
+        signal.to   = to;
+        output->emit(&signal);
+    }
+
     wf::get_core().seat->refocus();
+
+    return true;
 }
 
 /**
@@ -411,8 +427,7 @@ class vswitch : public wf::per_output_plugin_instance_t
 
                 if (only_view && view)
                 {
-                    wf::vswitch::move_view(output, view, delta, true);
-                    return true;
+                    return wf::vswitch::move_view(view, delta, true);
                 }
 
                 return add_direction(delta, view);
@@ -627,20 +642,7 @@ class wf_vswitch_global_plugin_t : public wf::per_output_plugin_t<vswitch>
     {
         uint64_t x = wf::ipc::json_get_uint64(data, "x");
         uint64_t y = wf::ipc::json_get_uint64(data, "y");
-        uint64_t output_id = wf::ipc::json_get_uint64(data, "output-id");
-        uint64_t view_id   = wf::ipc::json_get_uint64(data, "view-id");
-
-        auto wo = wf::ipc::find_output_by_id(output_id);
-        if (!wo)
-        {
-            return wf::ipc::json_error("Invalid output!");
-        }
-
-        auto grid_size = wo->wset()->get_workspace_grid_size();
-        if ((int(data["x"]) >= grid_size.width) || (int(data["y"]) >= grid_size.height))
-        {
-            return wf::ipc::json_error("Workspace coordinates are too big!");
-        }
+        uint64_t view_id = wf::ipc::json_get_uint64(data, "view-id");
 
         auto view = wf::toplevel_cast(wf::ipc::find_view_by_id(view_id));
         if (!view)
@@ -653,14 +655,18 @@ class wf_vswitch_global_plugin_t : public wf::per_output_plugin_t<vswitch>
             return wf::ipc::json_error("Cannot grab unmapped view!");
         }
 
-        if (view->get_output() != wo)
+        auto grid_size = view->get_wset()->get_workspace_grid_size();
+        if ((int(data["x"]) >= grid_size.width) || (int(data["y"]) >= grid_size.height))
         {
-            return wf::ipc::json_error("Cannot grab view on a different output!");
+            return wf::ipc::json_error("Workspace coordinates are too big!");
         }
 
-        wf::vswitch::move_view(wo, view, {(int)x, (int)y});
+        if (wf::vswitch::move_view(view, {(int)x, (int)y}))
+        {
+            return wf::ipc::json_ok();
+        }
 
-        return wf::ipc::json_ok();
+        return wf::ipc::json_error("The given view does not belong to any wset.");
     };
 };
 
