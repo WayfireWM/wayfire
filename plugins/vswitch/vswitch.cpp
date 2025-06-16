@@ -617,7 +617,7 @@ class wf_vswitch_global_plugin_t : public wf::per_output_plugin_t<vswitch>
         uint64_t x = wf::ipc::json_get_uint64(data, "x");
         uint64_t y = wf::ipc::json_get_uint64(data, "y");
         uint64_t output_id = wf::ipc::json_get_uint64(data, "output-id");
-        std::optional<uint64_t> view_id = wf::ipc::json_get_optional_uint64(data, "view-id");
+        uint64_t view_id = wf::ipc::json_get_uint64(data, "view-id");
 
         auto wo = wf::ipc::find_output_by_id(output_id);
         if (!wo)
