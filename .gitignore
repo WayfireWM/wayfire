@@ -65,3 +65,4 @@ build/**
 .cache/**
 
 # End of https://www.toptal.com/developers/gitignore/api/c++,meson,ninja,linux
+.aider*

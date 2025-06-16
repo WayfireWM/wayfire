@@ -62,6 +62,11 @@
 				<_name>Start when client connects</_name>
 			</desc>
 		</option>
+		<option name="xwayland_startup_script" type="string">
+			<_short>XWayland startup script</_short>
+			<_long>A script to execute when the XWayland server starts. This script is executed in a POSIX shell (/bin/sh).</_long>
+			<default></default>
+		</option>
 		<option name="max_render_time" type="int">
 			<_short>Maximum render time</_short>
 			<_long>Sets the compositor render delay in milliseconds, which allows applications to render with low latency.</_long>

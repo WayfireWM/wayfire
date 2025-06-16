@@ -5,6 +5,7 @@
 #include "../core/seat/cursor.hpp"
 #include <wayfire/view.hpp>
 #include <wayfire/nonstd/tracking-allocator.hpp>
+#include <wayfire/option-wrapper.hpp>
 
 #include "wayfire/unstable/wlr-view-events.hpp"
 #include "wayfire/util.hpp"
@@ -243,6 +244,14 @@ void wf::init_xwayland(bool lazy)
 
         wlr_xwayland_set_seat(xwayland_handle, wf::get_core().get_current_seat());
         xwayland_update_default_cursor();
+
+        static wf::option_wrapper_t<std::string> xwayland_startup_script{"core/xwayland_startup_script"};
+        auto script = xwayland_startup_script.value();
+        if (!script.empty())
+        {
+            LOGD("Executing XWayland startup script: ", script);
+            wf::get_core().run(script);
+        }
     });
 
     xwayland_handle = wlr_xwayland_create(wf::get_core().display,
