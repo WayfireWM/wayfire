@@ -223,9 +223,9 @@ class squeezimize_transformer : public wf::scene::view_2d_transformer_t
                 self->animation_geometry.height
             };
 
+            auto src_tex = wf::gles_texture_t{this->get_texture(1.0)};
             data.pass->custom_gles_subpass(data.target, [&]
             {
-                auto src_tex = wf::gles_texture_t{this->get_texture(1.0)};
                 self->program.use(wf::TEXTURE_TYPE_RGBA);
                 self->program.uniformMatrix4f("matrix",
                     wf::gles::render_target_orthographic_projection(data.target));
