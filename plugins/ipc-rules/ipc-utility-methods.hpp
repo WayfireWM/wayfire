@@ -130,24 +130,19 @@ class ipc_rules_utility_methods_t
         {
             wf::config::compound_option_t::stored_type_t values = compound_option->get_value_untyped();
 
-            auto values_json   = wf::json_t::array();
-            auto defaults_json = wf::json_t::array();
+            auto values_json = wf::json_t::array();
             for (size_t i = 0; i < values.size(); i++)
             {
-                auto values_json_ith   = wf::json_t::array();
-                auto defaults_json_ith = wf::json_t::array();
+                auto values_json_ith = wf::json_t::array();
                 for (size_t j = 0; j < values[i].size(); j++)
                 {
                     values_json_ith.append(values[i][j]);
-                    defaults_json_ith.append("");
                 }
 
                 values_json.append(values_json_ith);
-                defaults_json.append(defaults_json_ith);
             }
 
-            response["value"]   = values_json;
-            response["default"] = defaults_json;
+            response["value"] = values_json;
 
             return response;
         }
