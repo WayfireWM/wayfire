@@ -499,6 +499,9 @@ pid_t wf::compositor_core_impl_t::run(std::string command)
         return 0;
     }
 
+    wf::command_run_signal signal(command);
+    wf::get_core().emit(&signal);
+
     /* The following is a "hack" for disowning the child processes,
      * otherwise they will simply stay as zombie processes */
     pid_t pid = fork();
@@ -520,6 +523,11 @@ pid_t wf::compositor_core_impl_t::run(std::string command)
             }
 
 #endif
+            for (const auto& var : signal.env)
+            {
+                setenv(var.first.c_str(), var.second.c_str(), 1);
+            }
+
             if (discard_command_output)
             {
                 int dev_null = open("/dev/null", O_WRONLY);
