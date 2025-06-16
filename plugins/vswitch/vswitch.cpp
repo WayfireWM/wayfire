@@ -25,13 +25,13 @@ class workspace_animation_t : public duration_t
 };
 
 /**
- * A mall helper function to move a view and it's children to workspace @to_ws.
- * @relative flag tells you if the to_ws is relative value or not.
+ * A small helper function to move a view and its children to workspace @to_ws.
+ * @relative flag tells us if @to_ws is relative to current workspace or not.
  */
 static bool move_view(wayfire_toplevel_view view, wf::point_t to_ws, bool relative = false)
 {
     // Get the wset and output.
-    auto wset = view->get_wset();
+    auto wset   = view->get_wset();
 
     // If wset is nullptr, do nothing.
     if (!wset)
@@ -51,8 +51,7 @@ static bool move_view(wayfire_toplevel_view view, wf::point_t to_ws, bool relati
         wset->move_to_workspace(v, to);
     }
 
-    if (auto output = view->get_output())
-    {
+    if ( auto output = view->get_output() ) {
         wf::view_change_workspace_signal signal;
         signal.view = view;
         signal.from = from;
@@ -427,7 +426,7 @@ class vswitch : public wf::per_output_plugin_instance_t
 
                 if (only_view && view)
                 {
-                    return wf::vswitch::move_view(view, delta, true);
+                    return wf::vswitch::move_view( view, delta, true );
                 }
 
                 return add_direction(delta, view);
@@ -642,7 +641,7 @@ class wf_vswitch_global_plugin_t : public wf::per_output_plugin_t<vswitch>
     {
         uint64_t x = wf::ipc::json_get_uint64(data, "x");
         uint64_t y = wf::ipc::json_get_uint64(data, "y");
-        uint64_t view_id = wf::ipc::json_get_uint64(data, "view-id");
+        uint64_t view_id   = wf::ipc::json_get_uint64(data, "view-id");
 
         auto view = wf::toplevel_cast(wf::ipc::find_view_by_id(view_id));
         if (!view)
@@ -661,8 +660,7 @@ class wf_vswitch_global_plugin_t : public wf::per_output_plugin_t<vswitch>
             return wf::ipc::json_error("Workspace coordinates are too big!");
         }
 
-        if (wf::vswitch::move_view(view, {(int)x, (int)y}))
-        {
+        if ( wf::vswitch::move_view( view, {(int)x, (int)y} ) ) {
             return wf::ipc::json_ok();
         }
 
