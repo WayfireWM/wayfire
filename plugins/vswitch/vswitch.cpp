@@ -28,19 +28,13 @@ class workspace_animation_t : public duration_t
  * A small helper function to move a view and its children to workspace @to_ws.
  * @relative flag tells us if @to_ws is relative to current workspace or not.
  */
-static bool move_view(wayfire_toplevel_view view, wf::point_t to_ws, bool relative = false)
+static void move_view(wayfire_toplevel_view view, wf::point_t to_ws, bool relative = false)
 {
-    // Get the wset and output.
+    // Get the wset.
     auto wset = view->get_wset();
 
-    // If wset is nullptr, do nothing.
-    if (!wset)
-    {
-        return false;
-    }
-
-    // Coordinated for moving the view.
-    // We need from, becuase to_ws can be relative
+    // Coordinates for moving the view.
+    // We need from, because @to_ws can be relative
     wf::point_t from, to;
     from = wset->get_view_main_workspace(view);
     to   = (relative ? from : wf::point_t{0, 0}) + to_ws;
@@ -61,8 +55,6 @@ static bool move_view(wayfire_toplevel_view view, wf::point_t to_ws, bool relati
     }
 
     wf::get_core().seat->refocus();
-
-    return true;
 }
 
 /**
@@ -427,7 +419,8 @@ class vswitch : public wf::per_output_plugin_instance_t
 
                 if (only_view && view)
                 {
-                    return wf::vswitch::move_view(view, delta, true);
+                    wf::vswitch::move_view(view, delta, true);
+                    return true;
                 }
 
                 return add_direction(delta, view);
@@ -655,18 +648,19 @@ class wf_vswitch_global_plugin_t : public wf::per_output_plugin_t<vswitch>
             return wf::ipc::json_error("Cannot grab unmapped view!");
         }
 
+        if (!view->get_wset())
+        {
+            return wf::ipc::json_error("The given view does not belong to any wset!");
+        }
+
         auto grid_size = view->get_wset()->get_workspace_grid_size();
         if ((int(data["x"]) >= grid_size.width) || (int(data["y"]) >= grid_size.height))
         {
             return wf::ipc::json_error("Workspace coordinates are too big!");
         }
 
-        if (wf::vswitch::move_view(view, {(int)x, (int)y}))
-        {
-            return wf::ipc::json_ok();
-        }
-
-        return wf::ipc::json_error("The given view does not belong to any wset.");
+        wf::vswitch::move_view(view, {(int)x, (int)y});
+        return wf::ipc::json_ok();
     };
 };
 
