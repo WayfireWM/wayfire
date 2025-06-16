@@ -28,7 +28,7 @@ class workspace_animation_t : public duration_t
  * A small helper function to move a view and its children to workspace @to_ws.
  * @relative flag tells us if @to_ws is relative to current workspace or not.
  */
-static move_view(wayfire_toplevel_view view, wf::point_t to_ws, bool relative = false)
+static void move_view(wayfire_toplevel_view view, wf::point_t to_ws, bool relative = false)
 {
     // Get the wset.
     auto wset   = view->get_wset();
