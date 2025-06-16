@@ -28,12 +28,13 @@ class workspace_animation_t : public duration_t
  * A mall helper function to move a view and it's children to workspace @to_ws.
  * @relative flag tells you if the to_ws is relative value or not.
  */
-static void move_view(wf::output_t *output, wayfire_toplevel_view view, wf::point_t to_ws, bool relative = false)
+static void move_view(wf::output_t *output, wayfire_toplevel_view view, wf::point_t to_ws,
+    bool relative = false)
 {
     wf::view_change_workspace_signal signal;
     signal.view = view;
     signal.from = output->wset()->get_current_workspace();
-    signal.to   = ( relative ? signal.from : wf::point_t{0, 0} ) + to_ws;
+    signal.to   = (relative ? signal.from : wf::point_t{0, 0}) + to_ws;
 
     auto size  = output->get_screen_size();
     auto delta = signal.to - signal.from;
@@ -410,7 +411,7 @@ class vswitch : public wf::per_output_plugin_instance_t
 
                 if (only_view && view)
                 {
-                    wf::vswitch::move_view( output, view, delta, true );
+                    wf::vswitch::move_view(output, view, delta, true);
                     return true;
                 }
 
@@ -657,7 +658,7 @@ class wf_vswitch_global_plugin_t : public wf::per_output_plugin_t<vswitch>
             return wf::ipc::json_error("Cannot grab view on a different output!");
         }
 
-        wf::vswitch::move_view( wo, view, {(int)x, (int)y} );
+        wf::vswitch::move_view(wo, view, {(int)x, (int)y});
 
         return wf::ipc::json_ok();
     };
