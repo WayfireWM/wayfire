@@ -25,6 +25,30 @@ class workspace_animation_t : public duration_t
 };
 
 /**
+ * A mall helper function to move a view and it's children to workspace @to_ws.
+ * @relative flag tells you if the to_ws is relative value or not.
+ */
+static void move_view(wf::output_t *output, wayfire_toplevel_view view, wf::point_t to_ws, bool relative = false)
+{
+    wf::view_change_workspace_signal signal;
+    signal.view = view;
+    signal.from = output->wset()->get_current_workspace();
+    signal.to   = ( relative ? signal.from : wf::point_t{0, 0} ) + to_ws;
+
+    auto size  = output->get_screen_size();
+    auto delta = signal.to - signal.from;
+
+    for (auto& v : view->enumerate_views(false))
+    {
+        auto origin = wf::origin(v->get_pending_geometry());
+        v->move(origin.x + delta.x * size.width, origin.y + delta.y * size.height);
+    }
+
+    output->emit(&signal);
+    wf::get_core().seat->refocus();
+}
+
+/**
  * A simple scenegraph node which draws a view at a fixed position and as an overlay over the workspace wall.
  */
 class vswitch_overlay_node_t : public wf::scene::node_t
@@ -386,21 +410,7 @@ class vswitch : public wf::per_output_plugin_instance_t
 
                 if (only_view && view)
                 {
-                    auto size = output->get_screen_size();
-
-                    for (auto& v : view->enumerate_views(false))
-                    {
-                        auto origin = wf::origin(v->get_pending_geometry());
-                        v->move(origin.x + delta.x * size.width, origin.y + delta.y * size.height);
-                    }
-
-                    wf::view_change_workspace_signal data;
-                    data.view = view;
-                    data.from = output->wset()->get_current_workspace();
-                    data.to   = data.from + delta;
-                    output->emit(&data);
-                    wf::get_core().seat->refocus();
-
+                    wf::vswitch::move_view( output, view, delta, true );
                     return true;
                 }
 
@@ -647,22 +657,7 @@ class wf_vswitch_global_plugin_t : public wf::per_output_plugin_t<vswitch>
             return wf::ipc::json_error("Cannot grab view on a different output!");
         }
 
-        wf::view_change_workspace_signal signal;
-        signal.view = view;
-        signal.from = wo->wset()->get_current_workspace();
-        signal.to   = {(int)x, (int)y};
-
-        auto size  = wo->get_screen_size();
-        auto delta = signal.to - signal.from;
-
-        for (auto& v : view->enumerate_views(false))
-        {
-            auto origin = wf::origin(v->get_pending_geometry());
-            v->move(origin.x + delta.x * size.width, origin.y + delta.y * size.height);
-        }
-
-        wo->emit(&signal);
-        wf::get_core().seat->refocus();
+        wf::vswitch::move_view( wo, view, {(int)x, (int)y} );
 
         return wf::ipc::json_ok();
     };
