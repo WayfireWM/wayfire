@@ -25,6 +25,38 @@ class workspace_animation_t : public duration_t
 };
 
 /**
+ * A small helper function to move a view and its children to workspace @to_ws.
+ * @relative flag tells us if @to_ws is relative to current workspace or not.
+ */
+static void move_view(wayfire_toplevel_view view, wf::point_t to_ws, bool relative = false)
+{
+    // Get the wset.
+    auto wset   = view->get_wset();
+
+    // Coordinates for moving the view.
+    // We need from, because @to_ws can be relative
+    wf::point_t from, to;
+    from = wset->get_view_main_workspace(view);
+    to   = (relative ? from : wf::point_t{0, 0}) + to_ws;
+
+    // Move all the views of this view's tree, including unmapped ones.
+    for (auto& v : view->enumerate_views(false))
+    {
+        wset->move_to_workspace(v, to);
+    }
+
+    if ( auto output = view->get_output() ) {
+        wf::view_change_workspace_signal signal;
+        signal.view = view;
+        signal.from = from;
+        signal.to   = to;
+        output->emit(&signal);
+    }
+
+    wf::get_core().seat->refocus();
+}
+
+/**
  * A simple scenegraph node which draws a view at a fixed position and as an overlay over the workspace wall.
  */
 class vswitch_overlay_node_t : public wf::scene::node_t
@@ -386,21 +418,12 @@ class vswitch : public wf::per_output_plugin_instance_t
 
                 if (only_view && view)
                 {
-                    auto size = output->get_screen_size();
-
-                    for (auto& v : view->enumerate_views(false))
+                    if (!view->get_wset())
                     {
-                        auto origin = wf::origin(v->get_pending_geometry());
-                        v->move(origin.x + delta.x * size.width, origin.y + delta.y * size.height);
+                        return false;
                     }
 
-                    wf::view_change_workspace_signal data;
-                    data.view = view;
-                    data.from = output->wset()->get_current_workspace();
-                    data.to   = data.from + delta;
-                    output->emit(&data);
-                    wf::get_core().seat->refocus();
-
+                    wf::vswitch::move_view( view, delta, true );
                     return true;
                 }
 
@@ -550,12 +573,14 @@ class wf_vswitch_global_plugin_t : public wf::per_output_plugin_t<vswitch>
     {
         per_output_plugin_t::init();
         ipc_repo->register_method("vswitch/set-workspace", request_workspace);
+        ipc_repo->register_method("vswitch/send-view", send_view);
     }
 
     void fini() override
     {
         per_output_plugin_t::fini();
         ipc_repo->unregister_method("vswitch/set-workspace");
+        ipc_repo->unregister_method("vswitch/send-view");
     }
 
     wf::ipc::method_callback request_workspace = [=] (const wf::json_t& data)
@@ -607,6 +632,38 @@ class wf_vswitch_global_plugin_t : public wf::per_output_plugin_t<vswitch>
             output_instance[wo]->add_direction(delta, switch_with_view);
         }
 
+        return wf::ipc::json_ok();
+    };
+
+    wf::ipc::method_callback send_view = [=] (const wf::json_t& data)
+    {
+        uint64_t x = wf::ipc::json_get_uint64(data, "x");
+        uint64_t y = wf::ipc::json_get_uint64(data, "y");
+        uint64_t view_id   = wf::ipc::json_get_uint64(data, "view-id");
+
+        auto view = wf::toplevel_cast(wf::ipc::find_view_by_id(view_id));
+        if (!view)
+        {
+            return wf::ipc::json_error("Invalid view or view not toplevel!");
+        }
+
+        if (!view->is_mapped())
+        {
+            return wf::ipc::json_error("Cannot grab unmapped view!");
+        }
+
+        if (!view->get_wset())
+        {
+            return wf::ipc::json_error("The given view does not belong to any wset!");
+        }
+
+        auto grid_size = view->get_wset()->get_workspace_grid_size();
+        if ((int(data["x"]) >= grid_size.width) || (int(data["y"]) >= grid_size.height))
+        {
+            return wf::ipc::json_error("Workspace coordinates are too big!");
+        }
+
+        wf::vswitch::move_view( view, {(int)x, (int)y} );
         return wf::ipc::json_ok();
     };
 };
