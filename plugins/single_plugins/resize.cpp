@@ -61,6 +61,9 @@ class wayfire_resize : public wf::per_output_plugin_instance_t, public wf::point
     wf::geometry_t grabbed_geometry;
 
     uint32_t edges;
+
+    wf::option_wrapper_t<int> user_min_width{"resize/min_width"};
+    wf::option_wrapper_t<int> user_min_height{"resize/min_height"};
     wf::option_wrapper_t<wf::buttonbinding_t> button{"resize/activate"};
     wf::option_wrapper_t<wf::buttonbinding_t> button_preserve_aspect{
         "resize/activate_preserve_aspect"};
@@ -307,6 +310,16 @@ class wayfire_resize : public wf::per_output_plugin_instance_t, public wf::point
         min_size.height = std::max(1, min_size.height);
         min_size = wf::expand_dimensions_by_margins(min_size,
             view->toplevel()->pending().margins);
+
+        if (user_min_width)
+        {
+            min_size.width = std::max(min_size.width, static_cast<int>(user_min_width));
+        }
+
+        if (user_min_height)
+        {
+            min_size.height = std::max(min_size.height, static_cast<int>(user_min_height));
+        }
 
         return min_size;
     }
