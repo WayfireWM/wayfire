@@ -84,12 +84,12 @@ class render_instance_t
      * @param instructions A list of render instructions to be executed.
      *   Instructions are evaluated in the reverse order they are pushed
      *   (e.g. from instructions.rbegin() to instructions.rend()).
+     * @param target The target framebuffer to render the node and its children.
+     *   Note that some nodes may cause their children to be rendered to
+     *   auxiliary buffers.
      * @param damage The damaged region of the node, in node-local coordinates.
      *   Nodes may subtract from the damage, to prevent rendering below opaque
      *   regions, or expand it for certain special effects like blur.
-     * @param fb The target framebuffer to render the node and its children.
-     *   Note that some nodes may cause their children to be rendered to
-     *   auxiliary buffers.
      */
     virtual void schedule_instructions(
         std::vector<render_instruction_t>& instructions,
