@@ -43,7 +43,7 @@ class wayfire_xdg_activation_protocol_impl : public wf::plugin_interface_t
         if (last_view)
         {
             last_view->disconnect(&on_view_unmapped);
-            last_view->disconnect(&on_view_deactivated);
+            // last_view->disconnect(&on_view_deactivated);
             last_view = nullptr;
         }
 
@@ -80,7 +80,7 @@ class wayfire_xdg_activation_protocol_impl : public wf::plugin_interface_t
             last_token = nullptr; // avoid reusing the same token
             last_self_token = nullptr;
 
-            if (prevent_focus_stealing && !last_view)
+            if (prevent_focus_stealing && (!last_view || last_view != wf::get_core().seat->get_active_view()))
             {
                 LOGI("Denying focus request, requesting view has been deactivated");
                 return;
@@ -120,7 +120,7 @@ class wayfire_xdg_activation_protocol_impl : public wf::plugin_interface_t
             if (last_view)
             {
                 last_view->disconnect(&on_view_unmapped);
-                last_view->disconnect(&on_view_deactivated);
+                // last_view->disconnect(&on_view_deactivated);
                 last_view = nullptr;
             }
         });
@@ -147,7 +147,7 @@ class wayfire_xdg_activation_protocol_impl : public wf::plugin_interface_t
             if (last_view)
             {
                 last_view->disconnect(&on_view_unmapped);
-                last_view->disconnect(&on_view_deactivated);
+                // last_view->disconnect(&on_view_deactivated);
                 last_view = nullptr;
             }
 
@@ -155,15 +155,10 @@ class wayfire_xdg_activation_protocol_impl : public wf::plugin_interface_t
                 token->surface->resource) : nullptr;
             if (view)
             {
-                last_view = wf::toplevel_cast(view); // might return nullptr
-                //!! does not work for:
-                // (1) layer-shell views
-                // (2) (some) menus
-                if (last_view)
-                {
-                    last_view->connect(&on_view_unmapped);
-                    last_view->connect(&on_view_deactivated);
-                }
+                last_view = view;
+                last_view->connect(&on_view_unmapped);
+                LOGI("New token for view: ", view.get());
+                // last_view->connect(&on_view_deactivated);
             }
 
             // update our token and connect its destroy signal
@@ -201,16 +196,40 @@ class wayfire_xdg_activation_protocol_impl : public wf::plugin_interface_t
     wf::signal::connection_t<wf::view_unmapped_signal> on_view_unmapped = [this] (auto)
     {
         last_view->disconnect(&on_view_unmapped);
-        last_view->disconnect(&on_view_deactivated);
+        // last_view->disconnect(&on_view_deactivated);
+        LOGI("View closed: ", last_view.get());
+        
         // handle the case when last_view was a dialog that is closed by user interaction
-        last_view = last_view->parent;
+        auto toplevel = wf::toplevel_cast(last_view);
+        if (toplevel)
+        {
+            last_view = toplevel->parent;
+            LOGI("Setting parent: ", last_view.get());
+        } else
+        {
+            //!! does not work, it is already NULL when this is called
+            auto surface = last_view->get_wlr_surface();
+            auto popup = surface ? wlr_xdg_popup_try_from_wlr_surface (surface) : nullptr;
+            if (popup && popup->parent)
+            {
+                last_view = wf::wl_surface_to_wayfire_view (popup->parent->resource);
+                LOGI("Setting parent (from xdg-popup): ", last_view.get());
+            } else
+            {
+                //!! TODO: XWayland popups?
+                last_view = nullptr;
+                LOGI("No parent");
+            }
+        }
+
         if (last_view)
         {
             last_view->connect(&on_view_unmapped);
-            last_view->connect(&on_view_deactivated);
+            // last_view->connect(&on_view_deactivated);
         }
     };
 
+/*
     wf::signal::connection_t<wf::view_activated_state_signal> on_view_deactivated = [this] (auto)
     {
         if (last_view->activated)
@@ -224,25 +243,35 @@ class wayfire_xdg_activation_protocol_impl : public wf::plugin_interface_t
         last_view->disconnect(&on_view_deactivated);
         last_view = nullptr;
     };
+*/
 
     wf::signal::connection_t<wf::view_mapped_signal> on_view_mapped = [this] (auto signal)
     {
         signal->view->disconnect(&on_view_mapped);
 
+        bool should_focus = true;
+
         // re-check focus stealing prevention
+        if (prevent_focus_stealing)
+        {
+            if (!last_view || last_view != wf::get_core().seat->get_active_view())
+            {
+                LOGI("Denying focus request, requesting view has been deactivated");
+                should_focus = false;
+            }
+        }
         if (last_view)
         {
             last_view->disconnect(&on_view_unmapped);
-            last_view->disconnect(&on_view_deactivated);
+            // last_view->disconnect(&on_view_deactivated);
             last_view = nullptr;
-        } else if (prevent_focus_stealing)
-        {
-            LOGI("Denying focus request, requesting view has been deactivated");
-            return;
         }
 
-        LOGD("Activating view");
-        wf::get_core().default_wm->focus_request(signal->view);
+        if (should_focus)
+        {
+            LOGD("Activating view");
+            wf::get_core().default_wm->focus_request(signal->view);
+        }
     };
 
     wf::signal::connection_t<wf::command_run_signal> on_run_command = [this] (auto signal)
@@ -265,9 +294,9 @@ class wayfire_xdg_activation_protocol_impl : public wf::plugin_interface_t
             active_view = nullptr;
         }
 
-        auto active_toplevel = active_view ? wf::toplevel_cast(active_view) : nullptr;
+        // auto active_toplevel = active_view ? wf::toplevel_cast(active_view) : nullptr;
 
-        if (!active_toplevel)
+        if (!active_view)
         {
             // if there is no active view, we don't need a token
             return;
@@ -277,12 +306,12 @@ class wayfire_xdg_activation_protocol_impl : public wf::plugin_interface_t
         {
             // TODO: we need a separate last_view actually !
             last_view->disconnect(&on_view_unmapped);
-            last_view->disconnect(&on_view_deactivated);
+            // last_view->disconnect(&on_view_deactivated);
         }
 
-        last_view = active_toplevel;
+        last_view = active_view;
         last_view->connect(&on_view_unmapped);
-        last_view->connect(&on_view_deactivated);
+        // last_view->connect(&on_view_deactivated);
         last_self_token = wlr_xdg_activation_token_v1_create(xdg_activation);
         xdg_activation_token_self_destroy.disconnect();
         xdg_activation_token_self_destroy.connect(&last_self_token->events.destroy);
@@ -298,7 +327,7 @@ class wayfire_xdg_activation_protocol_impl : public wf::plugin_interface_t
     wf::wl_listener_wrapper xdg_activation_token_self_destroy;
     struct wlr_xdg_activation_token_v1 *last_token = nullptr;
     struct wlr_xdg_activation_token_v1 *last_self_token = nullptr;
-    wayfire_toplevel_view last_view = nullptr; // view that created the token
+    wayfire_view last_view = nullptr; // view that created the token
 
     wf::option_wrapper_t<bool> check_surface{"xdg-activation/check_surface"};
     wf::option_wrapper_t<bool> only_last_token{"xdg-activation/only_last_request"};
