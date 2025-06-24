@@ -120,6 +120,8 @@ wayfire_xdg_popup::wayfire_xdg_popup(wlr_xdg_popup *popup) : wf::view_interface_
     }
 
     on_surface_commit.set_callback([&] (void*) { commit(); });
+    // We'll receive the initial commit soon
+    on_surface_commit.connect(&popup->base->surface->events.commit);
 
     LOGI("New xdg popup");
     this->main_surface = std::make_shared<wf::scene::wlr_surface_node_t>(popup->base->surface, true);
@@ -173,7 +175,6 @@ std::shared_ptr<wayfire_xdg_popup> wayfire_xdg_popup::create(wlr_xdg_popup *popu
     self->surface_root_node = std::make_shared<wayfire_xdg_popup_node>(self);
     self->set_surface_root_node(self->surface_root_node);
     self->set_output(self->popup_parent->get_output());
-    self->unconstrain();
     return self;
 }
 
@@ -197,7 +198,11 @@ void wayfire_xdg_popup::map()
 
     wf::scene::readd_front(get_output()->node_for_layer(target_layer), get_root_node());
 
-    on_surface_commit.connect(&popup->base->surface->events.commit);
+    if (!popup->base->initial_commit)
+    {
+        on_surface_commit.connect(&popup->base->surface->events.commit);
+    }
+
     priv->set_mapped_surface_contents(main_surface);
     priv->set_mapped(main_surface->get_surface());
     priv->set_enabled(true);
@@ -239,6 +244,10 @@ void wayfire_xdg_popup::commit()
 {
     update_size();
     update_position();
+    if (popup->base->initial_commit)
+    {
+        unconstrain();
+    }
 }
 
 void wayfire_xdg_popup::update_position()
