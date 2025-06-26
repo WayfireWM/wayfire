@@ -83,5 +83,10 @@
 			<_long>Disable primary selection (middle-click copy/paste).</_long>
 			<default>false</default>
 		</option>
+		<option name="focus_main_surface_instead_of_popup" type="bool">
+			<_short>Focus main surface instead of popup menus</_short>
+			<_long>Focus the main surface instead of popup menus. Works around some bugs in Qt-based apps related to copy-paste.</_long>
+			<default>false</default>
+		</option>
 	</plugin>
 </wayfire>

@@ -102,11 +102,14 @@ bool wayfire_xdg_popup::should_close_on_focus_change(wf::keyboard_focus_changed_
 
 wayfire_xdg_popup::wayfire_xdg_popup(wlr_xdg_popup *popup) : wf::view_interface_t()
 {
-    this->popup_parent = wf::wl_surface_to_wayfire_view(popup->parent->resource).get();
+    auto parent_ptr = wf::wl_surface_to_wayfire_view(popup->parent->resource);
+    wf::dassert(parent_ptr.get(), "Popup has no existing parent?");
+    this->popup_parent = parent_ptr->weak_from_this();
+
     this->popup = popup;
     this->role  = wf::VIEW_ROLE_UNMANAGED;
 
-    if (!dynamic_cast<wayfire_xdg_popup*>(popup_parent.get()))
+    if (!dynamic_cast<wayfire_xdg_popup*>(parent_ptr.get()))
     {
         // 'toplevel' popups are responsible for closing their popup tree when the parent loses focus.
         // Note: we shouldn't close nested popups manually, since the parent popups will destroy them as well.
@@ -154,16 +157,16 @@ wayfire_xdg_popup::wayfire_xdg_popup(wlr_xdg_popup *popup) : wf::view_interface_
     });
     parent_app_id_changed.set_callback([=] (auto)
     {
-        this->handle_app_id_changed(popup_parent->get_app_id());
+        this->handle_app_id_changed(popup_parent.lock()->get_app_id());
     });
     parent_title_changed.set_callback([=] (auto)
     {
-        this->handle_title_changed(popup_parent->get_title());
+        this->handle_title_changed(popup_parent.lock()->get_title());
     });
 
-    popup_parent->connect(&this->parent_geometry_changed);
-    popup_parent->connect(&this->parent_app_id_changed);
-    popup_parent->connect(&this->parent_title_changed);
+    parent_ptr->connect(&this->parent_geometry_changed);
+    parent_ptr->connect(&this->parent_app_id_changed);
+    parent_ptr->connect(&this->parent_title_changed);
 }
 
 wayfire_xdg_popup::~wayfire_xdg_popup() = default;
@@ -174,7 +177,7 @@ std::shared_ptr<wayfire_xdg_popup> wayfire_xdg_popup::create(wlr_xdg_popup *popu
 
     self->surface_root_node = std::make_shared<wayfire_xdg_popup_node>(self);
     self->set_surface_root_node(self->surface_root_node);
-    self->set_output(self->popup_parent->get_output());
+    self->set_output(self->popup_parent.lock()->get_output());
     return self;
 }
 
@@ -189,7 +192,8 @@ void wayfire_xdg_popup::map()
 
     update_position();
 
-    wf::scene::layer parent_layer = wf::get_view_layer(popup_parent).value_or(wf::scene::layer::WORKSPACE);
+    wf::scene::layer parent_layer = wf::get_view_layer(popup_parent.lock())
+        .value_or(wf::scene::layer::WORKSPACE);
     auto target_layer = wf::scene::layer::UNMANAGED;
     if ((int)parent_layer > (int)wf::scene::layer::WORKSPACE)
     {
@@ -252,7 +256,8 @@ void wayfire_xdg_popup::commit()
 
 void wayfire_xdg_popup::update_position()
 {
-    if (!popup_parent->is_mapped() || !popup)
+    auto parent = popup_parent.lock();
+    if (!parent || !popup)
     {
         return;
     }
@@ -283,7 +288,7 @@ void wayfire_xdg_popup::unconstrain()
         auto as_popup = dynamic_cast<wayfire_xdg_popup*>(toplevel_parent);
         if (as_popup)
         {
-            toplevel_parent = as_popup->popup_parent.get();
+            toplevel_parent = as_popup->popup_parent.lock().get();
         } else
         {
             break;
@@ -399,6 +404,15 @@ wf::geometry_t wayfire_xdg_popup::get_geometry()
 
 wlr_surface*wayfire_xdg_popup::get_keyboard_focus_surface()
 {
+    static wf::option_wrapper_t<bool> focus_main_view{"workarounds/focus_main_surface_instead_of_popup"};
+    if (focus_main_view)
+    {
+        if (auto parent = this->popup_parent.lock())
+        {
+            return parent->get_keyboard_focus_surface();
+        }
+    }
+
     return priv->wsurface;
 }
 

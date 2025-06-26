@@ -29,7 +29,7 @@ class wlr_view_keyboard_interaction_t : public wf::keyboard_interaction_t
     {
         if (auto ptr = view.lock())
         {
-            if (ptr->get_wlr_surface())
+            if (auto surface = ptr->get_keyboard_focus_surface())
             {
                 auto pressed_keys = seat->get_pressed_keys();
 
@@ -37,11 +37,11 @@ class wlr_view_keyboard_interaction_t : public wf::keyboard_interaction_t
 
                 if (force_enter)
                 {
-                    wlr_seat_keyboard_enter(seat->seat, ptr->get_wlr_surface(),
+                    wlr_seat_keyboard_enter(seat->seat, surface,
                         pressed_keys.data(), pressed_keys.size(), kbd ? &kbd->modifiers : NULL);
                 } else
                 {
-                    wlr_seat_keyboard_notify_enter(seat->seat, ptr->get_wlr_surface(),
+                    wlr_seat_keyboard_notify_enter(seat->seat, surface,
                         pressed_keys.data(), pressed_keys.size(), kbd ? &kbd->modifiers : NULL);
                 }
             }

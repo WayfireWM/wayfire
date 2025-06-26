@@ -34,7 +34,7 @@ class wayfire_xdg_popup : public wf::view_interface_t
     ~wayfire_xdg_popup();
     static std::shared_ptr<wayfire_xdg_popup> create(wlr_xdg_popup *popup);
 
-    wayfire_view popup_parent;
+    std::weak_ptr<wf::view_interface_t> popup_parent;
     wlr_xdg_popup *popup;
     void map();
     void unmap();
