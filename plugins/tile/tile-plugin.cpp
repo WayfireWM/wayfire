@@ -5,6 +5,7 @@
 #include <wayfire/core.hpp>
 #include <wayfire/matcher.hpp>
 #include <wayfire/workspace-set.hpp>
+#include <wayfire/bindings-repository.hpp>
 #include <wayfire/signal-definitions.hpp>
 #include <wayfire/toplevel-view.hpp>
 
@@ -44,6 +45,12 @@ static bool can_tile_view(wayfire_toplevel_view view)
     return true;
 }
 
+wf::activator_callback on_toggle_maximized = [] (auto)
+{
+    return true;
+};
+
+
 namespace wf
 {
 class tile_output_plugin_t : public wf::pointer_interaction_t, public wf::custom_data_t
@@ -59,6 +66,8 @@ class tile_output_plugin_t : public wf::pointer_interaction_t, public wf::custom
     wf::option_wrapper_t<wf::keybinding_t> key_focus_right{"simple-tile/key_focus_right"};
     wf::option_wrapper_t<wf::keybinding_t> key_focus_above{"simple-tile/key_focus_above"};
     wf::option_wrapper_t<wf::keybinding_t> key_focus_below{"simple-tile/key_focus_below"};
+
+    wf::option_wrapper_t<wf::activatorbinding_t> key_toggle_maximized{"simple-tile/key_toggle_maximized"};
     wf::output_t *output;
 
   public:
@@ -161,6 +170,12 @@ class tile_output_plugin_t : public wf::pointer_interaction_t, public wf::custom
     {
         if (auto toplevel = toplevel_cast(ev->view))
         {
+            if (toplevel->get_wset())
+            {
+                auto wset = toplevel->get_wset();
+                tile_workspace_set_data_t::get(wset).unmaximize_all_views_on_workspace(wset);
+            }
+
             if (tile_window_by_default(toplevel))
             {
                 attach_view(toplevel);
@@ -271,6 +286,23 @@ class tile_output_plugin_t : public wf::pointer_interaction_t, public wf::custom
         });
     };
 
+    wf::activator_callback on_toggle_maximized = [=] (auto)
+    {
+        return conditioned_view_execute(true, [=] (wayfire_toplevel_view view)
+        {
+            auto node = tile::view_node_t::get_node(view);
+            if (!node)
+            {
+                return;
+            }
+
+            node->show_maximized = !node->show_maximized;
+
+            autocommit_transaction_t tx;
+            node->set_geometry(node->geometry, tx.tx);
+        });
+    };
+
     bool focus_adjacent(tile::split_insertion_t direction)
     {
         return conditioned_view_execute(true, [=] (wayfire_toplevel_view view)
@@ -278,18 +310,40 @@ class tile_output_plugin_t : public wf::pointer_interaction_t, public wf::custom
             auto adjacent = tile::find_first_view_in_direction(
                 tile::view_node_t::get_node(view), direction);
 
-            bool was_fullscreen = view->pending_fullscreen();
-            if (adjacent)
+            if (!adjacent)
             {
-                /* This will lower the fullscreen status of the view */
-                view_bring_to_front(adjacent->view);
-                wf::get_core().seat->focus_view(adjacent->view);
-
-                if (was_fullscreen && keep_fullscreen_on_adjacent)
-                {
-                    wf::get_core().default_wm->fullscreen_request(adjacent->view, output, true);
-                }
+                return false;
             }
+
+            auto current_node  = tile::view_node_t::get_node(view);
+            bool was_maximized = current_node->show_maximized;
+
+            if (was_maximized)
+            {
+                autocommit_transaction_t tx;
+                current_node->show_maximized = false;
+                current_node->set_geometry(current_node->geometry, tx.tx);
+            }
+
+            auto adjacent_node = tile::view_node_t::get_node(adjacent->view);
+            if (adjacent_node && was_maximized)
+            {
+                autocommit_transaction_t tx;
+                adjacent_node->show_maximized = true;
+                adjacent_node->set_geometry(adjacent_node->geometry, tx.tx);
+            }
+
+            wf::get_core().seat->focus_view(adjacent->view);
+            view_bring_to_front(adjacent->view);
+
+            /* This will lower the fullscreen status of the view */
+            bool was_fullscreen = view->pending_fullscreen();
+            if (was_fullscreen && keep_fullscreen_on_adjacent)
+            {
+                wf::get_core().default_wm->fullscreen_request(adjacent->view, output, true);
+            }
+
+            return true;
         });
     }
 
@@ -353,6 +407,8 @@ class tile_output_plugin_t : public wf::pointer_interaction_t, public wf::custom
         output->add_key(key_focus_right, &on_focus_adjacent);
         output->add_key(key_focus_above, &on_focus_adjacent);
         output->add_key(key_focus_below, &on_focus_adjacent);
+
+        output->add_activator(key_toggle_maximized, &on_toggle_maximized);
     }
 
     wf::plugin_activation_data_t grab_interface = {
@@ -380,6 +436,7 @@ class tile_output_plugin_t : public wf::pointer_interaction_t, public wf::custom
         output->rem_binding(&on_resize_view);
         output->rem_binding(&on_toggle_tiled_state);
         output->rem_binding(&on_focus_adjacent);
+        output->rem_binding(&on_toggle_maximized);
         stop_controller(true);
     }
 };
@@ -400,6 +457,7 @@ class tile_plugin_t : public wf::plugin_interface_t, wf::per_output_tracker_mixi
         wf::get_core().connect(&on_view_unmapped);
         ipc_repo->register_method("simple-tile/get-layout", ipc_get_layout);
         ipc_repo->register_method("simple-tile/set-layout", ipc_set_layout);
+        ipc_repo->register_method("simple-tile/set-show-maximized", ipc_set_show_maximized);
         preview_manager = std::make_unique<tile::drag_manager_t>();
     }
 
@@ -479,7 +537,8 @@ class tile_plugin_t : public wf::plugin_interface_t, wf::per_output_tracker_mixi
         {
             if (toplevel->get_wset())
             {
-                tile_workspace_set_data_t::get(toplevel->get_wset()).consider_exit_fullscreen(toplevel);
+                auto wset = toplevel->get_wset();
+                tile_workspace_set_data_t::get(wset).consider_exit_fullscreen(toplevel);
             }
         }
     };
@@ -513,6 +572,11 @@ class tile_plugin_t : public wf::plugin_interface_t, wf::per_output_tracker_mixi
     ipc::method_callback ipc_set_layout = [=] (wf::json_t params) -> wf::json_t
     {
         return tile::handle_ipc_set_layout(params);
+    };
+
+    ipc::method_callback ipc_set_show_maximized = [=] (wf::json_t params) -> wf::json_t
+    {
+        return tile::handle_ipc_set_show_maximized(params);
     };
 };
 

@@ -50,6 +50,15 @@
 			<_long>Moves focus to the window below with the specified key.</_long>
 			<default>&lt;super&gt; KEY_J</default>
 		</option>
+		<option name="key_toggle_maximized" type="activator">
+			<_short>Key toggle maximized</_short>
+			<_long>
+			Toggles the maximized state of the currently focused tiled view.
+			When enabled, the view fills the workarea (like fullscreen, but stays in its tile).
+			When disabled, the view returns to its previous tiled size.
+			</_long>
+			<default>&lt;super&gt; KEY_M</default>
+		</option>
 		<option name="inner_gap_size" type="int">
 			<_short>Inner gap size</_short>
 			<_long>Number of pixels to shrink of a view when it has a neighbor in a given direction.</_long>

@@ -215,6 +215,40 @@ inline std::unique_ptr<tile::tree_node_t> build_tree_from_json(const wf::json_t&
     return root;
 }
 
+inline wf::json_t handle_ipc_set_show_maximized(const wf::json_t& params)
+{
+    if (!params.has_member("view-id"))
+    {
+        return wf::ipc::json_error("Missing 'view-id' field");
+    }
+
+    uint64_t view_id = wf::ipc::json_get_uint64(params, "view-id");
+    auto view = wf::toplevel_cast(wf::ipc::find_view_by_id(view_id));
+    if (!view)
+    {
+        return wf::ipc::json_error("View not found");
+    }
+
+    if (!params.has_member("show-maximized"))
+    {
+        return wf::ipc::json_error("Missing 'show-maximized' field");
+    }
+
+    bool show_maximized = wf::ipc::json_get_bool(params, "show-maximized");
+
+    auto node = tile::view_node_t::get_node(view);
+    if (!node)
+    {
+        return wf::ipc::json_error("View is not tiled");
+    }
+
+    autocommit_transaction_t tx;
+    node->show_maximized = show_maximized;
+    node->set_geometry(node->geometry, tx.tx);
+
+    return wf::ipc::json_ok();
+}
+
 inline wf::json_t handle_ipc_get_layout(const json_t& params)
 {
     auto wset_index = wf::ipc::json_get_uint64(params, "wset-index");
