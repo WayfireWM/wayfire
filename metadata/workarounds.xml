@@ -86,6 +86,10 @@
 		<option name="focus_main_surface_instead_of_popup" type="bool">
 			<_short>Focus main surface instead of popup menus</_short>
 			<_long>Focus the main surface instead of popup menus. Works around some bugs in Qt-based apps related to copy-paste.</_long>
+		</option>
+		<option name="auto_reload_config" type="bool">
+			<_short>Auto-reload Config</_short>
+			<_long>Automatically reload the config file when it's modified.</_long>
 			<default>false</default>
 		</option>
 	</plugin>
