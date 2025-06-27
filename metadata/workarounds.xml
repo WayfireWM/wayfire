@@ -83,5 +83,10 @@
 			<_long>Disable primary selection (middle-click copy/paste).</_long>
 			<default>false</default>
 		</option>
+		<option name="auto_reload" type="bool">
+			<_short>Auto-reload Config</_short>
+			<_long>Automatically reload the config file when it's modified.</_long>
+			<default>false</default>
+		</option>
 	</plugin>
 </wayfire>
