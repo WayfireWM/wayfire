@@ -603,6 +603,11 @@ void wayfire_layer_shell_view::close()
 
 void wayfire_layer_shell_view::configure(wf::geometry_t box)
 {
+    if (!lsurface->initialized)
+    {
+        return;
+    }
+
     auto state = &lsurface->current;
     if ((state->anchor & both_horiz) == both_horiz)
     {
