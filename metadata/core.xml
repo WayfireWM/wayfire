@@ -98,5 +98,10 @@
 			<_long>Calls the shutdown routines for wayfire.</_long>
 			<default>&lt;ctrl&gt; &lt;alt&gt; KEY_BACKSPACE</default>
 		</option>
+		<option name="auto_reload" type="bool">
+			<_short>Auto-reload Config</_short>
+			<_long>Automatically reload the config file when it's modified.</_long>
+			<default>false</default>
+		</option>
 	</plugin>
 </wayfire>
