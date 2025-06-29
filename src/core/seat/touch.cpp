@@ -536,14 +536,44 @@ void wf::touch_interface_t::add_default_gestures()
 
     auto ack_edge_swipe = [esw_ptr, this] ()
     {
-        uint32_t possible_edges = find_swipe_edges(finger_state.get_center().origin);
+        wf::option_wrapper_t<double> edge_swipe_section_length{"input/edge_swipe_section_length"};
+        double main_edge_section = 1.0 - edge_swipe_section_length;
+        wf::touch::point_t point = finger_state.get_center().origin;
+        uint32_t possible_edges = find_swipe_edges(point);
         uint32_t direction = wf_touch_to_wf_dir(esw_ptr->target_direction);
-
+        auto output   = wf::get_core().seat->get_active_output();
+        auto geometry = output->get_layout_geometry();
+        touch_gesture_type_t edgeType = GESTURE_TYPE_NONE;
+        
         possible_edges &= direction;
+
         if (possible_edges)
         {
+            if (main_edge_section == 1.0)
+            {
+                edgeType = GESTURE_TYPE_EDGE_SWIPE;
+            } else if ((direction == GESTURE_DIRECTION_LEFT || direction == GESTURE_DIRECTION_RIGHT))
+            {
+                if (point.y <= (geometry.height * edge_swipe_section_length))
+                    edgeType = GESTURE_TYPE_EDGE_S1_SWIPE;
+                else if (edgeType == GESTURE_TYPE_NONE && (point.y > (geometry.height * edge_swipe_section_length))
+                            && (point.y < (geometry.height * main_edge_section)))
+                    edgeType = GESTURE_TYPE_EDGE_SWIPE;
+                else if (edgeType == GESTURE_TYPE_NONE && point.y >= (geometry.height * main_edge_section))
+                    edgeType = GESTURE_TYPE_EDGE_S2_SWIPE;
+            } else if ((direction == GESTURE_DIRECTION_UP || direction == GESTURE_DIRECTION_DOWN))
+            {
+                if (point.x <= (geometry.width * edge_swipe_section_length))
+                    edgeType = GESTURE_TYPE_EDGE_S1_SWIPE;
+                else if (edgeType == GESTURE_TYPE_NONE && (point.x > (geometry.width * edge_swipe_section_length))
+                            && (point.x < (geometry.width * main_edge_section)))
+                    edgeType = GESTURE_TYPE_EDGE_SWIPE;
+                else if (edgeType == GESTURE_TYPE_NONE && point.x >= (geometry.width * main_edge_section))
+                    edgeType = GESTURE_TYPE_EDGE_S2_SWIPE;
+            }
+
             wf::touchgesture_t gesture{
-                GESTURE_TYPE_EDGE_SWIPE,
+                edgeType,
                 direction,
                 esw_ptr->cnt_fingers
             };
