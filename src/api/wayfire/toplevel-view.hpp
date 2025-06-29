@@ -203,6 +203,17 @@ class toplevel_view_interface_t : public virtual wf::view_interface_t
      * This function is useful for view implementations only.
      */
     void set_toplevel(std::shared_ptr<wf::toplevel_t> toplevel);
+
+    /**
+     * Potentially focus this view on first map. Newly mapped views are
+     * focused if either:
+     *  - the "core/focus_on_map" option is set
+     *  - no toplevel view is currently focused (i.e. no view is focused
+     *      or the currently focused view has role VIEW_ROLE_DESKTOP_ENVIRONMENT)
+     *  - the newly mapped view is a dialog (i.e. has a non-null parent)
+     *      and its parent is focused
+     */
+    void focus_toplevel_on_map();
 };
 
 inline wayfire_toplevel_view toplevel_cast(wayfire_view view)
