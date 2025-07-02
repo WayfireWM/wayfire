@@ -215,8 +215,9 @@ class blur_render_instance_t : public transformer_render_instance_t<blur_node_t>
                 self->provider()->render(tex, bounding_box, data.damage, data.target, data.target);
             }
 
-            GLuint saved_fb = wf::gles::ensure_render_buffer_fb_id(saved_pixels->pixels.get_renderbuffer());
+            GL_CALL(glDisable(GL_SCISSOR_TEST));
 
+            GLuint saved_fb = wf::gles::ensure_render_buffer_fb_id(saved_pixels->pixels.get_renderbuffer());
             wf::gles::bind_render_buffer(data.target);
             // Setup framebuffer I/O. target_fb contains the frame
             // rendered with expanded damage and artifacts on the edges.

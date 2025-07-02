@@ -223,6 +223,8 @@ static wf::pointf_t get_center(wf::geometry_t g)
 void wf_blur_base::render(wf::gles_texture_t src_tex, wlr_box src_box, const wf::region_t& damage,
     const wf::render_target_t& background_source_fb, const wf::render_target_t& target_fb)
 {
+    wf::gles_texture_t blurred_background = wf::gles_texture_t::from_aux(fb[0]);
+    wf::gles::ensure_render_buffer_fb_id(target_fb);
     blend_program.use(src_tex.type);
 
     /* Use shader and enable vertex and texcoord data */
@@ -278,7 +280,7 @@ void wf_blur_base::render(wf::gles_texture_t src_tex, wlr_box src_box, const wf:
 
     blend_program.set_active_texture(src_tex);
     GL_CALL(glActiveTexture(GL_TEXTURE0 + 1));
-    GL_CALL(glBindTexture(GL_TEXTURE_2D, wf::gles_texture_t::from_aux(fb[0]).tex_id));
+    GL_CALL(glBindTexture(GL_TEXTURE_2D, blurred_background.tex_id));
 
     /* Render it to target_fb */
     wf::gles::bind_render_buffer(target_fb);
