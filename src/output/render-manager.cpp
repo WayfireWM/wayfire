@@ -334,8 +334,7 @@ struct swapchain_damage_manager_t
         return next_frame;
     }
 
-    void swap_buffers(std::unique_ptr<frame_object_t> next_frame, wf::render_pass_t pass,
-        const wf::region_t& swap_damage)
+    void swap_buffers(std::unique_ptr<frame_object_t> next_frame, const wf::region_t& swap_damage)
     {
         /* If force frame sync option is set, call glFinish to block until
          * the GPU finishes rendering. This can work around some driver
@@ -349,13 +348,6 @@ struct swapchain_damage_manager_t
         }
 
         frame_damage.clear();
-        if (!pass.submit())
-        {
-            LOGE("Failed to submit render pass!");
-            wlr_buffer_unlock(next_frame->buffer);
-            return;
-        }
-
         wlr_output_state_set_buffer(&next_frame->state, next_frame->buffer);
         wlr_buffer_unlock(next_frame->buffer);
 
@@ -1184,32 +1176,55 @@ class wf::render_manager::impl
 
         /* Part 3: overlay effects */
         effects->run_effects(OUTPUT_EFFECT_OVERLAY);
+        if (output_inhibit_counter)
+        {
+            current_pass->clear(current_pass->get_target().geometry, {0, 0, 0, 1});
+        }
 
-        /* Part 4: finalize the scene: postprocessing effects */
+        /* Part 4: we are done with the main scene. Submit the main render pass. */
+        const bool pass_status = current_pass->submit();
+        current_pass.reset();
+        if (!pass_status)
+        {
+            LOGE("Failed to submit render pass!");
+            wlr_buffer_unlock(next_frame->buffer);
+            return;
+        }
+
+        /* Part 5: finalize the scene: postprocessing effects */
         if (postprocessing->post_effects.size())
         {
             swap_damage |= damage_manager->get_wlr_damage_box();
         }
 
         postprocessing->run_post_effects();
-        if (output_inhibit_counter)
-        {
-            current_pass->clear(current_pass->get_target().geometry, {0, 0, 0, 1});
-        }
 
-        /* Part 5: render sw cursors
-         * We render software cursors after everything else
+        /* Part 6: render sw cursors We render software cursors after everything else
          * for consistency with hardware cursor planes */
-        wlr_output_add_software_cursors_to_render_pass(output->handle, current_pass->get_wlr_pass(),
-            swap_damage.to_pixman());
+        render_sw_cursors(next_frame.get());
 
-        /* Part 6: finalize frame: swap buffers, send frame_done, etc */
-        damage_manager->swap_buffers(std::move(next_frame), std::move(*current_pass.release()), swap_damage);
+        /* Part 7: finalize frame: swap buffers, send frame_done, etc */
+        damage_manager->swap_buffers(std::move(next_frame), swap_damage);
 
         postprocessing->set_current_buffer(nullptr);
 
         swap_damage.clear();
         post_paint();
+    }
+
+    void render_sw_cursors(swapchain_damage_manager_t::frame_object_t *next_frame)
+    {
+        auto sw_cursor_pass =
+            wlr_renderer_begin_buffer_pass(output->handle->renderer, next_frame->buffer, nullptr);
+        if (!sw_cursor_pass)
+        {
+            LOGE("Failed to render software cursors!");
+            return;
+        }
+
+        wlr_output_add_software_cursors_to_render_pass(output->handle,
+            sw_cursor_pass, swap_damage.to_pixman());
+        wlr_render_pass_submit(sw_cursor_pass);
     }
 
     /**
