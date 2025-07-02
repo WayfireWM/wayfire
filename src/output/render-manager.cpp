@@ -604,12 +604,31 @@ class depth_buffer_manager_t
     {
         /* If the backend doesn't have its own framebuffer, then the
          * framebuffer is created with a depth buffer. */
-        if ((fb == 0) || (required_counter <= 0))
+        if (required_counter <= 0)
         {
             return;
         }
 
-        attach_buffer(find_buffer(fb), fb, width, height);
+        attach_buffer(fb, width, height);
+    }
+
+    void frame_done()
+    {
+        if (currently_attached_fb == INVALID_FB)
+        {
+            return;
+        }
+
+        wf::gles::run_in_context_if_gles([&]
+        {
+            // Detach depth buffer
+            GL_CALL(glBindFramebuffer(GL_FRAMEBUFFER, currently_attached_fb));
+            GL_CALL(glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT,
+                GL_TEXTURE_2D, 0, 0));
+            GL_CALL(glBindFramebuffer(GL_FRAMEBUFFER, 0));
+        });
+
+        currently_attached_fb = INVALID_FB;
     }
 
     void set_required(bool require)
@@ -617,7 +636,7 @@ class depth_buffer_manager_t
         required_counter += require ? 1 : -1;
         if (required_counter <= 0)
         {
-            free_all_buffers();
+            free_buffer();
         }
     }
 
@@ -625,7 +644,7 @@ class depth_buffer_manager_t
 
     ~depth_buffer_manager_t()
     {
-        free_all_buffers();
+        free_buffer();
     }
 
     depth_buffer_manager_t(const depth_buffer_manager_t &) = delete;
@@ -634,97 +653,61 @@ class depth_buffer_manager_t
     depth_buffer_manager_t& operator =(depth_buffer_manager_t&&) = delete;
 
   private:
-    static constexpr size_t MAX_BUFFERS = 3;
     int required_counter = 0;
+    static constexpr int INVALID_FB  = 0;
+    static constexpr int INVALID_TEX = 0;
+    int currently_attached_fb = INVALID_FB;
 
     struct depth_buffer_t
     {
-        GLuint tex = -1;
-        int attached_to = -1;
+        GLuint tex = INVALID_TEX;
         int width  = 0;
         int height = 0;
+    } buffer;
 
-        int64_t last_used = 0;
-    };
-
-    void free_buffer(depth_buffer_t& buffer)
+    void free_buffer()
     {
-        if (buffer.tex != (GLuint) - 1)
+        currently_attached_fb = INVALID_FB;
+        if (buffer.tex != INVALID_TEX)
         {
-            GL_CALL(glDeleteTextures(1, &buffer.tex));
+            wf::gles::run_in_context([&]
+            {
+                GL_CALL(glDeleteTextures(1, &buffer.tex));
+                buffer.tex = INVALID_TEX;
+            });
         }
     }
 
-    void free_all_buffers()
+    void attach_buffer(int fb, int width, int height)
     {
+        if ((buffer.width != width) || (buffer.height != height))
+        {
+            free_buffer();
+            wf::gles::run_in_context_if_gles([&]
+            {
+                GL_CALL(glGenTextures(1, &buffer.tex));
+                GL_CALL(glBindTexture(GL_TEXTURE_2D, buffer.tex));
+                GL_CALL(glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT,
+                    width, height, 0, GL_DEPTH_COMPONENT, GL_UNSIGNED_INT, NULL));
+                GL_CALL(glBindTexture(GL_TEXTURE_2D, 0));
+            });
+
+            buffer.width  = width;
+            buffer.height = height;
+        }
+
         wf::gles::run_in_context_if_gles([&]
         {
-            for (auto& b : buffers)
-            {
-                free_buffer(b);
-            }
+            GL_CALL(glBindTexture(GL_TEXTURE_2D, buffer.tex));
+            GL_CALL(glBindFramebuffer(GL_FRAMEBUFFER, fb));
+            GL_CALL(glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT,
+                GL_TEXTURE_2D, buffer.tex, 0));
+            GL_CALL(glBindTexture(GL_TEXTURE_2D, 0));
+            GL_CALL(glBindFramebuffer(GL_FRAMEBUFFER, 0));
+
+            currently_attached_fb = fb;
         });
     }
-
-    void attach_buffer(depth_buffer_t& buffer, int fb, int width, int height)
-    {
-        if ((buffer.attached_to == fb) &&
-            (buffer.width == width) &&
-            (buffer.height == height))
-        {
-            return;
-        }
-
-        free_buffer(buffer);
-        GL_CALL(glGenTextures(1, &buffer.tex));
-        GL_CALL(glBindTexture(GL_TEXTURE_2D, buffer.tex));
-        GL_CALL(glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT,
-            width, height, 0, GL_DEPTH_COMPONENT, GL_UNSIGNED_INT, NULL));
-        buffer.width  = width;
-        buffer.height = height;
-
-        GL_CALL(glBindTexture(GL_TEXTURE_2D, buffer.tex));
-        GL_CALL(glBindFramebuffer(GL_FRAMEBUFFER, fb));
-        GL_CALL(glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT,
-            GL_TEXTURE_2D, buffer.tex, 0));
-        GL_CALL(glBindTexture(GL_TEXTURE_2D, 0));
-
-        buffer.attached_to = fb;
-        buffer.last_used   = get_current_time();
-    }
-
-    depth_buffer_t& find_buffer(int fb)
-    {
-        for (auto& buffer : buffers)
-        {
-            if (buffer.attached_to == fb)
-            {
-                return buffer;
-            }
-        }
-
-        /** New buffer? */
-        if (buffers.size() < MAX_BUFFERS)
-        {
-            buffers.push_back(depth_buffer_t{});
-
-            return buffers.back();
-        }
-
-        /** Evict oldest */
-        auto oldest = &buffers.front();
-        for (auto& buffer : buffers)
-        {
-            if (buffer.last_used < oldest->last_used)
-            {
-                oldest = &buffer;
-            }
-        }
-
-        return *oldest;
-    }
-
-    std::vector<depth_buffer_t> buffers;
 };
 
 /**
@@ -1145,6 +1128,12 @@ class wf::render_manager::impl
         }
     }
 
+    void unset_bound_output()
+    {
+        depth_buffer_manager->frame_done();
+        postprocessing->set_current_buffer(nullptr);
+    }
+
     /**
      * Repaints the whole output, includes all effects and hooks
      */
@@ -1206,8 +1195,7 @@ class wf::render_manager::impl
         /* Part 7: finalize frame: swap buffers, send frame_done, etc */
         damage_manager->swap_buffers(std::move(next_frame), swap_damage);
 
-        postprocessing->set_current_buffer(nullptr);
-
+        unset_bound_output();
         swap_damage.clear();
         post_paint();
     }

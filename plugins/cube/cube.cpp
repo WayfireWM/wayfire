@@ -409,6 +409,8 @@ class wayfire_cube : public wf::per_output_plugin_instance_t, public wf::pointer
         }
 
         wf::scene::remove_child(render_node);
+        output->render->damage_whole();
+
         render_node = nullptr;
         output->render->rem_effect(&pre_hook);
         output->render->set_require_depth_buffer(false);
