@@ -238,7 +238,8 @@ void transfer_views(wf::output_t *from, wf::output_t *to)
         auto views = from->wset()->get_views(WSET_SORT_STACKING);
         for (auto& view : views)
         {
-            move_view_to_output(view, to, true);
+            unsigned flags = VIEW_TO_OUTPUT_FLAG_RECONFIGURE | VIEW_TO_OUTPUT_FLAG_SAME_WORKSPACE;
+            move_view_to_output(view, to, flags);
         }
     }
 
@@ -621,7 +622,13 @@ struct output_layout_output_t
 
         /* It doesn't make sense to transfer to another output if we're
          * going to shut down the compositor */
-        transfer_views(wo, shutdown ? nullptr : get_core().seat->get_active_output());
+        wf::output_t *new_output = shutdown ? nullptr : get_core().seat->get_active_output();
+        transfer_views(wo, new_output);
+        if (new_output &&
+            (wo->wset()->get_workspace_grid_size() == new_output->wset()->get_workspace_grid_size()))
+        {
+            new_output->wset()->set_workspace(wo->wset()->get_current_workspace());
+        }
 
         wf::output_removed_signal data2;
         data2.output = wo;
@@ -1205,7 +1212,9 @@ class output_layout_t::impl
 
         if (!noop_output)
         {
-            auto handle = wlr_headless_add_output(noop_backend, 1280, 720);
+            // NOOP output should be at least as large as actual screen sizes. Otherwise, when
+            // when windows are temporarily mapped to it, they will be moved/cropped to match it.
+            auto handle = wlr_headless_add_output(noop_backend, 3840, 2160);
             handle->data = WF_NOOP_OUTPUT_MAGIC;
             strcpy(handle->name, "NOOP-1");
 
