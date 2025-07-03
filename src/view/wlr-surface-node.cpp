@@ -144,6 +144,12 @@ wf::scene::wlr_surface_node_t::wlr_surface_node_t(wlr_surface *surface, bool aut
 void wf::scene::wlr_surface_node_t::apply_state(surface_state_t&& state)
 {
     const bool size_changed = current_state.size != state.size;
+    if (size_changed)
+    {
+        state.accumulated_damage |= wf::construct_box({0, 0}, current_state.size);
+        state.accumulated_damage |= wf::construct_box({0, 0}, state.size);
+    }
+
     this->current_state = std::move(state);
     wf::scene::damage_node(this, current_state.accumulated_damage);
     if (size_changed)
