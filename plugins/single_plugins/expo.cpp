@@ -132,9 +132,6 @@ class wayfire_expo : public wf::per_output_plugin_instance_t, public wf::keyboar
         drag_helper->connect(&on_drag_output_focus);
         drag_helper->connect(&on_drag_snap_off);
         drag_helper->connect(&on_drag_done);
-
-        resize_ws_fade();
-        output->connect(&on_workspace_grid_changed);
     }
 
     bool handle_toggle()
@@ -302,6 +299,9 @@ class wayfire_expo : public wf::per_output_plugin_instance_t, public wf::keyboar
             output->add_activator(keyboard_select_options[i], &keyboard_select_cbs[i]);
         }
 
+        resize_ws_fade();
+        on_workspace_grid_changed.disconnect();
+        output->wset()->connect(&on_workspace_grid_changed);
         highlight_active_workspace();
         return true;
     }
@@ -766,6 +766,8 @@ class wayfire_expo : public wf::per_output_plugin_instance_t, public wf::keyboar
         output->render->rem_effect(&pre_frame);
         key_repeat.disconnect();
         key_pressed = 0;
+
+        on_workspace_grid_changed.disconnect();
     }
 
     void fini() override
