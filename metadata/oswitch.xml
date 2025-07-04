@@ -24,5 +24,25 @@
 			<_long>Moves focus to the previous output with the focused window with the specified activator.</_long>
 			<default></default>
 		</option>
+		<option name="left_output" type="activator">
+			<_short>Left output</_short>
+			<_long>Moves focus to the output on the left.</_long>
+			<default></default>
+		</option>
+		<option name="right_output" type="activator">
+			<_short>Right output</_short>
+			<_long>Moves focus to the output on the right.</_long>
+			<default></default>
+		</option>
+		<option name="up_output" type="activator">
+			<_short>Up output</_short>
+			<_long>Moves focus to the output above.</_long>
+			<default></default>
+		</option>
+		<option name="down_output" type="activator">
+			<_short>Down output</_short>
+			<_long>Moves focus to the output below.</_long>
+			<default></default>
+		</option>
 	</plugin>
 </wayfire>
