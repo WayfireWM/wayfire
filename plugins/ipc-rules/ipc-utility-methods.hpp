@@ -281,6 +281,8 @@ class ipc_rules_utility_methods_t
             return wf::ipc::json_error("Options must be an object!");
         }
 
+
+
         for (auto& option : data.get_member_names())
         {
             auto opt = wf::get_core().config->get_option(option);
@@ -304,6 +306,13 @@ class ipc_rules_utility_methods_t
                         std::string(json_to_string(data[option])) + "!");
                 }
             }
+
+            const char *config_file = std::getenv("WAYFIRE_CONFIG_FILE");
+            std::string config_file_str = config_file ? config_file : "wayfire.ini";
+
+            LOGW("Config option '", option, "' modified via IPC. ",
+                "Changes in ", config_file_str, " will not affect this option ",
+                "until Wayfire is restarted.");
 
             opt->set_locked(true);
         }
