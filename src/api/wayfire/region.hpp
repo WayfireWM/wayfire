@@ -57,6 +57,7 @@ struct region_t
     region_t& operator ^=(const region_t& other);
 
     pixman_region32_t *to_pixman();
+    const pixman_region32_t *to_pixman() const;
 
     const pixman_box32_t *begin() const;
     const pixman_box32_t *end() const;

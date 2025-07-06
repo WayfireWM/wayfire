@@ -359,7 +359,7 @@ void wf::render_pass_t::clear(const wf::region_t& region, const wf::color_t& col
     wlr_render_rect_options opts;
     opts.blend_mode = WLR_RENDER_BLEND_MODE_NONE;
     opts.box   = box;
-    opts.clip  = const_cast<wf::region_t&>(damage).to_pixman();
+    opts.clip  = damage.to_pixman();
     opts.color = {
         .r = static_cast<float>(color.r),
         .g = static_cast<float>(color.g),

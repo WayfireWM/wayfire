@@ -301,6 +301,11 @@ pixman_region32_t*wf::region_t::to_pixman()
     return &_region;
 }
 
+const pixman_region32_t*wf::region_t::to_pixman() const
+{
+    return &_region;
+}
+
 pixman_region32_t*wf::region_t::unconst() const
 {
     return const_cast<pixman_region32_t*>(&_region);
