@@ -83,14 +83,14 @@ class wayfire_zoom_screen : public wf::per_output_plugin_instance_t
         x   = box.x;
         y   = box.y;
 
-        const float scale = (progression - 1) / progression;
-
-        // The target width and height are truncated here so that `x1+tw` and
-        // `x1` round to GLint in tandem for glBlitFramebuffer(). This keeps the
-        // aspect ratio constant while panning around.
-        const int tw = w / progression, th = h / progression;
-        const float x1 = x * scale;
-        const float y1 = y * scale;
+        // Store progression once to avoid its value changing in subsequent calls, could be very tricky due to
+        // timing. And if we use slightly different progressions, we can get an invalid rect.
+        const float factor = (float)progression;
+        const float scale  = (factor - 1) / factor;
+        const float x1     = x * scale;
+        const float y1     = y * scale;
+        const float tw     = std::clamp(w / factor, 0.0f, w - x1);
+        const float th     = std::clamp(h / factor, 0.0f, h - y1);
 
         wlr_buffer_pass_options opts{};
         auto pass = wlr_renderer_begin_buffer_pass(wf::get_core().renderer, destination.get_buffer(), &opts);
@@ -98,7 +98,7 @@ class wayfire_zoom_screen : public wf::per_output_plugin_instance_t
         wlr_render_texture_options tex{};
         tex.texture     = source.get_texture();
         tex.blend_mode  = WLR_RENDER_BLEND_MODE_NONE;
-        tex.src_box     = {x1, y1, 1.0 * tw, 1.0 * th};
+        tex.src_box     = {x1, y1, tw, th};
         tex.dst_box     = {0, 0, w, h};
         tex.filter_mode = (interpolation_method == (int)interpolation_method_t::NEAREST) ?
             WLR_SCALE_FILTER_NEAREST : WLR_SCALE_FILTER_BILINEAR;
