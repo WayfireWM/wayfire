@@ -280,6 +280,7 @@ void wf::compositor_core_impl_t::post_init()
     plugin_mgr  = std::make_unique<wf::plugin_manager_t>();
     this->bindings->reparse_extensions();
 
+    this->state = compositor_state_t::RUNNING;
     // Move pointer to the middle of the leftmost, topmost output
     wf::pointf_t p;
     wf::output_t *wo = wf::get_core().output_layout->get_output_coords_at({FLT_MIN, FLT_MIN}, p);
@@ -292,7 +293,6 @@ void wf::compositor_core_impl_t::post_init()
 
     // Start processing cursor events
     seat->priv->cursor->setup_listeners();
-    this->state = compositor_state_t::RUNNING;
     core_startup_finished_signal startup_ev;
     this->emit(&startup_ev);
 }
