@@ -349,6 +349,7 @@ struct swapchain_damage_manager_t
 
         frame_damage.clear();
         wlr_output_state_set_buffer(&next_frame->state, next_frame->buffer);
+        wlr_output_state_set_damage(&next_frame->state, const_cast<wf::region_t&>(swap_damage).to_pixman());
         wlr_buffer_unlock(next_frame->buffer);
 
         if (!wlr_output_test_state(output, &next_frame->state))
