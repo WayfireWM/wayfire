@@ -93,5 +93,12 @@
 			<_long>Automatically reload the config file when it's modified.</_long>
 			<default>true</default>
 		</option>
+		<option name="config_reload_delay" type="int">
+			<_short>Config reload delay</_short>
+			<_long>Delay in milliseconds after a config file change before reloading.</_long>
+			<default>20</default>
+			<min>0</min>
+			<max>500</max>
+		</option>
 	</plugin>
 </wayfire>

@@ -1,4 +1,3 @@
-#include <vector>
 #include "wayfire/debug.hpp"
 #include "wayfire/signal-definitions.hpp"
 #include <string>
@@ -6,6 +5,7 @@
 #include <wayfire/config-backend.hpp>
 #include <wayfire/plugin.hpp>
 #include <wayfire/core.hpp>
+#include <wayfire/util.hpp> // Added for wl_timer
 
 #include <cstring>
 #include <sys/inotify.h>
@@ -40,8 +40,25 @@ class dynamic_ini_config_t : public wf::config_backend_t
   private:
     struct wl_event_source *inotify_evtsrc = nullptr;
     int inotify_fd = -1;
+    wf::wl_timer<false> reload_timer;
+    wf::option_wrapper_t<int> config_reload_delay;
 
   public:
+    /**
+     * Schedules a configuration reload after a delay.
+     * If a reload is already scheduled, it will be reset.
+     */
+    void schedule_config_reload()
+    {
+        uint32_t delay_ms = config_reload_delay;
+        LOGD("Scheduling configuration file reload in ", delay_ms, "ms");
+
+        reload_timer.set_timeout(delay_ms, [this] ()
+        {
+            this->do_reload_config();
+        });
+    }
+
     void init(wl_display *display, config::config_manager_t& config,
         const std::string& cfg_file) override
     {
@@ -56,6 +73,8 @@ class dynamic_ini_config_t : public wf::config_backend_t
         config = wf::config::build_configuration(
             get_xml_dirs(), SYSCONFDIR "/wayfire/defaults.ini", config_file);
 
+        // Load option after building the config, as the option is not present before that.
+        config_reload_delay.load_option("workarounds/config_reload_delay");
         if (check_auto_reload_option())
         {
             inotify_fd = inotify_init1(IN_CLOEXEC);
@@ -111,9 +130,23 @@ class dynamic_ini_config_t : public wf::config_backend_t
             inotify_evtsrc = nullptr;
             close(inotify_fd);
             inotify_fd = -1;
+            reload_timer.disconnect();
         }
 
         return false;
+    }
+
+    /**
+     * Performs the actual configuration reload and emits the signal.
+     * This is called by the wl_timer after the delay.
+     */
+    void do_reload_config()
+    {
+        LOGD("Reloading configuration file now!");
+        reload_config();
+        wf::reload_config_signal ev;
+        wf::get_core().emit(&ev);
+        check_auto_reload_option(); // Re-check auto-reload option after config has been reloaded
     }
 };
 }
@@ -170,14 +203,9 @@ static int handle_config_updated(int fd, uint32_t mask, void *data)
 
     if (should_reload)
     {
-        LOGD("Reloading configuration file");
-
-        reload_config();
-        wf::reload_config_signal ev;
-        wf::get_core().emit(&ev);
-
+        LOGD("Detected configuration file change.");
         auto self = reinterpret_cast<wf::dynamic_ini_config_t*>(data);
-        self->check_auto_reload_option();
+        self->schedule_config_reload();
     }
 
     return 0;
