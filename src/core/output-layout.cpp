@@ -749,9 +749,7 @@ struct output_layout_output_t
     void render_output(wlr_texture *texture)
     {
         // TODO: use render-manager's functions, apply gamma, use our normal pass functions.
-        int buffer_age;
-        struct wlr_render_pass *pass = wlr_output_begin_render_pass(handle, &pending_state.pending,
-            &buffer_age, NULL);
+        struct wlr_render_pass *pass = wlr_output_begin_render_pass(handle, &pending_state.pending, NULL);
         if (pass == NULL)
         {
             return;

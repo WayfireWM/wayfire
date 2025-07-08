@@ -63,6 +63,19 @@ static const wlr_drm_format *choose_format_from_set(const wlr_drm_format_set *se
     return nullptr;
 }
 
+/**
+ * Rounds a wlr_fbox to a wlr_box such that the integer box fully contains the float box.
+ */
+static wlr_box round_fbox_to_containing_box(wlr_fbox fbox)
+{
+    return wlr_box{
+        .x     = (int)std::floor(fbox.x),
+        .y     = (int)std::floor(fbox.y),
+        .width = (int)std::ceil(fbox.x + fbox.width) - (int)std::floor(fbox.x),
+        .height = (int)std::ceil(fbox.y + fbox.height) - (int)std::floor(fbox.y),
+    };
+}
+
 static const wlr_drm_format *choose_format(wlr_renderer *renderer, wf::buffer_allocation_hints_t hints)
 {
     auto supported_render_formats =
@@ -72,13 +85,13 @@ static const wlr_drm_format *choose_format(wlr_renderer *renderer, wf::buffer_al
     // The issue is that not all modifiers support SRGB. Until the wlroots issue
     // (https://gitlab.freedesktop.org/wlroots/wlroots/-/issues/3986) is fixed, we need to somehow filter out
     // formats that don't support SRGB. Simplest way is to patch wlroots as indicated in the issue.
-    if (renderer->impl->get_render_formats)
+    if (renderer->WLR_PRIVATE.impl->get_render_formats)
     {
         static bool initialized = false;
         static wlr_drm_format_set performant_formats{};
         if (!initialized)
         {
-            auto render_fmts = renderer->impl->get_render_formats(renderer);
+            auto render_fmts = renderer->WLR_PRIVATE.impl->get_render_formats(renderer);
             wlr_drm_format_set_intersect(&performant_formats, supported_render_formats, render_fmts);
         }
 
@@ -203,17 +216,11 @@ wf::render_target_t::render_target_t(const auxilliary_buffer_t& buffer) : render
         buffer.get_buffer(), buffer.get_size())
 {}
 
-wlr_box wf::render_target_t::framebuffer_box_from_geometry_box(wlr_box box) const
+wf::render_target_t wf::render_target_t::translated(wf::point_t offset) const
 {
-    wlr_fbox fbox = geometry_to_fbox(box);
-    wlr_fbox scaled_fbox = framebuffer_box_from_geometry_box(fbox);
-
-    return wlr_box{
-        .x     = (int)std::floor(scaled_fbox.x),
-        .y     = (int)std::floor(scaled_fbox.y),
-        .width = (int)std::ceil(scaled_fbox.x + scaled_fbox.width) - (int)std::floor(scaled_fbox.x),
-        .height = (int)std::ceil(scaled_fbox.y + scaled_fbox.height) - (int)std::floor(scaled_fbox.y),
-    };
+    render_target_t copy = *this;
+    copy.geometry = copy.geometry + offset;
+    return copy;
 }
 
 wlr_fbox wf::render_target_t::framebuffer_box_from_geometry_box(wlr_fbox box) const
@@ -223,10 +230,7 @@ wlr_fbox wf::render_target_t::framebuffer_box_from_geometry_box(wlr_fbox box) co
     box.y -= this->geometry.y;
 
     /* Step 2: Apply scale to box */
-    box.x     *= scale;
-    box.y     *= scale;
-    box.width *= scale;
-    box.height *= scale;
+    box = box * scale;
 
     /* Step 3: rotate */
     wf::dimensions_t size = get_size();
@@ -250,12 +254,62 @@ wlr_fbox wf::render_target_t::framebuffer_box_from_geometry_box(wlr_fbox box) co
     return result;
 }
 
+wlr_box wf::render_target_t::framebuffer_box_from_geometry_box(wlr_box box) const
+{
+    wlr_fbox fbox = geometry_to_fbox(box);
+    wlr_fbox scaled_fbox = framebuffer_box_from_geometry_box(fbox);
+    return round_fbox_to_containing_box(scaled_fbox);
+}
+
 wf::region_t wf::render_target_t::framebuffer_region_from_geometry_region(const wf::region_t& region) const
 {
     wf::region_t result;
     for (const auto& rect : region)
     {
         result |= framebuffer_box_from_geometry_box(wlr_box_from_pixman_box(rect));
+    }
+
+    return result;
+}
+
+wlr_fbox wf::render_target_t::geometry_fbox_from_framebuffer_box(wlr_fbox fb_box) const
+{
+    if (subbuffer)
+    {
+        fb_box = scale_fbox(geometry_to_fbox(subbuffer.value()),
+            {0.0, 0.0, (double)get_size().width, (double)get_size().height}, fb_box);
+    }
+
+    wf::dimensions_t current_fb_dimensions = get_size();
+    wlr_fbox result;
+    wlr_fbox_transform(&result, &fb_box, (wl_output_transform)wl_transform,
+        current_fb_dimensions.width, current_fb_dimensions.height);
+
+    if (scale != 0.0f)
+    {
+        result = result * (1.0 / scale);
+    } else
+    {
+        LOGE("Render target scale is zero, cannot invert framebuffer box!");
+        return {0, 0, 0, 0}; // Return an empty/invalid box
+    }
+
+    result.x += this->geometry.x;
+    result.y += this->geometry.y;
+    return result;
+}
+
+wlr_box wf::render_target_t::geometry_box_from_framebuffer_box(wlr_box fb_box) const
+{
+    return round_fbox_to_containing_box(geometry_fbox_from_framebuffer_box(geometry_to_fbox(fb_box)));
+}
+
+wf::region_t wf::render_target_t::geometry_region_from_framebuffer_region(const wf::region_t& region) const
+{
+    wf::region_t result;
+    for (const auto& rect : region)
+    {
+        result |= geometry_box_from_framebuffer_box(wlr_box_from_pixman_box(rect));
     }
 
     return result;

@@ -220,7 +220,9 @@ void wf::compositor_core_impl_t::init()
 
     im_relay = std::make_unique<input_method_relay>();
 
-    protocols.presentation = wlr_presentation_create(display, backend);
+    // TODO: is v2 the correct version here?
+    // https://gitlab.freedesktop.org/wlroots/wlroots/-/merge_requests/4858
+    protocols.presentation = wlr_presentation_create(display, backend, 2);
     protocols.viewporter   = wlr_viewporter_create(display);
 
     protocols.foreign_registry = wlr_xdg_foreign_registry_create(display);

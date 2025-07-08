@@ -199,6 +199,31 @@ struct render_target_t : public render_buffer_t
      * iterating over the rects in the region and transforming them with framebuffer_box_from_geometry_box.
      */
     wf::region_t framebuffer_region_from_geometry_region(const wf::region_t& region) const;
+
+    /**
+     * Get the geometry of the given framebuffer box after projecting it back to the logical coordinate space.
+     *
+     * The resulting geometry is affected by the framebuffer geometry, scale and
+     * transform.
+     */
+    wlr_box geometry_box_from_framebuffer_box(wlr_box fb_box) const;
+
+    /**
+     * Get the geometry of the given framebuffer fbox after projecting it back to the logical coordinate
+     * space.
+     *
+     * The resulting geometry is affected by the framebuffer geometry, scale and
+     * transform.
+     */
+    wlr_fbox geometry_fbox_from_framebuffer_box(wlr_fbox fb_box) const;
+
+    /**
+     * Get the geometry of the given framebuffer region after projecting it back to the logical coordinate
+     * space.
+     * This is the same as iterating over the rects in the region and transforming them with
+     * geometry_box_from_framebuffer_box.
+     */
+    wf::region_t geometry_region_from_framebuffer_region(const wf::region_t& region) const;
 };
 
 namespace scene

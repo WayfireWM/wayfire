@@ -118,7 +118,7 @@ void wf::xw::xwayland_toplevel_t::commit()
     if (_pending.tiled_edges != _current.tiled_edges)
     {
         wait_for_client = true;
-        wlr_xwayland_surface_set_maximized(xw, !!_pending.tiled_edges);
+        wlr_xwayland_surface_set_maximized(xw, !!_pending.tiled_edges, !!_pending.tiled_edges);
     }
 
     if (_pending.fullscreen != _current.fullscreen)
