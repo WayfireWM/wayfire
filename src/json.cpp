@@ -433,7 +433,7 @@ json_t::json_t(yyjson_mut_doc *doc)
     this->v   = yyjson_mut_doc_get_root(this->doc);
 }
 
-json_t::json_t(const json_t& other)
+json_t::json_t(const json_t& other) : json_reference_t()
 {
     *this = other;
 }
