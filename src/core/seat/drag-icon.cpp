@@ -158,9 +158,11 @@ wf::drag_icon_t::drag_icon_t(wlr_drag_icon *ic) : icon(ic)
     on_map.set_callback([=] (void*)
     {
         wf::scene::set_node_enabled(root_node, true);
+        wf::scene::damage_node(root_node, root_node->get_bounding_box());
     });
     on_unmap.set_callback([&] (void*)
     {
+        wf::scene::damage_node(root_node, last_box);
         wf::scene::set_node_enabled(root_node, false);
     });
     on_destroy.set_callback([&] (void*)
@@ -187,6 +189,7 @@ wf::drag_icon_t::drag_icon_t(wlr_drag_icon *ic) : icon(ic)
 
 wf::drag_icon_t::~drag_icon_t()
 {
+    wf::scene::damage_node(root_node, last_box);
     root_node->icon = nullptr;
     wf::scene::remove_child(root_node);
 }

@@ -214,13 +214,14 @@ class wayfire_dnd_xwayland_view : public wayfire_unmanaged_xwayland_view
 
     void handle_map_request(wlr_surface *surface) override
     {
-        LOGD("Mapping a Xwayland drag icon");
+        LOGC(XWL, "Mapping a Xwayland drag icon");
         wayfire_unmanaged_xwayland_view::handle_map_request(surface);
         wf::scene::readd_front(wf::get_core().scene(), this->get_root_node());
     }
 
     void handle_unmap_request() override
     {
+        LOGC(XWL, "Mapping a Xwayland drag icon");
         wayfire_unmanaged_xwayland_view::handle_unmap_request();
         wf::scene::remove_child(this->get_root_node());
     }
