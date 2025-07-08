@@ -34,6 +34,9 @@ class xdg_toplevel_t : public toplevel_t, public std::enable_shared_from_this<xd
     std::shared_ptr<wf::scene::wlr_surface_node_t> main_surface;
     scene::surface_state_t pending_state;
 
+    std::optional<uint32_t> configure_surface_with_state(const wf::toplevel_state_t& desired_state,
+        const wf::toplevel_state_t& base_state);
+
     void apply_pending_state();
     wf::dimensions_t get_current_wlr_toplevel_size();
 

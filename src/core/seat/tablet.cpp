@@ -166,7 +166,7 @@ bool wf::tablet_tool_t::set_focus(wf::scene::node_ptr surface)
         wf::xwayland_bring_to_front(next_focus);
     }
 
-    if (next_focus && wlr_surface_accepts_tablet_v2(tablet_v2, next_focus))
+    if (next_focus && wlr_surface_accepts_tablet_v2(next_focus, tablet_v2))
     {
         this->proximity_surface = surface;
         wlr_tablet_v2_tablet_tool_notify_proximity_in(tool_v2, tablet_v2, next_focus);

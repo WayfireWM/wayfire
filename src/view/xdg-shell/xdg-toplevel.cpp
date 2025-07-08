@@ -45,65 +45,70 @@ void wf::xdg_toplevel_t::commit()
         " margins=", _pending.margins.left, ",", _pending.margins.right, ",",
         _pending.margins.top, ",", _pending.margins.bottom);
 
-    if (!this->toplevel || (_current.mapped && !_pending.mapped))
+    if (!this->toplevel || (_current.mapped && !_pending.mapped) || !toplevel->base->initialized)
     {
         // No longer mapped => we can do whatever
         emit_ready();
         return;
     }
 
+    auto configure_serial = configure_surface_with_state(_pending, _current);
+    if (configure_serial.has_value())
+    {
+        // Send frame done to let the client know it update its state as fast as possible.
+        this->target_configure = *configure_serial;
+        main_surface->send_frame_done(true);
+    } else
+    {
+        emit_ready();
+    }
+}
+
+std::optional<uint32_t> wf::xdg_toplevel_t::configure_surface_with_state(
+    const wf::toplevel_state_t& desired_state, const wf::toplevel_state_t& base_state)
+{
     wf::dimensions_t current_size =
-        shrink_dimensions_by_margins(wf::dimensions(_current.geometry), _current.margins);
-    if (_pending.mapped && !_current.mapped)
+        shrink_dimensions_by_margins(wf::dimensions(base_state.geometry), base_state.margins);
+    if (desired_state.mapped && !base_state.mapped)
     {
         // We are trying to map the toplevel => check whether we should wait until it sets the proper
         // geometry, or whether we are 'only' mapping without resizing.
         current_size = get_current_wlr_toplevel_size();
     }
 
-    bool wait_for_client = false;
-
     const wf::dimensions_t desired_size =
-        wf::shrink_dimensions_by_margins(wf::dimensions(_pending.geometry), _pending.margins);
+        wf::shrink_dimensions_by_margins(wf::dimensions(desired_state.geometry), desired_state.margins);
+    std::optional<uint32_t> configure_serial;
 
-    if (current_size != desired_size)
+    if ((current_size != desired_size) && (desired_state.geometry.width > 0) &&
+        (desired_state.geometry.height > 0))
     {
-        wait_for_client = true;
         const int configure_width  = std::max(1, desired_size.width);
         const int configure_height = std::max(1, desired_size.height);
-        this->target_configure = wlr_xdg_toplevel_set_size(this->toplevel, configure_width, configure_height);
+        configure_serial = wlr_xdg_toplevel_set_size(this->toplevel, configure_width, configure_height);
     }
 
-    if (_current.tiled_edges != _pending.tiled_edges)
+    if (base_state.tiled_edges != desired_state.tiled_edges)
     {
-        wait_for_client = true;
-        wlr_xdg_toplevel_set_tiled(this->toplevel, _pending.tiled_edges);
-
+        wlr_xdg_toplevel_set_tiled(this->toplevel, desired_state.tiled_edges);
         auto version = wl_resource_get_version(toplevel->resource);
         if (version >= XDG_TOPLEVEL_STATE_TILED_LEFT_SINCE_VERSION)
         {
-            this->target_configure =
-                wlr_xdg_toplevel_set_maximized(this->toplevel, (_pending.tiled_edges == TILED_EDGES_ALL));
+            configure_serial =
+                wlr_xdg_toplevel_set_maximized(this->toplevel,
+                    (desired_state.tiled_edges == TILED_EDGES_ALL));
         } else
         {
-            this->target_configure = wlr_xdg_toplevel_set_maximized(this->toplevel, !!_pending.tiled_edges);
+            configure_serial = wlr_xdg_toplevel_set_maximized(this->toplevel, !!desired_state.tiled_edges);
         }
     }
 
-    if (_current.fullscreen != _pending.fullscreen)
+    if (base_state.fullscreen != desired_state.fullscreen)
     {
-        wait_for_client = true;
-        this->target_configure = wlr_xdg_toplevel_set_fullscreen(toplevel, _pending.fullscreen);
+        configure_serial = wlr_xdg_toplevel_set_fullscreen(toplevel, desired_state.fullscreen);
     }
 
-    if (wait_for_client)
-    {
-        // Send frame done to let the client know it update its state as fast as possible.
-        main_surface->send_frame_done(true);
-    } else
-    {
-        emit_ready();
-    }
+    return configure_serial;
 }
 
 void wf::xdg_toplevel_t::apply()
@@ -151,10 +156,11 @@ void wf::xdg_toplevel_t::apply()
 void wf::xdg_toplevel_t::handle_surface_commit()
 {
     pending_state.merge_state(toplevel->base->surface);
-
-    if (this->toplevel->base->initial_commit)
+    if (toplevel->base->initial_commit)
     {
-        wlr_xdg_surface_schedule_configure(this->toplevel->base);
+        wf::toplevel_state_t empty_state{};
+        configure_surface_with_state(_committed, empty_state);
+        wlr_xdg_surface_schedule_configure(toplevel->base);
         return;
     }
 
@@ -189,13 +195,10 @@ void wf::xdg_toplevel_t::handle_surface_commit()
     {
         if (toplevel)
         {
-            wlr_box wm_box;
-            wlr_xdg_surface_get_geometry(toplevel->base, &wm_box);
-
-            if (this->wm_offset != wf::origin(wm_box))
+            if (this->wm_offset != wf::origin(toplevel->base->geometry))
             {
                 // Trigger reppositioning in the view implementation
-                this->wm_offset = wf::origin(wm_box);
+                this->wm_offset = wf::origin(toplevel->base->geometry);
                 xdg_toplevel_applied_state_signal event_applied;
                 event_applied.old_state = current();
                 this->emit(&event_applied);
@@ -235,9 +238,7 @@ void wf::xdg_toplevel_t::apply_pending_state()
 
     if (toplevel)
     {
-        wlr_box wm_box;
-        wlr_xdg_surface_get_geometry(toplevel->base, &wm_box);
-        this->wm_offset = wf::origin(wm_box);
+        this->wm_offset = wf::origin(toplevel->base->geometry);
     }
 }
 
@@ -253,9 +254,7 @@ void wf::xdg_toplevel_t::emit_ready()
 wf::dimensions_t wf::xdg_toplevel_t::get_current_wlr_toplevel_size()
 {
     // Size did change => Start a new transaction to change the size.
-    wlr_box wm_box;
-    wlr_xdg_surface_get_geometry(toplevel->base, &wm_box);
-    return wf::dimensions(wm_box);
+    return wf::dimensions(toplevel->base->geometry);
 }
 
 wf::dimensions_t wf::xdg_toplevel_t::get_min_size()

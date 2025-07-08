@@ -334,6 +334,14 @@ class wayfire_blur : public wf::plugin_interface_t
   public:
     void init() override
     {
+        if (!wf::get_core().is_gles2())
+        {
+            const char *render_type =
+                wf::get_core().is_vulkan() ? "vulkan" : (wf::get_core().is_pixman() ? "pixman" : "unknown");
+            LOGE("blur: requires GLES2 support, but current renderer is ", render_type);
+            return;
+        }
+
         wf::get_core().connect(&on_render_pass_begin);
         blur_method_changed = [=] ()
         {

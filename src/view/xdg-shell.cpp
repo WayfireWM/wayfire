@@ -270,10 +270,8 @@ void wayfire_xdg_popup::update_position()
 
     if (wlr_xdg_surface *xdg_surface = wlr_xdg_surface_try_from_wlr_surface(popup->parent))
     {
-        wlr_box box;
-        wlr_xdg_surface_get_geometry(xdg_surface, &box);
-        local_offset.x += box.x;
-        local_offset.y += box.y;
+        local_offset.x += xdg_surface->geometry.x;
+        local_offset.y += xdg_surface->geometry.y;
     }
 
     wf::pointf_t popup_offset = wf::place_popup_at(popup->parent, popup->base->surface, local_offset);

@@ -10,7 +10,7 @@ struct region_t
 {
     region_t();
     /* Makes a copy of the given region */
-    region_t(pixman_region32_t *damage);
+    region_t(const pixman_region32_t *damage);
     region_t(const wlr_box& box);
     ~region_t();
 

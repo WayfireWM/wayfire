@@ -133,6 +133,7 @@ wf::geometry_t operator -(const wf::geometry_t & a, const wf::point_t& b);
 
 /** Scale the box */
 wf::geometry_t operator *(const wf::geometry_t& box, double scale);
+wlr_fbox operator *(const wlr_fbox& box, double scale);
 
 /* @return The length of the given vector */
 double abs(const wf::point_t & p);

@@ -25,7 +25,7 @@ wf::region_t::region_t()
     pixman_region32_init(&_region);
 }
 
-wf::region_t::region_t(pixman_region32_t *region) : wf::region_t()
+wf::region_t::region_t(const pixman_region32_t *region) : wf::region_t()
 {
     pixman_region32_copy(this->to_pixman(), region);
 }

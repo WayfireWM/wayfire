@@ -11,6 +11,7 @@ wf::text_input_v3_popup::text_input_v3_popup(wf::text_input_v3_im_relay_interfac
         on_map.disconnect();
         on_unmap.disconnect();
         on_destroy.disconnect();
+        on_surface_destroy.disconnect();
     });
 
     on_map.set_callback([&] (void*) { map(); });

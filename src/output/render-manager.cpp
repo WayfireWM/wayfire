@@ -67,9 +67,11 @@ struct swapchain_damage_manager_t
             scene::damage_callback push_damage = [=] (wf::region_t region)
             {
                 // Damage is pushed up to the root in root coordinate system,
-                // we need it in layout-local coordinate system.
+                // we need it in output-buffer-local coordinate system.
                 region += -wf::origin(wo->get_layout_geometry());
-                this->damage(region, true);
+                region  =
+                    wo->render->get_target_framebuffer().framebuffer_region_from_geometry_region(region);
+                this->damage_buffer(region, true);
             };
 
             render_instances.clear();
@@ -88,13 +90,6 @@ struct swapchain_damage_manager_t
                 }
             });
         }
-    }
-
-    void update_damage_ring_bounds()
-    {
-        int width, height;
-        wlr_output_transformed_resolution(output, &width, &height);
-        wlr_damage_ring_set_bounds(&damage_ring, width, height);
     }
 
     void start_rendering()
@@ -117,23 +112,23 @@ struct swapchain_damage_manager_t
         output->connect(&output_mode_changed);
 
         wlr_damage_ring_init(&damage_ring);
-        update_damage_ring_bounds();
-
         on_needs_frame.set_callback([=] (void*) { schedule_repaint(); });
-        on_damage.set_callback([&] (void *data)
+        on_damage.set_callback([=] (void *data)
         {
             auto ev = static_cast<wlr_output_event_damage*>(data);
-            if (wlr_damage_ring_add(&damage_ring, ev->damage))
-            {
-                schedule_repaint();
-            }
+
+            wf::region_t rotated{ev->damage};
+            int width, height;
+            wlr_output_transformed_resolution(this->output, &width, &height);
+            wlr_region_transform(rotated.to_pixman(), rotated.to_pixman(),
+                wlr_output_transform_invert(this->output->transform), width, height);
+            damage_buffer(rotated, true);
         });
 
         on_request_state.set_callback([=] (void *data)
         {
             auto ev = static_cast<wlr_output_event_request_state*>(data);
             wlr_output_commit_state(output->handle, ev->state);
-            update_damage_ring_bounds();
             damage_whole();
             schedule_repaint();
         });
@@ -162,31 +157,28 @@ struct swapchain_damage_manager_t
             return;
         }
 
-        update_damage_ring_bounds();
         schedule_repaint();
     };
 
     /**
      * Damage the given region
      */
-    void damage(const wf::region_t& region, bool repaint)
+    void damage_buffer(const wf::region_t& region, bool repaint)
     {
         if (region.empty())
         {
             return;
         }
 
-        /* Wlroots expects damage after scaling */
-        auto scaled_region = region * wo->handle->scale;
-        frame_damage |= scaled_region;
-        wlr_damage_ring_add(&damage_ring, scaled_region.to_pixman());
+        frame_damage |= region;
+        wlr_damage_ring_add(&damage_ring, region.to_pixman());
         if (repaint)
         {
             schedule_repaint();
         }
     }
 
-    void damage(const wf::geometry_t& box, bool repaint)
+    void damage_buffer(const wf::geometry_t& box, bool repaint)
     {
         if ((box.width <= 0) || (box.height <= 0))
         {
@@ -194,9 +186,8 @@ struct swapchain_damage_manager_t
         }
 
         /* Wlroots expects damage after scaling */
-        auto scaled_box = box * wo->handle->scale;
-        frame_damage |= scaled_box;
-        wlr_damage_ring_add_box(&damage_ring, &scaled_box);
+        frame_damage |= box;
+        wlr_damage_ring_add_box(&damage_ring, &box);
         if (repaint)
         {
             schedule_repaint();
@@ -223,8 +214,6 @@ struct swapchain_damage_manager_t
         schedule_repaint();
     }
 
-    wf::region_t acc_damage;
-
     // A struct which contains the necessary structures for painting one frame
     struct frame_object_t
     {
@@ -250,18 +239,13 @@ struct swapchain_damage_manager_t
 
     bool acquire_next_swapchain_buffer(frame_object_t& frame)
     {
-        int width, height;
-        wlr_output_transformed_resolution(output, &width, &height);
-        wlr_region_transform(&frame.state.damage, &damage_ring.current,
-            wlr_output_transform_invert(output->transform), width, height);
-
         if (!wlr_output_configure_primary_swapchain(output, &frame.state, &output->swapchain))
         {
             LOGE("Failed to configure primary output swapchain for output ", nonull(output->name));
             return false;
         }
 
-        frame.buffer = wlr_swapchain_acquire(output->swapchain, &frame.buffer_age);
+        frame.buffer = wlr_swapchain_acquire(output->swapchain);
         if (!frame.buffer)
         {
             LOGE("Failed to acquire buffer from the output swapchain!");
@@ -304,6 +288,9 @@ struct swapchain_damage_manager_t
      */
     std::unique_ptr<frame_object_t> start_frame()
     {
+        auto buffer_extents = this->get_buffer_extents();
+        pixman_region32_intersect_rect(&damage_ring.current, &damage_ring.current,
+            buffer_extents.x, buffer_extents.y, buffer_extents.width, buffer_extents.height);
         const bool needs_swap = force_next_frame | output->needs_frame |
             pixman_region32_not_empty(&damage_ring.current) | (constant_redraw_counter > 0);
         force_next_frame = false;
@@ -329,7 +316,7 @@ struct swapchain_damage_manager_t
         // Accumulate damage now, when we are sure we will render the frame.
         // Doing this earlier may mean that the damage from the previous frames
         // creeps into the current frame damage, if we had skipped a frame.
-        accumulate_damage(next_frame->buffer_age);
+        accumulate_damage(next_frame.get());
 
         return next_frame;
     }
@@ -363,21 +350,21 @@ struct swapchain_damage_manager_t
             LOGE("Output commit failed!");
             return;
         }
-
-        wlr_damage_ring_rotate(&damage_ring);
     }
 
     /**
      * Accumulate damage from last frame.
      * Needs to be called after make_current()
      */
-    void accumulate_damage(int buffer_age)
+    void accumulate_damage(frame_object_t *next_frame)
     {
-        wlr_damage_ring_get_buffer_damage(&damage_ring, buffer_age, acc_damage.to_pixman());
-        frame_damage |= acc_damage;
+        wf::region_t ring_damage;
+        wlr_damage_ring_rotate_buffer(&damage_ring, next_frame->buffer, ring_damage.to_pixman());
+
+        frame_damage |= ring_damage;
         if (runtime_config.no_damage_track)
         {
-            frame_damage |= get_wlr_damage_box();
+            frame_damage |= get_buffer_extents();
         }
     }
 
@@ -385,9 +372,9 @@ struct swapchain_damage_manager_t
      * Return the damage that has been scheduled for the next frame up to now,
      * or, if in a repaint, the damage for the current frame
      */
-    wf::region_t get_scheduled_damage()
+    wf::region_t get_scheduled_damage(const wf::render_target_t& target)
     {
-        return frame_damage * (1.0 / wo->handle->scale);
+        return target.geometry_region_from_framebuffer_region(frame_damage) & target.geometry;
     }
 
     /**
@@ -400,15 +387,11 @@ struct swapchain_damage_manager_t
     }
 
     /**
-     * Return the extents of the visible region for the output in the wlroots
-     * damage coordinate system.
+     * Get the full size of the buffer for damage tracking in output-buffer-local coordinate system
      */
-    wlr_box get_wlr_damage_box() const
+    wlr_box get_buffer_extents() const
     {
-        int w, h;
-        wlr_output_transformed_resolution(output, &w, &h);
-
-        return {0, 0, w, h};
+        return {0, 0, output->width, output->height};
     }
 
     /**
@@ -426,31 +409,11 @@ struct swapchain_damage_manager_t
     }
 
     /**
-     * Returns the scheduled damage for the given workspace, in output-local
-     * coordinates.
-     */
-    wf::region_t get_ws_damage(wf::point_t ws)
-    {
-        auto scaled = frame_damage * (1.0 / wo->handle->scale);
-
-        return scaled & get_ws_box(ws);
-    }
-
-    /**
      * Same as render_manager::damage_whole()
      */
     void damage_whole()
     {
-        auto vsize = wo->wset()->get_workspace_grid_size();
-        auto vp    = wo->wset()->get_current_workspace();
-        auto res   = wo->get_screen_size();
-
-        damage(wf::geometry_t{
-                -vp.x * res.width,
-                -vp.y * res.height,
-                vsize.width * res.width,
-                vsize.height * res.height,
-            }, true);
+        damage_buffer(get_buffer_extents(), true);
     }
 
     wf::wl_idle_call idle_damage;
@@ -957,7 +920,7 @@ class wf::render_manager::impl
     }
 
     wlr_color_transform *icc_color_transform = NULL;
-    wlr_buffer_pass_options pass_opts;
+    wlr_buffer_pass_options pass_opts{};
 
     void reload_icc_profile()
     {
@@ -1080,12 +1043,11 @@ class wf::render_manager::impl
     {
         render_pass_params_t params;
         params.instances = &damage_manager->render_instances;
-        params.damage    = damage_manager->get_ws_damage(
-            output->wset()->get_current_workspace());
-        params.damage += wf::origin(output->get_layout_geometry());
 
         params.target = postprocessing->get_target_framebuffer().translated(
             wf::origin(output->get_layout_geometry()));
+        params.damage = damage_manager->get_scheduled_damage(params.target);
+
         params.background_color = background_color_opt;
         params.reference_output = this->output;
         params.renderer = output->handle->renderer;
@@ -1095,22 +1057,21 @@ class wf::render_manager::impl
         pass_opts.color_transform = icc_color_transform;
         params.pass_opts   = &pass_opts;
         this->current_pass = std::make_unique<render_pass_t>(params);
+
         auto total_damage = current_pass->run_partial();
-
-        total_damage += -wf::origin(output->get_layout_geometry());
-        total_damage  = total_damage * output->handle->scale;
-        total_damage &= damage_manager->get_wlr_damage_box();
-
         if (runtime_config.damage_debug)
         {
             /* Clear the screen to yellow, so that the repainted parts are visible */
-            wf::region_t yellow = damage_manager->get_wlr_damage_box();
+            wf::region_t yellow = params.target.geometry;
             yellow ^= total_damage;
 
-            total_damage |= damage_manager->get_wlr_damage_box();
+            total_damage |= params.target.geometry;
             current_pass->clear(yellow, {1, 1, 0, 1});
         }
 
+        // Transform to buffer-local damage
+        total_damage  = params.target.framebuffer_region_from_geometry_region(total_damage);
+        total_damage &= damage_manager->get_buffer_extents();
         return total_damage;
     }
 
@@ -1184,7 +1145,7 @@ class wf::render_manager::impl
         /* Part 5: finalize the scene: postprocessing effects */
         if (postprocessing->post_effects.size())
         {
-            swap_damage |= damage_manager->get_wlr_damage_box();
+            swap_damage |= damage_manager->get_buffer_extents();
         }
 
         postprocessing->run_post_effects();
@@ -1304,7 +1265,7 @@ void render_manager::rem_post(post_hook_t *hook)
 
 wf::region_t render_manager::get_scheduled_damage()
 {
-    return pimpl->damage_manager->get_scheduled_damage();
+    return pimpl->damage_manager->get_scheduled_damage(get_target_framebuffer());
 }
 
 void render_manager::damage_whole()
@@ -1319,12 +1280,14 @@ void render_manager::damage_whole_idle()
 
 void render_manager::damage(const wlr_box& box, bool repaint)
 {
-    pimpl->damage_manager->damage(box, repaint);
+    auto fb = pimpl->postprocessing->get_target_framebuffer();
+    pimpl->damage_manager->damage_buffer(fb.framebuffer_box_from_geometry_box(box), repaint);
 }
 
 void render_manager::damage(const wf::region_t& region, bool repaint)
 {
-    pimpl->damage_manager->damage(region, repaint);
+    auto fb = pimpl->postprocessing->get_target_framebuffer();
+    pimpl->damage_manager->damage_buffer(fb.framebuffer_region_from_geometry_region(region), repaint);
 }
 
 wlr_box render_manager::get_ws_box(wf::point_t ws) const
