@@ -99,7 +99,10 @@ class wayfire_unmanaged_xwayland_view : public wayfire_xwayland_view_internal_ba
 
     void update_geometry_from_xsurface()
     {
-        wf::scene::damage_node(get_root_node(), last_bounding_box);
+        wf::region_t damage_region = last_bounding_box; // last bounding box
+        damage_region |= get_bounding_box(); // in case resize happened since last move
+        wf::scene::damage_node(get_root_node(), damage_region);
+
         wf::point_t new_position = {xw->x, xw->y};
 
         // Move to the correct output, if the xsurface has changed geometry
