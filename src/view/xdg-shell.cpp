@@ -192,7 +192,8 @@ void wayfire_xdg_popup::map()
 
     update_position();
 
-    wf::scene::layer parent_layer = wf::get_view_layer(popup_parent.lock())
+    auto parent = popup_parent.lock();
+    wf::scene::layer parent_layer = wf::get_view_layer(parent)
         .value_or(wf::scene::layer::WORKSPACE);
     auto target_layer = wf::scene::layer::UNMANAGED;
     if ((int)parent_layer > (int)wf::scene::layer::WORKSPACE)
@@ -200,7 +201,13 @@ void wayfire_xdg_popup::map()
         target_layer = parent_layer;
     }
 
-    wf::scene::readd_front(get_output()->node_for_layer(target_layer), get_root_node());
+    wf::scene::floating_inner_ptr target_parent_node = get_output()->node_for_layer(target_layer);
+    if (std::dynamic_pointer_cast<wayfire_xdg_popup>(parent))
+    {
+        target_parent_node = parent->get_root_node();
+    }
+
+    wf::scene::readd_front(target_parent_node, get_root_node());
 
     if (!popup->base->initial_commit)
     {
