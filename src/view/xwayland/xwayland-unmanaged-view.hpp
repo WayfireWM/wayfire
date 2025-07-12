@@ -99,7 +99,10 @@ class wayfire_unmanaged_xwayland_view : public wayfire_xwayland_view_internal_ba
 
     void update_geometry_from_xsurface()
     {
-        wf::scene::damage_node(get_root_node(), last_bounding_box);
+        wf::region_t damage_region = last_bounding_box; // last bounding box
+        damage_region |= get_bounding_box(); // in case resize happened since last move
+        wf::scene::damage_node(get_root_node(), damage_region);
+
         wf::point_t new_position = {xw->x, xw->y};
 
         // Move to the correct output, if the xsurface has changed geometry
@@ -164,11 +167,11 @@ class wayfire_unmanaged_xwayland_view : public wayfire_xwayland_view_internal_ba
          *
          * Note: only actual override-redirect views should get their focus disabled */
         kb_focus_enabled = (!xw->override_redirect ||
-            wlr_xwayland_or_surface_wants_focus(xw));
+            wlr_xwayland_surface_override_redirect_wants_focus(xw));
 
         wf::scene::readd_front(get_output()->node_for_layer(wf::scene::layer::UNMANAGED), get_root_node());
 
-        const bool wants_focus = (wlr_xwayland_icccm_input_model(xw) != WLR_ICCCM_INPUT_MODEL_NONE);
+        const bool wants_focus = (wlr_xwayland_surface_icccm_input_model(xw) != WLR_ICCCM_INPUT_MODEL_NONE);
         if (kb_focus_enabled && wants_focus)
         {
             wf::get_core().default_wm->focus_request(self());
@@ -181,7 +184,6 @@ class wayfire_unmanaged_xwayland_view : public wayfire_xwayland_view_internal_ba
     {
         LOGC(XWL, "Unmapping unmanaged xwayland surface ", self());
         emit_view_pre_unmap();
-        on_surface_commit.disconnect();
         do_unmap();
     }
 
@@ -214,13 +216,14 @@ class wayfire_dnd_xwayland_view : public wayfire_unmanaged_xwayland_view
 
     void handle_map_request(wlr_surface *surface) override
     {
-        LOGD("Mapping a Xwayland drag icon");
+        LOGC(XWL, "Mapping a Xwayland drag icon");
         wayfire_unmanaged_xwayland_view::handle_map_request(surface);
         wf::scene::readd_front(wf::get_core().scene(), this->get_root_node());
     }
 
     void handle_unmap_request() override
     {
+        LOGC(XWL, "Mapping a Xwayland drag icon");
         wayfire_unmanaged_xwayland_view::handle_unmap_request();
         wf::scene::remove_child(this->get_root_node());
     }

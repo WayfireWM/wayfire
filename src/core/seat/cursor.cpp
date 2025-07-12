@@ -120,6 +120,7 @@ void wf::cursor_t::init_xcursor()
 
     if (xcursor)
     {
+        last_cursor_name.clear(); // make sure we set the new cursor image with the new xcursor_manager
         wlr_xcursor_manager_destroy(xcursor);
     }
 

@@ -424,19 +424,29 @@ struct wf_xdg_decoration_t
             mode = default_mode;
         }
 
-        wlr_xdg_toplevel_decoration_v1_set_mode(decor, mode);
+        if (decor->toplevel->base->initialized)
+        {
+            wlr_xdg_toplevel_decoration_v1_set_mode(decor, mode);
+        }
     };
 
     std::function<void(void*)> commit = [&] (void*)
     {
+        wlr_xdg_surface *xdg_surface = decor->toplevel->base;
+
         bool use_csd = (decor->current.mode == WLR_XDG_TOPLEVEL_DECORATION_V1_MODE_CLIENT_SIDE);
-        uses_csd[decor->toplevel->base->surface] = use_csd;
+        uses_csd[xdg_surface->surface] = use_csd;
 
         auto wf_surface = dynamic_cast<wf::xdg_toplevel_view_t*>(
-            wf::wl_surface_to_wayfire_view(decor->toplevel->base->surface->resource).get());
+            wf::wl_surface_to_wayfire_view(xdg_surface->surface->resource).get());
         if (wf_surface)
         {
             wf_surface->set_decoration_mode(use_csd);
+        }
+
+        if (decor->toplevel->base->initial_commit)
+        {
+            mode_request(NULL);
         }
     };
 
@@ -454,8 +464,6 @@ struct wf_xdg_decoration_t
         on_mode_request.connect(&decor->events.request_mode);
         on_commit.connect(&decor->toplevel->base->surface->events.commit);
         on_destroy.connect(&decor->events.destroy);
-        /* Read initial decoration settings */
-        mode_request(NULL);
     }
 };
 
@@ -517,9 +525,7 @@ void wf::fini_xdg_decoration_handlers()
 void wf::xdg_toplevel_view_t::start_map_tx()
 {
     LOGC(VIEWS, "Start mapping ", self());
-    wlr_box box;
-    wlr_xdg_surface_get_geometry(xdg_toplevel->base, &box);
-
+    wlr_box box  = xdg_toplevel->base->geometry;
     auto margins = wtoplevel->pending().margins;
     box.x = wtoplevel->pending().geometry.x + margins.left;
     box.y = wtoplevel->pending().geometry.y + margins.top;

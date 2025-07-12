@@ -128,6 +128,16 @@ wf::geometry_t operator *(const wf::geometry_t& box, double scale)
     return scaled;
 }
 
+wlr_fbox operator *(const wlr_fbox& box, double scale)
+{
+    wlr_fbox scaled;
+    scaled.x     = box.x * scale;
+    scaled.y     = box.y * scale;
+    scaled.width = box.width * scale;
+    scaled.height = box.height * scale;
+    return scaled;
+}
+
 double abs(const wf::point_t& p)
 {
     return std::sqrt(p.x * p.x + p.y * p.y);

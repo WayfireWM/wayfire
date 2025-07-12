@@ -45,7 +45,6 @@ extern "C"
 #endif
 
 #include <wlr/render/egl.h>
-#include <wlr/types/wlr_matrix.h>
 #undef static
 #include <wlr/types/wlr_buffer.h>
 #include <wlr/types/wlr_viewporter.h>

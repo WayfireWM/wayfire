@@ -26,6 +26,7 @@ class wayfire_xwayland_view : public wf::toplevel_view_interface_t, public wayfi
     wf::wl_listener_wrapper on_request_move, on_request_resize,
         on_request_maximize, on_request_minimize, on_request_activate,
         on_request_fullscreen, on_set_hints, on_set_parent;
+    wf::wl_listener_wrapper on_surface_commit;
 
     wf::wl_listener_wrapper on_set_decorations;
     std::shared_ptr<wf::xw::xwayland_toplevel_t> toplevel;
@@ -226,7 +227,7 @@ class wayfire_xwayland_view : public wf::toplevel_view_interface_t, public wayfi
         {
             wf::view_hints_changed_signal data;
             data.view = this;
-            if (xw->hints->flags & XCB_ICCCM_WM_HINT_X_URGENCY)
+            if (xw->hints && (xw->hints->flags & XCB_ICCCM_WM_HINT_X_URGENCY))
             {
                 data.demands_attention = true;
             }
@@ -365,6 +366,7 @@ class wayfire_xwayland_view : public wf::toplevel_view_interface_t, public wayfi
         toplevel->set_main_surface(nullptr);
         toplevel->pending().mapped = false;
         wf::get_core().tx_manager->schedule_object(toplevel);
+        on_surface_commit.disconnect();
     }
 
     void map(wlr_surface *surface)
@@ -375,7 +377,7 @@ class wayfire_xwayland_view : public wf::toplevel_view_interface_t, public wayfi
         do_map(surface, false);
         on_surface_commit.connect(&surface->events.commit);
 
-        const bool wants_focus = (wlr_xwayland_icccm_input_model(xw) != WLR_ICCCM_INPUT_MODEL_NONE);
+        const bool wants_focus = (wlr_xwayland_surface_icccm_input_model(xw) != WLR_ICCCM_INPUT_MODEL_NONE);
         if (wants_focus)
         {
             wf::get_core().default_wm->focus_request(self());
@@ -389,7 +391,6 @@ class wayfire_xwayland_view : public wf::toplevel_view_interface_t, public wayfi
     {
         LOGC(VIEWS, "Do unmap ", self());
         do_unmap();
-        on_surface_commit.disconnect();
     }
 
     void commit()
