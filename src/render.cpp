@@ -210,6 +210,66 @@ wf::render_buffer_t wf::auxilliary_buffer_t::get_renderbuffer() const
     return buffer;
 }
 
+void wf::render_buffer_t::do_blit(wlr_texture *src_wlr_tex, wlr_fbox src_box,
+    wf::geometry_t dst_box, wlr_scale_filter_mode filter_mode) const
+{
+    auto renderer = wf::get_core().renderer;
+    auto target_buffer = this->get_buffer();
+
+    if (!target_buffer)
+    {
+        LOGE("Cannot copy to unallocated render buffer!");
+        return;
+    }
+
+    wlr_render_pass *pass = wlr_renderer_begin_buffer_pass(renderer, target_buffer, NULL);
+    if (!pass)
+    {
+        LOGE("Failed to start wlr render pass for render buffer copy!");
+        return;
+    }
+
+    wlr_render_texture_options opts{};
+    opts.texture = src_wlr_tex;
+    opts.alpha   = NULL;
+    opts.blend_mode  = WLR_RENDER_BLEND_MODE_NONE;
+    opts.filter_mode = filter_mode;
+    opts.transform   = WL_OUTPUT_TRANSFORM_NORMAL;
+    opts.clip    = NULL;
+    opts.src_box = src_box;
+    opts.dst_box = dst_box;
+    wlr_render_pass_add_texture(pass, &opts);
+    if (!wlr_render_pass_submit(pass))
+    {
+        LOGE("Blit to render buffer failed!");
+    }
+}
+
+void wf::render_buffer_t::blit(wf::auxilliary_buffer_t& source, wlr_fbox src_box,
+    wf::geometry_t dst_box, wlr_scale_filter_mode filter_mode) const
+{
+    if (wlr_texture *src_wlr_tex = source.get_texture())
+    {
+        do_blit(src_wlr_tex, src_box, dst_box, filter_mode);
+    } else
+    {
+        LOGE("Failed to get source texture for auxilliary_buffer_t copy!");
+    }
+}
+
+void wf::render_buffer_t::blit(const wf::render_buffer_t& source, wlr_fbox src_box,
+    wf::geometry_t dst_box, wlr_scale_filter_mode filter_mode) const
+{
+    if (wlr_texture *src_wlr_tex = wlr_texture_from_buffer(wf::get_core().renderer, source.get_buffer()))
+    {
+        do_blit(src_wlr_tex, src_box, dst_box, filter_mode);
+        wlr_texture_destroy(src_wlr_tex);
+    } else
+    {
+        LOGE("Failed to create texture from source render_buffer_t for copy!");
+    }
+}
+
 wf::render_target_t::render_target_t(const render_buffer_t& buffer) : render_buffer_t(buffer)
 {}
 wf::render_target_t::render_target_t(const auxilliary_buffer_t& buffer) : render_buffer_t(
