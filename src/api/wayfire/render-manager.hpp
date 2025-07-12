@@ -14,20 +14,25 @@ using effect_hook_t = std::function<void ()>;
 enum output_effect_type_t
 {
     /* Pre hooks are called before starting to repaint the output */
-    OUTPUT_EFFECT_PRE     = 0,
+    OUTPUT_EFFECT_PRE       = 0,
     /**
      * Damage hooks are called before attaching the renderer to the output.
      * They are useful if the output damage needs to be modified, whereas
      * plugins that simply need to update their animation should use PRE hooks.
      */
-    OUTPUT_EFFECT_DAMAGE  = 1,
+    OUTPUT_EFFECT_DAMAGE    = 1,
     /* Overlay hooks are called right after repainting the output, but
      * before post hooks and before swapping buffers */
-    OUTPUT_EFFECT_OVERLAY = 2,
+    OUTPUT_EFFECT_OVERLAY   = 2,
+    /**
+     * Pass done hooks are called after overlay hooks are all finished.
+     * At this point, the main render pass for the output is over.
+     */
+    OUTPUT_EFFECT_PASS_DONE = 3,
     /* Post hooks are called after the buffers have been swapped */
-    OUTPUT_EFFECT_POST    = 3,
+    OUTPUT_EFFECT_POST      = 4,
     /* Invalid type for a hook, used internally */
-    OUTPUT_EFFECT_TOTAL   = 4,
+    OUTPUT_EFFECT_TOTAL     = 5,
 };
 
 /** Post hooks are called just before swapping buffers. In contrast to
