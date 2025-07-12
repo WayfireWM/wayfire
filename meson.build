@@ -53,6 +53,11 @@ if not json.found()
 	json = sub_proj.dependency('yyjson')
 endif
 
+wlroots_base_version = '0.19'
+wlroots_dep_name = 'wlroots-' + wlroots_base_version
+wlroots_min_version = '>=' + wlroots_base_version + '.0'
+wlroots_max_version = '<=' + wlroots_base_version + '.99'
+
 # We're not to use system wlroots: So we'll use the subproject
 if get_option('use_system_wlroots').disabled()
 	use_system_wlroots = false
@@ -60,11 +65,11 @@ if get_option('use_system_wlroots').disabled()
 
 elif get_option('use_system_wlroots').enabled()
 	use_system_wlroots = true
-	wlroots = dependency('wlroots-0.19', version: ['>=0.19.0', '<0.20.0'], required: true)
+	wlroots = dependency(wlroots_dep_name, version: [wlroots_min_version, wlroots_max_version], required: true)
 
 elif get_option('use_system_wlroots').auto()
 	message( 'SEARCHING FOR WLROOTS' )
-	wlroots = dependency('wlroots-0.19', version: ['>=0.19.0', '<0.20.0'], required: false)
+	wlroots = dependency(wlroots_dep_name, version: [wlroots_min_version, wlroots_max_version], required: false)
 	use_system_wlroots = true
 	if not wlroots.found()
 		use_system_wlroots = false

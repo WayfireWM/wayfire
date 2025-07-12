@@ -149,7 +149,7 @@ public_api_requirements = [
     wayland_server,
     pixman,
     # These might be subprojects so we need to pass them as strings
-    'wlroots-0.18',
+    wlroots_dep_name,
     'wf-config',
 ]
 
