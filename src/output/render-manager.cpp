@@ -1037,6 +1037,8 @@ class wf::render_manager::impl
     /**
      * Render an output. Either calls the built-in renderer, or the render hook
      * of a plugin
+     *
+     * @return The swap damage in buffer-local coordinates.
      */
     wf::region_t start_output_pass(
         std::unique_ptr<swapchain_damage_manager_t::frame_object_t>& next_frame)
@@ -1141,6 +1143,8 @@ class wf::render_manager::impl
             wlr_buffer_unlock(next_frame->buffer);
             return;
         }
+
+        effects->run_effects(OUTPUT_EFFECT_PASS_DONE);
 
         /* Part 5: finalize the scene: postprocessing effects */
         if (postprocessing->post_effects.size())
