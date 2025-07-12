@@ -23,6 +23,8 @@ struct texture_t
     std::optional<wlr_scale_filter_mode> filter_mode = {};
 };
 
+struct auxilliary_buffer_t;
+
 /**
  * A simple wrapper for buffers which are used as render targets.
  * Note that a renderbuffer does not assume any ownership of the buffer.
@@ -45,6 +47,32 @@ struct render_buffer_t
         return size;
     }
 
+    /**
+     * Copy a part of another buffer onto this buffer.
+     * Note that this operation may involve the creation and deletion of textures, which can reset the
+     * GL state.
+     *
+     * @param source The source buffer containing the pixel data to be copied from.
+     * @param src_box The subrectangle of the source buffer to be copied from.
+     * @param dst_box The subrectangle of the destination buffer to be copied to.
+     * @param filter_mode The filter mode to use.
+     */
+    void blit(wf::auxilliary_buffer_t& source, wlr_fbox src_box, wf::geometry_t dst_box,
+        wlr_scale_filter_mode filter_mode = WLR_SCALE_FILTER_BILINEAR) const;
+
+    /**
+     * Copy a part of another buffer onto this buffer.
+     * Note that this operation may involve the creation and deletion of textures, which can reset the
+     * GL state.
+     *
+     * @param source The source buffer containing the pixel data to be copied from.
+     * @param src_box The subrectangle of the source buffer to be copied from.
+     * @param dst_box The subrectangle of the destination buffer to be copied to.
+     * @param filter_mode The filter mode to use.
+     */
+    void blit(const wf::render_buffer_t& source, wlr_fbox src_box, wf::geometry_t dst_box,
+        wlr_scale_filter_mode filter_mode = WLR_SCALE_FILTER_BILINEAR) const;
+
   private:
     friend struct auxilliary_buffer_t;
 
@@ -52,6 +80,10 @@ struct render_buffer_t
     wlr_buffer *buffer = NULL;
 
     wf::dimensions_t size = {0, 0};
+
+    // Helper for copy operations
+    void do_blit(wlr_texture *src_wlr_tex, wlr_fbox src_box, wf::geometry_t dst_box,
+        wlr_scale_filter_mode filter_mode) const;
 };
 
 /**
