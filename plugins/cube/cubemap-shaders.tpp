@@ -1,7 +1,7 @@
 static const char* cubemap_vertex =
 R"(#version 100
 
-attribute mediump vec3 position;
+attribute highp vec3 position;
 varying highp vec3 direction;
 
 uniform mat4 cubeMapMatrix;

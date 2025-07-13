@@ -7,7 +7,7 @@ static const char *vertex_shader =
     R"(
 #version 100
 
-attribute mediump vec2 position;
+attribute highp vec2 position;
 attribute highp vec2 uvPosition;
 
 varying highp vec2 uvpos;
@@ -29,11 +29,11 @@ uniform bool preserve_hue;
 
 void main()
 {
-    mediump vec4 tex = texture2D(smp, uvpos);
+    highp vec4 tex = texture2D(smp, uvpos);
 
     if (preserve_hue)
     {
-        mediump float hue = tex.a - min(tex.r, min(tex.g, tex.b)) - max(tex.r, max(tex.g, tex.b));
+        highp float hue = tex.a - min(tex.r, min(tex.g, tex.b)) - max(tex.r, max(tex.g, tex.b));
         gl_FragColor = hue + tex;
     } else
     {

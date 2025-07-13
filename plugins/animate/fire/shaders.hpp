@@ -5,16 +5,16 @@ static const char *particle_vert_source =
     R"(
 #version 100
 
-attribute mediump float radius;
-attribute mediump vec2 position;
-attribute mediump vec2 center;
-attribute mediump vec4 color;
+attribute highp float radius;
+attribute highp vec2 position;
+attribute highp vec2 center;
+attribute highp vec4 color;
 
 uniform mat4 matrix;
 
-varying mediump vec2 uv;
-varying mediump vec4 out_color;
-varying mediump float R;
+varying highp vec2 uv;
+varying highp vec4 out_color;
+varying highp float R;
 
 void main() {
     uv = position * radius;
@@ -29,21 +29,21 @@ static const char *particle_frag_source =
     R"(
 #version 100
 
-varying mediump vec2 uv;
-varying mediump vec4 out_color;
-varying mediump float R;
+varying highp vec2 uv;
+varying highp vec4 out_color;
+varying highp float R;
 
-uniform mediump float smoothing;
+uniform highp float smoothing;
 
 void main()
 {
-    mediump float len = length(uv);
+    highp float len = length(uv);
     if (len >= R)
     {
         gl_FragColor = vec4(0.0, 0.0, 0.0, 0.0);
     }
     else {
-        mediump float factor = 1.0 - len / R;
+        highp float factor = 1.0 - len / R;
         factor = pow(factor, smoothing);
         gl_FragColor = factor * out_color;
     }

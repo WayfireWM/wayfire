@@ -43,8 +43,8 @@ static const char *squeeze_vert_source =
     R"(
 #version 100
 
-attribute mediump vec2 position;
-attribute mediump vec2 uv_in;
+attribute highp vec2 position;
+attribute highp vec2 uv_in;
 
 uniform mat4 matrix;
 
@@ -62,12 +62,12 @@ static const char *squeeze_frag_source =
 @builtin_ext@
 @builtin@
 
-precision mediump float;
+precision highp float;
 
 varying highp vec2 uv;
-uniform mediump float progress;
-uniform mediump vec4 src_box;
-uniform mediump vec4 target_box;
+uniform highp float progress;
+uniform highp vec4 src_box;
+uniform highp vec4 target_box;
 uniform int upward;
 
 void main()

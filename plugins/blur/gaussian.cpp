@@ -4,7 +4,7 @@ static const char *gaussian_vertex_shader =
     R"(
 #version 100
 
-attribute mediump vec2 position;
+attribute highp vec2 position;
 uniform vec2 size;
 uniform float offset;
 
@@ -26,7 +26,7 @@ void main() {
 static const char *gaussian_fragment_shader_horz =
     R"(
 #version 100
-precision mediump float;
+precision highp float;
 
 uniform sampler2D bg_texture;
 uniform int mode;
@@ -48,7 +48,7 @@ void main()
 static const char *gaussian_fragment_shader_vert =
     R"(
 #version 100
-precision mediump float;
+precision highp float;
 
 uniform sampler2D bg_texture;
 uniform int mode;

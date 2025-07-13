@@ -4,8 +4,8 @@ static const char *bokeh_vertex_shader =
     R"(
 #version 100
 
-attribute mediump vec2 position;
-varying mediump vec2 uv;
+attribute highp vec2 position;
+varying highp vec2 uv;
 
 void main() {
 
@@ -17,7 +17,7 @@ void main() {
 static const char *bokeh_fragment_shader =
     R"(
 #version 100
-precision mediump float;
+precision highp float;
 
 uniform float offset;
 uniform int iterations;
@@ -25,7 +25,7 @@ uniform vec2 halfpixel;
 uniform int mode;
 
 uniform sampler2D bg_texture;
-varying mediump vec2 uv;
+varying highp vec2 uv;
 
 #define GOLDEN_ANGLE 2.39996
 

@@ -32,7 +32,7 @@ static const char *vertex_shader =
     R"(
 #version 100
 
-attribute mediump vec2 position;
+attribute highp vec2 position;
 
 void main() {
 
@@ -43,7 +43,7 @@ void main() {
 static const char *fragment_shader =
     R"(
 #version 100
-precision mediump float;
+precision highp float;
 
 uniform vec2 u_resolution;
 uniform vec2 u_mouse;

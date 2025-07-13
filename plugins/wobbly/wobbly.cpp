@@ -24,8 +24,8 @@ namespace
 const char *vertex_source =
     R"(
 #version 100
-attribute mediump vec2 position;
-attribute mediump vec2 uvPosition;
+attribute highp vec2 position;
+attribute highp vec2 uvPosition;
 varying highp vec2 uvpos;
 uniform mat4 MVP;
 

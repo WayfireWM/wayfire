@@ -12,10 +12,10 @@ static const char *blur_blend_vertex_shader =
     R"(
 #version 100
 
-attribute mediump vec2 position;
-attribute mediump vec2 uv_in;
+attribute highp vec2 position;
+attribute highp vec2 uv_in;
 
-varying mediump vec2 uvpos[2];
+varying highp vec2 uvpos[2];
 
 uniform mat4 mvp;
 uniform mat4 background_uv_matrix;
@@ -31,13 +31,13 @@ static const char *blur_blend_fragment_shader =
     R"(
 #version 100
 @builtin_ext@
-precision mediump float;
+precision highp float;
 
 @builtin@
 uniform float sat;
 uniform sampler2D bg_texture;
 
-varying mediump vec2 uvpos[2];
+varying highp vec2 uvpos[2];
 
 vec3 saturation(vec3 rgb, float adjustment)
 {

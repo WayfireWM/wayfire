@@ -2,7 +2,7 @@
 
 static const char* cube_vertex_2_0 =
 R"(#version 100
-attribute mediump vec3 position;
+attribute highp vec3 position;
 attribute highp vec2 uvPosition;
 
 varying highp vec2 uvpos;

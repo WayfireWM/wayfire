@@ -3,9 +3,9 @@
 static const char *kawase_vertex_shader =
     R"(
 #version 100
-attribute mediump vec2 position;
+attribute highp vec2 position;
 
-varying mediump vec2 uv;
+varying highp vec2 uv;
 
 void main() {
     gl_Position = vec4(position.xy, 0.0, 1.0);
@@ -15,13 +15,13 @@ void main() {
 static const char *kawase_fragment_shader_down =
     R"(
 #version 100
-precision mediump float;
+precision highp float;
 
 uniform float offset;
 uniform vec2 halfpixel;
 uniform sampler2D bg_texture;
 
-varying mediump vec2 uv;
+varying highp vec2 uv;
 
 void main()
 {
@@ -36,13 +36,13 @@ void main()
 static const char *kawase_fragment_shader_up =
     R"(
 #version 100
-precision mediump float;
+precision highp float;
 
 uniform float offset;
 uniform vec2 halfpixel;
 uniform sampler2D bg_texture;
 
-varying mediump vec2 uv;
+varying highp vec2 uv;
 
 void main()
 {
