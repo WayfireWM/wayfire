@@ -699,7 +699,7 @@ class wayfire_cube : public wf::per_output_plugin_instance_t, public wf::pointer
         }
 
         double xdiff = ev->delta_x;
-        double ydiff = ev->delta_y;
+        double ydiff = ev->delta_y * -1.0;
 
         animation.cube_animation.zoom.restart_with_end(
             animation.cube_animation.zoom.end);
