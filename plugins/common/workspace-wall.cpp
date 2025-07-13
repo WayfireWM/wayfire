@@ -351,6 +351,17 @@ void workspace_wall_t::start_output_renderer()
     wf::dassert(render_node == nullptr, "Starting workspace-wall twice?");
     render_node = std::make_shared<workspace_wall_node_t>(this);
     scene::add_front(wf::get_core().scene(), render_node);
+
+    if (!debug_track_id)
+    {
+        debug_track_id = wf::perf::get_new_track("workspace-wall " + this->output->to_string());
+    }
+
+    wf::perf::event_t::start_event({
+            .cat  = wf::perf::category::PLUGIN,
+            .name = "wall",
+            .track_id = debug_track_id,
+        });
 }
 
 void workspace_wall_t::stop_output_renderer(bool reset_viewport)
@@ -367,6 +378,8 @@ void workspace_wall_t::stop_output_renderer(bool reset_viewport)
     {
         set_viewport({0, 0, 0, 0});
     }
+
+    wf::perf::event_t::end_event(wf::perf::category::PLUGIN, debug_track_id);
 }
 
 wf::geometry_t workspace_wall_t::get_workspace_rectangle(

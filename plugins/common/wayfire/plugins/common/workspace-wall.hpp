@@ -128,5 +128,6 @@ class workspace_wall_t : public wf::signal::provider_t
   protected:
     class workspace_wall_node_t;
     std::shared_ptr<workspace_wall_node_t> render_node;
+    uint64_t debug_track_id = 0;
 };
 }

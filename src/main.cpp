@@ -229,6 +229,9 @@ static std::string_view get_category_name(wf::log::logging_category category)
       case wf::log::logging_category::OUTPUT:
         return "output";
 
+      case wf::log::logging_category::PERFETTO:
+        return "perfetto";
+
       default:
         wf::dassert(false);
         return "unknown";
@@ -279,6 +282,8 @@ void parse_extended_debugging(const std::vector<std::string>& categories)
 //
 int main(int argc, char *argv[])
 {
+    wf::perf::init_perfetto();
+
     wf::log::log_level_t log_level = wf::log::LOG_LEVEL_INFO;
     struct option opts[] = {
         {
@@ -521,6 +526,7 @@ int main(int argc, char *argv[])
     }
 
     wf::compositor_core_impl_t::deallocate_core();
+    wf::perf::fini_perfetto();
     LOGI("Shutdown successful!");
     return EXIT_SUCCESS;
 }

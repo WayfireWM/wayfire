@@ -67,7 +67,7 @@ json_flags = json.partial_dependency(compile_args: true, includes: true, link_ar
 wayfire_dependencies = [wayland_server, wlroots, xkbcommon, libinput,
                        pixman, drm, egl, glesv2, glm, wf_protos, libdl,
                        wfconfig, libinotify, backtrace, wfutils, xcb,
-                       wftouch, json_flags, udev]
+                       wftouch, json_flags, udev, perfetto]
 
 if conf_data.get('BUILD_WITH_IMAGEIO')
     wayfire_dependencies += [jpeg, png]

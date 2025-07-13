@@ -156,6 +156,15 @@ else
   conf_data.set('DEFAULT_CONFIG_BACKEND', get_option('default_config_backend'))
 endif
 
+if get_option('perfetto')
+  perfetto = dependency('perfetto', fallback: ['perfetto', 'dep_perfetto'], static: true)
+  conf_data.set('WF_USE_PERFETTO', 1)
+else
+  perfetto = declare_dependency()
+  conf_data.set('WF_USE_PERFETTO', 0)
+endif
+
+
 # needed to dlopen() plugins
 # -E is for RTTI/dynamic_cast across plugins
 add_project_link_arguments(['-rdynamic', '-Wl,-E'], language: 'cpp')

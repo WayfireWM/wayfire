@@ -1,3 +1,8 @@
+#include "config.h"
+#if WF_USE_PERFETTO
+    #include <perfetto.h>
+#endif
+
 #include "main.hpp"
 #include <string>
 #include <unistd.h>
@@ -472,4 +477,139 @@ void wf::detail::option_wrapper_debug_message(const std::string & option_name, c
 
     wf::print_trace(false);
     std::_Exit(0);
+}
+
+uint64_t wf::perf::get_new_flow()
+{
+    static uint64_t counter = 1;
+    return counter++;
+}
+
+#if WF_USE_PERFETTO
+    #define PERF_RENDER "render"
+    #define PERF_PLUGIN "plugin"
+    #define HANDLE_ALL_CATEGORIES \
+    HANDLE_CATEGORY(RENDER) \
+    HANDLE_CATEGORY(PLUGIN)
+
+// Define categories
+    #define HANDLE_CATEGORY(CAT) perfetto::Category(PERF_ ## CAT).SetDescription(#CAT),
+PERFETTO_DEFINE_CATEGORIES(HANDLE_ALL_CATEGORIES);
+    #undef HANDLE_CATEGORY
+
+PERFETTO_TRACK_EVENT_STATIC_STORAGE();
+#endif
+
+uint64_t wf::perf::get_new_track(std::string_view name)
+{
+    uint64_t counter = get_new_flow();
+
+#if WF_USE_PERFETTO
+    perfetto::Track track(counter);
+    auto desc = track.Serialize();
+    desc.set_name(std::string(name.data(), name.length()));
+    perfetto::TrackEvent::SetTrackDescriptor(track, desc);
+#endif
+
+    return counter;
+}
+
+template<class Type>
+void t_set_counter(wf::perf::category cat, std::string_view counter_name, Type value)
+{
+#if WF_USE_PERFETTO
+
+    #define HANDLE_CATEGORY(CAT) \
+  case wf::perf::category::CAT: \
+    TRACE_COUNTER(PERF_ ## CAT, \
+        perfetto::DynamicString(counter_name.data(), counter_name.length()), value); \
+    break;
+
+    switch (cat)
+    {
+        HANDLE_ALL_CATEGORIES;
+
+      case wf::perf::category::TOTAL:
+        wf::dassert(false);
+    }
+
+    #undef HANDLE_CATEGORY
+#endif
+}
+
+void wf::perf::detail::set_counter(category cat, std::string_view counter_name, int64_t value)
+{
+    t_set_counter(cat, counter_name, value);
+}
+
+void wf::perf::detail::set_counter(category cat, std::string_view counter_name, double value)
+{
+    t_set_counter(cat, counter_name, value);
+}
+
+uint64_t get_track_id(std::optional<uint64_t> track_id)
+{
+    static uint64_t default_track = wf::perf::get_new_track("wayfire");
+    return track_id.value_or(default_track);
+}
+
+void wf::perf::event_t::start_event(const event_params_t& params)
+{
+#if WF_USE_PERFETTO
+    auto track = perfetto::Track(get_track_id(params.track_id));
+
+    #define HANDLE_CATEGORY(CAT) \
+  case wf::perf::category::CAT: \
+    TRACE_EVENT_BEGIN(PERF_ ## CAT, \
+        perfetto::DynamicString(params.name.data(), params.name.length()), track); \
+    break;
+
+    switch (params.cat)
+    {
+        HANDLE_ALL_CATEGORIES;
+
+      case category::TOTAL:
+        wf::dassert(false);
+    }
+
+    #undef HANDLE_CATEGORY
+#endif
+}
+
+void wf::perf::event_t::end_event(category cat, std::optional<uint64_t> track_id)
+{
+#if WF_USE_PERFETTO
+    auto track = perfetto::Track(get_track_id(track_id));
+
+    #define HANDLE_CATEGORY(CAT) \
+  case wf::perf::category::CAT: \
+    TRACE_EVENT_END(PERF_ ## CAT, track); \
+    break;
+
+    switch (cat)
+    {
+        HANDLE_ALL_CATEGORIES;
+
+      case category::TOTAL:
+        break; // allow for ending of empty events
+    }
+
+#endif
+}
+
+void wf::perf::init_perfetto()
+{
+#if WF_USE_PERFETTO
+    perfetto::TracingInitArgs args;
+    args.backends = perfetto::kSystemBackend;
+    perfetto::Tracing::Initialize(args);
+    perfetto::TrackEvent::Register();
+#endif
+}
+
+void wf::perf::fini_perfetto()
+{
+#if WF_USE_PERFETTO
+    perfetto::Tracing::Shutdown();
+#endif
 }

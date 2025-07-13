@@ -278,8 +278,15 @@ struct swapchain_damage_manager_t
         return next_frame;
     }
 
-    void swap_buffers(std::unique_ptr<frame_object_t> next_frame, const wf::region_t& swap_damage)
+    void swap_buffers(std::unique_ptr<frame_object_t> next_frame, const wf::region_t& swap_damage,
+        uint64_t perf_track_id)
     {
+        auto _perf_ev = wf::perf::event_t{{
+            .cat  = wf::perf::category::RENDER,
+            .name = "swap_buffers",
+            .track_id = perf_track_id,
+        }};
+
         /* If force frame sync option is set, call glFinish to block until
          * the GPU finishes rendering. This can work around some driver
          * bugs, but may cause more resource usage. */
@@ -394,6 +401,10 @@ struct effect_hook_manager_t
 {
     using effect_container_t = wf::safe_list_t<effect_hook_t*>;
     effect_container_t effects[OUTPUT_EFFECT_TOTAL];
+    uint64_t perf_track_id;
+
+    effect_hook_manager_t(uint64_t track_id) : perf_track_id(track_id)
+    {}
 
     void add_effect(effect_hook_t *hook, output_effect_type_t type)
     {
@@ -416,6 +427,12 @@ struct effect_hook_manager_t
 
     void run_effects(output_effect_type_t type)
     {
+        auto _perf_ev = wf::perf::event_t{{
+            .cat  = wf::perf::category::RENDER,
+            .name = "effects",
+            .track_id = perf_track_id,
+        }};
+
         effects[type].for_each([] (auto effect)
         { (*effect)(); });
     }
@@ -426,6 +443,8 @@ struct effect_hook_manager_t
  */
 struct postprocessing_manager_t
 {
+    uint64_t perf_track_id;
+
     using post_container_t = wf::safe_list_t<post_hook_t*>;
     post_container_t post_effects;
     wf::auxilliary_buffer_t post_buffers[2];
@@ -434,9 +453,10 @@ struct postprocessing_manager_t
 
     output_t *output;
     uint32_t output_width, output_height;
-    postprocessing_manager_t(output_t *output)
+    postprocessing_manager_t(output_t *output, uint64_t track_id)
     {
         this->output = output;
+        this->perf_track_id = track_id;
     }
 
     wf::render_buffer_t final_target;
@@ -483,6 +503,12 @@ struct postprocessing_manager_t
      * damage. So, we need to keep the whole buffer each frame. */
     void run_post_effects()
     {
+        auto _perf_ev = wf::perf::event_t{{
+            .cat  = wf::perf::category::RENDER,
+            .name = "postprocessing",
+            .track_id = perf_track_id,
+        }};
+
         int cur_idx = 0;
         post_effects.for_each([&] (auto post) -> void
         {
@@ -662,10 +688,25 @@ class depth_buffer_manager_t
  */
 struct repaint_delay_manager_t
 {
+    uint64_t present_track_id = 0;
     repaint_delay_manager_t(wf::output_t *output)
     {
-        on_present.set_callback([&] (void *data)
+        on_present.set_callback([=] (void *data)
         {
+            if (!present_track_id)
+            {
+                present_track_id = wf::perf::get_new_track("present " + output->to_string());
+            } else
+            {
+                wf::perf::event_t::end_event(wf::perf::category::RENDER, present_track_id);
+            }
+
+            wf::perf::event_t::start_event({
+                    .cat  = wf::perf::category::RENDER,
+                    .name = "present",
+                    .track_id = present_track_id,
+                });
+
             auto ev = static_cast<wlr_output_event_present*>(data);
             this->refresh_nsec = ev->refresh;
         });
@@ -772,7 +813,7 @@ struct repaint_delay_manager_t
     }
 
     static constexpr int64_t MIN_INCREASE_WINDOW = 200; // 200 ms
-    static constexpr int64_t MAX_INCREASE_WINDOW = 30'000; // 30s
+    static constexpr int64_t MAX_INCREASE_WINDOW = 3'000; // 30s
     int64_t increase_window = MIN_INCREASE_WINDOW;
     int64_t last_increase   = 0;
 
@@ -815,11 +856,15 @@ class wf::render_manager::impl
         return icc_color_transform;
     }
 
+    uint64_t perf_track_id;
+
     impl(output_t *o) : output(o), env_allow_scanout(check_scanout_enabled())
     {
+        perf_track_id = wf::perf::get_new_track(o->to_string());
+        effects = std::make_unique<effect_hook_manager_t>(perf_track_id);
+        postprocessing = std::make_unique<postprocessing_manager_t>(o, perf_track_id);
+
         damage_manager = std::make_unique<swapchain_damage_manager_t>(o);
-        effects = std::make_unique<effect_hook_manager_t>();
-        postprocessing = std::make_unique<postprocessing_manager_t>(o);
         depth_buffer_manager = std::make_unique<depth_buffer_manager_t>();
         delay_manager = std::make_unique<repaint_delay_manager_t>(o);
 
@@ -832,22 +877,34 @@ class wf::render_manager::impl
                 return;
             }
 
-            delay_manager->start_frame();
+            wf::perf::event_t::start_event({
+                    .cat  = wf::perf::category::RENDER,
+                    .name = "frame",
+                    .track_id = perf_track_id,
+                });
 
+            delay_manager->start_frame();
             auto repaint_delay = delay_manager->get_delay();
+            wf::perf::set_counter(wf::perf::category::RENDER, "Repaint delay", (int64_t)repaint_delay);
+
+            const auto& end_frame = [=] ()
+            {
+                output->handle->frame_pending = false;
+                paint();
+                wf::perf::event_t::end_event(wf::perf::category::RENDER, perf_track_id);
+            };
+
             // Leave a bit of time for clients to render, see
             // https://github.com/swaywm/sway/pull/4588
             if (repaint_delay < 1)
             {
-                output->handle->frame_pending = false;
-                paint();
+                end_frame();
             } else
             {
                 output->handle->frame_pending = true;
                 repaint_timer.set_timeout(repaint_delay, [=] ()
                 {
-                    output->handle->frame_pending = false;
-                    paint();
+                    end_frame();
                 });
             }
 
@@ -1000,6 +1057,12 @@ class wf::render_manager::impl
     wf::region_t start_output_pass(
         std::unique_ptr<swapchain_damage_manager_t::frame_object_t>& next_frame)
     {
+        auto _perf_ev = wf::perf::event_t{{
+            .cat  = wf::perf::category::RENDER,
+            .name = "main pass",
+            .track_id = perf_track_id,
+        }};
+
         render_pass_params_t params;
         params.instances = &damage_manager->instance_manager->get_instances();
 
@@ -1060,6 +1123,12 @@ class wf::render_manager::impl
      */
     void paint()
     {
+        auto _perf_ev = wf::perf::event_t{{
+            .cat  = wf::perf::category::RENDER,
+            .name = "paint",
+            .track_id = perf_track_id,
+        }};
+
         /* Part 1: frame setup: query damage, etc. */
         effects->run_effects(OUTPUT_EFFECT_PRE);
         effects->run_effects(OUTPUT_EFFECT_DAMAGE);
@@ -1116,7 +1185,7 @@ class wf::render_manager::impl
         render_sw_cursors(next_frame.get());
 
         /* Part 7: finalize frame: swap buffers, send frame_done, etc */
-        damage_manager->swap_buffers(std::move(next_frame), swap_damage);
+        damage_manager->swap_buffers(std::move(next_frame), swap_damage, perf_track_id);
 
         unset_bound_output();
         swap_damage.clear();

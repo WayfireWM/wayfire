@@ -69,18 +69,105 @@ enum class logging_category : size_t
     INPUT_DEVICES = 12,
     // Output-device-related events
     OUTPUT        = 13,
+    // Perfetto events
+    PERFETTO      = 14,
     TOTAL,
 };
 
 extern std::bitset<(size_t)logging_category::TOTAL> enabled_categories;
 }
-}
 
+#define LOGC_ENABLED(CAT) wf::log::enabled_categories[(size_t)wf::log::logging_category::CAT]
 #define LOGC(CAT, ...) \
-    if (wf::log::enabled_categories[(size_t)wf::log::logging_category::CAT]) \
+    if (LOGC_ENABLED(CAT)) \
     { \
         LOGD("[", #CAT, "] ", __VA_ARGS__); \
     }
+
+// A wrapper around the perfetto API.
+// The functions have dummy implementations if Wayfire is not built with perfetto.
+namespace perf
+{
+enum class category
+{
+    RENDER = 0,
+    PLUGIN = 1,
+    TOTAL,
+};
+
+struct event_params_t
+{
+    category cat;
+    std::string_view name;
+    std::optional<uint64_t> flow_id{};
+    std::optional<uint64_t> track_id{};
+};
+
+struct dummy_event_t
+{};
+
+struct event_t
+{
+    event_t(const event_params_t& params)
+    {
+        if (LOGC_ENABLED(PERFETTO))
+        {
+            start_event(params);
+            this->cat = params.cat;
+            this->track_id = params.track_id;
+        }
+    }
+
+    ~event_t()
+    {
+        if (LOGC_ENABLED(PERFETTO))
+        {
+            end_event(cat, track_id);
+        }
+    }
+
+    event_t(const event_t&) = delete;
+    event_t(event_t&&) = delete;
+    event_t& operator =(const event_t&) = delete;
+    event_t& operator =(event_t&&) = delete;
+
+    static void start_event(const event_params_t& params);
+    static void end_event(category cat, std::optional<uint64_t> track_id = std::nullopt);
+
+  private:
+    category cat = category::TOTAL;
+    std::optional<uint64_t> track_id{};
+};
+
+uint64_t get_new_track(std::string_view name);
+uint64_t get_new_flow();
+
+namespace detail
+{
+void set_counter(category cat, std::string_view counter_name, int64_t value);
+void set_counter(category cat, std::string_view counter_name, double value);
+}
+
+inline void set_counter(category cat, std::string_view counter_name, int64_t value)
+{
+    if (LOGC_ENABLED(PERFETTO))
+    {
+        detail::set_counter(cat, counter_name, value);
+    }
+}
+
+inline void set_counter(category cat, std::string_view counter_name, double value)
+{
+    if (LOGC_ENABLED(PERFETTO))
+    {
+        detail::set_counter(cat, counter_name, value);
+    }
+}
+
+void init_perfetto();
+void fini_perfetto();
+}
+}
 
 /* ------------------- Miscallaneous helpers for debugging ------------------ */
 #include <ostream>
