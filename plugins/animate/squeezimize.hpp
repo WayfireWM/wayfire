@@ -72,12 +72,12 @@ uniform int upward;
 
 void main()
 {
-    float y;
+    float y, sigmoid;
     vec2 uv_squeeze;
     float inv_w = 1.0 / (src_box.z - src_box.x);
     float inv_h = 1.0 / (src_box.w - src_box.y);
-    float progress_pt_one = clamp(progress, 0.0, 0.5) * 2.0;
-    float progress_pt_two = (clamp(progress, 0.5, 1.0) - 0.5) * 2.0;
+    float progress_pt_one = pow(clamp(progress, 0.0, 0.25) * 4.0, 2.0);
+    float progress_pt_two = pow(progress, 2.0);
 
     uv_squeeze.x = (uv.x * inv_w) - (inv_w - 1.0);
     uv_squeeze.x += inv_w - inv_w * src_box.z;
@@ -88,13 +88,13 @@ void main()
     {
         y = uv.y;
         uv_squeeze.y += -progress_pt_two * (inv_h - target_box.w);
+        sigmoid = 1.0 / (1.0 + pow(2.718, -(y * (1.0 / (src_box.w - target_box.w)) * 15.0 - 10.0)));
     } else
     {
         y = 1.0 - uv.y;
         uv_squeeze.y -= -progress_pt_two * (inv_h - target_box.y + target_box.w);
+        sigmoid = 1.0 / (1.0 + pow(2.718, -(y * (1.0 / (target_box.w - src_box.y)) * 15.0 - 10.0)));
     }
-
-    float sigmoid = 1.0 / (1.0 + pow(2.718, -((y * inv_h) * 7.0 - 3.5)));
 
     uv_squeeze.x += sigmoid * progress_pt_one * (src_box.x - target_box.x) * inv_w;
     uv_squeeze.x *= (sigmoid * ((src_box.z - src_box.x) - (target_box.z - target_box.x)) /
