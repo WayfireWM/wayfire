@@ -328,26 +328,43 @@ class squeezimize_transformer : public wf::scene::view_2d_transformer_t
                 (this->minimize_target.y + this->minimize_target.height) - bbox.y),
                 (bbox.y + bbox.height) - this->minimize_target.y);
 
-        bool horiz   = false;
-        auto src_box = view->get_bounding_box();
-        auto output  = view->get_output();
-        auto geom    = output->get_relative_geometry();
-        auto d_horiz = std::max(std::max(0, src_box.x - (minimize_target.x + minimize_target.width)),
-            std::max(0, minimize_target.x - (src_box.x + src_box.width)));
-        auto d_vert = std::max(std::max(0, src_box.y - (minimize_target.y + minimize_target.height)),
-            std::max(0, minimize_target.y - (src_box.y + src_box.height)));
+        bool horiz;
+        // auto src_box = view->get_bounding_box();
+        auto output = view->get_output();
+        auto geom   = output->get_relative_geometry();
 
-        if (((d_vert == 0) && (d_horiz > 0)) ||
-            ((d_vert > 0) && (d_horiz > ((double)d_vert * geom.width) / geom.height)))
+        // check which edge the target is closest to
+        double x  = minimize_target.x + minimize_target.width / 2.0;
+        double y  = minimize_target.y + minimize_target.height / 2.0;
+        double y2 = y * geom.width / geom.height;
+        if (x < y2)
         {
-            // note: this requires d_horiz > 0, i.e. the target box does not overlap with the source
-            horiz = true;
-            // note: "upward" is named based on inverted y-coordinates
-            this->upward = (minimize_target.x < src_box.x);
+            // bottom left part of the screen
+            if (x < geom.width - y2)
+            {
+                // left edge
+                horiz = true;
+                this->upward = true;
+            } else
+            {
+                // bottom edge
+                horiz = false;
+                this->upward = false;
+            }
         } else
         {
-            this->upward = ((src_box.y > minimize_target.y) ||
-                ((src_box.y < 0) && (minimize_target.y < output->get_relative_geometry().height / 2)));
+            // top right part of the screen
+            if (x > geom.width - y2)
+            {
+                // right edge
+                horiz = true;
+                this->upward = false;
+            } else
+            {
+                // top edge
+                horiz = false;
+                this->upward = true;
+            }
         }
 
         wf::gles::run_in_context_if_gles([&]
