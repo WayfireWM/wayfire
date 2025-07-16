@@ -110,6 +110,61 @@ void main()
 }
 )";
 
+
+static const char *squeeze_frag_source_horiz =
+    R"(
+#version 100
+@builtin_ext@
+@builtin@
+
+precision mediump float;
+
+varying highp vec2 uv;
+uniform mediump float progress;
+uniform mediump vec4 src_box;
+uniform mediump vec4 target_box;
+uniform int upward;
+
+void main()
+{
+    float y, sigmoid;
+    vec2 uv_squeeze;
+    float inv_w = 1.0 / (src_box.z - src_box.x);
+    float inv_h = 1.0 / (src_box.w - src_box.y);
+    float progress_pt_one = pow(clamp(progress, 0.0, 0.25) * 4.0, 2.0);
+    float progress_pt_two = pow(progress, 2.0);
+
+    uv_squeeze.x = (uv.x * inv_w) - (inv_w - 1.0);
+    uv_squeeze.x += inv_w - inv_w * src_box.z;
+    uv_squeeze.y = inv_h * (1.0 - uv.y - src_box.y);
+
+    if (upward == 1)
+    {
+        y = 1.0 - uv.x;
+        uv_squeeze.x += progress_pt_two * (inv_w - target_box.z);
+        sigmoid = 1.0 / (1.0 + pow(2.718, -(y * (1.0 / (src_box.z - target_box.z)) * 15.0 - 10.0)));
+    } else
+    {
+        y = uv.x;
+        uv_squeeze.x -= progress_pt_two * (inv_w - target_box.x + target_box.z);
+        sigmoid = 1.0 / (1.0 + pow(2.718, -(y * (1.0 / (target_box.z - src_box.x)) * 15.0 - 10.0)));
+    }
+
+    uv_squeeze.y += sigmoid * progress_pt_one * (src_box.y - target_box.y) * inv_h;
+    uv_squeeze.y *= (sigmoid * ((src_box.w - src_box.y) - (target_box.w - target_box.y)) /
+                    (target_box.w - target_box.y) * progress_pt_one) + 1.0;
+    uv_squeeze.y = 1.0 - uv_squeeze.y;
+
+    if (uv_squeeze.x < 0.0 || uv_squeeze.y < 0.0 ||
+        uv_squeeze.x > 1.0 || uv_squeeze.y > 1.0)
+    {
+        discard;
+    }
+
+    gl_FragColor = get_pixel(uv_squeeze);
+}
+)";
+
 namespace wf
 {
 namespace squeezimize
@@ -276,15 +331,32 @@ class squeezimize_transformer : public wf::scene::view_2d_transformer_t
                 (this->minimize_target.y + this->minimize_target.height) - bbox.y),
                 (bbox.y + bbox.height) - this->minimize_target.y);
 
-        wf::gles::run_in_context_if_gles([&]
-        {
-            program.compile(squeeze_vert_source, squeeze_frag_source);
-        });
-
+        bool horiz   = false;
         auto src_box = view->get_bounding_box();
         auto output  = view->get_output();
-        this->upward = ((src_box.y > minimize_target.y) ||
-            ((src_box.y < 0) && (minimize_target.y < output->get_relative_geometry().height / 2)));
+        auto geom    = output->get_relative_geometry();
+        auto d_horiz = std::max(std::max(0, src_box.x - (minimize_target.x + minimize_target.width)),
+            std::max(0, minimize_target.x - (src_box.x + src_box.width)));
+        auto d_vert = std::max(std::max(0, src_box.y - (minimize_target.y + minimize_target.height)),
+            std::max(0, minimize_target.y - (src_box.y + src_box.height)));
+
+        if (((d_vert == 0) && (d_horiz > 0)) ||
+            ((d_vert > 0) && (d_horiz > ((double)d_vert * geom.width) / geom.height)))
+        {
+            // note: this requires d_horiz > 0, i.e. the target box does not overlap with the source
+            horiz = true;
+            // note: "upward" is named based on inverted y-coordinates
+            this->upward = (minimize_target.x < src_box.x);
+        } else
+        {
+            this->upward = ((src_box.y > minimize_target.y) ||
+                ((src_box.y < 0) && (minimize_target.y < output->get_relative_geometry().height / 2)));
+        }
+
+        wf::gles::run_in_context_if_gles([&]
+        {
+            program.compile(squeeze_vert_source, horiz ? squeeze_frag_source_horiz : squeeze_frag_source);
+        });
     }
 
     wf::geometry_t get_bounding_box() override
