@@ -99,7 +99,7 @@ static wl_output_transform get_transform_from_string(std::string transform)
         return WL_OUTPUT_TRANSFORM_270;
     } else if (transform == "180")
     {
-        return WL_OUTPUT_TRANSFORM_270;
+        return WL_OUTPUT_TRANSFORM_180;
     } else if (transform == "270")
     {
         return WL_OUTPUT_TRANSFORM_90;
