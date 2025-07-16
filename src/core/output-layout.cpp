@@ -89,20 +89,18 @@ class wlr_output_state_setter_t
 
 static wl_output_transform get_transform_from_string(std::string transform)
 {
-    // Most compositors like Sway and Weston use clockwise rotations.
-    // We try to follow the 'convention'.
     if (transform == "normal")
     {
         return WL_OUTPUT_TRANSFORM_NORMAL;
     } else if (transform == "90")
     {
-        return WL_OUTPUT_TRANSFORM_270;
+        return WL_OUTPUT_TRANSFORM_90;
     } else if (transform == "180")
     {
         return WL_OUTPUT_TRANSFORM_270;
     } else if (transform == "270")
     {
-        return WL_OUTPUT_TRANSFORM_90;
+        return WL_OUTPUT_TRANSFORM_270;
     } else if (transform == "flipped")
     {
         return WL_OUTPUT_TRANSFORM_FLIPPED;
@@ -111,10 +109,10 @@ static wl_output_transform get_transform_from_string(std::string transform)
         return WL_OUTPUT_TRANSFORM_FLIPPED_180;
     } else if (transform == "90_flipped")
     {
-        return WL_OUTPUT_TRANSFORM_FLIPPED_270;
+        return WL_OUTPUT_TRANSFORM_FLIPPED_90;
     } else if (transform == "270_flipped")
     {
-        return WL_OUTPUT_TRANSFORM_FLIPPED_90;
+        return WL_OUTPUT_TRANSFORM_FLIPPED_270;
     }
 
     LOGE("Bad output transform in config: ", transform);
@@ -982,7 +980,13 @@ struct output_layout_output_t
         {
             if (handle->transform != state.transform)
             {
-                wlr_output_state_set_transform(&pending_state.pending, state.transform);
+                auto transform = state.transform;
+                if (wlr_output_is_drm(handle))
+                {
+                    transform = wlr_drm_connector_get_panel_orientation(handle);
+                }
+
+                wlr_output_state_set_transform(&pending_state.pending, transform);
             }
 
             if (handle->scale != state.scale)
@@ -1348,9 +1352,17 @@ class output_layout_t::impl
             (int32_t)(state.mode.height / state.scale),
         };
 
-        if (state.transform & 1)
+        switch (state.transform)
         {
+          case WL_OUTPUT_TRANSFORM_90:
+          case WL_OUTPUT_TRANSFORM_270:
+          case WL_OUTPUT_TRANSFORM_FLIPPED_90:
+          case WL_OUTPUT_TRANSFORM_FLIPPED_270:
             std::swap(geometry.width, geometry.height);
+            break;
+
+          default:
+            break;
         }
 
         return geometry;

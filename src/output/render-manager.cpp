@@ -334,7 +334,7 @@ struct swapchain_damage_manager_t
         return next_frame;
     }
 
-    void swap_buffers(std::unique_ptr<frame_object_t> next_frame, const wf::region_t& swap_damage)
+    void swap_buffers(std::unique_ptr<frame_object_t> next_frame)
     {
         /* If force frame sync option is set, call glFinish to block until
          * the GPU finishes rendering. This can work around some driver
@@ -347,9 +347,14 @@ struct swapchain_damage_manager_t
             });
         }
 
+        int width, height;
+        wf::region_t transformed_damage;
         frame_damage.clear();
         wlr_output_state_set_buffer(&next_frame->state, next_frame->buffer);
-        wlr_output_state_set_damage(&next_frame->state, swap_damage.to_pixman());
+        wlr_output_transformed_resolution(output, &width, &height);
+        wlr_region_transform(transformed_damage.to_pixman(), &damage_ring.current,
+            wlr_output_transform_invert(output->transform), width, height);
+        wlr_output_state_set_damage(&next_frame->state, transformed_damage.to_pixman());
         wlr_buffer_unlock(next_frame->buffer);
 
         if (!wlr_output_test_state(output, &next_frame->state))
@@ -879,7 +884,6 @@ class wf::render_manager::impl
     wf::wl_timer<false> repaint_timer;
 
     output_t *output;
-    wf::region_t swap_damage;
     std::unique_ptr<swapchain_damage_manager_t> damage_manager;
     std::unique_ptr<effect_hook_manager_t> effects;
     std::unique_ptr<postprocessing_manager_t> postprocessing;
@@ -1068,14 +1072,14 @@ class wf::render_manager::impl
      */
     wf::region_t get_swap_damage()
     {
-        return swap_damage;
+        return damage_manager->frame_damage;
     }
 
     /**
      * Render an output. Either calls the built-in renderer, or the render hook
      * of a plugin
      */
-    wf::region_t start_output_pass(
+    void start_output_pass(
         std::unique_ptr<swapchain_damage_manager_t::frame_object_t>& next_frame)
     {
         render_pass_params_t params;
@@ -1110,8 +1114,6 @@ class wf::render_manager::impl
             total_damage |= damage_manager->get_wlr_damage_box();
             current_pass->clear(yellow, {1, 1, 0, 1});
         }
-
-        return total_damage;
     }
 
     void update_bound_output(wlr_buffer *buffer)
@@ -1160,9 +1162,9 @@ class wf::render_manager::impl
             return;
         }
 
-        /* Part 2: call the renderer, which sets swap_damage and draws the scenegraph */
+        /* Part 2: call the renderer, which draws the scenegraph */
         update_bound_output(next_frame->buffer);
-        this->swap_damage = start_output_pass(next_frame);
+        start_output_pass(next_frame);
 
         /* Part 3: overlay effects */
         effects->run_effects(OUTPUT_EFFECT_OVERLAY);
@@ -1181,12 +1183,6 @@ class wf::render_manager::impl
             return;
         }
 
-        /* Part 5: finalize the scene: postprocessing effects */
-        if (postprocessing->post_effects.size())
-        {
-            swap_damage |= damage_manager->get_wlr_damage_box();
-        }
-
         postprocessing->run_post_effects();
 
         /* Part 6: render sw cursors We render software cursors after everything else
@@ -1194,10 +1190,9 @@ class wf::render_manager::impl
         render_sw_cursors(next_frame.get());
 
         /* Part 7: finalize frame: swap buffers, send frame_done, etc */
-        damage_manager->swap_buffers(std::move(next_frame), swap_damage);
+        damage_manager->swap_buffers(std::move(next_frame));
 
         unset_bound_output();
-        swap_damage.clear();
         post_paint();
     }
 
@@ -1212,7 +1207,7 @@ class wf::render_manager::impl
         }
 
         wlr_output_add_software_cursors_to_render_pass(output->handle,
-            sw_cursor_pass, swap_damage.to_pixman());
+            sw_cursor_pass, damage_manager->frame_damage.to_pixman());
         wlr_render_pass_submit(sw_cursor_pass);
     }
 
