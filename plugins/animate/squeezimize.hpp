@@ -79,10 +79,8 @@ void main()
     float progress_pt_one = pow(clamp(progress, 0.0, 0.25) * 4.0, 2.0);
     float progress_pt_two = pow(progress, 2.0);
 
-    uv_squeeze.x = (uv.x * inv_w) - (inv_w - 1.0);
-    uv_squeeze.x += inv_w - inv_w * src_box.z;
-    uv_squeeze.y = (uv.y * inv_h) - (inv_h - 1.0);
-    uv_squeeze.y += inv_h * src_box.y;
+    uv_squeeze.x = inv_w * (uv.x - src_box.x);
+    uv_squeeze.y = inv_h * (uv.y - 1.0 + src_box.w);
 
     if (upward == 1)
     {
@@ -134,8 +132,7 @@ void main()
     float progress_pt_one = pow(clamp(progress, 0.0, 0.25) * 4.0, 2.0);
     float progress_pt_two = pow(progress, 2.0);
 
-    uv_squeeze.x = (uv.x * inv_w) - (inv_w - 1.0);
-    uv_squeeze.x += inv_w - inv_w * src_box.z;
+    uv_squeeze.x = inv_w * (uv.x - src_box.x);
     uv_squeeze.y = inv_h * (1.0 - uv.y - src_box.y);
 
     if (upward == 1)
