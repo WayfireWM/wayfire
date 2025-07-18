@@ -24,8 +24,11 @@ wf::auxilliary_buffer_t& wf::auxilliary_buffer_t::operator =(auxilliary_buffer_t
         return *this;
     }
 
-    this->buffer = other.buffer;
+    this->texture = other.texture;
+    this->buffer  = other.buffer;
     other.buffer.buffer = NULL;
+    other.texture     = NULL;
+    other.buffer.size = {0, 0};
     return *this;
 }
 
