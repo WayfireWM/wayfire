@@ -450,6 +450,7 @@ void wayfire_layer_shell_view::handle_destroy()
     on_map.disconnect();
     on_unmap.disconnect();
     on_new_popup.disconnect();
+    on_commit_unmapped.disconnect();
     remove_anchored(true);
 }
 
