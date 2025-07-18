@@ -195,6 +195,11 @@ void wf::compositor_core_impl_t::init()
     {
         auto event = (wlr_virtual_pointer_v1_new_pointer_event*)data;
         auto ptr   = event->new_pointer;
+        if (event->suggested_output && !ptr->pointer.output_name)
+        {
+            ptr->pointer.output_name = strdup(event->suggested_output->name);
+        }
+
         input->handle_new_input(&ptr->pointer.base);
     });
     vptr_created.connect(&protocols.vptr_manager->events.new_virtual_pointer);
