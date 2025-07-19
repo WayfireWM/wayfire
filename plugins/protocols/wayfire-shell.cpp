@@ -411,6 +411,109 @@ static void handle_surface_destroy(wl_resource *resource)
     wl_resource_set_user_data(resource, nullptr);
 }
 
+static void handle_keyboard_lang_manager_set_layout(wl_client *client, wl_resource *resource, uint32_t layout_idx)
+{
+    auto seat     = wf::get_core().get_current_seat();
+    auto keyboard = wlr_seat_get_keyboard(seat);
+
+    if (!keyboard)
+    {
+        return;
+    }
+
+    if (layout_idx >= xkb_keymap_num_layouts(keyboard->keymap))
+    {
+        return;
+    }
+
+    wlr_keyboard_notify_modifiers(keyboard, keyboard->modifiers.depressed,
+        keyboard->modifiers.latched, keyboard->modifiers.locked, layout_idx);
+}
+
+static void handle_keyboard_lang_manager_destroy(wl_resource *resource);
+
+static struct zwf_keyboard_lang_manager_v2_interface zwf_keyboard_lang_manager_impl = {
+    .set_layout = handle_keyboard_lang_manager_set_layout
+};
+
+class wfs_keyboard_lang_manager
+{
+    wl_resource *resource;
+    xkb_layout_index_t current_layout;
+
+    wf::signal::connection_t<wf::input_event_signal<mwlr_keyboard_modifiers_event>> on_keyboard_modifiers =
+        [=] (wf::input_event_signal<mwlr_keyboard_modifiers_event> *ev)
+    {
+        auto keyboard = wlr_keyboard_from_input_device(ev->device);
+        if (current_layout == keyboard->modifiers.group) {
+            return;
+        }
+
+        current_layout = keyboard->modifiers.group;
+        wl_resource_post_event(resource, ZWF_KEYBOARD_LANG_MANAGER_V2_CURRENT_LAYOUT, current_layout);
+        return;
+    };
+
+  public:
+    wfs_keyboard_lang_manager(wl_client *client, uint32_t id)
+    {
+        resource = wl_resource_create(client, &zwf_keyboard_lang_manager_v2_interface, 1, id);
+        wl_resource_set_implementation(resource, &zwf_keyboard_lang_manager_impl, this, handle_keyboard_lang_manager_destroy);
+
+        wf::get_core().connect(&on_keyboard_modifiers);
+
+        auto seat     = wf::get_core().get_current_seat();
+        auto keyboard = wlr_seat_get_keyboard(seat);
+        if (!keyboard)
+        {
+            return;
+        }
+
+        const auto& get_layout_name = [&] (xkb_layout_index_t layout)
+        {
+            auto layout_name = xkb_keymap_layout_get_name(keyboard->keymap, layout);
+            return layout_name ? layout_name : "unknown";
+        };
+
+        wl_array available;
+        wl_array_init(&available);
+
+        if (keyboard)
+        {
+            auto layout = xkb_state_serialize_layout(keyboard->xkb_state, XKB_STATE_LAYOUT_EFFECTIVE);
+            current_layout = layout;
+
+            auto n_layouts = xkb_keymap_num_layouts(keyboard->keymap);
+            for (size_t i = 0; i < n_layouts; i++)
+            {
+                auto layout_name = get_layout_name(i);
+                char *elem = (char *)wl_array_add(&available, strlen(layout_name) + 1);
+                if (elem == NULL) {
+                    wl_array_release(&available);
+                    return;
+                }
+                strcpy(elem, layout_name);
+            }
+        }
+
+        wl_resource_post_event(resource, ZWF_KEYBOARD_LANG_MANAGER_V2_AVAILABLE_LAYOUTS, &available);
+        wl_resource_post_event(resource, ZWF_KEYBOARD_LANG_MANAGER_V2_CURRENT_LAYOUT, current_layout);
+        wl_array_release(&available);
+    }
+
+    ~wfs_keyboard_lang_manager()
+    {
+        on_keyboard_modifiers.disconnect();
+    }
+};
+
+static void handle_keyboard_lang_manager_destroy(wl_resource *resource)
+{
+    auto manager = (wfs_keyboard_lang_manager*)wl_resource_get_user_data(resource);
+    delete manager;
+    wl_resource_set_user_data(resource, nullptr);
+}
+
 static void zwf_shell_manager_get_wf_output(wl_client *client,
     wl_resource *resource, wl_resource *output, uint32_t id)
 {
@@ -435,10 +538,15 @@ static void zwf_shell_manager_get_wf_surface(wl_client *client,
     }
 }
 
+static void zwf_shell_manager_get_wf_keyboard_lang_manager(wl_client *client, wl_resource *resource, uint32_t id) {
+    new wfs_keyboard_lang_manager(client, id);
+}
+
 const struct zwf_shell_manager_v2_interface zwf_shell_manager_v2_impl =
 {
     zwf_shell_manager_get_wf_output,
     zwf_shell_manager_get_wf_surface,
+    zwf_shell_manager_get_wf_keyboard_lang_manager,
 };
 
 void bind_zwf_shell_manager(wl_client *client, void *data,
