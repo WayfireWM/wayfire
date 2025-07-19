@@ -123,8 +123,6 @@ wayfire_xdg_popup::wayfire_xdg_popup(wlr_xdg_popup *popup) : wf::view_interface_
     }
 
     on_surface_commit.set_callback([&] (void*) { commit(); });
-    // We'll receive the initial commit soon
-    on_surface_commit.connect(&popup->base->surface->events.commit);
 
     LOGI("New xdg popup");
     this->main_surface = std::make_shared<wf::scene::wlr_surface_node_t>(popup->base->surface, true);
@@ -149,6 +147,8 @@ wayfire_xdg_popup::wayfire_xdg_popup(wlr_xdg_popup *popup) : wf::view_interface_
     on_new_popup.connect(&popup->base->events.new_popup);
     on_ping_timeout.connect(&popup->base->events.ping_timeout);
     on_reposition.connect(&popup->events.reposition);
+
+    on_surface_commit.connect(&popup->base->surface->events.commit);
 
     popup->base->data = this;
     parent_geometry_changed.set_callback([=] (auto)
