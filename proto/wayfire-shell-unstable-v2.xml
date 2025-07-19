@@ -19,6 +19,11 @@
       <arg name="surface" type="object" interface="wl_surface"/>
       <arg name="id" type="new_id" interface="zwf_surface_v2"/>
     </request>
+
+    <request name="get_wf_keyboard_lang_manager">
+      <description summary="Create a zwf_keyboard_lang_manager_v2"/>
+      <arg name="id" type="new_id" interface="zwf_keyboard_lang_manager_v2"/>
+    </request>
   </interface>
 
   <interface name="zwf_output_v2" version="2">
@@ -125,6 +130,27 @@
     <request name="interactive_move">
       <description summary="Start an interactive move of the surface"/>
     </request>
+  </interface>
+
+  <interface name="zwf_keyboard_lang_manager_v2" version="1">
+    <description summary="Keyboard layout manager"/>
+    <request name="set_layout">
+      <arg name="layout" type="uint" summary="Sets layout"/>
+    </request>
+
+    <event name="current_layout">
+      <description summary="Current keyboard layout">
+        Emmited on layout change and after manager is created, indicating active layout.
+      </description>
+      <arg name="id" type="uint"/>
+    </event>
+
+    <event name="available_layouts">
+      <description summary="Available layouts">
+        Array of available layout names
+      </description>
+      <arg name="layouts" type="array"/>
+    </event>
   </interface>
 
 </protocol>
