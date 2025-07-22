@@ -44,7 +44,14 @@ void wf::window_manager_t::update_last_windowed_geometry(wayfire_toplevel_view v
         return;
     }
 
-    windowed->last_windowed_geometry = view->toplevel()->pending().geometry;
+    update_last_windowed_geometry(view, view->toplevel()->pending().geometry);
+}
+
+void window_manager_t::update_last_windowed_geometry(wayfire_toplevel_view view,
+    wf::geometry_t windowed_geometry)
+{
+    auto windowed = view->get_data_safe<windowed_geometry_data_t>();
+    windowed->last_windowed_geometry = windowed_geometry;
     if (view->get_output())
     {
         windowed->windowed_geometry_workarea = view->get_output()->workarea->get_workarea();

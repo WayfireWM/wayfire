@@ -20,6 +20,7 @@ class window_manager_t
      * track of this when a plugin calls update_last_windowed_geometry().
      */
     virtual void update_last_windowed_geometry(wayfire_toplevel_view view);
+    virtual void update_last_windowed_geometry(wayfire_toplevel_view view, wf::geometry_t windowed_geometry);
 
     /**
      * Get the stored last_windowed_geometry, if it was stored at all.

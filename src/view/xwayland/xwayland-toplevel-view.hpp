@@ -319,9 +319,9 @@ class wayfire_xwayland_view : public wf::toplevel_view_interface_t, public wayfi
             };
 
             /* Make sure geometry is properly visible on the view output */
+            save_geometry = save_geometry - wf::origin(get_output()->get_layout_geometry());
             save_geometry = wf::clamp(save_geometry, get_output()->workarea->get_workarea());
-            toplevel->pending().geometry = save_geometry;
-            wf::get_core().default_wm->update_last_windowed_geometry({this});
+            wf::get_core().default_wm->update_last_windowed_geometry({this}, save_geometry);
         }
     }
 
