@@ -32,8 +32,11 @@ wf::xdg_toplevel_t::xdg_toplevel_t(wlr_xdg_toplevel *toplevel,
 
 void wf::xdg_toplevel_t::request_native_size()
 {
-    // This will trigger a client-driven transaction
-    wlr_xdg_toplevel_set_size(toplevel, 0, 0);
+    if (toplevel && toplevel->base->initialized)
+    {
+        // This will trigger a client-driven transaction
+        wlr_xdg_toplevel_set_size(toplevel, 0, 0);
+    }
 }
 
 void wf::xdg_toplevel_t::commit()
