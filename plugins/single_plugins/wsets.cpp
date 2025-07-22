@@ -274,7 +274,11 @@ class wayfire_wsets_plugin_t : public wf::plugin_interface_t
         auto target_wset     = available_sets[index];
         const auto& old_wset = view->get_wset();
 
-        old_wset->remove_view(view);
+        if (old_wset)
+        {
+            old_wset->remove_view(view);
+        }
+
         wf::scene::remove_child(view->get_root_node());
         wf::emit_view_pre_moved_to_wset_pre(view, old_wset, target_wset);
 
