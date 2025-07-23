@@ -111,11 +111,6 @@ wf::scene::wlr_surface_node_t::wlr_surface_node_t(wlr_surface *surface, bool aut
 
     this->on_surface_commit.set_callback([=] (void*)
     {
-        if (!wlr_surface_has_buffer(this->surface) && this->visibility.empty())
-        {
-            send_frame_done(false);
-        }
-
         if (this->autocommit)
         {
             apply_current_surface_state();
