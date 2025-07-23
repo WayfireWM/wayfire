@@ -23,6 +23,9 @@ struct surface_state_t
     std::optional<wlr_fbox> src_viewport;
     wl_output_transform transform = WL_OUTPUT_TRANSFORM_NORMAL;
 
+    // Sequence number of the last commit read from a wlr_surface state
+    std::optional<uint32_t> seq{};
+
     // Read the current surface state, get a lock on the current surface buffer (releasing any old locks),
     // and accumulate damage.
     void merge_state(wlr_surface *surface);
@@ -67,6 +70,7 @@ class wlr_surface_node_t : public node_t, public zero_copy_texturable_node_t
 
     wlr_surface *get_surface() const;
     void apply_state(surface_state_t&& state);
+    void apply_current_surface_state();
     void send_frame_done(bool delay_until_vblank);
 
   private:
@@ -89,7 +93,6 @@ class wlr_surface_node_t : public node_t, public zero_copy_texturable_node_t
 
     const bool autocommit;
     surface_state_t current_state;
-    void apply_current_surface_state();
 };
 }
 }

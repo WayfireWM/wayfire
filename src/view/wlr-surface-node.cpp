@@ -32,6 +32,7 @@ wf::scene::surface_state_t& wf::scene::surface_state_t::operator =(surface_state
     current_buffer = other.current_buffer;
     texture = other.texture;
     accumulated_damage = other.accumulated_damage;
+    seq  = other.seq;
     size = other.size;
     src_viewport = other.src_viewport;
     transform    = other.transform;
@@ -40,6 +41,7 @@ wf::scene::surface_state_t& wf::scene::surface_state_t::operator =(surface_state
     other.texture = NULL;
     other.accumulated_damage.clear();
     other.src_viewport.reset();
+    other.seq.reset();
     return *this;
 }
 
@@ -78,6 +80,8 @@ void wf::scene::surface_state_t::merge_state(wlr_surface *surface)
     {
         this->src_viewport.reset();
     }
+
+    this->seq = surface->current.seq;
 
     wf::region_t current_damage;
     wlr_surface_get_effective_damage(surface, current_damage.to_pixman());
@@ -160,6 +164,12 @@ void wf::scene::wlr_surface_node_t::apply_state(surface_state_t&& state)
 
 void wf::scene::wlr_surface_node_t::apply_current_surface_state()
 {
+    if (this->current_state.seq == surface->current.seq)
+    {
+        // Already up to date.
+        return;
+    }
+
     surface_state_t state;
     state.merge_state(surface);
     this->apply_state(std::move(state));
