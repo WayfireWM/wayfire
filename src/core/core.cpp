@@ -612,6 +612,11 @@ void wf::start_move_view_to_wset(wayfire_toplevel_view v, std::shared_ptr<wf::wo
 
 void wf::move_view_to_output(wayfire_toplevel_view v, wf::output_t *new_output, bool reconfigure)
 {
+    if (v->get_output() == new_output)
+    {
+        return;
+    }
+
     wf::dassert(!v->parent, "Cannot move a dialog to a different output than its parent!");
 
     auto old_output = v->get_output();

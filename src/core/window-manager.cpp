@@ -251,22 +251,14 @@ void window_manager_t::tile_request(wayfire_toplevel_view view,
 void window_manager_t::fullscreen_request(wayfire_toplevel_view view,
     wf::output_t *output, bool state, std::optional<wf::point_t> ws)
 {
-    if (view->toplevel()->pending().fullscreen == state)
-    {
-        return;
-    }
-
     wf::output_t *wo = output ?: (view->get_output() ?: wf::get_core().seat->get_active_output());
     const wf::point_t workspace = ws.value_or(wo->wset()->get_current_workspace());
     wf::dassert(wo != nullptr, "Fullscreening should not happen with null output!");
 
     /* TODO: what happens if the view is moved to the other output, but not
      * fullscreened? We should make sure that it stays visible there */
-    if (view->get_output() != wo)
-    {
-        // TODO: move_view_to_output seems like a good candidate for inclusion in window-manager
-        wf::move_view_to_output(view, wo, false);
-    }
+    // TODO: move_view_to_output seems like a good candidate for inclusion in window-manager
+    wf::move_view_to_output(view, wo, false);
 
     view_fullscreen_request_signal data;
     data.view  = view;
