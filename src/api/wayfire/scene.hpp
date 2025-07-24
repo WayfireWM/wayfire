@@ -419,7 +419,9 @@ using floating_inner_ptr = std::shared_ptr<floating_inner_node_t>;
 class output_node_t : public floating_inner_node_t
 {
   public:
-    output_node_t(wf::output_t *output);
+    output_node_t(wf::output_t *output, bool auto_limits = true);
+    ~output_node_t();
+
     std::string stringify() const override;
 
     wf::pointf_t to_local(const wf::pointf_t& point) override;
@@ -440,10 +442,7 @@ class output_node_t : public floating_inner_node_t
     /**
      * Get the output this node is responsible for.
      */
-    wf::output_t *get_output() const
-    {
-        return output;
-    }
+    wf::output_t *get_output() const;
 
     /**
      * The limit region of an output.
@@ -454,7 +453,8 @@ class output_node_t : public floating_inner_node_t
     std::optional<wf::geometry_t> limit_region;
 
   private:
-    wf::output_t *output;
+    struct priv_t;
+    std::unique_ptr<priv_t> priv;
 };
 
 /**

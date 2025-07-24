@@ -7,6 +7,7 @@
 
 #include "scene-priv.hpp"
 #include "wayfire/geometry.hpp"
+#include "wayfire/output-layout.hpp"
 #include "wayfire/region.hpp"
 #include "wayfire/scene-input.hpp"
 #include "wayfire/scene-render.hpp"
@@ -292,25 +293,69 @@ uint32_t node_t::optimize_update(uint32_t flags)
 }
 
 // ------------------------------ output_node_t --------------------------------
-output_node_t::output_node_t(wf::output_t *output) : floating_inner_node_t(true)
+
+struct output_node_t::priv_t
 {
-    this->output = output;
+    wf::output_t *output;
+    bool auto_limits = true;
+    wf::signal::connection_t<wf::output_configuration_changed_signal> on_changed;
+    wf::option_wrapper_t<bool> remove_output_limits{"workarounds/remove_output_limits"};
+
+    void update_limits(std::optional<wf::geometry_t>& limit_region)
+    {
+        if (!auto_limits)
+        {
+            // Plugins will set this manually
+            return;
+        }
+
+        if (remove_output_limits)
+        {
+            limit_region = std::nullopt;
+        } else
+        {
+            limit_region = output->get_layout_geometry();
+        }
+    }
+};
+
+output_node_t::output_node_t(wf::output_t *output, bool auto_limits) : floating_inner_node_t(true)
+{
+    this->priv = std::make_unique<priv_t>();
+    this->priv->auto_limits = auto_limits;
+    this->priv->output     = output;
+    this->priv->on_changed = [=] (wf::output_configuration_changed_signal *data)
+    {
+        this->priv->update_limits(this->limit_region);
+        wf::scene::update(shared_from_this(), scene::update_flag::INPUT_STATE);
+    };
+
+    this->priv->remove_output_limits.set_callback([=] ()
+    {
+        this->priv->update_limits(this->limit_region);
+    });
+
+    this->priv->update_limits(this->limit_region);
+    output->connect(&priv->on_changed);
 }
+
+output_node_t::~output_node_t()
+{}
 
 std::string output_node_t::stringify() const
 {
-    return "output " + this->output->to_string() + " " + stringify_flags();
+    return "output " + this->priv->output->to_string() + " " + stringify_flags();
 }
 
 wf::pointf_t output_node_t::to_local(const wf::pointf_t& point)
 {
-    auto offset = wf::origin(output->get_layout_geometry());
+    auto offset = wf::origin(priv->output->get_layout_geometry());
     return {point.x - offset.x, point.y - offset.y};
 }
 
 wf::pointf_t output_node_t::to_global(const wf::pointf_t& point)
 {
-    auto offset = wf::origin(output->get_layout_geometry());
+    auto offset = wf::origin(priv->output->get_layout_geometry());
     return {point.x + offset.x, point.y + offset.y};
 }
 
@@ -429,7 +474,7 @@ void output_node_t::gen_render_instances(
     std::vector<render_instance_uptr> & instances, damage_callback push_damage,
     wf::output_t *shown_on)
 {
-    if (this->limit_region && shown_on && (shown_on != this->output))
+    if (this->limit_region && shown_on && (shown_on != this->priv->output))
     {
         // If the limit region is set and we are limiting the generation of
         // instances to a particular region (typically an output), make sure we
@@ -438,14 +483,19 @@ void output_node_t::gen_render_instances(
     }
 
     instances.push_back(
-        std::make_unique<output_render_instance_t>(this, push_damage, output,
+        std::make_unique<output_render_instance_t>(this, push_damage, priv->output,
             shown_on));
 }
 
 wf::geometry_t output_node_t::get_bounding_box()
 {
     const auto bbox = node_t::get_bounding_box();
-    return bbox + wf::origin(output->get_layout_geometry());
+    return bbox + wf::origin(priv->output->get_layout_geometry());
+}
+
+wf::output_t*output_node_t::get_output() const
+{
+    return priv->output;
 }
 
 // ------------------------------ root_node_t ----------------------------------

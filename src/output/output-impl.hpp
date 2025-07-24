@@ -30,9 +30,6 @@ class output_impl_t : public output_t
 
   private:
     std::unordered_multiset<wf::plugin_activation_data_t*> active_plugins;
-    wf::signal::connection_t<output_configuration_changed_signal> on_configuration_changed;
-    void update_node_limits();
-
     wf::dimensions_t effective_size;
 
   public:

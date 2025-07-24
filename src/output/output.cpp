@@ -8,45 +8,21 @@
 #include "wayfire/scene-input.hpp"
 #include "wayfire/scene-operations.hpp"
 #include "wayfire/scene.hpp"
-#include "wayfire/toplevel-view.hpp"
-#include "wayfire/view-helpers.hpp"
 #include "wayfire/view.hpp"
-#include "../core/core-impl.hpp"
 #include "wayfire/signal-definitions.hpp"
 #include "wayfire/render-manager.hpp"
 #include "wayfire/output-layout.hpp"
 #include "wayfire/workspace-set.hpp"
-#include "wayfire/compositor-view.hpp"
-#include "../core/seat/input-manager.hpp"
-#include "../view/xdg-shell.hpp"
 #include <memory>
 #include <wayfire/config/types.hpp>
 #include <wayfire/util/log.hpp>
 #include <wayfire/nonstd/wlroots-full.hpp>
 #include <wayfire/workarea.hpp>
 #include <wayfire/window-manager.hpp>
-
-#include <algorithm>
 #include <assert.h>
+#include <wayfire/seat.hpp>
 
 wf::output_t::output_t() = default;
-
-void wf::output_impl_t::update_node_limits()
-{
-    static wf::option_wrapper_t<bool> remove_output_limits{"workarounds/remove_output_limits"};
-    for (int i = 0; i < (int)wf::scene::layer::ALL_LAYERS; i++)
-    {
-        if (remove_output_limits)
-        {
-            node_for_layer((wf::scene::layer)i)->limit_region.reset();
-        } else
-        {
-            node_for_layer((wf::scene::layer)i)->limit_region = get_layout_geometry();
-        }
-    }
-
-    wf::scene::update(wf::get_core().scene(), scene::update_flag::INPUT_STATE);
-}
 
 wf::output_impl_t::output_impl_t(wlr_output *handle,
     const wf::dimensions_t& effective_size)
@@ -61,19 +37,11 @@ wf::output_impl_t::output_impl_t(wlr_output *handle,
         scene::add_back(root->layers[layer], nodes[layer]);
     }
 
-    update_node_limits();
-
     workarea = std::make_unique<output_workarea_manager_t>(this);
     this->set_workspace_set(workspace_set_t::create());
 
     render = std::make_unique<render_manager>(this);
     promotion_manager = std::make_unique<promotion_manager_t>(this);
-
-    on_configuration_changed = [=] (wf::output_configuration_changed_signal *ev)
-    {
-        update_node_limits();
-    };
-    connect(&on_configuration_changed);
 }
 
 std::shared_ptr<wf::scene::output_node_t> wf::output_impl_t::node_for_layer(
