@@ -86,6 +86,8 @@ wayfire_view wf::seat_t::get_active_view() const
 
 void wf::seat_t::impl::update_active_view(wf::scene::node_ptr new_focus)
 {
+    static wf::option_wrapper_t<bool> keep_last_focus_activated{"workarounds/keep_last_toplevel_activated"};
+
     auto view = node_to_view(new_focus);
     auto last_active = _last_active_view.lock();
     if (view.get() == last_active.get())
@@ -94,7 +96,7 @@ void wf::seat_t::impl::update_active_view(wf::scene::node_ptr new_focus)
     }
 
     LOGC(KBD, "Active view becomes ", view);
-    if ((view == nullptr) || toplevel_cast(view))
+    if ((view == nullptr) || toplevel_cast(view) || !keep_last_focus_activated)
     {
         auto last_toplevel = _last_active_toplevel.lock();
         if (last_toplevel.get() != view.get())

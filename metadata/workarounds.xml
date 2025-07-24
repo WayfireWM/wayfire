@@ -88,6 +88,11 @@
 			<_long>Focus the main surface instead of popup menus. Works around some bugs in Qt-based apps related to copy-paste.</_long>
 			<default>false</default>
 		</option>
+		<option name="keep_last_toplevel_activated" type="bool">
+			<_short>Keep last focused toplevel activated</_short>
+			<_long>When a layer-shell view grabs keyboard focus, keep the last focused toplevel view as activated.</_long>
+			<default>true</default>
+		</option>
 		<option name="auto_reload_config" type="bool">
 			<_short>Auto-reload Config</_short>
 			<_long>Automatically reload the config file when it's modified.</_long>
