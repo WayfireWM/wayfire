@@ -67,6 +67,8 @@ enum class logging_category : size_t
     RENDER        = 11,
     // Input-device-related events
     INPUT_DEVICES = 12,
+    // Output-device-related events
+    OUTPUT        = 13,
     TOTAL,
 };
 
