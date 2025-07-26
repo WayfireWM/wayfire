@@ -1606,7 +1606,7 @@ class output_layout_t::impl
             auto& state  = entry.second;
             auto& lo     = this->outputs[handle];
 
-            if (!(state.source & OUTPUT_IMAGE_SOURCE_SELF))
+            if (state.source == OUTPUT_IMAGE_SOURCE_NONE)
             {
                 /* First shut down the output, move its views, etc. while it
                  * is still in the output layout and its global is active.
