@@ -87,37 +87,40 @@ class wlr_output_state_setter_t
 };
 }
 
+static std::map<std::string, wl_output_transform> output_transforms = {
+    {"normal", WL_OUTPUT_TRANSFORM_NORMAL},
+    {"90", WL_OUTPUT_TRANSFORM_90},
+    {"180", WL_OUTPUT_TRANSFORM_180},
+    {"270", WL_OUTPUT_TRANSFORM_270},
+    {"flipped", WL_OUTPUT_TRANSFORM_FLIPPED},
+    {"90_flipped", WL_OUTPUT_TRANSFORM_FLIPPED_90},
+    {"180_flipped", WL_OUTPUT_TRANSFORM_FLIPPED_180},
+    {"270_flipped", WL_OUTPUT_TRANSFORM_FLIPPED_270},
+};
+
 static wl_output_transform get_transform_from_string(std::string transform)
 {
-    if (transform == "normal")
+    auto it = output_transforms.find(transform);
+    if (it != output_transforms.end())
     {
-        return WL_OUTPUT_TRANSFORM_NORMAL;
-    } else if (transform == "90")
-    {
-        return WL_OUTPUT_TRANSFORM_90;
-    } else if (transform == "180")
-    {
-        return WL_OUTPUT_TRANSFORM_180;
-    } else if (transform == "270")
-    {
-        return WL_OUTPUT_TRANSFORM_270;
-    } else if (transform == "flipped")
-    {
-        return WL_OUTPUT_TRANSFORM_FLIPPED;
-    } else if (transform == "90_flipped")
-    {
-        return WL_OUTPUT_TRANSFORM_FLIPPED_90;
-    } else if (transform == "180_flipped")
-    {
-        return WL_OUTPUT_TRANSFORM_FLIPPED_180;
-    } else if (transform == "270_flipped")
-    {
-        return WL_OUTPUT_TRANSFORM_FLIPPED_270;
+        return it->second;
     }
 
     LOGE("Bad output transform in config: ", transform);
-
     return WL_OUTPUT_TRANSFORM_NORMAL;
+}
+
+static std::string wl_transform_to_string(wl_output_transform transform)
+{
+    for (auto& it : output_transforms)
+    {
+        if (it.second == transform)
+        {
+            return it.first;
+        }
+    }
+
+    return "normal";
 }
 
 wlr_output_mode *find_matching_mode(wlr_output *output,
@@ -1243,8 +1246,7 @@ class output_layout_t::impl
         state.source = OUTPUT_IMAGE_SOURCE_NONE;
         noop_output->apply_state(state);
         wlr_output_layout_remove(output_layout, noop_output->handle);
-        // Trigger repositioning of all outputs
-        apply_configuration(get_current_configuration());
+        emit_configuration_changed_for_dynamic_outputs(get_current_configuration());
     }
 
     void add_output(wlr_output *output)
@@ -1500,9 +1502,67 @@ class output_layout_t::impl
         return ok;
     }
 
+    static std::string_view get_output_source_name(output_image_source_t source)
+    {
+        switch (source)
+        {
+          case OUTPUT_IMAGE_SOURCE_INVALID:
+            return "invalid";
+
+          case OUTPUT_IMAGE_SOURCE_SELF:
+            return "self";
+
+          case OUTPUT_IMAGE_SOURCE_NONE:
+            return "none";
+
+          case OUTPUT_IMAGE_SOURCE_DPMS:
+            return "dpms";
+
+          case OUTPUT_IMAGE_SOURCE_MIRROR:
+            return "mirror";
+        }
+
+        return "unknown";
+    }
+
     /** Apply the given configuration. Config MUST be a valid configuration */
     void apply_configuration(const output_configuration_t& config)
     {
+        LOGC(OUTPUT, "Applying configuration:");
+        for (auto& entry : config)
+        {
+            LOGC(OUTPUT, "\toutput: ", entry.first->name);
+            if (entry.second.position.is_automatic_position())
+            {
+                LOGC(OUTPUT, "\t  position: automatic");
+            } else
+            {
+                LOGC(OUTPUT, "\t  position: ",
+                    entry.second.position.get_x(), ", ", entry.second.position.get_y());
+            }
+
+            if (entry.second.source == OUTPUT_IMAGE_SOURCE_NONE)
+            {
+                LOGC(OUTPUT, "\t  mode: off");
+            } else if (entry.second.source == OUTPUT_IMAGE_SOURCE_DPMS)
+            {
+                LOGC(OUTPUT, "\t  mode: dpms");
+            } else if (entry.second.source == OUTPUT_IMAGE_SOURCE_MIRROR)
+            {
+                LOGC(OUTPUT, "\t  mode: mirror ", entry.second.mirror_from);
+            } else
+            {
+                LOGC(OUTPUT, "\t  mode: ",
+                    entry.second.mode.width, "x", entry.second.mode.height, "@", entry.second.mode.refresh,
+                    entry.second.uses_custom_mode ? " (custom)" : "");
+            }
+
+            LOGC(OUTPUT, "\t  scale: ", entry.second.scale);
+            LOGC(OUTPUT, "\t  transform: ", wl_transform_to_string(entry.second.transform));
+            LOGC(OUTPUT, "\t  vrr: ", entry.second.vrr);
+            LOGC(OUTPUT, "\t  depth: ", entry.second.depth);
+        }
+
         /* The order in which we enable and disable outputs is important.
          * Firstly, on some systems where there aren't enough CRTCs, we can
          * only enable a subset of all outputs at once. This means we should
@@ -1545,7 +1605,7 @@ class output_layout_t::impl
             auto& state  = entry.second;
             auto& lo     = this->outputs[handle];
 
-            if (!(state.source & OUTPUT_IMAGE_SOURCE_SELF))
+            if (state.source == OUTPUT_IMAGE_SOURCE_NONE)
             {
                 /* First shut down the output, move its views, etc. while it
                  * is still in the output layout and its global is active.
@@ -1611,21 +1671,7 @@ class output_layout_t::impl
 
         /* Fifth: emit configuration-changed again for dynamically-positioned outputs, because their position
          * might have changed. */
-        for (auto& entry : config)
-        {
-            auto& handle = entry.first;
-            auto& state  = entry.second;
-            auto& lo     = this->outputs[handle];
-
-            if (state.source & OUTPUT_IMAGE_SOURCE_SELF &&
-                entry.second.position.is_automatic_position())
-            {
-                lo->emit_configuration_changed(wf::OUTPUT_POSITION_CHANGE);
-            }
-        }
-
-        wf::output_layout_configuration_changed_signal ev;
-        get_core().output_layout->emit(&ev);
+        emit_configuration_changed_for_dynamic_outputs(config);
 
         if (count_enabled > 0)
         {
@@ -1644,6 +1690,25 @@ class output_layout_t::impl
         {
             send_wlr_configuration();
         });
+    }
+
+    void emit_configuration_changed_for_dynamic_outputs(const output_configuration_t& config)
+    {
+        for (auto& entry : config)
+        {
+            auto& handle = entry.first;
+            auto& state  = entry.second;
+            auto& lo     = this->outputs[handle];
+
+            if (state.source & OUTPUT_IMAGE_SOURCE_SELF &&
+                entry.second.position.is_automatic_position())
+            {
+                lo->emit_configuration_changed(wf::OUTPUT_POSITION_CHANGE);
+            }
+        }
+
+        wf::output_layout_configuration_changed_signal ev;
+        get_core().output_layout->emit(&ev);
     }
 
     void send_wlr_configuration()
