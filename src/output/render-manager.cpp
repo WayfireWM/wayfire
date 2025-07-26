@@ -149,6 +149,11 @@ struct swapchain_damage_manager_t
         on_gamma_changed.connect(&wf::get_core().protocols.gamma_v1->events.set_gamma);
     }
 
+    ~swapchain_damage_manager_t()
+    {
+        wlr_damage_ring_finish(&damage_ring);
+    }
+
     wf::signal::connection_t<wf::output_configuration_changed_signal>
     output_mode_changed = [=] (wf::output_configuration_changed_signal *ev)
     {
