@@ -1542,16 +1542,26 @@ class output_layout_t::impl
                     entry.second.position.get_x(), ", ", entry.second.position.get_y());
             }
 
-            LOGC(OUTPUT, "\t  mode: ",
-                entry.second.mode.width, "x", entry.second.mode.height, "@", entry.second.mode.refresh,
-                entry.second.uses_custom_mode ? " (custom)" : "");
+            if (entry.second.source == OUTPUT_IMAGE_SOURCE_NONE)
+            {
+                LOGC(OUTPUT, "\t  mode: off");
+            } else if (entry.second.source == OUTPUT_IMAGE_SOURCE_DPMS)
+            {
+                LOGC(OUTPUT, "\t  mode: dpms");
+            } else if (entry.second.source == OUTPUT_IMAGE_SOURCE_MIRROR)
+            {
+                LOGC(OUTPUT, "\t  mode: mirror ", entry.second.mirror_from);
+            } else
+            {
+                LOGC(OUTPUT, "\t  mode: ",
+                    entry.second.mode.width, "x", entry.second.mode.height, "@", entry.second.mode.refresh,
+                    entry.second.uses_custom_mode ? " (custom)" : "");
+            }
 
             LOGC(OUTPUT, "\t  scale: ", entry.second.scale);
             LOGC(OUTPUT, "\t  transform: ", wl_transform_to_string(entry.second.transform));
             LOGC(OUTPUT, "\t  vrr: ", entry.second.vrr);
-            LOGC(OUTPUT, "\t  source: ", get_output_source_name(entry.second.source));
             LOGC(OUTPUT, "\t  depth: ", entry.second.depth);
-            LOGC(OUTPUT, "\t  mirror: ", entry.second.mirror_from);
         }
 
         /* The order in which we enable and disable outputs is important.
