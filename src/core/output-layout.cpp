@@ -1522,6 +1522,8 @@ class output_layout_t::impl
           case OUTPUT_IMAGE_SOURCE_MIRROR:
             return "mirror";
         }
+
+        return "unknown";
     }
 
     /** Apply the given configuration. Config MUST be a valid configuration */
