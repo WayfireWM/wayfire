@@ -178,65 +178,77 @@ static wf::config_backend_t *load_backend(const std::string& backend)
     return init();
 }
 
+static std::string_view get_category_name(wf::log::logging_category category)
+{
+    switch (category)
+    {
+      case wf::log::logging_category::TXN:
+        return "txn";
+
+      case wf::log::logging_category::TXNI:
+        return "txni";
+
+      case wf::log::logging_category::VIEWS:
+        return "views";
+
+      case wf::log::logging_category::WLR:
+        return "wlroots";
+
+      case wf::log::logging_category::SCANOUT:
+        return "scanout";
+
+      case wf::log::logging_category::POINTER:
+        return "pointer";
+
+      case wf::log::logging_category::WSET:
+        return "wset";
+
+      case wf::log::logging_category::KBD:
+        return "kbd";
+
+      case wf::log::logging_category::XWL:
+        return "xwayland";
+
+      case wf::log::logging_category::LSHELL:
+        return "layer-shell";
+
+      case wf::log::logging_category::IM:
+        return "im";
+
+      case wf::log::logging_category::RENDER:
+        return "render";
+
+      case wf::log::logging_category::INPUT_DEVICES:
+        return "input-devices";
+
+      case wf::log::logging_category::OUTPUT:
+        return "output";
+
+      default:
+        wf::dassert(false);
+        return "unknown";
+    }
+}
+
 void parse_extended_debugging(const std::vector<std::string>& categories)
 {
     for (const auto& cat : categories)
     {
-        if (cat == "txn")
+        size_t idx = 0;
+        const size_t total = (size_t)wf::log::logging_category::TOTAL;
+        for (; idx < total; idx++)
         {
-            LOGD("Enabling extended debugging for transactions");
-            wf::log::enabled_categories.set((size_t)wf::log::logging_category::TXN, 1);
-        } else if (cat == "txni")
+            if (get_category_name((wf::log::logging_category)idx) == cat)
+            {
+                LOGD("Enabling debugging category \"", cat, "\"");
+                wf::log::enabled_categories.set(idx, 1);
+                break;
+            }
+        }
+
+        if (idx == total)
         {
-            LOGD("Enabling extended debugging for transaction objects");
-            wf::log::enabled_categories.set((size_t)wf::log::logging_category::TXNI, 1);
-        } else if (cat == "views")
-        {
-            LOGD("Enabling extended debugging for views");
-            wf::log::enabled_categories.set((size_t)wf::log::logging_category::VIEWS, 1);
-        } else if (cat == "wlroots")
-        {
-            LOGD("Enabling extended debugging for wlroots");
-            wf::log::enabled_categories.set((size_t)wf::log::logging_category::WLR, 1);
-        } else if (cat == "scanout")
-        {
-            LOGD("Enabling extended debugging for direct scanout");
-            wf::log::enabled_categories.set((size_t)wf::log::logging_category::SCANOUT, 1);
-        } else if (cat == "pointer")
-        {
-            LOGD("Enabling extended debugging for pointer events");
-            wf::log::enabled_categories.set((size_t)wf::log::logging_category::POINTER, 1);
-        } else if (cat == "wset")
-        {
-            LOGD("Enabling extended debugging for workspace set events");
-            wf::log::enabled_categories.set((size_t)wf::log::logging_category::WSET, 1);
-        } else if (cat == "kbd")
-        {
-            LOGD("Enabling extended debugging for keyboard events");
-            wf::log::enabled_categories.set((size_t)wf::log::logging_category::KBD, 1);
-        } else if (cat == "xwayland")
-        {
-            LOGD("Enabling extended debugging for xwayland events");
-            wf::log::enabled_categories.set((size_t)wf::log::logging_category::XWL, 1);
-        } else if (cat == "layer-shell")
-        {
-            LOGD("Enabling extended debugging for layer-shell events");
-            wf::log::enabled_categories.set((size_t)wf::log::logging_category::LSHELL, 1);
-        } else if (cat == "im")
-        {
-            LOGD("Enabling extended debugging for input method events");
-            wf::log::enabled_categories.set((size_t)wf::log::logging_category::IM, 1);
-        } else if (cat == "render")
-        {
-            LOGD("Enabling extended debugging for render events");
-            wf::log::enabled_categories.set((size_t)wf::log::logging_category::RENDER, 1);
-        } else if (cat == "input-devices")
-        {
-            LOGD("Enabling extended debugging for input-devices");
-            wf::log::enabled_categories.set((size_t)wf::log::logging_category::INPUT_DEVICES, 1);
-        } else
-        {
-            LOGE("Unrecognized debugging category \"", cat, "\"");
+            LOGW("Unknown debugging category \"", cat, "\"");
         }
     }
 }

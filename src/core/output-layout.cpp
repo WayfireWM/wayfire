@@ -87,37 +87,40 @@ class wlr_output_state_setter_t
 };
 }
 
+static std::map<std::string, wl_output_transform> output_transforms = {
+    {"normal", WL_OUTPUT_TRANSFORM_NORMAL},
+    {"90", WL_OUTPUT_TRANSFORM_90},
+    {"180", WL_OUTPUT_TRANSFORM_180},
+    {"270", WL_OUTPUT_TRANSFORM_270},
+    {"flipped", WL_OUTPUT_TRANSFORM_FLIPPED},
+    {"90_flipped", WL_OUTPUT_TRANSFORM_FLIPPED_90},
+    {"180_flipped", WL_OUTPUT_TRANSFORM_FLIPPED_180},
+    {"270_flipped", WL_OUTPUT_TRANSFORM_FLIPPED_270},
+};
+
 static wl_output_transform get_transform_from_string(std::string transform)
 {
-    if (transform == "normal")
+    auto it = output_transforms.find(transform);
+    if (it != output_transforms.end())
     {
-        return WL_OUTPUT_TRANSFORM_NORMAL;
-    } else if (transform == "90")
-    {
-        return WL_OUTPUT_TRANSFORM_90;
-    } else if (transform == "180")
-    {
-        return WL_OUTPUT_TRANSFORM_180;
-    } else if (transform == "270")
-    {
-        return WL_OUTPUT_TRANSFORM_270;
-    } else if (transform == "flipped")
-    {
-        return WL_OUTPUT_TRANSFORM_FLIPPED;
-    } else if (transform == "90_flipped")
-    {
-        return WL_OUTPUT_TRANSFORM_FLIPPED_90;
-    } else if (transform == "180_flipped")
-    {
-        return WL_OUTPUT_TRANSFORM_FLIPPED_180;
-    } else if (transform == "270_flipped")
-    {
-        return WL_OUTPUT_TRANSFORM_FLIPPED_270;
+        return it->second;
     }
 
     LOGE("Bad output transform in config: ", transform);
-
     return WL_OUTPUT_TRANSFORM_NORMAL;
+}
+
+static std::string wl_transform_to_string(wl_output_transform transform)
+{
+    for (auto& it : output_transforms)
+    {
+        if (it.second == transform)
+        {
+            return it.first;
+        }
+    }
+
+    return "normal";
 }
 
 wlr_output_mode *find_matching_mode(wlr_output *output,
@@ -1500,9 +1503,67 @@ class output_layout_t::impl
         return ok;
     }
 
+    static std::string_view get_output_source_name(output_image_source_t source)
+    {
+        switch (source)
+        {
+          case OUTPUT_IMAGE_SOURCE_INVALID:
+            return "invalid";
+
+          case OUTPUT_IMAGE_SOURCE_SELF:
+            return "self";
+
+          case OUTPUT_IMAGE_SOURCE_NONE:
+            return "none";
+
+          case OUTPUT_IMAGE_SOURCE_DPMS:
+            return "dpms";
+
+          case OUTPUT_IMAGE_SOURCE_MIRROR:
+            return "mirror";
+        }
+
+        return "unknown";
+    }
+
     /** Apply the given configuration. Config MUST be a valid configuration */
     void apply_configuration(const output_configuration_t& config)
     {
+        LOGC(OUTPUT, "Applying configuration:");
+        for (auto& entry : config)
+        {
+            LOGC(OUTPUT, "\toutput: ", entry.first->name);
+            if (entry.second.position.is_automatic_position())
+            {
+                LOGC(OUTPUT, "\t  position: automatic");
+            } else
+            {
+                LOGC(OUTPUT, "\t  position: ",
+                    entry.second.position.get_x(), ", ", entry.second.position.get_y());
+            }
+
+            if (entry.second.source == OUTPUT_IMAGE_SOURCE_NONE)
+            {
+                LOGC(OUTPUT, "\t  mode: off");
+            } else if (entry.second.source == OUTPUT_IMAGE_SOURCE_DPMS)
+            {
+                LOGC(OUTPUT, "\t  mode: dpms");
+            } else if (entry.second.source == OUTPUT_IMAGE_SOURCE_MIRROR)
+            {
+                LOGC(OUTPUT, "\t  mode: mirror ", entry.second.mirror_from);
+            } else
+            {
+                LOGC(OUTPUT, "\t  mode: ",
+                    entry.second.mode.width, "x", entry.second.mode.height, "@", entry.second.mode.refresh,
+                    entry.second.uses_custom_mode ? " (custom)" : "");
+            }
+
+            LOGC(OUTPUT, "\t  scale: ", entry.second.scale);
+            LOGC(OUTPUT, "\t  transform: ", wl_transform_to_string(entry.second.transform));
+            LOGC(OUTPUT, "\t  vrr: ", entry.second.vrr);
+            LOGC(OUTPUT, "\t  depth: ", entry.second.depth);
+        }
+
         /* The order in which we enable and disable outputs is important.
          * Firstly, on some systems where there aren't enough CRTCs, we can
          * only enable a subset of all outputs at once. This means we should
