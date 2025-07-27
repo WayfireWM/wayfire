@@ -1200,7 +1200,10 @@ class output_layout_t::impl
 
     void ensure_noop_output()
     {
-        LOGI("new output: NOOP-1");
+        if (!noop_output || (noop_output->current_state.source != OUTPUT_IMAGE_SOURCE_SELF))
+        {
+            LOGI("new output: NOOP-1");
+        }
 
         if (!noop_output)
         {
@@ -1223,7 +1226,14 @@ class output_layout_t::impl
          * next reconfiguration. This is needed because if we are removing
          * an output, we might get into a situation where the last physical
          * output has already been removed but we are yet to add the noop one */
-        noop_output->apply_state(noop_output->load_configured_state());
+        auto configured_state = noop_output->load_configured_state();
+        if (configured_state.source != OUTPUT_IMAGE_SOURCE_SELF)
+        {
+            LOGW("Noop output cannot be disabled, mirrored or put into DPMS state!");
+            configured_state.source = OUTPUT_IMAGE_SOURCE_SELF;
+        }
+
+        noop_output->apply_state(configured_state);
         wlr_output_layout_add_auto(output_layout, noop_output->handle);
         timer_remove_noop.disconnect();
     }
