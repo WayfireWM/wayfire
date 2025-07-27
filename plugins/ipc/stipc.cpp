@@ -388,18 +388,27 @@ class stipc_plugin_t : public wf::plugin_interface_t
     ipc::method_callback destroy_wayland_output = [] (wf::json_t data) -> json_t
     {
         auto output_str = wf::ipc::json_get_string(data, "output");
-        auto output     = wf::get_core().output_layout->find_output(output_str);
+
+        wlr_output *output = NULL;
+        for (auto& wo : wf::get_core().output_layout->get_current_configuration())
+        {
+            if (output_str == wo.first->name)
+            {
+                output = wo.first;
+            }
+        }
+
         if (!output)
         {
             return wf::ipc::json_error("Could not find output: \"" + output_str + "\"");
         }
 
-        if (!wlr_output_is_wl(output->handle))
+        if (!wlr_output_is_wl(output))
         {
             return wf::ipc::json_error("Output is not a wayland output!");
         }
 
-        wlr_output_destroy(output->handle);
+        wlr_output_destroy(output);
         return wf::ipc::json_ok();
     };
 
