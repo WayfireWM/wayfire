@@ -415,6 +415,7 @@ void core_drag_t::handle_motion(wf::point_t to)
                 set_tiled_wobbly(v.view, false);
             }
 
+            update_current_output(to);
             snap_off_signal data;
             data.focus_output = current_output;
             emit(&data);
