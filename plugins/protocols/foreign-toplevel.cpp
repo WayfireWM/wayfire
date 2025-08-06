@@ -99,7 +99,7 @@ class wayfire_foreign_toplevel
 
 #endif
 
-            app_id = default_app_id + " " + ev.app_id;
+            app_id = default_app_id + " " + ev.app_id + " wf-ipc-" + std::to_string(view->get_id());
         } else
         {
             app_id = default_app_id;
