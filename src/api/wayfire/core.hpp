@@ -329,11 +329,37 @@ class compositor_core_t : public wf::object_base_t, public signal::provider_t
 };
 
 /**
- * Change the view's output to new_output. If the reconfigure flag is
- * set, it will adjust the view geometry for the new output and clamp
- * it to the output geometry so it is at an expected size and position.
+ * Flags for move_view_to_output.
  */
-void move_view_to_output(wayfire_toplevel_view v, wf::output_t *new_output, bool reconfigure);
+enum
+{
+    /**
+     * Adjust the view geometry for the new output and clamp it to the output geometry so it is
+     * at an expected size and position.
+     */
+    VIEW_TO_OUTPUT_FLAG_RECONFIGURE    = 1 << 0,
+    /**
+     * If the new output has the same workspace geometry as the current output, move the view to the
+     * same workspace as it is currently on.
+     */
+    VIEW_TO_OUTPUT_FLAG_SAME_WORKSPACE = 1 << 1,
+};
+
+/**
+ * Change the view's output to new_output.
+ */
+void move_view_to_output(wayfire_toplevel_view v, wf::output_t *new_output, unsigned flags);
+
+/**
+ * Change the view's output to new_output. Equivalent to calling the move_view_to_output with
+ * the RECONFIGURE flag set to the specified value and no other flags set.
+ */
+inline void move_view_to_output(wayfire_toplevel_view v, wf::output_t *new_output,
+    bool reconfigure)
+{
+    unsigned flags = reconfigure ? VIEW_TO_OUTPUT_FLAG_RECONFIGURE : 0;
+    move_view_to_output(v, new_output, flags);
+}
 
 /**
  * Start a move of a view to a new workspace set (and thus potentially to a new output).
