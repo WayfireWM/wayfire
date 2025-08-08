@@ -310,7 +310,6 @@ void wf::touch_interface_t::update_cursor_state()
 }
 
 // Swipe params
-constexpr static int EDGE_SWIPE_THRESHOLD  = 10;
 constexpr static double MIN_SWIPE_DISTANCE = 30;
 constexpr static double MAX_SWIPE_DISTANCE = 450;
 constexpr static double SWIPE_INCORRECT_DRAG_TOLERANCE = 150;
@@ -428,24 +427,25 @@ static uint32_t find_swipe_edges(wf::touch::point_t point)
 {
     auto output   = wf::get_core().seat->get_active_output();
     auto geometry = output->get_layout_geometry();
+    wf::option_wrapper_t<int> edge_swipe_threshold{"input/edge_swipe_threshold"};
 
     uint32_t edge_directions = 0;
-    if (point.x <= geometry.x + EDGE_SWIPE_THRESHOLD)
+    if (point.x <= geometry.x + edge_swipe_threshold)
     {
         edge_directions |= wf::GESTURE_DIRECTION_RIGHT;
     }
 
-    if (point.x >= geometry.x + geometry.width - EDGE_SWIPE_THRESHOLD)
+    if (point.x >= geometry.x + geometry.width - edge_swipe_threshold)
     {
         edge_directions |= wf::GESTURE_DIRECTION_LEFT;
     }
 
-    if (point.y <= geometry.y + EDGE_SWIPE_THRESHOLD)
+    if (point.y <= geometry.y + edge_swipe_threshold)
     {
         edge_directions |= wf::GESTURE_DIRECTION_DOWN;
     }
 
-    if (point.y >= geometry.y + geometry.height - EDGE_SWIPE_THRESHOLD)
+    if (point.y >= geometry.y + geometry.height - edge_swipe_threshold)
     {
         edge_directions |= wf::GESTURE_DIRECTION_UP;
     }
