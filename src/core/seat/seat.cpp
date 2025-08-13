@@ -7,6 +7,7 @@
 #include "keyboard.hpp"
 #include "pointer.hpp"
 #include "touch.hpp"
+#include "tablet.hpp"
 #include "input-manager.hpp"
 #include "wayfire/output-layout.hpp"
 #include <wayfire/util/log.hpp>
@@ -622,6 +623,11 @@ void touchscreen_device_t::calibrate(std::shared_ptr<wf::config::section_t> devi
         LOGI("    ", m[0], " ", m[1], " ", m[2], " ", m[3], " ", m[4], " ", m[5]);
         libinput_device_config_calibration_set_matrix(libinput_dev, m);
     }
+}
+
+void tablet_t::reconfigure_device(std::shared_ptr<wf::config::section_t> device_section)
+{
+    map_to_output(device_section);
 }
 
 input_device_t::input_device_t(wlr_input_device *handle)

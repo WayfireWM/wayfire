@@ -81,6 +81,7 @@ struct tablet_t : public input_device_impl_t
     tablet_t(wlr_cursor *cursor, wlr_input_device *tool);
     virtual ~tablet_t();
 
+    void reconfigure_device(std::shared_ptr<wf::config::section_t> device_section) override;
     /** Handle a tool tip event */
     void handle_tip(wlr_tablet_tool_tip_event *ev,
         input_event_processing_mode_t mode);
