@@ -1017,6 +1017,8 @@ class output_layout_t::impl
 
     wl_listener_wrapper on_backend_destroy;
 
+    wl_listener_wrapper on_request_state;
+
     wl_idle_call idle_update_configuration;
     wl_timer<false> timer_remove_noop;
 
@@ -1291,6 +1293,16 @@ class output_layout_t::impl
         {
             remove_output(output);
         });
+
+        on_request_state.set_callback([=] (void *data)
+        {
+            auto ev = static_cast<wlr_output_event_request_state*>(data);
+            wlr_output_commit_state(ev->output, ev->state);
+            send_wlr_configuration();
+            outputs[output]->output->render->damage_whole();
+            outputs[output]->output->render->schedule_redraw();
+        });
+        on_request_state.connect(&output->events.request_state);
 
         reconfigure_from_config();
     }
