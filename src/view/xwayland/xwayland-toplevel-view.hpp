@@ -376,8 +376,72 @@ class wayfire_xwayland_view : public wf::toplevel_view_interface_t, public wayfi
         wf::adjust_view_output_on_map(this);
         do_map(surface, false);
         on_surface_commit.connect(&surface->events.commit);
+        bool wants_focus = false;
 
-        const bool wants_focus = (wlr_xwayland_surface_icccm_input_model(xw) != WLR_ICCCM_INPUT_MODEL_NONE);
+        switch (wlr_xwayland_surface_icccm_input_model(xw))
+        {
+          /*
+           * Abbreviated from ICCCM section 4.1.7 (Input Focus):
+           *
+           * Passive Input - The client expects keyboard input but never
+           * explicitly sets the input focus.
+           * Locally Active Input - The client expects keyboard input and
+           * explicitly sets the input focus, but it only does so when one
+           * of its windows already has the focus.
+           *
+           * Passive and Locally Active clients set the input field of
+           * WM_HINTS to True, which indicates that they require window
+           * manager assistance in acquiring the input focus.
+           */
+          case WLR_ICCCM_INPUT_MODEL_PASSIVE:
+          case WLR_ICCCM_INPUT_MODEL_LOCAL:
+            wants_focus = true;
+            break;
+
+          /*
+           * Globally Active Input - The client expects keyboard input and
+           * explicitly sets the input focus, even when it is in windows
+           * the client does not own. ... It wants to prevent the window
+           * manager from setting the input focus to any of its windows
+           * [because it may or may not want focus].
+           *
+           * Globally Active client windows may receive a WM_TAKE_FOCUS
+           * message from the window manager. If they want the focus, they
+           * should respond with a SetInputFocus request.
+           */
+          case WLR_ICCCM_INPUT_MODEL_GLOBAL:
+            /*
+             * Assume that NORMAL and DIALOG windows are likely to
+             * want focus. These window types should show up in the
+             * Alt-Tab switcher and be automatically focused when
+             * they become topmost.
+             *
+             * When we offer focus, we don't really focus the dialog.
+             * Instead, by offering focus like that, we let the client
+             * switch focus between its surfaces without involving the
+             * compositor.
+             */
+            if (wlr_xwayland_surface_has_window_type(xw,
+                WLR_XWAYLAND_NET_WM_WINDOW_TYPE_NORMAL) ||
+                wlr_xwayland_surface_has_window_type(xw,
+                    WLR_XWAYLAND_NET_WM_WINDOW_TYPE_DIALOG))
+            {
+                wlr_xwayland_surface_offer_focus(xw);
+            }
+
+            break;
+
+          /*
+           * No Input - The client never expects keyboard input.
+           *
+           * No Input and Globally Active clients set the input field to
+           * False, which requests that the window manager not set the
+           * input focus to their top-level window.
+           */
+          case WLR_ICCCM_INPUT_MODEL_NONE:
+            break;
+        }
+
         if (wants_focus)
         {
             wf::get_core().default_wm->focus_request(self());
