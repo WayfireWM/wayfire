@@ -336,7 +336,7 @@ struct output_layout_output_t
     int current_bit_depth = RENDER_BIT_DEPTH_DEFAULT;
 
     std::unique_ptr<wf::output_impl_t> output;
-    wl_listener_wrapper on_destroy, on_commit;
+    wl_listener_wrapper on_destroy, on_commit, on_request_state;
 
     std::shared_ptr<wf::config::section_t> config_section;
     wf::option_wrapper_t<wf::output_config::mode_t> mode_opt;
@@ -365,6 +365,7 @@ struct output_layout_output_t
     {
         this->handle = handle;
         on_destroy.connect(&handle->events.destroy);
+        on_request_state.connect(&handle->events.request_state);
         initialize_config_options();
 
         is_nested_compositor = wlr_output_is_wl(handle);
@@ -1290,6 +1291,29 @@ class output_layout_t::impl
         lo->on_destroy.set_callback([output, this] (void*)
         {
             remove_output(output);
+        });
+
+        lo->on_request_state.set_callback([=] (void *data)
+        {
+            auto ev = static_cast<wlr_output_event_request_state*>(data);
+            wlr_output_commit_state(ev->output, ev->state);
+            if (!lo->output)
+            {
+                return;
+            }
+
+            send_wlr_configuration();
+            for (auto& output : outputs)
+            {
+                output.second->emit_configuration_changed(
+                    wf::OUTPUT_POSITION_CHANGE | wf::OUTPUT_MODE_CHANGE);
+            }
+
+            output_layout_configuration_changed_signal signal;
+            wf::get_core().output_layout->emit(&signal);
+
+            lo->output->render->damage_whole();
+            lo->output->render->schedule_redraw();
         });
 
         reconfigure_from_config();
