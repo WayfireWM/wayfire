@@ -17,17 +17,22 @@
 #include "core/core-impl.hpp"
 #include <wayfire/nonstd/wlroots.hpp>
 
-static void print_version()
+static std::string get_version_string()
 {
-    std::cout << WAYFIRE_VERSION << "-" << wf::version::git_commit <<
-        " (" __DATE__ ") branch " << wf::version::git_branch <<
-        " wlroots-" << WLR_VERSION_STR << std::endl;
+    return std::string(WAYFIRE_VERSION) + "-" + wf::version::git_commit +
+           " (" + __DATE__ + ") branch " + wf::version::git_branch +
+           " wlroots-" + WLR_VERSION_STR;
+}
+
+static void print_version_and_exit()
+{
+    std::cout << get_version_string() << std::endl;
     exit(0);
 }
 
 static void print_help()
 {
-    std::cout << "Wayfire " << WAYFIRE_VERSION << std::endl;
+    std::cout << "Wayfire: " << get_version_string() << std::endl;
     std::cout << "Usage: wayfire [OPTION]...\n" << std::endl;
     std::cout << " -c,  --config            specify config file to use " <<
         "(overrides WAYFIRE_CONFIG_FILE from the environment)" << std::endl;
@@ -366,7 +371,7 @@ int main(int argc, char *argv[])
             break;
 
           case 'v':
-            print_version();
+            print_version_and_exit();
             break;
 
           default:
@@ -401,7 +406,7 @@ int main(int argc, char *argv[])
         std::abort();
     });
 
-    LOGI("Starting wayfire version ", WAYFIRE_VERSION);
+    LOGI("Starting wayfire: ", get_version_string());
     /* First create display and initialize safe-list's event loop, so that
      * wf objects (which depend on safe-list) can work */
     auto display = wl_display_create();
