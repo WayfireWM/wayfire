@@ -380,7 +380,7 @@ class wayfire_xwayland_view : public wf::toplevel_view_interface_t, public wayfi
         const bool wants_focus = (wlr_xwayland_surface_icccm_input_model(xw) != WLR_ICCCM_INPUT_MODEL_NONE);
         if (wants_focus)
         {
-            wf::get_core().default_wm->focus_request(self());
+            focus_toplevel_on_map();
         }
 
         /* Might trigger repositioning */
