@@ -11,6 +11,7 @@
 #include "wayfire/region.hpp"
 #include "wayfire/scene-input.hpp"
 #include "wayfire/scene-render.hpp"
+#include "wayfire/scene-operations.hpp"
 #include "wayfire/signal-provider.hpp"
 #include <wayfire/core.hpp>
 
@@ -554,6 +555,11 @@ void update(node_ptr changed_node, uint32_t flags)
         flags |= update_flag::MASKED;
     }
 
+    node_update_signal data;
+    data.node  = changed_node.get();
+    data.flags = flags;
+    changed_node->emit(&data);
+
     if (changed_node == wf::get_core().scene())
     {
         root_node_update_signal data;
@@ -596,6 +602,89 @@ uint32_t optimize_nested_render_instances(wf::scene::node_ptr node, uint32_t fla
     }
 
     return flags;
+}
+
+render_instance_manager_t::render_instance_manager_t(std::vector<node_ptr> nodes, damage_callback on_damage,
+    wf::output_t *reference_output) : nodes(nodes), on_damage(on_damage), reference_output(reference_output)
+{
+    regen_instances();
+    this->on_update = [=] (node_update_signal *ev)
+    {
+        if (ev->flags & scene::update_flag::MASKED)
+        {
+            // Update is masked, but the starting node is updated. So it is about a disabled child node, which
+            // we can ignore. On the other hand, if the starting node is disabled, all updates will be masked.
+            // However in some cases (move-drag-interface, for example), or when rendering minimized views or
+            // similar, the starting nodes are disabled, but we still want to render them.
+            if (ev->node->is_enabled())
+            {
+                return;
+            }
+        }
+
+        constexpr uint32_t recompute_instances_on = scene::update_flag::CHILDREN_LIST |
+            scene::update_flag::ENABLED;
+        constexpr uint32_t recompute_visibility_on = recompute_instances_on | scene::update_flag::GEOMETRY;
+
+        const auto& output_name = [&] { return reference_output ? reference_output->to_string() : "none"; };
+        const auto& is_root     = [&] { return nodes.size() > 0 && nodes[0] == wf::get_core().scene(); };
+
+        if (ev->flags & recompute_instances_on)
+        {
+            LOGC(RENDER, this, ": Output ", output_name(), ": regenerating instances from ", nodes.size(),
+                " nodes (root=", is_root() ? "true" : "false", ").");
+            regen_instances();
+        }
+
+        if (ev->flags & recompute_visibility_on)
+        {
+            idle_visibility.run_once([=] ()
+            {
+                LOGC(RENDER, this, ": Output ", output_name(), ": recomputing visibility from ", nodes.size(),
+                    " nodes (root=", is_root() ? "true" : "false", ").");
+                update_visibility();
+            });
+        }
+    };
+
+    for (auto& node : nodes)
+    {
+        node->connect(&on_update);
+    }
+}
+
+void render_instance_manager_t::regen_instances()
+{
+    instances.clear();
+    for (auto& node : nodes)
+    {
+        node->gen_render_instances(instances, on_damage, reference_output);
+    }
+}
+
+void render_instance_manager_t::set_visibility_region(wf::region_t region)
+{
+    this->visibility_region = region;
+    update_visibility();
+}
+
+void render_instance_manager_t::update_visibility()
+{
+    if (!reference_output || !visibility_region.has_value())
+    {
+        return;
+    }
+
+    wf::region_t visibility = this->visibility_region.value();
+    for (auto& instance : instances)
+    {
+        instance->compute_visibility(reference_output, visibility);
+    }
+}
+
+std::vector<render_instance_uptr>& render_instance_manager_t::get_instances()
+{
+    return this->instances;
 }
 } // namespace scene
 }

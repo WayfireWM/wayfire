@@ -1,6 +1,7 @@
 #include "wayfire/render-manager.hpp"
 #include "pixman.h"
 #include "wayfire/config-backend.hpp"
+#include "wayfire/scene-operations.hpp"
 #include "wayfire/core.hpp"
 #include "wayfire/debug.hpp"
 #include "wayfire/geometry.hpp"
@@ -33,9 +34,6 @@ namespace wf
 struct swapchain_damage_manager_t
 {
     wf::option_wrapper_t<bool> force_frame_sync{"workarounds/force_frame_sync"};
-    signal::connection_t<scene::root_node_update_signal> root_update;
-    std::vector<scene::render_instance_uptr> render_instances;
-
     wf::wl_listener_wrapper on_needs_frame;
     wf::wl_listener_wrapper on_damage;
     wf::wl_listener_wrapper on_request_state;
@@ -47,61 +45,24 @@ struct swapchain_damage_manager_t
     output_t *wo;
 
     bool pending_gamma_lut = false;
-    wf::wl_idle_call idle_recompute_visibility;
 
-    void update_scenegraph(uint32_t update_mask)
-    {
-        if (update_mask & scene::update_flag::MASKED)
-        {
-            return;
-        }
-
-        constexpr uint32_t recompute_instances_on = scene::update_flag::CHILDREN_LIST |
-            scene::update_flag::ENABLED;
-        constexpr uint32_t recompute_visibility_on = recompute_instances_on | scene::update_flag::GEOMETRY;
-
-        if (update_mask & recompute_instances_on)
-        {
-            LOGC(RENDER, "Output ", wo->to_string(), ": regenerating instances.");
-            auto root = wf::get_core().scene();
-            scene::damage_callback push_damage = [=] (wf::region_t region)
-            {
-                // Damage is pushed up to the root in root coordinate system,
-                // we need it in output-buffer-local coordinate system.
-                region += -wf::origin(wo->get_layout_geometry());
-                region  =
-                    wo->render->get_target_framebuffer().framebuffer_region_from_geometry_region(region);
-                this->damage_buffer(region, true);
-            };
-
-            render_instances.clear();
-            root->gen_render_instances(render_instances, push_damage, wo);
-        }
-
-        if (update_mask & recompute_visibility_on)
-        {
-            idle_recompute_visibility.run_once([=] ()
-            {
-                LOGC(RENDER, "Output ", wo->to_string(), ": recomputing visibility.");
-                wf::region_t region = this->wo->get_layout_geometry();
-                for (auto& inst : render_instances)
-                {
-                    inst->compute_visibility(wo, region);
-                }
-            });
-        }
-    }
-
+    std::unique_ptr<wf::scene::render_instance_manager_t> instance_manager;
     void start_rendering()
     {
-        auto root = wf::get_core().scene();
-        root_update = [=] (scene::root_node_update_signal *data)
+        scene::damage_callback push_damage = [=] (wf::region_t region)
         {
-            update_scenegraph(data->flags);
+            // Damage is pushed up to the root in root coordinate system,
+            // we need it in output-buffer-local coordinate system.
+            region += -wf::origin(wo->get_layout_geometry());
+            region  =
+                wo->render->get_target_framebuffer().framebuffer_region_from_geometry_region(region);
+            this->damage_buffer(region, true);
         };
 
-        root->connect<scene::root_node_update_signal>(&root_update);
-        update_scenegraph(scene::update_flag::CHILDREN_LIST);
+        std::vector<scene::node_ptr> nodes;
+        nodes.push_back(wf::get_core().scene());
+        instance_manager = std::make_unique<wf::scene::render_instance_manager_t>(nodes, push_damage, wo);
+        instance_manager->set_visibility_region(wo->get_layout_geometry());
     }
 
     swapchain_damage_manager_t(output_t *output)
@@ -163,6 +124,7 @@ struct swapchain_damage_manager_t
         }
 
         schedule_repaint();
+        instance_manager->set_visibility_region(wo->get_layout_geometry());
     };
 
     /**
@@ -1026,7 +988,7 @@ class wf::render_manager::impl
         }
 
         auto result = scene::try_scanout_from_list(
-            damage_manager->render_instances, output);
+            damage_manager->instance_manager->get_instances(), output);
         return result == scene::direct_scanout::SUCCESS;
     }
 
@@ -1049,7 +1011,7 @@ class wf::render_manager::impl
         std::unique_ptr<swapchain_damage_manager_t::frame_object_t>& next_frame)
     {
         render_pass_params_t params;
-        params.instances = &damage_manager->render_instances;
+        params.instances = &damage_manager->instance_manager->get_instances();
 
         params.target = postprocessing->get_target_framebuffer().translated(
             wf::origin(output->get_layout_geometry()));
@@ -1326,8 +1288,7 @@ wf::render_pass_t*render_manager::get_current_pass()
 
 void priv_render_manager_clear_instances(wf::render_manager *manager)
 {
-    manager->pimpl->damage_manager->render_instances.clear();
-    manager->pimpl->damage_manager->root_update.disconnect();
+    manager->pimpl->damage_manager->instance_manager.reset();
 }
 
 void priv_render_manager_start_rendering(wf::render_manager *manager)

@@ -194,7 +194,10 @@ class dragged_view_node_t : public wf::scene::node_t
     {
         wf::geometry_t last_bbox = {0, 0, 0, 0};
         wf::scene::damage_callback push_damage;
-        std::vector<scene::render_instance_uptr> children;
+        wf::output_t *shown_on = nullptr;
+        std::weak_ptr<dragged_view_node_t> self;
+        std::unique_ptr<wf::scene::render_instance_manager_t> children_manager;
+
         wf::signal::connection_t<scene::node_damage_signal> on_node_damage =
             [=] (scene::node_damage_signal *data)
         {
@@ -205,24 +208,37 @@ class dragged_view_node_t : public wf::scene::node_t
         dragged_view_render_instance_t(std::shared_ptr<dragged_view_node_t> self,
             wf::scene::damage_callback push_damage, wf::output_t *shown_on)
         {
+            this->self = self;
+            this->push_damage = push_damage;
+
+            std::vector<wf::scene::node_ptr> all_rendered;
+            for (auto& view : self->views)
+            {
+                all_rendered.push_back(view.view->get_transformed_node());
+            }
+
             auto push_damage_child = [=] (wf::region_t child_damage)
             {
                 push_damage(last_bbox);
-                last_bbox = self->get_bounding_box();
+                last_bbox = this->self.lock()->get_bounding_box();
                 push_damage(last_bbox);
             };
 
-            for (auto& view : self->views)
-            {
-                auto node = view.view->get_transformed_node();
-                node->gen_render_instances(children, push_damage_child, shown_on);
-            }
+            this->shown_on = shown_on;
+            this->children_manager = std::make_unique<wf::scene::render_instance_manager_t>(all_rendered,
+                push_damage_child,
+                shown_on);
+
+            const int BIG_NUMBER    = 1e5;
+            wf::region_t big_region =
+                wf::geometry_t{-BIG_NUMBER, -BIG_NUMBER, 2 * BIG_NUMBER, 2 * BIG_NUMBER};
+            children_manager->set_visibility_region(big_region);
         }
 
         void schedule_instructions(std::vector<scene::render_instruction_t>& instructions,
             const wf::render_target_t& target, wf::region_t& damage) override
         {
-            for (auto& inst : children)
+            for (auto& inst : children_manager->get_instances())
             {
                 inst->schedule_instructions(instructions, target, damage);
             }
@@ -230,20 +246,9 @@ class dragged_view_node_t : public wf::scene::node_t
 
         void presentation_feedback(wf::output_t *output) override
         {
-            for (auto& instance : children)
+            for (auto& instance : children_manager->get_instances())
             {
                 instance->presentation_feedback(output);
-            }
-        }
-
-        void compute_visibility(wf::output_t *output, wf::region_t& visible) override
-        {
-            for (auto& instance : children)
-            {
-                const int BIG_NUMBER    = 1e5;
-                wf::region_t big_region =
-                    wf::geometry_t{-BIG_NUMBER, -BIG_NUMBER, 2 * BIG_NUMBER, 2 * BIG_NUMBER};
-                instance->compute_visibility(output, big_region);
             }
         }
     };

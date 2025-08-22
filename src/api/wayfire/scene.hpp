@@ -487,6 +487,19 @@ struct root_node_update_signal
 };
 
 /**
+ * A signal that the node has been updated. Emitted on every node, including the root (so this signal is a
+ * superset of root_node_update_signal).
+ *
+ * on: scenegraph nodes
+ * when: Emitted when an update sequence reaches the given node.
+ */
+struct node_update_signal
+{
+    scene::node_t *node;
+    uint32_t flags;
+};
+
+/**
  * The root (Level 1) node of the whole scenegraph.
  */
 class root_node_t final : public floating_inner_node_t

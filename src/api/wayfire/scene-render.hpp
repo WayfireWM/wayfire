@@ -18,6 +18,7 @@ class node_t;
 using node_ptr = std::shared_ptr<node_t>;
 
 class render_instance_t;
+using render_instance_uptr = std::unique_ptr<render_instance_t>;
 
 /**
  * Describes the result of trying to do direct scanout of a render instance on
