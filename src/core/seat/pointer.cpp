@@ -243,7 +243,7 @@ void wf::pointer_t::check_implicit_grab()
 {
     /* start a button held grab, so that the window will receive all the
      * subsequent events, no matter what happens */
-    if ((count_pressed_buttons == 1) && cursor_focus)
+    if ((count_pressed_buttons >= 1) && cursor_focus)
     {
         grab_surface(cursor_focus);
     }
