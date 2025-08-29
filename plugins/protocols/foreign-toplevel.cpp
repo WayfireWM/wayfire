@@ -10,10 +10,28 @@
 #include <wayfire/toplevel-view.hpp>
 #include <wayfire/window-manager.hpp>
 #include "gtk-shell.hpp"
+#include "kde-appmenu.hpp"
 #include "config.h"
 
 class wayfire_foreign_toplevel;
 using foreign_toplevel_map_type = std::map<wayfire_toplevel_view, std::unique_ptr<wayfire_foreign_toplevel>>;
+
+class toplevel_gtk_shell1_dbus_properties_t : public wf::custom_data_t
+{
+  public:
+    std::optional<std::string> app_menu_path;
+    std::optional<std::string> menubar_path;
+    std::optional<std::string> window_object_path;
+    std::optional<std::string> application_object_path;
+    std::optional<std::string> unique_bus_name;
+};
+
+class toplevel_kde_appmenu_path_t : public wf::custom_data_t
+{
+  public:
+    std::optional<std::string> service_name;
+    std::optional<std::string> object_path;
+};
 
 class wayfire_foreign_toplevel
 {
@@ -62,6 +80,59 @@ class wayfire_foreign_toplevel
         toplevel_handle_v1_fullscreen_request.disconnect();
         toplevel_handle_v1_set_rectangle_request.disconnect();
         wlr_foreign_toplevel_handle_v1_destroy(handle);
+    }
+
+    void toplevel_send_gtk_shell1_dbus_properties(
+        const char *app_menu_path,
+        const char *menubar_path,
+        const char *window_object_path,
+        const char *application_object_path,
+        const char *unique_bus_name)
+    {
+        // !! TODO: app_menu_path (not sure which interface it corresponds to)
+
+        if (menubar_path && unique_bus_name)
+        {
+            wlr_foreign_toplevel_handle_v1_add_surface_dbus_annotation(
+                handle, "org.gtk.Menus", unique_bus_name, menubar_path);
+        } else
+        {
+            wlr_foreign_toplevel_handle_v1_remove_surface_dbus_annotation(
+                handle, "org.gtk.Menus");
+        }
+
+        if (window_object_path && unique_bus_name)
+        {
+            wlr_foreign_toplevel_handle_v1_add_surface_dbus_annotation(
+                handle, "org.gtk.Actions", unique_bus_name, window_object_path);
+        } else
+        {
+            wlr_foreign_toplevel_handle_v1_remove_surface_dbus_annotation(
+                handle, "org.gtk.Actions");
+        }
+
+        if (application_object_path && unique_bus_name)
+        {
+            wlr_foreign_toplevel_handle_v1_add_client_dbus_annotation(
+                handle, "org.gtk.Actions", unique_bus_name, application_object_path);
+        } else
+        {
+            wlr_foreign_toplevel_handle_v1_remove_client_dbus_annotation(
+                handle, "org.gtk.Actions");
+        }
+    }
+
+    void toplevel_send_kde_appmenu_path(const char *service_name, const char *object_path)
+    {
+        if (service_name && object_path)
+        {
+            wlr_foreign_toplevel_handle_v1_add_surface_dbus_annotation(
+                handle, "com.canonical.dbusmenu", service_name, object_path);
+        } else
+        {
+            wlr_foreign_toplevel_handle_v1_remove_surface_dbus_annotation(
+                handle, "com.canonical.dbusmenu");
+        }
     }
 
   private:
@@ -259,6 +330,8 @@ class wayfire_foreign_toplevel_protocol_impl : public wf::plugin_interface_t
         toplevel_manager = wlr_foreign_toplevel_manager_v1_create(wf::get_core().display);
         wf::get_core().connect(&on_view_mapped);
         wf::get_core().connect(&on_view_unmapped);
+        wf::get_core().connect(&on_view_dbus_properties_changed);
+        wf::get_core().connect(&on_view_kde_appmenu_changed);
     }
 
     void fini() override
@@ -277,12 +350,128 @@ class wayfire_foreign_toplevel_protocol_impl : public wf::plugin_interface_t
             auto handle = wlr_foreign_toplevel_handle_v1_create(toplevel_manager);
             handle_for_view[toplevel] =
                 std::make_unique<wayfire_foreign_toplevel>(toplevel, handle, &handle_for_view);
+
+            if (auto props = toplevel->get_data<toplevel_gtk_shell1_dbus_properties_t>())
+            {
+                handle_for_view[toplevel]->toplevel_send_gtk_shell1_dbus_properties(
+                    props->app_menu_path ? props->app_menu_path->c_str() : nullptr,
+                    props->menubar_path ? props->menubar_path->c_str() : nullptr,
+                    props->window_object_path ? props->window_object_path->c_str() : nullptr,
+                    props->application_object_path ? props->application_object_path->c_str() : nullptr,
+                    props->unique_bus_name ? props->unique_bus_name->c_str() : nullptr);
+            }
+
+            if (auto props = toplevel->get_data<toplevel_kde_appmenu_path_t>())
+            {
+                handle_for_view[toplevel]->toplevel_send_kde_appmenu_path(
+                    props->service_name ? props->service_name->c_str() : nullptr,
+                    props->object_path ? props->object_path->c_str() : nullptr);
+            }
         }
     };
 
     wf::signal::connection_t<wf::view_unmapped_signal> on_view_unmapped = [=] (wf::view_unmapped_signal *ev)
     {
         handle_for_view.erase(toplevel_cast(ev->view));
+    };
+
+    wf::signal::connection_t<gtk_shell_dbus_properties_signal> on_view_dbus_properties_changed =
+        [=] (gtk_shell_dbus_properties_signal *ev)
+    {
+        if (auto toplevel = wf::toplevel_cast(ev->view))
+        {
+            auto it = handle_for_view.find(toplevel);
+            if (it != handle_for_view.end())
+            {
+                it->second->toplevel_send_gtk_shell1_dbus_properties(
+                    ev->app_menu_path,
+                    ev->menubar_path,
+                    ev->window_object_path,
+                    ev->application_object_path,
+                    ev->unique_bus_name);
+            }
+
+            /* Store the values with the view. This is necessary to cover the cases when either:
+             *  (1) the view has not been mapped yet; or (2) the view is later unmapped and remapped
+             */
+            auto props = toplevel->get_data_safe<toplevel_gtk_shell1_dbus_properties_t>();
+            if (ev->app_menu_path)
+            {
+                props->app_menu_path = ev->app_menu_path;
+            } else
+            {
+                props->app_menu_path.reset();
+            }
+
+            if (ev->application_object_path)
+            {
+                props->application_object_path =
+                    ev->application_object_path;
+            } else
+            {
+                props->application_object_path.reset();
+            }
+
+            if (ev->menubar_path)
+            {
+                props->menubar_path = ev->menubar_path;
+            } else
+            {
+                props->menubar_path.reset();
+            }
+
+            if (ev->unique_bus_name)
+            {
+                props->unique_bus_name = ev->unique_bus_name;
+            } else
+            {
+                props->unique_bus_name.reset();
+            }
+
+            if (ev->window_object_path)
+            {
+                props->window_object_path =
+                    ev->window_object_path;
+            } else
+            {
+                props->window_object_path.reset();
+            }
+        }
+    };
+
+    wf::signal::connection_t<kde_appmenu_dbus_address_signal> on_view_kde_appmenu_changed =
+        [=] (kde_appmenu_dbus_address_signal *ev)
+    {
+        if (auto toplevel = wf::toplevel_cast(ev->view))
+        {
+            auto it = handle_for_view.find(toplevel);
+            if (it != handle_for_view.end())
+            {
+                it->second->toplevel_send_kde_appmenu_path(
+                    ev->service_name,
+                    ev->object_path);
+            }
+
+            /* Store the values with the view. This is necessary to cover the cases when either:
+             *  (1) the view has not been mapped yet; or (2) the view is later unmapped and remapped
+             */
+            auto props = toplevel->get_data_safe<toplevel_kde_appmenu_path_t>();
+            if (ev->service_name)
+            {
+                props->service_name = ev->service_name;
+            } else
+            {
+                props->service_name.reset();
+            }
+
+            if (ev->object_path)
+            {
+                props->object_path = ev->object_path;
+            } else
+            {
+                props->object_path.reset();
+            }
+        }
     };
 
     wlr_foreign_toplevel_manager_v1 *toplevel_manager;
