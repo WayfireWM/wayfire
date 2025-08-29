@@ -990,8 +990,8 @@ struct output_layout_output_t
             pending_state.commit(handle);
 
             ensure_wayfire_output(get_effective_size());
-            output->render->damage_whole();
             emit_configuration_changed(changed_fields);
+            output->render->damage_whole();
         } else /* state.source == OUTPUT_IMAGE_SOURCE_MIRROR */
         {
             destroy_wayfire_output();
