@@ -1,4 +1,4 @@
-wobbly_c_model = static_library('wobbly-c-model', ['wobbly.c'], install: false)
+wobbly_c_model = static_library('wobbly-c-model', ['wobbly.c'], dependencies: [glesv2], install: false)
 
 wobbly = shared_module('wobbly',
                        ['wobbly.cpp'],
