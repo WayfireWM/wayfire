@@ -399,8 +399,6 @@ void view_action_interface_t::_set_alpha(float alpha)
     {
         tr->alpha = alpha;
         _nontoplevel->damage();
-
-        LOGI("View action interface: Alpha set to ", alpha, ".");
     }
 }
 
