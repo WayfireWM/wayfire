@@ -64,7 +64,7 @@
 			</desc>
 		</option>
 		<option name="minimize_animation" type="string">
-			<_short>Minimze animation</_short>
+			<_short>Minimize animation</_short>
 			<_long>Specifies the type of animation when minimizing a window.</_long>
 			<default>squeezimize</default>
 			<desc>
