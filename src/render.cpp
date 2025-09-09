@@ -24,11 +24,8 @@ wf::auxilliary_buffer_t& wf::auxilliary_buffer_t::operator =(auxilliary_buffer_t
         return *this;
     }
 
-    this->texture = other.texture;
-    this->buffer  = other.buffer;
-    other.buffer.buffer = NULL;
-    other.texture     = NULL;
-    other.buffer.size = {0, 0};
+    this->texture = std::exchange(other.texture, nullptr);
+    this->buffer  = std::exchange(other.buffer, {});
     return *this;
 }
 
