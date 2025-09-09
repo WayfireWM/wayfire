@@ -1,0 +1,13 @@
+<?xml version="1.0"?>
+<wayfire>
+	<plugin name="security-context-v1">
+		<_short>Security-context-v1 Protocol</_short>
+		<_long>An implementation of the security-context-v1 protocol.</_long>
+		<category>Utility</category>
+		<option name="privileged_protocols" type="string">
+			<_short>Privileged protocols</_short>
+			<_long>A comma-separated list of privileged protocols, which are not exposed to sandboxed clients.</_long>
+			<default>zwlr_foreign_toplevel_manager_v1,zwlr_screencopy_manager_v1,zwlr_data_control_manager_v1,zwp_keyboard_shortcuts_inhibit_manager_v1</default>
+		</option>
+	</plugin>
+</wayfire>
