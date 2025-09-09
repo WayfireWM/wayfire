@@ -695,6 +695,73 @@ wf::compositor_core_t::compositor_core_t()
 wf::compositor_core_t::~compositor_core_t()
 {}
 
+void wf::wayland_global_filter_t::set_filter(filter_callback filter)
+{
+    this->filter = filter;
+    wf::compositor_core_impl_t::get().register_filter(this);
+}
+
+void wf::wayland_global_filter_t::unset_filter()
+{
+    wf::compositor_core_impl_t::get().unregister_filter(this);
+    this->filter = {};
+}
+
+wf::wayland_global_filter_t::~wayland_global_filter_t()
+{
+    unset_filter();
+}
+
+bool wf::wayland_global_filter_t::check_global(const wl_client *client, const wl_global *global) const
+{
+    if (filter)
+    {
+        return filter(client, global);
+    }
+
+    return true;
+}
+
+void wf::compositor_core_impl_t::register_filter(wayland_global_filter_t *filter)
+{
+    if (std::find(wayland_global_filters.begin(), wayland_global_filters.end(), filter) ==
+        wayland_global_filters.end())
+    {
+        wayland_global_filters.push_back(filter);
+    }
+
+    wl_display_set_global_filter(display, global_filter, this);
+}
+
+void wf::compositor_core_impl_t::unregister_filter(wayland_global_filter_t *filter)
+{
+    auto it = std::find(wayland_global_filters.begin(), wayland_global_filters.end(), filter);
+    if (it != wayland_global_filters.end())
+    {
+        wayland_global_filters.erase(it);
+    }
+
+    if (wayland_global_filters.empty())
+    {
+        wl_display_set_global_filter(display, nullptr, nullptr);
+    }
+}
+
+bool wf::compositor_core_impl_t::global_filter(const wl_client *client, const wl_global *global, void *data)
+{
+    auto *self = static_cast<wf::compositor_core_impl_t*>(data);
+    return std::all_of(self->wayland_global_filters.begin(), self->wayland_global_filters.end(),
+        [&] (wayland_global_filter_t *filter)
+    {
+        return filter->check_global(client, global);
+    });
+}
+
+std::unique_ptr<wf::wayland_global_filter_t> wf::compositor_core_t::create_global_filter()
+{
+    return std::unique_ptr<wf::wayland_global_filter_t>(new wf::wayland_global_filter_t());
+}
+
 wf::compositor_core_impl_t::compositor_core_impl_t()
 {}
 wf::compositor_core_impl_t::~compositor_core_impl_t()

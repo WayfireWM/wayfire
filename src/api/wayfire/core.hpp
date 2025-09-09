@@ -54,6 +54,7 @@ class output_layout_t;
 class input_device_t;
 class bindings_repository_t;
 class seat_t;
+class compositor_core_t;
 
 /** Describes the state of the compositor */
 enum class compositor_state_t
@@ -79,6 +80,45 @@ enum class compositor_state_t
      * The compositor has stopped the main loop and is shutting down.
      */
     SHUTDOWN,
+};
+
+/**
+ * A filter that can be used to select which globals are advertised to clients.
+ *
+ * This can be used to hide certain globals from clients, for example to implement the security-context-v1
+ * protocol, or make sure that only certain clients have access to privileged protocols.
+ */
+class wayland_global_filter_t final
+{
+  public:
+    using filter_callback = std::function<bool (const wl_client*client, const wl_global*global)>;
+
+    /**
+     * Set a new global filter. By default, all globals are advertised to all clients.
+     *
+     * In case multiple plugins create filters, a global is advertised to a client if all filters return true.
+     */
+    void set_filter(filter_callback filter);
+
+    /**
+     * Unset the filter, if it was set before.
+     */
+    void unset_filter();
+
+    /** The global filter automatically de-registers itself on destruction */
+    ~wayland_global_filter_t();
+
+    wayland_global_filter_t(const wayland_global_filter_t&) = delete;
+    wayland_global_filter_t(wayland_global_filter_t&&) = delete;
+    wayland_global_filter_t& operator =(const wayland_global_filter_t&) = delete;
+    wayland_global_filter_t& operator =(wayland_global_filter_t&&) = delete;
+
+    bool check_global(const wl_client *client, const wl_global *global) const;
+
+  private:
+    wayland_global_filter_t() = default;
+    filter_callback filter;
+    friend class compositor_core_t;
 };
 
 class compositor_core_t : public wf::object_base_t, public signal::provider_t
@@ -322,6 +362,11 @@ class compositor_core_t : public wf::object_base_t, public signal::provider_t
      * Returns a reference to the only core instance.
      */
     static compositor_core_t& get();
+
+    /**
+     * Create a new global filter for this core.
+     */
+    std::unique_ptr<wayland_global_filter_t> create_global_filter();
 
   protected:
     compositor_core_t();
