@@ -352,13 +352,12 @@ struct output_layout_output_t
     void initialize_config_options()
     {
         config_section = wf::get_core().config_backend->get_output_section(handle);
-        auto name = config_section->get_name();
-        mode_opt.load_option(name + "/mode");
-        position_opt.load_option(name + "/position");
-        scale_opt.load_option(name + "/scale");
-        transform_opt.load_option(name + "/transform");
-        vrr_opt.load_option(name + "/vrr");
-        depth_opt.load_option(name + "/depth");
+        mode_opt.load_option(config_section, "mode");
+        position_opt.load_option(config_section, "position");
+        scale_opt.load_option(config_section, "scale");
+        transform_opt.load_option(config_section, "transform");
+        vrr_opt.load_option(config_section, "vrr");
+        depth_opt.load_option(config_section, "depth");
     }
 
     output_layout_output_t(wlr_output *handle)

@@ -46,6 +46,19 @@ class option_wrapper_t : public base_option_wrapper_t<Type>
         }
     }
 
+    void load_option(std::shared_ptr<wf::config::section_t> section, const std::string& option_name)
+    {
+        try {
+            base_option_wrapper_t<Type>::load_option(section, option_name);
+        } catch (const std::runtime_error& err)
+        {
+            detail::option_wrapper_debug_message(section->get_name() + "/" + option_name, err);
+        } catch (const std::logic_error& err)
+        {
+            detail::option_wrapper_debug_message(section->get_name() + "/" + option_name, err);
+        }
+    }
+
     option_wrapper_t() : wf::base_option_wrapper_t<Type>()
     {}
 

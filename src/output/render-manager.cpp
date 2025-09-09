@@ -866,7 +866,7 @@ class wf::render_manager::impl
         damage_manager->schedule_repaint();
 
         auto section = wf::get_core().config_backend->get_output_section(output->handle);
-        icc_profile.load_option(section->get_name() + "/icc_profile");
+        icc_profile.load_option(section, "icc_profile");
         icc_profile.set_callback([=] ()
         {
             reload_icc_profile();

@@ -124,16 +124,13 @@ wf::keyboard_t::keyboard_t(wlr_input_device *dev) :
 {
     auto section =
         wf::get_core().config_backend->get_input_device_section("input", dev);
-    auto section_name = section->get_name();
-
-    model.load_option(section_name + "/xkb_model");
-    variant.load_option(section_name + "/xkb_variant");
-    layout.load_option(section_name + "/xkb_layout");
-    options.load_option(section_name + "/xkb_options");
-    rules.load_option(section_name + "/xkb_rules");
-
-    repeat_rate.load_option(section_name + "/kb_repeat_rate");
-    repeat_delay.load_option(section_name + "/kb_repeat_delay");
+    model.load_option(section, "xkb_model");
+    variant.load_option(section, "xkb_variant");
+    layout.load_option(section, "xkb_layout");
+    options.load_option(section, "xkb_options");
+    rules.load_option(section, "xkb_rules");
+    repeat_rate.load_option(section, "kb_repeat_rate");
+    repeat_delay.load_option(section, "kb_repeat_delay");
 
     // When the configuration options change, mark them as dirty.
     // They are applied at the config-reloaded signal.

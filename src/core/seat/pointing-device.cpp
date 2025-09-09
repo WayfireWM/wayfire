@@ -13,30 +13,27 @@ void wf::pointing_device_t::load_options()
 {
     auto section =
         wf::get_core().config_backend->get_input_device_section("input", get_wlr_handle());
-    auto section_name = section->get_name();
+    left_handed_mode.load_option(section, "left_handed_mode");
+    middle_emulation.load_option(section, "middle_emulation");
 
-    left_handed_mode.load_option(section_name + "/left_handed_mode");
-    middle_emulation.load_option(section_name + "/middle_emulation");
+    mouse_scroll_speed.load_option(section, "mouse_scroll_speed");
+    mouse_cursor_speed.load_option(section, "mouse_cursor_speed");
+    touchpad_cursor_speed.load_option(section, "touchpad_cursor_speed");
+    touchpad_scroll_speed.load_option(section, "touchpad_scroll_speed");
 
-    mouse_scroll_speed.load_option(section_name + "/mouse_scroll_speed");
-    mouse_cursor_speed.load_option(section_name + "/mouse_cursor_speed");
-    touchpad_cursor_speed.load_option(section_name + "/touchpad_cursor_speed");
-    touchpad_scroll_speed.load_option(section_name + "/touchpad_scroll_speed");
+    mouse_natural_scroll_enabled.load_option(section, "mouse_natural_scroll");
+    touchpad_tap_enabled.load_option(section, "tap_to_click");
+    touchpad_dwt_enabled.load_option(section, "disable_touchpad_while_typing");
+    touchpad_dwmouse_enabled.load_option(section, "disable_touchpad_while_mouse");
+    touchpad_natural_scroll_enabled.load_option(section, "natural_scroll");
+    touchpad_tap_and_drag_enabled.load_option(section, "tap_and_drag");
+    touchpad_drag_lock_enabled.load_option(section, "drag_lock");
+    touchpad_3fg_drag.load_option(section, "3fg_drag");
 
-    mouse_natural_scroll_enabled.load_option(section_name + "/mouse_natural_scroll");
-    touchpad_tap_enabled.load_option(section_name + "/tap_to_click");
-    touchpad_dwt_enabled.load_option(section_name + "/disable_touchpad_while_typing");
-    touchpad_dwmouse_enabled.load_option(section_name + "/disable_touchpad_while_mouse");
-    touchpad_natural_scroll_enabled.load_option(section_name + "/natural_scroll");
-    touchpad_tap_and_drag_enabled.load_option(section_name + "/tap_and_drag");
-    touchpad_drag_lock_enabled.load_option(section_name + "/drag_lock");
-    touchpad_3fg_drag.load_option(section_name + "/3fg_drag");
-
-    mouse_accel_profile.load_option(section_name + "/mouse_accel_profile");
-    touchpad_accel_profile.load_option(section_name + "/touchpad_accel_profile");
-
-    touchpad_click_method.load_option(section_name + "/click_method");
-    touchpad_scroll_method.load_option(section_name + "/scroll_method");
+    mouse_accel_profile.load_option(section, "mouse_accel_profile");
+    touchpad_accel_profile.load_option(section, "touchpad_accel_profile");
+    touchpad_click_method.load_option(section, "click_method");
+    touchpad_scroll_method.load_option(section, "scroll_method");
 }
 
 static void set_libinput_accel_profile(libinput_device *dev, std::string name)
