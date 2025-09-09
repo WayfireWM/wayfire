@@ -137,7 +137,7 @@ class wayfire_unmanaged_xwayland_view : public wayfire_xwayland_view_internal_ba
   public:
     wayfire_unmanaged_xwayland_view(wlr_xwayland_surface *xww) : wayfire_xwayland_view_internal_base(xww)
     {
-        LOGE("new unmanaged xwayland surface ", xw->title, " class: ", xw->class_t,
+        LOGC(XWL, "New unmanaged xwayland surface ", xw->title, " class: ", xw->class_t,
             " instance: ", xw->instance);
 
         role = wf::VIEW_ROLE_UNMANAGED;
