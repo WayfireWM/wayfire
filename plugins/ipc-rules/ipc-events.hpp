@@ -2,6 +2,7 @@
 
 #include "ipc-rules-common.hpp"
 #include <set>
+#include "wayfire/output-layout.hpp"
 #include "wayfire/plugins/ipc/ipc-method-repository.hpp"
 #include "wayfire/seat.hpp"
 #include <wayfire/per-output-plugin.hpp>
@@ -34,20 +35,10 @@ class ipc_rules_events_methods_t : public wf::per_output_tracker_mixin_t<>
                 event.register_output(output);
             }
         }
-
-        wf::json_t data;
-        data["event"]  = "output-added";
-        data["output"] = output_to_json(output);
-        send_event_to_subscribes(data, data["event"]);
     }
 
     void handle_output_removed(wf::output_t *output) override
-    {
-        wf::json_t data;
-        data["event"]  = "output-removed";
-        data["output"] = output_to_json(output);
-        send_event_to_subscribes(data, data["event"]);
-    }
+    {}
 
     // Template FOO for efficient management of signals: ensure that only actually listened-for signals
     // are connected.
@@ -96,6 +87,16 @@ class ipc_rules_events_methods_t : public wf::per_output_tracker_mixin_t<>
     }
 
     template<class Signal>
+    static signal_registration_handler get_generic_output_layout_registration_cb(
+        wf::signal::connection_t<Signal> *conn)
+    {
+        return {
+            .register_core = [=] () { wf::get_core().output_layout->connect(conn); },
+            .unregister    = [=] () { conn->disconnect(); }
+        };
+    }
+
+    template<class Signal>
     signal_registration_handler get_generic_output_registration_cb(wf::signal::connection_t<Signal> *conn)
     {
         return {
@@ -117,6 +118,9 @@ class ipc_rules_events_methods_t : public wf::per_output_tracker_mixin_t<>
         {"plugin-activation-state-changed", get_generic_core_registration_cb(&on_plugin_activation_changed)},
         {"output-gain-focus", get_generic_core_registration_cb(&on_output_gain_focus)},
         {"keyboard-modifier-state-changed", get_generic_core_registration_cb(&on_keyboard_modifiers)},
+
+        {"output-added", get_generic_output_registration_cb(&on_output_added)},
+        {"output-removed", get_generic_output_layout_registration_cb(&on_output_removed)},
 
         {"view-tiled", get_generic_output_registration_cb(&_tiled)},
         {"view-minimized", get_generic_output_registration_cb(&_minimized)},
@@ -222,6 +226,25 @@ class ipc_rules_events_methods_t : public wf::per_output_tracker_mixin_t<>
         data["event"]  = "view-set-output";
         data["output"] = output_to_json(ev->output);
         data["view"]   = view_to_json(ev->view);
+        send_event_to_subscribes(data, data["event"]);
+    };
+
+    // required by handle_new_output
+    wf::signal::connection_t<wf::output_added_signal> on_output_added =
+        [=] (wf::output_added_signal *ev)
+    {
+        wf::json_t data;
+        data["event"]  = "output-added";
+        data["output"] = output_to_json(ev->output);
+        send_event_to_subscribes(data, data["event"]);
+    };
+
+    wf::signal::connection_t<wf::output_removed_signal> on_output_removed =
+        [=] (wf::output_removed_signal *ev)
+    {
+        wf::json_t data;
+        data["event"]  = "output-removed";
+        data["output"] = output_to_json(ev->output);
         send_event_to_subscribes(data, data["event"]);
     };
 
