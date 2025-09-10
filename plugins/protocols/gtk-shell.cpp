@@ -45,6 +45,24 @@ static void handle_gtk_surface_set_dbus_properties(wl_client *client,
     {
         wf::get_core().get_data_safe<wf_gtk_shell>()->surface_app_id[surface->wl_surface] = application_id;
     }
+
+    wayfire_view view = wf::wl_surface_to_wayfire_view(surface->wl_surface);
+    if (!view)
+    {
+        LOGE("Could not get view");
+        return;
+    } else
+    {
+        gtk_shell_dbus_properties_signal ev;
+        ev.view = view;
+        ev.app_menu_path = app_menu_path;
+        ev.menubar_path  = menubar_path;
+        ev.window_object_path = window_object_path;
+        ev.application_object_path = application_object_path;
+        ev.unique_bus_name = unique_bus_name;
+
+        wf::get_core().emit(&ev);
+    }
 }
 
 /**

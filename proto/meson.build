@@ -35,7 +35,8 @@ server_protocols = [
     'wayfire-shell-unstable-v2.xml',
     'gtk-shell.xml',
     'wlr-layer-shell-unstable-v1.xml',
-    'wlr-output-power-management-unstable-v1.xml'
+    'wlr-output-power-management-unstable-v1.xml',
+    'kde-appmenu.xml'
 ]
 
 wl_protos_src = []

@@ -12,3 +12,17 @@ struct gtk_shell_app_id_query_signal
     // Set by the gtk-shell plugin in response to the signal
     std::string app_id;
 };
+
+/**
+ * A signal that is emitted when the DBus properties of a gtk-shell surface change.
+ */
+struct gtk_shell_dbus_properties_signal
+{
+    wayfire_view view;
+
+    const char *app_menu_path;
+    const char *menubar_path;
+    const char *window_object_path;
+    const char *application_object_path;
+    const char *unique_bus_name;
+};
