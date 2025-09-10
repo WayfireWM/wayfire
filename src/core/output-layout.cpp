@@ -526,7 +526,7 @@ struct output_layout_output_t
         state.position = position_opt;
 
         wf::output_config::mode_t mode = mode_opt;
-        wlr_output_mode tmp;
+        wlr_output_mode tmp{};
 
         switch (mode.get_type())
         {
