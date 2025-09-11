@@ -161,5 +161,5 @@ extern "C"
 #include <wlr/types/wlr_xdg_activation_v1.h>
 
 // Ext protocols
-#include <wlr/types/wlr_foreign_toplevel_management_v1.h>
+#include <wlr/types/wlr_ext_foreign_toplevel_list_v1.h>
 }
