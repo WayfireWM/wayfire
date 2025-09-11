@@ -53,9 +53,12 @@ class wayfire_xwayland_view : public wf::toplevel_view_interface_t, public wayfi
             wlr_xwayland_surface_configure(xw, ev->x, ev->y, ev->width, ev->height);
             if ((ev->mask & XCB_CONFIG_WINDOW_X) && (ev->mask & XCB_CONFIG_WINDOW_Y))
             {
-                this->self_positioned = true;
-                toplevel->pending().geometry.x = ev->x - output_origin.x;
-                toplevel->pending().geometry.y = ev->y - output_origin.y;
+                int sx = ev->x - output_origin.x;
+                int sy = ev->y - output_origin.y;
+                this->set_property<int>("startup-x", sx);
+                this->set_property<int>("startup-y", sy);
+                toplevel->pending().geometry.x = sx;
+                toplevel->pending().geometry.y = sy;
             }
 
             return;
@@ -305,8 +308,7 @@ class wayfire_xwayland_view : public wf::toplevel_view_interface_t, public wayfi
          * manager determine this. We try to heuristically guess which of the
          * two cases we're dealing with by checking whether we have received
          * a valid ConfigureRequest before mapping */
-        bool client_self_positioned = self_positioned;
-        wf::view_implementation::emit_view_map_signal(self(), client_self_positioned);
+        wf::view_implementation::emit_view_map_signal(self());
     }
 
     void store_xw_geometry_unmapped()
