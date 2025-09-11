@@ -217,7 +217,7 @@ class wayfire_foreign_toplevel_protocol_impl : public wf::plugin_interface_t
         {
             auto handle = wlr_foreign_toplevel_handle_v1_create(toplevel_manager);
             handle_for_view[toplevel] =
-                std::make_unique<wayfire_foreign_toplevel>(toplevel, handle, &handle_for_view
+                std::make_unique<wayfire_foreign_toplevel>(toplevel, handle, &handle_for_view,
                     wayfire_foreign_toplevel::ProtocolType::WLR);
         }
     };
