@@ -23,8 +23,8 @@ void get_state(wayfire_view view, struct wlr_ext_foreign_toplevel_handle_v1_stat
     get_app_id(view, appid_cstr);
 
     // Update the state
-    state->title  = strdup( title_buffer.c_str() );
-    state->app_id = strdup( appid_cstr );
+    state->title  = strdup(title_buffer.c_str());
+    state->app_id = strdup(appid_cstr);
 }
 
 void wayfire_foreign_toplevel::send_initial_state()
