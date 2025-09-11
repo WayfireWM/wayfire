@@ -11,7 +11,7 @@
 #include "wayfire/output-layout.hpp"
 #include "wayfire/window-manager.hpp"
 #include "wayfire/workarea.hpp"
-#include "wayfire/workspace-set.hpp"
+#include "wayfire/workspace-set.hpp" // IWYU pragma: keep
 #include <memory>
 #include <wayfire/util/log.hpp>
 #include <wayfire/view-helpers.hpp>
@@ -22,6 +22,20 @@ void wf::view_implementation::emit_view_map_signal(wayfire_view view, bool has_p
     wf::view_mapped_signal data;
     data.view = view;
     data.is_positioned = has_position;
+
+    view->emit(&data);
+    if (view->get_output())
+    {
+        view->get_output()->emit(&data);
+    }
+
+    wf::get_core().emit(&data);
+}
+
+void wf::view_implementation::emit_view_map_signal(wayfire_view view)
+{
+    wf::view_mapped_signal data;
+    data.view = view;
 
     view->emit(&data);
     if (view->get_output())
@@ -56,7 +70,7 @@ void wf::view_implementation::emit_geometry_changed_signal(wayfire_toplevel_view
 
 void wf::view_interface_t::emit_view_map()
 {
-    view_implementation::emit_view_map_signal(self(), false);
+    view_implementation::emit_view_map_signal(self());
 }
 
 void wf::view_interface_t::emit_view_unmap()
