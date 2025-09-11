@@ -126,8 +126,7 @@ class wayfire_ext_foreign_toplevel_protocol_impl : public wf::plugin_interface_t
     };
 
     wf::signal::connection_t<wf::view_unmapped_signal> on_view_unmapped = [=] (wf::view_unmapped_signal *ev)
-    {
-    };
+    {};
 
     wlr_ext_foreign_toplevel_list_v1 *toplevel_manager;
     std::map<wayfire_toplevel_view, std::unique_ptr<wayfire_foreign_toplevel>> handle_for_view;
