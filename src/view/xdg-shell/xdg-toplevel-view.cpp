@@ -26,7 +26,6 @@
 wf::xdg_toplevel_view_base_t::xdg_toplevel_view_base_t(wlr_xdg_toplevel *toplevel, bool autocommit)
 {
     this->xdg_toplevel = toplevel;
-    LOGI("new xdg_shell_stable surface: ", xdg_toplevel->title, " app-id: ", xdg_toplevel->app_id);
 
     this->main_surface = std::make_shared<scene::wlr_surface_node_t>(toplevel->base->surface, autocommit);
 
@@ -43,8 +42,15 @@ wf::xdg_toplevel_view_base_t::xdg_toplevel_view_base_t(wlr_xdg_toplevel *topleve
     on_set_app_id.set_callback([&] (void*)
     {
         handle_app_id_changed(nonull(xdg_toplevel->app_id));
+
+        on_set_title.set_callback([&] (void*)
+        {
+            LOGI("new xdg_shell_stable surface: ", "(title: '", xdg_toplevel->title, "' app-id: '",
+                xdg_toplevel->app_id, "')");
+        });
     });
     on_ping_timeout.set_callback([&] (void*)
+
     {
         wf::view_implementation::emit_ping_timeout_signal(self());
     });
