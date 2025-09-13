@@ -16,170 +16,180 @@
 
 #define WLR_HNDL static_cast<wlr_foreign_toplevel_handle_v1*>(handle)
 
-void wayfire_foreign_toplevel::send_initial_state()
+class wayfire_wlr_foreign_toplevel : public wayfire_foreign_toplevel
 {
-    toplevel_send_title();
-    toplevel_send_app_id();
-    toplevel_send_state();
-    toplevel_update_output(view->get_output(), true);
-}
+  public:
+    wayfire_wlr_foreign_toplevel(wayfire_toplevel_view view, void *handle,
+        foreign_toplevel_map_type *view_to_toplevel) : wayfire_foreign_toplevel(view,
+            handle, view_to_toplevel,
+            ProtocolType::WLR)
+    {}
 
-void wayfire_foreign_toplevel::init_connections()
-{
-    view->connect(&on_title_changed);
-    view->connect(&on_app_id_changed);
-
-    view->connect(&on_set_output);
-    view->connect(&on_tiled);
-    view->connect(&on_minimized);
-    view->connect(&on_fullscreen);
-    view->connect(&on_activated);
-    view->connect(&on_parent_changed);
-}
-
-void wayfire_foreign_toplevel::disconnect_request_handlers()
-{
-    toplevel_handle_v1_close_request.disconnect();
-    toplevel_handle_v1_maximize_request.disconnect();
-    toplevel_handle_v1_minimize_request.disconnect();
-    toplevel_handle_v1_activate_request.disconnect();
-    toplevel_handle_v1_fullscreen_request.disconnect();
-    toplevel_handle_v1_set_rectangle_request.disconnect();
-}
-
-void wayfire_foreign_toplevel::destroy_handle()
-{
-    wlr_foreign_toplevel_handle_v1_destroy(WLR_HNDL);
-}
-
-void wayfire_foreign_toplevel::toplevel_send_title()
-{
-    wlr_foreign_toplevel_handle_v1_set_title(WLR_HNDL,
-        view->get_title().c_str());
-}
-
-void wayfire_foreign_toplevel::toplevel_send_app_id()
-{
-    char app_id[1024] = {0};
-    get_app_id(view, app_id);
-    wlr_foreign_toplevel_handle_v1_set_app_id(WLR_HNDL, app_id);
-}
-
-void wayfire_foreign_toplevel::toplevel_send_state()
-{
-    wlr_foreign_toplevel_handle_v1_set_maximized(WLR_HNDL,
-        view->pending_tiled_edges() == wf::TILED_EDGES_ALL);
-    wlr_foreign_toplevel_handle_v1_set_activated(WLR_HNDL,
-        view->activated);
-    wlr_foreign_toplevel_handle_v1_set_minimized(WLR_HNDL,
-        view->minimized);
-    wlr_foreign_toplevel_handle_v1_set_fullscreen(WLR_HNDL,
-        view->pending_fullscreen());
-
-    /* update parent as well */
-    auto it = view_to_toplevel->find(view->parent);
-    if (it == view_to_toplevel->end())
+  protected:
+    virtual void send_initial_state() override
     {
-        wlr_foreign_toplevel_handle_v1_set_parent(WLR_HNDL,
-            nullptr);
-    } else
-    {
-        wlr_foreign_toplevel_handle_v1_set_parent(WLR_HNDL,
-            static_cast<wlr_foreign_toplevel_handle_v1*>(it->second->
-                handle));
-    }
-}
-
-void wayfire_foreign_toplevel::toplevel_update_output(wf::output_t *output, bool enter)
-{
-    if (output && enter)
-    {
-        wlr_foreign_toplevel_handle_v1_output_enter(WLR_HNDL,
-            output->handle);
+        toplevel_send_title();
+        toplevel_send_app_id();
+        toplevel_send_state();
+        toplevel_update_output(view->get_output(), true);
     }
 
-    if (output && !enter)
+    virtual void init_connections() override
     {
-        wlr_foreign_toplevel_handle_v1_output_leave(WLR_HNDL,
-            output->handle);
+        view->connect(&on_title_changed);
+        view->connect(&on_app_id_changed);
+
+        view->connect(&on_set_output);
+        view->connect(&on_tiled);
+        view->connect(&on_minimized);
+        view->connect(&on_fullscreen);
+        view->connect(&on_activated);
+        view->connect(&on_parent_changed);
     }
-}
 
-void wayfire_foreign_toplevel::init_request_handlers()
-{
-    toplevel_handle_v1_maximize_request.set_callback([&] (void *data)
+    virtual void disconnect_request_handlers() override
     {
-        auto ev = static_cast<wlr_foreign_toplevel_handle_v1_maximized_event*>(data);
-        wf::get_core().default_wm->tile_request(view, ev->maximized ? wf::TILED_EDGES_ALL : 0);
-    });
+        toplevel_handle_v1_close_request.disconnect();
+        toplevel_handle_v1_maximize_request.disconnect();
+        toplevel_handle_v1_minimize_request.disconnect();
+        toplevel_handle_v1_activate_request.disconnect();
+        toplevel_handle_v1_fullscreen_request.disconnect();
+        toplevel_handle_v1_set_rectangle_request.disconnect();
+    }
 
-    toplevel_handle_v1_minimize_request.set_callback([&] (void *data)
+    virtual void destroy_handle() override
     {
-        auto ev = static_cast<wlr_foreign_toplevel_handle_v1_minimized_event*>(data);
-        wf::get_core().default_wm->minimize_request(view, ev->minimized);
-    });
+        wlr_foreign_toplevel_handle_v1_destroy(WLR_HNDL);
+    }
 
-    toplevel_handle_v1_activate_request.set_callback([&] (auto)
+    virtual void toplevel_send_title() override
     {
-        wf::get_core().default_wm->focus_request(view);
-    });
+        wlr_foreign_toplevel_handle_v1_set_title(WLR_HNDL,
+            view->get_title().c_str());
+    }
 
-    toplevel_handle_v1_close_request.set_callback([&] (auto)
+    virtual void toplevel_send_app_id() override
     {
-        view->close();
-    });
+        char app_id[1024] = {0};
+        get_app_id(view, app_id);
+        wlr_foreign_toplevel_handle_v1_set_app_id(WLR_HNDL, app_id);
+    }
 
-    toplevel_handle_v1_set_rectangle_request.set_callback([&] (void *data)
+    virtual void toplevel_send_state() override
     {
-        auto ev = static_cast<wlr_foreign_toplevel_handle_v1_set_rectangle_event*>(data);
-        auto surface = wf::wl_surface_to_wayfire_view(ev->surface->resource);
-        if (!surface)
+        wlr_foreign_toplevel_handle_v1_set_maximized(WLR_HNDL,
+            view->pending_tiled_edges() == wf::TILED_EDGES_ALL);
+        wlr_foreign_toplevel_handle_v1_set_activated(WLR_HNDL,
+            view->activated);
+        wlr_foreign_toplevel_handle_v1_set_minimized(WLR_HNDL,
+            view->minimized);
+        wlr_foreign_toplevel_handle_v1_set_fullscreen(WLR_HNDL,
+            view->pending_fullscreen());
+
+        /* update parent as well */
+        auto it = view_to_toplevel->find(view->parent);
+        if (it == view_to_toplevel->end())
         {
-            LOGE("Setting minimize hint to unknown surface. Wayfire currently"
-                 "supports only setting hints relative to views.");
-            return;
+            wlr_foreign_toplevel_handle_v1_set_parent(WLR_HNDL,
+                nullptr);
+        } else
+        {
+            wlr_foreign_toplevel_handle_v1_set_parent(WLR_HNDL,
+                static_cast<wlr_foreign_toplevel_handle_v1*>(it->second->get()));
+        }
+    }
+
+    virtual void toplevel_update_output(wf::output_t *output, bool enter) override
+    {
+        if (output && enter)
+        {
+            wlr_foreign_toplevel_handle_v1_output_enter(WLR_HNDL,
+                output->handle);
         }
 
-        handle_minimize_hint(view.get(), surface.get(), {ev->x, ev->y, ev->width, ev->height});
-    });
-
-    toplevel_handle_v1_fullscreen_request.set_callback([&] (
-        void *data)
-    {
-        auto ev = static_cast<wlr_foreign_toplevel_handle_v1_fullscreen_event*>(data);
-        auto wo = wf::get_core().output_layout->find_output(ev->output);
-        wf::get_core().default_wm->fullscreen_request(view, wo, ev->fullscreen);
-    });
-
-    toplevel_handle_v1_close_request.connect(
-        &WLR_HNDL->events.request_close);
-    toplevel_handle_v1_maximize_request.connect(
-        &WLR_HNDL->events.request_maximize);
-    toplevel_handle_v1_minimize_request.connect(
-        &WLR_HNDL->events.request_minimize);
-    toplevel_handle_v1_activate_request.connect(
-        &WLR_HNDL->events.request_activate);
-    toplevel_handle_v1_fullscreen_request.connect(
-        &WLR_HNDL->events.request_fullscreen);
-    toplevel_handle_v1_set_rectangle_request.connect(
-        &WLR_HNDL->events.set_rectangle);
-}
-
-void wayfire_foreign_toplevel::handle_minimize_hint(wf::toplevel_view_interface_t *view,
-    wf::view_interface_t *relative_to,
-    wlr_box hint)
-{
-    if (relative_to->get_output() != view->get_output())
-    {
-        LOGE("Minimize hint set to surface on a different output, problems might arise");
-        /* TODO: translate coordinates in case minimize hint is on another output */
+        if (output && !enter)
+        {
+            wlr_foreign_toplevel_handle_v1_output_leave(WLR_HNDL,
+                output->handle);
+        }
     }
 
-    wf::pointf_t relative = relative_to->get_surface_root_node()->to_global({0, 0});
-    hint.x += relative.x;
-    hint.y += relative.y;
-    view->set_minimize_hint(hint);
-}
+    virtual void init_request_handlers() override
+    {
+        toplevel_handle_v1_maximize_request.set_callback([&] (void *data)
+        {
+            auto ev = static_cast<wlr_foreign_toplevel_handle_v1_maximized_event*>(data);
+            wf::get_core().default_wm->tile_request(view, ev->maximized ? wf::TILED_EDGES_ALL : 0);
+        });
+
+        toplevel_handle_v1_minimize_request.set_callback([&] (void *data)
+        {
+            auto ev = static_cast<wlr_foreign_toplevel_handle_v1_minimized_event*>(data);
+            wf::get_core().default_wm->minimize_request(view, ev->minimized);
+        });
+
+        toplevel_handle_v1_activate_request.set_callback([&] (auto)
+        {
+            wf::get_core().default_wm->focus_request(view);
+        });
+
+        toplevel_handle_v1_close_request.set_callback([&] (auto)
+        {
+            view->close();
+        });
+
+        toplevel_handle_v1_set_rectangle_request.set_callback([&] (void *data)
+        {
+            auto ev = static_cast<wlr_foreign_toplevel_handle_v1_set_rectangle_event*>(data);
+            auto surface = wf::wl_surface_to_wayfire_view(ev->surface->resource);
+            if (!surface)
+            {
+                LOGE("Setting minimize hint to unknown surface. Wayfire currently"
+                     "supports only setting hints relative to views.");
+                return;
+            }
+
+            handle_minimize_hint(view.get(), surface.get(), {ev->x, ev->y, ev->width, ev->height});
+        });
+
+        toplevel_handle_v1_fullscreen_request.set_callback([&] (
+            void *data)
+        {
+            auto ev = static_cast<wlr_foreign_toplevel_handle_v1_fullscreen_event*>(data);
+            auto wo = wf::get_core().output_layout->find_output(ev->output);
+            wf::get_core().default_wm->fullscreen_request(view, wo, ev->fullscreen);
+        });
+
+        toplevel_handle_v1_close_request.connect(
+            &WLR_HNDL->events.request_close);
+        toplevel_handle_v1_maximize_request.connect(
+            &WLR_HNDL->events.request_maximize);
+        toplevel_handle_v1_minimize_request.connect(
+            &WLR_HNDL->events.request_minimize);
+        toplevel_handle_v1_activate_request.connect(
+            &WLR_HNDL->events.request_activate);
+        toplevel_handle_v1_fullscreen_request.connect(
+            &WLR_HNDL->events.request_fullscreen);
+        toplevel_handle_v1_set_rectangle_request.connect(
+            &WLR_HNDL->events.set_rectangle);
+    }
+
+    virtual void handle_minimize_hint(wf::toplevel_view_interface_t *view,
+        wf::view_interface_t *relative_to,
+        wlr_box hint) override
+    {
+        if (relative_to->get_output() != view->get_output())
+        {
+            LOGE("Minimize hint set to surface on a different output, problems might arise");
+            /* TODO: translate coordinates in case minimize hint is on another output */
+        }
+
+        wf::pointf_t relative = relative_to->get_surface_root_node()->to_global({0, 0});
+        hint.x += relative.x;
+        hint.y += relative.y;
+        view->set_minimize_hint(hint);
+    }
+};
 
 class wayfire_foreign_toplevel_protocol_impl : public wf::plugin_interface_t
 {
@@ -217,8 +227,7 @@ class wayfire_foreign_toplevel_protocol_impl : public wf::plugin_interface_t
         {
             auto handle = wlr_foreign_toplevel_handle_v1_create(toplevel_manager);
             handle_for_view[toplevel] =
-                std::make_unique<wayfire_foreign_toplevel>(toplevel, handle, &handle_for_view,
-                    wayfire_foreign_toplevel::ProtocolType::WLR);
+                std::make_unique<wayfire_wlr_foreign_toplevel>(toplevel, handle, &handle_for_view);
         }
     };
 

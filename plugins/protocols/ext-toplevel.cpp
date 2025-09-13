@@ -27,54 +27,65 @@ void get_state(wayfire_view view, struct wlr_ext_foreign_toplevel_handle_v1_stat
     state->app_id = strdup(appid_cstr);
 }
 
-void wayfire_foreign_toplevel::send_initial_state()
+class wayfire_ext_foreign_toplevel : public wayfire_foreign_toplevel
 {
-    toplevel_send_state();
-}
+  public:
+    wayfire_ext_foreign_toplevel(wayfire_toplevel_view view, void *handle) : wayfire_foreign_toplevel(view,
+            handle,
+            nullptr,
+            ProtocolType::EXT)
+    {}
 
-void wayfire_foreign_toplevel::init_request_handlers()
-{
-    // No request handlers at the present moment.
-    // We may want to deal with them later on while implementing
-    // ext-foreign-toplevel-management protocol.
-}
+  protected:
+    virtual void send_initial_state() override
+    {
+        toplevel_send_state();
+    }
 
-void wayfire_foreign_toplevel::init_connections()
-{
-    view->connect(&on_title_changed);
-    view->connect(&on_app_id_changed);
-}
+    virtual void init_request_handlers() override
+    {
+        // No request handlers at the present moment.
+        // We may want to deal with them later on while implementing
+        // ext-foreign-toplevel-management protocol.
+    }
 
-void wayfire_foreign_toplevel::destroy_handle()
-{
-    wlr_ext_foreign_toplevel_handle_v1_destroy(EXT_HNDL);
-}
+    virtual void init_connections() override
+    {
+        view->connect(&on_title_changed);
+        view->connect(&on_app_id_changed);
+    }
 
-void wayfire_foreign_toplevel::toplevel_send_title()
-{
-    toplevel_send_state();
-}
+    virtual void destroy_handle() override
+    {
+        wlr_ext_foreign_toplevel_handle_v1_destroy(EXT_HNDL);
+    }
 
-void wayfire_foreign_toplevel::toplevel_send_app_id()
-{
-    toplevel_send_state();
-}
+    virtual void toplevel_send_title() override
+    {
+        toplevel_send_state();
+    }
 
-void wayfire_foreign_toplevel::toplevel_send_state()
-{
-    // Prepare the state
-    struct wlr_ext_foreign_toplevel_handle_v1_state new_state;
-    get_state(view, &new_state);
+    virtual void toplevel_send_app_id() override
+    {
+        toplevel_send_state();
+    }
 
-    /** Send the state; done() is sent by wlroots */
-    wlr_ext_foreign_toplevel_handle_v1_update_state(EXT_HNDL,
-        &new_state);
-}
+    virtual void toplevel_send_state() override
+    {
+        // Prepare the state
+        struct wlr_ext_foreign_toplevel_handle_v1_state new_state;
+        get_state(view, &new_state);
 
-void wayfire_foreign_toplevel::toplevel_update_output(wf::output_t*, bool)
-{
-    // no-op
-}
+        /** Send the state; done() is sent by wlroots */
+        wlr_ext_foreign_toplevel_handle_v1_update_state(EXT_HNDL,
+            &new_state);
+    }
+
+    virtual void toplevel_update_output(wf::output_t*, bool) override
+    {
+        // no-op
+    }
+};
 
 class wayfire_ext_foreign_toplevel_protocol_impl : public wf::plugin_interface_t
 {
@@ -120,8 +131,7 @@ class wayfire_ext_foreign_toplevel_protocol_impl : public wf::plugin_interface_t
                 return;
             }
 
-            handle_for_view[toplevel] = std::make_unique<wayfire_foreign_toplevel>(toplevel, handle, nullptr,
-                wayfire_foreign_toplevel::ProtocolType::EXT);
+            handle_for_view[toplevel] = std::make_unique<wayfire_ext_foreign_toplevel>(toplevel, handle);
         }
     };
 
