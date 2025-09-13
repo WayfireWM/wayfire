@@ -52,11 +52,6 @@ void get_app_id(wayfire_view view, char *app_id)
 
 class wayfire_foreign_toplevel
 {
-    wayfire_toplevel_view view;
-    /** This can be wither wlr_foreign_toplevel_handle_v1 or ext_foreign_toplevel_handle_v1 */
-    void *handle = nullptr;
-    foreign_toplevel_map_type *view_to_toplevel = nullptr;
-
   public:
     // Protocol type tracking
     enum class ProtocolType
@@ -86,23 +81,43 @@ class wayfire_foreign_toplevel
         destroy_handle();
     }
 
-  private:
+    void *get()
+    {
+        return handle;
+    }
+
+  protected:
+    wayfire_toplevel_view view;
+    /** This can be wither wlr_foreign_toplevel_handle_v1 or ext_foreign_toplevel_handle_v1 */
+    void *handle = nullptr;
+    foreign_toplevel_map_type *view_to_toplevel = nullptr;
+
     const ProtocolType protocol_type;
 
-    void init_request_handlers();
-    void send_initial_state();
-    void init_connections();
-    void disconnect_request_handlers();
-    void destroy_handle();
+    virtual void init_request_handlers()
+    {}
+    virtual void send_initial_state()
+    {}
+    virtual void init_connections()
+    {}
+    virtual void disconnect_request_handlers()
+    {}
+    virtual void destroy_handle()
+    {}
 
-    void toplevel_send_title();
-    void toplevel_send_app_id();
-    void toplevel_update_output(wf::output_t*, bool);
-    void toplevel_send_state();
+    virtual void toplevel_send_title()
+    {}
+    virtual void toplevel_send_app_id()
+    {}
+    virtual void toplevel_update_output(wf::output_t*, bool)
+    {}
+    virtual void toplevel_send_state()
+    {}
 
-/** Minimize rectangle */
-    void handle_minimize_hint(wf::toplevel_view_interface_t *view, wf::view_interface_t *relative_to,
-        wlr_box hint);
+    /** Minimize rectangle */
+    virtual void handle_minimize_hint(wf::toplevel_view_interface_t *view, wf::view_interface_t *relative_to,
+        wlr_box hint)
+    {}
 
     wf::signal::connection_t<wf::view_title_changed_signal> on_title_changed = [=] (auto)
     {
