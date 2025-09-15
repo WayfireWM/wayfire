@@ -133,7 +133,8 @@ void wf::compositor_core_impl_t::init()
             wlr_primary_selection_v1_device_manager_create(display);
     }
 
-    protocols.data_control = wlr_data_control_manager_v1_create(display);
+    protocols.data_control     = wlr_data_control_manager_v1_create(display);
+    protocols.ext_data_control = wlr_ext_data_control_manager_v1_create(display, 1);
 
     output_layout = std::make_unique<wf::output_layout_t>(backend);
     init_desktop_apis();

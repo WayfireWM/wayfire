@@ -51,6 +51,8 @@ extern "C"
     struct wlr_texture;
     struct wlr_viewporter;
 
+    struct wlr_ext_data_control_manager_v1;
+
 #include <wlr/types/wlr_input_device.h>
 #include <wlr/types/wlr_pointer.h>
 #include <wlr/types/wlr_keyboard.h>
