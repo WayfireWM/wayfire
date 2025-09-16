@@ -1390,7 +1390,14 @@ class wayfire_scale : public wf::per_output_plugin_instance_t,
             }
         }
 
-        refocus();
+        if ((output == wf::get_core().seat->get_active_output()) && current_focus_view)
+        {
+            refocus();
+        } else if (current_focus_view)
+        {
+            wf::view_bring_to_front(current_focus_view);
+        }
+
         scale_end_signal signal;
         output->emit(&signal);
     }
