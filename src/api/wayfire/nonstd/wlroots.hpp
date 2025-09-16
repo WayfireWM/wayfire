@@ -28,6 +28,9 @@ extern "C"
     struct wlr_virtual_pointer_manager_v1;
     struct wlr_idle_notifier_v1;
     struct wlr_screencopy_manager_v1;
+    struct wlr_ext_foreign_toplevel_list_v1;
+    struct wlr_ext_image_copy_capture_manager_v1;
+    struct wlr_ext_output_image_capture_source_manager_v1;
     struct wlr_foreign_toplevel_manager_v1;
     struct wlr_pointer_gestures_v1;
     struct wlr_relative_pointer_manager_v1;
