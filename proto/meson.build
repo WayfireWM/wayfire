@@ -14,12 +14,6 @@ wayland_scanner_code = generator(
 	arguments: ['private-code', '@INPUT@', '@OUTPUT@'],
 )
 
-wayland_scanner_client = generator(
-	wayland_scanner,
-	output: '@BASENAME@-client-protocol.h',
-	arguments: ['client-header', '@INPUT@', '@OUTPUT@'],
-)
-
 server_protocols = [
 	[wl_protocol_dir, 'stable/xdg-shell/xdg-shell.xml'],
 	[wl_protocol_dir, 'unstable/linux-dmabuf/linux-dmabuf-unstable-v1.xml'],
@@ -32,6 +26,9 @@ server_protocols = [
     [wl_protocol_dir, 'unstable/input-method/input-method-unstable-v1.xml'],
     [wl_protocol_dir, 'staging/ext-session-lock/ext-session-lock-v1.xml'],
     [wl_protocol_dir, 'unstable/text-input/text-input-unstable-v1.xml'],
+    [wl_protocol_dir, 'staging/ext-foreign-toplevel-list/ext-foreign-toplevel-list-v1.xml'],
+    [wl_protocol_dir, 'staging/ext-image-capture-source/ext-image-capture-source-v1.xml'],
+    [wl_protocol_dir, 'staging/ext-image-copy-capture/ext-image-copy-capture-v1.xml'],
     'wayfire-shell-unstable-v2.xml',
     'gtk-shell.xml',
     'wlr-layer-shell-unstable-v1.xml',
