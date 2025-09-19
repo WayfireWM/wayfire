@@ -1,0 +1,40 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"POT-Creation-Date: 2025-09-18 14:55+0300\n"
+"PO-Revision-Date: 2025-09-18 22:41+0300\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: ro_RO\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Poedit 3.7\n"
+
+#. (itstool) path: plugin/_short
+#: /home/vlad/CLionProjects/wayfire/metadata/input-method-v1.xml:4
+msgid "Input-Method-V1 Protocol"
+msgstr "Protocolul Input-Method-V1"
+
+#. (itstool) path: plugin/_long
+#: /home/vlad/CLionProjects/wayfire/metadata/input-method-v1.xml:5
+msgid ""
+"An implementation of the input-method-v1 protocol. Needed for proper "
+"functioning of input methods like Fcitx5."
+msgstr ""
+"O implementare a protocolului input-method-v1 necesar pentru "
+"funcționarea corectă a metodelor de intrare precum Fcitx5."
+
+#. (itstool) path: option/_short
+#: /home/vlad/CLionProjects/wayfire/metadata/input-method-v1.xml:8
+msgid ""
+"Enable support for the text-input-v1 protocol, used predominantly by "
+"Chromium and Electron apps."
+msgstr ""
+"Activează sprijinul pentru protocolul text-input-v1, folosit mai "
+"ales de aplicațiile Chromium și Electron."
+
+#. (itstool) path: option/_short
+#: /home/vlad/CLionProjects/wayfire/metadata/input-method-v1.xml:12
+msgid "Enable support for the text-input-v3 protocol."
+msgstr "Activează sprijinul pentru protocolul text-input-v3."

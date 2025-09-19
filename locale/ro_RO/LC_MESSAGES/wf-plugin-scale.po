@@ -1,0 +1,234 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"POT-Creation-Date: 2025-09-18 14:55+0300\n"
+"PO-Revision-Date: 2025-09-19 08:30+0300\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: ro_RO\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Poedit 3.7\n"
+
+#. (itstool) path: plugin/_short
+#: /home/vlad/CLionProjects/wayfire/metadata/scale.xml:4
+msgid "Scale"
+msgstr "Scalare"
+
+#. (itstool) path: plugin/_long
+#: /home/vlad/CLionProjects/wayfire/metadata/scale.xml:5
+msgid "Show all views on screen."
+msgstr "Arată toate ferestrele pe ecran."
+
+#. (itstool) path: group/_short
+#: /home/vlad/CLionProjects/wayfire/metadata/scale.xml:8
+msgid "Behavior"
+msgstr "Comportament"
+
+#. (itstool) path: option/_short
+#: /home/vlad/CLionProjects/wayfire/metadata/scale.xml:10
+msgid "Toggle"
+msgstr "Inițiere"
+
+#. (itstool) path: option/_long
+#: /home/vlad/CLionProjects/wayfire/metadata/scale.xml:11
+msgid "Toggles scale with the specified activator."
+msgstr "Comută scalarea cu activatorul specificat."
+
+#. (itstool) path: option/_short
+#: /home/vlad/CLionProjects/wayfire/metadata/scale.xml:15
+msgid "Toggle for all workspaces"
+msgstr "Inițiere pentru toate birourile"
+
+#. (itstool) path: option/_long
+#: /home/vlad/CLionProjects/wayfire/metadata/scale.xml:16
+msgid "Toggles scale showing windows from all workspaces."
+msgstr "Comută scalarea arătând ferestre de pe toate birourile."
+
+#. (itstool) path: option/_short
+#: /home/vlad/CLionProjects/wayfire/metadata/scale.xml:20
+msgid "Animation Transition Time"
+msgstr "Durata animației de tranziție"
+
+#. (itstool) path: option/_long
+#: /home/vlad/CLionProjects/wayfire/metadata/scale.xml:21
+msgid "Time it takes for views to transition. Units are in milliseconds."
+msgstr ""
+"Cât timp durează ca ferestrele să-și efectueze tranziția, în milisecunde."
+
+#. (itstool) path: option/_short
+#: /home/vlad/CLionProjects/wayfire/metadata/scale.xml:26
+msgid "Allow Zoomed Views"
+msgstr "Permite ferestre mărite"
+
+#. (itstool) path: option/_long
+#: /home/vlad/CLionProjects/wayfire/metadata/scale.xml:27
+msgid "Whether scaled views can have a size larger than their original size."
+msgstr ""
+"Dacă ferestrele scalate pot fi mai mari decât dimensiunea lor originală."
+
+#. (itstool) path: option/_short
+#: /home/vlad/CLionProjects/wayfire/metadata/scale.xml:31
+msgid "Close views with middle click"
+msgstr "Închide ferestrele cu clic-mijloc"
+
+#. (itstool) path: option/_long
+#: /home/vlad/CLionProjects/wayfire/metadata/scale.xml:32
+msgid ""
+"Use the middle mouse button to close views in the scale state. Only applies "
+"if interactive mode is not enabled."
+msgstr ""
+"Folosiți butonul din mijloc pentru a închide ferestrele scalate. Se aplică "
+"numai dacă modul interactiv nu este activat."
+
+#. (itstool) path: option/_short
+#: /home/vlad/CLionProjects/wayfire/metadata/scale.xml:36
+msgid "Include minimized views"
+msgstr "Include ferestrele minimizate"
+
+#. (itstool) path: option/_long
+#: /home/vlad/CLionProjects/wayfire/metadata/scale.xml:37
+msgid "Whether to show views that are minimized when starting scale."
+msgstr ""
+"Dacă să se afișeze și ferestrele minimizate când se inițiază scalarea."
+
+#. (itstool) path: option/_short
+#: /home/vlad/CLionProjects/wayfire/metadata/scale.xml:41
+msgid "Close on new views"
+msgstr "Închide la ferestre noi"
+
+#. (itstool) path: option/_long
+#: /home/vlad/CLionProjects/wayfire/metadata/scale.xml:42
+msgid "Whether to close scale when a new view is mapped."
+msgstr "Dacă să se închidă scalarea când o nouă fereastră este pusă pe ecran."
+
+#. (itstool) path: group/_short
+#: /home/vlad/CLionProjects/wayfire/metadata/scale.xml:47
+msgid "Appearance"
+msgstr "Aspect"
+
+#. (itstool) path: option/_short
+#: /home/vlad/CLionProjects/wayfire/metadata/scale.xml:49
+msgid "Spacing"
+msgstr "Distanțiere"
+
+#. (itstool) path: option/_long
+#: /home/vlad/CLionProjects/wayfire/metadata/scale.xml:50
+msgid "Sets the spacing between the views."
+msgstr "Stabilește distanțierea dintre ferestre."
+
+#. (itstool) path: option/_short
+#: /home/vlad/CLionProjects/wayfire/metadata/scale.xml:55
+msgid "Outer Margin"
+msgstr "Marginea exterioară"
+
+#. (itstool) path: option/_long
+#: /home/vlad/CLionProjects/wayfire/metadata/scale.xml:56
+msgid ""
+"The outer margin is the space reserved between the scaled windows and the "
+"monitor edges while scale is active."
+msgstr ""
+"Marginea exterioară este spațiul rezervat între ferestrele scalate și "
+"marginile monitorului când scalarea este activă."
+
+#. (itstool) path: option/_short
+#: /home/vlad/CLionProjects/wayfire/metadata/scale.xml:61
+msgid "Inactive Opacity"
+msgstr "Opacitate pentru inactive"
+
+#. (itstool) path: option/_long
+#: /home/vlad/CLionProjects/wayfire/metadata/scale.xml:62
+msgid "Set the opacity value of the inactive windows."
+msgstr "Stabilește valoarea opacității ferestrelor inactive."
+
+#. (itstool) path: option/_short
+#: /home/vlad/CLionProjects/wayfire/metadata/scale.xml:69
+msgid "Minimized View Opacity"
+msgstr "Opacitate pentru ferestre minimizate"
+
+#. (itstool) path: option/_long
+#: /home/vlad/CLionProjects/wayfire/metadata/scale.xml:70
+msgid "Set the opacity value of minimized views that are shown in scale."
+msgstr "Stabilește opacitatea ferestrelor minimizate care sunt scalate."
+
+#. (itstool) path: option/_short
+#: /home/vlad/CLionProjects/wayfire/metadata/scale.xml:77
+msgid "Show views' title"
+msgstr "Arată titlul ferestrelor"
+
+#. (itstool) path: option/_long
+#: /home/vlad/CLionProjects/wayfire/metadata/scale.xml:78
+msgid "Whether to display the title of each view as an overlay."
+msgstr "Dacă să se suprapună pe fiecare fereastră titlul acesteia."
+
+#. (itstool) path: desc/_name
+#: /home/vlad/CLionProjects/wayfire/metadata/scale.xml:82
+msgid "Never"
+msgstr "Niciodată"
+
+#. (itstool) path: desc/_name
+#: /home/vlad/CLionProjects/wayfire/metadata/scale.xml:86
+msgid "Only for the view under the pointer"
+msgstr "Doar pentru fereastra de sub cursor"
+
+#. (itstool) path: desc/_name
+#: /home/vlad/CLionProjects/wayfire/metadata/scale.xml:90
+msgid "For all views"
+msgstr "Pentru toate ferestrele"
+
+#. (itstool) path: option/_short
+#: /home/vlad/CLionProjects/wayfire/metadata/scale.xml:94
+msgid "Font size for title"
+msgstr "Dimensiunea fontului titlului"
+
+#. (itstool) path: option/_long
+#: /home/vlad/CLionProjects/wayfire/metadata/scale.xml:95
+msgid "Size of font used to display an overlay of each view's title."
+msgstr ""
+"Dimensiunea fontului folosit pentru a suprascrie titlul fiecărei ferestre."
+
+#. (itstool) path: option/_short
+#: /home/vlad/CLionProjects/wayfire/metadata/scale.xml:99
+msgid "Position for title"
+msgstr "Poziția titlului"
+
+#. (itstool) path: option/_long
+#: /home/vlad/CLionProjects/wayfire/metadata/scale.xml:100
+msgid "Position for overlays of views' titles when shown."
+msgstr "Poziția suprapunerilor cu titlurile ferestrelor, când sunt afișate."
+
+#. (itstool) path: desc/_name
+#: /home/vlad/CLionProjects/wayfire/metadata/scale.xml:104
+msgid "Top"
+msgstr "Sus"
+
+#. (itstool) path: desc/_name
+#: /home/vlad/CLionProjects/wayfire/metadata/scale.xml:108
+msgid "Center"
+msgstr "Centru"
+
+#. (itstool) path: desc/_name
+#: /home/vlad/CLionProjects/wayfire/metadata/scale.xml:112
+msgid "Bottom"
+msgstr "Jos"
+
+#. (itstool) path: option/_short
+#: /home/vlad/CLionProjects/wayfire/metadata/scale.xml:116
+msgid "Background color"
+msgstr "Culoarea fundalului"
+
+#. (itstool) path: option/_long
+#: /home/vlad/CLionProjects/wayfire/metadata/scale.xml:117
+msgid "Background color for title overlay text."
+msgstr "Culoarea fundalului pentru textul suprapunerii cu titlul."
+
+#. (itstool) path: option/_short
+#: /home/vlad/CLionProjects/wayfire/metadata/scale.xml:121
+msgid "Text color"
+msgstr "Culoarea textului"
+
+#. (itstool) path: option/_long
+#: /home/vlad/CLionProjects/wayfire/metadata/scale.xml:122
+msgid "Text color for title overlay."
+msgstr "Culoarea textului pentru suprapunerea cu titlul."

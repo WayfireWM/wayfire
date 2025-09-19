@@ -1,0 +1,118 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"POT-Creation-Date: 2025-09-18 14:55+0300\n"
+"PO-Revision-Date: 2025-09-18 18:11+0300\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: ro_RO\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Poedit 3.7\n"
+
+#. (itstool) path: plugin/_short
+#: /home/vlad/CLionProjects/wayfire/metadata/decoration.xml:4
+msgid "Decoration"
+msgstr "Decorație"
+
+#. (itstool) path: plugin/_long
+#: /home/vlad/CLionProjects/wayfire/metadata/decoration.xml:5
+msgid "Default decorations around XWayland windows."
+msgstr "Decorațiile implicite în jurul ferestrelor XWayland."
+
+#. (itstool) path: option/_short
+#: /home/vlad/CLionProjects/wayfire/metadata/decoration.xml:8
+msgid "Font"
+msgstr "Font"
+
+#. (itstool) path: option/_long
+#: /home/vlad/CLionProjects/wayfire/metadata/decoration.xml:9
+msgid "Sets the font to use for the title bars."
+msgstr "Stabilește fontul de folosit pentru barele de titlu."
+
+#. (itstool) path: option/_short
+#: /home/vlad/CLionProjects/wayfire/metadata/decoration.xml:13
+msgid "Font color"
+msgstr "Culoarea fontului"
+
+#. (itstool) path: option/_long
+#: /home/vlad/CLionProjects/wayfire/metadata/decoration.xml:14
+msgid "Sets the font color to use for the title bars."
+msgstr "Stabilește culoarea fontului de folosit pentru barele de titlu."
+
+#. (itstool) path: option/_short
+#: /home/vlad/CLionProjects/wayfire/metadata/decoration.xml:18
+msgid "Title bar height"
+msgstr "Înălțimea barei de titlu"
+
+#. (itstool) path: option/_long
+#: /home/vlad/CLionProjects/wayfire/metadata/decoration.xml:19
+msgid "Sets the height of the title bars in pixels."
+msgstr "Stabilește înălțimea barei de titlu, în pixeli."
+
+#. (itstool) path: option/_short
+#: /home/vlad/CLionProjects/wayfire/metadata/decoration.xml:25
+msgid "Border size"
+msgstr "Dimensiunea bordurii"
+
+#. (itstool) path: option/_long
+#: /home/vlad/CLionProjects/wayfire/metadata/decoration.xml:26
+msgid "Sets the border size in pixels."
+msgstr "Stabilește dimensiunea bordurii, în pixeli."
+
+#. (itstool) path: option/_short
+#: /home/vlad/CLionProjects/wayfire/metadata/decoration.xml:32
+msgid "Order of window buttons"
+msgstr "Ordinea butoanelor de fereastră"
+
+#. (itstool) path: option/_long
+#: /home/vlad/CLionProjects/wayfire/metadata/decoration.xml:33
+msgid "Sets the order of the window buttons."
+msgstr "Stabilește ordinea butoanelor de fereastră."
+
+#. (itstool) path: option/_short
+#: /home/vlad/CLionProjects/wayfire/metadata/decoration.xml:38
+msgid "Color when window is active"
+msgstr "Culoare când fereastra e activă"
+
+#. (itstool) path: option/_long
+#: /home/vlad/CLionProjects/wayfire/metadata/decoration.xml:39
+msgid "Sets the color when the window is active."
+msgstr "Stabilește culoarea ramei când fereastra este activă."
+
+#. (itstool) path: option/_short
+#: /home/vlad/CLionProjects/wayfire/metadata/decoration.xml:43
+msgid "Color when window is inactive"
+msgstr "Culoare când fereastra e inactivă"
+
+#. (itstool) path: option/_long
+#: /home/vlad/CLionProjects/wayfire/metadata/decoration.xml:44
+msgid "Sets the color when the window is inactive."
+msgstr "Stabilește culoarea ramei când fereastra este inactivă."
+
+#. (itstool) path: option/_short
+#: /home/vlad/CLionProjects/wayfire/metadata/decoration.xml:48
+msgid "Decoration disabled for specified window types"
+msgstr "Decorația dezactivată pentru tipurile specificate de fereastră"
+
+#. (itstool) path: option/_long
+#: /home/vlad/CLionProjects/wayfire/metadata/decoration.xml:49
+msgid "Disables window decoration for windows matching the specified criteria."
+msgstr ""
+"Dezactivează decorația pentru ferestrele ce îndeplinesc criteriile "
+"specificate."
+
+#. (itstool) path: option/_short
+#: /home/vlad/CLionProjects/wayfire/metadata/decoration.xml:53
+msgid "Force decorations for specified window types"
+msgstr "Forțează decorații pentru tipurile specificate de fereastră"
+
+#. (itstool) path: option/_long
+#: /home/vlad/CLionProjects/wayfire/metadata/decoration.xml:54
+msgid ""
+"Forces window decoration for windows matching the specified criteria, "
+"overriding client decoration preference."
+msgstr ""
+"Forțează decorația pentru ferestrele ce îndeplinesc criteriile specificate, "
+"ignorând preferințele privind decorațiile ale clientului."

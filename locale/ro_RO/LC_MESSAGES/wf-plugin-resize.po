@@ -1,0 +1,77 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"POT-Creation-Date: 2025-09-18 14:55+0300\n"
+"PO-Revision-Date: 2025-09-19 08:16+0300\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: ro_RO\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Poedit 3.7\n"
+
+#. (itstool) path: plugin/_short
+#: /home/vlad/CLionProjects/wayfire/metadata/resize.xml:4
+msgid "Resize"
+msgstr "Redimensionare"
+
+#. (itstool) path: plugin/_long
+#: /home/vlad/CLionProjects/wayfire/metadata/resize.xml:5
+msgid ""
+"A plugin to resize windows by dragging them from any part (not just the "
+"edges)."
+msgstr ""
+"Un modul pentru a redimensiona ferestrele trăgând de ele de oriunde (nu "
+"doar de la margini)."
+
+#. (itstool) path: option/_short
+#: /home/vlad/CLionProjects/wayfire/metadata/resize.xml:8
+msgid "Activate"
+msgstr "Inițiere"
+
+#. (itstool) path: option/_long
+#: /home/vlad/CLionProjects/wayfire/metadata/resize.xml:9
+msgid ""
+"When the specified button is held down, you can drag a window to resize it."
+msgstr ""
+"Când se ține apăsat butonul specificat, puteți trage ferestre pentru a le "
+"redimensiona."
+
+#. (itstool) path: option/_short
+#: /home/vlad/CLionProjects/wayfire/metadata/resize.xml:14
+msgid "Minimum view width"
+msgstr "Lățimea minimă a ferestrei"
+
+#. (itstool) path: option/_long
+#: /home/vlad/CLionProjects/wayfire/metadata/resize.xml:15
+msgid "If set, views cannot be resized smaller than this width."
+msgstr ""
+"Dacă este specificată, ferestrele nu pot fi făcute mai mici decât această "
+"lățime."
+
+#. (itstool) path: option/_short
+#: /home/vlad/CLionProjects/wayfire/metadata/resize.xml:21
+msgid "Minimum view height"
+msgstr "Înălțimea minimă a ferestrei"
+
+#. (itstool) path: option/_long
+#: /home/vlad/CLionProjects/wayfire/metadata/resize.xml:22
+msgid "If set, views cannot be resized smaller than this height."
+msgstr ""
+"Dacă este specificată, ferestrele nu pot fi făcute mai mici decât această "
+"înălțime."
+
+#. (itstool) path: option/_short
+#: /home/vlad/CLionProjects/wayfire/metadata/resize.xml:28
+msgid "Activate resize while preserving aspect"
+msgstr "Inițiere redimensionare păstrând raportul"
+
+#. (itstool) path: option/_long
+#: /home/vlad/CLionProjects/wayfire/metadata/resize.xml:29
+msgid ""
+"When the specified button is held down, you can drag a window to resize it "
+"while preserving its original aspect."
+msgstr ""
+"Când se ține apăsat butonul specificat, puteți trage ferestre pentru a le "
+"redimensiona păstrându-le raportul de aspect inițial."

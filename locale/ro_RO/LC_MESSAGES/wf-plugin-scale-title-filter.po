@@ -1,0 +1,86 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"POT-Creation-Date: 2025-09-18 14:55+0300\n"
+"PO-Revision-Date: 2025-09-19 08:35+0300\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: ro_RO\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Poedit 3.7\n"
+
+#. (itstool) path: plugin/_short
+#: /home/vlad/CLionProjects/wayfire/metadata/scale-title-filter.xml:4
+msgid "Scale Title Filter"
+msgstr "Filtru de titluri în scalare"
+
+#. (itstool) path: plugin/_long
+#: /home/vlad/CLionProjects/wayfire/metadata/scale-title-filter.xml:5
+msgid "Filter the views shown by scale by typing."
+msgstr "Filtrează ferestrele arătate de scară când se tastează."
+
+#. (itstool) path: option/_short
+#: /home/vlad/CLionProjects/wayfire/metadata/scale-title-filter.xml:8
+msgid "Case sensitive"
+msgstr "Sensibilitate la majuscule"
+
+#. (itstool) path: option/_long
+#: /home/vlad/CLionProjects/wayfire/metadata/scale-title-filter.xml:9
+msgid "Match titles in a case sensitive way."
+msgstr "Potrivește titlurile ținând cont de majuscule sau minuscule."
+
+#. (itstool) path: option/_short
+#: /home/vlad/CLionProjects/wayfire/metadata/scale-title-filter.xml:13
+msgid "Share filter among outputs"
+msgstr "Împarte filtrul între ecrane"
+
+#. (itstool) path: option/_long
+#: /home/vlad/CLionProjects/wayfire/metadata/scale-title-filter.xml:14
+msgid ""
+"Whether the active filter is shared among all outputs. Set to false to "
+"filter independently on each output."
+msgstr ""
+"Dacă filtrul activ este folosit pe toate ecranele. Setați la fals "
+"pentru a filtra independent pe fiecare ecran."
+
+#. (itstool) path: option/_short
+#: /home/vlad/CLionProjects/wayfire/metadata/scale-title-filter.xml:18
+msgid "Show overlay"
+msgstr "Arată suprapunerea"
+
+#. (itstool) path: option/_long
+#: /home/vlad/CLionProjects/wayfire/metadata/scale-title-filter.xml:19
+msgid "Whether the current filter value is shown as an overlay."
+msgstr "Dacă valoarea actuală a filtrului este folosită ca suprapunere."
+
+#. (itstool) path: option/_short
+#: /home/vlad/CLionProjects/wayfire/metadata/scale-title-filter.xml:23
+msgid "Text font size"
+msgstr "Dimensiunea fontului textului"
+
+#. (itstool) path: option/_long
+#: /home/vlad/CLionProjects/wayfire/metadata/scale-title-filter.xml:24
+msgid "Size of the text used in the overlay."
+msgstr "Dimensiunea fontului textului suprapunerii."
+
+#. (itstool) path: option/_short
+#: /home/vlad/CLionProjects/wayfire/metadata/scale-title-filter.xml:29
+msgid "Background color"
+msgstr "Culoarea fundalului"
+
+#. (itstool) path: option/_long
+#: /home/vlad/CLionProjects/wayfire/metadata/scale-title-filter.xml:30
+msgid "Background color for overlay text."
+msgstr "Culoarea fundalului pentru textul suprapunerii."
+
+#. (itstool) path: option/_short
+#: /home/vlad/CLionProjects/wayfire/metadata/scale-title-filter.xml:34
+msgid "Text color"
+msgstr "Culoarea textului"
+
+#. (itstool) path: option/_long
+#: /home/vlad/CLionProjects/wayfire/metadata/scale-title-filter.xml:35
+msgid "Text color for overlay."
+msgstr "Culoarea textului pentru textul suprapunerii."

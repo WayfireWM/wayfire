@@ -1,0 +1,32 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"POT-Creation-Date: 2025-09-18 14:55+0300\n"
+"PO-Revision-Date: 2025-09-19 09:19+0300\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: ro_RO\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Poedit 3.7\n"
+
+#. (itstool) path: plugin/_short
+#: /home/vlad/CLionProjects/wayfire/metadata/wayfire-shell.xml:4
+msgid "Wayfire Shell Protocol"
+msgstr "Protocol Interfață Wayfire"
+
+#. (itstool) path: plugin/_long
+#: /home/vlad/CLionProjects/wayfire/metadata/wayfire-shell.xml:5
+msgid "An implementation of the wayfire-shell protocol."
+msgstr "O implementare a protocolului wayfire-shell."
+
+#. (itstool) path: option/_short
+#: /home/vlad/CLionProjects/wayfire/metadata/wayfire-shell.xml:8
+msgid "Toggle Menu"
+msgstr "Comută meniul"
+
+#. (itstool) path: option/_long
+#: /home/vlad/CLionProjects/wayfire/metadata/wayfire-shell.xml:9
+msgid "Toggles menu with the specified activator."
+msgstr "Comută meniul cu activatorul specificat."

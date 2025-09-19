@@ -244,6 +244,7 @@ subdir('src')
 subdir('man')
 subdir('metadata')
 subdir('plugins')
+subdir('locale')
 
 # Unit tests
 doctest = dependency('doctest', required: get_option('tests'))

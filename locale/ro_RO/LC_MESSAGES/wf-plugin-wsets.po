@@ -1,0 +1,52 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"POT-Creation-Date: 2025-09-18 14:55+0300\n"
+"PO-Revision-Date: 2025-09-19 10:19+0300\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: ro_RO\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Poedit 3.7\n"
+
+#. (itstool) path: plugin/_short
+#: /home/vlad/CLionProjects/wayfire/metadata/wsets.xml:4
+msgid "Workspace Sets"
+msgstr "Seturi de birouri"
+
+#. (itstool) path: plugin/_long
+#: /home/vlad/CLionProjects/wayfire/metadata/wsets.xml:5
+msgid "A plugin which allows manipulation of workspace sets."
+msgstr "Un modul care permite manipularea seturilor de birouri."
+
+#. (itstool) path: option/_short
+#: /home/vlad/CLionProjects/wayfire/metadata/wsets.xml:8
+msgid "Bind/Select workspace set to current output"
+msgstr "Asociază/selectează setul de birouri cu ecranul actual"
+
+#. (itstool) path: option/_long
+#: /home/vlad/CLionProjects/wayfire/metadata/wsets.xml:9
+msgid "A binding to bind and/or select the workspace set #N to the current output."
+msgstr "O asociere pentru a asocia sau a selecta setul de birouri nr. N cu ecranul actual."
+
+#. (itstool) path: option/_short
+#: /home/vlad/CLionProjects/wayfire/metadata/wsets.xml:13
+msgid "Move window to workspace set"
+msgstr "Mută fereastra pe setul de birouri"
+
+#. (itstool) path: option/_long
+#: /home/vlad/CLionProjects/wayfire/metadata/wsets.xml:14
+msgid "A binding to move the currently focused window to the workspace set #N."
+msgstr "O asociere pentru a muta fereastra actual focalizată pe setul de birouri nr. N."
+
+#. (itstool) path: option/_short
+#: /home/vlad/CLionProjects/wayfire/metadata/wsets.xml:18
+msgid "Label duration"
+msgstr "Durata etichetei"
+
+#. (itstool) path: option/_long
+#: /home/vlad/CLionProjects/wayfire/metadata/wsets.xml:19
+msgid "Sets the duration in milliseconds for which the workspace set label is shown."
+msgstr "Stabilește durata pentru care se afișează eticheta setului de birouri, în milisecunde."

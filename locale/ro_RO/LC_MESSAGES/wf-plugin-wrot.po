@@ -1,0 +1,100 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"POT-Creation-Date: 2025-09-18 14:55+0300\n"
+"PO-Revision-Date: 2025-09-19 10:13+0300\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: ro_RO\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Poedit 3.7\n"
+
+#. (itstool) path: plugin/_short
+#: /home/vlad/CLionProjects/wayfire/metadata/wrot.xml:4
+msgid "Window Rotate"
+msgstr "Rotirea ferestrelor"
+
+#. (itstool) path: plugin/_long
+#: /home/vlad/CLionProjects/wayfire/metadata/wrot.xml:5
+msgid "A plugin to rotate windows with the mouse."
+msgstr "Un modul pentru a roti ferestre cu mausul."
+
+#. (itstool) path: option/_short
+#: /home/vlad/CLionProjects/wayfire/metadata/wrot.xml:8
+msgid "Rotate 2D"
+msgstr "Rotire bidimensională"
+
+#. (itstool) path: option/_long
+#: /home/vlad/CLionProjects/wayfire/metadata/wrot.xml:9
+msgid "Rotates the window around its z-axis."
+msgstr "Rotește fereastra în jurul axei Z."
+
+#. (itstool) path: option/_short
+#: /home/vlad/CLionProjects/wayfire/metadata/wrot.xml:13
+msgid "Rotate 3D"
+msgstr "Rotire tridimensională"
+
+#. (itstool) path: option/_long
+#: /home/vlad/CLionProjects/wayfire/metadata/wrot.xml:14
+msgid "Rotates the window around its x and y axes.."
+msgstr "Rotește fereastra în jurul axelor X și Y."
+
+#. (itstool) path: option/_short
+#: /home/vlad/CLionProjects/wayfire/metadata/wrot.xml:18
+msgid "Reset Radius"
+msgstr "Restabilește raza"
+
+#. (itstool) path: option/_long
+#: /home/vlad/CLionProjects/wayfire/metadata/wrot.xml:19
+msgid ""
+"The radius of the reset area for 2D rotations. The reset area is located at "
+"the center of the view and resets the rotation."
+msgstr ""
+"Raza zonei de restabilire pentru rotații bidimensionale; este localizată în "
+"centrul ferestrei și restabilește rotația."
+
+#. (itstool) path: option/_short
+#: /home/vlad/CLionProjects/wayfire/metadata/wrot.xml:24
+msgid "Reset Current"
+msgstr "Restabilește fereastra actuală"
+
+#. (itstool) path: option/_long
+#: /home/vlad/CLionProjects/wayfire/metadata/wrot.xml:25
+msgid "Remove rotation from the currently focused view."
+msgstr "Elimină rotația ferestrei actual focalizate."
+
+#. (itstool) path: option/_short
+#: /home/vlad/CLionProjects/wayfire/metadata/wrot.xml:29
+msgid "Reset All"
+msgstr "Restabilește-le pe toate"
+
+#. (itstool) path: option/_long
+#: /home/vlad/CLionProjects/wayfire/metadata/wrot.xml:30
+msgid "Remove rotation from all views."
+msgstr "Elimină rotația tuturor ferestrelor."
+
+#. (itstool) path: option/_short
+#: /home/vlad/CLionProjects/wayfire/metadata/wrot.xml:34
+msgid "Sensitivity (3D)"
+msgstr "Sensibilitate tridimensională"
+
+#. (itstool) path: option/_long
+#: /home/vlad/CLionProjects/wayfire/metadata/wrot.xml:35
+msgid ""
+"How quickly 3D rotations happen with mouse movements (in arminutes per "
+"pixel)."
+msgstr ""
+"Cât de repede se fac rotații tridimensionale cu mișcări ale mausului (în "
+"arc-minute pe pixel)."
+
+#. (itstool) path: option/_short
+#: /home/vlad/CLionProjects/wayfire/metadata/wrot.xml:39
+msgid "Invert 3D rotation directions"
+msgstr "Inversează direcțiile rotației tridimensionale"
+
+#. (itstool) path: option/_long
+#: /home/vlad/CLionProjects/wayfire/metadata/wrot.xml:40
+msgid "Invert the direction of movement for 3D rotations."
+msgstr "Inversează direcția mișcării pentru rotații tridimensionale."

@@ -1,0 +1,151 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"POT-Creation-Date: 2025-09-18 14:55+0300\n"
+"PO-Revision-Date: 2025-09-19 07:57+0300\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: ro_RO\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Poedit 3.7\n"
+
+#. (itstool) path: plugin/_short
+#: /home/vlad/CLionProjects/wayfire/metadata/move.xml:4
+msgid "Move"
+msgstr "Mutare"
+
+#. (itstool) path: plugin/_long
+#: /home/vlad/CLionProjects/wayfire/metadata/move.xml:5
+msgid ""
+"A plugin to move windows around by dragging them from any part (not just the "
+"title bar)."
+msgstr ""
+"Un modul pentru mutarea ferestrelor prin tragerea de oriunde (nu doar de pe "
+"bara de titlu)."
+
+#. (itstool) path: option/_short
+#: /home/vlad/CLionProjects/wayfire/metadata/move.xml:8
+msgid "Activate"
+msgstr "Inițiere"
+
+#. (itstool) path: option/_long
+#: /home/vlad/CLionProjects/wayfire/metadata/move.xml:9
+msgid ""
+"When the specified button is held down, you can drag windows to move them."
+msgstr ""
+"Când se ține apăsat butonul specificat, puteți trage ferestre pentru a le "
+"muta."
+
+#. (itstool) path: option/_short
+#: /home/vlad/CLionProjects/wayfire/metadata/move.xml:14
+msgid "Snap"
+msgstr "Potrivire"
+
+#. (itstool) path: option/_long
+#: /home/vlad/CLionProjects/wayfire/metadata/move.xml:15
+msgid ""
+"Enables or disables snapping the window being moved to an edge of the screen."
+msgstr ""
+"Activează sau dezactivează potrivirea ferestrei mutate de marginile "
+"ecranului."
+
+#. (itstool) path: option/_short
+#: /home/vlad/CLionProjects/wayfire/metadata/move.xml:19
+msgid "Snap threshold"
+msgstr "Distanță pentru potrivire"
+
+#. (itstool) path: option/_long
+#: /home/vlad/CLionProjects/wayfire/metadata/move.xml:20
+msgid ""
+"Sets the amount of pixels from the edge of the screen for which aero-snap "
+"gets triggered."
+msgstr ""
+"Stabilește numărul de pixeli de la marginea ecranului de la care se "
+"declanșează potrivirea."
+
+#. (itstool) path: option/_short
+#: /home/vlad/CLionProjects/wayfire/metadata/move.xml:24
+msgid "Quarter snap threshold"
+msgstr "Distanță pentru potrivirea de sfert"
+
+#. (itstool) path: option/_long
+#: /home/vlad/CLionProjects/wayfire/metadata/move.xml:25
+msgid ""
+"Sets the amount of pixels from the corner of the screen for which quarter "
+"aero-snap gets triggered. The mouse should still be within snap_threshold of "
+"at least one edge of the screen."
+msgstr ""
+"Stabilește numărul de pixeli de la colțul ecranului de la care se "
+"declanșează potrivirea pe un sfert. Mausul trebuie totuși să fie la maxim "
+"snap_threshold pixeli de o margine a ecranului."
+
+#. (itstool) path: option/_short
+#: /home/vlad/CLionProjects/wayfire/metadata/move.xml:29
+msgid "Snap off"
+msgstr "Desprindere"
+
+#. (itstool) path: option/_long
+#: /home/vlad/CLionProjects/wayfire/metadata/move.xml:30
+msgid ""
+"Enables or disables snapping off the window being grabbed from an edge of "
+"the screen."
+msgstr ""
+"Activează sau dezactivează desprinderea unei ferestre potrivite cu marginea "
+"ecranului."
+
+#. (itstool) path: option/_short
+#: /home/vlad/CLionProjects/wayfire/metadata/move.xml:34
+msgid "Snap off threshold"
+msgstr "Distanță desprindere"
+
+#. (itstool) path: option/_long
+#: /home/vlad/CLionProjects/wayfire/metadata/move.xml:35
+msgid ""
+"When attempting to move a snapped window, this option requires the user to "
+"move at least the specified amount of pixels before the window actually "
+"moves. This only takes effect with `move.enable_snap_off`."
+msgstr ""
+"Când se încearcă mutarea unei ferestre potrivite, opțiunea vă cere să o "
+"mutați cel puțin numărul specificat de pixeli până se va mișca. Aceasta se "
+"aplică numai împreună cu «move.enable_snap_off»."
+
+#. (itstool) path: option/_short
+#: /home/vlad/CLionProjects/wayfire/metadata/move.xml:39
+msgid "Disallow independently moving dialogues"
+msgstr "Interzice mutarea independentă a dialogurilor"
+
+#. (itstool) path: option/_long
+#: /home/vlad/CLionProjects/wayfire/metadata/move.xml:40
+msgid "Disallows independently moving dialogues."
+msgstr "Interzice mutarea dialogurilor separat de fereastra-părinte."
+
+#. (itstool) path: option/_short
+#: /home/vlad/CLionProjects/wayfire/metadata/move.xml:44
+msgid "Preview fill color"
+msgstr "Culoarea umplerii previzualizării"
+
+#. (itstool) path: option/_short
+#: /home/vlad/CLionProjects/wayfire/metadata/move.xml:48
+msgid "Preview border color"
+msgstr "Culoarea chenarului previzualizării"
+
+#. (itstool) path: option/_short
+#: /home/vlad/CLionProjects/wayfire/metadata/move.xml:52
+msgid "Preview border width"
+msgstr "Grosimea chenarului previzualizării"
+
+#. (itstool) path: option/_short
+#: /home/vlad/CLionProjects/wayfire/metadata/move.xml:57
+msgid "Switch workspace after"
+msgstr "Schimbă biroul după"
+
+#. (itstool) path: option/_long
+#: /home/vlad/CLionProjects/wayfire/metadata/move.xml:58
+msgid ""
+"Switch workspace when the mouse stays on the output edge for the given "
+"duration in milliseconds (-1 to disable)."
+msgstr ""
+"Schimbă biroul după ce mausul stă pe marginea ecranului pentru timpul "
+"specificat în milisecunde (-1 pentru dezactivare)."

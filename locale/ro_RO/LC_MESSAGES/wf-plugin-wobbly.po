@@ -1,0 +1,52 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"POT-Creation-Date: 2025-09-18 14:55+0300\n"
+"PO-Revision-Date: 2025-09-19 09:51+0300\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: ro_RO\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Poedit 3.7\n"
+
+#. (itstool) path: plugin/_short
+#: /home/vlad/CLionProjects/wayfire/metadata/wobbly.xml:4
+msgid "Wobbly"
+msgstr "Elastic"
+
+#. (itstool) path: plugin/_long
+#: /home/vlad/CLionProjects/wayfire/metadata/wobbly.xml:5
+msgid "A plugin to get wobbly windows."
+msgstr "Un modul pentru a obține ferestre elastice."
+
+#. (itstool) path: option/_short
+#: /home/vlad/CLionProjects/wayfire/metadata/wobbly.xml:8
+msgid "Friction"
+msgstr "Frecare"
+
+#. (itstool) path: option/_long
+#: /home/vlad/CLionProjects/wayfire/metadata/wobbly.xml:9
+msgid "Sets the friction value."
+msgstr "Stabilește valoarea frecării."
+
+#. (itstool) path: option/_short
+#: /home/vlad/CLionProjects/wayfire/metadata/wobbly.xml:13
+msgid "Spring constant"
+msgstr "K resort"
+
+#. (itstool) path: option/_long
+#: /home/vlad/CLionProjects/wayfire/metadata/wobbly.xml:14
+msgid "Sets the spring constant."
+msgstr "Stabilește constanta elastică a resortului simulat."
+
+#. (itstool) path: option/_short
+#: /home/vlad/CLionProjects/wayfire/metadata/wobbly.xml:18
+msgid "Grid resolution"
+msgstr "Rezoluția grilei"
+
+#. (itstool) path: option/_long
+#: /home/vlad/CLionProjects/wayfire/metadata/wobbly.xml:19
+msgid "Sets the grid resolution."
+msgstr "Stabilește rezoluția grilei."

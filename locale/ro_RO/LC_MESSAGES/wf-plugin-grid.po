@@ -1,0 +1,198 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"POT-Creation-Date: 2025-09-18 14:55+0300\n"
+"PO-Revision-Date: 2025-09-18 19:01+0300\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: ro_RO\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Poedit 3.7\n"
+
+#. (itstool) path: plugin/_short
+#: /home/vlad/CLionProjects/wayfire/metadata/grid.xml:4
+msgid "Grid"
+msgstr "Grilă"
+
+#. (itstool) path: plugin/_long
+#: /home/vlad/CLionProjects/wayfire/metadata/grid.xml:5
+msgid "A plugin to position the windows in certain regions of the output."
+msgstr ""
+"Un modul pentru poziționarea ferestrelor în anumite regiuni ale ecranului."
+
+#. (itstool) path: option/_short
+#: /home/vlad/CLionProjects/wayfire/metadata/grid.xml:8
+msgid "Duration"
+msgstr "Durată"
+
+#. (itstool) path: option/_long
+#: /home/vlad/CLionProjects/wayfire/metadata/grid.xml:9
+msgid "Sets the duration of the animation in milliseconds."
+msgstr "Stabilește durata animației, în milisecunde."
+
+#. (itstool) path: option/_short
+#: /home/vlad/CLionProjects/wayfire/metadata/grid.xml:13
+msgid "Type"
+msgstr "Tip"
+
+#. (itstool) path: option/_long
+#: /home/vlad/CLionProjects/wayfire/metadata/grid.xml:14
+msgid "Sets the type of the animation."
+msgstr "Stabilește tipul animației."
+
+#. (itstool) path: desc/_name
+#: /home/vlad/CLionProjects/wayfire/metadata/grid.xml:18
+msgid "None"
+msgstr "Niciuna"
+
+#. (itstool) path: desc/_name
+#: /home/vlad/CLionProjects/wayfire/metadata/grid.xml:22
+msgid "Crossfade"
+msgstr "Dizolvare"
+
+#. (itstool) path: desc/_name
+#: /home/vlad/CLionProjects/wayfire/metadata/grid.xml:26
+msgid "Wobbly"
+msgstr "Elastic"
+
+#. (itstool) path: option/_short
+#: /home/vlad/CLionProjects/wayfire/metadata/grid.xml:31
+msgid "Bottom left"
+msgstr "Stânga-jos"
+
+#. (itstool) path: option/_long
+#: /home/vlad/CLionProjects/wayfire/metadata/grid.xml:32
+msgid ""
+"Positions the window in the bottom left corner of the screen with the "
+"specified activator. The window takes 1/4 of the screen."
+msgstr ""
+"Pune fereastra în colțul din stânga-jos al ecranului cu activatorul "
+"specificat. Aceasta va ocupa un sfert din ecran."
+
+#. (itstool) path: option/_short
+#: /home/vlad/CLionProjects/wayfire/metadata/grid.xml:36
+msgid "Bottom"
+msgstr "Jos"
+
+#. (itstool) path: option/_long
+#: /home/vlad/CLionProjects/wayfire/metadata/grid.xml:37
+msgid ""
+"Positions the window in the bottom edge of the screen with the specified "
+"activator. The window takes half of the screen."
+msgstr ""
+"Pune fereastra pe marginea de jos a ecranului cu activatorul specificat. "
+"Aceasta va ocupa jumătate din ecran."
+
+#. (itstool) path: option/_short
+#: /home/vlad/CLionProjects/wayfire/metadata/grid.xml:41
+msgid "Bottom right"
+msgstr "Dreapta-jos"
+
+#. (itstool) path: option/_long
+#: /home/vlad/CLionProjects/wayfire/metadata/grid.xml:42
+msgid ""
+"Positions the window in the bottom right corner of the screen with the "
+"specified activator. The window takes 1/4 of the screen."
+msgstr ""
+"Pune fereastra în colțul din dreapta-jos al ecranului cu activatorul "
+"specificat. Aceasta va ocupa un sfert din ecran."
+
+#. (itstool) path: option/_short
+#: /home/vlad/CLionProjects/wayfire/metadata/grid.xml:46
+msgid "Left"
+msgstr "Stânga"
+
+#. (itstool) path: option/_long
+#: /home/vlad/CLionProjects/wayfire/metadata/grid.xml:47
+msgid ""
+"Positions the window in the left edge of the screen with the specified "
+"activator. The window takes half of the screen."
+msgstr ""
+"Pune fereastra pe marginea din stânga a ecranului cu activatorul specificat. "
+"Aceasta va ocupa jumătate din ecran."
+
+#. (itstool) path: option/_short
+#: /home/vlad/CLionProjects/wayfire/metadata/grid.xml:51
+msgid "Center"
+msgstr "Centru"
+
+#. (itstool) path: option/_long
+#: /home/vlad/CLionProjects/wayfire/metadata/grid.xml:52
+msgid ""
+"Positions the window in the center of the screen with the specified "
+"activator. The window is maximized."
+msgstr ""
+"Pune fereastra în centrul ecranului cu activatorul specificat. Aceasta va fi "
+"maximizată."
+
+#. (itstool) path: option/_short
+#: /home/vlad/CLionProjects/wayfire/metadata/grid.xml:56
+msgid "Right"
+msgstr "Dreapta"
+
+#. (itstool) path: option/_long
+#: /home/vlad/CLionProjects/wayfire/metadata/grid.xml:57
+msgid ""
+"Positions the window in the right edge of the screen with the specified "
+"activator. The window takes half of the screen."
+msgstr ""
+"Pune fereastra pe marginea din dreapta a ecranului cu activatorul "
+"specificat. Aceasta va ocupa jumătate din ecran."
+
+#. (itstool) path: option/_short
+#: /home/vlad/CLionProjects/wayfire/metadata/grid.xml:61
+msgid "Top left"
+msgstr "Stânga-sus"
+
+#. (itstool) path: option/_long
+#: /home/vlad/CLionProjects/wayfire/metadata/grid.xml:62
+msgid ""
+"Positions the window in the top left corner of the screen with the specified "
+"activator. The window takes 1/4 of the screen."
+msgstr ""
+"Pune fereastra în colțul din stânga-sus al ecranului cu activatorul "
+"specificat. Aceasta va ocupa un sfert din ecran."
+
+#. (itstool) path: option/_short
+#: /home/vlad/CLionProjects/wayfire/metadata/grid.xml:66
+msgid "Top"
+msgstr "Sus"
+
+#. (itstool) path: option/_long
+#: /home/vlad/CLionProjects/wayfire/metadata/grid.xml:67
+msgid ""
+"Positions the window in the top edge of the screen with the specified "
+"activator. The window takes half of the screen."
+msgstr ""
+"Pune fereastra pe marginea de sus a ecranului cu activatorul specificat. "
+"Aceasta va ocupa jumătate din ecran."
+
+#. (itstool) path: option/_short
+#: /home/vlad/CLionProjects/wayfire/metadata/grid.xml:71
+msgid "Top right"
+msgstr "Dreapta-sus"
+
+#. (itstool) path: option/_long
+#: /home/vlad/CLionProjects/wayfire/metadata/grid.xml:72
+msgid ""
+"Positions the window in the top right corner of the screen with the "
+"specified activator. The window takes 1/4 of the screen."
+msgstr ""
+"Pune fereastra în colțul din dreapta-sus al ecranului cu activatorul "
+"specificat. Aceasta va ocupa un sfert din ecran."
+
+#. (itstool) path: option/_short
+#: /home/vlad/CLionProjects/wayfire/metadata/grid.xml:76
+msgid "Restore"
+msgstr "Restaurare"
+
+#. (itstool) path: option/_long
+#: /home/vlad/CLionProjects/wayfire/metadata/grid.xml:77
+msgid ""
+"Restores the window to its original size and position with the specified "
+"activator."
+msgstr ""
+"Restaurează fereastra la dimensiunea și poziția ei inițiale cu activatorul "
+"specificat."
