@@ -12,31 +12,28 @@ msgstr ""
 "X-Generator: Poedit 3.7\n"
 
 #. (itstool) path: plugin/_short
-#: /home/vlad/CLionProjects/wayfire/metadata/window-rules.xml:4
 msgid "Window Rules"
 msgstr "Reguli de fereastră"
 
 #. (itstool) path: plugin/_long
-#: /home/vlad/CLionProjects/wayfire/metadata/window-rules.xml:5
-msgid "A plugin to apply specific commands to windows by using various criteria."
-msgstr "Un modul pentru a aplica anumite comenzi ferestrelor folosind diverse criterii."
+msgid ""
+"A plugin to apply specific commands to windows by using various criteria."
+msgstr ""
+"Un modul pentru a aplica anumite comenzi ferestrelor folosind diverse "
+"criterii."
 
 #. (itstool) path: option/_short
-#: /home/vlad/CLionProjects/wayfire/metadata/window-rules.xml:8
 msgid "Window rules"
 msgstr "Reguli de fereastră"
 
 #. (itstool) path: option/_long
-#: /home/vlad/CLionProjects/wayfire/metadata/window-rules.xml:9
 msgid "Apply specific commands to windows by using various criteria"
 msgstr "Aplică anumite comenzi ferestrelor folosind diverse criterii."
 
 #. (itstool) path: entry/_short
-#: /home/vlad/CLionProjects/wayfire/metadata/window-rules.xml:11
 msgid "Rule"
 msgstr "Regulă"
 
 #. (itstool) path: entry/_long
-#: /home/vlad/CLionProjects/wayfire/metadata/window-rules.xml:12
 msgid "Defines the rule to be applied"
 msgstr "Definește regula de aplicat."

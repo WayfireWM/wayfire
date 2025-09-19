@@ -12,22 +12,18 @@ msgstr ""
 "X-Generator: Poedit 3.7\n"
 
 #. (itstool) path: plugin/_short
-#: /home/vlad/CLionProjects/wayfire/metadata/alpha.xml:4
 msgid "Alpha"
 msgstr "Alfa"
 
 #. (itstool) path: plugin/_long
-#: /home/vlad/CLionProjects/wayfire/metadata/alpha.xml:5
 msgid "A plugin to change the opacity of windows."
 msgstr "Un modul pentru schimbarea opacității ferestrelor."
 
 #. (itstool) path: option/_short
-#: /home/vlad/CLionProjects/wayfire/metadata/alpha.xml:8
 msgid "Modifier"
 msgstr "Modificator"
 
 #. (itstool) path: option/_long
-#: /home/vlad/CLionProjects/wayfire/metadata/alpha.xml:9
 msgid ""
 "When the modifier key is held down, you can scroll down and up to adjust the "
 "opacity of the window."
@@ -36,12 +32,10 @@ msgstr ""
 "schimba opacitatea ferestrei."
 
 #. (itstool) path: option/_short
-#: /home/vlad/CLionProjects/wayfire/metadata/alpha.xml:13
 msgid "Minimum"
 msgstr "Minim"
 
 #. (itstool) path: option/_long
-#: /home/vlad/CLionProjects/wayfire/metadata/alpha.xml:14
 msgid ""
 "Sets the minimum opacity of the window between 0 (completely transparent) "
 "and 1 (completely opaque)."

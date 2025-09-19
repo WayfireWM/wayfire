@@ -12,41 +12,33 @@ msgstr ""
 "X-Generator: Poedit 3.7\n"
 
 #. (itstool) path: plugin/_short
-#: /home/vlad/CLionProjects/wayfire/metadata/wobbly.xml:4
 msgid "Wobbly"
 msgstr "Elastic"
 
 #. (itstool) path: plugin/_long
-#: /home/vlad/CLionProjects/wayfire/metadata/wobbly.xml:5
 msgid "A plugin to get wobbly windows."
 msgstr "Un modul pentru a obține ferestre elastice."
 
 #. (itstool) path: option/_short
-#: /home/vlad/CLionProjects/wayfire/metadata/wobbly.xml:8
 msgid "Friction"
 msgstr "Frecare"
 
 #. (itstool) path: option/_long
-#: /home/vlad/CLionProjects/wayfire/metadata/wobbly.xml:9
 msgid "Sets the friction value."
 msgstr "Stabilește valoarea frecării."
 
 #. (itstool) path: option/_short
-#: /home/vlad/CLionProjects/wayfire/metadata/wobbly.xml:13
 msgid "Spring constant"
 msgstr "K resort"
 
 #. (itstool) path: option/_long
-#: /home/vlad/CLionProjects/wayfire/metadata/wobbly.xml:14
 msgid "Sets the spring constant."
 msgstr "Stabilește constanta elastică a resortului simulat."
 
 #. (itstool) path: option/_short
-#: /home/vlad/CLionProjects/wayfire/metadata/wobbly.xml:18
 msgid "Grid resolution"
 msgstr "Rezoluția grilei"
 
 #. (itstool) path: option/_long
-#: /home/vlad/CLionProjects/wayfire/metadata/wobbly.xml:19
 msgid "Sets the grid resolution."
 msgstr "Stabilește rezoluția grilei."

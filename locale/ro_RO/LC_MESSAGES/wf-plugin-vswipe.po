@@ -12,131 +12,108 @@ msgstr ""
 "X-Generator: Poedit 3.7\n"
 
 #. (itstool) path: plugin/_short
-#: /home/vlad/CLionProjects/wayfire/metadata/vswipe.xml:4
 msgid "Viewport Swipe"
 msgstr "Glisare birouri"
 
 #. (itstool) path: plugin/_long
-#: /home/vlad/CLionProjects/wayfire/metadata/vswipe.xml:5
 msgid "A plugin to swipe workspaces in a grid."
 msgstr "Un modul pentru a glisa birourile într-o grilă."
 
 #. (itstool) path: option/_short
-#: /home/vlad/CLionProjects/wayfire/metadata/vswipe.xml:8
 msgid "Enable horizontal"
 msgstr "Pe orizontală"
 
 #. (itstool) path: option/_long
-#: /home/vlad/CLionProjects/wayfire/metadata/vswipe.xml:9
 msgid "Enables or disables horizontal swiping."
 msgstr "Activează sau dezactivează glisarea pe orizontală."
 
 #. (itstool) path: option/_short
-#: /home/vlad/CLionProjects/wayfire/metadata/vswipe.xml:13
 msgid "Enable vertical"
 msgstr "Pe verticală"
 
 #. (itstool) path: option/_long
-#: /home/vlad/CLionProjects/wayfire/metadata/vswipe.xml:14
 msgid "Enables or disables vertical swiping."
 msgstr "Activează sau dezactivează glisarea pe verticală."
 
 #. (itstool) path: option/_short
-#: /home/vlad/CLionProjects/wayfire/metadata/vswipe.xml:18
 msgid "Enable free movement"
 msgstr "Mișcare liberă"
 
 #. (itstool) path: option/_long
-#: /home/vlad/CLionProjects/wayfire/metadata/vswipe.xml:19
-msgid "Enables or disables moving diagonally and more than one workspace at a time."
-msgstr "Activează sau dezactivează mișcarea pe diagonală și cu mai mult de un birou deodată."
+msgid ""
+"Enables or disables moving diagonally and more than one workspace at a time."
+msgstr ""
+"Activează sau dezactivează mișcarea pe diagonală și cu mai mult de un birou "
+"deodată."
 
 #. (itstool) path: option/_short
-#: /home/vlad/CLionProjects/wayfire/metadata/vswipe.xml:23
 msgid "Enable smooth transition"
 msgstr "Tranziție lină"
 
 #. (itstool) path: option/_long
-#: /home/vlad/CLionProjects/wayfire/metadata/vswipe.xml:24
 msgid "Enables or disables smooth transition."
 msgstr "Activează sau dezactivează o tranziție lină."
 
 #. (itstool) path: option/_short
-#: /home/vlad/CLionProjects/wayfire/metadata/vswipe.xml:28
 msgid "Duration"
 msgstr "Durata"
 
 #. (itstool) path: option/_long
-#: /home/vlad/CLionProjects/wayfire/metadata/vswipe.xml:29
 msgid "Sets the duration of the animation in milliseconds."
 msgstr "Stabilește durata animației, în milisecunde."
 
 #. (itstool) path: option/_short
-#: /home/vlad/CLionProjects/wayfire/metadata/vswipe.xml:33
 msgid "Background color"
 msgstr "Culoarea fundalului"
 
 #. (itstool) path: option/_long
-#: /home/vlad/CLionProjects/wayfire/metadata/vswipe.xml:34
 msgid "Sets the background color."
 msgstr "Stabilește culoarea fundalului."
 
 #. (itstool) path: option/_short
-#: /home/vlad/CLionProjects/wayfire/metadata/vswipe.xml:38
 msgid "Number of fingers"
 msgstr "Numărul de degete"
 
 #. (itstool) path: option/_long
-#: /home/vlad/CLionProjects/wayfire/metadata/vswipe.xml:39
 msgid "Specifies the number of fingers to swipe."
 msgstr "Specifică numărul de degete care să gliseze."
 
 #. (itstool) path: option/_short
-#: /home/vlad/CLionProjects/wayfire/metadata/vswipe.xml:43
 msgid "Gap"
 msgstr "Gol"
 
 #. (itstool) path: option/_long
-#: /home/vlad/CLionProjects/wayfire/metadata/vswipe.xml:44
 msgid "Changes the gap in pixels."
 msgstr "Schimbă golul dintre birouri, în pixeli."
 
 #. (itstool) path: option/_short
-#: /home/vlad/CLionProjects/wayfire/metadata/vswipe.xml:48
 msgid "threshold"
 msgstr "Glisare minimă"
 
 #. (itstool) path: option/_long
-#: /home/vlad/CLionProjects/wayfire/metadata/vswipe.xml:49
 msgid "Sets the threshold."
 msgstr "Stabilește limita pentru glisare."
 
 #. (itstool) path: option/_short
-#: /home/vlad/CLionProjects/wayfire/metadata/vswipe.xml:53
 msgid "Delta threshold"
 msgstr "Delta glisare minimă"
 
 #. (itstool) path: option/_long
-#: /home/vlad/CLionProjects/wayfire/metadata/vswipe.xml:54
 msgid "Sets the delta threshold."
 msgstr "Stabilește delta limitei pentru glisare."
 
 #. (itstool) path: option/_short
-#: /home/vlad/CLionProjects/wayfire/metadata/vswipe.xml:58
 msgid "Speed factor"
 msgstr "Factor de viteză"
 
 #. (itstool) path: option/_long
-#: /home/vlad/CLionProjects/wayfire/metadata/vswipe.xml:59
 msgid "Sets the speed factor."
 msgstr "Stabilește factorul de viteză."
 
 #. (itstool) path: option/_short
-#: /home/vlad/CLionProjects/wayfire/metadata/vswipe.xml:63
 msgid "Speed cap"
 msgstr "Limită de viteză"
 
 #. (itstool) path: option/_long
-#: /home/vlad/CLionProjects/wayfire/metadata/vswipe.xml:64
 msgid "Sets the speed cap."
 msgstr "Stabilește limita de viteză."

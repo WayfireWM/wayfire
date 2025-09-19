@@ -12,26 +12,22 @@ msgstr ""
 "X-Generator: Poedit 3.7\n"
 
 #. (itstool) path: plugin/_short
-#: /home/vlad/CLionProjects/wayfire/metadata/preserve-output.xml:4
 msgid "Preserve Output"
 msgstr "Păstrează ecranul"
 
 #. (itstool) path: plugin/_long
-#: /home/vlad/CLionProjects/wayfire/metadata/preserve-output.xml:5
 msgid ""
 "A plugin to restore windows to their original position if outputs are "
 "temporarily disconnected."
 msgstr ""
-"Un modul pentru a întoarce ferestrele la poziția lor originală dacă "
-"ecranele sunt deconectate temporar."
+"Un modul pentru a întoarce ferestrele la poziția lor originală dacă ecranele "
+"sunt deconectate temporar."
 
 #. (itstool) path: option/_short
-#: /home/vlad/CLionProjects/wayfire/metadata/preserve-output.xml:8
 msgid "Last output focus timeout"
 msgstr "Cronometru pentru focalizarea ultimului ecran"
 
 #. (itstool) path: option/_long
-#: /home/vlad/CLionProjects/wayfire/metadata/preserve-output.xml:9
 msgid ""
 "Length of time in milliseconds to remember a destroyed output as the last "
 "output with focus, before it can be overridden by another destroyed output "

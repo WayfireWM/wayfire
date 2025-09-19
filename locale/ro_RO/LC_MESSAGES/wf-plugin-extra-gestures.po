@@ -12,35 +12,29 @@ msgstr ""
 "X-Generator: Poedit 3.7\n"
 
 #. (itstool) path: plugin/_short
-#: /home/vlad/CLionProjects/wayfire/metadata/extra-gestures.xml:4
 msgid "Extra Touchscreen Gestures"
 msgstr "Gesturi tactile suplimentare"
 
 #. (itstool) path: plugin/_long
-#: /home/vlad/CLionProjects/wayfire/metadata/extra-gestures.xml:5
 msgid "A plugin which provides several touchscreen gestures."
 msgstr "Un modul care furnizează câteva gesturi pentru ecranul tactil."
 
 #. (itstool) path: option/_short
-#: /home/vlad/CLionProjects/wayfire/metadata/extra-gestures.xml:8
 msgid "Fingers to move"
 msgstr "Degete de mișcat"
 
 #. (itstool) path: option/_long
-#: /home/vlad/CLionProjects/wayfire/metadata/extra-gestures.xml:9
 msgid ""
 "Number of fingers to press and hold to start interactive move of the view."
 msgstr ""
-"Numărul de degete de menținut apăsate pentru a începe mutarea interactivă "
-"a ferestrei."
+"Numărul de degete de menținut apăsate pentru a începe mutarea interactivă a "
+"ferestrei."
 
 #. (itstool) path: option/_short
-#: /home/vlad/CLionProjects/wayfire/metadata/extra-gestures.xml:15
 msgid "Start moving after"
 msgstr "Începe mutarea după"
 
 #. (itstool) path: option/_long
-#: /home/vlad/CLionProjects/wayfire/metadata/extra-gestures.xml:16
 msgid ""
 "Amount of time in milliseconds to hold fingers before starting interactive "
 "move of the view."
@@ -49,12 +43,10 @@ msgstr ""
 "începerii mutării interactive a ferestrei."
 
 #. (itstool) path: option/_short
-#: /home/vlad/CLionProjects/wayfire/metadata/extra-gestures.xml:22
 msgid "Tap to close"
 msgstr "Atinge pentru a închide"
 
 #. (itstool) path: option/_long
-#: /home/vlad/CLionProjects/wayfire/metadata/extra-gestures.xml:23
 msgid ""
 "Number of fingers to tap with to close a window. Set to very high(20) to "
 "disable."

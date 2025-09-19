@@ -14,26 +14,20 @@ msgstr ""
 #. (itstool) path: plugin/_short
 #. (itstool) path: group/_short
 #. (itstool) path: option/_short
-#: /home/vlad/CLionProjects/wayfire/metadata/autostart.xml:4
-#: /home/vlad/CLionProjects/wayfire/metadata/autostart.xml:8
-#: /home/vlad/CLionProjects/wayfire/metadata/autostart.xml:11
 msgid "Autostart"
 msgstr "Pornire automată"
 
 #. (itstool) path: plugin/_long
-#: /home/vlad/CLionProjects/wayfire/metadata/autostart.xml:5
 msgid "A plugin to run shell commands on startup."
 msgstr ""
 "Un modul pentru rularea comenzilor (pentru interpretorul de comandă) la "
 "pornire."
 
 #. (itstool) path: group/_long
-#: /home/vlad/CLionProjects/wayfire/metadata/autostart.xml:9
 msgid "Specifies the shell commands to run on startup."
 msgstr "Specifică comenzile care să fie executate la pornire."
 
 #. (itstool) path: option/_long
-#: /home/vlad/CLionProjects/wayfire/metadata/autostart.xml:12
 msgid ""
 "Executes shell command with `sh` on startup. The program ID does not matter, "
 "but must be different for distinct commands."
@@ -42,12 +36,10 @@ msgstr ""
 "dar trebuie să fie distinct pentru comenzi distincte."
 
 #. (itstool) path: option/_short
-#: /home/vlad/CLionProjects/wayfire/metadata/autostart.xml:19
 msgid "Autostart shell clients"
 msgstr "Pornește automat clienții de interfață a biroului"
 
 #. (itstool) path: option/_long
-#: /home/vlad/CLionProjects/wayfire/metadata/autostart.xml:20
 msgid ""
 "Start wf-panel and wf-background if they are not listed as autostart entries."
 msgstr "Pornește wf-panel și wf-background dacă nu sunt deja trecute în listă."

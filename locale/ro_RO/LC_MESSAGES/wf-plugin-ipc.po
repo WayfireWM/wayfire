@@ -12,11 +12,9 @@ msgstr ""
 "X-Generator: Poedit 3.7\n"
 
 #. (itstool) path: plugin/_short
-#: /home/vlad/CLionProjects/wayfire/metadata/ipc.xml:4
 msgid "IPC protocol"
 msgstr "Protocol IPC"
 
 #. (itstool) path: plugin/_long
-#: /home/vlad/CLionProjects/wayfire/metadata/ipc.xml:5
 msgid "Allow external programs to interact with Wayfire plugins."
 msgstr "Permite programelor externe să interacționeze cu modulele Wayfire."

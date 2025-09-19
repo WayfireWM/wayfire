@@ -12,11 +12,9 @@ msgstr ""
 "X-Generator: Poedit 3.7\n"
 
 #. (itstool) path: plugin/_short
-#: /home/vlad/CLionProjects/wayfire/metadata/gtk-shell.xml:4
 msgid "GTK Shell Protocol"
 msgstr "Protocolul GTK Shell"
 
 #. (itstool) path: plugin/_long
-#: /home/vlad/CLionProjects/wayfire/metadata/gtk-shell.xml:5
 msgid "An implementation of the gtk-shell protocol."
 msgstr "O implementare a protocolului gtk-shell."

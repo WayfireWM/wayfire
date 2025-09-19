@@ -12,12 +12,10 @@ msgstr ""
 "X-Generator: Poedit 3.7\n"
 
 #. (itstool) path: plugin/_short
-#: /home/vlad/CLionProjects/wayfire/metadata/session-lock.xml:4
 msgid "Session Lock Protocol"
 msgstr "Protocolul Blocare sesiune (Session Lock)"
 
 #. (itstool) path: plugin/_long
-#: /home/vlad/CLionProjects/wayfire/metadata/session-lock.xml:5
 msgid ""
 "An implementation of the ext-session-lock-v1 protocol. Provides more secure "
 "screen locking."

@@ -12,12 +12,10 @@ msgstr ""
 "X-Generator: Poedit 3.7\n"
 
 #. (itstool) path: plugin/_short
-#: /home/vlad/CLionProjects/wayfire/metadata/simple-tile.xml:4
 msgid "Simple Tile"
 msgstr "Potrivire simplă"
 
 #. (itstool) path: plugin/_long
-#: /home/vlad/CLionProjects/wayfire/metadata/simple-tile.xml:5
 msgid ""
 "A plugin which provides some tiling features, inspired by Sway. The plugin "
 "is meant to contain only the basics."
@@ -26,24 +24,20 @@ msgstr ""
 "de Sway. Este conceput pentru a conține doar esențialul."
 
 #. (itstool) path: option/_short
-#: /home/vlad/CLionProjects/wayfire/metadata/simple-tile.xml:8
 msgid "Tile enabled for specified window types"
 msgstr "Potrivire activată pentru tipurile specificate de fereastră"
 
 #. (itstool) path: option/_long
-#: /home/vlad/CLionProjects/wayfire/metadata/simple-tile.xml:9
 msgid "Enables tiling for windows matching the specified criteria."
 msgstr ""
 "Activează potrivirea pentru ferestrele care corespund cu criteriile "
 "specificate."
 
 #. (itstool) path: option/_short
-#: /home/vlad/CLionProjects/wayfire/metadata/simple-tile.xml:13
 msgid "Keep fullscreen on adjacent"
 msgstr "Păstrează ecranul complet pe adiacentă"
 
 #. (itstool) path: option/_long
-#: /home/vlad/CLionProjects/wayfire/metadata/simple-tile.xml:14
 msgid ""
 "Specifies whether to keep fullscreen state when changing the focus. If "
 "**true**, the next focused window will also get fullscreen. If **false**, "
@@ -54,12 +48,10 @@ msgstr ""
 "ecranul complet, altfel se va anula ecranul complet."
 
 #. (itstool) path: option/_short
-#: /home/vlad/CLionProjects/wayfire/metadata/simple-tile.xml:19
 msgid "Button move"
 msgstr "Buton de mutare"
 
 #. (itstool) path: option/_long
-#: /home/vlad/CLionProjects/wayfire/metadata/simple-tile.xml:20
 msgid ""
 "When the specified button is held down, you can drag and drop tiled windows "
 "to reorder them and to change the tiling direction."
@@ -68,12 +60,10 @@ msgstr ""
 "potrivite pentru a le reordona și a schimba direcția potrivirii."
 
 #. (itstool) path: option/_short
-#: /home/vlad/CLionProjects/wayfire/metadata/simple-tile.xml:24
 msgid "Button resize"
 msgstr "Buton de redimensionare"
 
 #. (itstool) path: option/_long
-#: /home/vlad/CLionProjects/wayfire/metadata/simple-tile.xml:25
 msgid ""
 "When the specified button is held down, you can drag tiled windows to resize "
 "them."
@@ -82,62 +72,50 @@ msgstr ""
 "pentru a le redimensiona."
 
 #. (itstool) path: option/_short
-#: /home/vlad/CLionProjects/wayfire/metadata/simple-tile.xml:29
 msgid "Key toggle"
 msgstr "Tastă de comutare"
 
 #. (itstool) path: option/_long
-#: /home/vlad/CLionProjects/wayfire/metadata/simple-tile.xml:30
 msgid "Toggles tiling mode with the specified key."
 msgstr "Comută modul de potrivire cu activatorul specificat."
 
 #. (itstool) path: option/_short
-#: /home/vlad/CLionProjects/wayfire/metadata/simple-tile.xml:34
 msgid "Key focus left"
 msgstr "Tastă pentru focalizarea la stânga"
 
 #. (itstool) path: option/_long
-#: /home/vlad/CLionProjects/wayfire/metadata/simple-tile.xml:35
 msgid "Moves focus to the window left with the specified key."
 msgstr "Mută focalizarea la fereastra din stânga cu activatorul specificat."
 
 #. (itstool) path: option/_short
-#: /home/vlad/CLionProjects/wayfire/metadata/simple-tile.xml:39
 msgid "Key focus right"
 msgstr "Tastă pentru focalizarea la dreapta"
 
 #. (itstool) path: option/_long
-#: /home/vlad/CLionProjects/wayfire/metadata/simple-tile.xml:40
 msgid "Moves focus to the window right with the specified key."
 msgstr "Mută focalizarea la fereastra din dreapta cu activatorul specificat."
 
 #. (itstool) path: option/_short
-#: /home/vlad/CLionProjects/wayfire/metadata/simple-tile.xml:44
 msgid "Key focus above"
 msgstr "Tastă pentru focalizarea în sus"
 
 #. (itstool) path: option/_long
-#: /home/vlad/CLionProjects/wayfire/metadata/simple-tile.xml:45
 msgid "Moves focus to the window above with the specified key."
 msgstr "Mută focalizarea la fereastra de deasupra cu activatorul specificat."
 
 #. (itstool) path: option/_short
-#: /home/vlad/CLionProjects/wayfire/metadata/simple-tile.xml:49
 msgid "Key focus below"
 msgstr "Tastă pentru focalizarea în jos"
 
 #. (itstool) path: option/_long
-#: /home/vlad/CLionProjects/wayfire/metadata/simple-tile.xml:50
 msgid "Moves focus to the window below with the specified key."
 msgstr "Mută focalizarea la fereastra de dedesubt cu activatorul specificat."
 
 #. (itstool) path: option/_short
-#: /home/vlad/CLionProjects/wayfire/metadata/simple-tile.xml:54
 msgid "Key toggle maximized"
 msgstr "Tastă pentru comutarea maximizării"
 
 #. (itstool) path: option/_long
-#: /home/vlad/CLionProjects/wayfire/metadata/simple-tile.xml:55
 msgid ""
 "Toggles the maximized state of the currently focused tiled view. When "
 "enabled, the view fills the workarea (like fullscreen, but stays in its "
@@ -149,12 +127,10 @@ msgstr ""
 "dimensiunea anterioară."
 
 #. (itstool) path: option/_short
-#: /home/vlad/CLionProjects/wayfire/metadata/simple-tile.xml:63
 msgid "Inner gap size"
 msgstr "Dimensiunea golului interior"
 
 #. (itstool) path: option/_long
-#: /home/vlad/CLionProjects/wayfire/metadata/simple-tile.xml:64
 msgid ""
 "Number of pixels to shrink of a view when it has a neighbor in a given "
 "direction."
@@ -163,12 +139,10 @@ msgstr ""
 "anumită direcție."
 
 #. (itstool) path: option/_short
-#: /home/vlad/CLionProjects/wayfire/metadata/simple-tile.xml:68
 msgid "Outer horizontal gap size"
 msgstr "Dimensiunea marginii exterioare pe orizontală"
 
 #. (itstool) path: option/_long
-#: /home/vlad/CLionProjects/wayfire/metadata/simple-tile.xml:69
 msgid ""
 "Number of pixels to shrink of a view when it has no neighbor on the left or "
 "on the right."
@@ -177,12 +151,10 @@ msgstr ""
 "stânga sau în dreapta."
 
 #. (itstool) path: option/_short
-#: /home/vlad/CLionProjects/wayfire/metadata/simple-tile.xml:73
 msgid "Outer vertical gap size"
 msgstr "Dimensiunea marginii exterioare pe verticală"
 
 #. (itstool) path: option/_long
-#: /home/vlad/CLionProjects/wayfire/metadata/simple-tile.xml:74
 msgid ""
 "Number of pixels to shrink of a view when it has no neighbor above or below."
 msgstr ""
@@ -190,12 +162,10 @@ msgstr ""
 "sus sau în jos."
 
 #. (itstool) path: option/_short
-#: /home/vlad/CLionProjects/wayfire/metadata/simple-tile.xml:78
 msgid "Resize animation duration"
 msgstr "Durata animației de redimensionare"
 
 #. (itstool) path: option/_long
-#: /home/vlad/CLionProjects/wayfire/metadata/simple-tile.xml:79
 msgid ""
 "The duration of the crossfade animation in situations where a tiled view's "
 "geometry changes."
@@ -204,16 +174,13 @@ msgstr ""
 "schimbă."
 
 #. (itstool) path: option/_short
-#: /home/vlad/CLionProjects/wayfire/metadata/simple-tile.xml:84
 msgid "Preview fill color"
 msgstr "Culoarea umplerii previzualizării"
 
 #. (itstool) path: option/_short
-#: /home/vlad/CLionProjects/wayfire/metadata/simple-tile.xml:88
 msgid "Preview border color"
 msgstr "Culoarea marginii previzualizării"
 
 #. (itstool) path: option/_short
-#: /home/vlad/CLionProjects/wayfire/metadata/simple-tile.xml:92
 msgid "Preview border width"
 msgstr "Grosimea marginii previzualizării"

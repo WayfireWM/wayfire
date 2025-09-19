@@ -12,11 +12,9 @@ msgstr ""
 "X-Generator: Poedit 3.7\n"
 
 #. (itstool) path: plugin/_short
-#: /home/vlad/CLionProjects/wayfire/metadata/foreign-toplevel.xml:4
 msgid "Foreign Toplevel Protocol"
 msgstr "Protocol principale străine (Foreign Toplevel)"
 
 #. (itstool) path: plugin/_long
-#: /home/vlad/CLionProjects/wayfire/metadata/foreign-toplevel.xml:5
 msgid "An implementation of the wlr-foreign-toplevel-management-v1 protocol."
 msgstr "O implementare a protocolului wlr-foreign-toplevel-management-v1."

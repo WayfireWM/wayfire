@@ -12,12 +12,10 @@ msgstr ""
 "X-Generator: Poedit 3.7\n"
 
 #. (itstool) path: plugin/_short
-#: /home/vlad/CLionProjects/wayfire/metadata/ipc-rules.xml:4
 msgid "Window Rules IPC Interface"
 msgstr "Interfață IPC pentru reguli de ferestre"
 
 #. (itstool) path: plugin/_long
-#: /home/vlad/CLionProjects/wayfire/metadata/ipc-rules.xml:5
 msgid ""
 "Interface to allow an external program to implement window rules (requires "
 "the IPC plugin)."

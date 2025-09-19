@@ -12,21 +12,17 @@ msgstr ""
 "X-Generator: Poedit 3.7\n"
 
 #. (itstool) path: plugin/_short
-#: /home/vlad/CLionProjects/wayfire/metadata/wayfire-shell.xml:4
 msgid "Wayfire Shell Protocol"
 msgstr "Protocol Interfață Wayfire"
 
 #. (itstool) path: plugin/_long
-#: /home/vlad/CLionProjects/wayfire/metadata/wayfire-shell.xml:5
 msgid "An implementation of the wayfire-shell protocol."
 msgstr "O implementare a protocolului wayfire-shell."
 
 #. (itstool) path: option/_short
-#: /home/vlad/CLionProjects/wayfire/metadata/wayfire-shell.xml:8
 msgid "Toggle Menu"
 msgstr "Comută meniul"
 
 #. (itstool) path: option/_long
-#: /home/vlad/CLionProjects/wayfire/metadata/wayfire-shell.xml:9
 msgid "Toggles menu with the specified activator."
 msgstr "Comută meniul cu activatorul specificat."

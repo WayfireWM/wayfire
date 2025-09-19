@@ -12,49 +12,40 @@ msgstr ""
 "X-Generator: Poedit 3.7\n"
 
 #. (itstool) path: plugin/_short
-#: /home/vlad/CLionProjects/wayfire/metadata/workarounds.xml:4
 msgid "Workarounds"
 msgstr "Improvizații"
 
 #. (itstool) path: plugin/_long
-#: /home/vlad/CLionProjects/wayfire/metadata/workarounds.xml:5
 msgid "Some hacks that might be required to make things work."
 msgstr ""
 "Niște improvizații care ar putea fi necesare pentru ca lucrurile să "
 "funcționeze."
 
 #. (itstool) path: option/_short
-#: /home/vlad/CLionProjects/wayfire/metadata/workarounds.xml:8
 msgid "Application ID mode"
 msgstr "Modul identificatorului de aplicație"
 
 #. (itstool) path: option/_long
-#: /home/vlad/CLionProjects/wayfire/metadata/workarounds.xml:9
 msgid "Specifies the application ID mode."
 msgstr "Specifică modul identificatorului de aplicație."
 
 #. (itstool) path: desc/_name
-#: /home/vlad/CLionProjects/wayfire/metadata/workarounds.xml:13
 msgid "Stock"
 msgstr "Stoc"
 
 #. (itstool) path: desc/_name
-#: /home/vlad/CLionProjects/wayfire/metadata/workarounds.xml:17
 msgid "GTK Shell"
 msgstr "Interfață GTK"
 
 #. (itstool) path: desc/_name
-#: /home/vlad/CLionProjects/wayfire/metadata/workarounds.xml:21
 msgid "Full"
 msgstr "Complet"
 
 #. (itstool) path: option/_short
-#: /home/vlad/CLionProjects/wayfire/metadata/workarounds.xml:25
 msgid "Make all dialogs modal"
 msgstr "Fă toate dialogurile modale"
 
 #. (itstool) path: option/_long
-#: /home/vlad/CLionProjects/wayfire/metadata/workarounds.xml:26
 msgid ""
 "If false, the main window can be focused even if it has a dialog. The dialog "
 "is nevertheless kept on top of the main window. Kwin defaults to false."
@@ -64,12 +55,10 @@ msgstr ""
 "implicit."
 
 #. (itstool) path: option/_short
-#: /home/vlad/CLionProjects/wayfire/metadata/workarounds.xml:30
 msgid "Allow dynamic repaint delay"
 msgstr "Permite întârzierea dinamică la redesenare"
 
 #. (itstool) path: option/_long
-#: /home/vlad/CLionProjects/wayfire/metadata/workarounds.xml:31
 msgid ""
 "If true, allows Wayfire to dynamically recalculate its max_render_time, i.e "
 "allow render time higher than max_render_time."
@@ -78,13 +67,11 @@ msgstr ""
 "permițând un timp de desenare mai mare decât max_render_time."
 
 #. (itstool) path: option/_short
-#: /home/vlad/CLionProjects/wayfire/metadata/workarounds.xml:35
 msgid "Use external output configuration instead of Wayfire's own."
 msgstr ""
 "Folosește configurația externă a ecranelor în locul celei proprii a Wayfire."
 
 #. (itstool) path: option/_long
-#: /home/vlad/CLionProjects/wayfire/metadata/workarounds.xml:36
 msgid ""
 "If true, Wayfire will not handle any configuration options for outputs in "
 "the config file once an external daemon like https://github.com/emersion/"
@@ -100,12 +87,10 @@ msgstr ""
 "linii de mod particularizate."
 
 #. (itstool) path: option/_short
-#: /home/vlad/CLionProjects/wayfire/metadata/workarounds.xml:42
 msgid "Allow views to overlap between multiple outputs."
 msgstr "Permite ferestrelor să se suprapună între mai multe ferestre"
 
 #. (itstool) path: option/_long
-#: /home/vlad/CLionProjects/wayfire/metadata/workarounds.xml:43
 msgid ""
 "Allow views to overlap between multiple outputs. Many of the core plugins "
 "will not behave properly with this option set!"
@@ -114,7 +99,6 @@ msgstr ""
 "incluse nu se vor comporta corect cu această opțiune!"
 
 #. (itstool) path: option/_short
-#: /home/vlad/CLionProjects/wayfire/metadata/workarounds.xml:47
 msgid ""
 "Force xdg-decoration clients to use the compositor-preferred decoration mode."
 msgstr ""
@@ -122,7 +106,6 @@ msgstr ""
 "compozitor"
 
 #. (itstool) path: option/_long
-#: /home/vlad/CLionProjects/wayfire/metadata/workarounds.xml:48
 msgid ""
 "Force xdg-decoration clients to use the compositor-preferred decoration mode "
 "regardless of the client's preference."
@@ -131,12 +114,10 @@ msgstr ""
 "compozitor, indiferent de preferința clientului."
 
 #. (itstool) path: option/_short
-#: /home/vlad/CLionProjects/wayfire/metadata/workarounds.xml:52
 msgid "Enable calling dlclose() when a plugin is unloaded"
 msgstr "Activează apelul la dlclose() când se anulează încărcarea unui modul"
 
 #. (itstool) path: option/_long
-#: /home/vlad/CLionProjects/wayfire/metadata/workarounds.xml:53
 msgid ""
 "Enable calling dlclose() when a plugin is unloaded. Note that this may not "
 "work well with all plugins."
@@ -145,12 +126,10 @@ msgstr ""
 "putea să nu funcționeze bine cu toate modulele."
 
 #. (itstool) path: option/_short
-#: /home/vlad/CLionProjects/wayfire/metadata/workarounds.xml:57
 msgid "Discard output from commands invoked by Wayfire."
 msgstr "Aruncă ieșirea de la comenzile invocate de Wayfire"
 
 #. (itstool) path: option/_long
-#: /home/vlad/CLionProjects/wayfire/metadata/workarounds.xml:58
 msgid ""
 "Discard output from commands invoked by Wayfire, so that they don't end up "
 "in the logs."
@@ -159,12 +138,10 @@ msgstr ""
 "jurnale."
 
 #. (itstool) path: option/_short
-#: /home/vlad/CLionProjects/wayfire/metadata/workarounds.xml:62
 msgid "Enable support for the newer input-method-v2 protocol."
 msgstr "Activează sprijinul pentru noul protocol input-method-v2"
 
 #. (itstool) path: option/_long
-#: /home/vlad/CLionProjects/wayfire/metadata/workarounds.xml:63
 msgid ""
 "Enable support for the newer input-method-v2 protocol. Note that the input-"
 "method-v1 protocol works better in many cases."
@@ -173,7 +150,6 @@ msgstr ""
 "input-method-v1 funcționează mai bine în multe cazuri."
 
 #. (itstool) path: option/_short
-#: /home/vlad/CLionProjects/wayfire/metadata/workarounds.xml:67
 msgid ""
 "Enable certain damage optimizations which are based on a surfaces' opaque "
 "regions."
@@ -182,7 +158,6 @@ msgstr ""
 "unei suprafețe"
 
 #. (itstool) path: option/_long
-#: /home/vlad/CLionProjects/wayfire/metadata/workarounds.xml:68
 msgid ""
 "Enable certain damage optimizations which are based on a surfaces' opaque "
 "regions. In some cases, this optimization might give unexpected results (i.e "
@@ -195,12 +170,10 @@ msgstr ""
 "este permis conform protocolului Wayland."
 
 #. (itstool) path: option/_short
-#: /home/vlad/CLionProjects/wayfire/metadata/workarounds.xml:72
 msgid "Force frame synchronization."
 msgstr "Forțează sincronizarea cadrelor"
 
 #. (itstool) path: option/_long
-#: /home/vlad/CLionProjects/wayfire/metadata/workarounds.xml:73
 msgid ""
 "This option can be used to workaround driver bugs that cause rendering "
 "artifacts, though can cause more resource usage. Leave disabled if unsure."
@@ -210,12 +183,10 @@ msgstr ""
 "de resurse. Lăsați-o dezactivată dacă nu știți sigur."
 
 #. (itstool) path: option/_short
-#: /home/vlad/CLionProjects/wayfire/metadata/workarounds.xml:77
 msgid "Maximum buffer size"
 msgstr "Dimensiunea maximă a zonei temporare"
 
 #. (itstool) path: option/_long
-#: /home/vlad/CLionProjects/wayfire/metadata/workarounds.xml:78
 msgid ""
 "Maximum size in pixels of graphics buffers used for rendering. Needs to be "
 "set lower on some systems to avoid crashes and other issues."
@@ -225,23 +196,19 @@ msgstr ""
 "crăparea."
 
 #. (itstool) path: option/_short
-#: /home/vlad/CLionProjects/wayfire/metadata/workarounds.xml:82
 msgid "Disable primary selection"
 msgstr "Dezactivează selecția primară"
 
 #. (itstool) path: option/_long
-#: /home/vlad/CLionProjects/wayfire/metadata/workarounds.xml:83
 msgid "Disable primary selection (middle-click copy/paste)."
 msgstr ""
 "Dezactivează selecția primară (copiere/inserare cu butonul din mijloc)."
 
 #. (itstool) path: option/_short
-#: /home/vlad/CLionProjects/wayfire/metadata/workarounds.xml:87
 msgid "Focus main surface instead of popup menus"
 msgstr "Focalizează suprafața principală în locul listelor-meniu"
 
 #. (itstool) path: option/_long
-#: /home/vlad/CLionProjects/wayfire/metadata/workarounds.xml:88
 msgid ""
 "Focus the main surface instead of popup menus. Works around some bugs in Qt-"
 "based apps related to copy-paste."
@@ -250,12 +217,10 @@ msgstr ""
 "probleme legate de copiere/inserare în aplicațiile Qt."
 
 #. (itstool) path: option/_short
-#: /home/vlad/CLionProjects/wayfire/metadata/workarounds.xml:92
 msgid "Keep last focused toplevel activated"
 msgstr "Păstrează ultima principală focalizată activată"
 
 #. (itstool) path: option/_long
-#: /home/vlad/CLionProjects/wayfire/metadata/workarounds.xml:93
 msgid ""
 "When a layer-shell view grabs keyboard focus, keep the last focused toplevel "
 "view as activated."
@@ -264,22 +229,18 @@ msgstr ""
 "tastaturii, păstrează ultima fereastră principală focalizată ca activată."
 
 #. (itstool) path: option/_short
-#: /home/vlad/CLionProjects/wayfire/metadata/workarounds.xml:97
 msgid "Auto-reload Config"
 msgstr "Reîncărcarea automată a configurației"
 
 #. (itstool) path: option/_long
-#: /home/vlad/CLionProjects/wayfire/metadata/workarounds.xml:98
 msgid "Automatically reload the config file when it's modified."
 msgstr "Reîncarcă automat fișierul cu configurări la modificare."
 
 #. (itstool) path: option/_short
-#: /home/vlad/CLionProjects/wayfire/metadata/workarounds.xml:102
 msgid "Config reload delay"
 msgstr "Întârziere la reîncărcarea configurării"
 
 #. (itstool) path: option/_long
-#: /home/vlad/CLionProjects/wayfire/metadata/workarounds.xml:103
 msgid "Delay in milliseconds after a config file change before reloading."
 msgstr ""
 "Întârziere în milisecunde după o schimbare în fișierul de configurări "

@@ -12,23 +12,19 @@ msgstr ""
 "X-Generator: Poedit 3.7\n"
 
 #. (itstool) path: plugin/_short
-#: /home/vlad/CLionProjects/wayfire/metadata/shortcuts-inhibit.xml:4
 msgid "Keyboard Shortcuts Inhibit Protocol"
 msgstr ""
 "Protocolul Inhibarea scurtăturilor de tastatură (Keyboard Shortcuts Inhibit)"
 
 #. (itstool) path: plugin/_long
-#: /home/vlad/CLionProjects/wayfire/metadata/shortcuts-inhibit.xml:5
 msgid "An implementation of the keyboard-shortcuts-inhibit-v1 protocol."
 msgstr "O implementare a protocolului keyboard-shortcuts-inhibit-v1."
 
 #. (itstool) path: option/_short
-#: /home/vlad/CLionProjects/wayfire/metadata/shortcuts-inhibit.xml:9
 msgid "Inhibit by default"
 msgstr "Inhibare implicită"
 
 #. (itstool) path: option/_long
-#: /home/vlad/CLionProjects/wayfire/metadata/shortcuts-inhibit.xml:10
 msgid ""
 "Criteria for which apps to inhibit input for even though they do not request "
 "it via the protocol."
@@ -37,22 +33,18 @@ msgstr ""
 "prin protocol."
 
 #. (itstool) path: option/_short
-#: /home/vlad/CLionProjects/wayfire/metadata/shortcuts-inhibit.xml:15
 msgid "Ignore views"
 msgstr "Ignoră ferestrele"
 
 #. (itstool) path: option/_long
-#: /home/vlad/CLionProjects/wayfire/metadata/shortcuts-inhibit.xml:16
 msgid "Restrict matched views from activating shortcuts inhibit."
 msgstr ""
 "Nu permite ferestrelor care corespund să activeze inhibarea scurtăturilor."
 
 #. (itstool) path: option/_short
-#: /home/vlad/CLionProjects/wayfire/metadata/shortcuts-inhibit.xml:21
 msgid "Break current inhibitor"
 msgstr "Anulează inhibitorul actual"
 
 #. (itstool) path: option/_long
-#: /home/vlad/CLionProjects/wayfire/metadata/shortcuts-inhibit.xml:22
 msgid "A keybinding to remove the currently active inhibitor temporary."
 msgstr "O asociere pentru a suprima temporar inhibitorul momentan activ."

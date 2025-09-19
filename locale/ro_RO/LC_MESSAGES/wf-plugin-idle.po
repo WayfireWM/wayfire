@@ -12,23 +12,19 @@ msgstr ""
 "X-Generator: Poedit 3.7\n"
 
 #. (itstool) path: plugin/_short
-#: /home/vlad/CLionProjects/wayfire/metadata/idle.xml:4
 msgid "Idle"
 msgstr "Inactivitate"
 
 #. (itstool) path: plugin/_long
-#: /home/vlad/CLionProjects/wayfire/metadata/idle.xml:5
 msgid "A plugin for idle settings, such as the screensaver and DPMS."
 msgstr ""
 "Un modul pentru opțiuni de inactivitate, precum protectorul de ecran și DPMS."
 
 #. (itstool) path: option/_short
-#: /home/vlad/CLionProjects/wayfire/metadata/idle.xml:9
 msgid "Toggle"
 msgstr "Comutare"
 
 #. (itstool) path: option/_long
-#: /home/vlad/CLionProjects/wayfire/metadata/idle.xml:10
 msgid ""
 "Disables the compositor going idle with the specified activator. Pressing "
 "again reactivates."
@@ -37,12 +33,10 @@ msgstr ""
 "Apăsarea din nou reactivează."
 
 #. (itstool) path: option/_short
-#: /home/vlad/CLionProjects/wayfire/metadata/idle.xml:15
 msgid "Screensaver timeout"
 msgstr "Timp înaintea pornirii protectorului de ecran"
 
 #. (itstool) path: option/_long
-#: /home/vlad/CLionProjects/wayfire/metadata/idle.xml:16
 msgid ""
 "Displays the screensaver after the specified seconds of inactivity. Setting "
 "the value to **-1** disables the screensaver."
@@ -51,12 +45,10 @@ msgstr ""
 "secunde; reglarea la -1 îl dezactivează."
 
 #. (itstool) path: option/_short
-#: /home/vlad/CLionProjects/wayfire/metadata/idle.xml:21
 msgid "DPMS timeout"
 msgstr "Timp înaintea DPMS"
 
 #. (itstool) path: option/_long
-#: /home/vlad/CLionProjects/wayfire/metadata/idle.xml:22
 msgid ""
 "Enters power saving mode after the specified seconds of inactivity. Setting "
 "the value to **-1** disables power saving."
@@ -65,22 +57,18 @@ msgstr ""
 "inactivitate, în secunde. Reglarea la -1 dezactivează modul economic."
 
 #. (itstool) path: option/_short
-#: /home/vlad/CLionProjects/wayfire/metadata/idle.xml:27
 msgid "Disable on fullscreen"
 msgstr "Dezactivare la ecran complet"
 
 #. (itstool) path: option/_long
-#: /home/vlad/CLionProjects/wayfire/metadata/idle.xml:28
 msgid "Disables idle on fullscreen."
 msgstr "Dezactivează inactivitatea când ceva este în ecran complet."
 
 #. (itstool) path: option/_short
-#: /home/vlad/CLionProjects/wayfire/metadata/idle.xml:33
 msgid "Disable idle timeout initially"
 msgstr "Dezactivează cronometrul de inactivitate în mod implicit"
 
 #. (itstool) path: option/_long
-#: /home/vlad/CLionProjects/wayfire/metadata/idle.xml:34
 msgid ""
 "Disables idle timeout innitially as if the toggle was called once after "
 "loading the plugin."
@@ -89,12 +77,10 @@ msgstr ""
 "modulului, ca și cum ar fi fost activat comutatorul."
 
 #. (itstool) path: option/_short
-#: /home/vlad/CLionProjects/wayfire/metadata/idle.xml:39
 msgid "Cube zoom speed"
 msgstr "Viteză micșorare pentru cub"
 
 #. (itstool) path: option/_long
-#: /home/vlad/CLionProjects/wayfire/metadata/idle.xml:40
 msgid ""
 "Sets the zoom speed. The speed means how long it will take from the time the "
 "screensaver starts to the time the cube reaches `idle.cube_max_zoom`."
@@ -103,21 +89,17 @@ msgstr ""
 "protectorului de ecran să ajungă la `idle.cube_max_zoom` după pornire."
 
 #. (itstool) path: option/_short
-#: /home/vlad/CLionProjects/wayfire/metadata/idle.xml:44
 msgid "Cube rotate speed"
 msgstr "Viteza rotirii cubului"
 
 #. (itstool) path: option/_long
-#: /home/vlad/CLionProjects/wayfire/metadata/idle.xml:45
 msgid "Sets the speed rotation of the cube."
 msgstr "Stabilește viteza cu care se învârte cubul."
 
 #. (itstool) path: option/_short
-#: /home/vlad/CLionProjects/wayfire/metadata/idle.xml:50
 msgid "Cube max zoom"
 msgstr "Micșorare maximă a cubului"
 
 #. (itstool) path: option/_long
-#: /home/vlad/CLionProjects/wayfire/metadata/idle.xml:51
 msgid "Sets the maximum zoom level."
 msgstr "Stabilește nivelul maxim de micșorare."

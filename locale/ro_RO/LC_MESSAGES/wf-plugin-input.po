@@ -12,22 +12,18 @@ msgstr ""
 "X-Generator: Poedit 3.7\n"
 
 #. (itstool) path: plugin/_short
-#: /home/vlad/CLionProjects/wayfire/metadata/input.xml:4
 msgid "Input"
 msgstr "Intrare"
 
 #. (itstool) path: plugin/_long
-#: /home/vlad/CLionProjects/wayfire/metadata/input.xml:5
 msgid "Input configuration."
 msgstr "Configurarea aparatelor de intrare."
 
 #. (itstool) path: option/_short
-#: /home/vlad/CLionProjects/wayfire/metadata/input.xml:8
 msgid "Left-handed mode"
 msgstr "Mod pentru stângaci"
 
 #. (itstool) path: option/_long
-#: /home/vlad/CLionProjects/wayfire/metadata/input.xml:9
 msgid ""
 "Switches the device’s functionality to be more accommodating for left-handed "
 "users."
@@ -36,22 +32,18 @@ msgstr ""
 "utilizatorii stângaci."
 
 #. (itstool) path: group/_short
-#: /home/vlad/CLionProjects/wayfire/metadata/input.xml:14
 msgid "Keyboard"
 msgstr "Tastatură"
 
 #. (itstool) path: group/_long
-#: /home/vlad/CLionProjects/wayfire/metadata/input.xml:15
 msgid "Configure the keyboard."
 msgstr "Configurează tastatura."
 
 #. (itstool) path: option/_short
-#: /home/vlad/CLionProjects/wayfire/metadata/input.xml:18
 msgid "Modifier binding timeout"
 msgstr "Cronometrul pentru asocierile la modificatoare"
 
 #. (itstool) path: option/_long
-#: /home/vlad/CLionProjects/wayfire/metadata/input.xml:19
 msgid ""
 "Cancels modifier actions (like `Super` for the `expo` plugin) when held for "
 "the specified timeout (in milliseconds). Setting the value to **0** never "
@@ -62,22 +54,18 @@ msgstr ""
 "că nu se anulează niciodată."
 
 #. (itstool) path: option/_short
-#: /home/vlad/CLionProjects/wayfire/metadata/input.xml:24
 msgid "Key repeat delay"
 msgstr "Întârzierea repetării tastelor"
 
 #. (itstool) path: option/_long
-#: /home/vlad/CLionProjects/wayfire/metadata/input.xml:25
 msgid "Sets the amount of time a key must be held before it starts repeating."
 msgstr "Stabilește pentru cât timp trebuie menținută o tastă până se repetă."
 
 #. (itstool) path: option/_short
-#: /home/vlad/CLionProjects/wayfire/metadata/input.xml:29
 msgid "Key repeat rate"
 msgstr "Rata repetării tastelor"
 
 #. (itstool) path: option/_long
-#: /home/vlad/CLionProjects/wayfire/metadata/input.xml:30
 msgid ""
 "Sets the frequency of key repeats once the `input.kb_repeat_delay` has "
 "passed."
@@ -86,32 +74,26 @@ msgstr ""
 "input.kb_repeat_delay."
 
 #. (itstool) path: option/_short
-#: /home/vlad/CLionProjects/wayfire/metadata/input.xml:34
 msgid "Numlock default state"
 msgstr "Starea implicită a blocării cifrelor"
 
 #. (itstool) path: option/_long
-#: /home/vlad/CLionProjects/wayfire/metadata/input.xml:35
 msgid "Default numlock state when wayfire starts."
 msgstr "Starea blocării cifrelor (Num Lock) când pornește Wayfire."
 
 #. (itstool) path: option/_short
-#: /home/vlad/CLionProjects/wayfire/metadata/input.xml:39
 msgid "Capslock default state"
 msgstr "Starea implicită a blocării majusculelor"
 
 #. (itstool) path: option/_long
-#: /home/vlad/CLionProjects/wayfire/metadata/input.xml:40
 msgid "Default capslock state when wayfire starts."
 msgstr "Starea blocării majusculelor (Caps Lock) când pornește Wayfire."
 
 #. (itstool) path: option/_short
-#: /home/vlad/CLionProjects/wayfire/metadata/input.xml:45
 msgid "XKB layout"
 msgstr "Aranjament XKB"
 
 #. (itstool) path: option/_long
-#: /home/vlad/CLionProjects/wayfire/metadata/input.xml:46
 msgid ""
 "Sets the layout of the keyboard, like `us` or `fr`. Multiple layouts can be "
 "specified by separating them with commas."
@@ -120,12 +102,10 @@ msgstr ""
 "aranjamente pot fi specificate separându-le cu virgule."
 
 #. (itstool) path: option/_short
-#: /home/vlad/CLionProjects/wayfire/metadata/input.xml:50
 msgid "XKB model"
 msgstr "Model XKB"
 
 #. (itstool) path: option/_long
-#: /home/vlad/CLionProjects/wayfire/metadata/input.xml:51
 msgid ""
 "Sets the model of the keyboard. This has an influence for some extra keys "
 "your keyboard might have."
@@ -134,12 +114,10 @@ msgstr ""
 "care pot exista pe tastatura dumneavoastră."
 
 #. (itstool) path: option/_short
-#: /home/vlad/CLionProjects/wayfire/metadata/input.xml:55
 msgid "XKB options"
 msgstr "Opțiuni XKB"
 
 #. (itstool) path: option/_long
-#: /home/vlad/CLionProjects/wayfire/metadata/input.xml:56
 msgid ""
 "Sets extra XKB configuration options for the keyboard. Multiple options can "
 "be specified by separating them with commas."
@@ -148,44 +126,36 @@ msgstr ""
 "fi specificate separându-le cu virgule."
 
 #. (itstool) path: option/_short
-#: /home/vlad/CLionProjects/wayfire/metadata/input.xml:60
 msgid "XKB rules"
 msgstr "Reguli XKB"
 
 #. (itstool) path: option/_long
-#: /home/vlad/CLionProjects/wayfire/metadata/input.xml:61
 msgid "Sets files of rules to be used for keyboard mapping composition."
 msgstr ""
 "Stabilește fișiere de reguli de folosit pentru compunerea aranjamentelor de "
 "tastatură."
 
 #. (itstool) path: option/_short
-#: /home/vlad/CLionProjects/wayfire/metadata/input.xml:65
 msgid "XKB variant"
 msgstr "Variantă XKB"
 
 #. (itstool) path: option/_long
-#: /home/vlad/CLionProjects/wayfire/metadata/input.xml:66
 msgid "Sets the variant of the keyboard, like `dvorak` or `colemak`."
 msgstr "Stabilește varianta tastaturii, precum «dvorak» sau «colemak»."
 
 #. (itstool) path: group/_short
-#: /home/vlad/CLionProjects/wayfire/metadata/input.xml:72
 msgid "Mouse"
 msgstr "Maus"
 
 #. (itstool) path: group/_long
-#: /home/vlad/CLionProjects/wayfire/metadata/input.xml:73
 msgid "Configure the mouse."
 msgstr "Configurează mausul."
 
 #. (itstool) path: option/_short
-#: /home/vlad/CLionProjects/wayfire/metadata/input.xml:76
 msgid "Middle-click emulation"
 msgstr "Echivalarea clicului de mijloc"
 
 #. (itstool) path: option/_long
-#: /home/vlad/CLionProjects/wayfire/metadata/input.xml:77
 msgid ""
 "Enables middle button emulation by hitting the left and right buttons "
 "simultaneously."
@@ -194,63 +164,42 @@ msgstr ""
 "de mijloc."
 
 #. (itstool) path: option/_short
-#: /home/vlad/CLionProjects/wayfire/metadata/input.xml:81
 msgid "Mouse acceleration profile"
 msgstr "Profilul accelerației mausului"
 
 #. (itstool) path: option/_long
-#: /home/vlad/CLionProjects/wayfire/metadata/input.xml:82
 msgid "Sets the pointer acceleration profile."
 msgstr "Stabilește profilul pentru accelerație."
 
 #. (itstool) path: desc/_name
-#: /home/vlad/CLionProjects/wayfire/metadata/input.xml:86
-#: /home/vlad/CLionProjects/wayfire/metadata/input.xml:130
-#: /home/vlad/CLionProjects/wayfire/metadata/input.xml:156
-#: /home/vlad/CLionProjects/wayfire/metadata/input.xml:177
-#: /home/vlad/CLionProjects/wayfire/metadata/input.xml:227
-#: /home/vlad/CLionProjects/wayfire/metadata/input.xml:273
 msgid "Default"
 msgstr "Standard"
 
 #. (itstool) path: desc/_name
-#: /home/vlad/CLionProjects/wayfire/metadata/input.xml:90
-#: /home/vlad/CLionProjects/wayfire/metadata/input.xml:134
-#: /home/vlad/CLionProjects/wayfire/metadata/input.xml:160
-#: /home/vlad/CLionProjects/wayfire/metadata/input.xml:181
-#: /home/vlad/CLionProjects/wayfire/metadata/input.xml:231
 msgid "None"
 msgstr "Niciunul"
 
 #. (itstool) path: desc/_name
-#: /home/vlad/CLionProjects/wayfire/metadata/input.xml:94
-#: /home/vlad/CLionProjects/wayfire/metadata/input.xml:138
 msgid "Adaptive"
 msgstr "Adaptiv"
 
 #. (itstool) path: desc/_name
-#: /home/vlad/CLionProjects/wayfire/metadata/input.xml:98
-#: /home/vlad/CLionProjects/wayfire/metadata/input.xml:142
 msgid "Flat"
 msgstr "Constant"
 
 #. (itstool) path: option/_short
-#: /home/vlad/CLionProjects/wayfire/metadata/input.xml:102
 msgid "Mouse cursor speed"
 msgstr "Viteza cursorului mausului"
 
 #. (itstool) path: option/_long
-#: /home/vlad/CLionProjects/wayfire/metadata/input.xml:103
 msgid "Changes the pointer acceleration."
 msgstr "Schimbă accelerarea cursorului."
 
 #. (itstool) path: option/_short
-#: /home/vlad/CLionProjects/wayfire/metadata/input.xml:109
 msgid "Mouse scroll speed"
 msgstr "Viteza derulării cu mausul"
 
 #. (itstool) path: option/_long
-#: /home/vlad/CLionProjects/wayfire/metadata/input.xml:110
 msgid ""
 "Changes the mouse scroll factor. Scroll speed will be scaled by the given "
 "value, which must be non-negative."
@@ -259,151 +208,122 @@ msgstr ""
 "cu valoarea care trebuie să nu fie negativă."
 
 #. (itstool) path: option/_short
-#: /home/vlad/CLionProjects/wayfire/metadata/input.xml:115
 msgid "Mouse natural scroll"
 msgstr "Derulare inversată cu mausul"
 
 #. (itstool) path: option/_long
-#: /home/vlad/CLionProjects/wayfire/metadata/input.xml:116
 msgid "Enables or disables mouse natural (inverted) scrolling."
 msgstr "Activează sau dezactivează derularea inversată „naturală” cu mausul"
 
 #. (itstool) path: group/_short
-#: /home/vlad/CLionProjects/wayfire/metadata/input.xml:122
 msgid "Touchpad"
 msgstr "Zonă tactilă"
 
 #. (itstool) path: group/_long
-#: /home/vlad/CLionProjects/wayfire/metadata/input.xml:123
 msgid "Configure the touchpad."
 msgstr "Configurează zona tactilă."
 
 #. (itstool) path: option/_short
-#: /home/vlad/CLionProjects/wayfire/metadata/input.xml:125
 msgid "Touchpad acceleration profile"
 msgstr "Profilul accelerației zonei tactile"
 
 #. (itstool) path: option/_long
-#: /home/vlad/CLionProjects/wayfire/metadata/input.xml:126
 msgid "Sets the touchpad acceleration profile."
 msgstr "Stabilește profilul accelerației pentru zona tactilă."
 
 #. (itstool) path: option/_short
-#: /home/vlad/CLionProjects/wayfire/metadata/input.xml:146
 msgid "Tap-to-click"
 msgstr "Clic prin atingere"
 
 #. (itstool) path: option/_long
-#: /home/vlad/CLionProjects/wayfire/metadata/input.xml:147
 msgid "Enables or disables tap-to-click."
 msgstr ""
 "Activează sau dezactivează posibilitatea de a face un clic doar atingând "
 "zona tactilă."
 
 #. (itstool) path: option/_short
-#: /home/vlad/CLionProjects/wayfire/metadata/input.xml:151
 msgid "Click method"
 msgstr "Metodă de clic"
 
 #. (itstool) path: option/_long
-#: /home/vlad/CLionProjects/wayfire/metadata/input.xml:152
 msgid "Changes the click method."
 msgstr "Schimbă metoda de clic."
 
 #. (itstool) path: desc/_name
-#: /home/vlad/CLionProjects/wayfire/metadata/input.xml:164
 msgid "Button areas"
 msgstr "Zonele butoanelor"
 
 #. (itstool) path: desc/_name
-#: /home/vlad/CLionProjects/wayfire/metadata/input.xml:168
 msgid "Clickfinger"
 msgstr "Degetul de clic"
 
 #. (itstool) path: option/_short
-#: /home/vlad/CLionProjects/wayfire/metadata/input.xml:172
 msgid "Scroll method"
 msgstr "Metoda de derulare"
 
 #. (itstool) path: option/_long
-#: /home/vlad/CLionProjects/wayfire/metadata/input.xml:173
 msgid "Changes the scroll method."
 msgstr "Schimbă metoda de derulare."
 
 #. (itstool) path: desc/_name
-#: /home/vlad/CLionProjects/wayfire/metadata/input.xml:185
 msgid "Two-finger"
 msgstr "Două degete"
 
 #. (itstool) path: desc/_name
-#: /home/vlad/CLionProjects/wayfire/metadata/input.xml:189
 msgid "Edge"
 msgstr "Pe margine"
 
 #. (itstool) path: desc/_name
-#: /home/vlad/CLionProjects/wayfire/metadata/input.xml:193
 msgid "On-button down"
 msgstr "Când este apăsat butonul"
 
 #. (itstool) path: option/_short
-#: /home/vlad/CLionProjects/wayfire/metadata/input.xml:197
 msgid "Disable touchpad while typing"
 msgstr "Dezactivează zona tactilă când tastez"
 
 #. (itstool) path: option/_long
-#: /home/vlad/CLionProjects/wayfire/metadata/input.xml:198
 msgid "Disables the touchpad while typing."
 msgstr "Dezactivează zona tactilă în timpul tastării."
 
 #. (itstool) path: option/_short
-#: /home/vlad/CLionProjects/wayfire/metadata/input.xml:202
 msgid "Disable touchpad while using the mouse"
 msgstr "Dezactivează zona tactilă când folosesc mausul"
 
 #. (itstool) path: option/_long
-#: /home/vlad/CLionProjects/wayfire/metadata/input.xml:203
 msgid "Disables the touchpad while using the mouse."
 msgstr "Dezactivează zona tactilă când se folosește un maus."
 
 #. (itstool) path: option/_short
-#: /home/vlad/CLionProjects/wayfire/metadata/input.xml:207
 msgid "Natural scroll"
 msgstr "Derulare naturală"
 
 #. (itstool) path: option/_long
-#: /home/vlad/CLionProjects/wayfire/metadata/input.xml:208
 msgid "Enables or disables natural (inverted) scrolling."
 msgstr "Activează sau dezactivează derularea naturală (inversată)."
 
 #. (itstool) path: option/_short
-#: /home/vlad/CLionProjects/wayfire/metadata/input.xml:212
 msgid "Tap and drag"
 msgstr "Atingere și tragere"
 
 #. (itstool) path: option/_long
-#: /home/vlad/CLionProjects/wayfire/metadata/input.xml:213
 msgid "Enables or disables tap-and-drag."
 msgstr ""
 "Activează sau dezactivează posibilitatea de a atinge apoi a glisarea pentru "
 "executarea unei trageri."
 
 #. (itstool) path: option/_short
-#: /home/vlad/CLionProjects/wayfire/metadata/input.xml:217
 msgid "Drag lock"
 msgstr "Blocare tragere"
 
 #. (itstool) path: option/_long
-#: /home/vlad/CLionProjects/wayfire/metadata/input.xml:218
 msgid "Enables or disables drag lock."
 msgstr "Activează sau dezactivează blocarea tragerii."
 
 #. (itstool) path: option/_short
-#: /home/vlad/CLionProjects/wayfire/metadata/input.xml:222
 msgid "Multi-finger drag"
 msgstr "Tragere cu mai multe degete"
 
 #. (itstool) path: option/_long
-#: /home/vlad/CLionProjects/wayfire/metadata/input.xml:223
 msgid ""
 "Enables or disables 3-finger or 4-finger drag. Requires libinput ≥ 1.28."
 msgstr ""
@@ -411,32 +331,26 @@ msgstr ""
 "libinput ≥ 1.28."
 
 #. (itstool) path: desc/_name
-#: /home/vlad/CLionProjects/wayfire/metadata/input.xml:235
 msgid "Drag using 3 fingers"
 msgstr "Tragere cu trei degete"
 
 #. (itstool) path: desc/_name
-#: /home/vlad/CLionProjects/wayfire/metadata/input.xml:239
 msgid "Drag using 4 fingers"
 msgstr "Tragere cu patru degete"
 
 #. (itstool) path: option/_short
-#: /home/vlad/CLionProjects/wayfire/metadata/input.xml:243
 msgid "Touchpad cursor speed"
 msgstr "Viteza cursorului pe zona tactilă"
 
 #. (itstool) path: option/_long
-#: /home/vlad/CLionProjects/wayfire/metadata/input.xml:244
 msgid "Changes the touchpad acceleration."
 msgstr "Schimbă accelerarea zonei tactile."
 
 #. (itstool) path: option/_short
-#: /home/vlad/CLionProjects/wayfire/metadata/input.xml:250
 msgid "Touchscreen gesture sensitivity"
 msgstr "Sensibilitatea ecranului tactil la gesturi"
 
 #. (itstool) path: option/_long
-#: /home/vlad/CLionProjects/wayfire/metadata/input.xml:251
 msgid ""
 "Change the sensitivity of the built-in gesture detection. Higher values mean "
 "that less finger movement is required to trigger the gesture."
@@ -446,12 +360,10 @@ msgstr ""
 "declanșa."
 
 #. (itstool) path: option/_short
-#: /home/vlad/CLionProjects/wayfire/metadata/input.xml:257
 msgid "Touchpad scroll speed"
 msgstr "Viteza derulării cu zona tactilă"
 
 #. (itstool) path: option/_long
-#: /home/vlad/CLionProjects/wayfire/metadata/input.xml:258
 msgid ""
 "Changes the touchpad scroll factor. Scroll speed will be scaled by the given "
 "value, which must be non-negative."
@@ -460,61 +372,49 @@ msgstr ""
 "înmulțită cu valoarea care trebuie să nu fie negativă."
 
 #. (itstool) path: group/_short
-#: /home/vlad/CLionProjects/wayfire/metadata/input.xml:265
 msgid "Tablet"
 msgstr "Tabletă"
 
 #. (itstool) path: group/_long
-#: /home/vlad/CLionProjects/wayfire/metadata/input.xml:266
 msgid "Configure graphic tablets."
 msgstr "Configurează tabletele grafice."
 
 #. (itstool) path: option/_short
-#: /home/vlad/CLionProjects/wayfire/metadata/input.xml:268
 msgid "Motion Mode"
 msgstr "Mod de mișcare"
 
 #. (itstool) path: option/_long
-#: /home/vlad/CLionProjects/wayfire/metadata/input.xml:269
 msgid "Sets the motion mode for graphic tablets."
 msgstr "Stabilește modul mișcării pe tabletele grafice."
 
 #. (itstool) path: desc/_name
-#: /home/vlad/CLionProjects/wayfire/metadata/input.xml:277
 msgid "Absolute"
 msgstr "Absolută"
 
 #. (itstool) path: desc/_name
-#: /home/vlad/CLionProjects/wayfire/metadata/input.xml:281
 msgid "Relative"
 msgstr "Relativă"
 
 #. (itstool) path: group/_short
-#: /home/vlad/CLionProjects/wayfire/metadata/input.xml:287
 msgid "Cursor"
 msgstr "Cursor"
 
 #. (itstool) path: group/_long
-#: /home/vlad/CLionProjects/wayfire/metadata/input.xml:288
 msgid "Configure the cursor."
 msgstr "Configurează cursorul."
 
 #. (itstool) path: option/_short
-#: /home/vlad/CLionProjects/wayfire/metadata/input.xml:290
 msgid "Cursor theme"
 msgstr "Tema cursorului"
 
 #. (itstool) path: option/_long
-#: /home/vlad/CLionProjects/wayfire/metadata/input.xml:291
 msgid "Overrides the system default `XCursor` theme."
 msgstr "Suprascrie tema XCursor implicită a sistemului."
 
 #. (itstool) path: option/_short
-#: /home/vlad/CLionProjects/wayfire/metadata/input.xml:295
 msgid "Cursor size"
 msgstr "Dimensiunea cursorului"
 
 #. (itstool) path: option/_long
-#: /home/vlad/CLionProjects/wayfire/metadata/input.xml:296
 msgid "Overrides the system default `XCursor` size."
 msgstr "Suprascrie dimensiunea XCursor implicită a sistemului."

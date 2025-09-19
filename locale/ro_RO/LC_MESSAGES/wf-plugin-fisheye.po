@@ -12,41 +12,33 @@ msgstr ""
 "X-Generator: Poedit 3.7\n"
 
 #. (itstool) path: plugin/_short
-#: /home/vlad/CLionProjects/wayfire/metadata/fisheye.xml:4
 msgid "Fisheye"
 msgstr "Ochi de pește"
 
 #. (itstool) path: plugin/_long
-#: /home/vlad/CLionProjects/wayfire/metadata/fisheye.xml:5
 msgid "A plugin which provides fisheye effect."
 msgstr "Un modul care furnizează un efect de obiectiv „ochi de pește”."
 
 #. (itstool) path: option/_short
-#: /home/vlad/CLionProjects/wayfire/metadata/fisheye.xml:8
 msgid "Toggle"
 msgstr "Inițiere"
 
 #. (itstool) path: option/_long
-#: /home/vlad/CLionProjects/wayfire/metadata/fisheye.xml:9
 msgid "Toggles fisheye with the specified activator."
 msgstr "Comută ochiul de pește cu activatorul specificat."
 
 #. (itstool) path: option/_short
-#: /home/vlad/CLionProjects/wayfire/metadata/fisheye.xml:13
 msgid "Radius"
 msgstr "Rază"
 
 #. (itstool) path: option/_long
-#: /home/vlad/CLionProjects/wayfire/metadata/fisheye.xml:14
 msgid "Sets the border radius in pixels."
 msgstr "Stabilește raza colțului în pixeli."
 
 #. (itstool) path: option/_short
-#: /home/vlad/CLionProjects/wayfire/metadata/fisheye.xml:19
 msgid "Zoom"
 msgstr "Mărire"
 
 #. (itstool) path: option/_long
-#: /home/vlad/CLionProjects/wayfire/metadata/fisheye.xml:20
 msgid "Sets the zoom factor."
 msgstr "Stabilește factorul de mărire."

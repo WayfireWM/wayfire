@@ -12,172 +12,140 @@ msgstr ""
 "X-Generator: Poedit 3.7\n"
 
 #. (itstool) path: plugin/_short
-#: /home/vlad/CLionProjects/wayfire/metadata/vswitch.xml:4
 msgid "Viewport Switcher"
 msgstr "Schimbător de birouri"
 
 #. (itstool) path: plugin/_long
-#: /home/vlad/CLionProjects/wayfire/metadata/vswitch.xml:5
 msgid "A plugin to switch workspaces in a grid."
 msgstr "Un modul pentru a schimba birourile într-o grilă."
 
 #. (itstool) path: option/_short
-#: /home/vlad/CLionProjects/wayfire/metadata/vswitch.xml:8
 msgid "Left"
 msgstr "Stânga"
 
 #. (itstool) path: option/_long
-#: /home/vlad/CLionProjects/wayfire/metadata/vswitch.xml:9
 msgid "Switches to workspace left with the specified activator."
 msgstr "Trece la biroul din stânga cu activatorul specificat."
 
 #. (itstool) path: option/_short
-#: /home/vlad/CLionProjects/wayfire/metadata/vswitch.xml:13
 msgid "Right"
 msgstr "Dreapta"
 
 #. (itstool) path: option/_long
-#: /home/vlad/CLionProjects/wayfire/metadata/vswitch.xml:14
 msgid "Switches to workspace right with the specified activator."
 msgstr ""
 
 #. (itstool) path: option/_short
-#: /home/vlad/CLionProjects/wayfire/metadata/vswitch.xml:18
 msgid "Up"
 msgstr "Sus"
 
 #. (itstool) path: option/_long
-#: /home/vlad/CLionProjects/wayfire/metadata/vswitch.xml:19
 msgid "Switches to workspace up with the specified activator."
 msgstr ""
 
 #. (itstool) path: option/_short
-#: /home/vlad/CLionProjects/wayfire/metadata/vswitch.xml:23
 msgid "Down"
 msgstr "Jos"
 
 #. (itstool) path: option/_long
-#: /home/vlad/CLionProjects/wayfire/metadata/vswitch.xml:24
 msgid "Switches to workspace down with the specified activator."
 msgstr ""
 
 #. (itstool) path: option/_short
-#: /home/vlad/CLionProjects/wayfire/metadata/vswitch.xml:28
 msgid "Last"
 msgstr "Ultimul"
 
 #. (itstool) path: option/_long
-#: /home/vlad/CLionProjects/wayfire/metadata/vswitch.xml:29
 msgid "Switches to the last active workspace with the specified activator."
 msgstr ""
 
 #. (itstool) path: option/_short
-#: /home/vlad/CLionProjects/wayfire/metadata/vswitch.xml:33
 msgid "Left with window"
 msgstr "Stânga cu fereastră"
 
 #. (itstool) path: option/_long
-#: /home/vlad/CLionProjects/wayfire/metadata/vswitch.xml:34
 msgid ""
 "Switches to workspace left with the focused window with the specified "
 "activator."
 msgstr ""
 
 #. (itstool) path: option/_short
-#: /home/vlad/CLionProjects/wayfire/metadata/vswitch.xml:38
 msgid "Right with window"
 msgstr "Dreapta cu fereastră"
 
 #. (itstool) path: option/_long
-#: /home/vlad/CLionProjects/wayfire/metadata/vswitch.xml:39
 msgid ""
 "Switches to workspace right with the focused window with the specified "
 "activator."
 msgstr ""
 
 #. (itstool) path: option/_short
-#: /home/vlad/CLionProjects/wayfire/metadata/vswitch.xml:43
 msgid "Up with window"
 msgstr "Sus cu fereastră"
 
 #. (itstool) path: option/_long
-#: /home/vlad/CLionProjects/wayfire/metadata/vswitch.xml:44
 msgid ""
 "Switches to workspace up with the focused window with the specified "
 "activator."
 msgstr ""
 
 #. (itstool) path: option/_short
-#: /home/vlad/CLionProjects/wayfire/metadata/vswitch.xml:48
 msgid "Down with window"
 msgstr "Jos cu fereastră"
 
 #. (itstool) path: option/_long
-#: /home/vlad/CLionProjects/wayfire/metadata/vswitch.xml:49
 msgid ""
 "Switches to workspace down with the focused window with the specified "
 "activator."
 msgstr ""
 
 #. (itstool) path: option/_short
-#: /home/vlad/CLionProjects/wayfire/metadata/vswitch.xml:53
 msgid "Last with window"
 msgstr "Ultimul cu fereastră"
 
 #. (itstool) path: option/_long
-#: /home/vlad/CLionProjects/wayfire/metadata/vswitch.xml:54
 msgid ""
 "Switches to the last active workspace with the focused window with the "
 "specified activator."
 msgstr ""
 
 #. (itstool) path: option/_short
-#: /home/vlad/CLionProjects/wayfire/metadata/vswitch.xml:58
 msgid "Send window to the left"
 msgstr "Trimite fereastra la stânga"
 
 #. (itstool) path: option/_long
-#: /home/vlad/CLionProjects/wayfire/metadata/vswitch.xml:59
 msgid "Send the focused window to the workspace on the left."
 msgstr ""
 
 #. (itstool) path: option/_short
-#: /home/vlad/CLionProjects/wayfire/metadata/vswitch.xml:63
 msgid "Send window to the right"
 msgstr "Trimite fereastra la dreapta"
 
 #. (itstool) path: option/_long
-#: /home/vlad/CLionProjects/wayfire/metadata/vswitch.xml:64
 msgid "Send the focused window to the workspace on the right."
 msgstr ""
 
 #. (itstool) path: option/_short
-#: /home/vlad/CLionProjects/wayfire/metadata/vswitch.xml:68
 msgid "Send window above"
 msgstr "Trimite fereastra în sus"
 
 #. (itstool) path: option/_long
-#: /home/vlad/CLionProjects/wayfire/metadata/vswitch.xml:69
 msgid "Send the focused window to the workspace above."
 msgstr ""
 
 #. (itstool) path: option/_short
-#: /home/vlad/CLionProjects/wayfire/metadata/vswitch.xml:73
 msgid "Send window below"
 msgstr "Trimite fereastra în jos"
 
 #. (itstool) path: option/_long
-#: /home/vlad/CLionProjects/wayfire/metadata/vswitch.xml:74
 msgid "Send the focused window to the workspace below."
 msgstr ""
 
 #. (itstool) path: option/_short
-#: /home/vlad/CLionProjects/wayfire/metadata/vswitch.xml:78
 msgid "Send window to last"
 msgstr "Trimite fereastra pe ultimul"
 
 #. (itstool) path: option/_long
-#: /home/vlad/CLionProjects/wayfire/metadata/vswitch.xml:79
 msgid ""
 "Send the focused window to the last active workspace with the specified "
 "activator."
@@ -185,86 +153,66 @@ msgstr ""
 
 #. (itstool) path: option/_short
 #. (itstool) path: option/_long
-#: /home/vlad/CLionProjects/wayfire/metadata/vswitch.xml:84
-#: /home/vlad/CLionProjects/wayfire/metadata/vswitch.xml:85
 msgid "Go-To-Workspace bindings"
 msgstr "Asocieri pentru trecerea la birou"
 
 #. (itstool) path: entry/_short
-#: /home/vlad/CLionProjects/wayfire/metadata/vswitch.xml:87
-#: /home/vlad/CLionProjects/wayfire/metadata/vswitch.xml:96
 msgid "Binding for workspace N"
 msgstr "Asociere pentru biroul N"
 
 #. (itstool) path: entry/_long
-#: /home/vlad/CLionProjects/wayfire/metadata/vswitch.xml:88
 msgid "Sets the binding to go to workspace N."
 msgstr "Stabilește asocierea pentru a trece la biroul N."
 
 #. (itstool) path: option/_short
 #. (itstool) path: option/_long
-#: /home/vlad/CLionProjects/wayfire/metadata/vswitch.xml:93
-#: /home/vlad/CLionProjects/wayfire/metadata/vswitch.xml:94
-#: /home/vlad/CLionProjects/wayfire/metadata/vswitch.xml:102
-#: /home/vlad/CLionProjects/wayfire/metadata/vswitch.xml:103
 msgid "Go-To-Workspace with window bindings"
 msgstr "Asocieri pentru trecerea la birou cu fereastra"
 
 #. (itstool) path: entry/_long
-#: /home/vlad/CLionProjects/wayfire/metadata/vswitch.xml:97
 msgid "Sets the binding to go to workspace N with currently focused window."
 msgstr ""
 "Stabilește asocierea pentru a trece la biroul N împreună cu fereastra "
 "momentan focalizată."
 
 #. (itstool) path: entry/_short
-#: /home/vlad/CLionProjects/wayfire/metadata/vswitch.xml:105
 msgid "Move window to workspace N"
 msgstr "Mută fereastra pe biroul N"
 
 #. (itstool) path: entry/_long
-#: /home/vlad/CLionProjects/wayfire/metadata/vswitch.xml:106
 msgid "Sets the binding to move focused window to workspace N."
 msgstr ""
 "Stabilește asocierea pentru a muta fereastra momentan focalizată pe biroul N."
 
 #. (itstool) path: option/_short
-#: /home/vlad/CLionProjects/wayfire/metadata/vswitch.xml:111
 msgid "Duration"
 msgstr "Durată"
 
 #. (itstool) path: option/_long
-#: /home/vlad/CLionProjects/wayfire/metadata/vswitch.xml:112
 msgid "Sets the duration of the workspace switching animation in milliseconds."
 msgstr "Stabilește durata animației de schimbare a birourilor, în milisecunde."
 
 #. (itstool) path: option/_short
-#: /home/vlad/CLionProjects/wayfire/metadata/vswitch.xml:116
 msgid "Gap size"
 msgstr "Dimensiunea golului"
 
 #. (itstool) path: option/_long
-#: /home/vlad/CLionProjects/wayfire/metadata/vswitch.xml:117
 msgid ""
 "Sets the gap between workspaces when animating the transition between them."
 msgstr "Stabilește golul dintre birouri când se animă tranziția dintre ele."
 
 #. (itstool) path: option/_short
-#: /home/vlad/CLionProjects/wayfire/metadata/vswitch.xml:121
 msgid "Background color"
 msgstr "Culoarea fundalului"
 
 #. (itstool) path: option/_long
-#: /home/vlad/CLionProjects/wayfire/metadata/vswitch.xml:122
 msgid "Sets the background color of gaps."
 msgstr "Stabilește culoarea fundalului golurilor."
 
 #. (itstool) path: option/_short
-#: /home/vlad/CLionProjects/wayfire/metadata/vswitch.xml:126
 msgid "Wraparound"
 msgstr "Circular"
 
 #. (itstool) path: option/_long
-#: /home/vlad/CLionProjects/wayfire/metadata/vswitch.xml:127
 msgid "Whether to wrap around when at the edge of the workspace grid."
 msgstr "Dacă să se treacă la biroul opus de la marginea grilei de birouri."

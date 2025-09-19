@@ -12,12 +12,10 @@ msgstr ""
 "X-Generator: Poedit 3.7\n"
 
 #. (itstool) path: option/_short
-#: /home/vlad/CLionProjects/wayfire/metadata/input-device.xml:9
 msgid "Calibration matrix"
 msgstr "Matrice de calibrare"
 
 #. (itstool) path: option/_long
-#: /home/vlad/CLionProjects/wayfire/metadata/input-device.xml:10
 msgid ""
 "Calibration matrix for touch devices, uses udev/libinput format (2x3 matrix, "
 "6 floats separated by space)."

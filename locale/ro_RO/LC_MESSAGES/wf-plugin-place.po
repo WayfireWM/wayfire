@@ -12,41 +12,33 @@ msgstr ""
 "X-Generator: Poedit 3.7\n"
 
 #. (itstool) path: plugin/_short
-#: /home/vlad/CLionProjects/wayfire/metadata/place.xml:4
 msgid "Place"
 msgstr "Amplasare"
 
 #. (itstool) path: plugin/_long
-#: /home/vlad/CLionProjects/wayfire/metadata/place.xml:5
 msgid "A plugin to position newly opened windows."
 msgstr "Un modul pentru a poziționa ferestrele nou deschise."
 
 #. (itstool) path: option/_short
-#: /home/vlad/CLionProjects/wayfire/metadata/place.xml:8
 msgid "Window placement mode"
 msgstr "Modul de amplasare a ferestrelor"
 
 #. (itstool) path: option/_long
-#: /home/vlad/CLionProjects/wayfire/metadata/place.xml:9
 msgid "Specifies how to position newly opened windows."
 msgstr "Specifică cum se poziționează ferestrele când sunt deschise."
 
 #. (itstool) path: desc/_name
-#: /home/vlad/CLionProjects/wayfire/metadata/place.xml:13
 msgid "Center"
 msgstr "Centru"
 
 #. (itstool) path: desc/_name
-#: /home/vlad/CLionProjects/wayfire/metadata/place.xml:17
 msgid "Cascade"
 msgstr "Cascadă"
 
 #. (itstool) path: desc/_name
-#: /home/vlad/CLionProjects/wayfire/metadata/place.xml:21
 msgid "Maximize"
 msgstr "Maximizate"
 
 #. (itstool) path: desc/_name
-#: /home/vlad/CLionProjects/wayfire/metadata/place.xml:25
 msgid "Random"
 msgstr "Aleator"

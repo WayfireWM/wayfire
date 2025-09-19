@@ -12,22 +12,18 @@ msgstr ""
 "X-Generator: Poedit 3.7\n"
 
 #. (itstool) path: plugin/_short
-#: /home/vlad/CLionProjects/wayfire/metadata/expo.xml:4
 msgid "Expo"
 msgstr "Expunere"
 
 #. (itstool) path: plugin/_long
-#: /home/vlad/CLionProjects/wayfire/metadata/expo.xml:5
 msgid "A plugin to show an overview of all workspaces."
 msgstr "Un modul pentru a afișa o panoramă a tuturor birourilor."
 
 #. (itstool) path: option/_short
-#: /home/vlad/CLionProjects/wayfire/metadata/expo.xml:8
 msgid "Toggle"
 msgstr "Comutare"
 
 #. (itstool) path: option/_long
-#: /home/vlad/CLionProjects/wayfire/metadata/expo.xml:9
 msgid ""
 "Shows an overview of all workspaces with the specified activator. Pressing "
 "again exits."
@@ -36,42 +32,34 @@ msgstr ""
 "încă o dată o închide."
 
 #. (itstool) path: option/_short
-#: /home/vlad/CLionProjects/wayfire/metadata/expo.xml:13
 msgid "Background color"
 msgstr "Culoarea fundalului"
 
 #. (itstool) path: option/_long
-#: /home/vlad/CLionProjects/wayfire/metadata/expo.xml:14
 msgid "Sets the background color."
 msgstr "Stabilește culoarea fundalului."
 
 #. (itstool) path: option/_short
-#: /home/vlad/CLionProjects/wayfire/metadata/expo.xml:18
 msgid "Zoom duration"
 msgstr "Durata micșorării"
 
 #. (itstool) path: option/_long
-#: /home/vlad/CLionProjects/wayfire/metadata/expo.xml:19
 msgid "Sets the zoom duration in milliseconds."
 msgstr "Stabilește durata micșorării în milisecunde."
 
 #. (itstool) path: option/_short
-#: /home/vlad/CLionProjects/wayfire/metadata/expo.xml:23
 msgid "Delimiter offset"
 msgstr "Spațiu de delimitare"
 
 #. (itstool) path: option/_long
-#: /home/vlad/CLionProjects/wayfire/metadata/expo.xml:24
 msgid "Sets the delimiter offset (in pixels) between workspaces."
 msgstr "Stabilește decalajul de delimitare dintre birouri, în pixeli."
 
 #. (itstool) path: option/_short
-#: /home/vlad/CLionProjects/wayfire/metadata/expo.xml:28
 msgid "Keyboard interaction"
 msgstr "Interacțiune cu tastatura"
 
 #. (itstool) path: option/_long
-#: /home/vlad/CLionProjects/wayfire/metadata/expo.xml:29
 msgid ""
 "Allow the use of arrow keys to select a workspace, ESC to cancel and ENTER "
 "to accept."
@@ -80,12 +68,10 @@ msgstr ""
 "pentru a anula și Enter pentru a accepta."
 
 #. (itstool) path: option/_short
-#: /home/vlad/CLionProjects/wayfire/metadata/expo.xml:33
 msgid "Brightness of inactive workspaces"
 msgstr "Luminozitatea birourilor inactive"
 
 #. (itstool) path: option/_long
-#: /home/vlad/CLionProjects/wayfire/metadata/expo.xml:34
 msgid ""
 "Decrease the brightness of all workspaces except the currently selected one "
 "to this value."
@@ -94,12 +80,10 @@ msgstr ""
 "valoare."
 
 #. (itstool) path: option/_short
-#: /home/vlad/CLionProjects/wayfire/metadata/expo.xml:41
 msgid "Brightness transition duration"
 msgstr "Durata tranziției de luminozitate"
 
 #. (itstool) path: option/_long
-#: /home/vlad/CLionProjects/wayfire/metadata/expo.xml:42
 msgid ""
 "Duration of the transition of brightness when a new workspace is selected in "
 "milliseconds."
@@ -108,12 +92,10 @@ msgstr ""
 "milisecunde."
 
 #. (itstool) path: option/_short
-#: /home/vlad/CLionProjects/wayfire/metadata/expo.xml:46
 msgid "Select workspace"
 msgstr "Selectează biroul"
 
 #. (itstool) path: option/_long
-#: /home/vlad/CLionProjects/wayfire/metadata/expo.xml:47
 msgid ""
 "When the binding is triggered while expo is active, the corresponding "
 "workspace will be focused and Expo will exit."

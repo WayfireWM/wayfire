@@ -12,27 +12,23 @@ msgstr ""
 "X-Generator: Poedit 3.7\n"
 
 #. (itstool) path: plugin/_short
-#: /home/vlad/CLionProjects/wayfire/metadata/xdg-activation.xml:4
 msgid "XDG Activation Protocol"
 msgstr "Protocolul de activare XDG"
 
 #. (itstool) path: plugin/_long
-#: /home/vlad/CLionProjects/wayfire/metadata/xdg-activation.xml:5
 msgid ""
 "An implementation of the xdg-activation-v1 protocol. This allows the active "
 "app to pass the focus to a different view in the same or a different app."
 msgstr ""
 "O implementare a protocolului xdg-activation-v1. Acesta permite aplicației "
-"active să mute focalizarea la o fereastră diferită din aceeași aplicație "
-"sau din alta."
+"active să mute focalizarea la o fereastră diferită din aceeași aplicație sau "
+"din alta."
 
 #. (itstool) path: option/_short
-#: /home/vlad/CLionProjects/wayfire/metadata/xdg-activation.xml:8
 msgid "Restrict to valid view"
 msgstr "Restricționare la ferestre valide"
 
 #. (itstool) path: option/_long
-#: /home/vlad/CLionProjects/wayfire/metadata/xdg-activation.xml:9
 msgid ""
 "Whether to reject creating activation requests if no source view exists. "
 "Without this option, any view can grab to focus at any time."
@@ -41,12 +37,10 @@ msgstr ""
 "sursă. Altfel, orice fereastră poate prelua focalizarea oricând."
 
 #. (itstool) path: option/_short
-#: /home/vlad/CLionProjects/wayfire/metadata/xdg-activation.xml:13
 msgid "Restrict to the most recent activation request"
 msgstr "Restricționare la cea mai recentă cerere de activare"
 
 #. (itstool) path: option/_long
-#: /home/vlad/CLionProjects/wayfire/metadata/xdg-activation.xml:14
 msgid ""
 "Whether to reject activation requests if a newer request has arrived since "
 "their creation."
@@ -55,12 +49,10 @@ msgstr ""
 "crearea lor."
 
 #. (itstool) path: option/_short
-#: /home/vlad/CLionProjects/wayfire/metadata/xdg-activation.xml:18
 msgid "Timeout for activation (in seconds)"
 msgstr "Timp pentru activare (în secunde)"
 
 #. (itstool) path: option/_long
-#: /home/vlad/CLionProjects/wayfire/metadata/xdg-activation.xml:19
 msgid ""
 "Focus requests will be ignored if at least this amount of time has elapsed "
 "between creating and using it."

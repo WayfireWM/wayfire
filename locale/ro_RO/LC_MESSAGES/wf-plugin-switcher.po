@@ -12,61 +12,49 @@ msgstr ""
 "X-Generator: Poedit 3.7\n"
 
 #. (itstool) path: plugin/_short
-#: /home/vlad/CLionProjects/wayfire/metadata/switcher.xml:4
 msgid "Switcher"
 msgstr "Schimbător"
 
 #. (itstool) path: plugin/_long
-#: /home/vlad/CLionProjects/wayfire/metadata/switcher.xml:5
 msgid "A plugin to change active window with an animation."
 msgstr "Un modul pentru a schimba fereastra activă cu o animație."
 
 #. (itstool) path: option/_short
-#: /home/vlad/CLionProjects/wayfire/metadata/switcher.xml:9
 msgid "Next view"
 msgstr "Fereastra următoare"
 
 #. (itstool) path: option/_long
-#: /home/vlad/CLionProjects/wayfire/metadata/switcher.xml:10
 msgid "Switches to the next view with the specified key."
 msgstr "Trece la fereastra următoare cu activatorul specificat."
 
 #. (itstool) path: option/_short
-#: /home/vlad/CLionProjects/wayfire/metadata/switcher.xml:14
 msgid "Previous view"
 msgstr "Fereastra anterioară"
 
 #. (itstool) path: option/_long
-#: /home/vlad/CLionProjects/wayfire/metadata/switcher.xml:15
 msgid "Switches to the previous view with the specified key."
 msgstr "Trece la fereastra anterioară cu activatorul specificat."
 
 #. (itstool) path: option/_short
-#: /home/vlad/CLionProjects/wayfire/metadata/switcher.xml:20
 msgid "Duration"
 msgstr "Durata"
 
 #. (itstool) path: option/_long
-#: /home/vlad/CLionProjects/wayfire/metadata/switcher.xml:21
 msgid "Sets the duration of the animation in milliseconds."
 msgstr "Stabilește durata animației, în milisecunde."
 
 #. (itstool) path: option/_short
-#: /home/vlad/CLionProjects/wayfire/metadata/switcher.xml:25
 msgid "Thumbnail size"
 msgstr "Dimensiunea miniaturii"
 
 #. (itstool) path: option/_long
-#: /home/vlad/CLionProjects/wayfire/metadata/switcher.xml:26
 msgid "Sets the thumbnail size."
 msgstr "Stabilește dimensiunea miniaturii."
 
 #. (itstool) path: option/_short
-#: /home/vlad/CLionProjects/wayfire/metadata/switcher.xml:30
 msgid "Thumbnail rotation"
 msgstr "Rotația miniaturii"
 
 #. (itstool) path: option/_long
-#: /home/vlad/CLionProjects/wayfire/metadata/switcher.xml:31
 msgid "Sets the thumbnail rotation in degrees."
 msgstr "Stabilește rotația miniaturii, în grade."

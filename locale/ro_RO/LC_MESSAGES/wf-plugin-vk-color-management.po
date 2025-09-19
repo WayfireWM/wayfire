@@ -12,12 +12,10 @@ msgstr ""
 "X-Generator: Poedit 3.7\n"
 
 #. (itstool) path: plugin/_short
-#: /home/vlad/CLionProjects/wayfire/metadata/vk-color-management.xml:4
 msgid "ICC profile support for the GLES2 renderer"
 msgstr "Sprijinul pentru profiluri ICC în desenatorul GLES2"
 
 #. (itstool) path: plugin/_long
-#: /home/vlad/CLionProjects/wayfire/metadata/vk-color-management.xml:5
 msgid ""
 "Adds support for ICC profiles when running with the GLES2 renderer. Needs "
 "wlroots' vulkan renderer."

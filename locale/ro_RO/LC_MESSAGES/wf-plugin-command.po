@@ -13,76 +13,59 @@ msgstr ""
 
 #. (itstool) path: plugin/_short
 #. (itstool) path: entry/_short
-#: /home/vlad/CLionProjects/wayfire/metadata/command.xml:4
-#: /home/vlad/CLionProjects/wayfire/metadata/command.xml:11
-#: /home/vlad/CLionProjects/wayfire/metadata/command.xml:25
-#: /home/vlad/CLionProjects/wayfire/metadata/command.xml:39
-#: /home/vlad/CLionProjects/wayfire/metadata/command.xml:52
 msgid "Command"
 msgstr "Comandă"
 
 #. (itstool) path: plugin/_long
-#: /home/vlad/CLionProjects/wayfire/metadata/command.xml:5
-msgid "A plugin to bind key combo (key, button, touch) to execute shell commands."
-msgstr "Un modul pentru a asocia combinații (de taste, de butoane, de atingeri) cu executarea unor comenzi de sistem."
+msgid ""
+"A plugin to bind key combo (key, button, touch) to execute shell commands."
+msgstr ""
+"Un modul pentru a asocia combinații (de taste, de butoane, de atingeri) cu "
+"executarea unor comenzi de sistem."
 
 #. (itstool) path: option/_short
 #. (itstool) path: option/_long
-#: /home/vlad/CLionProjects/wayfire/metadata/command.xml:8
-#: /home/vlad/CLionProjects/wayfire/metadata/command.xml:9
 msgid "Regular bindings"
 msgstr "Asocieri obișnuite"
 
 #. (itstool) path: entry/_long
-#: /home/vlad/CLionProjects/wayfire/metadata/command.xml:12
-#: /home/vlad/CLionProjects/wayfire/metadata/command.xml:26
-#: /home/vlad/CLionProjects/wayfire/metadata/command.xml:40
-#: /home/vlad/CLionProjects/wayfire/metadata/command.xml:53
 msgid "Sets the command to execute."
 msgstr "Stabilește comanda de executat."
 
 #. (itstool) path: entry/_short
-#: /home/vlad/CLionProjects/wayfire/metadata/command.xml:16
-#: /home/vlad/CLionProjects/wayfire/metadata/command.xml:30
-#: /home/vlad/CLionProjects/wayfire/metadata/command.xml:44
-#: /home/vlad/CLionProjects/wayfire/metadata/command.xml:57
 msgid "Binding"
 msgstr "Asociere"
 
 #. (itstool) path: entry/_long
-#: /home/vlad/CLionProjects/wayfire/metadata/command.xml:17
-#: /home/vlad/CLionProjects/wayfire/metadata/command.xml:31
-#: /home/vlad/CLionProjects/wayfire/metadata/command.xml:45
-#: /home/vlad/CLionProjects/wayfire/metadata/command.xml:58
 msgid "Sets the triggering activator binding."
 msgstr "Stabilește asocierea declanșatoare."
 
 #. (itstool) path: option/_short
-#: /home/vlad/CLionProjects/wayfire/metadata/command.xml:22
 msgid "Repeatable bindings"
 msgstr "Asocieri repetabile"
 
 #. (itstool) path: option/_long
-#: /home/vlad/CLionProjects/wayfire/metadata/command.xml:23
-msgid "Bindings which repeat their command if their key or button is held pressed."
-msgstr "Asocieri care își repetă comanda dacă apăsarea tastelor sau butoanelor acestora este menținută."
+msgid ""
+"Bindings which repeat their command if their key or button is held pressed."
+msgstr ""
+"Asocieri care își repetă comanda dacă apăsarea tastelor sau butoanelor "
+"acestora este menținută."
 
 #. (itstool) path: option/_short
-#: /home/vlad/CLionProjects/wayfire/metadata/command.xml:36
 msgid "Always bindings"
 msgstr "Asocieri mereu disponibile"
 
 #. (itstool) path: option/_long
-#: /home/vlad/CLionProjects/wayfire/metadata/command.xml:37
-msgid "Sets the bindings which are always available, even when screen is locked."
-msgstr "Definește asocierile care se pot folosi întotdeauna, chiar și atunci când ecranul este blocat."
+msgid ""
+"Sets the bindings which are always available, even when screen is locked."
+msgstr ""
+"Definește asocierile care se pot folosi întotdeauna, chiar și atunci când "
+"ecranul este blocat."
 
 #. (itstool) path: option/_short
-#: /home/vlad/CLionProjects/wayfire/metadata/command.xml:49
 msgid "Release bindings"
 msgstr "Asocieri la eliberare"
 
 #. (itstool) path: option/_long
-#: /home/vlad/CLionProjects/wayfire/metadata/command.xml:50
 msgid "Sets the bindings which activate on release"
 msgstr "Definește asocierile care se activează la eliberare."

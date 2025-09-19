@@ -12,61 +12,49 @@ msgstr ""
 "X-Generator: Poedit 3.7\n"
 
 #. (itstool) path: plugin/_short
-#: /home/vlad/CLionProjects/wayfire/metadata/zoom.xml:4
 msgid "Zoom"
 msgstr "Mărire"
 
 #. (itstool) path: plugin/_long
-#: /home/vlad/CLionProjects/wayfire/metadata/zoom.xml:5
 msgid "A plugin to zoom in the desktop with the mouse."
 msgstr "Un modul pentru a mări biroul cu mausul."
 
 #. (itstool) path: option/_short
-#: /home/vlad/CLionProjects/wayfire/metadata/zoom.xml:8
 msgid "Zoom in the desktop by scrolling with modifier"
 msgstr "Măriți biroul derulând cu modificatorul"
 
 #. (itstool) path: option/_long
-#: /home/vlad/CLionProjects/wayfire/metadata/zoom.xml:9
 msgid "Scrolls with the specified modifier to zoom in and out."
 msgstr "Derularea cu modificatorul specificat mărește sau micșorează biroul."
 
 #. (itstool) path: option/_short
-#: /home/vlad/CLionProjects/wayfire/metadata/zoom.xml:13
 msgid "Speed"
 msgstr "Viteză"
 
 #. (itstool) path: option/_long
-#: /home/vlad/CLionProjects/wayfire/metadata/zoom.xml:14
 msgid "Sets the speed factor for zooming."
 msgstr "Stabilește factorul de viteză pentru mărire."
 
 #. (itstool) path: option/_short
-#: /home/vlad/CLionProjects/wayfire/metadata/zoom.xml:19
 msgid "Smoothing duration"
 msgstr "Durata atenuării"
 
 #. (itstool) path: option/_long
-#: /home/vlad/CLionProjects/wayfire/metadata/zoom.xml:20
 msgid "Sets the smoothing duration in milliseconds."
 msgstr "Stabilește durata atenuării, în milisecunde."
 
 #. (itstool) path: option/_short
-#: /home/vlad/CLionProjects/wayfire/metadata/zoom.xml:24
 msgid "Interpolation method"
 msgstr "Metoda de interpolare"
 
 #. (itstool) path: option/_long
-#: /home/vlad/CLionProjects/wayfire/metadata/zoom.xml:25
 msgid "Sets the pixel interpolation method to use."
 msgstr "Alege metoda de interpolare a pixelilor de folosit."
 
 #. (itstool) path: desc/_name
-#: /home/vlad/CLionProjects/wayfire/metadata/zoom.xml:31
 msgid "Linear"
 msgstr "Lineară"
 
 #. (itstool) path: desc/_name
-#: /home/vlad/CLionProjects/wayfire/metadata/zoom.xml:35
 msgid "Nearest"
 msgstr "Cel mai apropiat"

@@ -12,22 +12,18 @@ msgstr ""
 "X-Generator: Poedit 3.7\n"
 
 #. (itstool) path: plugin/_short
-#: /home/vlad/CLionProjects/wayfire/metadata/security-context-v1.xml:4
 msgid "Security-context-v1 Protocol"
 msgstr "Protocolul Context de securitate (Security-context-v1)"
 
 #. (itstool) path: plugin/_long
-#: /home/vlad/CLionProjects/wayfire/metadata/security-context-v1.xml:5
 msgid "An implementation of the security-context-v1 protocol."
 msgstr "O implementare a protocolului security-context-v1."
 
 #. (itstool) path: option/_short
-#: /home/vlad/CLionProjects/wayfire/metadata/security-context-v1.xml:8
 msgid "Privileged protocols"
 msgstr "Protocoale privilegiate"
 
 #. (itstool) path: option/_long
-#: /home/vlad/CLionProjects/wayfire/metadata/security-context-v1.xml:9
 msgid ""
 "A comma-separated list of privileged protocols, which are not exposed to "
 "sandboxed clients."
