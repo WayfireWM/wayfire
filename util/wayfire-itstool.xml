@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<its:rules xmlns:its="http://www.w3.org/2005/11/its" version="2.0">
+    <its:translateRule translate="no" selector="//*"/>
+    <its:translateRule translate="yes" selector="//_short"/>
+    <its:translateRule translate="yes" selector="//_long"/>
+    <its:translateRule translate="yes" selector="//_name"/>
+</its:rules>
