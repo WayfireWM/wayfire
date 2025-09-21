@@ -159,7 +159,7 @@ programs.wayfire = {
 };
 ```
 
-###### Ubuntu
+###### Ubuntu/Debian 13
 
 ```
 apt install wayfire
