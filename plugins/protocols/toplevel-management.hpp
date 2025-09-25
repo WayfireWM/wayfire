@@ -1,19 +1,11 @@
 #include "wayfire/view.hpp"
 #include <wayfire/toplevel-view.hpp>
 
-class wayfire_foreign_toplevel;
-using foreign_toplevel_map_type = std::map<wayfire_toplevel_view, std::unique_ptr<wayfire_foreign_toplevel>>;
-
-void get_app_id(wayfire_view view, char *app_id)
+std::string get_app_id(wayfire_view view)
 {
-    if (!view || !app_id)
+    if (!view)
     {
-        if (app_id)
-        {
-            strcpy(app_id, "unknown");
-        }
-
-        return;
+        return "unknown";
     }
 
     std::string result;
@@ -47,7 +39,7 @@ void get_app_id(wayfire_view view, char *app_id)
     }
 
     // Safely copy to the output buffer
-    strcpy(app_id, result.c_str());
+    return result;
 }
 
 class wayfire_foreign_toplevel
@@ -60,10 +52,9 @@ class wayfire_foreign_toplevel
         EXT,
     };
 
-    wayfire_foreign_toplevel(wayfire_toplevel_view view, void *handle,
-        foreign_toplevel_map_type *view_to_toplevel = nullptr,
+    wayfire_foreign_toplevel(wayfire_toplevel_view view,
         ProtocolType ptype = ProtocolType::WLR) :
-        view(view), handle(handle), view_to_toplevel(view_to_toplevel), protocol_type(ptype)
+        view(view), protocol_type(ptype)
     {
         /** Currently only wlr-foreign-toplevel-handle needs this. */
         init_request_handlers();
@@ -81,16 +72,9 @@ class wayfire_foreign_toplevel
         destroy_handle();
     }
 
-    void *get()
-    {
-        return handle;
-    }
-
   protected:
     wayfire_toplevel_view view;
     /** This can be wither wlr_foreign_toplevel_handle_v1 or ext_foreign_toplevel_handle_v1 */
-    void *handle = nullptr;
-    foreign_toplevel_map_type *view_to_toplevel = nullptr;
 
     const ProtocolType protocol_type;
 

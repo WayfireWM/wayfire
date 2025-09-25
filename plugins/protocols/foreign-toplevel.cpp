@@ -14,16 +14,23 @@
 
 #include "toplevel-management.hpp"
 
-#define WLR_HNDL static_cast<wlr_foreign_toplevel_handle_v1*>(handle)
+class wayfire_wlr_foreign_toplevel;
+
+using wlr_foreign_toplevel_map_type = std::map<wayfire_toplevel_view,
+    std::unique_ptr<wayfire_wlr_foreign_toplevel>>;
 
 class wayfire_wlr_foreign_toplevel : public wayfire_foreign_toplevel
 {
+    wlr_foreign_toplevel_handle_v1 *handle;
+    wlr_foreign_toplevel_map_type *view_to_toplevel;
+
   public:
-    wayfire_wlr_foreign_toplevel(wayfire_toplevel_view view, void *handle,
-        foreign_toplevel_map_type *view_to_toplevel) : wayfire_foreign_toplevel(view,
-            handle, view_to_toplevel,
-            ProtocolType::WLR)
-    {}
+    wayfire_wlr_foreign_toplevel(wayfire_toplevel_view view, void *hndl,
+        wlr_foreign_toplevel_map_type *view_toplevel_map) : wayfire_foreign_toplevel(view, ProtocolType::WLR),
+        view_to_toplevel(view_toplevel_map)
+    {
+        handle = static_cast<wlr_foreign_toplevel_handle_v1*>(hndl);
+    }
 
   protected:
     virtual void send_initial_state() override
@@ -59,43 +66,41 @@ class wayfire_wlr_foreign_toplevel : public wayfire_foreign_toplevel
 
     virtual void destroy_handle() override
     {
-        wlr_foreign_toplevel_handle_v1_destroy(WLR_HNDL);
+        wlr_foreign_toplevel_handle_v1_destroy(handle);
     }
 
     virtual void toplevel_send_title() override
     {
-        wlr_foreign_toplevel_handle_v1_set_title(WLR_HNDL,
-            view->get_title().c_str());
+        wlr_foreign_toplevel_handle_v1_set_title(handle, view->get_title().c_str());
     }
 
     virtual void toplevel_send_app_id() override
     {
-        char app_id[1024] = {0};
-        get_app_id(view, app_id);
-        wlr_foreign_toplevel_handle_v1_set_app_id(WLR_HNDL, app_id);
+        std::string appid_buffer = get_app_id(view);
+        wlr_foreign_toplevel_handle_v1_set_app_id(handle, appid_buffer.c_str());
     }
 
     virtual void toplevel_send_state() override
     {
-        wlr_foreign_toplevel_handle_v1_set_maximized(WLR_HNDL,
+        wlr_foreign_toplevel_handle_v1_set_maximized(handle,
             view->pending_tiled_edges() == wf::TILED_EDGES_ALL);
-        wlr_foreign_toplevel_handle_v1_set_activated(WLR_HNDL,
+        wlr_foreign_toplevel_handle_v1_set_activated(handle,
             view->activated);
-        wlr_foreign_toplevel_handle_v1_set_minimized(WLR_HNDL,
+        wlr_foreign_toplevel_handle_v1_set_minimized(handle,
             view->minimized);
-        wlr_foreign_toplevel_handle_v1_set_fullscreen(WLR_HNDL,
+        wlr_foreign_toplevel_handle_v1_set_fullscreen(handle,
             view->pending_fullscreen());
 
         /* update parent as well */
         auto it = view_to_toplevel->find(view->parent);
         if (it == view_to_toplevel->end())
         {
-            wlr_foreign_toplevel_handle_v1_set_parent(WLR_HNDL,
+            wlr_foreign_toplevel_handle_v1_set_parent(handle,
                 nullptr);
         } else
         {
-            wlr_foreign_toplevel_handle_v1_set_parent(WLR_HNDL,
-                static_cast<wlr_foreign_toplevel_handle_v1*>(it->second->get()));
+            wlr_foreign_toplevel_handle_v1_set_parent(handle,
+                static_cast<wlr_foreign_toplevel_handle_v1*>(it->second->handle));
         }
     }
 
@@ -103,13 +108,13 @@ class wayfire_wlr_foreign_toplevel : public wayfire_foreign_toplevel
     {
         if (output && enter)
         {
-            wlr_foreign_toplevel_handle_v1_output_enter(WLR_HNDL,
+            wlr_foreign_toplevel_handle_v1_output_enter(handle,
                 output->handle);
         }
 
         if (output && !enter)
         {
-            wlr_foreign_toplevel_handle_v1_output_leave(WLR_HNDL,
+            wlr_foreign_toplevel_handle_v1_output_leave(handle,
                 output->handle);
         }
     }
@@ -161,17 +166,17 @@ class wayfire_wlr_foreign_toplevel : public wayfire_foreign_toplevel
         });
 
         toplevel_handle_v1_close_request.connect(
-            &WLR_HNDL->events.request_close);
+            &handle->events.request_close);
         toplevel_handle_v1_maximize_request.connect(
-            &WLR_HNDL->events.request_maximize);
+            &handle->events.request_maximize);
         toplevel_handle_v1_minimize_request.connect(
-            &WLR_HNDL->events.request_minimize);
+            &handle->events.request_minimize);
         toplevel_handle_v1_activate_request.connect(
-            &WLR_HNDL->events.request_activate);
+            &handle->events.request_activate);
         toplevel_handle_v1_fullscreen_request.connect(
-            &WLR_HNDL->events.request_fullscreen);
+            &handle->events.request_fullscreen);
         toplevel_handle_v1_set_rectangle_request.connect(
-            &WLR_HNDL->events.set_rectangle);
+            &handle->events.set_rectangle);
     }
 
     virtual void handle_minimize_hint(wf::toplevel_view_interface_t *view,
@@ -237,7 +242,7 @@ class wayfire_foreign_toplevel_protocol_impl : public wf::plugin_interface_t
     };
 
     wlr_foreign_toplevel_manager_v1 *toplevel_manager;
-    std::map<wayfire_toplevel_view, std::unique_ptr<wayfire_foreign_toplevel>> handle_for_view;
+    std::map<wayfire_toplevel_view, std::unique_ptr<wayfire_wlr_foreign_toplevel>> handle_for_view;
 };
 
 DECLARE_WAYFIRE_PLUGIN(wayfire_foreign_toplevel_protocol_impl);
