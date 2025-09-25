@@ -18,23 +18,23 @@
 void get_state(wayfire_view view, struct wlr_ext_foreign_toplevel_handle_v1_state *state)
 {
     std::string title_buffer = view->get_title();
-    char appid_cstr[1024]    = {0};
-
-    get_app_id(view, appid_cstr);
+    std::string appid_buffer = get_app_id(view);
 
     // Update the state
     state->title  = strdup(title_buffer.c_str());
-    state->app_id = strdup(appid_cstr);
+    state->app_id = strdup(appid_buffer.c_str());
 }
 
 class wayfire_ext_foreign_toplevel : public wayfire_foreign_toplevel
 {
+    wlr_ext_foreign_toplevel_handle_v1 *handle;
+
   public:
-    wayfire_ext_foreign_toplevel(wayfire_toplevel_view view, void *handle) : wayfire_foreign_toplevel(view,
-            handle,
-            nullptr,
+    wayfire_ext_foreign_toplevel(wayfire_toplevel_view view, void *hndl) : wayfire_foreign_toplevel(view,
             ProtocolType::EXT)
-    {}
+    {
+        handle = static_cast<wlr_ext_foreign_toplevel_handle_v1*>(hndl);
+    }
 
   protected:
     virtual void send_initial_state() override
