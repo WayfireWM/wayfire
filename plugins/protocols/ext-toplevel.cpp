@@ -30,8 +30,7 @@ class wayfire_ext_foreign_toplevel : public wayfire_foreign_toplevel
     wlr_ext_foreign_toplevel_handle_v1 *handle;
 
   public:
-    wayfire_ext_foreign_toplevel(wayfire_toplevel_view view, void *hndl) : wayfire_foreign_toplevel(view,
-            ProtocolType::EXT)
+    wayfire_ext_foreign_toplevel(wayfire_toplevel_view view, void *hndl) : wayfire_foreign_toplevel(view)
     {
         handle = static_cast<wlr_ext_foreign_toplevel_handle_v1*>(hndl);
     }

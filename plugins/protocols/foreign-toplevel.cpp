@@ -26,7 +26,7 @@ class wayfire_wlr_foreign_toplevel : public wayfire_foreign_toplevel
 
   public:
     wayfire_wlr_foreign_toplevel(wayfire_toplevel_view view, void *hndl,
-        wlr_foreign_toplevel_map_type *view_toplevel_map) : wayfire_foreign_toplevel(view, ProtocolType::WLR),
+        wlr_foreign_toplevel_map_type *view_toplevel_map) : wayfire_foreign_toplevel(view),
         view_to_toplevel(view_toplevel_map)
     {
         handle = static_cast<wlr_foreign_toplevel_handle_v1*>(hndl);
