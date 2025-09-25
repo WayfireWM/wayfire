@@ -167,5 +167,4 @@ extern "C"
 
 // Ext protocols
 #include <wlr/types/wlr_ext_data_control_v1.h>
-#include <wlr/types/wlr_foreign_toplevel_management_v1.h>
 }
