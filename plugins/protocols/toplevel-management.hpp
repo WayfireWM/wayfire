@@ -45,16 +45,8 @@ std::string get_app_id(wayfire_view view)
 class wayfire_foreign_toplevel
 {
   public:
-    // Protocol type tracking
-    enum class ProtocolType
-    {
-        WLR,
-        EXT,
-    };
-
-    wayfire_foreign_toplevel(wayfire_toplevel_view view,
-        ProtocolType ptype = ProtocolType::WLR) :
-        view(view), protocol_type(ptype)
+    wayfire_foreign_toplevel(wayfire_toplevel_view view) :
+        view(view)
     {
         /** Currently only wlr-foreign-toplevel-handle needs this. */
         init_request_handlers();
@@ -75,8 +67,6 @@ class wayfire_foreign_toplevel
   protected:
     wayfire_toplevel_view view;
     /** This can be wither wlr_foreign_toplevel_handle_v1 or ext_foreign_toplevel_handle_v1 */
-
-    const ProtocolType protocol_type;
 
     virtual void init_request_handlers()
     {}
