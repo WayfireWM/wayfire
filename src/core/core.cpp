@@ -170,6 +170,31 @@ void wf::compositor_core_impl_t::init()
         LOGI("Not using wlr_drm_lease_device_v1; VR will not be available!");
     }
 
+    protocols.cursor_shape_manager = wlr_cursor_shape_manager_v1_create(display, 1);
+    cursor_shape_set_request.set_callback([&] (void *data)
+    {
+        auto event = (wlr_cursor_shape_manager_v1_request_set_shape_event *)data;
+        const char *shape_name = wlr_cursor_shape_v1_name(event->shape);
+        struct wlr_seat_client *focused_client = event->seat_client->seat->pointer_state.focused_client;
+
+        if (seat->priv->cursor->touchscreen_mode_active)
+        {
+            return;
+        }
+
+        if (seat->priv->cursor->hide_ref_counter)
+        {
+            return;
+        }
+
+        if (focused_client == event->seat_client)
+        {
+            wlr_cursor_set_xcursor(seat->priv->cursor->cursor, seat->priv->cursor->xcursor, shape_name);
+        }
+    });
+    cursor_shape_set_request.connect(&protocols.cursor_shape_manager->events.request_set_shape);
+
+
     /* idle-inhibit setup */
     protocols.idle_notifier = wlr_idle_notifier_v1_create(display);
     protocols.idle_inhibit  = wlr_idle_inhibit_v1_create(display);
@@ -337,6 +362,7 @@ void wf::compositor_core_impl_t::disconnect_signals()
     vkbd_created.disconnect();
     vptr_created.disconnect();
     pointer_constraint_added.disconnect();
+    cursor_shape_set_request.disconnect();
 }
 
 void wf::compositor_core_impl_t::fini()
