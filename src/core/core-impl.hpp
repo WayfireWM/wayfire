@@ -87,6 +87,7 @@ class compositor_core_impl_t : public compositor_core_t
     wf::wl_listener_wrapper pointer_constraint_added;
     wf::wl_listener_wrapper idle_inhibitor_created;
     wf::wl_listener_wrapper drm_lease_request;
+    wf::wl_listener_wrapper cursor_shape_set_request;
     std::shared_ptr<scene::root_node_t> scene_root;
 
     std::vector<wayland_global_filter_t*> wayland_global_filters;
