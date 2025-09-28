@@ -8,15 +8,11 @@ po_files = files(po_files_raw)
 
 foreach po_file : po_files
     language = fs.name(fs.parent(fs.parent(po_file)))
-    install_path = join_paths(
-        wayfire_locale_dir,
-        language,
-        'LC_MESSAGES'
-    )
-    run_command('mkdir', '-p', meson.project_build_root() + '/locale/' + language + '/LC_MESSAGES', check : true)
-    run_command('msgfmt', po_file, '-o', meson.project_build_root() + '/locale/' + language + '/LC_MESSAGES/' + fs.stem(po_file) + '.mo', check : true)
-    install_data(
-        meson.project_build_root() + '/locale/' + language + '/LC_MESSAGES/' + fs.stem(po_file) + '.mo',
-        install_dir : install_path
-    )
+    install_path = join_paths(wayfire_locale_dir, language, 'LC_MESSAGES')
+    mo_dir = join_paths(meson.project_build_root(), 'locale', language, 'LC_MESSAGES')
+    mo_file = fs.stem(po_file) + '.mo'
+    mo_path = join_paths(mo_dir, mo_file)
+    run_command('mkdir', '-p', mo_dir, check : true)
+    run_command('msgfmt', po_file, '-o', mo_path, check : true)
+    install_data(mo_path, install_dir : install_path)
 endforeach
