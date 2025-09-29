@@ -377,6 +377,7 @@ int main(int argc, char *argv[])
           default:
             std::cerr << "Unrecognized command line argument " << optarg << "\n" <<
                 std::endl;
+            return EXIT_FAILURE;
         }
     }
 
