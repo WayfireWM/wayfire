@@ -7,3 +7,4 @@ option('default_config_backend', type: 'string', value: 'default', description: 
 option('print_trace', type: 'boolean', value: true, description: 'Print stack trace in debug logs (disables coredump)')
 option('tests', type: 'feature', value: 'auto', description: 'Enable unit tests')
 option('custom_pch', type: 'boolean', value: false, description: 'Use custom PCH for plugins. May not work with all compilers and setups.')
+option('build_locales', type: 'feature', value: 'auto', description: 'Build supported locale translations')

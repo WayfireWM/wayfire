@@ -244,7 +244,12 @@ subdir('src')
 subdir('man')
 subdir('metadata')
 subdir('plugins')
-subdir('locale')
+
+if get_option('buildtype') != 'debug' or not get_option('build_locales').auto()
+    if not get_option('build_locales').disabled()
+        subdir('locale')
+    endif
+endif
 
 # Unit tests
 doctest = dependency('doctest', required: get_option('tests'))
