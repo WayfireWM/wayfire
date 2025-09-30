@@ -348,6 +348,7 @@ struct view_mapped_signal
     wayfire_view view;
 
     /* Indicates whether the position already has its initial position */
+    [[deprecated("Use startup-x and startup-y properties instead")]]
     bool is_positioned = false;
 };
 

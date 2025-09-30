@@ -2,6 +2,7 @@
 #include <unordered_map>
 #include <wayfire/signal-provider.hpp>
 #include <wayfire/nonstd/safe-list.hpp>
+#include <wayfire/util/log.hpp>
 
 struct wf::signal::provider_t::impl
 {
@@ -138,4 +139,10 @@ void wf::object_base_t::_clear_data()
     {
         erase_data(key);
     }
+}
+
+void wf::object_base_t::_warn_wrong_type(std::string name)
+{
+    LOGW("Tried to access data with name '", name, "' using the wrong type. Actual type: ",
+        typeid(_fetch_data(name)).name());
 }

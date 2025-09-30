@@ -19,9 +19,6 @@ class wayfire_xwayland_view_internal_base : public wf::xwayland_view_base_t
   protected:
     wf::wl_listener_wrapper on_configure;
 
-    /** The geometry requested by the client */
-    bool self_positioned = false;
-
   public:
     wayfire_xwayland_view_internal_base(wlr_xwayland_surface *xww) : xwayland_view_base_t(xww)
     {}
