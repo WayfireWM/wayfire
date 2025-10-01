@@ -1,0 +1,24 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"POT-Creation-Date: 2025-09-18 14:55+0300\n"
+"PO-Revision-Date: 2025-09-18 22:46+0300\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: ro\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Poedit 3.7\n"
+
+#. (itstool) path: plugin/_short
+msgid "Window Rules IPC Interface"
+msgstr "Interfață IPC pentru reguli de ferestre"
+
+#. (itstool) path: plugin/_long
+msgid ""
+"Interface to allow an external program to implement window rules (requires "
+"the IPC plugin)."
+msgstr ""
+"Interfață pentru a permite unui program extern să implementeze reguli de "
+"ferestre (necesită modulul IPC)."

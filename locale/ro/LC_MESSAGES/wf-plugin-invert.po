@@ -1,0 +1,36 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"POT-Creation-Date: 2025-09-18 14:55+0300\n"
+"PO-Revision-Date: 2025-09-18 22:43+0300\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: ro\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Poedit 3.7\n"
+
+#. (itstool) path: plugin/_short
+msgid "Invert"
+msgstr "Negativ"
+
+#. (itstool) path: plugin/_long
+msgid "A plugin to invert the colors of the whole output."
+msgstr "Un modul pentru a inversa culorile întregului ecran."
+
+#. (itstool) path: option/_short
+msgid "Toggle"
+msgstr "Comutare"
+
+#. (itstool) path: option/_long
+msgid "Inverts the colors of the whole output with the specified activator."
+msgstr "Inversează culorile întregului ecran cu activatorul specificat."
+
+#. (itstool) path: option/_short
+msgid "Preserve Hue"
+msgstr "Păstrează nuanța"
+
+#. (itstool) path: option/_long
+msgid "Only operate on black and white, preserving the hue"
+msgstr "Operează doar cu alb și negru, păstrând nuanța."

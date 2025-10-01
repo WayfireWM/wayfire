@@ -1,0 +1,186 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"POT-Creation-Date: 2025-09-18 14:55+0300\n"
+"PO-Revision-Date: 2025-09-19 09:00+0300\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: ro\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Poedit 3.7\n"
+
+#. (itstool) path: plugin/_short
+msgid "Simple Tile"
+msgstr "Potrivire simplă"
+
+#. (itstool) path: plugin/_long
+msgid ""
+"A plugin which provides some tiling features, inspired by Sway. The plugin "
+"is meant to contain only the basics."
+msgstr ""
+"Un modul care furnizează câteva funcții de potrivire a ferestrelor inspirate "
+"de Sway. Este conceput pentru a conține doar esențialul."
+
+#. (itstool) path: option/_short
+msgid "Tile enabled for specified window types"
+msgstr "Potrivire activată pentru tipurile specificate de fereastră"
+
+#. (itstool) path: option/_long
+msgid "Enables tiling for windows matching the specified criteria."
+msgstr ""
+"Activează potrivirea pentru ferestrele care corespund cu criteriile "
+"specificate."
+
+#. (itstool) path: option/_short
+msgid "Keep fullscreen on adjacent"
+msgstr "Păstrează ecranul complet pe adiacentă"
+
+#. (itstool) path: option/_long
+msgid ""
+"Specifies whether to keep fullscreen state when changing the focus. If "
+"**true**, the next focused window will also get fullscreen. If **false**, "
+"leaves fullscreen."
+msgstr ""
+"Specifică dacă se păstrează starea ecranului complet când se schimbă "
+"focalizarea. Dacă este adevărat, următoarea fereastră focalizată va primi "
+"ecranul complet, altfel se va anula ecranul complet."
+
+#. (itstool) path: option/_short
+msgid "Button move"
+msgstr "Buton de mutare"
+
+#. (itstool) path: option/_long
+msgid ""
+"When the specified button is held down, you can drag and drop tiled windows "
+"to reorder them and to change the tiling direction."
+msgstr ""
+"Când se ține apăsat butonul specificat, puteți trage și amplasa ferestre "
+"potrivite pentru a le reordona și a schimba direcția potrivirii."
+
+#. (itstool) path: option/_short
+msgid "Button resize"
+msgstr "Buton de redimensionare"
+
+#. (itstool) path: option/_long
+msgid ""
+"When the specified button is held down, you can drag tiled windows to resize "
+"them."
+msgstr ""
+"Când se ține apăsat butonul specificat, puteți trage ferestre potrivite "
+"pentru a le redimensiona."
+
+#. (itstool) path: option/_short
+msgid "Key toggle"
+msgstr "Tastă de comutare"
+
+#. (itstool) path: option/_long
+msgid "Toggles tiling mode with the specified key."
+msgstr "Comută modul de potrivire cu activatorul specificat."
+
+#. (itstool) path: option/_short
+msgid "Key focus left"
+msgstr "Tastă pentru focalizarea la stânga"
+
+#. (itstool) path: option/_long
+msgid "Moves focus to the window left with the specified key."
+msgstr "Mută focalizarea la fereastra din stânga cu activatorul specificat."
+
+#. (itstool) path: option/_short
+msgid "Key focus right"
+msgstr "Tastă pentru focalizarea la dreapta"
+
+#. (itstool) path: option/_long
+msgid "Moves focus to the window right with the specified key."
+msgstr "Mută focalizarea la fereastra din dreapta cu activatorul specificat."
+
+#. (itstool) path: option/_short
+msgid "Key focus above"
+msgstr "Tastă pentru focalizarea în sus"
+
+#. (itstool) path: option/_long
+msgid "Moves focus to the window above with the specified key."
+msgstr "Mută focalizarea la fereastra de deasupra cu activatorul specificat."
+
+#. (itstool) path: option/_short
+msgid "Key focus below"
+msgstr "Tastă pentru focalizarea în jos"
+
+#. (itstool) path: option/_long
+msgid "Moves focus to the window below with the specified key."
+msgstr "Mută focalizarea la fereastra de dedesubt cu activatorul specificat."
+
+#. (itstool) path: option/_short
+msgid "Key toggle maximized"
+msgstr "Tastă pentru comutarea maximizării"
+
+#. (itstool) path: option/_long
+msgid ""
+"Toggles the maximized state of the currently focused tiled view. When "
+"enabled, the view fills the workarea (like fullscreen, but stays in its "
+"tile). When disabled, the view returns to its previous tiled size."
+msgstr ""
+"Comută starea de maximizare a ferestrei potrivite momentan focalizate. Când "
+"este activată, fereastra umple zona de lucru (ca ecranul complet, dar "
+"regiunea potrivită rămâne). Când se dezactivează, fereastra se întoarce la "
+"dimensiunea anterioară."
+
+#. (itstool) path: option/_short
+msgid "Inner gap size"
+msgstr "Dimensiunea golului interior"
+
+#. (itstool) path: option/_long
+msgid ""
+"Number of pixels to shrink of a view when it has a neighbor in a given "
+"direction."
+msgstr ""
+"Numărul de pixeli cu care să se micșoreze o fereastră când are vecin într-o "
+"anumită direcție."
+
+#. (itstool) path: option/_short
+msgid "Outer horizontal gap size"
+msgstr "Dimensiunea marginii exterioare pe orizontală"
+
+#. (itstool) path: option/_long
+msgid ""
+"Number of pixels to shrink of a view when it has no neighbor on the left or "
+"on the right."
+msgstr ""
+"Numărul de pixeli cu care să se micșoreze o fereastră când nu are vecin în "
+"stânga sau în dreapta."
+
+#. (itstool) path: option/_short
+msgid "Outer vertical gap size"
+msgstr "Dimensiunea marginii exterioare pe verticală"
+
+#. (itstool) path: option/_long
+msgid ""
+"Number of pixels to shrink of a view when it has no neighbor above or below."
+msgstr ""
+"Numărul de pixeli cu care să se micșoreze o fereastră când nu are vecin în "
+"sus sau în jos."
+
+#. (itstool) path: option/_short
+msgid "Resize animation duration"
+msgstr "Durata animației de redimensionare"
+
+#. (itstool) path: option/_long
+msgid ""
+"The duration of the crossfade animation in situations where a tiled view's "
+"geometry changes."
+msgstr ""
+"Durata animației de dizolvare când geometria unei ferestre potrivite se "
+"schimbă."
+
+#. (itstool) path: option/_short
+msgid "Preview fill color"
+msgstr "Culoarea umplerii previzualizării"
+
+#. (itstool) path: option/_short
+msgid "Preview border color"
+msgstr "Culoarea marginii previzualizării"
+
+#. (itstool) path: option/_short
+msgid "Preview border width"
+msgstr "Grosimea marginii previzualizării"

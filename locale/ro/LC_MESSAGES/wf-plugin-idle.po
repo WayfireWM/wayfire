@@ -1,0 +1,105 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"POT-Creation-Date: 2025-09-18 14:55+0300\n"
+"PO-Revision-Date: 2025-09-18 19:10+0300\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: ro\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Poedit 3.7\n"
+
+#. (itstool) path: plugin/_short
+msgid "Idle"
+msgstr "Inactivitate"
+
+#. (itstool) path: plugin/_long
+msgid "A plugin for idle settings, such as the screensaver and DPMS."
+msgstr ""
+"Un modul pentru opțiuni de inactivitate, precum protectorul de ecran și DPMS."
+
+#. (itstool) path: option/_short
+msgid "Toggle"
+msgstr "Comutare"
+
+#. (itstool) path: option/_long
+msgid ""
+"Disables the compositor going idle with the specified activator. Pressing "
+"again reactivates."
+msgstr ""
+"Previne compozitorul din a deveni inactiv cu activatorul specificat. "
+"Apăsarea din nou reactivează."
+
+#. (itstool) path: option/_short
+msgid "Screensaver timeout"
+msgstr "Timp înaintea pornirii protectorului de ecran"
+
+#. (itstool) path: option/_long
+msgid ""
+"Displays the screensaver after the specified seconds of inactivity. Setting "
+"the value to **-1** disables the screensaver."
+msgstr ""
+"Afișează protectorul de ecran după timpul specificat de inactivitate, în "
+"secunde; reglarea la -1 îl dezactivează."
+
+#. (itstool) path: option/_short
+msgid "DPMS timeout"
+msgstr "Timp înaintea DPMS"
+
+#. (itstool) path: option/_long
+msgid ""
+"Enters power saving mode after the specified seconds of inactivity. Setting "
+"the value to **-1** disables power saving."
+msgstr ""
+"Activează modul de economisire a energiei după timpul specificat de "
+"inactivitate, în secunde. Reglarea la -1 dezactivează modul economic."
+
+#. (itstool) path: option/_short
+msgid "Disable on fullscreen"
+msgstr "Dezactivare la ecran complet"
+
+#. (itstool) path: option/_long
+msgid "Disables idle on fullscreen."
+msgstr "Dezactivează inactivitatea când ceva este în ecran complet."
+
+#. (itstool) path: option/_short
+msgid "Disable idle timeout initially"
+msgstr "Dezactivează cronometrul de inactivitate în mod implicit"
+
+#. (itstool) path: option/_long
+msgid ""
+"Disables idle timeout innitially as if the toggle was called once after "
+"loading the plugin."
+msgstr ""
+"Dezactivează în mod implicit cronometrul de inactivitate după încărcarea "
+"modulului, ca și cum ar fi fost activat comutatorul."
+
+#. (itstool) path: option/_short
+msgid "Cube zoom speed"
+msgstr "Viteză micșorare pentru cub"
+
+#. (itstool) path: option/_long
+msgid ""
+"Sets the zoom speed. The speed means how long it will take from the time the "
+"screensaver starts to the time the cube reaches `idle.cube_max_zoom`."
+msgstr ""
+"Stabilește viteza micșorării, adică cât de mult timp durează ca cubul "
+"protectorului de ecran să ajungă la `idle.cube_max_zoom` după pornire."
+
+#. (itstool) path: option/_short
+msgid "Cube rotate speed"
+msgstr "Viteza rotirii cubului"
+
+#. (itstool) path: option/_long
+msgid "Sets the speed rotation of the cube."
+msgstr "Stabilește viteza cu care se învârte cubul."
+
+#. (itstool) path: option/_short
+msgid "Cube max zoom"
+msgstr "Micșorare maximă a cubului"
+
+#. (itstool) path: option/_long
+msgid "Sets the maximum zoom level."
+msgstr "Stabilește nivelul maxim de micșorare."

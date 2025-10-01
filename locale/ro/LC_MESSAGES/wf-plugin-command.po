@@ -1,0 +1,71 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"POT-Creation-Date: 2025-09-18 14:55+0300\n"
+"PO-Revision-Date: 2025-09-18 16:09+0300\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: ro\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Poedit 3.7\n"
+
+#. (itstool) path: plugin/_short
+#. (itstool) path: entry/_short
+msgid "Command"
+msgstr "Comandă"
+
+#. (itstool) path: plugin/_long
+msgid ""
+"A plugin to bind key combo (key, button, touch) to execute shell commands."
+msgstr ""
+"Un modul pentru a asocia combinații (de taste, de butoane, de atingeri) cu "
+"executarea unor comenzi de sistem."
+
+#. (itstool) path: option/_short
+#. (itstool) path: option/_long
+msgid "Regular bindings"
+msgstr "Asocieri obișnuite"
+
+#. (itstool) path: entry/_long
+msgid "Sets the command to execute."
+msgstr "Stabilește comanda de executat."
+
+#. (itstool) path: entry/_short
+msgid "Binding"
+msgstr "Asociere"
+
+#. (itstool) path: entry/_long
+msgid "Sets the triggering activator binding."
+msgstr "Stabilește asocierea declanșatoare."
+
+#. (itstool) path: option/_short
+msgid "Repeatable bindings"
+msgstr "Asocieri repetabile"
+
+#. (itstool) path: option/_long
+msgid ""
+"Bindings which repeat their command if their key or button is held pressed."
+msgstr ""
+"Asocieri care își repetă comanda dacă apăsarea tastelor sau butoanelor "
+"acestora este menținută."
+
+#. (itstool) path: option/_short
+msgid "Always bindings"
+msgstr "Asocieri mereu disponibile"
+
+#. (itstool) path: option/_long
+msgid ""
+"Sets the bindings which are always available, even when screen is locked."
+msgstr ""
+"Definește asocierile care se pot folosi întotdeauna, chiar și atunci când "
+"ecranul este blocat."
+
+#. (itstool) path: option/_short
+msgid "Release bindings"
+msgstr "Asocieri la eliberare"
+
+#. (itstool) path: option/_long
+msgid "Sets the bindings which activate on release"
+msgstr "Definește asocierile care se activează la eliberare."
