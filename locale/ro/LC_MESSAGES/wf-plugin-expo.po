@@ -1,0 +1,104 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"POT-Creation-Date: 2025-09-18 14:55+0300\n"
+"PO-Revision-Date: 2025-09-18 18:22+0300\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: ro\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Poedit 3.7\n"
+
+#. (itstool) path: plugin/_short
+msgid "Expo"
+msgstr "Expunere"
+
+#. (itstool) path: plugin/_long
+msgid "A plugin to show an overview of all workspaces."
+msgstr "Un modul pentru a afișa o panoramă a tuturor birourilor."
+
+#. (itstool) path: option/_short
+msgid "Toggle"
+msgstr "Comutare"
+
+#. (itstool) path: option/_long
+msgid ""
+"Shows an overview of all workspaces with the specified activator. Pressing "
+"again exits."
+msgstr ""
+"Arată o panoramă a tuturor birourilor cu activatorul specificat; apăsarea "
+"încă o dată o închide."
+
+#. (itstool) path: option/_short
+msgid "Background color"
+msgstr "Culoarea fundalului"
+
+#. (itstool) path: option/_long
+msgid "Sets the background color."
+msgstr "Stabilește culoarea fundalului."
+
+#. (itstool) path: option/_short
+msgid "Zoom duration"
+msgstr "Durata micșorării"
+
+#. (itstool) path: option/_long
+msgid "Sets the zoom duration in milliseconds."
+msgstr "Stabilește durata micșorării în milisecunde."
+
+#. (itstool) path: option/_short
+msgid "Delimiter offset"
+msgstr "Spațiu de delimitare"
+
+#. (itstool) path: option/_long
+msgid "Sets the delimiter offset (in pixels) between workspaces."
+msgstr "Stabilește decalajul de delimitare dintre birouri, în pixeli."
+
+#. (itstool) path: option/_short
+msgid "Keyboard interaction"
+msgstr "Interacțiune cu tastatura"
+
+#. (itstool) path: option/_long
+msgid ""
+"Allow the use of arrow keys to select a workspace, ESC to cancel and ENTER "
+"to accept."
+msgstr ""
+"Permite folosirea tastelor cu săgeți pentru a selecta un birou, Escape "
+"pentru a anula și Enter pentru a accepta."
+
+#. (itstool) path: option/_short
+msgid "Brightness of inactive workspaces"
+msgstr "Luminozitatea birourilor inactive"
+
+#. (itstool) path: option/_long
+msgid ""
+"Decrease the brightness of all workspaces except the currently selected one "
+"to this value."
+msgstr ""
+"Scade luminozitatea tuturor birourilor, mai puțin cel selectat, la această "
+"valoare."
+
+#. (itstool) path: option/_short
+msgid "Brightness transition duration"
+msgstr "Durata tranziției de luminozitate"
+
+#. (itstool) path: option/_long
+msgid ""
+"Duration of the transition of brightness when a new workspace is selected in "
+"milliseconds."
+msgstr ""
+"Durata tranziției de luminozitate când se selectează un nou birou, în "
+"milisecunde."
+
+#. (itstool) path: option/_short
+msgid "Select workspace"
+msgstr "Selectează biroul"
+
+#. (itstool) path: option/_long
+msgid ""
+"When the binding is triggered while expo is active, the corresponding "
+"workspace will be focused and Expo will exit."
+msgstr ""
+"Când se declanșează această asociere în timp ce este activată expunerea, va "
+"fi focalizat biroul corespunzător și expunerea se va închide."

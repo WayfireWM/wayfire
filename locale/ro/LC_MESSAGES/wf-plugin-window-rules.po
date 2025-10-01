@@ -1,0 +1,39 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"POT-Creation-Date: 2025-09-18 14:55+0300\n"
+"PO-Revision-Date: 2025-09-19 09:21+0300\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: ro\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Poedit 3.7\n"
+
+#. (itstool) path: plugin/_short
+msgid "Window Rules"
+msgstr "Reguli de fereastră"
+
+#. (itstool) path: plugin/_long
+msgid ""
+"A plugin to apply specific commands to windows by using various criteria."
+msgstr ""
+"Un modul pentru a aplica anumite comenzi ferestrelor folosind diverse "
+"criterii."
+
+#. (itstool) path: option/_short
+msgid "Window rules"
+msgstr "Reguli de fereastră"
+
+#. (itstool) path: option/_long
+msgid "Apply specific commands to windows by using various criteria"
+msgstr "Aplică anumite comenzi ferestrelor folosind diverse criterii."
+
+#. (itstool) path: entry/_short
+msgid "Rule"
+msgstr "Regulă"
+
+#. (itstool) path: entry/_long
+msgid "Defines the rule to be applied"
+msgstr "Definește regula de aplicat."

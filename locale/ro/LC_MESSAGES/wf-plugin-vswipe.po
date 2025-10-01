@@ -1,0 +1,119 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"POT-Creation-Date: 2025-09-18 14:55+0300\n"
+"PO-Revision-Date: 2025-09-19 09:08+0300\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: ro\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Poedit 3.7\n"
+
+#. (itstool) path: plugin/_short
+msgid "Viewport Swipe"
+msgstr "Glisare birouri"
+
+#. (itstool) path: plugin/_long
+msgid "A plugin to swipe workspaces in a grid."
+msgstr "Un modul pentru a glisa birourile într-o grilă."
+
+#. (itstool) path: option/_short
+msgid "Enable horizontal"
+msgstr "Pe orizontală"
+
+#. (itstool) path: option/_long
+msgid "Enables or disables horizontal swiping."
+msgstr "Activează sau dezactivează glisarea pe orizontală."
+
+#. (itstool) path: option/_short
+msgid "Enable vertical"
+msgstr "Pe verticală"
+
+#. (itstool) path: option/_long
+msgid "Enables or disables vertical swiping."
+msgstr "Activează sau dezactivează glisarea pe verticală."
+
+#. (itstool) path: option/_short
+msgid "Enable free movement"
+msgstr "Mișcare liberă"
+
+#. (itstool) path: option/_long
+msgid ""
+"Enables or disables moving diagonally and more than one workspace at a time."
+msgstr ""
+"Activează sau dezactivează mișcarea pe diagonală și cu mai mult de un birou "
+"deodată."
+
+#. (itstool) path: option/_short
+msgid "Enable smooth transition"
+msgstr "Tranziție lină"
+
+#. (itstool) path: option/_long
+msgid "Enables or disables smooth transition."
+msgstr "Activează sau dezactivează o tranziție lină."
+
+#. (itstool) path: option/_short
+msgid "Duration"
+msgstr "Durata"
+
+#. (itstool) path: option/_long
+msgid "Sets the duration of the animation in milliseconds."
+msgstr "Stabilește durata animației, în milisecunde."
+
+#. (itstool) path: option/_short
+msgid "Background color"
+msgstr "Culoarea fundalului"
+
+#. (itstool) path: option/_long
+msgid "Sets the background color."
+msgstr "Stabilește culoarea fundalului."
+
+#. (itstool) path: option/_short
+msgid "Number of fingers"
+msgstr "Numărul de degete"
+
+#. (itstool) path: option/_long
+msgid "Specifies the number of fingers to swipe."
+msgstr "Specifică numărul de degete care să gliseze."
+
+#. (itstool) path: option/_short
+msgid "Gap"
+msgstr "Gol"
+
+#. (itstool) path: option/_long
+msgid "Changes the gap in pixels."
+msgstr "Schimbă golul dintre birouri, în pixeli."
+
+#. (itstool) path: option/_short
+msgid "threshold"
+msgstr "Glisare minimă"
+
+#. (itstool) path: option/_long
+msgid "Sets the threshold."
+msgstr "Stabilește limita pentru glisare."
+
+#. (itstool) path: option/_short
+msgid "Delta threshold"
+msgstr "Delta glisare minimă"
+
+#. (itstool) path: option/_long
+msgid "Sets the delta threshold."
+msgstr "Stabilește delta limitei pentru glisare."
+
+#. (itstool) path: option/_short
+msgid "Speed factor"
+msgstr "Factor de viteză"
+
+#. (itstool) path: option/_long
+msgid "Sets the speed factor."
+msgstr "Stabilește factorul de viteză."
+
+#. (itstool) path: option/_short
+msgid "Speed cap"
+msgstr "Limită de viteză"
+
+#. (itstool) path: option/_long
+msgid "Sets the speed cap."
+msgstr "Stabilește limita de viteză."

@@ -1,0 +1,247 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"POT-Creation-Date: 2025-09-18 14:55+0300\n"
+"PO-Revision-Date: 2025-09-19 10:09+0300\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: ro\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Poedit 3.7\n"
+
+#. (itstool) path: plugin/_short
+msgid "Workarounds"
+msgstr "Improvizații"
+
+#. (itstool) path: plugin/_long
+msgid "Some hacks that might be required to make things work."
+msgstr ""
+"Niște improvizații care ar putea fi necesare pentru ca lucrurile să "
+"funcționeze."
+
+#. (itstool) path: option/_short
+msgid "Application ID mode"
+msgstr "Modul identificatorului de aplicație"
+
+#. (itstool) path: option/_long
+msgid "Specifies the application ID mode."
+msgstr "Specifică modul identificatorului de aplicație."
+
+#. (itstool) path: desc/_name
+msgid "Stock"
+msgstr "Stoc"
+
+#. (itstool) path: desc/_name
+msgid "GTK Shell"
+msgstr "Interfață GTK"
+
+#. (itstool) path: desc/_name
+msgid "Full"
+msgstr "Complet"
+
+#. (itstool) path: option/_short
+msgid "Make all dialogs modal"
+msgstr "Fă toate dialogurile modale"
+
+#. (itstool) path: option/_long
+msgid ""
+"If false, the main window can be focused even if it has a dialog. The dialog "
+"is nevertheless kept on top of the main window. Kwin defaults to false."
+msgstr ""
+"Dacă este fals, fereastra principală poate fi focalizată chiar dacă are "
+"dialog. Totuși, dialogul rămâne deasupra ei. Kwin folosește fals în mod "
+"implicit."
+
+#. (itstool) path: option/_short
+msgid "Allow dynamic repaint delay"
+msgstr "Permite întârzierea dinamică la redesenare"
+
+#. (itstool) path: option/_long
+msgid ""
+"If true, allows Wayfire to dynamically recalculate its max_render_time, i.e "
+"allow render time higher than max_render_time."
+msgstr ""
+"Dacă este adevărat, permite Wayfire să recalculeze max_render_time dinamic, "
+"permițând un timp de desenare mai mare decât max_render_time."
+
+#. (itstool) path: option/_short
+msgid "Use external output configuration instead of Wayfire's own."
+msgstr ""
+"Folosește configurația externă a ecranelor în locul celei proprii a Wayfire."
+
+#. (itstool) path: option/_long
+msgid ""
+"If true, Wayfire will not handle any configuration options for outputs in "
+"the config file once an external daemon like https://github.com/emersion/"
+"kanshi sets the output configuration via the wlr-output-management protocol. "
+"Exceptions are made for options not available via wlr-output-management, "
+"like output mirroring and custom modelines."
+msgstr ""
+"Dacă este adevărată, Wayfire nu se va ocupa de opțiunile de configurație "
+"pentru ieșiri din fișierul de configurări dacă un serviciu extern precum "
+"https://github.com/emersion/kanshi stabilește configurația ecranelor "
+"folosind protocolul wlr-output-management. Există excepții pentru opțiunile "
+"care nu sunt disponibile prin acel protocol, precum oglindirea ecranelor și "
+"linii de mod particularizate."
+
+#. (itstool) path: option/_short
+msgid "Allow views to overlap between multiple outputs."
+msgstr "Permite ferestrelor să se suprapună între mai multe ferestre"
+
+#. (itstool) path: option/_long
+msgid ""
+"Allow views to overlap between multiple outputs. Many of the core plugins "
+"will not behave properly with this option set!"
+msgstr ""
+"Permite ferestrelor să se suprapună între mai multe ferestre. Multe module "
+"incluse nu se vor comporta corect cu această opțiune!"
+
+#. (itstool) path: option/_short
+msgid ""
+"Force xdg-decoration clients to use the compositor-preferred decoration mode."
+msgstr ""
+"Forțează clienții xdg-decoration să folosească modul de decorare preferat de "
+"compozitor"
+
+#. (itstool) path: option/_long
+msgid ""
+"Force xdg-decoration clients to use the compositor-preferred decoration mode "
+"regardless of the client's preference."
+msgstr ""
+"Forțează clienții xdg-decoration să folosească modul de decorare preferat de "
+"compozitor, indiferent de preferința clientului."
+
+#. (itstool) path: option/_short
+msgid "Enable calling dlclose() when a plugin is unloaded"
+msgstr "Activează apelul la dlclose() când se anulează încărcarea unui modul"
+
+#. (itstool) path: option/_long
+msgid ""
+"Enable calling dlclose() when a plugin is unloaded. Note that this may not "
+"work well with all plugins."
+msgstr ""
+"Activează apelul la dlclose() când se anulează încărcarea unui modul. S-ar "
+"putea să nu funcționeze bine cu toate modulele."
+
+#. (itstool) path: option/_short
+msgid "Discard output from commands invoked by Wayfire."
+msgstr "Aruncă ieșirea de la comenzile invocate de Wayfire"
+
+#. (itstool) path: option/_long
+msgid ""
+"Discard output from commands invoked by Wayfire, so that they don't end up "
+"in the logs."
+msgstr ""
+"Aruncă ieșirea de la comenzile invocate de Wayfire pentru a nu fi incluse în "
+"jurnale."
+
+#. (itstool) path: option/_short
+msgid "Enable support for the newer input-method-v2 protocol."
+msgstr "Activează sprijinul pentru noul protocol input-method-v2"
+
+#. (itstool) path: option/_long
+msgid ""
+"Enable support for the newer input-method-v2 protocol. Note that the input-"
+"method-v1 protocol works better in many cases."
+msgstr ""
+"Activează sprijinul pentru noul protocol input-method-v2. Totuși, protocolul "
+"input-method-v1 funcționează mai bine în multe cazuri."
+
+#. (itstool) path: option/_short
+msgid ""
+"Enable certain damage optimizations which are based on a surfaces' opaque "
+"regions."
+msgstr ""
+"Permite anumite optimizări de daune care sunt bazate pe regiunile opace ale "
+"unei suprafețe"
+
+#. (itstool) path: option/_long
+msgid ""
+"Enable certain damage optimizations which are based on a surfaces' opaque "
+"regions. In some cases, this optimization might give unexpected results (i.e "
+"background app stops updating) even though this is fine according to "
+"Wayland's protocol."
+msgstr ""
+"Permite anumite optimizări de daune „damage” care sunt bazate pe regiunile "
+"opace ale unei suprafețe. În unele cazuri, ar putea duce la rezultate "
+"neașteptate (precum o aplicație de fundal care nu se mai actualizează) deși "
+"este permis conform protocolului Wayland."
+
+#. (itstool) path: option/_short
+msgid "Force frame synchronization."
+msgstr "Forțează sincronizarea cadrelor"
+
+#. (itstool) path: option/_long
+msgid ""
+"This option can be used to workaround driver bugs that cause rendering "
+"artifacts, though can cause more resource usage. Leave disabled if unsure."
+msgstr ""
+"Opțiunea poate fi folosită pentru a soluționa problemele din piloți care "
+"provoacă artefacte la desenare, dar poate duce și la un consum mai ridicat "
+"de resurse. Lăsați-o dezactivată dacă nu știți sigur."
+
+#. (itstool) path: option/_short
+msgid "Maximum buffer size"
+msgstr "Dimensiunea maximă a zonei temporare"
+
+#. (itstool) path: option/_long
+msgid ""
+"Maximum size in pixels of graphics buffers used for rendering. Needs to be "
+"set lower on some systems to avoid crashes and other issues."
+msgstr ""
+"Dimensiunea maximă a zonelor temporare de grafică „buffers” folosite pentru "
+"afișare. Pe unele sisteme, este necesar reglajul în jos pentru a evita "
+"crăparea."
+
+#. (itstool) path: option/_short
+msgid "Disable primary selection"
+msgstr "Dezactivează selecția primară"
+
+#. (itstool) path: option/_long
+msgid "Disable primary selection (middle-click copy/paste)."
+msgstr ""
+"Dezactivează selecția primară (copiere/inserare cu butonul din mijloc)."
+
+#. (itstool) path: option/_short
+msgid "Focus main surface instead of popup menus"
+msgstr "Focalizează suprafața principală în locul listelor-meniu"
+
+#. (itstool) path: option/_long
+msgid ""
+"Focus the main surface instead of popup menus. Works around some bugs in Qt-"
+"based apps related to copy-paste."
+msgstr ""
+"Focalizează suprafața principală în locul listelor-meniu. Soluționează unele "
+"probleme legate de copiere/inserare în aplicațiile Qt."
+
+#. (itstool) path: option/_short
+msgid "Keep last focused toplevel activated"
+msgstr "Păstrează ultima principală focalizată activată"
+
+#. (itstool) path: option/_long
+msgid ""
+"When a layer-shell view grabs keyboard focus, keep the last focused toplevel "
+"view as activated."
+msgstr ""
+"Când o fereastră layer-shell (de interfață a biroului) preia focalizarea "
+"tastaturii, păstrează ultima fereastră principală focalizată ca activată."
+
+#. (itstool) path: option/_short
+msgid "Auto-reload Config"
+msgstr "Reîncărcarea automată a configurației"
+
+#. (itstool) path: option/_long
+msgid "Automatically reload the config file when it's modified."
+msgstr "Reîncarcă automat fișierul cu configurări la modificare."
+
+#. (itstool) path: option/_short
+msgid "Config reload delay"
+msgstr "Întârziere la reîncărcarea configurării"
+
+#. (itstool) path: option/_long
+msgid "Delay in milliseconds after a config file change before reloading."
+msgstr ""
+"Întârziere în milisecunde după o schimbare în fișierul de configurări "
+"înaintea reîncărcării."

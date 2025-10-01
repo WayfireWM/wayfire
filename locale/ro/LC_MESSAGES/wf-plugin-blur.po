@@ -1,0 +1,166 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"POT-Creation-Date: 2025-09-18 14:55+0300\n"
+"PO-Revision-Date: 2025-09-18 16:02+0300\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: ro\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Poedit 3.7\n"
+
+#. (itstool) path: plugin/_short
+msgid "Blur"
+msgstr "Încețoșare"
+
+#. (itstool) path: plugin/_long
+msgid "A plugin to blur windows."
+msgstr "Un modul pentru a încețoșa ferestre."
+
+#. (itstool) path: option/_short
+msgid "Blur by default"
+msgstr "Încețoșare în mod implicit"
+
+#. (itstool) path: option/_long
+msgid "Criteria for which apps to be blurred when they are opened"
+msgstr ""
+"Criterii pentru a stabili care aplicații să fie încețoșate când sunt deschise"
+
+#. (itstool) path: option/_short
+msgid "Toggle"
+msgstr "Comutare"
+
+#. (itstool) path: option/_long
+msgid "Sets the shortcut to toggle blurring for a specific window."
+msgstr ""
+"Stabilește scurtătura pentru a comuta încețoșarea unei anumite ferestre."
+
+#. (itstool) path: option/_short
+msgid "Method"
+msgstr "Metodă"
+
+#. (itstool) path: option/_long
+msgid "Chooses a blur algorithm."
+msgstr "Alege un algoritm de încețoșare."
+
+#. (itstool) path: desc/_name
+msgid "Box"
+msgstr "Chenar"
+
+#. (itstool) path: desc/_name
+msgid "Gaussian"
+msgstr "Gaussian"
+
+#. (itstool) path: desc/_name
+msgid "Kawase"
+msgstr "Kawase"
+
+#. (itstool) path: desc/_name
+msgid "Bokeh"
+msgstr "Defocalizare"
+
+#. (itstool) path: option/_short
+msgid "Blur saturation"
+msgstr "Saturația încețoșării"
+
+#. (itstool) path: option/_long
+msgid "Sets the saturation of the blurred content."
+msgstr "Stabilește saturația conținutului încețoșat."
+
+#. (itstool) path: option/_short
+msgid "Box offset"
+msgstr "Decalajul chenarelor"
+
+#. (itstool) path: option/_long
+msgid "Sets the offset value for the box method."
+msgstr "Stabilește valoarea decalajului pentru algoritmul chenar."
+
+#. (itstool) path: option/_short
+msgid "Box degrade"
+msgstr "Degradarea chenarelor"
+
+#. (itstool) path: option/_long
+msgid "Sets the degrade value for the box method."
+msgstr "Stabilește valoarea degradării pentru algoritmul chenar."
+
+#. (itstool) path: option/_short
+msgid "Box iterations"
+msgstr "Ciclurile chenarelor"
+
+#. (itstool) path: option/_long
+msgid "Sets the iterations for the box method."
+msgstr "Stabilește numărul de cicluri pentru algoritmul chenar."
+
+#. (itstool) path: option/_short
+msgid "Gaussian offset"
+msgstr "Decalajul gaussian"
+
+#. (itstool) path: option/_long
+msgid "Sets the offset value for the gaussian method."
+msgstr "Stabilește valoarea decalajului pentru algoritmul gaussian."
+
+#. (itstool) path: option/_short
+msgid "Gaussian degrade"
+msgstr "Degradarea gaussiană"
+
+#. (itstool) path: option/_long
+msgid "Sets the degrade value for the gaussian method."
+msgstr "Stabilește valoarea degradării pentru algoritmul gaussian."
+
+#. (itstool) path: option/_short
+msgid "Gaussian iterations"
+msgstr "Ciclurile gaussiene"
+
+#. (itstool) path: option/_long
+msgid "Sets the iterations for the gaussian method."
+msgstr "Stabilește numărul de cicluri pentru algoritmul gaussian."
+
+#. (itstool) path: option/_short
+msgid "Kawase offset"
+msgstr "Decalajul kawase"
+
+#. (itstool) path: option/_long
+msgid "Sets the offset value for the kawase method."
+msgstr "Stabilește valoarea decalajului pentru algoritmul kawase."
+
+#. (itstool) path: option/_short
+msgid "Kawase degrade"
+msgstr "Degradarea kawase"
+
+#. (itstool) path: option/_long
+msgid "Sets the degrade value for the kawase method."
+msgstr "Stabilește valoarea degradării pentru algoritmul kawase."
+
+#. (itstool) path: option/_short
+msgid "Kawase iterations"
+msgstr "Ciclurile kawase"
+
+#. (itstool) path: option/_long
+msgid "Sets the iterations for the kawase method."
+msgstr "Stabilește numărul de cicluri pentru algoritmul kawase."
+
+#. (itstool) path: option/_short
+msgid "Bokeh offset"
+msgstr "Decalajul defocalizării"
+
+#. (itstool) path: option/_long
+msgid "Sets the offset value for the bokeh method."
+msgstr "Stabilește valoarea decalajului pentru algoritmul de defocalizare."
+
+#. (itstool) path: option/_short
+msgid "Bokeh degrade"
+msgstr "Degradarea defocalizării"
+
+#. (itstool) path: option/_long
+msgid "Sets the degrade value for the bokeh method."
+msgstr "Stabilește valoarea degradării pentru algoritmul de defocalizare."
+
+#. (itstool) path: option/_short
+msgid "Bokeh iterations"
+msgstr "Ciclurile defocalizării"
+
+#. (itstool) path: option/_long
+msgid "Sets the iterations for the bokeh method."
+msgstr "Stabilește valoarea decalajului pentru algoritmul de defocalizare."
