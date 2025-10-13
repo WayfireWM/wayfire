@@ -14,6 +14,7 @@
 #include "wayfire/signal-definitions.hpp"
 #include "wayfire/signal-provider.hpp"
 #include "wayfire/toplevel-view.hpp"
+#include <wayfire/view-helpers.hpp>
 #include "wayfire/window-manager.hpp"
 #include "wayfire/seat.hpp"
 #include "wayfire/nonstd/reverse.hpp"
@@ -48,6 +49,8 @@ class wayfire_wm_actions_output_t : public wf::per_output_plugin_instance_t
         "wm-actions/toggle_sticky"};
     wf::option_wrapper_t<wf::activatorbinding_t> send_to_back{
         "wm-actions/send_to_back"};
+    wf::option_wrapper_t<wf::activatorbinding_t> bring_to_front{
+        "wm-actions/bring_to_front"};
 
     wf::plugin_activation_data_t grab_interface = {
         .name = "wm-actions",
@@ -339,6 +342,15 @@ class wayfire_wm_actions_output_t : public wf::per_output_plugin_instance_t
         });
     };
 
+    wf::activator_callback on_bring_to_front = [=] (auto ev) -> bool
+    {
+        return execute_for_selected_view(ev.source, [this] (wayfire_view view)
+        {
+            view_bring_to_front(view);
+            return true;
+        });
+    };
+
     void disable_showdesktop()
     {
         view_set_output.disconnect();
@@ -369,6 +381,7 @@ class wayfire_wm_actions_output_t : public wf::per_output_plugin_instance_t
         output->add_activator(toggle_fullscreen, &on_toggle_fullscreen);
         output->add_activator(toggle_sticky, &on_toggle_sticky);
         output->add_activator(send_to_back, &on_send_to_back);
+        output->add_activator(bring_to_front, &on_bring_to_front);
         output->connect(&on_set_above_state_signal);
         output->connect(&on_view_minimized);
         wf::get_core().connect(&on_view_output_changed);
@@ -391,6 +404,7 @@ class wayfire_wm_actions_output_t : public wf::per_output_plugin_instance_t
         output->rem_binding(&on_toggle_fullscreen);
         output->rem_binding(&on_toggle_sticky);
         output->rem_binding(&on_send_to_back);
+        output->rem_binding(&on_bring_to_front);
     }
 };
 

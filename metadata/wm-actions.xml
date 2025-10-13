@@ -39,5 +39,10 @@
 			<_long>Send the active view to behind all other views.</_long>
 			<default>disabled</default>
 		</option>
+		<option name="bring_to_front" type="activator">
+			<_short>Bring to front</_short>
+			<_long>Raise the active view above all other views.</_long>
+			<default>disabled</default>
+		</option>
 	</plugin>
 </wayfire>
