@@ -19,6 +19,7 @@ wf::cursor_t::cursor_t(wf::seat_t *seat)
     wlr_cursor_map_to_output(cursor, NULL);
     wlr_cursor_warp(cursor, NULL, cursor->x, cursor->y);
     init_xcursor();
+    init_cursor_shape_manager();
 
     config_reloaded = [=] (auto)
     {
@@ -128,14 +129,46 @@ void wf::cursor_t::init_xcursor()
     set_cursor("default");
 }
 
-void wf::cursor_t::set_cursor(std::string name)
+bool wf::cursor_t::can_client_set_cursor()
 {
-    if (this->hide_ref_counter)
+    if (this->touchscreen_mode_active)
     {
-        return;
+        return false;
     }
 
-    if (this->touchscreen_mode_active)
+    if (this->hide_ref_counter)
+    {
+        return false;
+    }
+
+    return true;
+}
+
+void wf::cursor_t::init_cursor_shape_manager()
+{
+    cursor_shape_manager = wlr_cursor_shape_manager_v1_create(seat->seat->display, 1);
+    request_set_cursor_shape.set_callback([&] (void *data)
+    {
+        auto event = (wlr_cursor_shape_manager_v1_request_set_shape_event*)data;
+        const char *shape_name = wlr_cursor_shape_v1_name(event->shape);
+        struct wlr_seat_client *focused_client = seat->seat->pointer_state.focused_client;
+
+        if (focused_client != event->seat_client)
+        {
+            return;
+        }
+
+        if (can_client_set_cursor())
+        {
+            wlr_cursor_set_xcursor(cursor, xcursor, shape_name);
+        }
+    });
+    request_set_cursor_shape.connect(&cursor_shape_manager->events.request_set_shape);
+}
+
+void wf::cursor_t::set_cursor(std::string name)
+{
+    if (!can_client_set_cursor())
     {
         return;
     }
@@ -189,12 +222,7 @@ wf::pointf_t wf::cursor_t::get_cursor_position()
 void wf::cursor_t::set_cursor(
     wlr_seat_pointer_request_set_cursor_event *ev, bool validate_request)
 {
-    if (this->hide_ref_counter)
-    {
-        return;
-    }
-
-    if (this->touchscreen_mode_active)
+    if (!can_client_set_cursor())
     {
         return;
     }

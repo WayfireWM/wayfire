@@ -26,6 +26,7 @@ struct cursor_t
     void set_cursor(wlr_seat_pointer_request_set_cursor_event *ev,
         bool validate_request);
     void set_cursor(std::string name);
+    bool can_client_set_cursor();
     void unhide_cursor();
     void hide_cursor();
     int hide_ref_counter = 0;
@@ -48,6 +49,7 @@ struct cursor_t
     wf::pointf_t get_cursor_position();
 
     void init_xcursor();
+    void init_cursor_shape_manager();
     void setup_listeners();
 
     // Device event listeners
@@ -63,12 +65,14 @@ struct cursor_t
 
     // Seat events
     wf::wl_listener_wrapper request_set_cursor;
+    wf::wl_listener_wrapper request_set_cursor_shape;
 
     wf::signal::connection_t<wf::reload_config_signal> config_reloaded;
     wf::seat_t *seat;
 
     wlr_cursor *cursor = NULL;
     wlr_xcursor_manager *xcursor = NULL;
+    wlr_cursor_shape_manager_v1 *cursor_shape_manager = NULL;
 
     std::string last_cursor_name;
 

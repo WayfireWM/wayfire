@@ -155,6 +155,9 @@ extern "C"
 #include <wlr/types/wlr_fractional_scale_v1.h>
 #include <wlr/types/wlr_single_pixel_buffer_v1.h>
 #include <wlr/types/wlr_session_lock_v1.h>
+#if  __has_include(<cursor-shape-v1-protocol.h>)
+    #include <wlr/types/wlr_cursor_shape_v1.h>
+#endif
 
 // Activation plugin
 #include <wlr/types/wlr_xdg_activation_v1.h>

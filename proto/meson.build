@@ -32,6 +32,7 @@ server_protocols = [
     [wl_protocol_dir, 'unstable/input-method/input-method-unstable-v1.xml'],
     [wl_protocol_dir, 'staging/ext-session-lock/ext-session-lock-v1.xml'],
     [wl_protocol_dir, 'unstable/text-input/text-input-unstable-v1.xml'],
+    [wl_protocol_dir, 'staging/cursor-shape/cursor-shape-v1.xml'],
     'wayfire-shell-unstable-v2.xml',
     'gtk-shell.xml',
     'wlr-layer-shell-unstable-v1.xml',
