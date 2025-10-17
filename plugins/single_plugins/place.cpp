@@ -1,96 +1,140 @@
 #include "wayfire/signal-provider.hpp"
 #include "wayfire/toplevel-view.hpp"
-#include <wayfire/per-output-plugin.hpp>
+#include <wayfire/debug.hpp>
+#include "wayfire/txn/transaction-manager.hpp"
+#include "wayfire/plugin.hpp"
 #include <wayfire/view.hpp>
 #include <wayfire/core.hpp>
 #include <wayfire/workarea.hpp>
 #include <wayfire/window-manager.hpp>
 #include <wayfire/signal-definitions.hpp>
 
-class wayfire_place_window : public wf::per_output_plugin_instance_t
+class wayfire_place_cascade_data : public wf::custom_data_t
 {
-    wf::signal::connection_t<wf::view_mapped_signal> on_view_mapped = [=] (wf::view_mapped_signal *ev)
-    {
-        auto toplevel = wf::toplevel_cast(ev->view);
+  public:
+    int x = 0;
+    int y = 0;
+};
 
-        if (!toplevel || toplevel->parent || toplevel->pending_fullscreen() ||
-            toplevel->pending_tiled_edges() || ev->is_positioned)
+class wayfire_place_window : public wf::plugin_interface_t
+{
+    wf::signal::connection_t<wf::txn::new_transaction_signal> on_new_tx =
+        [=] (wf::txn::new_transaction_signal *ev)
+    {
+        // For each transaction, we need to consider what happens with participating views
+        for (const auto& obj : ev->tx->get_objects())
         {
-            return;
+            auto toplevel = std::dynamic_pointer_cast<wf::toplevel_t>(obj);
+            if (!toplevel || !map_pending(toplevel))
+            {
+                continue;
+            }
+
+            auto view = wf::find_view_for_toplevel(toplevel);
+            if (view && should_place(view))
+            {
+                do_place(view);
+            }
+        }
+    };
+
+    bool map_pending(std::shared_ptr<wf::toplevel_t> toplevel)
+    {
+        return !toplevel->current().mapped && toplevel->pending().mapped;
+    }
+
+    bool should_place(wayfire_toplevel_view toplevel)
+    {
+        if (toplevel->parent)
+        {
+            return false;
         }
 
-        ev->is_positioned = true;
+        if (toplevel->pending_fullscreen() || toplevel->pending_tiled_edges())
+        {
+            return false;
+        }
+
+        if (toplevel->has_property("startup-x") || toplevel->has_property("startup-y"))
+        {
+            return false;
+        }
+
+        if (!toplevel->get_output())
+        {
+            return false;
+        }
+
+        return true;
+    }
+
+    void do_place(wayfire_toplevel_view view)
+    {
+        auto output   = view->get_output();
         auto workarea = output->workarea->get_workarea();
 
         std::string mode = placement_mode;
         if (mode == "cascade")
         {
-            cascade(toplevel, workarea);
+            cascade(view, workarea);
         } else if (mode == "maximize")
         {
-            maximize(toplevel, workarea);
+            maximize(view, workarea);
         } else if (mode == "random")
         {
-            random(toplevel, workarea);
+            random(view, workarea);
         } else
         {
-            center(toplevel, workarea);
+            center(view, workarea);
         }
-    };
+    }
 
-    wf::signal::connection_t<wf::workarea_changed_signal> workarea_changed_cb = [=] (auto)
+    void adjust_cascade_for_workarea(nonstd::observer_ptr<wayfire_place_cascade_data> cascade,
+        wf::geometry_t workarea)
     {
-        auto workarea = output->workarea->get_workarea();
-        if ((cascade_x < workarea.x) ||
-            (cascade_x > workarea.x + workarea.width))
+        if ((cascade->x < workarea.x) || (cascade->x > workarea.x + workarea.width))
         {
-            cascade_x = workarea.x;
+            cascade->x = workarea.x;
         }
 
-        if ((cascade_y < workarea.y) ||
-            (cascade_y > workarea.y + workarea.height))
+        if ((cascade->y < workarea.y) || (cascade->y > workarea.y + workarea.height))
         {
-            cascade_y = workarea.y;
+            cascade->y = workarea.y;
         }
-    };
+    }
 
     wf::option_wrapper_t<std::string> placement_mode{"place/mode"};
-
-    int cascade_x, cascade_y;
 
   public:
     void init() override
     {
-        auto workarea = output->workarea->get_workarea();
-        cascade_x = workarea.x;
-        cascade_y = workarea.y;
-
-        output->connect(&workarea_changed_cb);
-        output->connect(&on_view_mapped);
+        wf::get_core().tx_manager->connect(&on_new_tx);
     }
 
-    void cascade(wayfire_toplevel_view & view, wf::geometry_t workarea)
+    void cascade(wayfire_toplevel_view view, wf::geometry_t workarea)
     {
         wf::geometry_t window = view->get_pending_geometry();
+        auto cascade = view->get_output()->get_data_safe<wayfire_place_cascade_data>();
+        adjust_cascade_for_workarea(cascade, workarea);
 
-        if ((cascade_x + window.width > workarea.x + workarea.width) ||
-            (cascade_y + window.height > workarea.y + workarea.height))
+        if ((cascade->x + window.width > workarea.x + workarea.width) ||
+            (cascade->y + window.height > workarea.y + workarea.height))
         {
-            cascade_x = workarea.x;
-            cascade_y = workarea.y;
+            cascade->x = workarea.x;
+            cascade->y = workarea.y;
         }
 
-        view->move(cascade_x, cascade_y);
+        view->toplevel()->pending().geometry.x = cascade->x;
+        view->toplevel()->pending().geometry.y = cascade->y;
 
-        cascade_x += workarea.width * .03;
-        cascade_y += workarea.height * .03;
+        cascade->x += workarea.width * .03;
+        cascade->y += workarea.height * .03;
     }
 
     void random(wayfire_toplevel_view & view, wf::geometry_t workarea)
     {
         wf::geometry_t window = view->get_pending_geometry();
         wf::geometry_t area;
-        int pos_x, pos_y;
 
         area.x     = workarea.x;
         area.y     = workarea.y;
@@ -104,18 +148,15 @@ class wayfire_place_window : public wf::per_output_plugin_instance_t
             return;
         }
 
-        pos_x = rand() % area.width + area.x;
-        pos_y = rand() % area.height + area.y;
-
-        view->move(pos_x, pos_y);
+        view->toplevel()->pending().geometry.x = rand() % area.width + area.x;
+        view->toplevel()->pending().geometry.y = rand() % area.height + area.y;
     }
 
     void center(wayfire_toplevel_view & view, wf::geometry_t workarea)
     {
         wf::geometry_t window = view->get_pending_geometry();
-        window.x = workarea.x + (workarea.width / 2) - (window.width / 2);
-        window.y = workarea.y + (workarea.height / 2) - (window.height / 2);
-        view->move(window.x, window.y);
+        view->toplevel()->pending().geometry.x = workarea.x + (workarea.width / 2) - (window.width / 2);
+        view->toplevel()->pending().geometry.y = workarea.y + (workarea.height / 2) - (window.height / 2);
     }
 
     void maximize(wayfire_toplevel_view & view, wf::geometry_t workarea)
@@ -124,4 +165,4 @@ class wayfire_place_window : public wf::per_output_plugin_instance_t
     }
 };
 
-DECLARE_WAYFIRE_PLUGIN(wf::per_output_plugin_t<wayfire_place_window>);
+DECLARE_WAYFIRE_PLUGIN(wayfire_place_window);
