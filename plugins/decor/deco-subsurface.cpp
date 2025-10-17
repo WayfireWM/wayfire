@@ -293,7 +293,7 @@ class simple_decoration_node_t : public wf::scene::node_t, public wf::pointer_in
     void handle_touch_motion(uint32_t time_ms, int finger_id, wf::pointf_t position) override
     {
         position -= wf::pointf_t{get_offset()};
-        layout.handle_motion(position.x, position.y);
+        handle_action(layout.handle_motion(position.x, position.y));
     }
 
     void resize(wf::dimensions_t dims)
