@@ -126,8 +126,11 @@ struct seat_t::impl
     wf::output_t *active_output = nullptr;
     std::weak_ptr<wf::toplevel_view_interface_t> _last_active_toplevel;
     std::weak_ptr<wf::view_interface_t> _last_active_view;
+    wf::signal::connection_t<wf::view_minimized_signal> on_view_minimized;
     wf::signal::connection_t<scene::root_node_update_signal> on_root_node_updated;
-    void update_active_view(wf::scene::node_ptr new_focus);
+
+    void check_update_active_view(wf::scene::node_ptr new_focus);
+    void set_activated_view(wayfire_toplevel_view view);
 
     // Last serial used for button press, release, touch down/up and or tablet tip events.
     uint32_t last_press_release_serial = 0;
