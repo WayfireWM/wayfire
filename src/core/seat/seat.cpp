@@ -85,7 +85,7 @@ wayfire_view wf::seat_t::get_active_view() const
     return priv->_last_active_view.lock();
 }
 
-void wf::seat_t::impl::update_active_view(wf::scene::node_ptr new_focus)
+void wf::seat_t::impl::check_update_active_view(wf::scene::node_ptr new_focus)
 {
     static wf::option_wrapper_t<bool> keep_last_focus_activated{"workarounds/keep_last_toplevel_activated"};
 
@@ -97,31 +97,47 @@ void wf::seat_t::impl::update_active_view(wf::scene::node_ptr new_focus)
     }
 
     LOGC(KBD, "Active view becomes ", view);
-    if ((view == nullptr) || toplevel_cast(view) || !keep_last_focus_activated)
-    {
-        auto last_toplevel = _last_active_toplevel.lock();
-        if (last_toplevel.get() != view.get())
-        {
-            if (last_toplevel)
-            {
-                last_toplevel->set_activated(false);
-            }
-
-            _last_active_toplevel.reset();
-            if (auto toplevel = toplevel_cast(view))
-            {
-                toplevel->set_activated(true);
-                _last_active_toplevel = toplevel->weak_from_this();
-            }
-        }
-    }
-
     if (view)
     {
         _last_active_view = view->weak_from_this();
     } else
     {
         this->_last_active_view.reset();
+    }
+
+    // Update activated status for toplevel views
+    auto last_toplevel = _last_active_toplevel.lock();
+    if (last_toplevel.get() == view.get())
+    {
+        return;
+    }
+
+    const bool do_change_activated =
+        ((view == nullptr) || toplevel_cast(view)) || // Switching to another toplevel view
+        !keep_last_focus_activated; // Workaround to change in all cases (including when focusing panel)
+
+    if (do_change_activated)
+    {
+        set_activated_view(toplevel_cast(view));
+    }
+}
+
+void wf::seat_t::impl::set_activated_view(wayfire_toplevel_view view)
+{
+    auto last_toplevel = _last_active_toplevel.lock();
+    if (last_toplevel)
+    {
+        last_toplevel->set_activated(false);
+    }
+
+    _last_active_toplevel.reset();
+    on_view_minimized.disconnect();
+
+    if (view)
+    {
+        view->set_activated(true);
+        view->connect(&on_view_minimized);
+        _last_active_toplevel = view->weak_from_this();
     }
 }
 
@@ -177,12 +193,12 @@ void wf::seat_t::focus_view(wayfire_view v)
 
     if (!v || !v->is_mapped() || !v->get_keyboard_focus_surface())
     {
-        priv->update_active_view(nullptr);
+        priv->check_update_active_view(nullptr);
         give_input_focus(nullptr);
         return;
     }
 
-    priv->update_active_view(v->get_root_node());
+    priv->check_update_active_view(v->get_root_node());
     give_input_focus(v);
 }
 
@@ -199,7 +215,7 @@ void wf::seat_t::refocus()
     auto focus_sptr = focus ? focus->shared_from_this() : nullptr;
     if (wf::node_to_view(focus_sptr) || !focus)
     {
-        priv->update_active_view(focus_sptr);
+        priv->check_update_active_view(focus_sptr);
     }
 
     priv->set_keyboard_focus(focus_sptr, keyboard_focus_reason::REFOCUS);
@@ -396,6 +412,13 @@ wf::seat_t::seat_t(wl_display *display, std::string name) : seat(wlr_seat_create
     });
 
     wf::get_core().scene()->connect(&priv->on_root_node_updated);
+    priv->on_view_minimized.set_callback([=] (wf::view_minimized_signal *ev)
+    {
+        if (ev->view->minimized)
+        {
+            priv->set_activated_view(nullptr);
+        }
+    });
 }
 
 void wf::seat_t::impl::update_capabilities()
