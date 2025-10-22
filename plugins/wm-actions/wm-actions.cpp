@@ -344,7 +344,7 @@ class wayfire_wm_actions_output_t : public wf::per_output_plugin_instance_t
 
     wf::activator_callback on_bring_to_front = [=] (auto ev) -> bool
     {
-        return execute_for_selected_view(ev.source, [this] (wayfire_view view)
+        return execute_for_selected_view(ev.source, [] (wayfire_view view)
         {
             view_bring_to_front(view);
             return true;
