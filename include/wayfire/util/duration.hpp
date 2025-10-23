@@ -11,9 +11,8 @@ namespace animation
 namespace smoothing
 {
 /**
- * A smooth function is a function which takes a double in [0, 1] and returns
- * another double in R. Both ranges represent percentage of a progress of
- * an animation.
+ * A smooth function is a function which takes a double in [0, 1] and returns another double in R. Both ranges
+ * represent percentage of a progress of an animation.
  */
 using smooth_function = std::function<double (double)>;
 
@@ -23,6 +22,8 @@ extern smooth_function linear;
 extern smooth_function circle;
 /** "sigmoid" smoothing function, i.e x -> 1.0 / (1 + exp(-12 * x + 6)) */
 extern smooth_function sigmoid;
+/** custom cubic-bezier as in CSS */
+extern smooth_function get_cubic_bezier(double x1, double y1, double x2, double y2);
 
 std::vector<std::string> get_available_smooth_functions();
 }
@@ -34,10 +35,7 @@ struct animation_description_t
     animation::smoothing::smooth_function easing;
     std::string easing_name;
 
-    bool operator ==(const animation_description_t& other) const
-    {
-        return (length_ms == other.length_ms) && (easing_name == other.easing_name);
-    }
+    bool operator ==(const animation_description_t& other) const;
 };
 
 namespace option_type
@@ -66,15 +64,13 @@ struct transition_t
 };
 
 /**
- * duration_t is a class which can be used to track progress over a specific
- * time interval.
+ * duration_t is a class which can be used to track progress over a specific time interval.
  */
 class duration_t
 {
   public:
     /**
-     * Construct a new duration.
-     * Initially, the duration is not running and its progress is 1.
+     * Construct a new duration. Initially, the duration is not running and its progress is 1.
      *
      * @param length The length of the duration in milliseconds.
      * @param smooth The smoothing function for transitions.
@@ -95,40 +91,36 @@ class duration_t
     duration_t& operator =(duration_t&& other) = default;
 
     /**
-     * Start the duration.
-     * This means that the progress will get reset to 0.
+     * Start the duration. This means that the progress will get reset to 0.
      */
     void start();
 
     /**
-     * Get the progress of the duration in percentage.
-     * The progress will be smoothed using the smoothing function.
+     * Get the progress of the duration in percentage. The progress will be smoothed using the smoothing
+     * function.
      *
-     * @return The current progress after smoothing. It is guaranteed that when
-     *   the duration starts, progress will be close to 0, and when it is
-     *   finished, it will be close to 1.
+     * @return The current progress after smoothing. It is guaranteed that when the duration starts, progress
+     * will be close to 0, and when it is finished, it will be close to 1.
      */
     double progress() const;
 
     /**
-     * Check if the duration is still running.
-     * Note that even when the duration first finishes, this function will
-     * still return that the function is running one time.
+     * Check if the duration is still running. Note that even when the duration first finishes, this function
+     * will still return that the function is running one time.
      *
      * @return Whether the duration still has not elapsed.
      */
     bool running();
 
     /**
-     * Reverse the duration. The progress will remain the same but the
-     * direction will reverse toward the opposite start or end point.
+     * Reverse the duration. The progress will remain the same but the direction will reverse toward the
+     * opposite start or end point.
      */
     void reverse();
 
     /**
      * Get duration direction.
-     *  0: reverse
-     *  1: forward
+     *  0: reverse 1: forward
      */
     int get_direction();
 
@@ -138,17 +130,14 @@ class duration_t
 };
 
 /**
- * A timed transition is a transition between two states which happens
- * over a period of time.
+ * A timed transition is a transition between two states which happens over a period of time.
  *
- * During the transition, the current state is smoothly interpolated between
- * start and end.
+ * During the transition, the current state is smoothly interpolated between start and end.
  */
 struct timed_transition_t : public transition_t
 {
     /**
-     * Construct a new timed transition using the given duration to measure
-     * progress.
+     * Construct a new timed transition using the given duration to measure progress.
      *
      * @duration The duration to use for time measurement
      * @start The start state.
@@ -204,14 +193,12 @@ class simple_animation_t : public duration_t, public timed_transition_t
     void animate(double start, double end);
 
     /**
-     * Animate from the current progress to the given end, and start the
-     * duration.
+     * Animate from the current progress to the given end, and start the duration.
      */
     void animate(double end);
 
     /**
-     * Animate from the current progress to the current end, and start the
-     * duration.
+     * Animate from the current progress to the current end, and start the duration.
      */
     void animate();
 };

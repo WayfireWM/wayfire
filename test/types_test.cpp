@@ -536,9 +536,26 @@ TEST_CASE("wf::animation::animation_description_t")
     };
     std::string sigmoid250ms_str = "250ms sigmoid";
 
+    adt custom4s = {
+        .length_ms = 4000,
+        .easing    = wf::animation::smoothing::get_cubic_bezier(0.25, 0.6, 0.75, 0.4),
+        .easing_name = "cubic-bezier 0.25 0.6 0.75 0.4",
+    };
+    std::string custom4s_str = "4s cubic-bezier 0.25 0.6 0.75 0.4";
+
+    adt custom333ms = {
+        .length_ms = 333,
+        .easing    = wf::animation::smoothing::get_cubic_bezier(0.16, 1, 0.3, 1),
+        .easing_name = "cubic-bezier 0.1600 1.0000 0.3000 1.0000",
+    };
+    std::string custom333ms_str = "333ms cubic-bezier 0.16 1 0.3 1";
+
     CHECK(from_string<adt>(circle100_str) == circle100);
     CHECK(from_string<adt>(circle100_str_2) == circle100);
     CHECK(from_string<adt>(linear8s_str) == linear8s);
     CHECK(from_string<adt>(sigmoid250ms_str) == sigmoid250ms);
+    CHECK(from_string<adt>(custom4s_str) == custom4s);
+    CHECK(from_string<adt>(custom333ms_str) == custom333ms);
+    CHECK(from_string<adt>(to_string<adt>(custom333ms)) == from_string<adt>(custom333ms_str));
     CHECK(to_string<adt>(sigmoid250ms) == sigmoid250ms_str);
 }

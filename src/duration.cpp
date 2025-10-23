@@ -4,7 +4,20 @@
 #include <algorithm>
 #include <chrono>
 #include <cmath>
+#include <limits>
 #include <map>
+#include <sstream>
+
+double bezier_helper(double t, double p0, double p1, double p2, double p3)
+{
+    const double u = 1 - t;
+    return u * u * u * p0 + 3 * u * u * t * p1 + 3 * u * t * t * p2 + t * t * t * p3;
+}
+
+inline bool epsilon_comparison(double a, double b)
+{
+    return std::fabs(a - b) <= std::numeric_limits<double>::epsilon() * std::fabs(a + b);
+}
 
 namespace wf
 {
@@ -20,8 +33,57 @@ smooth_function circle =
 const double sigmoid_max = 1 + std::exp(-6);
 smooth_function sigmoid  =
     [] (double x) -> double { return sigmoid_max / (1 + exp(-12 * x + 6)); };
+
+smooth_function get_cubic_bezier(double x1, double y1, double x2, double y2)
+{
+    // https://en.wikipedia.org/wiki/Newton%27s_method
+    return [=] (double x)
+    {
+        double t = x;
+        for (int i = 0; i < 10; ++i)
+        {
+            const double f  = bezier_helper(t, 0, x1, x2, 1) - x;
+            const double df = 3 * (1 - t) * (1 - t) * x1 + 6 * (1 - t) * t * (x2 - x1) + 3 * t * t * (1 - x2);
+            if (std::abs(f) < 1e-6)
+            {
+                break;
+            }
+
+            t -= f / df;
+        }
+
+        return bezier_helper(t, 0, y1, y2, 1);
+    };
+}
 }
 } // namespace animation
+}
+
+bool wf::animation_description_t::operator ==(const animation_description_t & other) const
+{
+    if (easing_name == other.easing_name)
+    {
+        return (length_ms == other.length_ms);
+    }
+
+    // Cubic-bezier easings need parsing to handle epsilon
+    std::stringstream easing_a(easing_name);
+    std::stringstream easing_b(easing_name);
+    std::string easing_type_a, easing_type_b;
+    easing_a >> easing_type_a;
+    easing_b >> easing_type_b;
+    if ((easing_type_a != "cubic-bezier") || (easing_type_b != "cubic-bezier"))
+    {
+        return false;
+    }
+
+    double x1_a, y1_a, x2_a, y2_a, x1_b, y1_b, x2_b, y2_b;
+    easing_a >> x1_a >> y1_a >> x2_a >> y2_a;
+    easing_b >> x1_b >> y1_b >> x2_b >> y2_b;
+    return epsilon_comparison(x1_a, x1_b) &&
+           epsilon_comparison(y1_a, y1_b) &&
+           epsilon_comparison(x2_a, x2_b) &&
+           epsilon_comparison(y2_b, y2_b);
 }
 
 class wf::animation::duration_t::impl
@@ -297,7 +359,7 @@ std::optional<animation_description_t> from_string<animation_description_t>(cons
         return animation_description_t{
             .length_ms = *val,
             .easing    = animation::smoothing::circle,
-            .easing_name = "circle",
+            .easing_name = "circle"
         };
     }
 
@@ -321,7 +383,20 @@ std::optional<animation_description_t> from_string<animation_description_t>(cons
         result.easing_name = "circle";
     }
 
-    if (!animation::smoothing::easing_map.count(result.easing_name))
+    if (animation::smoothing::easing_map.count(result.easing_name))
+    {
+        result.easing = animation::smoothing::easing_map.at(result.easing_name);
+    } else if (result.easing_name == "cubic-bezier")
+    {
+        double x1 = 0, y1 = 0, x2 = 1, y2 = 1;
+        stream >> x1 >> y1 >> x2 >> y2;
+        result.easing = animation::smoothing::get_cubic_bezier(x1, y1, x2, y2);
+        result.easing_name = "cubic-bezier " +
+            to_string(x1) +
+            " " + to_string(y1) +
+            " " + to_string(x2) +
+            " " + to_string(y2);
+    } else
     {
         return {};
     }
@@ -333,7 +408,6 @@ std::optional<animation_description_t> from_string<animation_description_t>(cons
         return {};
     }
 
-    result.easing = animation::smoothing::easing_map.at(result.easing_name);
     if (suffix == "s")
     {
         result.length_ms = N * 1000;
