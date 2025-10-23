@@ -66,7 +66,7 @@ class wayfire_grid : public wf::plugin_interface_t, public wf::per_output_tracke
         if (!wo->can_activate_plugin(&grab_interface))
         {
             return false;
-        }    
+        }
 
         if (auto toplevel = toplevel_cast(view))
         {
