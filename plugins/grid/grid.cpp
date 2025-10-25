@@ -68,14 +68,13 @@ class wayfire_grid : public wf::plugin_interface_t, public wf::per_output_tracke
             return false;
         }
 
-        auto toplevel = toplevel_cast(view);
-        if (!view)
+        if (auto toplevel = toplevel_cast(view))
         {
-            return false;
+            wf::get_core().default_wm->tile_request(toplevel, 0);
+            return true;
         }
 
-        wf::get_core().default_wm->tile_request(toplevel, 0);
-        return true;
+        return false;
     };
 
   public:
@@ -88,7 +87,7 @@ class wayfire_grid : public wf::plugin_interface_t, public wf::per_output_tracke
             bindings[i].load_from_xml_option("grid/slot_" + slots[i]);
             bindings[i].set_handler([=] (wf::output_t *wo, wayfire_view view)
             {
-                if (!wo->can_activate_plugin(wf::CAPABILITY_MANAGE_DESKTOP))
+                if (!wo->can_activate_plugin(&grab_interface))
                 {
                     return false;
                 }
