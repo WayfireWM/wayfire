@@ -1,5 +1,5 @@
 protocol_plugins = [
-  'foreign-toplevel', 'gtk-shell', 'wayfire-shell', 'xdg-activation', 'shortcuts-inhibit',
+  'ext-toplevel', 'foreign-toplevel', 'gtk-shell', 'wayfire-shell', 'xdg-activation', 'shortcuts-inhibit',
   'input-method-v1', 'session-lock', 'security-context-v1',
 ]
 
