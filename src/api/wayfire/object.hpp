@@ -2,6 +2,7 @@
 #define OBJECT_HPP
 
 #include <typeinfo>
+#include <optional>
 #include <memory>
 #include <string>
 #include <cstdint>
@@ -22,6 +23,13 @@ class custom_data_t
     custom_data_t(const custom_data_t& other) = default;
     custom_data_t& operator =(custom_data_t&& other) = default;
     custom_data_t& operator =(const custom_data_t& other) = default;
+};
+
+template<class T>
+class property_data_t : public custom_data_t
+{
+  public:
+    T value;
 };
 
 /**
@@ -114,6 +122,44 @@ class object_base_t
 
     virtual ~object_base_t();
 
+    bool has_property(std::string name)
+    {
+        return has_data(name);
+    }
+
+    template<class T>
+    std::optional<T> get_property(std::string name)
+    {
+        auto data = get_data<property_data_t<T>>(name);
+        if (!data)
+        {
+            return {};
+        }
+
+        return data->value;
+    }
+
+    template<class T>
+    void set_property(std::string name, T value)
+    {
+        auto data = get_data<property_data_t<T>>(name);
+        if (has_data(name) && !data)
+        {
+            _warn_wrong_type(name);
+            return;
+        }
+
+        if (!data)
+        {
+            auto prop = std::make_unique<property_data_t<T>>();
+            prop->value = value;
+            store_data<property_data_t<T>>(std::move(prop), name);
+        } else
+        {
+            data->value = value;
+        }
+    }
+
     object_base_t(const object_base_t &) = delete;
     object_base_t(object_base_t &&) = delete;
     object_base_t& operator =(const object_base_t&) = delete;
@@ -134,6 +180,8 @@ class object_base_t
 
     /** Store the given data under the given name */
     void _store_data(std::unique_ptr<custom_data_t> data, std::string name);
+
+    void _warn_wrong_type(std::string name);
 
     class obase_impl;
     std::unique_ptr<obase_impl> obase_priv;
