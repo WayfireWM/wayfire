@@ -10,22 +10,34 @@
 
 // private API, used to make it easier to serialize output state
 #include "src/core/output-layout-priv.hpp"
+#include "wayfire/txn/transaction-manager.hpp"
 
 namespace wf
 {
 class ipc_rules_events_methods_t : public wf::per_output_tracker_mixin_t<>
 {
+    static constexpr const char *PRE_MAP_EVENT = "view-pre-map";
+
   public:
     void init_events(ipc::method_repository_t *method_repository)
     {
         method_repository->register_method("window-rules/events/watch", on_client_watch);
+        method_repository->register_method("window-rules/unblock-map", on_client_unblock_map);
         method_repository->connect(&on_client_disconnected);
+
+        signal_map[PRE_MAP_EVENT] = signal_registration_handler{
+            .register_core = [=] () { wf::get_core().tx_manager->connect(&on_new_tx); },
+            .unregister    = [=] () { on_new_tx.disconnect(); },
+            .auto_register = false,
+        };
+
         init_output_tracking();
     }
 
     void fini_events(ipc::method_repository_t *method_repository)
     {
         method_repository->unregister_method("window-rules/events/watch");
+        method_repository->unregister_method("window-rules/unblock-map");
         fini_output_tracking();
     }
 
@@ -51,6 +63,7 @@ class ipc_rules_events_methods_t : public wf::per_output_tracker_mixin_t<>
         std::function<void(wf::output_t*)> register_output = [] (wf::output_t*) {};
         std::function<void()> unregister = [] () {};
         int connected_count = 0;
+        bool auto_register  = true;
 
         void increase_count()
         {
@@ -168,9 +181,12 @@ class ipc_rules_events_methods_t : public wf::per_output_tracker_mixin_t<>
             }
         } else
         {
-            for (auto& [ev_name, _] : signal_map)
+            for (auto& [ev_name, ev] : signal_map)
             {
-                subscribed_to.insert(ev_name);
+                if (ev.auto_register)
+                {
+                    subscribed_to.insert(ev_name);
+                }
             }
         }
 
@@ -430,6 +446,135 @@ class ipc_rules_events_methods_t : public wf::per_output_tracker_mixin_t<>
         data["wset-data"]   =
             ev->output ? wset_to_json(ev->output->wset().get()) : json_t::null();
         send_event_to_subscribes(data, data["event"]);
+    };
+
+    class ipc_delay_object_t : public txn::transaction_object_t
+    {
+      public:
+        ipc_delay_object_t(std::string name) : obj_name(name)
+        {}
+
+        std::string stringify() const override
+        {
+            return obj_name;
+        }
+
+        void commit() override
+        {
+            if (delay_count < 1)
+            {
+                wf::txn::emit_object_ready(this);
+            }
+        }
+
+        void apply() override
+        {
+            delay_count = 0;
+        }
+
+        void set_delay(int count)
+        {
+            delay_count = count;
+        }
+
+        void reduce_delay()
+        {
+            delay_count--;
+            if (delay_count == 0)
+            {
+                wf::txn::emit_object_ready(this);
+            }
+        }
+
+        bool currently_blocking() const
+        {
+            return delay_count > 0;
+        }
+
+      private:
+        std::string obj_name;
+        int delay_count = 0;
+    };
+
+    using ipc_delay_object_sptr = std::shared_ptr<ipc_delay_object_t>;
+    struct ipc_delay_custom_data_t : public wf::custom_data_t
+    {
+        ipc_delay_object_sptr delay_obj;
+    };
+
+    wf::signal::connection_t<wf::txn::new_transaction_signal> on_new_tx =
+        [=] (wf::txn::new_transaction_signal *ev)
+    {
+        std::vector<wayfire_toplevel_view> mapping_views;
+        for (auto& obj : ev->tx->get_objects())
+        {
+            if (auto toplevel = std::dynamic_pointer_cast<wf::toplevel_t>(obj))
+            {
+                if (!toplevel->current().mapped && toplevel->pending().mapped)
+                {
+                    mapping_views.push_back(wf::toplevel_cast(wf::find_view_for_toplevel(toplevel)));
+                    wf::dassert(mapping_views.back() != nullptr,
+                        "Mapping a toplevel means there must be a corresponding view!");
+                }
+            }
+        }
+
+        for (auto& view : mapping_views)
+        {
+            if (!view->has_data<ipc_delay_custom_data_t>())
+            {
+                auto delay_data = std::make_unique<ipc_delay_custom_data_t>();
+                delay_data->delay_obj = std::make_shared<ipc_delay_object_t>(
+                    "ipc-delay-object-for-view-" + std::to_string(view->get_id()));
+                view->store_data<ipc_delay_custom_data_t>(std::move(delay_data));
+            }
+
+            auto delay_obj = view->get_data<ipc_delay_custom_data_t>()->delay_obj;
+            if (delay_obj->currently_blocking())
+            {
+                // Already blocked for mapping.
+                // This can happen if we have another transaction while the map is being blocked (for example
+                // IPC client adjusts the geometry of the view, we shouldn't block again).
+                continue;
+            }
+
+            // View is about to be mapped. We should notify the IPC clients which care about this
+            // that a view is ready for mapping.
+            send_view_to_subscribes(view, PRE_MAP_EVENT);
+
+            // Aside from sending a notification, we artificially delay the mapping of the view until
+            // the IPC clients notify us that they are ready with the view setup.
+            // Detail: we first commit the delay obj on its own. This should be a new tx which
+            // goes immediately to commit.
+            const int connected_count = signal_map[PRE_MAP_EVENT].connected_count;
+            delay_obj->set_delay(connected_count);
+            wf::get_core().tx_manager->schedule_object(delay_obj);
+
+            // Next, we add the delay obj to the current transaction, so that the toplevel map is
+            // delayed until the delay obj is ready (and it becomes ready when all IPC clients say
+            // they have set up the view).
+            ev->tx->add_object(delay_obj);
+        }
+    };
+
+    wf::ipc::method_callback_full on_client_unblock_map =
+        [=] (wf::json_t data, wf::ipc::client_interface_t *client)
+    {
+        auto id = wf::ipc::json_get_uint64(data, "id");
+        if (auto view = wf::ipc::find_view_by_id(id))
+        {
+            if (!view->has_data<ipc_delay_custom_data_t>())
+            {
+                return wf::ipc::json_error("View with id " + std::to_string(id) +
+                    " is not being delayed for mapping");
+            }
+
+            auto delay_obj = view->get_data<ipc_delay_custom_data_t>()->delay_obj;
+            delay_obj->reduce_delay();
+            return wf::ipc::json_ok();
+        }
+
+        return wf::ipc::json_error("No such view with id " + std::to_string(id));
     };
 };
 }
