@@ -41,19 +41,26 @@ struct wf::txn::transaction_manager_t::impl
     {
         while (true)
         {
-            const size_t start_size = tx->get_objects().size();
+            bool size_changed = false;
             for (auto& existing : pending)
             {
                 if (transactions_intersect(existing, tx))
                 {
+                    const size_t start_size = tx->get_objects().size();
                     for (auto& obj : existing->get_objects())
                     {
                         tx->add_object(obj);
                     }
+
+                    if (start_size != tx->get_objects().size())
+                    {
+                        LOGC(TXN, "Merged transaction ", existing.get(), " into ", tx.get());
+                        size_changed = true;
+                    }
                 }
             }
 
-            if (start_size == tx->get_objects().size())
+            if (!size_changed)
             {
                 // No new objects were added in the last iteration => done
                 break;
