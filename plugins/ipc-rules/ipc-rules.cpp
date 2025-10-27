@@ -37,6 +37,7 @@ class ipc_rules_t : public wf::plugin_interface_t,
         method_repository->register_method("window-rules/get-focused-view", get_focused_view);
         method_repository->register_method("window-rules/get-focused-output", get_focused_output);
         method_repository->register_method("window-rules/close-view", close_view);
+        method_repository->register_method("window-rules/set-view-property", set_view_property);
 
         init_input_methods(method_repository.get());
         init_utility_methods(method_repository.get());
@@ -57,6 +58,7 @@ class ipc_rules_t : public wf::plugin_interface_t,
         method_repository->unregister_method("window-rules/get-focused-output");
         method_repository->unregister_method("window-rules/get-cursor-position");
         method_repository->unregister_method("window-rules/close-view");
+        method_repository->unregister_method("window-rules/set-view-property");
 
         fini_input_methods(method_repository.get());
         fini_utility_methods(method_repository.get());
@@ -149,6 +151,45 @@ class ipc_rules_t : public wf::plugin_interface_t,
         }
 
         return wf::ipc::json_error("no such view");
+    };
+
+    wf::ipc::method_callback set_view_property = [=] (wf::json_t data)
+    {
+        auto id   = wf::ipc::json_get_uint64(data, "id");
+        auto view = wf::ipc::find_view_by_id(id);
+        if (!view)
+        {
+            return wf::ipc::json_error("no such view");
+        }
+
+        auto property = wf::ipc::json_get_string(data, "property");
+        if (!data.has_member("value"))
+        {
+            return wf::ipc::json_error("missing value field");
+        }
+
+        auto value = data["value"];
+        if (value.is_bool())
+        {
+            view->set_property<bool>(property, value.as_bool());
+        } else if (value.is_uint64())
+        {
+            view->set_property<uint64_t>(property, value.as_uint64());
+        } else if (value.is_int64())
+        {
+            view->set_property<int64_t>(property, value.as_int64());
+        } else if (value.is_string())
+        {
+            view->set_property<std::string>(property, value.as_string());
+        } else if (value.is_double())
+        {
+            view->set_property<double>(property, value.as_double());
+        } else
+        {
+            return wf::ipc::json_error("unsupported value type");
+        }
+
+        return wf::ipc::json_ok();
     };
 
     wf::ipc::method_callback list_outputs = [=] (wf::json_t)
