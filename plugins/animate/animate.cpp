@@ -295,46 +295,80 @@ class wayfire_animation : public wf::plugin_interface_t, private wf::per_output_
         wf::animation_description_t duration;
     };
 
-    view_animation_t get_animation_for_view(
-        wf::option_wrapper_t<std::string>& anim_type, wayfire_view view)
+
+    view_animation_t get_animation_for_view(const std::string& anim_type,
+        wf::option_wrapper_t<std::string>& anim_type_cfg, wayfire_view view)
     {
-        /* Determine the animation for the given view.
-         * Note that the matcher plugin might not have been loaded, so
-         * we need to have a fallback algorithm */
+        std::string desired_effect_name;
+        std::optional<wf::animation_description_t> desired_duration;
+
+        // Default animation options (open/close/minimize_animation + enabled_for)
+        if (animation_enabled_for.matches(view))
+        {
+            desired_effect_name = (std::string)anim_type_cfg;
+        }
+
+        // Specialized animation options (fade/zoom/fire enabled for specific view classes)
         if (fade_enabled_for.matches(view))
         {
-            return {"fade", fade_duration};
+            desired_effect_name = "fade";
+            desired_duration    = fade_duration.value();
         }
 
         if (zoom_enabled_for.matches(view))
         {
-            return {"zoom", zoom_duration};
+            desired_effect_name = "zoom";
+            desired_duration    = zoom_duration.value();
         }
 
         if (fire_enabled_for.matches(view))
         {
-            return {"fire", fire_duration};
+            desired_effect_name = "fire";
+            desired_duration    = fire_duration.value();
         }
 
-        if (animation_enabled_for.matches(view))
-        {
-            if (!effects_registry->effects.count(anim_type))
-            {
-                if ((std::string)anim_type != "none")
-                {
-                    LOGE("Unknown animation type: \"", (std::string)anim_type, "\"");
-                }
+        // Lastly, check view properties. They take the highest priority.
+        const std::string anim_type_prop     = anim_type + "-animation-type";
+        std::optional<std::string> type_prop = view->get_property<std::string>(anim_type_prop);
+        desired_effect_name = type_prop.value_or(desired_effect_name);
 
-                return {"none", wf::animation_description_t{0, {}, ""}};
+        const std::string anim_duration_prop = anim_type + "-animation-duration";
+        std::optional<std::string> duration_prop_str =
+            view->get_property<std::string>(anim_duration_prop);
+        if (auto duration_prop_str = view->get_property<std::string>(anim_duration_prop))
+        {
+            auto duration_prop =
+                wf::option_type::from_string<wf::animation_description_t>(*duration_prop_str);
+
+            if (duration_prop)
+            {
+                desired_duration = duration_prop;
+            } else
+            {
+                LOGE("Invalid animation duration property \"", *duration_prop_str, "\"");
+            }
+        }
+
+        if (!effects_registry->effects.count(desired_effect_name))
+        {
+            if ((std::string)desired_effect_name != "none")
+            {
+                LOGE("Unknown animation type: \"", desired_effect_name, "\"");
             }
 
-            return {
-                .animation_name = anim_type,
-                .duration = effects_registry->effects[anim_type].default_duration().value_or(default_duration)
-            };
+            return {"none", wf::animation_description_t{0, {}, ""}};
         }
 
-        return {"none", wf::animation_description_t{0, {}, ""}};
+        if (!desired_duration.has_value())
+        {
+            desired_duration =
+                effects_registry->effects[desired_effect_name].default_duration().value_or(default_duration);
+        }
+
+        return {
+            .animation_name = desired_effect_name,
+            .duration = desired_duration.value(),
+        };
     }
 
     std::string get_map_animation_cdata_name(std::string animation_name)
@@ -374,7 +408,7 @@ class wayfire_animation : public wf::plugin_interface_t, private wf::per_output_
     /* TODO: enhance - add more animations */
     wf::signal::connection_t<wf::view_mapped_signal> on_view_mapped = [=] (wf::view_mapped_signal *ev)
     {
-        auto animation = get_animation_for_view(open_animation, ev->view);
+        auto animation = get_animation_for_view("open", open_animation, ev->view);
         set_animation(ev->view, animation.animation_name,
             wf::animate::ANIMATION_TYPE_MAP, animation.duration);
     };
@@ -382,7 +416,7 @@ class wayfire_animation : public wf::plugin_interface_t, private wf::per_output_
     wf::signal::connection_t<wf::view_pre_unmap_signal> on_view_pre_unmap =
         [=] (wf::view_pre_unmap_signal *ev)
     {
-        auto animation = get_animation_for_view(close_animation, ev->view);
+        auto animation = get_animation_for_view("close", close_animation, ev->view);
         set_animation(ev->view, animation.animation_name,
             wf::animate::ANIMATION_TYPE_UNMAP, animation.duration);
     };
@@ -390,7 +424,7 @@ class wayfire_animation : public wf::plugin_interface_t, private wf::per_output_
     wf::signal::connection_t<wf::view_minimize_request_signal> on_minimize_request =
         [=] (wf::view_minimize_request_signal *ev)
     {
-        auto animation = get_animation_for_view(minimize_animation, ev->view);
+        auto animation = get_animation_for_view("minimize", minimize_animation, ev->view);
         set_animation(ev->view, minimize_animation,
             ev->state ? wf::animate::ANIMATION_TYPE_MINIMIZE : wf::animate::ANIMATION_TYPE_RESTORE,
             animation.duration);

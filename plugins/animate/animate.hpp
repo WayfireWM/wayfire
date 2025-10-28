@@ -69,6 +69,11 @@ class animate_effects_registry_t
         effects.erase(name);
     }
 
+    bool has_effect(std::string name)
+    {
+        return effects.count(name);
+    }
+
     std::map<std::string, effect_description_t> effects;
 };
 }
