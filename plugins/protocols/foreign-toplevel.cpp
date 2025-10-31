@@ -12,36 +12,37 @@
 #include "gtk-shell.hpp"
 #include "config.h"
 
-class wayfire_foreign_toplevel;
-using foreign_toplevel_map_type = std::map<wayfire_toplevel_view, std::unique_ptr<wayfire_foreign_toplevel>>;
+#include "toplevel-management.hpp"
 
-class wayfire_foreign_toplevel
+class wayfire_wlr_foreign_toplevel;
+
+using wlr_foreign_toplevel_map_type = std::map<wayfire_toplevel_view,
+    std::unique_ptr<wayfire_wlr_foreign_toplevel>>;
+
+class wayfire_wlr_foreign_toplevel : public wayfire_foreign_toplevel
 {
-    wayfire_toplevel_view view;
     wlr_foreign_toplevel_handle_v1 *handle;
-    foreign_toplevel_map_type *view_to_toplevel;
+    wlr_foreign_toplevel_map_type *view_to_toplevel;
 
   public:
-    wayfire_foreign_toplevel(wayfire_toplevel_view view, wlr_foreign_toplevel_handle_v1 *handle,
-        foreign_toplevel_map_type *view_to_toplevel)
+    wayfire_wlr_foreign_toplevel(wayfire_toplevel_view view, void *hndl,
+        wlr_foreign_toplevel_map_type *view_toplevel_map) : wayfire_foreign_toplevel(view),
+        view_to_toplevel(view_toplevel_map)
     {
-        this->view   = view;
-        this->handle = handle;
-        this->view_to_toplevel = view_to_toplevel;
+        handle = static_cast<wlr_foreign_toplevel_handle_v1*>(hndl);
+    }
 
-        init_request_handlers();
-        toplevel_handle_v1_close_request.connect(&handle->events.request_close);
-        toplevel_handle_v1_maximize_request.connect(&handle->events.request_maximize);
-        toplevel_handle_v1_minimize_request.connect(&handle->events.request_minimize);
-        toplevel_handle_v1_activate_request.connect(&handle->events.request_activate);
-        toplevel_handle_v1_fullscreen_request.connect(&handle->events.request_fullscreen);
-        toplevel_handle_v1_set_rectangle_request.connect(&handle->events.set_rectangle);
-
+  protected:
+    virtual void send_initial_state() override
+    {
         toplevel_send_title();
         toplevel_send_app_id();
         toplevel_send_state();
         toplevel_update_output(view->get_output(), true);
+    }
 
+    virtual void init_connections() override
+    {
         view->connect(&on_title_changed);
         view->connect(&on_app_id_changed);
 
@@ -53,7 +54,7 @@ class wayfire_foreign_toplevel
         view->connect(&on_parent_changed);
     }
 
-    ~wayfire_foreign_toplevel()
+    virtual void disconnect_request_handlers() override
     {
         toplevel_handle_v1_close_request.disconnect();
         toplevel_handle_v1_maximize_request.disconnect();
@@ -61,134 +62,64 @@ class wayfire_foreign_toplevel
         toplevel_handle_v1_activate_request.disconnect();
         toplevel_handle_v1_fullscreen_request.disconnect();
         toplevel_handle_v1_set_rectangle_request.disconnect();
+    }
+
+    virtual void destroy_handle() override
+    {
         wlr_foreign_toplevel_handle_v1_destroy(handle);
     }
 
-  private:
-    void toplevel_send_title()
+    virtual void toplevel_send_title() override
     {
         wlr_foreign_toplevel_handle_v1_set_title(handle, view->get_title().c_str());
     }
 
-    void toplevel_send_app_id()
+    virtual void toplevel_send_app_id() override
     {
-        std::string app_id;
-
-        auto default_app_id = view->get_app_id();
-
-        gtk_shell_app_id_query_signal ev;
-        ev.view = view;
-        wf::get_core().emit(&ev);
-        std::string app_id_mode = wf::option_wrapper_t<std::string>("workarounds/app_id_mode");
-
-        if ((app_id_mode == "gtk-shell") && (ev.app_id.length() > 0))
-        {
-            app_id = ev.app_id;
-        } else if (app_id_mode == "full")
-        {
-#if WF_HAS_XWAYLAND
-            auto wlr_surface = view->get_wlr_surface();
-            if (wlr_surface)
-            {
-                if (wlr_xwayland_surface *xw_surface =
-                        wlr_xwayland_surface_try_from_wlr_surface(wlr_surface))
-                {
-                    ev.app_id = nonull(xw_surface->instance);
-                }
-            }
-
-#endif
-
-            app_id = default_app_id + " " + ev.app_id + " wf-ipc-" + std::to_string(view->get_id());
-        } else
-        {
-            app_id = default_app_id;
-        }
-
-        wlr_foreign_toplevel_handle_v1_set_app_id(handle, app_id.c_str());
+        std::string appid_buffer = get_app_id(view);
+        wlr_foreign_toplevel_handle_v1_set_app_id(handle, appid_buffer.c_str());
     }
 
-    void toplevel_send_state()
+    virtual void toplevel_send_state() override
     {
         wlr_foreign_toplevel_handle_v1_set_maximized(handle,
             view->pending_tiled_edges() == wf::TILED_EDGES_ALL);
-        wlr_foreign_toplevel_handle_v1_set_activated(handle, view->activated);
-        wlr_foreign_toplevel_handle_v1_set_minimized(handle, view->minimized);
-        wlr_foreign_toplevel_handle_v1_set_fullscreen(handle, view->pending_fullscreen());
+        wlr_foreign_toplevel_handle_v1_set_activated(handle,
+            view->activated);
+        wlr_foreign_toplevel_handle_v1_set_minimized(handle,
+            view->minimized);
+        wlr_foreign_toplevel_handle_v1_set_fullscreen(handle,
+            view->pending_fullscreen());
 
         /* update parent as well */
         auto it = view_to_toplevel->find(view->parent);
         if (it == view_to_toplevel->end())
         {
-            wlr_foreign_toplevel_handle_v1_set_parent(handle, nullptr);
+            wlr_foreign_toplevel_handle_v1_set_parent(handle,
+                nullptr);
         } else
         {
-            wlr_foreign_toplevel_handle_v1_set_parent(handle, it->second->handle);
+            wlr_foreign_toplevel_handle_v1_set_parent(handle,
+                static_cast<wlr_foreign_toplevel_handle_v1*>(it->second->handle));
         }
     }
 
-    void toplevel_update_output(wf::output_t *output, bool enter)
+    virtual void toplevel_update_output(wf::output_t *output, bool enter) override
     {
         if (output && enter)
         {
-            wlr_foreign_toplevel_handle_v1_output_enter(handle, output->handle);
+            wlr_foreign_toplevel_handle_v1_output_enter(handle,
+                output->handle);
         }
 
         if (output && !enter)
         {
-            wlr_foreign_toplevel_handle_v1_output_leave(handle, output->handle);
+            wlr_foreign_toplevel_handle_v1_output_leave(handle,
+                output->handle);
         }
     }
 
-    wf::signal::connection_t<wf::view_title_changed_signal> on_title_changed = [=] (auto)
-    {
-        toplevel_send_title();
-    };
-
-    wf::signal::connection_t<wf::view_app_id_changed_signal> on_app_id_changed = [=] (auto)
-    {
-        toplevel_send_app_id();
-    };
-
-    wf::signal::connection_t<wf::view_set_output_signal> on_set_output = [=] (wf::view_set_output_signal *ev)
-    {
-        toplevel_update_output(ev->output, false);
-        toplevel_update_output(view->get_output(), true);
-    };
-
-    wf::signal::connection_t<wf::view_minimized_signal> on_minimized = [=] (auto)
-    {
-        toplevel_send_state();
-    };
-
-    wf::signal::connection_t<wf::view_fullscreen_signal> on_fullscreen = [=] (auto)
-    {
-        toplevel_send_state();
-    };
-
-    wf::signal::connection_t<wf::view_tiled_signal> on_tiled = [=] (auto)
-    {
-        toplevel_send_state();
-    };
-
-    wf::signal::connection_t<wf::view_activated_state_signal> on_activated = [=] (auto)
-    {
-        toplevel_send_state();
-    };
-
-    wf::signal::connection_t<wf::view_parent_changed_signal> on_parent_changed = [=] (auto)
-    {
-        toplevel_send_state();
-    };
-
-    wf::wl_listener_wrapper toplevel_handle_v1_maximize_request;
-    wf::wl_listener_wrapper toplevel_handle_v1_activate_request;
-    wf::wl_listener_wrapper toplevel_handle_v1_minimize_request;
-    wf::wl_listener_wrapper toplevel_handle_v1_set_rectangle_request;
-    wf::wl_listener_wrapper toplevel_handle_v1_fullscreen_request;
-    wf::wl_listener_wrapper toplevel_handle_v1_close_request;
-
-    void init_request_handlers()
+    virtual void init_request_handlers() override
     {
         toplevel_handle_v1_maximize_request.set_callback([&] (void *data)
         {
@@ -233,14 +164,28 @@ class wayfire_foreign_toplevel
             auto wo = wf::get_core().output_layout->find_output(ev->output);
             wf::get_core().default_wm->fullscreen_request(view, wo, ev->fullscreen);
         });
+
+        toplevel_handle_v1_close_request.connect(
+            &handle->events.request_close);
+        toplevel_handle_v1_maximize_request.connect(
+            &handle->events.request_maximize);
+        toplevel_handle_v1_minimize_request.connect(
+            &handle->events.request_minimize);
+        toplevel_handle_v1_activate_request.connect(
+            &handle->events.request_activate);
+        toplevel_handle_v1_fullscreen_request.connect(
+            &handle->events.request_fullscreen);
+        toplevel_handle_v1_set_rectangle_request.connect(
+            &handle->events.set_rectangle);
     }
 
-    void handle_minimize_hint(wf::toplevel_view_interface_t *view, wf::view_interface_t *relative_to,
-        wlr_box hint)
+    virtual void handle_minimize_hint(wf::toplevel_view_interface_t *view,
+        wf::view_interface_t *relative_to,
+        wlr_box hint) override
     {
         if (relative_to->get_output() != view->get_output())
         {
-            LOGE("Minimize hint set to surface on a different output, " "problems might arise");
+            LOGE("Minimize hint set to surface on a different output, problems might arise");
             /* TODO: translate coordinates in case minimize hint is on another output */
         }
 
@@ -257,12 +202,23 @@ class wayfire_foreign_toplevel_protocol_impl : public wf::plugin_interface_t
     void init() override
     {
         toplevel_manager = wlr_foreign_toplevel_manager_v1_create(wf::get_core().display);
+        if (!toplevel_manager)
+        {
+            LOGE("Failed to create foreign toplevel manager");
+            return;
+        }
+
         wf::get_core().connect(&on_view_mapped);
         wf::get_core().connect(&on_view_unmapped);
     }
 
     void fini() override
-    {}
+    {
+        // Clear the toplevel handle pointers.
+        handle_for_view.clear();
+
+        // toplevel_manager will be cleared by wlroots.
+    }
 
     bool is_unloadable() override
     {
@@ -276,7 +232,7 @@ class wayfire_foreign_toplevel_protocol_impl : public wf::plugin_interface_t
         {
             auto handle = wlr_foreign_toplevel_handle_v1_create(toplevel_manager);
             handle_for_view[toplevel] =
-                std::make_unique<wayfire_foreign_toplevel>(toplevel, handle, &handle_for_view);
+                std::make_unique<wayfire_wlr_foreign_toplevel>(toplevel, handle, &handle_for_view);
         }
     };
 
@@ -286,7 +242,7 @@ class wayfire_foreign_toplevel_protocol_impl : public wf::plugin_interface_t
     };
 
     wlr_foreign_toplevel_manager_v1 *toplevel_manager;
-    std::map<wayfire_toplevel_view, std::unique_ptr<wayfire_foreign_toplevel>> handle_for_view;
+    std::map<wayfire_toplevel_view, std::unique_ptr<wayfire_wlr_foreign_toplevel>> handle_for_view;
 };
 
 DECLARE_WAYFIRE_PLUGIN(wayfire_foreign_toplevel_protocol_impl);
