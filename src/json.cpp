@@ -225,7 +225,7 @@ json_reference_t& json_reference_t::operator =(const int& v)
     return *this;
 }
 
-json_reference_t& json_reference_t::operator =(const uint& v)
+json_reference_t& json_reference_t::operator =(const unsigned int& v)
 {
     yyjson_mut_set_uint(this->v, v);
     return *this;
@@ -331,7 +331,7 @@ bool json_reference_t::is_uint() const
            (yyjson_mut_get_uint(v) <= std::numeric_limits<unsigned int>::max());
 }
 
-json_reference_t::operator uint() const
+json_reference_t::operator unsigned int() const
 {
     wf::dassert(is_uint());
     return yyjson_mut_get_uint(v);
