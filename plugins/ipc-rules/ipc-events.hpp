@@ -236,7 +236,7 @@ class ipc_rules_events_methods_t : public wf::per_output_tracker_mixin_t<>
     {
         wf::json_t event;
         event["event"] = event_name;
-        event["view"]  = view_to_json(view);
+        event["view"]  = ipc_rules::view_to_json(view);
         send_event_to_subscribes(event, event_name);
     }
 
@@ -268,8 +268,8 @@ class ipc_rules_events_methods_t : public wf::per_output_tracker_mixin_t<>
     {
         wf::json_t data;
         data["event"]  = "view-set-output";
-        data["output"] = output_to_json(ev->output);
-        data["view"]   = view_to_json(ev->view);
+        data["output"] = ipc_rules::output_to_json(ev->output);
+        data["view"]   = ipc_rules::view_to_json(ev->view);
         send_event_to_subscribes(data, data["event"]);
     };
 
@@ -279,7 +279,7 @@ class ipc_rules_events_methods_t : public wf::per_output_tracker_mixin_t<>
     {
         wf::json_t data;
         data["event"]  = "output-added";
-        data["output"] = output_to_json(ev->output);
+        data["output"] = ipc_rules::output_to_json(ev->output);
         send_event_to_subscribes(data, data["event"]);
     };
 
@@ -288,7 +288,7 @@ class ipc_rules_events_methods_t : public wf::per_output_tracker_mixin_t<>
     {
         wf::json_t data;
         data["event"]  = "output-removed";
-        data["output"] = output_to_json(ev->output);
+        data["output"] = ipc_rules::output_to_json(ev->output);
         send_event_to_subscribes(data, data["event"]);
     };
 
@@ -335,7 +335,7 @@ class ipc_rules_events_methods_t : public wf::per_output_tracker_mixin_t<>
         wf::json_t data;
         data["event"] = "view-geometry-changed";
         data["old-geometry"] = wf::ipc::geometry_to_json(ev->old_geometry);
-        data["view"] = view_to_json(ev->view);
+        data["view"] = ipc_rules::view_to_json(ev->view);
         send_event_to_subscribes(data, data["event"]);
     };
 
@@ -344,9 +344,9 @@ class ipc_rules_events_methods_t : public wf::per_output_tracker_mixin_t<>
     {
         wf::json_t data;
         data["event"]    = "view-wset-changed";
-        data["old-wset"] = wset_to_json(ev->old_wset.get());
-        data["new-wset"] = wset_to_json(ev->new_wset.get());
-        data["view"]     = view_to_json(ev->view);
+        data["old-wset"] = ipc_rules::wset_to_json(ev->old_wset.get());
+        data["new-wset"] = ipc_rules::wset_to_json(ev->new_wset.get());
+        data["view"]     = ipc_rules::view_to_json(ev->view);
         send_event_to_subscribes(data, data["event"]);
     };
 
@@ -363,7 +363,7 @@ class ipc_rules_events_methods_t : public wf::per_output_tracker_mixin_t<>
         data["event"]     = "view-tiled";
         data["old-edges"] = ev->old_edges;
         data["new-edges"] = ev->new_edges;
-        data["view"] = view_to_json(ev->view);
+        data["view"] = ipc_rules::view_to_json(ev->view);
         send_event_to_subscribes(data, data["event"]);
     };
 
@@ -392,7 +392,7 @@ class ipc_rules_events_methods_t : public wf::per_output_tracker_mixin_t<>
         data["event"] = "view-workspace-changed";
         data["from"]  = wf::ipc::point_to_json(ev->from);
         data["to"]    = wf::ipc::point_to_json(ev->to);
-        data["view"]  = view_to_json(ev->view);
+        data["view"]  = ipc_rules::view_to_json(ev->view);
         send_event_to_subscribes(data, data["event"]);
     };
 
@@ -416,7 +416,7 @@ class ipc_rules_events_methods_t : public wf::per_output_tracker_mixin_t<>
         data["plugin"] = ev->plugin_name;
         data["state"]  = ev->activated;
         data["output"] = ev->output ? (int)ev->output->get_id() : -1;
-        data["output-data"] = output_to_json(ev->output);
+        data["output-data"] = ipc_rules::output_to_json(ev->output);
         send_event_to_subscribes(data, data["event"]);
     };
 
@@ -425,7 +425,7 @@ class ipc_rules_events_methods_t : public wf::per_output_tracker_mixin_t<>
     {
         wf::json_t data;
         data["event"]  = "output-gain-focus";
-        data["output"] = output_to_json(ev->output);
+        data["output"] = ipc_rules::output_to_json(ev->output);
         send_event_to_subscribes(data, data["event"]);
     };
 
@@ -441,7 +441,7 @@ class ipc_rules_events_methods_t : public wf::per_output_tracker_mixin_t<>
 
         wf::json_t data;
         data["event"] = "keyboard-modifier-state-changed";
-        data["state"] = get_keyboard_state(keyboard);
+        data["state"] = ipc_rules::get_keyboard_state(keyboard);
         send_event_to_subscribes(data, data["event"]);
     };
 
@@ -452,8 +452,8 @@ class ipc_rules_events_methods_t : public wf::per_output_tracker_mixin_t<>
         data["event"]    = "output-wset-changed";
         data["new-wset"] = ev->new_wset ? (int)ev->new_wset->get_id() : -1;
         data["output"]   = ev->output ? (int)ev->output->get_id() : -1;
-        data["new-wset-data"] = wset_to_json(ev->new_wset.get());
-        data["output-data"]   = output_to_json(ev->output);
+        data["new-wset-data"] = ipc_rules::wset_to_json(ev->new_wset.get());
+        data["output-data"]   = ipc_rules::output_to_json(ev->output);
         send_event_to_subscribes(data, data["event"]);
     };
 
@@ -466,9 +466,9 @@ class ipc_rules_events_methods_t : public wf::per_output_tracker_mixin_t<>
         data["new-workspace"] = wf::ipc::point_to_json(ev->new_viewport);
         data["output"] = ev->output ? (int)ev->output->get_id() : -1;
         data["wset"]   = (ev->output && ev->output->wset()) ? (int)ev->output->wset()->get_id() : -1;
-        data["output-data"] = output_to_json(ev->output);
+        data["output-data"] = ipc_rules::output_to_json(ev->output);
         data["wset-data"]   =
-            ev->output ? wset_to_json(ev->output->wset().get()) : json_t::null();
+            ev->output ? ipc_rules::wset_to_json(ev->output->wset().get()) : json_t::null();
         send_event_to_subscribes(data, data["event"]);
     };
 

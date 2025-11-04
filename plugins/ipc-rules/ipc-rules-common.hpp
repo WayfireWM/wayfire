@@ -11,6 +11,8 @@
 #include <wayfire/unstable/wlr-surface-node.hpp>
 #include <wayfire/view-helpers.hpp>
 
+namespace wf::ipc_rules
+{
 static inline wf::json_t output_to_json(wf::output_t *o)
 {
     if (!o)
@@ -260,8 +262,6 @@ static inline wf::json_t get_keyboard_state(wlr_keyboard *keyboard)
     return state;
 }
 
-namespace wf::ipc_rules
-{
 namespace detail
 {
 /**

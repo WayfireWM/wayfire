@@ -70,7 +70,7 @@ class ipc_rules_t : public wf::plugin_interface_t,
         wf::json_t response = wf::json_t::array();
         for (auto& view : wf::get_core().get_all_views())
         {
-            wf::json_t v = view_to_json(view);
+            wf::json_t v = wf::ipc_rules::view_to_json(view);
             response.append(v);
         }
 
@@ -83,7 +83,7 @@ class ipc_rules_t : public wf::plugin_interface_t,
         if (auto view = wf::ipc::find_view_by_id(id))
         {
             auto response = wf::ipc::json_ok();
-            response["info"] = view_to_json(view);
+            response["info"] = wf::ipc_rules::view_to_json(view);
             return response;
         }
 
@@ -95,7 +95,7 @@ class ipc_rules_t : public wf::plugin_interface_t,
         if (auto view = wf::get_core().seat->get_active_view())
         {
             auto response = wf::ipc::json_ok();
-            response["info"] = view_to_json(view);
+            response["info"] = wf::ipc_rules::view_to_json(view);
             return response;
         } else
         {
@@ -112,7 +112,7 @@ class ipc_rules_t : public wf::plugin_interface_t,
 
         if (active_output)
         {
-            response["info"] = output_to_json(active_output);
+            response["info"] = wf::ipc_rules::output_to_json(active_output);
         } else
         {
             response["info"] = wf::json_t::null();
@@ -197,7 +197,7 @@ class ipc_rules_t : public wf::plugin_interface_t,
         wf::json_t response = wf::json_t::array();
         for (auto& output : wf::get_core().output_layout->get_outputs())
         {
-            response.append(output_to_json(output));
+            response.append(wf::ipc_rules::output_to_json(output));
         }
 
         return response;
@@ -212,7 +212,7 @@ class ipc_rules_t : public wf::plugin_interface_t,
             return wf::ipc::json_error("output not found");
         }
 
-        auto response = output_to_json(wo);
+        auto response = wf::ipc_rules::output_to_json(wo);
         return response;
     };
 
@@ -274,7 +274,7 @@ class ipc_rules_t : public wf::plugin_interface_t,
         wf::json_t response = wf::json_t::array();
         for (auto& workspace_set : wf::workspace_set_t::get_all())
         {
-            response.append(wset_to_json(workspace_set.get()));
+            response.append(wf::ipc_rules::wset_to_json(workspace_set.get()));
         }
 
         return response;
@@ -289,7 +289,7 @@ class ipc_rules_t : public wf::plugin_interface_t,
             return wf::ipc::json_error("workspace set not found");
         }
 
-        auto response = wset_to_json(ws);
+        auto response = wf::ipc_rules::wset_to_json(ws);
         return response;
     };
 

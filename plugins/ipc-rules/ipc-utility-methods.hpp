@@ -81,7 +81,7 @@ class ipc_rules_utility_methods_t
         our_outputs.insert(wo->get_id());
 
         auto response = wf::ipc::json_ok();
-        response["output"] = output_to_json(wo);
+        response["output"] = ipc_rules::output_to_json(wo);
         return response;
     };
 
@@ -350,7 +350,7 @@ class ipc_rules_utility_methods_t
     {
         auto seat     = wf::get_core().get_current_seat();
         auto keyboard = wlr_seat_get_keyboard(seat);
-        return get_keyboard_state(keyboard);
+        return ipc_rules::get_keyboard_state(keyboard);
     };
 
     wf::ipc::method_callback set_kb_state = [=] (const wf::json_t& data) -> json_t
