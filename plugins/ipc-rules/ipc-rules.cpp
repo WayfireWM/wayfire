@@ -38,6 +38,7 @@ class ipc_rules_t : public wf::plugin_interface_t,
         method_repository->register_method("window-rules/get-focused-output", get_focused_output);
         method_repository->register_method("window-rules/close-view", close_view);
         method_repository->register_method("window-rules/set-view-property", set_view_property);
+        method_repository->register_method("window-rules/get-view-property", get_view_property);
 
         init_input_methods(method_repository.get());
         init_utility_methods(method_repository.get());
@@ -59,6 +60,7 @@ class ipc_rules_t : public wf::plugin_interface_t,
         method_repository->unregister_method("window-rules/get-cursor-position");
         method_repository->unregister_method("window-rules/close-view");
         method_repository->unregister_method("window-rules/set-view-property");
+        method_repository->unregister_method("window-rules/get-view-property");
 
         fini_input_methods(method_repository.get());
         fini_utility_methods(method_repository.get());
@@ -172,12 +174,12 @@ class ipc_rules_t : public wf::plugin_interface_t,
         if (value.is_bool())
         {
             view->set_property<bool>(property, value.as_bool());
-        } else if (value.is_uint64())
-        {
-            view->set_property<uint64_t>(property, value.as_uint64());
         } else if (value.is_int64())
         {
             view->set_property<int64_t>(property, value.as_int64());
+        } else if (value.is_uint64())
+        {
+            view->set_property<uint64_t>(property, value.as_uint64());
         } else if (value.is_string())
         {
             view->set_property<std::string>(property, value.as_string());
@@ -190,6 +192,59 @@ class ipc_rules_t : public wf::plugin_interface_t,
         }
 
         return wf::ipc::json_ok();
+    };
+
+    wf::ipc::method_callback get_view_property = [=] (wf::json_t data)
+    {
+        auto id   = wf::ipc::json_get_uint64(data, "id");
+        auto view = wf::ipc::find_view_by_id(id);
+        if (!view)
+        {
+            return wf::ipc::json_error("no such view");
+        }
+
+        auto property = wf::ipc::json_get_string(data, "property");
+        if (!view->has_property(property))
+        {
+            return wf::ipc::json_error("property not found on given view");
+        }
+
+        if (auto value = view->get_property<int64_t>(property);value.has_value())
+        {
+            wf::json_t response = wf::ipc::json_ok();
+            response["value"] = value.value();
+            return response;
+        }
+
+        if (auto value = view->get_property<uint64_t>(property);value.has_value())
+        {
+            wf::json_t response = wf::ipc::json_ok();
+            response["value"] = value.value();
+            return response;
+        }
+
+        if (auto value = view->get_property<bool>(property);value.has_value())
+        {
+            wf::json_t response = wf::ipc::json_ok();
+            response["value"] = value.value();
+            return response;
+        }
+
+        if (auto value = view->get_property<std::string>(property);value.has_value())
+        {
+            wf::json_t response = wf::ipc::json_ok();
+            response["value"] = value.value();
+            return response;
+        }
+
+        if (auto value = view->get_property<double>(property);value.has_value())
+        {
+            wf::json_t response = wf::ipc::json_ok();
+            response["value"] = value.value();
+            return response;
+        }
+
+        return wf::ipc::json_error("property has unsupported type");
     };
 
     wf::ipc::method_callback list_outputs = [=] (wf::json_t)
