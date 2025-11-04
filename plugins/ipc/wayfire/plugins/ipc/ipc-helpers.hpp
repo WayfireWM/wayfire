@@ -54,6 +54,51 @@ WFJSON_GETTER_FUNCTION(bool, bool);
 
 #undef WFJSON_GETTER_FUNCTION
 
+/**
+ * Get the view id from a json object. Supports "id", "view_id" and "view-id" fields.
+ *
+ * @param data The json object.
+ * @param support_shorthand Whether to support shorthand "id" name for the view id (true by default).
+ */
+inline std::optional<uint64_t> json_get_optional_view_id(const wf::json_t& data,
+    bool support_shorthand = true)
+{
+    std::optional<uint64_t> id;
+    if (support_shorthand)
+    {
+        id = wf::ipc::json_get_optional_uint64(data, "id");
+    }
+
+    if (!id.has_value())
+    {
+        id = wf::ipc::json_get_optional_uint64(data, "view-id");
+    }
+
+    if (!id.has_value())
+    {
+        // legacy support for "view_id" field
+        id = wf::ipc::json_get_optional_uint64(data, "view_id");
+    }
+
+    return id;
+}
+
+/**
+ * Get the view id from a json object. Supports "id", "view_id" and "view-id" fields.
+ *
+ * @param data The json object.
+ * @param support_shorthand Whether to support shorthand "id" name for the view id (true by default).
+ */
+inline uint64_t json_get_view_id(const wf::json_t& data, bool support_shorthand = true)
+{
+    auto id = json_get_optional_view_id(data, support_shorthand);
+    if (!id.has_value())
+    {
+        throw ipc_method_exception_t("Missing view id (id, view-id or view_id)");
+    }
+
+    return id.value();
+}
 
 inline wayfire_view find_view_by_id(uint32_t id)
 {
