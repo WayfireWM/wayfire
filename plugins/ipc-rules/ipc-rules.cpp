@@ -81,15 +81,10 @@ class ipc_rules_t : public wf::plugin_interface_t,
 
     wf::ipc::method_callback get_view_info = [=] (wf::json_t data)
     {
-        auto id = wf::ipc::json_get_uint64(data, "id");
-        if (auto view = wf::ipc::find_view_by_id(id))
-        {
-            auto response = wf::ipc::json_ok();
-            response["info"] = wf::ipc_rules::view_to_json(view);
-            return response;
-        }
-
-        return wf::ipc::json_error("no such view");
+        auto view     = wf::ipc::json_find_view_or_throw(data);
+        auto response = wf::ipc::json_ok();
+        response["info"] = wf::ipc_rules::view_to_json(view);
+        return response;
     };
 
     wf::ipc::method_callback get_focused_view = [=] (wf::json_t data)
@@ -125,45 +120,28 @@ class ipc_rules_t : public wf::plugin_interface_t,
 
     wf::ipc::method_callback focus_view = [=] (wf::json_t data)
     {
-        auto id = wf::ipc::json_get_uint64(data, "id");
-        if (auto view = wf::ipc::find_view_by_id(id))
+        auto view     = wf::ipc::json_find_view_or_throw(data);
+        auto toplevel = wf::toplevel_cast(view);
+        if (!toplevel)
         {
-            auto response = wf::ipc::json_ok();
-            auto toplevel = wf::toplevel_cast(view);
-            if (!toplevel)
-            {
-                return wf::ipc::json_error("view is not toplevel");
-            }
-
-            wf::get_core().default_wm->focus_request(toplevel);
-            return response;
+            return wf::ipc::json_error("view is not toplevel");
         }
 
-        return wf::ipc::json_error("no such view");
+        auto response = wf::ipc::json_ok();
+        wf::get_core().default_wm->focus_request(toplevel);
+        return response;
     };
 
     wf::ipc::method_callback close_view = [=] (wf::json_t data)
     {
-        auto id = wf::ipc::json_get_uint64(data, "id");
-        if (auto view = wf::ipc::find_view_by_id(id))
-        {
-            auto response = wf::ipc::json_ok();
-            view->close();
-            return response;
-        }
-
-        return wf::ipc::json_error("no such view");
+        auto view = wf::ipc::json_find_view_or_throw(data);
+        view->close();
+        return wf::ipc::json_ok();
     };
 
     wf::ipc::method_callback set_view_property = [=] (wf::json_t data)
     {
-        auto id   = wf::ipc::json_get_uint64(data, "id");
-        auto view = wf::ipc::find_view_by_id(id);
-        if (!view)
-        {
-            return wf::ipc::json_error("no such view");
-        }
-
+        auto view     = wf::ipc::json_find_view_or_throw(data);
         auto property = wf::ipc::json_get_string(data, "property");
         if (!data.has_member("value"))
         {
@@ -196,13 +174,7 @@ class ipc_rules_t : public wf::plugin_interface_t,
 
     wf::ipc::method_callback get_view_property = [=] (wf::json_t data)
     {
-        auto id   = wf::ipc::json_get_uint64(data, "id");
-        auto view = wf::ipc::find_view_by_id(id);
-        if (!view)
-        {
-            return wf::ipc::json_error("no such view");
-        }
-
+        auto view     = wf::ipc::json_find_view_or_throw(data);
         auto property = wf::ipc::json_get_string(data, "property");
         if (!view->has_property(property))
         {
@@ -273,7 +245,7 @@ class ipc_rules_t : public wf::plugin_interface_t,
 
     wf::ipc::method_callback configure_view = [=] (wf::json_t data)
     {
-        auto id = wf::ipc::json_get_uint64(data, "id");
+        auto view = wf::ipc::json_find_view_or_throw(data);
         auto output_id = wf::ipc::json_get_optional_uint64(data, "output_id");
 
         if (data.has_member("geometry") && !data["geometry"].is_object())
@@ -281,13 +253,7 @@ class ipc_rules_t : public wf::plugin_interface_t,
             return wf::ipc::json_error("invalid geometry");
         }
 
-        auto sticky = wf::ipc::json_get_optional_bool(data, "sticky");
-        auto view   = wf::ipc::find_view_by_id(id);
-        if (!view)
-        {
-            return wf::ipc::json_error("view not found");
-        }
-
+        auto sticky   = wf::ipc::json_get_optional_bool(data, "sticky");
         auto toplevel = wf::toplevel_cast(view);
         if (!toplevel)
         {

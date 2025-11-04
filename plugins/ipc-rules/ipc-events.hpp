@@ -584,21 +584,16 @@ class ipc_rules_events_methods_t : public wf::per_output_tracker_mixin_t<>
     wf::ipc::method_callback_full on_client_unblock_map =
         [=] (wf::json_t data, wf::ipc::client_interface_t *client)
     {
-        auto id = wf::ipc::json_get_uint64(data, "id");
-        if (auto view = wf::ipc::find_view_by_id(id))
+        auto view = wf::ipc::json_find_view_or_throw(data);
+        if (!view->has_data<ipc_delay_custom_data_t>())
         {
-            if (!view->has_data<ipc_delay_custom_data_t>())
-            {
-                return wf::ipc::json_error("View with id " + std::to_string(id) +
-                    " is not being delayed for mapping");
-            }
-
-            auto delay_obj = view->get_data<ipc_delay_custom_data_t>()->delay_obj;
-            delay_obj->reduce_delay();
-            return wf::ipc::json_ok();
+            return wf::ipc::json_error("View with id " + std::to_string(view->get_id()) +
+                " is not being delayed for mapping");
         }
 
-        return wf::ipc::json_error("No such view with id " + std::to_string(id));
+        auto delay_obj = view->get_data<ipc_delay_custom_data_t>()->delay_obj;
+        delay_obj->reduce_delay();
+        return wf::ipc::json_ok();
     };
 };
 }

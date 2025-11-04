@@ -113,6 +113,18 @@ inline wayfire_view find_view_by_id(uint32_t id)
     return nullptr;
 }
 
+inline wayfire_view json_find_view_or_throw(const wf::json_t& data)
+{
+    auto id   = json_get_view_id(data);
+    auto view = find_view_by_id((uint32_t)id);
+    if (!view)
+    {
+        throw ipc_method_exception_t("No view with id=" + std::to_string(id));
+    }
+
+    return view;
+}
+
 inline wf::output_t *find_output_by_id(int32_t id)
 {
     for (auto wo : wf::get_core().output_layout->get_outputs())
