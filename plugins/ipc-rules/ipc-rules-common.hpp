@@ -1,5 +1,7 @@
 #pragma once
+#include "wayfire/plugins/common/shared-core-data.hpp"
 #include "wayfire/plugins/ipc/ipc-helpers.hpp"
+#include "wayfire/plugins/ipc/ipc-method-repository.hpp"
 #include <wayfire/output.hpp>
 #include <wayfire/workarea.hpp>
 #include <wayfire/workspace-set.hpp>
@@ -256,4 +258,37 @@ static inline wf::json_t get_keyboard_state(wlr_keyboard *keyboard)
     }
 
     return state;
+}
+
+namespace wf::ipc_rules
+{
+namespace detail
+{
+/**
+ * A signal emitted to ipc-rules when a plugin wishes to send a custom event.
+ * This is internal API, use send_event_to_subscribes() instead.
+ */
+struct custom_event_signal_t
+{
+    wf::json_t data;
+};
+}
+
+/**
+ * Send a custom event to all clients which subscribed to it.
+ * Note: this will do nothing if the ipc-rules plugin is not loaded.
+ *
+ * @param data The event data to send.
+ * @param event_name The name of the event. It will be automatically added to data as "event".
+ *    Note that custom event names MUST end in '#' to distinguish them from built-in events.
+ *    Otherwise, they will not be available for fine-grained subscription from clients.
+ */
+static inline void send_event_to_subscribes(wf::json_t data, const std::string& event_name)
+{
+    static wf::shared_data::ref_ptr_t<wf::ipc::method_repository_t> method_repository;
+    data["event"] = event_name;
+    detail::custom_event_signal_t ev;
+    ev.data = std::move(data);
+    method_repository->emit(&ev);
+}
 }

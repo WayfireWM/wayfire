@@ -24,6 +24,7 @@ class ipc_rules_events_methods_t : public wf::per_output_tracker_mixin_t<>
         method_repository->register_method("window-rules/events/watch", on_client_watch);
         method_repository->register_method("window-rules/unblock-map", on_client_unblock_map);
         method_repository->connect(&on_client_disconnected);
+        method_repository->connect(&on_custom_event);
 
         signal_map[PRE_MAP_EVENT] = signal_registration_handler{
             .register_core = [=] () { wf::get_core().tx_manager->connect(&on_new_tx); },
@@ -54,6 +55,12 @@ class ipc_rules_events_methods_t : public wf::per_output_tracker_mixin_t<>
 
     void handle_output_removed(wf::output_t *output) override
     {}
+
+    wf::signal::connection_t<wf::ipc_rules::detail::custom_event_signal_t> on_custom_event =
+        [=] (wf::ipc_rules::detail::custom_event_signal_t *ev)
+    {
+        send_event_to_subscribes(ev->data, ev->data["event"].as_string(), true);
+    };
 
     // Template FOO for efficient management of signals: ensure that only actually listened-for signals
     // are connected.
@@ -148,8 +155,14 @@ class ipc_rules_events_methods_t : public wf::per_output_tracker_mixin_t<>
         {"wset-workspace-changed", get_generic_output_registration_cb(&on_wset_workspace_changed)},
     };
 
+    struct client_watch_state_t
+    {
+        std::set<std::string> connected_events;
+        bool connected_all = false;
+    };
+
     // Track a list of clients which have requested watch
-    std::map<wf::ipc::client_interface_t*, std::set<std::string>> clients;
+    std::map<wf::ipc::client_interface_t*, client_watch_state_t> clients;
 
     wf::ipc::method_callback_full on_client_watch =
         [=] (wf::json_t data, wf::ipc::client_interface_t *client)
@@ -160,7 +173,12 @@ class ipc_rules_events_methods_t : public wf::per_output_tracker_mixin_t<>
             return wf::ipc::json_error("Event list is not an array!");
         }
 
-        std::set<std::string> subscribed_to;
+        if (clients.count(client))
+        {
+            return wf::ipc::json_error("Client is already watching events!");
+        }
+
+        client_watch_state_t state;
         if (data.has_member(EVENTS))
         {
             for (size_t i = 0; i < data[EVENTS].size(); i++)
@@ -171,9 +189,12 @@ class ipc_rules_events_methods_t : public wf::per_output_tracker_mixin_t<>
                     return wf::ipc::json_error("Event list contains non-string entries!");
                 }
 
-                if (signal_map.count(sub))
+                const auto& event_name = sub.as_string();
+                const bool is_known_builtin_event = signal_map.count(event_name);
+                const bool is_custom_event = !event_name.empty() && event_name.back() == '#';
+                if (is_known_builtin_event || is_custom_event)
                 {
-                    subscribed_to.insert(sub);
+                    state.connected_events.insert(sub.as_string());
                 } else
                 {
                     return wf::ipc::json_error("Event not found: \"" + sub.as_string() + "\"");
@@ -181,28 +202,29 @@ class ipc_rules_events_methods_t : public wf::per_output_tracker_mixin_t<>
             }
         } else
         {
+            state.connected_all = true;
             for (auto& [ev_name, ev] : signal_map)
             {
                 if (ev.auto_register)
                 {
-                    subscribed_to.insert(ev_name);
+                    state.connected_events.insert(ev_name);
                 }
             }
         }
 
-        for (auto& ev_name : subscribed_to)
+        for (auto& ev_name : state.connected_events)
         {
             signal_map[ev_name].increase_count();
         }
 
-        clients[client] = subscribed_to;
+        clients[client] = std::move(state);
         return wf::ipc::json_ok();
     };
 
     wf::signal::connection_t<wf::ipc::client_disconnected_signal> on_client_disconnected =
         [=] (wf::ipc::client_disconnected_signal *ev)
     {
-        for (auto& ev_name : clients[ev->client])
+        for (auto& ev_name : clients[ev->client].connected_events)
         {
             signal_map[ev_name].decrease_count();
         }
@@ -218,11 +240,13 @@ class ipc_rules_events_methods_t : public wf::per_output_tracker_mixin_t<>
         send_event_to_subscribes(event, event_name);
     }
 
-    void send_event_to_subscribes(const wf::json_t& data, const std::string& event_name)
+    void send_event_to_subscribes(const wf::json_t& data, const std::string& event_name,
+        bool custom_event = false)
     {
-        for (auto& [client, events] : clients)
+        for (auto& [client, state] : clients)
         {
-            if (events.empty() || events.count(event_name))
+            if (state.connected_events.empty() || state.connected_events.count(event_name) ||
+                (custom_event && state.connected_all))
             {
                 client->send_json(data);
             }
