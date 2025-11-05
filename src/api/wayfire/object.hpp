@@ -140,13 +140,13 @@ class object_base_t
     }
 
     template<class T>
-    void set_property(std::string name, T value)
+    bool set_property(std::string name, T value)
     {
         auto data = get_data<property_data_t<T>>(name);
         if (has_data(name) && !data)
         {
             _warn_wrong_type(name);
-            return;
+            return false;
         }
 
         if (!data)
@@ -158,6 +158,8 @@ class object_base_t
         {
             data->value = value;
         }
+
+        return true;
     }
 
     object_base_t(const object_base_t &) = delete;

@@ -151,19 +151,39 @@ class ipc_rules_t : public wf::plugin_interface_t,
         auto value = data["value"];
         if (value.is_bool())
         {
-            view->set_property<bool>(property, value.as_bool());
+            if (!view->set_property<bool>(property, value.as_bool()))
+            {
+                return wf::ipc::json_error("failed to set property " + property +
+                    " as bool value, wrong property type?");
+            }
         } else if (value.is_int64())
         {
-            view->set_property<int64_t>(property, value.as_int64());
+            if (!view->set_property<int64_t>(property, value.as_int64()))
+            {
+                return wf::ipc::json_error("failed to set property " + property +
+                    " as int64 value, wrong property type?");
+            }
         } else if (value.is_uint64())
         {
-            view->set_property<uint64_t>(property, value.as_uint64());
+            if (!view->set_property<uint64_t>(property, value.as_uint64()))
+            {
+                return wf::ipc::json_error("failed to set property " + property +
+                    " as uint64 value, wrong property type?");
+            }
         } else if (value.is_string())
         {
-            view->set_property<std::string>(property, value.as_string());
+            if (!view->set_property<std::string>(property, value.as_string()))
+            {
+                return wf::ipc::json_error("failed to set property " + property +
+                    " as string value, wrong property type?");
+            }
         } else if (value.is_double())
         {
-            view->set_property<double>(property, value.as_double());
+            if (!view->set_property<double>(property, value.as_double()))
+            {
+                return wf::ipc::json_error("failed to set property " + property +
+                    " as double value, wrong property type?");
+            }
         } else
         {
             return wf::ipc::json_error("unsupported value type");
