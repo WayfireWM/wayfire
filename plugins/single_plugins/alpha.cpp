@@ -60,14 +60,8 @@ class wayfire_alpha : public wf::plugin_interface_t
     {
         auto view  = wf::ipc::json_find_view_or_throw(data);
         auto alpha = wf::ipc::json_get_double(data, "alpha");
-        if (view && view->is_mapped())
-        {
-            auto tr = ensure_transformer(view);
-            adjust_alpha(view, tr, alpha);
-        } else
-        {
-            return wf::ipc::json_error("Failed to find view with given id. Maybe it was closed?");
-        }
+        auto tr    = ensure_transformer(view);
+        adjust_alpha(view, tr, alpha);
 
         return wf::ipc::json_ok();
     };
