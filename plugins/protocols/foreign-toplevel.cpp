@@ -12,6 +12,8 @@
 #include "gtk-shell.hpp"
 #include "config.h"
 
+#include "toplevel-common.hpp"
+
 class wayfire_foreign_toplevel;
 using foreign_toplevel_map_type = std::map<wayfire_toplevel_view, std::unique_ptr<wayfire_foreign_toplevel>>;
 
@@ -72,38 +74,7 @@ class wayfire_foreign_toplevel
 
     void toplevel_send_app_id()
     {
-        std::string app_id;
-
-        auto default_app_id = view->get_app_id();
-
-        gtk_shell_app_id_query_signal ev;
-        ev.view = view;
-        wf::get_core().emit(&ev);
-        std::string app_id_mode = wf::option_wrapper_t<std::string>("workarounds/app_id_mode");
-
-        if ((app_id_mode == "gtk-shell") && (ev.app_id.length() > 0))
-        {
-            app_id = ev.app_id;
-        } else if (app_id_mode == "full")
-        {
-#if WF_HAS_XWAYLAND
-            auto wlr_surface = view->get_wlr_surface();
-            if (wlr_surface)
-            {
-                if (wlr_xwayland_surface *xw_surface =
-                        wlr_xwayland_surface_try_from_wlr_surface(wlr_surface))
-                {
-                    ev.app_id = nonull(xw_surface->instance);
-                }
-            }
-
-#endif
-
-            app_id = default_app_id + " " + ev.app_id + " wf-ipc-" + std::to_string(view->get_id());
-        } else
-        {
-            app_id = default_app_id;
-        }
+        std::string app_id = get_app_id(view);
 
         wlr_foreign_toplevel_handle_v1_set_app_id(handle, app_id.c_str());
     }
