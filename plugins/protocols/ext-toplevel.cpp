@@ -128,7 +128,6 @@ class wayfire_ext_foreign_toplevel_protocol_impl : public wf::plugin_interface_t
         }
 
         wf::get_core().connect(&on_view_mapped);
-        wf::get_core().connect(&on_view_unmapped);
     }
 
     void fini() override
