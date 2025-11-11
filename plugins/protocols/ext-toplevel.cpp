@@ -104,11 +104,6 @@ class wayfire_ext_foreign_toplevel
             &new_state);
     }
 
-    /** Minimize rectangle */
-    virtual void handle_minimize_hint(wf::toplevel_view_interface_t *view, wf::view_interface_t *relative_to,
-        wlr_box hint)
-    {}
-
     wf::signal::connection_t<wf::view_title_changed_signal> on_title_changed = [=] (auto)
     {
         toplevel_send_state();
@@ -167,9 +162,6 @@ class wayfire_ext_foreign_toplevel_protocol_impl : public wf::plugin_interface_t
             handle_for_view[toplevel] = std::make_unique<wayfire_ext_foreign_toplevel>(toplevel, handle);
         }
     };
-
-    wf::signal::connection_t<wf::view_unmapped_signal> on_view_unmapped = [=] (wf::view_unmapped_signal *ev)
-    {};
 
     wlr_ext_foreign_toplevel_list_v1 *toplevel_manager;
     std::map<wayfire_toplevel_view, std::unique_ptr<wayfire_ext_foreign_toplevel>> handle_for_view;
