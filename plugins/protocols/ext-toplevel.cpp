@@ -128,6 +128,7 @@ class wayfire_ext_foreign_toplevel_protocol_impl : public wf::plugin_interface_t
         }
 
         wf::get_core().connect(&on_view_mapped);
+        wf::get_core().connect(&on_view_unmapped);
     }
 
     void fini() override
@@ -160,6 +161,11 @@ class wayfire_ext_foreign_toplevel_protocol_impl : public wf::plugin_interface_t
 
             handle_for_view[toplevel] = std::make_unique<wayfire_ext_foreign_toplevel>(toplevel, handle);
         }
+    };
+
+    wf::signal::connection_t<wf::view_unmapped_signal> on_view_unmapped = [=] (wf::view_unmapped_signal *ev)
+    {
+        handle_for_view.erase(toplevel_cast(ev->view));
     };
 
     wlr_ext_foreign_toplevel_list_v1 *toplevel_manager;
