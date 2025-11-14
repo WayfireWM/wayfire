@@ -308,15 +308,15 @@ class tile_workspace_set_data_t : public wf::custom_data_t
 
     void unmaximize_all_views_on_workspace()
     {
-        auto wset = this->wset.lock();
-        for (auto& view : wset->get_views())
+        auto vp = this->wset.lock()->get_current_workspace();
+        for_each_view(roots[vp.x][vp.y], [&] (wayfire_toplevel_view view)
         {
             auto node = tile::view_node_t::get_node(view);
             if (node && node->show_maximized)
             {
                 set_view_maximized(view, false);
             }
-        }
+        });
     }
 
     void set_view_fullscreen(wayfire_toplevel_view view, bool fullscreen)
