@@ -47,19 +47,19 @@ class compound_option_entry_base_t
     virtual ~compound_option_entry_base_t() = default;
 
     /** @return The prefix of the tuple entry. */
-    std::string get_prefix() const
+    const std::string& get_prefix() const WF_LIFETIMEBOUND
     {
         return prefix;
     }
 
     /** @return The name of the tuple entry. */
-    std::string get_name() const
+    const std::string& get_name() const WF_LIFETIMEBOUND
     {
         return name;
     }
 
     /** @return The untyped default value of the tuple entry. */
-    std::optional<std::string> get_default_value() const
+    const std::optional<std::string>& get_default_value() const WF_LIFETIMEBOUND
     {
         return default_value;
     }
@@ -224,12 +224,12 @@ class compound_option_t : public option_base_t
     /**
      * Get the type information about entries in the option.
      */
-    const entries_t& get_entries() const;
+    const entries_t& get_entries() const WF_LIFETIMEBOUND;
 
     /**
      * Check if this compound option has named tuples.
      */
-    std::string get_type_hint() const
+    const std::string& get_type_hint() const WF_LIFETIMEBOUND
     {
         return list_type_hint;
     }

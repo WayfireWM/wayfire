@@ -6,6 +6,12 @@
 
 #include <memory>
 
+#ifdef __clang__
+    #define WF_LIFETIMEBOUND [[clang::lifetimebound]]
+#else
+    #define WF_LIFETIMEBOUND
+#endif
+
 namespace wf
 {
 namespace config
@@ -21,7 +27,7 @@ class option_base_t
     option_base_t& operator =(const option_base_t& other) = delete;
 
     /** @return The name of the option */
-    std::string get_name() const;
+    const std::string& get_name() const WF_LIFETIMEBOUND;
 
     /** @return A copy of the option */
     virtual std::shared_ptr<option_base_t> clone_option() const = 0;
@@ -253,12 +259,12 @@ class option_t : public option_base_t,
         }
     }
 
-    Type get_value() const
+    const Type& get_value() const WF_LIFETIMEBOUND
     {
         return value;
     }
 
-    Type get_default_value() const
+    const Type& get_default_value() const WF_LIFETIMEBOUND
     {
         return default_value;
     }

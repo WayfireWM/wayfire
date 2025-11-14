@@ -95,12 +95,12 @@ class base_option_wrapper_t
     }
 
     /** Implicitly convertible to the value of the option */
-    operator Type() const
+    operator decltype(auto)() const WF_LIFETIMEBOUND
     {
         return this->value();
     }
 
-    Type value() const
+    decltype(auto) value() const WF_LIFETIMEBOUND
     {
         if constexpr (is_std_vector<Type>::value)
         {

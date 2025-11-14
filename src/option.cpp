@@ -5,7 +5,7 @@
 #include "option-impl.hpp"
 #include "wayfire/util/log.hpp"
 
-std::string wf::config::option_base_t::get_name() const
+const std::string& wf::config::option_base_t::get_name() const
 {
     return this->priv->name;
 }
