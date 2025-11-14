@@ -119,6 +119,14 @@ void wf::keyboard_t::setup_listeners()
     on_modifier.connect(&handle->events.modifiers);
 }
 
+void wf::keyboard_t::schedule_idle_reload()
+{
+    idle_reload_config.run_once([=] ()
+    {
+        this->reload_input_options();
+    });
+}
+
 wf::keyboard_t::keyboard_t(wlr_input_device *dev) :
     handle(wlr_keyboard_from_input_device(dev)), device(dev)
 {
@@ -132,15 +140,13 @@ wf::keyboard_t::keyboard_t(wlr_input_device *dev) :
     repeat_rate.load_option(section, "kb_repeat_rate");
     repeat_delay.load_option(section, "kb_repeat_delay");
 
-    // When the configuration options change, mark them as dirty.
-    // They are applied at the config-reloaded signal.
-    model.set_callback([=] () { this->dirty_options = true; });
-    variant.set_callback([=] () { this->dirty_options = true; });
-    layout.set_callback([=] () { this->dirty_options = true; });
-    options.set_callback([=] () { this->dirty_options = true; });
-    rules.set_callback([=] () { this->dirty_options = true; });
-    repeat_rate.set_callback([=] () { this->dirty_options = true; });
-    repeat_delay.set_callback([=] () { this->dirty_options = true; });
+    model.set_callback([=] () { schedule_idle_reload(); });
+    variant.set_callback([=] () { schedule_idle_reload(); });
+    layout.set_callback([=] () { schedule_idle_reload();});
+    options.set_callback([=] () { schedule_idle_reload();});
+    rules.set_callback([=] () { schedule_idle_reload();});
+    repeat_rate.set_callback([=] () { schedule_idle_reload();});
+    repeat_delay.set_callback([=] () { schedule_idle_reload();});
 
     setup_listeners();
     reload_input_options();
@@ -164,13 +170,6 @@ static void set_locked_mod(xkb_mod_mask_t *mods, xkb_keymap *keymap, const char 
 
 void wf::keyboard_t::reload_input_options()
 {
-    if (!this->dirty_options)
-    {
-        return;
-    }
-
-    this->dirty_options = false;
-
     auto ctx = xkb_context_new(XKB_CONTEXT_NO_FLAGS);
 
     /* Copy memory to stack, so that .c_str() is valid */
