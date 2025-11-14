@@ -56,7 +56,7 @@ class wayfire_ext_foreign_toplevel
         init_connections();
     }
 
-    ~wayfire_ext_foreign_toplevel()
+    virtual ~wayfire_ext_foreign_toplevel()
     {
         disconnect_request_handlers();
         destroy_handle();

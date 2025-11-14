@@ -43,15 +43,7 @@ pixman         = dependency('pixman-1')
 xkbcommon      = dependency('xkbcommon')
 libdl          = cpp.find_library('dl')
 udev           = dependency('libudev')
-json           = dependency('yyjson', required: false)
-
-if not json.found()
-	cmake = import('cmake')
-	cmake_opts = cmake.subproject_options()
-	cmake_opts.add_cmake_defines({'CMAKE_POSITION_INDEPENDENT_CODE': true})
-	sub_proj = cmake.subproject('yyjson', options: cmake_opts)
-	json = sub_proj.dependency('yyjson')
-endif
+json           = subproject('wf-json').get_variable('wfjson')
 
 wlroots_base_version = '0.19'
 wlroots_dep_name = 'wlroots-' + wlroots_base_version

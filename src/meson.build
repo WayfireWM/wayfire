@@ -2,7 +2,6 @@ wayfire_sources = ['geometry.cpp',
                    'region.cpp',
                    'debug.cpp',
                    'util.cpp',
-                   'json.cpp',
                    'render.cpp',
 
                    'core/window-manager.cpp',

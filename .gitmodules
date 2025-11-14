@@ -10,3 +10,6 @@
 [submodule "subprojects/wf-touch"]
 	path = subprojects/wf-touch
 	url = https://github.com/WayfireWM/wf-touch
+[submodule "subprojects/wf-json"]
+	path = subprojects/wf-json
+	url = https://github.com/WayfireWM/wf-json
