@@ -254,6 +254,7 @@ class tile_workspace_set_data_t : public wf::custom_data_t
         }
 
         consider_exit_fullscreen(view);
+        unmaximize_all_views_on_workspace();
     }
 
     /** Remove the given view from its tiling container */
@@ -305,8 +306,9 @@ class tile_workspace_set_data_t : public wf::custom_data_t
         }
     }
 
-    void unmaximize_all_views_on_workspace(std::shared_ptr<wf::workspace_set_t> wset)
+    void unmaximize_all_views_on_workspace()
     {
+        auto wset = this->wset.lock();
         for (auto& view : wset->get_views())
         {
             auto node = tile::view_node_t::get_node(view);
