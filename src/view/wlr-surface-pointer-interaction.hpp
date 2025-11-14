@@ -100,7 +100,6 @@ class wlr_surface_pointer_interaction_t final : public wf::pointer_interaction_t
         {
             wf::pointf_t gc     = wf::get_core().get_cursor_position();
             wf::pointf_t target = gc;
-
             switch (last_constraint->type)
             {
               case WLR_POINTER_CONSTRAINT_V1_CONFINED:
@@ -135,6 +134,7 @@ class wlr_surface_pointer_interaction_t final : public wf::pointer_interaction_t
 
         constraint_destroyed.set_callback([=] (void*)
         {
+            _warp_to_cursor_hint();
             last_constraint = NULL;
             constraint_destroyed.disconnect();
         });
@@ -149,6 +149,23 @@ class wlr_surface_pointer_interaction_t final : public wf::pointer_interaction_t
     {
         _check_activate_constraint();
     };
+
+    void _warp_to_cursor_hint()
+    {
+        if (!this->last_constraint || !this->last_constraint->current.cursor_hint.enabled)
+        {
+            return;
+        }
+
+        wf::pointf_t local = wf::pointf_t{
+            (double)this->last_constraint->current.cursor_hint.x,
+            (double)this->last_constraint->current.cursor_hint.y
+        };
+
+        auto global = get_absolute_position_from_relative(local);
+        wf::get_core().warp_cursor(global);
+        wlr_seat_pointer_warp(wf::get_core().seat->seat, local.x, local.y);
+    }
 
     void _reset_constraint()
     {
@@ -234,6 +251,7 @@ class wlr_surface_pointer_interaction_t final : public wf::pointer_interaction_t
             wlr_seat_pointer_notify_clear_focus(seat);
         }
 
+        _warp_to_cursor_hint();
         _reset_constraint();
         on_pointer_motion.disconnect();
     }
