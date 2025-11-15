@@ -38,6 +38,9 @@ class keyboard_t
 
   private:
     wf::wl_listener_wrapper on_key, on_modifier;
+    wf::wl_idle_call idle_reload_config;
+    void schedule_idle_reload();
+
     void setup_listeners();
 
     wf::signal::connection_t<wf::reload_config_signal> on_config_reload;
@@ -45,8 +48,6 @@ class keyboard_t
 
     wf::option_wrapper_t<std::string> model, variant, layout, options, rules;
     wf::option_wrapper_t<int> repeat_rate, repeat_delay;
-    /** Options have changed in the config file */
-    bool dirty_options = true;
 
     std::chrono::steady_clock::time_point mod_binding_start;
 
