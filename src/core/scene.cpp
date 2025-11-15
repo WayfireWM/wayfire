@@ -300,11 +300,12 @@ struct output_node_t::priv_t
     wf::output_t *output;
     bool auto_limits = true;
     wf::signal::connection_t<wf::output_configuration_changed_signal> on_changed;
+    wf::signal::connection_t<wf::output_removed_signal> on_removed;
     wf::option_wrapper_t<bool> remove_output_limits{"workarounds/remove_output_limits"};
 
     void update_limits(std::optional<wf::geometry_t>& limit_region)
     {
-        if (!auto_limits)
+        if (!auto_limits || !output)
         {
             // Plugins will set this manually
             return;
@@ -331,6 +332,12 @@ output_node_t::output_node_t(wf::output_t *output, bool auto_limits) : floating_
         wf::scene::update(shared_from_this(), scene::update_flag::INPUT_STATE);
     };
 
+    this->priv->on_removed = [=] (wf::output_removed_signal *data)
+    {
+        this->priv->output = nullptr;
+    };
+    output->connect(&this->priv->on_removed);
+
     this->priv->remove_output_limits.set_callback([=] ()
     {
         this->priv->update_limits(this->limit_region);
@@ -345,19 +352,37 @@ output_node_t::~output_node_t()
 
 std::string output_node_t::stringify() const
 {
-    return "output " + this->priv->output->to_string() + " " + stringify_flags();
+    if (!this->priv->output)
+    {
+        return "output (removed) " + stringify_flags();
+    } else
+    {
+        return "output " + this->priv->output->to_string() + " " + stringify_flags();
+    }
 }
 
 wf::pointf_t output_node_t::to_local(const wf::pointf_t& point)
 {
-    auto offset = wf::origin(priv->output->get_layout_geometry());
-    return {point.x - offset.x, point.y - offset.y};
+    if (this->priv->output)
+    {
+        auto offset = wf::origin(priv->output->get_layout_geometry());
+        return {point.x - offset.x, point.y - offset.y};
+    } else
+    {
+        return point;
+    }
 }
 
 wf::pointf_t output_node_t::to_global(const wf::pointf_t& point)
 {
-    auto offset = wf::origin(priv->output->get_layout_geometry());
-    return {point.x + offset.x, point.y + offset.y};
+    if (this->priv->output)
+    {
+        auto offset = wf::origin(priv->output->get_layout_geometry());
+        return {point.x + offset.x, point.y + offset.y};
+    } else
+    {
+        return point;
+    }
 }
 
 std::optional<input_node_t> output_node_t::find_node_at(const wf::pointf_t& at)
@@ -372,7 +397,6 @@ std::optional<input_node_t> output_node_t::find_node_at(const wf::pointf_t& at)
 
 class output_render_instance_t : public default_render_instance_t
 {
-    wf::output_t *output;
     output_node_t *self;
     std::vector<render_instance_uptr> children;
 
@@ -381,8 +405,7 @@ class output_render_instance_t : public default_render_instance_t
         wf::output_t *output, wf::output_t *shown_on) :
         default_render_instance_t(self, transform_damage(callback))
     {
-        this->self   = self;
-        this->output = output;
+        this->self = self;
 
         // Children are stored as a sublist, because we need to translate every
         // time between global and output-local geometry.
@@ -400,13 +423,24 @@ class output_render_instance_t : public default_render_instance_t
     {
         return [=] (const wf::region_t& damage)
         {
-            child_damage(damage + wf::origin(output->get_layout_geometry()));
+            if (self->get_output())
+            {
+                child_damage(damage + wf::origin(self->get_output()->get_layout_geometry()));
+            } else
+            {
+                child_damage(damage);
+            }
         };
     }
 
     void schedule_instructions(std::vector<render_instruction_t>& instructions,
         const wf::render_target_t& target, wf::region_t& damage) override
     {
+        if (!self->get_output())
+        {
+            return;
+        }
+
         if (self->limit_region)
         {
             wf::region_t our_damage = damage & *self->limit_region;
@@ -431,7 +465,7 @@ class output_render_instance_t : public default_render_instance_t
         // In principle, we just have to schedule the children.
         // However, we need to adjust the target's geometry and the damage to
         // fit with the coordinate system of the output.
-        auto offset = wf::origin(output->get_layout_geometry());
+        auto offset = wf::origin(this->self->get_output()->get_layout_geometry());
         wf::render_target_t new_target = target.translated(-offset);
 
         damage += -offset;
@@ -445,7 +479,7 @@ class output_render_instance_t : public default_render_instance_t
 
     direct_scanout try_scanout(wf::output_t *scanout) override
     {
-        if ((scanout != this->output) && this->self->limit_region)
+        if ((scanout != this->self->get_output()) && this->self->limit_region)
         {
             // Can't scanout on a different output because it is outside
             // of the limit region
@@ -475,6 +509,11 @@ void output_node_t::gen_render_instances(
     std::vector<render_instance_uptr> & instances, damage_callback push_damage,
     wf::output_t *shown_on)
 {
+    if (!priv->output)
+    {
+        return;
+    }
+
     if (this->limit_region && shown_on && (shown_on != this->priv->output))
     {
         // If the limit region is set and we are limiting the generation of
@@ -490,6 +529,11 @@ void output_node_t::gen_render_instances(
 
 wf::geometry_t output_node_t::get_bounding_box()
 {
+    if (!priv->output)
+    {
+        return node_t::get_bounding_box();
+    }
+
     const auto bbox = node_t::get_bounding_box();
     return bbox + wf::origin(priv->output->get_layout_geometry());
 }
