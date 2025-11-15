@@ -46,7 +46,9 @@ class lock_base_node : public Node...
   public:
     template<typename... T>
     lock_base_node(wf::output_t *output, T&&... v) : Node(std::forward<T>(v)...)..., output(output)
-    {}
+    {
+        output->connect(&handle_output_removed);
+    }
 
     wf::keyboard_focus_node_t keyboard_refocus(wf::output_t *output)
     {
@@ -65,6 +67,10 @@ class lock_base_node : public Node...
 
   protected:
     wf::output_t *output;
+    wf::signal::connection_t<wf::output_pre_remove_signal> handle_output_removed = [=] (auto)
+    {
+        this->output = nullptr;
+    };
 };
 
 // Scenegraph node for the surface displayed by the session lock client.
@@ -80,11 +86,23 @@ class lock_surface_node : public lock_base_node<wf::scene::wlr_surface_node_t>
     void configure(wf::dimensions_t size)
     {
         wlr_session_lock_surface_v1_configure(lock_surface, size.width, size.height);
-        LOGC(LSHELL, "surface_configure on ", lock_surface->output->name, " ", size);
+        if (output)
+        {
+            LOGC(LSHELL, "surface_configure on ", lock_surface->output->name, " ", size);
+        } else
+        {
+            LOGC(LSHELL, "surface_configure on deleted output ", size);
+        }
     }
 
     void display()
     {
+        if (!output)
+        {
+            LOGW("Trying to display lock_surface on removed output");
+            return;
+        }
+
         auto layer_node = output->node_for_layer(wf::scene::layer::LOCK);
         wf::scene::add_front(layer_node, shared_from_this());
         wf::wlr_surface_controller_t::create_controller(lock_surface->surface, layer_node);
@@ -97,8 +115,8 @@ class lock_surface_node : public lock_base_node<wf::scene::wlr_surface_node_t>
         wf::scene::damage_node(shared_from_this(), get_bounding_box());
         wf::wlr_surface_controller_t::try_free_controller(this->lock_surface->surface);
         wf::scene::remove_child(shared_from_this());
-        const char *name = this->output->handle ? this->output->handle->name : "(deleted)";
         this->interaction = std::make_unique<wf::keyboard_interaction_t>();
+        const char *name = (this->output && this->output->handle) ? this->output->handle->name : "(deleted)";
         LOGC(LSHELL, "lock_surface on ", name, " destroyed");
     }
 
@@ -135,6 +153,12 @@ class lock_crashed_node : public lock_base_node<simple_text_node_t>
 
     void display(std::string text)
     {
+        if (!output)
+        {
+            LOGW("Trying to display crashed lock node on removed output");
+            return;
+        }
+
         wf::cairo_text_t::params params(
             1280 /* font_size */,
             wf::color_t{0, 0, 0, 1} /* bg_color */,
