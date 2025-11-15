@@ -74,14 +74,20 @@ class lock_base_node : public Node...
 };
 
 // Scenegraph node for the surface displayed by the session lock client.
-class lock_surface_node : public lock_base_node<wf::scene::wlr_surface_node_t>
+class lock_surface_node : public lock_base_node<wf::scene::floating_inner_node_t>
 {
+    std::shared_ptr<wf::scene::wlr_surface_node_t> surface;
+
   public:
     lock_surface_node(wlr_session_lock_surface_v1 *lock_surface, wf::output_t *output) :
-        lock_base_node(output, lock_surface->surface, true /* autocommit */),
+        lock_base_node(output, false /* is_structure */),
         lock_surface(lock_surface),
         interaction(std::make_unique<lock_surface_keyboard_interaction>(lock_surface->surface))
-    {}
+    {
+        this->surface = std::make_shared<wf::scene::wlr_surface_node_t>(
+            lock_surface->surface, true /* autocommit */);
+        this->set_children_list({this->surface});
+    }
 
     void configure(wf::dimensions_t size)
     {
@@ -105,7 +111,8 @@ class lock_surface_node : public lock_base_node<wf::scene::wlr_surface_node_t>
 
         auto layer_node = output->node_for_layer(wf::scene::layer::LOCK);
         wf::scene::add_front(layer_node, shared_from_this());
-        wf::wlr_surface_controller_t::create_controller(lock_surface->surface, layer_node);
+        wf::wlr_surface_controller_t::create_controller(lock_surface->surface,
+            std::dynamic_pointer_cast<wf::scene::floating_inner_node_t>(shared_from_this()));
         wf::get_core().seat->set_active_node(shared_from_this());
         wf::get_core().seat->refocus();
     }
@@ -120,9 +127,14 @@ class lock_surface_node : public lock_base_node<wf::scene::wlr_surface_node_t>
         LOGC(LSHELL, "lock_surface on ", name, " destroyed");
     }
 
-    wf::keyboard_interaction_t& keyboard_interaction()
+    wf::keyboard_interaction_t& keyboard_interaction() override
     {
         return *interaction;
+    }
+
+    std::string stringify() const override
+    {
+        return "lock_surface_node " + stringify_flags();
     }
 
   private:
@@ -187,6 +199,11 @@ class lock_crashed_node : public lock_base_node<simple_text_node_t>
         result.node = this;
         result.local_coords = at;
         return result;
+    }
+
+    std::string stringify() const override
+    {
+        return "lock_crashed_node " + stringify_flags();
     }
 };
 
