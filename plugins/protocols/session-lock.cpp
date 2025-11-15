@@ -292,14 +292,17 @@ class wf_session_lock_plugin : public wf::plugin_interface_t
             destroy.set_callback([this] (void *data)
             {
                 disconnect_signals();
-                set_state(state == UNLOCKED ? DESTROYED : ZOMBIE);
-                if (state == ZOMBIE)
+                LOGC(LSHELL, "session lock destroyed");
+                if (state == UNLOCKED)
                 {
+                    // Will destroy the whole session_lock object, aka frees this.
+                    set_state(DESTROYED);
+                } else
+                {
+                    set_state(ZOMBIE);
                     // ensure that the crashed node is displayed in this case as well
                     lock_all();
                 }
-
-                LOGC(LSHELL, "session lock destroyed");
             });
             destroy.connect(&lock->events.destroy);
 
