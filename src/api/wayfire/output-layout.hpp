@@ -32,7 +32,7 @@ struct output_added_signal
 };
 
 /**
- * on: output, output-layout(output-)
+ * on: output, output-layout
  * when: Emitted just before starting the destruction procedure for an output.
  */
 struct output_pre_remove_signal
@@ -41,8 +41,8 @@ struct output_pre_remove_signal
 };
 
 /**
- * on: output-layout
- * when: Each time a new output is added.
+ * on: output, output-layout
+ * when: Immediately before freeing an output.
  */
 struct output_removed_signal
 {

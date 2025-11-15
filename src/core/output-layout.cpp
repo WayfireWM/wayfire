@@ -624,6 +624,7 @@ struct output_layout_output_t
 
         wf::output_removed_signal data2;
         data2.output = wo;
+        wo->emit(&data2);
         get_core().output_layout->emit(&data2);
         this->output = nullptr;
     }
