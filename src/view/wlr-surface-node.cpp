@@ -287,6 +287,10 @@ class wf::scene::wlr_surface_node_t::wlr_surface_render_instance_t : public rend
         this->push_damage = push_damage;
         this->visible_on  = visible_on;
         self->connect(&on_surface_damage);
+
+        // Initialize with a huge visibility region so that we can push the damage before visibility
+        // computation gives us the actually visible region.
+        this->last_visibility |= wlr_box{-INT_MIN / 2, -INT_MIN / 2, INT_MAX, INT_MAX};
     }
 
     ~wlr_surface_render_instance_t()
@@ -383,18 +387,22 @@ class wf::scene::wlr_surface_node_t::wlr_surface_render_instance_t : public rend
     {
         auto our_box = self->get_bounding_box();
         on_frame_done.disconnect();
-        last_visibility = visible & our_box;
+
+        // We store the last visibility to determine whether to push damage for hidden regions.
+        // Note that we store the visibility before clipping to our bounding box, because damage
+        // may be outside of it (e.g., if the surface resizes to a larger size and the visibility is not
+        // immediately recomputed due to optimizations).
+        last_visibility = visible;
 
         static wf::option_wrapper_t<bool> use_opaque_optimizations{
             "workarounds/enable_opaque_region_damage_optimizations"
         };
 
-        if (!last_visibility.empty())
+        if (!(visible & our_box).empty())
         {
             // We are visible on the given output => send wl_surface.frame on output frame, so that clients
             // can draw the next frame.
             output->connect(&on_frame_done);
-
             if (use_opaque_optimizations && self->surface)
             {
                 pixman_region32_subtract(visible.to_pixman(), visible.to_pixman(),
