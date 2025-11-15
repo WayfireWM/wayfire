@@ -67,6 +67,20 @@ class tile_workspace_set_data_t : public wf::custom_data_t
         outer_vert_gaps.set_callback(update_gaps);
     }
 
+    ~tile_workspace_set_data_t()
+    {
+        for (auto& row : roots)
+        {
+            for (auto& root : row)
+            {
+                tile::for_each_view(root, [] (wayfire_toplevel_view view)
+                {
+                    view->set_allowed_actions(VIEW_ALLOW_ALL);
+                });
+            }
+        }
+    }
+
     wf::signal::connection_t<workarea_changed_signal> on_workarea_changed = [=] (auto)
     {
         update_root_size();
