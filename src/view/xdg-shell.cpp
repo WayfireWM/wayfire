@@ -421,7 +421,10 @@ wlr_surface*wayfire_xdg_popup::get_keyboard_focus_surface()
     {
         if (auto parent = this->popup_parent.lock())
         {
-            return parent->get_keyboard_focus_surface();
+            if (auto parent_focus = parent->get_keyboard_focus_surface())
+            {
+                return parent_focus;
+            }
         }
     }
 
