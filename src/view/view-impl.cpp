@@ -21,7 +21,6 @@ void wf::view_implementation::emit_view_map_signal(wayfire_view view, bool has_p
 {
     wf::view_mapped_signal data;
     data.view = view;
-    data.is_positioned = has_position;
 
     view->emit(&data);
     if (view->get_output())
