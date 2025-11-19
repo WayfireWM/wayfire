@@ -263,7 +263,8 @@ void transfer_views(wf::output_t *from, wf::output_t *to)
         auto views = from->wset()->get_views(WSET_SORT_STACKING);
         for (auto& view : views)
         {
-            move_view_to_output(view, to, true);
+            unsigned flags = VIEW_TO_OUTPUT_FLAG_RECONFIGURE | VIEW_TO_OUTPUT_FLAG_SAME_WORKSPACE;
+            move_view_to_output(view, to, flags);
         }
     }
 
@@ -1229,7 +1230,9 @@ class output_layout_t::impl
 
         if (!noop_output)
         {
-            auto handle = wlr_headless_add_output(noop_backend, 1280, 720);
+            // NOOP output should be at least as large as actual screen sizes. Otherwise, when
+            // when windows are temporarily mapped to it, they will be moved/cropped to match it.
+            auto handle = wlr_headless_add_output(noop_backend, 3840, 2160);
             handle->data = WF_NOOP_OUTPUT_MAGIC;
             strcpy(handle->name, "NOOP-1");
 
