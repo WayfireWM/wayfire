@@ -287,10 +287,7 @@ class wf::scene::wlr_surface_node_t::wlr_surface_render_instance_t : public rend
         this->push_damage = push_damage;
         this->visible_on  = visible_on;
         self->connect(&on_surface_damage);
-
-        // Initialize with a huge visibility region so that we can push the damage before visibility
-        // computation gives us the actually visible region.
-        this->last_visibility |= wlr_box{-INT_MIN / 2, -INT_MIN / 2, INT_MAX, INT_MAX};
+        this->last_visibility |= wlr_box{INT_MIN / 2, INT_MIN / 2, INT_MAX, INT_MAX};
     }
 
     ~wlr_surface_render_instance_t()
