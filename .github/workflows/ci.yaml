@@ -22,7 +22,7 @@ jobs:
         image: archlinux:latest
     steps:
     - run: pacman --noconfirm --noprogressbar -Syyu
-    - run: pacman --noconfirm --noprogressbar -Sy git clang lld libc++ pkgconf cmake meson ninja wayland wayland-protocols libinput libxkbcommon pixman glm libdrm libglvnd cairo pango systemd scdoc base-devel seatd hwdata libdisplay-info openmp doctest yyjson
+    - run: pacman --noconfirm --noprogressbar -Sy git clang lld libc++ pkgconf cmake meson ninja wayland wayland-protocols libinput libxkbcommon pixman glm libdrm libglvnd cairo pango systemd scdoc base-devel seatd hwdata libdisplay-info openmp doctest
 
       # Build Wayfire
     - uses: actions/checkout@v1
