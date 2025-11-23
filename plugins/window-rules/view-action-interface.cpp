@@ -17,6 +17,7 @@
 #include <cfloat>
 #include <string>
 #include <vector>
+#include <sstream>
 
 namespace wf
 {
@@ -313,6 +314,78 @@ std::tuple<bool, int> view_action_interface_t::_expect_int(
     return {false, 0};
 }
 
+std::optional<wf::geometry_t> view_action_interface_t::_parse_x11_geometry(std::string geometry)
+{
+    if (!_nontoplevel->get_output())
+    {
+        return std::nullopt;
+    }
+
+    // parse X11 style geometry widthxheight+x+y
+    std::istringstream g(geometry);
+    wf::geometry_t workarea = _nontoplevel->get_output()->workarea->get_workarea();
+    wlr_box bb = _nontoplevel->get_bounding_box();
+    int x = bb.x, y = bb.y, w = bb.width, h = bb.height;
+    char c;
+
+    c = g.peek();
+    if ((c != 'x') && (c != '-') && (c != '+'))
+    {
+        g >> w;
+        if (g.fail())
+        {
+            return std::nullopt;
+        }
+    }
+
+    c = g.get();
+    if (c == 'x')
+    {
+        g >> h;
+        if (g.fail())
+        {
+            return std::nullopt;
+        }
+
+        c = g.get();
+    }
+
+    if ((c == '+') || (c == '-'))
+    {
+        g >> x;
+        if (g.fail())
+        {
+            return std::nullopt;
+        }
+
+        if (c == '-')
+        {
+            x = std::max(workarea.width - w - x, 0);
+        }
+
+        x += workarea.x;
+        c  = g.get();
+        if ((c == '+') || (c == '-'))
+        {
+            g >> y;
+            if (g.fail())
+            {
+                return std::nullopt;
+            }
+
+            if (c == '-')
+            {
+                y = std::max(workarea.height - h - y, 0);
+            }
+
+            y += workarea.y;
+            c  = g.get();
+        }
+    }
+
+    return wf::geometry_t({x, y, w, h});
+}
+
 std::tuple<bool, float> view_action_interface_t::_validate_alpha(
     const std::vector<variant_t> & args)
 {
@@ -338,6 +411,24 @@ std::tuple<bool, float> view_action_interface_t::_validate_alpha(
 std::tuple<bool, int, int, int, int> view_action_interface_t::_validate_geometry(
     const std::vector<variant_t> & args)
 {
+    if (args.size() == 2)
+    {
+        if (wf::is_string(args.at(1)))
+        {
+            std::string x11geo = wf::get_string(args.at(1));
+            std::optional<wf::geometry_t> geo = _parse_x11_geometry(x11geo);
+            if (geo.has_value())
+            {
+                wf::geometry_t g = geo.value();
+                return {true, g.x, g.y, g.width, g.height};
+            } else
+            {
+                LOGE("View action interface: Invalid arguments. Expected 'set geometry x11-geometry-string.");
+                return {false, 0, 0, 0, 0};
+            }
+        }
+    }
+
     auto arg_x = _expect_int(args, 1);
     auto arg_y = _expect_int(args, 2);
     auto arg_w = _expect_int(args, 3);
