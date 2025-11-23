@@ -83,6 +83,9 @@ class wayfire_place_window : public wf::plugin_interface_t
         } else if (mode == "random")
         {
             random(view, workarea);
+        } else if (mode == "pointer")
+        {
+            pointer(view, workarea);
         } else
         {
             center(view, workarea);
@@ -157,6 +160,24 @@ class wayfire_place_window : public wf::plugin_interface_t
         wf::geometry_t window = view->get_pending_geometry();
         view->toplevel()->pending().geometry.x = workarea.x + (workarea.width / 2) - (window.width / 2);
         view->toplevel()->pending().geometry.y = workarea.y + (workarea.height / 2) - (window.height / 2);
+    }
+
+    void pointer(wayfire_toplevel_view & view, wf::geometry_t workarea)
+    {
+        wf::output_t *output = view->get_output();
+        if (!output)
+        {
+            return;
+        }
+
+        wf::point_t pos = output->get_cursor_position().round_down();
+        wf::geometry_t window = view->get_pending_geometry();
+        window.x = workarea.x + std::clamp(pos.x - window.width / 2,
+            0, workarea.width - window.width);
+        window.y = workarea.y + std::clamp(pos.y - window.height / 2,
+            0, workarea.height - window.height);
+        view->toplevel()->pending().geometry.x = window.x;
+        view->toplevel()->pending().geometry.y = window.y;
     }
 
     void maximize(wayfire_toplevel_view & view, wf::geometry_t workarea)
