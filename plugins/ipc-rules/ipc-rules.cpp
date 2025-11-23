@@ -273,7 +273,15 @@ class ipc_rules_t : public wf::plugin_interface_t,
             return wf::ipc::json_error("invalid geometry");
         }
 
-        auto sticky   = wf::ipc::json_get_optional_bool(data, "sticky");
+        auto sticky = wf::ipc::json_get_optional_bool(data, "sticky");
+        auto tiled_edges = wf::ipc::json_get_optional_uint64(data, "tiled-edges");
+        if (tiled_edges.has_value() && (tiled_edges.value() > wf::TILED_EDGES_ALL))
+        {
+            return wf::ipc::json_error("invalid tiled-edges value");
+        }
+
+        auto fullscreen = wf::ipc::json_get_optional_bool(data, "fullscreen");
+
         auto toplevel = wf::toplevel_cast(view);
         if (!toplevel)
         {
@@ -299,7 +307,23 @@ class ipc_rules_t : public wf::plugin_interface_t,
                 return wf::ipc::json_error("invalid geometry");
             }
 
-            toplevel->set_geometry(*geometry);
+            toplevel->toplevel()->pending().geometry = *geometry;
+        }
+
+        if (tiled_edges.has_value())
+        {
+            toplevel->toplevel()->pending().tiled_edges = *tiled_edges;
+        }
+
+        if (fullscreen.has_value())
+        {
+            toplevel->toplevel()->pending().fullscreen = *fullscreen;
+        }
+
+        // Schedule one transaction with all the state changes.
+        if (data.has_member("geometry") || tiled_edges.has_value() || fullscreen.has_value())
+        {
+            wf::get_core().tx_manager->schedule_object(toplevel->toplevel());
         }
 
         if (sticky.has_value())
