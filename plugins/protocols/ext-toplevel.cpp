@@ -10,6 +10,7 @@
 #include <wayfire/toplevel-view.hpp>
 #include <wayfire/window-manager.hpp>
 #include "gtk-shell.hpp"
+#include "../wm-actions/wm-actions-signals.hpp"
 #include "config.h"
 
 #include "toplevel-common.hpp"
@@ -113,18 +114,43 @@ class wayfire_ext_foreign_toplevel
             auto wo = wf::get_core().output_layout->find_output(ev->output);
             wf::get_core().default_wm->fullscreen_request(view, wo, ev->fullscreen);
         });
-        
+
+        toplevel_handle_v1_above_request.set_callback([&] (void *data)
+        {
+            auto ev = static_cast<wlr_ext_foreign_toplevel_state_handle_v1_always_on_top_event*>(data);
+            wf::wm_actions_set_above_state_signal sig;
+
+            auto output = view->get_output();
+            if (!output)
+            {
+                return;
+            }
+
+            sig.view  = view;
+            sig.above = ev->always_on_top;
+            output->emit(&sig);
+        });
+
+        toplevel_handle_v1_sticky_request.set_callback([&] (void *data)
+        {
+            auto ev = static_cast<wlr_ext_foreign_toplevel_state_handle_v1_sticky_event*>(data);
+            view->set_sticky(ev->sticky);
+        });
+
         toplevel_handle_v1_close_request.connect(&state_handle->events.request_close);
         toplevel_handle_v1_maximize_request.connect(&state_handle->events.request_maximize);
         toplevel_handle_v1_minimize_request.connect(&state_handle->events.request_minimize);
         toplevel_handle_v1_activate_request.connect(&state_handle->events.request_activate);
         toplevel_handle_v1_fullscreen_request.connect(&state_handle->events.request_fullscreen);
         toplevel_handle_v1_set_rectangle_request.connect(&state_handle->events.set_rectangle);
+        toplevel_handle_v1_above_request.connect(&state_handle->events.request_always_on_top);
+        toplevel_handle_v1_sticky_request.connect(&state_handle->events.request_sticky);
     }
 
     virtual void send_initial_state()
     {
         toplevel_send_title_appid();
+        toplevel_update_output(view->get_output(), true);
         toplevel_send_additional_state();
     }
 
@@ -132,11 +158,14 @@ class wayfire_ext_foreign_toplevel
     {
         view->connect(&on_title_changed);
         view->connect(&on_app_id_changed);
+        view->connect(&on_set_output);
         view->connect(&on_tiled);
         view->connect(&on_minimized);
         view->connect(&on_fullscreen);
         view->connect(&on_activated);
         view->connect(&on_parent_changed);
+        view->connect(&on_above_changed);
+        view->connect(&on_sticky_changed);
     }
 
     virtual void disconnect_request_handlers()
@@ -147,6 +176,8 @@ class wayfire_ext_foreign_toplevel
         toplevel_handle_v1_activate_request.disconnect();
         toplevel_handle_v1_fullscreen_request.disconnect();
         toplevel_handle_v1_set_rectangle_request.disconnect();
+        toplevel_handle_v1_above_request.disconnect();
+        toplevel_handle_v1_sticky_request.disconnect();
     }
 
     virtual void destroy_handle()
@@ -173,7 +204,9 @@ class wayfire_ext_foreign_toplevel
         wlr_ext_foreign_toplevel_state_handle_v1_set_activated(state_handle, view->activated);
         wlr_ext_foreign_toplevel_state_handle_v1_set_minimized(state_handle, view->minimized);
         wlr_ext_foreign_toplevel_state_handle_v1_set_fullscreen(state_handle, view->pending_fullscreen());
-        //!! TODO: always on top and sticky !!
+        bool is_above = view->has_data("wm-actions-above"); //!! TODO: is there a better way to get this?
+        wlr_ext_foreign_toplevel_state_handle_v1_set_always_on_top(state_handle, is_above);
+        wlr_ext_foreign_toplevel_state_handle_v1_set_sticky(state_handle, view->sticky);
 
         /* update parent as well */
         auto it = view_to_toplevel->find(view->parent);
@@ -186,6 +219,19 @@ class wayfire_ext_foreign_toplevel
         }
     }
 
+    void toplevel_update_output(wf::output_t *output, bool enter)
+    {
+        if (output && enter)
+        {
+            wlr_ext_foreign_toplevel_state_handle_v1_output_enter(state_handle, output->handle);
+        }
+
+        if (output && !enter)
+        {
+            wlr_ext_foreign_toplevel_state_handle_v1_output_leave(state_handle, output->handle);
+        }
+    }
+
     wf::signal::connection_t<wf::view_title_changed_signal> on_title_changed = [=] (auto)
     {
         toplevel_send_title_appid();
@@ -194,6 +240,12 @@ class wayfire_ext_foreign_toplevel
     wf::signal::connection_t<wf::view_app_id_changed_signal> on_app_id_changed = [=] (auto)
     {
         toplevel_send_title_appid();
+    };
+
+    wf::signal::connection_t<wf::view_set_output_signal> on_set_output = [=] (wf::view_set_output_signal *ev)
+    {
+        toplevel_update_output(ev->output, false);
+        toplevel_update_output(view->get_output(), true);
     };
 
     wf::signal::connection_t<wf::view_minimized_signal> on_minimized = [=] (auto)
@@ -221,12 +273,24 @@ class wayfire_ext_foreign_toplevel
         toplevel_send_additional_state();
     };
 
+    wf::signal::connection_t<wf::wm_actions_above_changed_signal> on_above_changed = [=] (auto)
+    {
+        toplevel_send_additional_state();
+    };
+
+    wf::signal::connection_t<wf::view_set_sticky_signal> on_sticky_changed = [=] (auto)
+    {
+        toplevel_send_additional_state();
+    };
+
     wf::wl_listener_wrapper toplevel_handle_v1_maximize_request;
     wf::wl_listener_wrapper toplevel_handle_v1_activate_request;
     wf::wl_listener_wrapper toplevel_handle_v1_minimize_request;
     wf::wl_listener_wrapper toplevel_handle_v1_set_rectangle_request;
     wf::wl_listener_wrapper toplevel_handle_v1_fullscreen_request;
     wf::wl_listener_wrapper toplevel_handle_v1_close_request;
+    wf::wl_listener_wrapper toplevel_handle_v1_above_request;
+    wf::wl_listener_wrapper toplevel_handle_v1_sticky_request;
 
     void handle_minimize_hint(wf::toplevel_view_interface_t *view, wf::view_interface_t *relative_to,
         wlr_box hint)
@@ -257,8 +321,8 @@ class wayfire_ext_foreign_toplevel_protocol_impl : public wf::plugin_interface_t
         }
 
         state_manager = wlr_ext_foreign_toplevel_state_manager_v1_create(wf::get_core().display,
-            15, // possible notifications: maximize, minimize, activated, fullscreen -- TODO: use #defines from protocol header !!
-            31 // possible actions: close, maximize, minimize, activate, fullscreen
+            63, // possible notifications: maximize, minimize, activated, fullscreen, always_on_top, sticky -- TODO: use #defines from protocol header !!
+            127 // possible actions: close, maximize, minimize, activate, fullscreen, always_on_top, sticky
         );
         if (!state_manager)
         {
