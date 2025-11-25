@@ -130,7 +130,7 @@ std::string read_output(std::string command)
  * Try to find the correct path to the given executable.
  *
  * If the path is relative(beginning with . or ..), or absolute, we already
- * have the corrent path. Otherwise, try to find it with 'which'
+ * have the correct path. Otherwise, try to find it with 'which'
  */
 std::string locate_executable(std::string executable)
 {
