@@ -626,16 +626,17 @@ void wf::move_view_to_output(wayfire_toplevel_view v, wf::output_t *new_output, 
 
     auto old_output = v->get_output();
     auto old_wset   = v->get_wset();
-    auto old_ws     = old_wset->get_view_main_workspace(v);
     auto new_wset   = new_output->wset();
+    const bool reconfigure    = (flags & VIEW_TO_OUTPUT_FLAG_RECONFIGURE) && (old_output != nullptr);
+    const bool same_workspace = (flags & VIEW_TO_OUTPUT_FLAG_SAME_WORKSPACE) && reconfigure &&
+        (old_wset != nullptr);
 
     uint32_t edges;
     bool fullscreen;
-    bool reconfigure    = flags & VIEW_TO_OUTPUT_FLAG_RECONFIGURE;
-    bool same_workspace = flags & VIEW_TO_OUTPUT_FLAG_SAME_WORKSPACE;
     wf::geometry_t view_g;
     wf::geometry_t old_output_g;
     wf::geometry_t new_output_g;
+    wf::point_t old_ws = {0, 0};
 
     int delta_x = 0;
     int delta_y = 0;
@@ -654,6 +655,10 @@ void wf::move_view_to_output(wayfire_toplevel_view v, wf::output_t *new_output, 
 
         delta_x = view_g.x - v->get_pending_geometry().x;
         delta_y = view_g.y - v->get_pending_geometry().y;
+        if (same_workspace)
+        {
+            old_ws = old_wset->get_view_main_workspace(v);
+        }
     }
 
     assert(new_output);
