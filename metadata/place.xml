@@ -24,6 +24,10 @@
 				<value>random</value>
 				<_name>Random</_name>
 			</desc>
+			<desc>
+				<value>pointer</value>
+				<_name>Pointer</_name>
+			</desc>
 		</option>
 	</plugin>
 </wayfire>
