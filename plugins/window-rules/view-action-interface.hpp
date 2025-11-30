@@ -33,6 +33,7 @@ class view_action_interface_t : public action_interface_t
         std::size_t position);
     std::tuple<bool, int> _expect_int(const std::vector<variant_t> & args,
         std::size_t position);
+    std::optional<wf::geometry_t> _parse_x11_geometry(std::string geometry);
 
     std::tuple<bool, float> _validate_alpha(const std::vector<variant_t> & args);
     std::tuple<bool, int, int, int, int> _validate_geometry(
