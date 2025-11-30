@@ -276,7 +276,7 @@ class wayfire_wm_actions_output_t : public wf::per_output_plugin_instance_t
 
         if (showdesktop_active)
         {
-            for (auto& view : output->wset()->get_views())
+            for (auto& view : output->wset()->get_views(wf::WSET_CURRENT_WORKSPACE))
             {
                 if (!view->minimized)
                 {
@@ -357,7 +357,7 @@ class wayfire_wm_actions_output_t : public wf::per_output_plugin_instance_t
         workspace_changed.disconnect();
         view_minimized.disconnect();
 
-        auto views = output->wset()->get_views(wf::WSET_SORT_STACKING);
+        auto views = output->wset()->get_views(wf::WSET_CURRENT_WORKSPACE | wf::WSET_SORT_STACKING);
         for (auto& view : wf::reverse(views))
         {
             if (view->has_data("wm-actions-showdesktop"))
