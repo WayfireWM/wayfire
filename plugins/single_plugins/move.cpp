@@ -47,8 +47,8 @@ class wayfire_move : public wf::per_output_plugin_instance_t,
         wf::grid::slot_t slot_id = wf::grid::SLOT_NONE;
     } slot;
 
-
     wf::wl_timer<false> workspace_switch_timer;
+    wf::grid::slot_t workspace_switch_slot_id = wf::grid::SLOT_NONE;
 
     wf::shared_data::ref_ptr_t<wf::move_drag::core_drag_t> drag_helper;
 
@@ -72,11 +72,11 @@ class wayfire_move : public wf::per_output_plugin_instance_t,
             } else
             {
                 input_grab->regrab_input();
-                update_slot(calc_slot(get_input_coords()));
+                update_slot(wf::grid::MOVE_OP_UPDATE_PREVIEW);
             }
         } else
         {
-            update_slot(wf::grid::SLOT_NONE);
+            update_slot(wf::grid::MOVE_OP_CLEAR_PREVIEW);
         }
     };
 
@@ -105,13 +105,24 @@ class wayfire_move : public wf::per_output_plugin_instance_t,
 
             wf::move_drag::adjust_view_on_output(ev);
 
-            if (enable_snap && (slot.slot_id != wf::grid::SLOT_NONE))
+            if (enable_snap)
             {
-                wf::get_core().default_wm->tile_request(ev->main_view,
-                    wf::grid::get_tiled_edges_for_slot(slot.slot_id));
+                auto input = get_input_coords();
+                wf::grid::grid_handle_move_signal grid_signal;
+                grid_signal.output    = output;
+                grid_signal.input     = input;
+                grid_signal.operation = wf::grid::MOVE_OP_DROP;
+                grid_signal.view = ev->main_view;
+                wf::get_core().emit(&grid_signal);
 
-                /* Update slot, will hide the preview as well */
-                update_slot(wf::grid::SLOT_NONE);
+                if (!grid_signal.carried_out && (slot.slot_id != wf::grid::SLOT_NONE))
+                {
+                    wf::get_core().default_wm->tile_request(ev->main_view,
+                        wf::grid::get_tiled_edges_for_slot(slot.slot_id));
+
+                    /* Update slot, will hide the preview as well */
+                    update_slot(wf::grid::MOVE_OP_CLEAR_PREVIEW);
+                }
             }
 
             wf::get_core().default_wm->set_view_grabbed(ev->main_view, false);
@@ -296,7 +307,7 @@ class wayfire_move : public wf::per_output_plugin_instance_t,
         }
 
         this->input_grab->grab_input(wf::scene::layer::OVERLAY);
-        update_slot(wf::grid::SLOT_NONE);
+        update_slot(wf::grid::MOVE_OP_CLEAR_PREVIEW);
         return true;
     }
 
@@ -348,7 +359,7 @@ class wayfire_move : public wf::per_output_plugin_instance_t,
         drag_helper->set_pending_drag(grab_position);
         drag_helper->start_drag(view, opts);
         drag_helper->handle_motion(get_global_input_coords());
-        update_slot(wf::grid::SLOT_NONE);
+        update_slot(wf::grid::MOVE_OP_CLEAR_PREVIEW);
         return true;
     }
 
@@ -368,66 +379,16 @@ class wayfire_move : public wf::per_output_plugin_instance_t,
         drag_helper->handle_input_released();
     }
 
-    /* Calculate the slot to which the view would be snapped if the input
-     * is released at output-local coordinates (x, y) */
-    wf::grid::slot_t calc_slot(wf::point_t point)
+    void update_workspace_switch_timeout(wf::point_t input, bool force_disable_timer)
     {
-        if (!is_snap_enabled())
+        wf::grid::slot_t slot_id = force_disable_timer ? wf::grid::SLOT_NONE :
+            wf::grid::calc_slot(output, input, snap_threshold, quarter_snap_threshold);
+        if (slot_id == workspace_switch_slot_id)
         {
-            return wf::grid::SLOT_NONE;
+            return;
         }
 
-        auto g = output->workarea->get_workarea();
-        if (!(output->get_relative_geometry() & point))
-        {
-            return wf::grid::SLOT_NONE;
-        }
-
-        int threshold = snap_threshold;
-
-        bool is_left   = point.x - g.x <= threshold;
-        bool is_right  = g.x + g.width - point.x <= threshold;
-        bool is_top    = point.y - g.y < threshold;
-        bool is_bottom = g.x + g.height - point.y < threshold;
-
-        bool is_far_left   = point.x - g.x <= quarter_snap_threshold;
-        bool is_far_right  = g.x + g.width - point.x <= quarter_snap_threshold;
-        bool is_far_top    = point.y - g.y < quarter_snap_threshold;
-        bool is_far_bottom = g.x + g.height - point.y < quarter_snap_threshold;
-
-        wf::grid::slot_t slot = wf::grid::SLOT_NONE;
-        if ((is_left && is_far_top) || (is_far_left && is_top))
-        {
-            slot = wf::grid::SLOT_TL;
-        } else if ((is_right && is_far_top) || (is_far_right && is_top))
-        {
-            slot = wf::grid::SLOT_TR;
-        } else if ((is_right && is_far_bottom) || (is_far_right && is_bottom))
-        {
-            slot = wf::grid::SLOT_BR;
-        } else if ((is_left && is_far_bottom) || (is_far_left && is_bottom))
-        {
-            slot = wf::grid::SLOT_BL;
-        } else if (is_right)
-        {
-            slot = wf::grid::SLOT_RIGHT;
-        } else if (is_left)
-        {
-            slot = wf::grid::SLOT_LEFT;
-        } else if (is_top)
-        {
-            // Maximize when dragging to the top
-            slot = wf::grid::SLOT_CENTER;
-        } else if (is_bottom)
-        {
-            slot = wf::grid::SLOT_BOTTOM;
-        }
-
-        return slot;
-    }
-
-    void update_workspace_switch_timeout(wf::grid::slot_t slot_id)
-    {
+        workspace_switch_slot_id = slot_id;
         if ((workspace_switch_after == -1) || (slot_id == wf::grid::SLOT_NONE))
         {
             workspace_switch_timer.disconnect();
@@ -484,50 +445,59 @@ class wayfire_move : public wf::per_output_plugin_instance_t,
         });
     }
 
-    void update_slot(wf::grid::slot_t new_slot_id)
+    void update_slot(wf::grid::move_op_t operation)
     {
-        /* No changes in the slot, just return */
-        if (slot.slot_id == new_slot_id)
+        auto input = get_input_coords();
+        if (!is_snap_enabled() || !(output->get_relative_geometry() & input))
+        {
+            operation = wf::grid::MOVE_OP_CLEAR_PREVIEW;
+        }
+
+        wf::grid::grid_handle_move_signal grid_signal;
+        grid_signal.output    = output;
+        grid_signal.input     = input;
+        grid_signal.operation = operation;
+        wf::get_core().emit(&grid_signal);
+
+        if (grid_signal.carried_out)
+        {
+            update_workspace_switch_timeout(input, !operation);
+            return;
+        }
+
+        /* if the grid plugin isn't loaded, we're handling the preview for maximize */
+        wf::grid::slot_t old_slot_id = slot.slot_id;
+        slot.slot_id = !operation ? wf::grid::SLOT_NONE :
+            wf::grid::calc_slot(output, input, snap_threshold, quarter_snap_threshold);
+        if (slot.slot_id != wf::grid::SLOT_CENTER)
+        {
+            slot.slot_id = wf::grid::SLOT_NONE;
+        }
+
+        if (old_slot_id == slot.slot_id)
         {
             return;
         }
 
-        /* Destroy previous preview */
         if (slot.preview)
         {
-            auto input = get_input_coords();
             slot.preview->set_target_geometry({input.x, input.y, 1, 1}, 0, true);
             slot.preview = nullptr;
         }
 
-        wf::grid::grid_request_signal grid_signal;
-        wf::get_core().emit(&grid_signal);
-
-        if (grid_signal.carried_out || (new_slot_id == wf::grid::slot_t::SLOT_CENTER))
+        if (slot.slot_id)
         {
-            slot.slot_id = new_slot_id;
-        } else
-        {
-            slot.slot_id = new_slot_id = wf::grid::slot_t::SLOT_NONE;
-        }
-
-        /* Show a preview overlay */
-        if (new_slot_id)
-        {
-            wf::geometry_t slot_geometry = wf::grid::get_slot_dimensions(output, new_slot_id);
-            /* Unknown slot geometry, can't show a preview */
-            if ((slot_geometry.width <= 0) || (slot_geometry.height <= 0))
+            wf::geometry_t slot_geometry = output->workarea->get_workarea();
+            /* only show a preview with valid geometry */
+            if ((slot_geometry.width > 0) || (slot_geometry.height > 0))
             {
-                return;
+                slot.preview = std::make_shared<wf::preview_indication_t>(
+                    wf::geometry_t{input.x, input.y, 1, 1}, output, "move");
+                slot.preview->set_target_geometry(slot_geometry, 1);
             }
-
-            auto input = get_input_coords();
-            slot.preview = std::make_shared<wf::preview_indication_t>(
-                wf::geometry_t{input.x, input.y, 1, 1}, output, "move");
-            slot.preview->set_target_geometry(slot_geometry, 1);
         }
 
-        update_workspace_switch_timeout(new_slot_id);
+        update_workspace_switch_timeout(input, !operation);
     }
 
     /* Returns the currently used input coordinates in global compositor space */
@@ -582,7 +552,7 @@ class wayfire_move : public wf::per_output_plugin_instance_t,
     void handle_input_motion()
     {
         drag_helper->handle_motion(get_global_input_coords());
-        update_slot(calc_slot(get_input_coords()));
+        update_slot(wf::grid::MOVE_OP_UPDATE_PREVIEW);
     }
 
     void fini() override

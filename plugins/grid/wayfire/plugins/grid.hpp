@@ -8,16 +8,28 @@ namespace wf
 {
 namespace grid
 {
+enum move_op_t
+{
+    MOVE_OP_CLEAR_PREVIEW  = 0,
+    MOVE_OP_UPDATE_PREVIEW = 1,
+    MOVE_OP_DROP           = 2,
+};
+
 /**
  * name: request
  * on: core
  * when: Emitted before move renders a grid indicator and sets the slot.
  * carried_out: true if a plugin can handle move request to grid.
  */
-struct grid_request_signal
+struct grid_handle_move_signal
 {
     /* True if a plugin handled this signal */
     bool carried_out = false;
+    move_op_t operation;
+    wf::output_t *output;
+    /* input coordinates in output-local space */
+    wf::point_t input;
+    wayfire_toplevel_view view;
 };
 
 /**
@@ -117,6 +129,56 @@ inline wf::geometry_t get_slot_dimensions(wf::output_t *output, int n)
     }
 
     return area;
+}
+
+/* Calculate the slot to which the view would be snapped if the input
+ * is released at output-local coordinates (x, y) */
+inline wf::grid::slot_t calc_slot(wf::output_t *output, wf::point_t point, int snap_threshold,
+    int quarter_snap_threshold)
+{
+    auto g = output->workarea->get_workarea();
+
+    int threshold = snap_threshold;
+
+    bool is_left   = point.x - g.x <= threshold;
+    bool is_right  = g.x + g.width - point.x <= threshold;
+    bool is_top    = point.y - g.y < threshold;
+    bool is_bottom = g.x + g.height - point.y < threshold;
+
+    bool is_far_left   = point.x - g.x <= quarter_snap_threshold;
+    bool is_far_right  = g.x + g.width - point.x <= quarter_snap_threshold;
+    bool is_far_top    = point.y - g.y < quarter_snap_threshold;
+    bool is_far_bottom = g.x + g.height - point.y < quarter_snap_threshold;
+
+    wf::grid::slot_t slot = wf::grid::SLOT_NONE;
+    if ((is_left && is_far_top) || (is_far_left && is_top))
+    {
+        slot = wf::grid::SLOT_TL;
+    } else if ((is_right && is_far_top) || (is_far_right && is_top))
+    {
+        slot = wf::grid::SLOT_TR;
+    } else if ((is_right && is_far_bottom) || (is_far_right && is_bottom))
+    {
+        slot = wf::grid::SLOT_BR;
+    } else if ((is_left && is_far_bottom) || (is_far_left && is_bottom))
+    {
+        slot = wf::grid::SLOT_BL;
+    } else if (is_right)
+    {
+        slot = wf::grid::SLOT_RIGHT;
+    } else if (is_left)
+    {
+        slot = wf::grid::SLOT_LEFT;
+    } else if (is_top)
+    {
+        // Maximize when dragging to the top
+        slot = wf::grid::SLOT_CENTER;
+    } else if (is_bottom)
+    {
+        slot = wf::grid::SLOT_BOTTOM;
+    }
+
+    return slot;
 }
 }
 }

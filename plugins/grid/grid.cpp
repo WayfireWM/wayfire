@@ -10,6 +10,7 @@
 #include "wayfire/plugin.hpp"
 #include "wayfire/signal-definitions.hpp"
 #include <wayfire/plugins/common/geometry-animation.hpp>
+#include <wayfire/plugins/common/preview-indication.hpp>
 #include "wayfire/plugins/grid.hpp"
 #include "wayfire/plugins/crossfade.hpp"
 #include <wayfire/window-manager.hpp>
@@ -55,6 +56,13 @@ class wayfire_grid : public wf::plugin_interface_t, public wf::per_output_tracke
     std::vector<std::string> slots = {"unused", "bl", "b", "br", "l", "c", "r", "tl", "t", "tr"};
     wf::ipc_activator_t bindings[10];
     wf::ipc_activator_t restore{"grid/restore"};
+    wf::option_wrapper_t<int> snap_threshold{"move/snap_threshold"};
+    wf::option_wrapper_t<int> quarter_snap_threshold{"move/quarter_snap_threshold"};
+    struct
+    {
+        std::shared_ptr<wf::preview_indication_t> preview;
+        wf::grid::slot_t slot_id = wf::grid::SLOT_NONE;
+    } slot;
 
     wf::plugin_activation_data_t grab_interface{
         .name = "grid",
@@ -102,13 +110,60 @@ class wayfire_grid : public wf::plugin_interface_t, public wf::per_output_tracke
             });
         }
 
-        wf::get_core().connect(&grid_request_signal_cb);
+        wf::get_core().connect(&grid_handle_move_signal_cb);
     }
 
-    wf::signal::connection_t<wf::grid::grid_request_signal> grid_request_signal_cb =
-        [=] (wf::grid::grid_request_signal *ev)
+    wf::signal::connection_t<wf::grid::grid_handle_move_signal> grid_handle_move_signal_cb =
+        [=] (wf::grid::grid_handle_move_signal *ev)
     {
         ev->carried_out = true;
+        wf::grid::slot_t new_slot_id = ev->operation == wf::grid::MOVE_OP_CLEAR_PREVIEW ?
+            wf::grid::slot_t::SLOT_NONE :
+            wf::grid::calc_slot(ev->output, ev->input, snap_threshold, quarter_snap_threshold);
+
+        if ((ev->operation == wf::grid::MOVE_OP_DROP) && new_slot_id)
+        {
+            ev->view->toplevel()->pending().tiled_edges = wf::grid::get_tiled_edges_for_slot(new_slot_id);
+            auto desired_size = wf::grid::get_slot_dimensions(ev->view->get_output(), new_slot_id);
+            ev->view->get_data_safe<wf_grid_slot_data>()->slot = new_slot_id;
+            ensure_grid_view(ev->view)->adjust_target_geometry(
+                adjust_for_workspace(ev->view->get_wset(), desired_size,
+                    ev->view->get_output()->wset()->get_current_workspace()),
+                ev->view->toplevel()->pending().tiled_edges);
+            new_slot_id = wf::grid::slot_t::SLOT_NONE;
+        }
+
+        /* No changes in the slot, just return */
+        if (slot.slot_id == new_slot_id)
+        {
+            return;
+        }
+
+        /* Destroy previous preview */
+        if (slot.preview)
+        {
+            auto input = ev->input;
+            slot.preview->set_target_geometry({input.x, input.y, 1, 1}, 0, true);
+            slot.preview = nullptr;
+        }
+
+        slot.slot_id = new_slot_id;
+
+        /* Show a preview overlay */
+        if (new_slot_id)
+        {
+            wf::geometry_t slot_geometry = wf::grid::get_slot_dimensions(ev->output, new_slot_id);
+            /* Unknown slot geometry, can't show a preview */
+            if ((slot_geometry.width <= 0) || (slot_geometry.height <= 0))
+            {
+                return;
+            }
+
+            auto input = ev->input;
+            slot.preview = std::make_shared<wf::preview_indication_t>(
+                wf::geometry_t{input.x, input.y, 1, 1}, ev->output, "move");
+            slot.preview->set_target_geometry(slot_geometry, 1);
+        }
     };
 
     void handle_new_output(wf::output_t *output) override
