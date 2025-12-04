@@ -56,7 +56,7 @@ class wlr_surface_touch_interaction_t final : public wf::touch_interaction_t
                     node->local_coords.x, node->local_coords.y);
             } else
             {
-                wlr_seat_touch_point_clear_focus(seat->seat, time_ms, finger_id);
+                wlr_seat_touch_notify_clear_focus(seat->seat, time_ms, finger_id);
             }
 
             return;
