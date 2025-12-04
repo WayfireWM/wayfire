@@ -45,7 +45,7 @@ libdl          = cpp.find_library('dl')
 udev           = dependency('libudev')
 json           = subproject('wf-json').get_variable('wfjson')
 
-wlroots_base_version = '0.19'
+wlroots_base_version = '0.20'
 wlroots_dep_name = 'wlroots-' + wlroots_base_version
 wlroots_min_version = '>=' + wlroots_base_version + '.0'
 wlroots_max_version = '<=' + wlroots_base_version + '.99'
