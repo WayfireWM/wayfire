@@ -96,9 +96,9 @@ class wayfire_xwayland_view : public wf::toplevel_view_interface_t, public wayfi
     wf::geometry_t translate_geometry_to_output(wf::output_t *output, wf::point_t ws_offset, wf::geometry_t g)
     {
         auto outputs = wf::get_core().output_layout->get_outputs();
-        auto og   = output->get_layout_geometry();
-        auto from = wf::get_core().output_layout->get_output_at(
-            g.x + g.width / 2 + og.x, g.y + g.height / 2 + og.y);
+        auto og = output->get_layout_geometry();
+        wf::pointf_t midpoint{g.x + g.width / 2.0 + og.x, g.y + g.height / 2.0 + og.y};
+        auto from = wf::get_core().output_layout->find_closest_output(midpoint);
         if (!from)
         {
             return g;

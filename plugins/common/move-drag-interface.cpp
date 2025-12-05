@@ -540,7 +540,7 @@ bool core_drag_t::is_view_held_in_place()
 void core_drag_t::update_current_output(wf::point_t grab)
 {
     wf::pointf_t origin = {1.0 * grab.x, 1.0 * grab.y};
-    auto output = wf::get_core().output_layout->get_output_coords_at(origin, origin);
+    auto output = wf::get_core().output_layout->find_closest_output(origin);
     update_current_output(output);
 }
 

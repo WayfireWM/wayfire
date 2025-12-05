@@ -402,7 +402,7 @@ void output_impl_t::add_activator(
         if (act.source == activator_source_t::HOTSPOT)
         {
             auto pos = wf::get_core().get_cursor_position();
-            auto wo  = wf::get_core().output_layout->get_output_at(pos.x, pos.y);
+            auto wo  = wf::get_core().output_layout->find_closest_output(pos);
             if (this != wo)
             {
                 return false;

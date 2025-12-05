@@ -118,7 +118,7 @@ class wayfire_alpha : public wf::plugin_interface_t
     wf::axis_callback axis_cb = [=] (wlr_pointer_axis_event *ev)
     {
         auto gc = wf::get_core().get_cursor_position();
-        auto current_output = wf::get_core().output_layout->get_output_coords_at(gc, gc);
+        auto current_output = wf::get_core().output_layout->find_closest_output(gc);
         if (!current_output || !current_output->can_activate_plugin(&grab_interface))
         {
             return false;
