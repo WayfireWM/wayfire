@@ -107,7 +107,7 @@ class wayfire_unmanaged_xwayland_view : public wayfire_xwayland_view_internal_ba
 
         // Move to the correct output, if the xsurface has changed geometry
         wf::pointf_t midpoint = {xw->x + xw->width / 2.0, xw->y + xw->height / 2.0};
-        wf::output_t *wo = wf::get_core().output_layout->get_output_coords_at(midpoint, midpoint);
+        wf::output_t *wo = wf::get_core().output_layout->find_closest_output(midpoint);
 
         if (wo)
         {

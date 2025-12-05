@@ -314,7 +314,7 @@ class wayfire_move : public wf::per_output_plugin_instance_t,
     bool initiate(wayfire_toplevel_view view, wf::point_t grab_position)
     {
         // First, make sure that the view is on the output the input is.
-        auto target_output = wf::get_core().output_layout->get_output_at(grab_position.x, grab_position.y);
+        auto target_output = wf::get_core().output_layout->find_closest_output(wf::pointf_t{grab_position});
         if (target_output && (view->get_output() != target_output))
         {
             auto parent = wf::find_topmost_parent(view);

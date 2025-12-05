@@ -294,8 +294,7 @@ void wf::compositor_core_impl_t::post_init()
 
     this->state = compositor_state_t::RUNNING;
     // Move pointer to the middle of the leftmost, topmost output
-    wf::pointf_t p;
-    wf::output_t *wo = wf::get_core().output_layout->get_output_coords_at({FLT_MIN, FLT_MIN}, p);
+    wf::output_t *wo = output_layout->find_closest_output({FLT_MIN, FLT_MIN});
     // Output might be noop but guaranteed to not be null
     wo->ensure_pointer(true);
     seat->focus_output(wo);
