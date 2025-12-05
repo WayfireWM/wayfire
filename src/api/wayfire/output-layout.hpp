@@ -144,8 +144,12 @@ struct output_state_t
 /** An output configuration is simply a list of each output with its state */
 using output_configuration_t = std::map<wlr_output*, output_state_t>;
 
-/* output_layout_t is responsible for managing outputs and their attributes -
- * mode, scale, position, transform. */
+/**
+ * The output layout is a manager for all outputs in the compositor.
+ *
+ * It keeps track of all outputs reported by the wlroots backend (DRM connectors, wayland-backend nested
+ * outputs, etc.), as well as a virtual NOOP output for cases where no other outputs are present.
+ */
 class output_layout_t : public wf::signal::provider_t
 {
   public:
@@ -158,48 +162,53 @@ class output_layout_t : public wf::signal::provider_t
     wlr_output_layout *get_handle();
 
     /**
-     * @return the output at the given coordinates, or null if no such output
-     */
-    wf::output_t *get_output_at(int x, int y);
-
-    /**
-     * Get the output closest to the given origin and the closest coordinates
-     * to origin which lie inside the output.
+     * Generate a list of the active outputs in the output layout.
+     * Here an active output is an output which is enabled (potentially in DPMS mode) and not mirrored.
+     * Such outputs have a corresponding logical wf::output_t object allocated to them.
      *
-     * @param origin The start coordinates
-     * @param closest The closest point to origin inside the returned output
-     * @return the output at the given coordinates
-     */
-    wf::output_t *get_output_coords_at(wf::pointf_t origin, wf::pointf_t& closest);
-
-    /**
-     * @return the number of the active outputs in the output layout
-     */
-    size_t get_num_outputs();
-
-    /**
+     * In case that no outputs are present or enabled, the list will contain the NOOP output.
+     *
      * @return a list of the active outputs in the output layout
      */
     std::vector<wf::output_t*> get_outputs();
 
     /**
-     * @return the "next" output in the layout. It is guaranteed that starting
-     * with any output in the layout, and successively calling this function
-     * will iterate over all outputs
+     * Find the active output which is closest to the given coordinates.
+     *
+     * @param origin The coordinates to find the closest output to
+     * @return The output closest to @origin
      */
-    wf::output_t *get_next_output(wf::output_t *output);
+    wf::output_t *find_closest_output(wf::pointf_t origin);
+
+    /**
+     * Find the active output which is closest to the given coordinates.
+     *
+     * @param origin The coordinates to find the closest output to
+     * @param closest Output parameter to store the coordinates of the closest point on the output found
+     * @return The output closest to @origin
+     */
+    wf::output_t *find_closest_output(wf::pointf_t origin, wf::pointf_t& closest);
 
     /**
      * @return the output_t associated with the wlr_output, or null if the
      * output isn't found
      */
     wf::output_t *find_output(wlr_output *output);
+
+    /**
+     * @return the output_t with the given name, or null if not found
+     */
     wf::output_t *find_output(std::string name);
 
     /**
-     * @return the current output configuration. This contains ALL outputs,
-     * not just the ones in the actual layout (so disabled ones are included
-     * as well)
+     * Get the current output configuration, consisting of every present output regardless of its state (i.e
+     * including disabled and mirrored outputs).
+     *
+     * Note that the output configuration includes only outputs reported by the wlroots backend. The NOOP
+     * output is never included here, even if it is the only present / enabled output.
+     * Thus, the output configuration may be empty even if get_outputs() returns a non-empty list.
+     *
+     * @return The current output configuration
      */
     output_configuration_t get_current_configuration();
 
@@ -211,8 +220,8 @@ class output_layout_t : public wf::signal::provider_t
      * outputs to their previous state.
      *
      * @param configuration The output configuration to be applied
-     * @param test_only     If true, this will only simulate applying
-     * the configuration, without actually changing anything
+     * @param test_only     If true, this will only simulate applying the configuration, without actually
+     *   changing anything
      *
      * @return true on successful application, false otherwise
      */

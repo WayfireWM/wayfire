@@ -321,8 +321,7 @@ void wf::tablet_t::handle_tip(wlr_tablet_tool_tip_event *ev,
     if (ev->state == WLR_TABLET_TOOL_TIP_DOWN)
     {
         auto gc     = seat->priv->cursor->get_cursor_position();
-        auto output =
-            wf::get_core().output_layout->get_output_at(gc.x, gc.y);
+        auto output = wf::get_core().output_layout->find_closest_output(gc);
         wf::get_core().seat->focus_output(output);
 
         handled_in_binding |= wf::get_core().bindings->handle_button(

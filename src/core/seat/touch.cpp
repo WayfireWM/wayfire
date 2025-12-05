@@ -44,7 +44,7 @@ wf::touch_interface_t::touch_interface_t(wlr_cursor *cursor, wlr_seat *seat,
             wlr_cursor_absolute_to_layout_coords(cursor, &ev->touch->base, ev->x, ev->y, &lx, &ly);
 
             wf::pointf_t point;
-            wf::get_core().output_layout->get_output_coords_at({lx, ly}, point);
+            wf::get_core().output_layout->find_closest_output({lx, ly}, point);
             handle_touch_down(ev->touch_id, ev->time_msec, point, mode);
         }
 
@@ -78,7 +78,7 @@ wf::touch_interface_t::touch_interface_t(wlr_cursor *cursor, wlr_seat *seat,
                 ev->x, ev->y, &lx, &ly);
 
             wf::pointf_t point;
-            wf::get_core().output_layout->get_output_coords_at({lx, ly}, point);
+            wf::get_core().output_layout->find_closest_output({lx, ly}, point);
             handle_touch_motion(ev->touch_id, ev->time_msec, point, true, mode);
         }
 
@@ -220,8 +220,7 @@ void wf::touch_interface_t::handle_touch_down(int32_t id, uint32_t time,
 
     if (id == 0)
     {
-        wf::get_core().seat->focus_output(
-            wf::get_core().output_layout->get_output_at(point.x, point.y));
+        wf::get_core().seat->focus_output(wf::get_core().output_layout->find_closest_output(point));
     }
 
     // NB. We first update the focus, and then update the gesture,
