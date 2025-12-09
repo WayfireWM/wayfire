@@ -1,7 +1,7 @@
 plugins = [
   'move', 'resize', 'command', 'autostart', 'vswipe', 'wrot', 'expo',
   'switcher', 'fast-switcher', 'oswitch', 'place', 'invert',
-  'fisheye', 'zoom', 'alpha', 'idle', 'extra-gestures', 'preserve-output',
+  'zoom', 'alpha', 'idle', 'extra-gestures', 'preserve-output',
   'wsets', 'xkb-bindings',
 ]
 
