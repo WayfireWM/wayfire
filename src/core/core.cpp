@@ -151,9 +151,9 @@ void wf::compositor_core_impl_t::init()
     protocols.foreign_toplevel_image_capture_source =
         wlr_ext_foreign_toplevel_image_capture_source_manager_v1_create(display, 1);
     protocols.gamma_v1 = wlr_gamma_control_manager_v1_create(display);
-    protocols.export_dmabuf  = wlr_export_dmabuf_manager_v1_create(display);
-    protocols.output_manager = wlr_xdg_output_manager_v1_create(display,
-        output_layout->get_handle());
+    protocols.export_dmabuf = wlr_export_dmabuf_manager_v1_create(display);
+    xdg_output_manager = std::make_unique<wf::xdg_output_manager_v1>(display,
+        output_layout.get());
     protocols.drm_v1 = wlr_drm_lease_v1_manager_create(display, backend);
     drm_lease_request.set_callback([&] (void *data)
     {

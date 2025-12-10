@@ -17,6 +17,7 @@ wayfire_sources = ['geometry.cpp',
                    'core/img.cpp',
                    'core/wm.cpp',
                    'core/view-access-interface.cpp',
+                   'core/xdg-output-management.cpp',
 
                    'core/txn/transaction.cpp',
                    'core/txn/transaction-manager.cpp',
