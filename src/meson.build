@@ -66,7 +66,7 @@ wayfire_sources = ['geometry.cpp',
 wayfire_dependencies = [wayland_server, wlroots, xkbcommon, libinput,
                        pixman, drm, egl, glesv2, glm, wf_protos, libdl,
                        wfconfig, libinotify, backtrace, wfutils, xcb,
-                       wftouch, json, udev]
+                       wftouch, udev]
 
 if conf_data.get('BUILD_WITH_IMAGEIO')
     wayfire_dependencies += [jpeg, png]
@@ -114,7 +114,7 @@ git_branch_info = vcs_tag(
 # First build a static library of all sources, so that it can be reused
 # in tests
 libwayfire_sta = static_library('libwayfire', wayfire_sources,
-    dependencies: wayfire_dependencies,
+    dependencies: [wayfire_dependencies, json.as_link_whole()],
     include_directories: [wayfire_conf_inc, wayfire_api_inc],
     cpp_args: debug_arguments,
     install: false, cpp_pch: 'pch/pch.h')
