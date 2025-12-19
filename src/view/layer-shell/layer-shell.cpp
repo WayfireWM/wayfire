@@ -630,6 +630,7 @@ void wayfire_layer_shell_view::configure(wf::geometry_t box)
     {
         LOGE("layer-surface has calculated width and height < 0");
         close();
+        return;
     }
 
     // TODO: transactions here could make sense, since we want to change x,y,w,h together, but have to wait
