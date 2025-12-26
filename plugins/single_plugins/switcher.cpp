@@ -706,6 +706,31 @@ class WayfireSwitcher : public wf::per_output_plugin_instance_t, public wf::keyb
         render_view_scene(sv.view, buffer);
     }
 
+    std::vector<SwitcherView*> calculate_render_order()
+    {
+        auto sorted_views = output->wset()->get_views(wf::WSET_SORT_STACKING);
+        std::map<wayfire_toplevel_view, int> view_order;
+        for (size_t i = 0; i < sorted_views.size(); i++)
+        {
+            view_order[sorted_views[i]] = i;
+        }
+
+        std::vector<SwitcherView*> render_order;
+        for (auto& sv : views)
+        {
+            render_order.push_back(&sv);
+        }
+
+        std::sort(render_order.begin(), render_order.end(),
+            [&] (SwitcherView* a, SwitcherView* b)
+        {
+            /* Render in the reverse order because we don't use depth testing */
+            return view_order[a->view] > view_order[b->view];
+        });
+
+        return render_order;
+    }
+
     void render(const wf::scene::render_instruction_t& data)
     {
         data.pass->clear(data.target.geometry, {0, 0, 0, 1});
@@ -716,10 +741,9 @@ class WayfireSwitcher : public wf::per_output_plugin_instance_t, public wf::keyb
             render_view_scene(view, local_target);
         }
 
-        /* Render in the reverse order because we don't use depth testing */
-        for (auto& view : wf::reverse(views))
+        for (auto view : calculate_render_order())
         {
-            render_view(view, local_target);
+            render_view(*view, local_target);
         }
 
         for (auto view : get_overlay_views())
