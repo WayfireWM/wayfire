@@ -151,7 +151,7 @@ class ipc_rules_events_methods_t : public wf::per_output_tracker_mixin_t<>
         {"view-minimized", get_generic_output_registration_cb(&_minimized)},
         {"view-fullscreen", get_generic_output_registration_cb(&_fullscreened)},
         {"view-sticky", get_generic_output_registration_cb(&_stickied)},
-        {"view-above", get_generic_output_registration_cb(&_above_state)},
+        {"view-always-on-top", get_generic_output_registration_cb(&_above_state)},
         {"view-workspace-changed", get_generic_output_registration_cb(&_view_workspace)},
         {"output-wset-changed", get_generic_output_registration_cb(&on_wset_changed)},
         {"wset-workspace-changed", get_generic_output_registration_cb(&on_wset_workspace_changed)},
@@ -391,7 +391,7 @@ class ipc_rules_events_methods_t : public wf::per_output_tracker_mixin_t<>
     wf::signal::connection_t<wf::wm_actions_above_changed_signal> _above_state =
         [=] (wf::wm_actions_above_changed_signal *ev)
     {
-        send_view_to_subscribes(ev->view, "view-above");
+        send_view_to_subscribes(ev->view, "view-always-on-top");
     };
 
     wf::signal::connection_t<wf::view_change_workspace_signal> _view_workspace =
