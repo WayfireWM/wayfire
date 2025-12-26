@@ -722,7 +722,7 @@ class WayfireSwitcher : public wf::per_output_plugin_instance_t, public wf::keyb
         }
 
         std::sort(render_order.begin(), render_order.end(),
-            [&] (SwitcherView* a, SwitcherView* b)
+            [&] (SwitcherView *a, SwitcherView *b)
         {
             /* Render in the reverse order because we don't use depth testing */
             return view_order[a->view] > view_order[b->view];
