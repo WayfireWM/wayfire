@@ -72,6 +72,12 @@ class wayfire_zoom_screen : public wf::per_output_plugin_instance_t
     {
         auto w = destination.get_size().width;
         auto h = destination.get_size().height;
+        if ((w <= 0) || (h <= 0))
+        {
+            LOGE("Invalid output size in zoom plugin!");
+            return;
+        }
+
         auto oc = output->get_cursor_position();
         double x, y;
         wlr_box b = output->get_relative_geometry();
@@ -87,8 +93,8 @@ class wayfire_zoom_screen : public wf::per_output_plugin_instance_t
         // timing. And if we use slightly different progressions, we can get an invalid rect.
         const float factor = (float)progression;
         const float scale  = (factor - 1) / factor;
-        const float x1     = x * scale;
-        const float y1     = y * scale;
+        const float x1     = std::clamp(float(x * scale), 0.0f, w - 1.0f);
+        const float y1     = std::clamp(float(y * scale), 0.0f, h - 1.0f);
         const float tw     = std::clamp(w / factor, 0.0f, w - x1);
         const float th     = std::clamp(h / factor, 0.0f, h - y1);
         auto filter_mode   = (interpolation_method == (int)interpolation_method_t::NEAREST) ?
