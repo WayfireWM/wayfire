@@ -11,6 +11,7 @@
 #include <wayfire/geometry.hpp>
 #include <wlr/types/wlr_output.h>
 #include <wayfire/signal-provider.hpp>
+#include "wayfire/debug.hpp"
 #include "xdg-output-unstable-v1-protocol.h"
 
 namespace wf
@@ -107,7 +108,27 @@ void xdg_output_manager_v1::update_outputs()
 
     auto output_visible_for_clients = [&] (wlr_output *output)
     {
+        // NULL output is not part of the configuration state, so we need a separate check
+        if ((std::string(nonull(output->name)) == "NOOP-1") && output->enabled)
+        {
+            return true;
+        }
+
         return config.count(output) && (config[output].source & OUTPUT_IMAGE_SOURCE_SELF);
+    };
+
+    const auto& update_output = [&] (wlr_output *output, wf::geometry_t geometry)
+    {
+        bool changed = false;
+        for (auto& resource : output_resources[output])
+        {
+            changed |= resource->resend_details(geometry);
+        }
+
+        if (changed)
+        {
+            wlr_output_schedule_done(output);
+        }
     };
 
     auto it = output_resources.begin();
@@ -119,18 +140,7 @@ void xdg_output_manager_v1::update_outputs()
         } else
         {
             auto geometry = ol->find_output(it->first)->get_layout_geometry();
-            bool changed  = false;
-
-            for (auto& resource : it->second)
-            {
-                changed |= resource->resend_details(geometry);
-            }
-
-            if (changed)
-            {
-                wlr_output_schedule_done(it->first);
-            }
-
+            update_output(it->first, geometry);
             ++it;
         }
     }
