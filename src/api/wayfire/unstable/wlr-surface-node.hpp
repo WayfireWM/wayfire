@@ -69,7 +69,7 @@ class wlr_surface_node_t : public node_t, public zero_copy_texturable_node_t
     std::optional<wf::texture_t> to_texture() const override;
 
     wlr_surface *get_surface() const;
-    void apply_state(surface_state_t&& state);
+    virtual void apply_state(surface_state_t&& state);
     void apply_current_surface_state();
     void send_frame_done(bool delay_until_vblank);
 
@@ -92,6 +92,8 @@ class wlr_surface_node_t : public node_t, public zero_copy_texturable_node_t
     wf::wl_listener_wrapper on_surface_commit;
 
     const bool autocommit;
+
+  protected:
     surface_state_t current_state;
 };
 }
