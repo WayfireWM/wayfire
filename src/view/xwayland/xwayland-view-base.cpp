@@ -1,3 +1,4 @@
+#include "view/xwayland/xwayland-surface.hpp"
 #include "wayfire/unstable/xwl-toplevel-base.hpp"
 #include "wayfire/view-helpers.hpp"
 #include "../view-impl.hpp"
@@ -45,7 +46,7 @@ void wf::xwayland_view_base_t::do_map(wlr_surface *surface, bool autocommit, boo
 {
     if (!this->main_surface)
     {
-        this->main_surface = std::make_shared<wf::scene::wlr_surface_node_t>(xw->surface, autocommit);
+        this->main_surface = std::make_shared<wf::xw::xwayland_surface_node_t>(xw->surface, autocommit);
         priv->set_mapped_surface_contents(main_surface);
     }
 

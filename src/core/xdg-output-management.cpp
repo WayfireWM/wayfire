@@ -11,6 +11,7 @@
 #include <wayfire/geometry.hpp>
 #include <wlr/types/wlr_output.h>
 #include <wayfire/signal-provider.hpp>
+#include "view/view-impl.hpp"
 #include "wayfire/debug.hpp"
 #include "xdg-output-unstable-v1-protocol.h"
 
@@ -60,6 +61,11 @@ class xdg_output_v1_resource
         {
             on_description_changed.connect(&output->events.description);
         }
+    }
+
+    bool is_xwayland() const
+    {
+        return wl_resource_get_client(xdg_output) == wf::xwayland_get_client();
     }
 
     bool resend_details(wf::geometry_t geometry)
@@ -117,12 +123,14 @@ void xdg_output_manager_v1::update_outputs()
         return config.count(output) && (config[output].source & OUTPUT_IMAGE_SOURCE_SELF);
     };
 
-    const auto& update_output = [&] (wlr_output *output, wf::geometry_t geometry)
+    const auto& update_output = [&] (wlr_output *output, wf::geometry_t geometry,
+                                     wf::geometry_t xwayland_geometry)
     {
         bool changed = false;
         for (auto& resource : output_resources[output])
         {
-            changed |= resource->resend_details(geometry);
+            wf::geometry_t to_send = resource->is_xwayland() ? xwayland_geometry : geometry;
+            changed |= resource->resend_details(to_send);
         }
 
         if (changed)
@@ -131,6 +139,9 @@ void xdg_output_manager_v1::update_outputs()
         }
     };
 
+    static wf::option_wrapper_t<bool> force_xwayland_scaling{"workarounds/force_xwayland_scaling"};
+
+    int xwayland_location_x = 0;
     auto it = output_resources.begin();
     while (it != output_resources.end())
     {
@@ -139,8 +150,22 @@ void xdg_output_manager_v1::update_outputs()
             it = output_resources.erase(it);
         } else
         {
-            auto geometry = ol->find_output(it->first)->get_layout_geometry();
-            update_output(it->first, geometry);
+            auto wo = ol->find_output(it->first);
+            auto geometry = wo->get_layout_geometry();
+            if (force_xwayland_scaling)
+            {
+                int width, height;
+                wlr_output_transformed_resolution(it->first, &width, &height);
+                wf::geometry_t xwayland_geometry = {xwayland_location_x, 0, width, height};
+                update_output(it->first, geometry, xwayland_geometry);
+                xwayland_location_x += width;
+                wo->get_data_safe<wf::xdg_output_xwayland_geometry>()->geometry = xwayland_geometry;
+            } else
+            {
+                update_output(it->first, geometry, geometry);
+                wo->get_data_safe<wf::xdg_output_xwayland_geometry>()->geometry = geometry;
+            }
+
             ++it;
         }
     }
