@@ -337,3 +337,14 @@ int wf::xwayland_get_pid()
     return -1;
 #endif
 }
+
+wl_client*wf::xwayland_get_client()
+{
+#if WF_HAS_XWAYLAND
+
+    return (xwayland_handle && xwayland_handle->server) ? xwayland_handle->server->client : NULL;
+#else
+
+    return nullptr;
+#endif
+}
