@@ -3,12 +3,18 @@
 #include <memory>
 #include <map>
 #include <vector>
+#include "wayfire/object.hpp"
 #include "xdg-output-unstable-v1-protocol.h"
 #include <wayfire/output-layout.hpp>
 
 namespace wf
 {
 class xdg_output_v1_resource;
+class xdg_output_xwayland_geometry : public wf::custom_data_t
+{
+  public:
+    std::optional<wf::geometry_t> geometry;
+};
 
 class xdg_output_manager_v1
 {

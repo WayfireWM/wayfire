@@ -2,6 +2,7 @@
 
 #include "config.h"
 #include "view/view-impl.hpp"
+#include "view/xwayland/xwayland-surface.hpp"
 #include "wayfire/core.hpp"
 #include "wayfire/debug.hpp"
 #include "wayfire/geometry.hpp"
@@ -34,18 +35,18 @@ class wayfire_xwayland_view : public wf::toplevel_view_interface_t, public wayfi
     wf::signal::connection_t<wf::output_configuration_changed_signal> output_geometry_changed =
         [=] (wf::output_configuration_changed_signal *ev)
     {
-        toplevel->set_output_offset(wf::origin(ev->output->get_layout_geometry()));
+        toplevel->update_output(ev->output);
     };
 
     void handle_client_configure(wlr_xwayland_surface_configure_event *ev) override
     {
-        wf::point_t output_origin = {0, 0};
+        wf::geometry_t configure_geometry = wlr_box{ev->x, ev->y, ev->width, ev->height};
         if (get_output())
         {
-            output_origin = wf::origin(get_output()->get_layout_geometry());
+            configure_geometry = wf::xw::calculate_wayfire_geometry(get_output(), configure_geometry);
         }
 
-        LOGC(XWL, "Client configure ", self(), " at ", ev->x, ",", ev->y, " ", ev->width, "x", ev->height);
+        LOGC(XWL, "Client configures ", self(), " to ", configure_geometry);
         if (!is_mapped())
         {
             /* If the view is not mapped yet, let it be configured as it
@@ -53,18 +54,16 @@ class wayfire_xwayland_view : public wf::toplevel_view_interface_t, public wayfi
             wlr_xwayland_surface_configure(xw, ev->x, ev->y, ev->width, ev->height);
             if ((ev->mask & XCB_CONFIG_WINDOW_X) && (ev->mask & XCB_CONFIG_WINDOW_Y))
             {
-                int sx = ev->x - output_origin.x;
-                int sy = ev->y - output_origin.y;
-                this->set_property<int>("startup-x", sx);
-                this->set_property<int>("startup-y", sy);
-                toplevel->pending().geometry.x = sx;
-                toplevel->pending().geometry.y = sy;
+                this->set_property<int>("startup-x", configure_geometry.x);
+                this->set_property<int>("startup-y", configure_geometry.y);
+                toplevel->pending().geometry.x = configure_geometry.x;
+                toplevel->pending().geometry.y = configure_geometry.y;
             }
 
             return;
         }
 
-        configure_request(wlr_box{ev->x, ev->y, ev->width, ev->height});
+        configure_request(configure_geometry);
     }
 
     void update_decorated()
@@ -74,47 +73,45 @@ class wayfire_xwayland_view : public wf::toplevel_view_interface_t, public wayfi
         this->set_decoration_mode(xw->decorations & csd_flags);
     }
 
+    /**
+     * Handle a configure request for a mapped xwayland view.
+     *
+     * @param configure_geometry The desired geometry from the client request, in output-local coordinates.
+     */
     void configure_request(wf::geometry_t configure_geometry)
     {
         configure_geometry = wf::expand_geometry_by_margins(configure_geometry, toplevel->pending().margins);
-        wf::output_t *o = get_output();
-        if (!o)
-        {
-            set_geometry(configure_geometry);
-            return;
-        }
-
-        auto og = o->get_layout_geometry();
 
         // If client is fullscreen or tiled, do not allow it to reposition itself.
         // Otherwise, we will make sure it remains on its original workspace.
         if (pending_fullscreen() || pending_tiled_edges())
         {
-            configure_geometry.x = get_pending_geometry().x + og.x;
-            configure_geometry.y = get_pending_geometry().y + og.y;
+            configure_geometry.x = get_pending_geometry().x;
+            configure_geometry.y = get_pending_geometry().y;
             set_geometry(configure_geometry);
             return;
         }
 
-        // Translate to output-local coordinates
-        configure_geometry.x -= og.x;
-        configure_geometry.y -= og.y;
-
-        auto workarea = o->workarea->get_workarea();
-        wayfire_toplevel_view main_view = wf::find_topmost_parent(wayfire_toplevel_view{this});
-
-        // View workspace relative to current workspace
-        if (main_view->get_wset())
+        if (get_output())
         {
-            auto view_ws = main_view->get_wset()->get_view_main_workspace(main_view);
-            workarea.x += og.width * view_ws.x;
-            workarea.y += og.height * view_ws.y;
-        }
+            auto workarea = get_output()->workarea->get_workarea();
+            auto og = get_output()->get_screen_size();
 
-        // Ensure view remains visible
-        if (!(configure_geometry & workarea))
-        {
-            configure_geometry = wf::clamp(configure_geometry, workarea);
+            wayfire_toplevel_view main_view = wf::find_topmost_parent(wayfire_toplevel_view{this});
+
+            // View workspace relative to current workspace
+            if (main_view->get_wset())
+            {
+                auto view_ws = main_view->get_wset()->get_view_main_workspace(main_view);
+                workarea.x += og.width * view_ws.x;
+                workarea.y += og.height * view_ws.y;
+            }
+
+            // Ensure view remains visible
+            if (!(configure_geometry & workarea))
+            {
+                configure_geometry = wf::clamp(configure_geometry, workarea);
+            }
         }
 
         set_geometry(configure_geometry);
@@ -282,7 +279,7 @@ class wayfire_xwayland_view : public wf::toplevel_view_interface_t, public wayfi
             };
 
             /* Make sure geometry is properly visible on the view output */
-            save_geometry = save_geometry - wf::origin(get_output()->get_layout_geometry());
+            save_geometry = wf::xw::calculate_wayfire_geometry(get_output(), save_geometry);
             save_geometry = wf::clamp(save_geometry, get_output()->workarea->get_workarea());
             wf::get_core().default_wm->update_last_windowed_geometry({this}, save_geometry);
         }
@@ -291,9 +288,9 @@ class wayfire_xwayland_view : public wf::toplevel_view_interface_t, public wayfi
     void handle_map_request(wlr_surface*) override
     {
         LOGC(VIEWS, "Start mapping ", self());
-        this->main_surface = std::make_shared<wf::scene::wlr_surface_node_t>(xw->surface, false);
+        this->main_surface = std::make_shared<wf::xw::xwayland_surface_node_t>(xw->surface, false);
         priv->set_mapped_surface_contents(main_surface);
-        toplevel->set_main_surface(main_surface);
+        toplevel->set_main_surface(std::dynamic_pointer_cast<wf::xw::xwayland_surface_node_t>(main_surface));
         toplevel->pending().mapped = true;
 
         bool map_maximized = xw->maximized_horz || xw->maximized_vert;
@@ -311,11 +308,7 @@ class wayfire_xwayland_view : public wf::toplevel_view_interface_t, public wayfi
             xw->surface->current.height
         };
 
-        if (get_output())
-        {
-            desired_geometry = desired_geometry + -wf::origin(get_output()->get_layout_geometry());
-        }
-
+        desired_geometry = wf::xw::calculate_wayfire_geometry(get_output(), desired_geometry);
         wf::adjust_view_pending_geometry_on_start_map(this, desired_geometry, map_fs, map_maximized);
         wf::get_core().tx_manager->schedule_object(toplevel);
     }
@@ -452,10 +445,10 @@ class wayfire_xwayland_view : public wf::toplevel_view_interface_t, public wayfi
         if (wo)
         {
             wo->connect(&output_geometry_changed);
-            toplevel->set_output_offset(wf::origin(wo->get_layout_geometry()));
+            toplevel->update_output(wo);
         } else
         {
-            toplevel->set_output_offset({0, 0});
+            toplevel->update_output(nullptr);
         }
     }
 

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "config.h"
+#include "view/xwayland/xwayland-surface.hpp"
 #include "wayfire/geometry.hpp"
 #include "wayfire/util.hpp"
 #include <memory>
@@ -32,15 +33,15 @@ class xwayland_toplevel_t : public wf::toplevel_t, public std::enable_shared_fro
     wf::dimensions_t get_min_size() override;
     wf::dimensions_t get_max_size() override;
 
-    void set_main_surface(std::shared_ptr<wf::scene::wlr_surface_node_t> main_surface);
-    void set_output_offset(wf::point_t output_offset);
+    void set_main_surface(std::shared_ptr<wf::xw::xwayland_surface_node_t> main_surface);
+    void update_output(wf::output_t *output);
 
     wf::geometry_t calculate_base_geometry();
 
     void request_native_size();
 
   private:
-    std::shared_ptr<wf::scene::wlr_surface_node_t> main_surface;
+    std::shared_ptr<wf::xw::xwayland_surface_node_t> main_surface;
     scene::surface_state_t pending_state;
 
     void apply_pending_state();
@@ -51,6 +52,7 @@ class xwayland_toplevel_t : public wf::toplevel_t, public std::enable_shared_fro
     wf::wl_idle_call idle_ready;
 
     wlr_xwayland_surface *xw;
+    float output_scale = 1.0;
     wf::point_t output_offset = {0, 0};
     void handle_surface_commit();
 
