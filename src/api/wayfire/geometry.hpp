@@ -127,6 +127,9 @@ geometry_t fbox_to_geometry(const wlr_fbox& fbox);
 bool operator ==(const wf::geometry_t& a, const wf::geometry_t& b);
 bool operator !=(const wf::geometry_t& a, const wf::geometry_t& b);
 
+bool operator ==(const wlr_fbox& a, const wlr_fbox& b);
+bool operator !=(const wlr_fbox& a, const wlr_fbox& b);
+
 wf::point_t operator +(const wf::point_t& a, const wf::geometry_t& b);
 wf::geometry_t operator +(const wf::geometry_t & a, const wf::point_t& b);
 wf::geometry_t operator -(const wf::geometry_t & a, const wf::point_t& b);

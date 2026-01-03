@@ -330,7 +330,7 @@ class scale_title_filter : public wf::per_output_plugin_instance_t
         }
 
         auto tex = filter_overlay.get_texture();
-        if (!tex.texture)
+        if (!tex)
         {
             return;
         }
@@ -342,12 +342,12 @@ class scale_title_filter : public wf::per_output_plugin_instance_t
             (int)(overlay_size.height / output_scale)
         };
 
-        tex.source_box = wlr_fbox{
+        tex->set_source_box(wlr_fbox{
             filter_overlay.get_size().width / 2.0 - overlay_size.width / 2.0,
             filter_overlay.get_size().height / 2.0 - overlay_size.height / 2.0,
             overlay_size.width * 1.0,
             overlay_size.height * 1.0,
-        };
+        });
 
         auto damage = output->render->get_scheduled_damage() & geometry;
         output->render->get_current_pass()->add_texture(tex, out_fb, geometry, damage);

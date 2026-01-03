@@ -812,7 +812,14 @@ class wf::render_manager::impl
 
     wlr_color_transform *get_color_transform()
     {
-        return icc_color_transform;
+        if (icc_color_transform)
+        {
+            return icc_color_transform;
+        }
+
+        static wlr_color_transform *default_transform =
+            wlr_color_transform_init_linear_to_inverse_eotf(WLR_COLOR_TRANSFER_FUNCTION_SRGB);
+        return default_transform;
     }
 
     impl(output_t *o) : output(o), env_allow_scanout(check_scanout_enabled())
@@ -1013,8 +1020,8 @@ class wf::render_manager::impl
         params.flags    = RPASS_CLEAR_BACKGROUND | RPASS_EMIT_SIGNALS;
 
         pass_opts.timer = NULL; // TODO: do we care about this? could be useful for dynamic frame scheduling
-        pass_opts.color_transform = icc_color_transform;
-        params.pass_opts   = &pass_opts;
+        pass_opts.color_transform = get_color_transform();
+        params.pass_opts   = std::move(pass_opts);
         this->current_pass = std::make_unique<render_pass_t>(params);
 
         auto total_damage = current_pass->run_partial();
@@ -1125,8 +1132,10 @@ class wf::render_manager::impl
 
     void render_sw_cursors(swapchain_damage_manager_t::frame_object_t *next_frame)
     {
+        wlr_buffer_pass_options options{};
+        options.color_transform = get_color_transform();
         auto sw_cursor_pass =
-            wlr_renderer_begin_buffer_pass(output->handle->renderer, next_frame->buffer, nullptr);
+            wlr_renderer_begin_buffer_pass(output->handle->renderer, next_frame->buffer, &options);
         if (!sw_cursor_pass)
         {
             LOGE("Failed to render software cursors!");

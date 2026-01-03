@@ -26,7 +26,7 @@ struct owned_texture_t
 
     owned_texture_t(owned_texture_t&& other) : owned_texture_t()
     {
-        std::swap(tex, other.tex);
+        std::swap(texture, other.texture);
         std::swap(size, other.size);
     }
 
@@ -37,30 +37,19 @@ struct owned_texture_t
             return *this;
         }
 
-        if (tex)
-        {
-            wlr_texture_destroy(tex);
-        }
-
-        tex = other.tex;
-        other.tex = NULL;
-
+        this->texture = other.texture;
+        other.texture = nullptr;
         size = other.size;
         other.size = {0, 0};
         return *this;
     }
 
     ~owned_texture_t()
-    {
-        if (tex)
-        {
-            wlr_texture_destroy(tex);
-        }
-    }
+    {}
 
-    wf::texture_t get_texture() const
+    std::shared_ptr<wf::texture_t> get_texture() const
     {
-        return wf::texture_t{tex};
+        return texture;
     }
 
     wf::dimensions_t get_size() const
@@ -75,7 +64,7 @@ struct owned_texture_t
     // Assumes ownership of the texture!
     owned_texture_t(wlr_texture *new_tex)
     {
-        tex = new_tex;
+        this->texture = wf::texture_t::from_texture(new_tex);
     }
 
     owned_texture_t(cairo_surface_t *surface)
@@ -102,13 +91,14 @@ struct owned_texture_t
             wf::dassert(false, "Unsupported cairo format: " + std::to_string(fmt) + "!");
         }
 
-        this->tex = wlr_texture_from_pixels(wf::get_core().renderer, drm_fmt, stride, width, height,
+        auto wlr_tex = wlr_texture_from_pixels(wf::get_core().renderer, drm_fmt, stride, width, height,
             cairo_image_surface_get_data(surface));
-        this->size = {width, height};
+        this->texture = wf::texture_t::from_texture(wlr_tex);
+        this->size    = {width, height};
     }
 
   private:
-    wlr_texture *tex = NULL;
+    std::shared_ptr<wf::texture_t> texture;
     wf::dimensions_t size = {0, 0};
 };
 
@@ -334,7 +324,7 @@ struct cairo_text_t
         return surface_size;
     }
 
-    wf::texture_t get_texture() const
+    std::shared_ptr<wf::texture_t> get_texture() const
     {
         return this->tex.get_texture();
     }

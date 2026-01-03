@@ -150,7 +150,8 @@ class crossfade_render_instance_t : public scene::render_instance_t
             ra = std::pow((self->overlay_alpha - 0.5) * 2, N) / 2.0 + 0.5;
         }
 
-        wf::texture_t tex = wf::texture_t{self->original_buffer.get_texture()};
+        auto tex = wf::texture_t::from_buffer(
+            self->original_buffer.get_buffer(), self->original_buffer.get_texture());
         data.pass->add_texture(tex, data.target, self->displayed_geometry, data.damage, 1.0 - ra);
     }
 };

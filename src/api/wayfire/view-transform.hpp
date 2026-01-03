@@ -22,9 +22,9 @@ class zero_copy_texturable_node_t
      * Get a texture from the node without copying.
      * Note that this operation might fail for non-trivial transformers.
      */
-    virtual std::optional<wf::texture_t> to_texture() const
+    virtual std::shared_ptr<wf::texture_t> to_texture() const
     {
-        return {};
+        return nullptr;
     }
 };
 
@@ -61,7 +61,7 @@ class transformer_base_node_t : public scene::floating_inner_node_t
     // children's current content.
     wf::region_t cached_damage;
 
-    wf::texture_t get_updated_contents(const wf::geometry_t& bbox, float scale,
+    std::shared_ptr<wf::texture_t> get_updated_contents(const wf::geometry_t& bbox, float scale,
         std::vector<scene::render_instance_uptr>& children);
 
     void release_buffers();
@@ -88,18 +88,21 @@ template<class NodeType>
 class transformer_render_instance_t : public render_instance_t
 {
   protected:
-    std::optional<wf::texture_t> zero_copy_texture()
+    std::shared_ptr<wf::texture_t> zero_copy_texture()
     {
         if (self->get_children().size() == 1)
         {
             auto child = self->get_children().front().get();
             if (auto zcopy = dynamic_cast<zero_copy_texturable_node_t*>(child))
             {
-                return zcopy->to_texture();
+                if (auto tex = zcopy->to_texture())
+                {
+                    return tex;
+                }
             }
         }
 
-        return {};
+        return nullptr;
     }
 
     // A pointer to the transformer node this render instance belongs to.
@@ -120,7 +123,7 @@ class transformer_render_instance_t : public render_instance_t
      *   indicates how much bigger the temporary buffer should be than its logical
      *   size.
      */
-    wf::texture_t get_texture(float scale)
+    std::shared_ptr<wf::texture_t> get_texture(float scale)
     {
         // Optimization: if we have a single child (usually the surface root node)
         // and we can directly convert it to texture, we don't need a full render
@@ -128,7 +131,7 @@ class transformer_render_instance_t : public render_instance_t
         if (auto tex = zero_copy_texture())
         {
             self->release_buffers();
-            return *tex;
+            return tex;
         }
 
         return self->get_updated_contents(self->get_children_bounding_box(), scale, children);

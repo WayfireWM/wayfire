@@ -124,7 +124,7 @@ class simple_decoration_node_t : public wf::scene::node_t, public wf::pointer_in
             {
                 wf::geometry_t title_geometry = item->get_geometry() + origin;
                 update_title(title_geometry.width, title_geometry.height, data.target.scale);
-                if (title_texture.tex.get_texture().texture != NULL)
+                if (title_texture.tex.get_texture() != NULL)
                 {
                     data.pass->add_texture(title_texture.tex.get_texture(), data.target,
                         title_geometry, data.damage);

@@ -80,6 +80,16 @@ bool operator !=(const wf::geometry_t& a, const wf::geometry_t& b)
     return !(a == b);
 }
 
+bool operator ==(const wlr_fbox& a, const wlr_fbox& b)
+{
+    return a.x == b.x && a.y == b.y && a.width == b.width && a.height == b.height;
+}
+
+bool operator !=(const wlr_fbox& a, const wlr_fbox& b)
+{
+    return !(a == b);
+}
+
 wf::point_t wf::operator +(const wf::point_t& a, const wf::point_t& b)
 {
     return {a.x + b.x, a.y + b.y};
