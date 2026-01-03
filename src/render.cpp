@@ -6,6 +6,113 @@
 #include <wayfire/scene-render.hpp>
 #include <drm_fourcc.h>
 
+bool wf::color_transform_t::operator ==(const color_transform_t& other) const
+{
+    return transfer_function == other.transfer_function &&
+           primaries == other.primaries &&
+           color_encoding == other.color_encoding &&
+           color_range == other.color_range;
+}
+
+bool wf::color_transform_t::operator !=(const color_transform_t& other) const
+{
+    return !(*this == other);
+}
+
+wf::texture_t::texture_t() = default;
+
+wf::texture_t::~texture_t()
+{
+    if (buffer)
+    {
+        wlr_buffer_unlock(buffer);
+    } else if (texture)
+    {
+        wlr_texture_destroy(texture);
+    }
+}
+
+std::optional<wlr_fbox> wf::texture_t::get_source_box() const
+{
+    return source_box;
+}
+
+void wf::texture_t::set_source_box(const std::optional<wlr_fbox>& box)
+{
+    source_box = box;
+}
+
+wl_output_transform wf::texture_t::get_transform() const
+{
+    return transform;
+}
+
+void wf::texture_t::set_transform(wl_output_transform t)
+{
+    transform = t;
+}
+
+std::optional<wlr_scale_filter_mode> wf::texture_t::get_filter_mode() const
+{
+    return filter_mode;
+}
+
+void wf::texture_t::set_filter_mode(const std::optional<wlr_scale_filter_mode>& mode)
+{
+    filter_mode = mode;
+}
+
+wf::color_transform_t wf::texture_t::get_color_transform() const
+{
+    return color_transform;
+}
+
+void wf::texture_t::set_color_transform(const wf::color_transform_t& ct)
+{
+    color_transform = ct;
+}
+
+std::shared_ptr<wf::texture_t> wf::texture_t::from_buffer(wlr_buffer *buffer, wlr_texture *texture)
+{
+    auto tex = std::shared_ptr<texture_t>(new texture_t());
+    tex->buffer  = buffer;
+    tex->texture = texture;
+    if (buffer)
+    {
+        wlr_buffer_lock(buffer);
+    }
+
+    return tex;
+}
+
+std::shared_ptr<wf::texture_t> wf::texture_t::from_texture(wlr_texture *texture)
+{
+    auto tex = std::shared_ptr<texture_t>(new texture_t());
+    tex->buffer  = nullptr;
+    tex->texture = texture;
+    return tex;
+}
+
+std::shared_ptr<wf::texture_t> wf::texture_t::from_aux(auxilliary_buffer_t& buffer)
+{
+    return from_buffer(buffer.get_buffer(), buffer.get_texture());
+}
+
+wlr_texture*wf::texture_t::get_wlr_texture() const
+{
+    return texture;
+}
+
+int32_t wf::texture_t::get_width() const
+{
+    return texture->width;
+}
+
+int32_t wf::texture_t::get_height() const
+{
+    return texture->height;
+}
+
 wf::render_buffer_t::render_buffer_t(wlr_buffer *buffer, wf::dimensions_t size)
 {
     this->buffer = buffer;
@@ -413,16 +520,8 @@ wf::region_t wf::render_pass_t::run_partial()
         }
     }
 
-    this->pass = wlr_renderer_begin_buffer_pass(
-        params.renderer ?: wf::get_core().renderer,
-        params.target.get_buffer(),
-        params.pass_opts);
-
-    if (!pass)
-    {
-        LOGE("Error: failed to start wlr render pass!");
-        return accumulated_damage;
-    }
+    // When we need the wlr pass, start rendering.
+    this->needs_restart = true;
 
     // Clear visible background areas
     if (params.flags & RPASS_CLEAR_BACKGROUND)
@@ -462,7 +561,7 @@ wlr_renderer*wf::render_pass_t::get_wlr_renderer() const
 
 wlr_render_pass*wf::render_pass_t::get_wlr_pass()
 {
-    return pass;
+    return _get_pass();
 }
 
 void wf::render_pass_t::clear(const wf::region_t& region, const wf::color_t& color)
@@ -481,11 +580,12 @@ void wf::render_pass_t::clear(const wf::region_t& region, const wf::color_t& col
         .a = static_cast<float>(color.a),
     };
 
-    wlr_render_pass_add_rect(pass, &opts);
+    wlr_render_pass_add_rect(_get_pass(), &opts);
 }
 
-void wf::render_pass_t::add_texture(const wf::texture_t& texture, const wf::render_target_t& adjusted_target,
-    const wlr_fbox& geometry, const wf::region_t& damage, float alpha)
+void wf::render_pass_t::add_texture(const std::shared_ptr<wf::texture_t>& texture,
+    const wf::render_target_t& adjusted_target, const wlr_fbox& geometry,
+    const wf::region_t& damage, float alpha)
 {
     if (wlr_renderer_is_gles2(this->get_wlr_renderer()))
     {
@@ -499,7 +599,7 @@ void wf::render_pass_t::add_texture(const wf::texture_t& texture, const wf::rend
     wf::region_t fb_damage = adjusted_target.framebuffer_region_from_geometry_region(damage);
 
     wlr_render_texture_options opts{};
-    opts.texture = texture.texture;
+    opts.texture = texture->get_wlr_texture();
     opts.alpha   = &alpha;
     opts.blend_mode = WLR_RENDER_BLEND_MODE_PREMULTIPLIED;
 
@@ -508,12 +608,21 @@ void wf::render_pass_t::add_texture(const wf::texture_t& texture, const wf::rend
     // but only for integer scale.
     const auto preferred_filter = ((adjusted_target.scale - floor(adjusted_target.scale)) < 0.001) ?
         WLR_SCALE_FILTER_NEAREST : WLR_SCALE_FILTER_BILINEAR;
-    opts.filter_mode = texture.filter_mode.value_or(preferred_filter);
-    opts.transform   = wlr_output_transform_compose(wlr_output_transform_invert(texture.transform),
+    opts.filter_mode = texture->get_filter_mode().value_or(preferred_filter);
+    opts.transform   = wlr_output_transform_compose(wlr_output_transform_invert(texture->get_transform()),
         adjusted_target.wl_transform);
     opts.clip    = fb_damage.to_pixman();
-    opts.src_box = texture.source_box.value_or(wlr_fbox{0, 0, 0, 0});
+    opts.src_box = texture->get_source_box().value_or(wlr_fbox{0, 0, 0, 0});
     opts.dst_box = fbox_to_geometry(adjusted_target.framebuffer_box_from_geometry_box(geometry));
+
+    auto ct = texture->get_color_transform();
+    wlr_color_primaries primaries{};
+    opts.color_encoding = ct.color_encoding;
+    opts.color_range    = ct.color_range;
+    wlr_color_primaries_from_named(&primaries, ct.primaries);
+    opts.primaries = &primaries;
+    opts.transfer_function = ct.transfer_function;
+
     wlr_render_pass_add_texture(get_wlr_pass(), &opts);
 }
 
@@ -538,11 +647,12 @@ void wf::render_pass_t::add_rect(const wf::color_t& color, const wf::render_targ
     opts.box  = fbox_to_geometry(adjusted_target.framebuffer_box_from_geometry_box(geometry));
     wf::dassert(opts.box.width >= 0);
     wf::dassert(opts.box.height >= 0);
-    wlr_render_pass_add_rect(pass, &opts);
+    wlr_render_pass_add_rect(_get_pass(), &opts);
 }
 
-void wf::render_pass_t::add_texture(const wf::texture_t& texture, const wf::render_target_t& adjusted_target,
-    const wf::geometry_t& geometry, const wf::region_t& damage, float alpha)
+void wf::render_pass_t::add_texture(const std::shared_ptr<wf::texture_t>& texture,
+    const wf::render_target_t& adjusted_target, const wf::geometry_t& geometry, const wf::region_t& damage,
+    float alpha)
 {
     add_texture(texture, adjusted_target, geometry_to_fbox(geometry), damage, alpha);
 }
@@ -555,14 +665,21 @@ void wf::render_pass_t::add_rect(const wf::color_t& color, const wf::render_targ
 
 bool wf::render_pass_t::submit()
 {
-    bool status = wlr_render_pass_submit(pass);
-    this->pass = NULL;
+    if (!this->_pass)
+    {
+        // No pass currently running.
+        needs_restart = false;
+        return true;
+    }
+
+    bool status = wlr_render_pass_submit(_pass);
+    this->_pass = NULL;
     return status;
 }
 
 wf::render_pass_t::~render_pass_t()
 {
-    if (this->pass)
+    if (this->_pass)
     {
         LOGW("Dropping unsubmitted render pass!");
     }
@@ -580,9 +697,10 @@ wf::render_pass_t& wf::render_pass_t::operator =(render_pass_t&& other)
         return *this;
     }
 
-    this->pass   = other.pass;
-    other.pass   = NULL;
+    this->_pass  = other._pass;
+    other._pass  = NULL;
     this->params = other.params;
+    this->needs_restart = other.needs_restart;
     return *this;
 }
 
@@ -608,4 +726,48 @@ void wf::render_pass_t::finish_gles_subpass()
     // Bind the framebuffer again so that the wlr pass can continue as usual.
     wf::gles::bind_render_buffer(params.target);
     GL_CALL(glDisable(GL_SCISSOR_TEST));
+}
+
+#if WF_HAS_VULKAN
+wf::vulkan_render_state_t*wf::render_pass_t::prepare_vulkan_subpass()
+{
+    if (!wlr_renderer_is_vk(this->get_wlr_renderer()))
+    {
+        return nullptr;
+    }
+
+    if (!active_command_buffer)
+    {
+        active_command_buffer = &vk::command_buffer_t::buffer_for_pass(*this);
+    }
+
+    return wf::get_core_impl().vulkan_state.get();
+}
+
+void wf::render_pass_t::end_vulkan_subpass()
+{
+    wlr_vk_render_pass_reset_pipeline(this->get_wlr_pass());
+}
+
+#endif
+
+wlr_render_pass*wf::render_pass_t::_get_pass()
+{
+    if (this->_pass)
+    {
+        return this->_pass;
+    }
+
+    if (!this->needs_restart)
+    {
+        LOGE("Cannot get wlr_render_pass before starting the render pass!");
+        return nullptr;
+    }
+
+    this->_pass = wlr_renderer_begin_buffer_pass(
+        params.renderer ?: wf::get_core().renderer,
+        params.target.get_buffer(),
+        params.pass_opts);
+
+    return _pass;
 }

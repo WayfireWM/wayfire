@@ -36,7 +36,7 @@ extern "C"
     #include <wlr/render/gles2.h>
 #endif
 
-#if WLR_HAS_VULKAN_RENDERER
+#if WF_HAS_VULKAN
     #include <wlr/render/vulkan.h>
 #endif
 
@@ -48,6 +48,8 @@ extern "C"
 #undef static
 #include <wlr/types/wlr_buffer.h>
 #include <wlr/types/wlr_viewporter.h>
+#include <wlr/types/wlr_color_management_v1.h>
+#include <wlr/types/wlr_color_representation_v1.h>
 
 #include <wlr/types/wlr_damage_ring.h>
 #include <wlr/types/wlr_presentation_time.h>

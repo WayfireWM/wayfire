@@ -8,6 +8,7 @@
 #include "wayfire/scene.hpp"
 #include "wayfire/util.hpp"
 #include <wayfire/nonstd/wlroots-full.hpp>
+#include <wayfire/vulkan.hpp>
 
 namespace wf
 {
@@ -20,6 +21,10 @@ class compositor_core_impl_t : public compositor_core_t
     // If NULL, we are not running in GLES mode.
     wlr_egl *egl = NULL;
     wlr_compositor *compositor;
+
+#if WF_HAS_VULKAN
+    std::unique_ptr<wf::vulkan_render_state_t> vulkan_state;
+#endif
 
     std::unique_ptr<wf::input_manager_t> input;
     std::unique_ptr<input_method_relay> im_relay;

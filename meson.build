@@ -36,7 +36,7 @@ pangocairo     = dependency('pangocairo')
 drm            = dependency('libdrm')
 egl            = dependency('egl')
 glesv2         = dependency('glesv2')
-vulkan         = dependency('vulkan', required: false)
+vulkan         = dependency('vulkan', required: get_option('vulkan_effects'))
 glm            = dependency('glm', required: false)
 libinput       = dependency('libinput', version: '>=1.7.0')
 pixman         = dependency('pixman-1')
@@ -194,6 +194,15 @@ else
   conf_data.set('BUILD_WITH_IMAGEIO', false)
 endif
 
+
+use_vulkan = vulkan.found() and wlroots_features['vulkan_renderer'] and not get_option('vulkan_effects').disabled()
+conf_data.set('WF_SHADER_DIR', join_paths(get_option('prefix'), 'share', 'wayfire', 'shaders'))
+if use_vulkan
+  conf_data.set('WF_HAS_VULKAN', 1)
+else
+  conf_data.set('WF_HAS_VULKAN', 0)
+endif
+
 wayfire_conf_inc = include_directories(['.'])
 
 add_project_arguments(['-Wno-unused-parameter'], language: 'cpp')
@@ -231,6 +240,9 @@ else
   has_asan = false
 endif
 
+if use_vulkan
+  subdir('shaders')
+endif
 subdir('proto')
 subdir('src')
 subdir('man')

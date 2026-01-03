@@ -9,6 +9,7 @@
 #mesondefine BUILD_WITH_IMAGEIO
 #mesondefine USE_GLES32
 #mesondefine WF_HAS_XWAYLAND
+#mesondefine WF_HAS_VULKAN
 
 
 #endif /* end of include guard: CONFIG_H */
