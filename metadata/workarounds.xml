@@ -105,5 +105,10 @@
 			<min>0</min>
 			<max>500</max>
 		</option>
+		<option name="force_xwayland_scaling" type="bool">
+			<_short>Force Xwayland DPI scaling</_short>
+			<_long>Disables the default blurry scaling for Xwayland and forces client-side scaling for Xwayland windows dependent on the DPI settings.</_long>
+			<default>false</default>
+		</option>
 	</plugin>
 </wayfire>
