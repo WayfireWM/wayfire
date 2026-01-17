@@ -45,6 +45,54 @@ static void handle_gtk_surface_set_dbus_properties(wl_client *client,
     {
         wf::get_core().get_data_safe<wf_gtk_shell>()->surface_app_id[surface->wl_surface] = application_id;
     }
+
+    wayfire_view view = wf::wl_surface_to_wayfire_view(surface->wl_surface);
+    if (!view)
+    {
+        LOGE("Could not get view");
+        return;
+    } else
+    {
+        if (app_menu_path && *app_menu_path)
+        {
+            view->set_property<std::string>("gtk-shell-app-menu-path", app_menu_path);
+        } else
+        {
+            view->erase_property("gtk-shell-app-menu-path");
+        }
+
+        if (application_object_path && *application_object_path)
+        {
+            view->set_property<std::string>("gtk-shell-application-object-path", application_object_path);
+        } else
+        {
+            view->erase_property("gtk-shell-application-object-path");
+        }
+
+        if (menubar_path && *menubar_path)
+        {
+            view->set_property<std::string>("gtk-shell-menubar-path", menubar_path);
+        } else
+        {
+            view->erase_property("gtk-shell-menubar-path");
+        }
+
+        if (unique_bus_name && *unique_bus_name)
+        {
+            view->set_property<std::string>("gtk-shell-unique-bus-name", unique_bus_name);
+        } else
+        {
+            view->erase_property("gtk-shell-unique-bus-name");
+        }
+
+        if (window_object_path && *window_object_path)
+        {
+            view->set_property<std::string>("gtk-shell-window-object-path", window_object_path);
+        } else
+        {
+            view->erase_property("gtk-shell-window-object-path");
+        }
+    }
 }
 
 /**
