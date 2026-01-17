@@ -10,6 +10,8 @@
 #include <wayfire/nonstd/wlroots-full.hpp>
 #include <wayfire/unstable/wlr-surface-node.hpp>
 #include <wayfire/view-helpers.hpp>
+#include "plugins/protocols/gtk-shell.hpp"
+#include "plugins/protocols/kde-appmenu.hpp"
 
 namespace wf::ipc_rules
 {
@@ -209,6 +211,76 @@ static inline wf::json_t view_to_json(wayfire_view view)
     description["focusable"] = view->is_focusable();
     description["type"] = get_view_type(view);
     description["always-on-top"] = view->has_data("wm-actions-above");
+
+    if (auto props = view->get_data<gtk_shell_dbus_properties_t>())
+    {
+        wf::json_t props_json;
+
+        if (props->app_menu_path)
+        {
+            props_json["app_menu_path"] = *props->app_menu_path;
+        } else
+        {
+            props_json["app_menu_path"] = wf::json_t::null();
+        }
+
+        if (props->menubar_path)
+        {
+            props_json["menubar_path"] = *props->menubar_path;
+        } else
+        {
+            props_json["menubar_path"] = wf::json_t::null();
+        }
+
+        if (props->window_object_path)
+        {
+            props_json["window_object_path"] = *props->window_object_path;
+        } else
+        {
+            props_json["window_object_path"] = wf::json_t::null();
+        }
+
+        if (props->application_object_path)
+        {
+            props_json["application_object_path"] = *props->application_object_path;
+        } else
+        {
+            props_json["application_object_path"] = wf::json_t::null();
+        }
+
+        if (props->unique_bus_name)
+        {
+            props_json["unique_bus_name"] = *props->unique_bus_name;
+        } else
+        {
+            props_json["unique_bus_name"] = wf::json_t::null();
+        }
+
+        description["gtk_dbus_properties"] = props_json;
+    }
+
+    if (auto props = view->get_data<kde_appmenu_properties_t>())
+    {
+        wf::json_t props_json;
+
+        if (props->service_name)
+        {
+            props_json["service_name"] = *props->service_name;
+        } else
+        {
+            props_json["service_name"] = wf::json_t::null();
+        }
+
+        if (props->object_path)
+        {
+            props_json["object_path"] = *props->object_path;
+        } else
+        {
+            props_json["object_path"] = wf::json_t::null();
+        }
+
+        description["kde_appmenu_properties"] = props_json;
+    }
 
     return description;
 }
