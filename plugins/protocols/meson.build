@@ -1,6 +1,6 @@
 protocol_plugins = [
   'ext-toplevel', 'foreign-toplevel', 'gtk-shell', 'wayfire-shell', 'xdg-activation', 'shortcuts-inhibit',
-  'input-method-v1', 'session-lock', 'security-context-v1',
+  'input-method-v1', 'session-lock', 'security-context-v1', 'kde-appmenu',
 ]
 
 all_include_dirs = [wayfire_api_inc, wayfire_conf_inc, plugins_common_inc, ipc_include_dirs]

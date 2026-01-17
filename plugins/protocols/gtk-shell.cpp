@@ -45,6 +45,56 @@ static void handle_gtk_surface_set_dbus_properties(wl_client *client,
     {
         wf::get_core().get_data_safe<wf_gtk_shell>()->surface_app_id[surface->wl_surface] = application_id;
     }
+
+    wayfire_view view = wf::wl_surface_to_wayfire_view(surface->wl_surface);
+    if (!view)
+    {
+        LOGE("Could not get view");
+        return;
+    } else
+    {
+        auto props = view->get_data_safe<gtk_shell_dbus_properties_t>();
+
+        if (app_menu_path)
+        {
+            props->app_menu_path = app_menu_path;
+        } else
+        {
+            props->app_menu_path.reset();
+        }
+
+        if (application_object_path)
+        {
+            props->application_object_path = application_object_path;
+        } else
+        {
+            props->application_object_path.reset();
+        }
+
+        if (menubar_path)
+        {
+            props->menubar_path = menubar_path;
+        } else
+        {
+            props->menubar_path.reset();
+        }
+
+        if (unique_bus_name)
+        {
+            props->unique_bus_name = unique_bus_name;
+        } else
+        {
+            props->unique_bus_name.reset();
+        }
+
+        if (window_object_path)
+        {
+            props->window_object_path = window_object_path;
+        } else
+        {
+            props->window_object_path.reset();
+        }
+    }
 }
 
 /**
