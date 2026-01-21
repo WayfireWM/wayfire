@@ -379,6 +379,9 @@ void bind_gtk_shell1(wl_client *client, void *data, uint32_t version, uint32_t i
 {
     auto resource = wl_resource_create(client, &gtk_shell1_interface, GTK_SHELL_VERSION, id);
     wl_resource_set_implementation(resource, &gtk_shell1_impl, data, handle_gtk_shell1_destroy);
+    wf::option_wrapper_t<bool> global_menu_bar{"gtk-shell/global_menu_bar"};
+    // Note: we also have the "global_app_menu" capability, but it does not seem to have any effect
+    gtk_shell1_send_capabilities(resource, global_menu_bar ? GTK_SHELL1_CAPABILITY_GLOBAL_MENU_BAR : 0);
 }
 
 class wayfire_gtk_shell_impl : public wf::plugin_interface_t
