@@ -162,6 +162,11 @@ class object_base_t
         return true;
     }
 
+    void erase_property(std::string name)
+    {
+        erase_data(name);
+    }
+
     object_base_t(const object_base_t &) = delete;
     object_base_t(object_base_t &&) = delete;
     object_base_t& operator =(const object_base_t&) = delete;
