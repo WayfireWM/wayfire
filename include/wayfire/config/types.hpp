@@ -487,6 +487,10 @@ enum mode_type_t
 {
     /** Output was configured in automatic mode. */
     MODE_AUTO,
+    /** Output was configured with the biggest refresh rate. */
+    MODE_HIGHRR,
+    /** Output was configured with the biggest resolution. */
+    MODE_HIGHRES,
     /** Output was configured to be turned off. */
     MODE_OFF,
     /** Output was configured with a given resolution. */
@@ -507,6 +511,14 @@ struct mode_t
      * @param auto_on If true, the created mode will be an AUTO mode.
      */
     mode_t(bool auto_on = false);
+
+    /**
+     * Initialize an alternative AUTO mode.
+     *
+     * @param auto_on Must be true in order to choose an alternative mode. Otherwise always OFF mode.
+     * @param prioritize_res If true, the created mode will be an HIGHRES mode. Otherwise, HIGHRR.
+     */
+    mode_t(int prioritize_res = 3);
 
     /**
      * Initialize the mode with source self.

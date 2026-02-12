@@ -1072,6 +1072,11 @@ wf::output_config::mode_t::mode_t(bool auto_on)
     this->type = auto_on ? MODE_AUTO : MODE_OFF;
 }
 
+wf::output_config::mode_t::mode_t(int prioritize_res)
+{
+    this->type = prioritize_res == 3 ? MODE_HIGHRES : MODE_HIGHRR;
+}
+
 wf::output_config::mode_t::mode_t(int32_t width, int32_t height, int32_t refresh)
 {
     this->type    = MODE_RESOLUTION;
@@ -1132,6 +1137,8 @@ bool wf::output_config::mode_t::operator ==(const mode_t& other) const
         return mirror_from == other.mirror_from;
 
       case MODE_AUTO:
+      case MODE_HIGHRR:
+      case MODE_HIGHRES:
       case MODE_OFF:
         return true;
     }
@@ -1151,6 +1158,16 @@ std::optional<wf::output_config::mode_t> wf::option_type::from_string(
     if ((string == "auto") || (string == "default"))
     {
         return wf::output_config::mode_t{true};
+    }
+
+    if ((string == "highres"))
+    {
+        return wf::output_config::mode_t{3};
+    }
+
+    if ((string == "highrr"))
+    {
+        return wf::output_config::mode_t{2};
     }
 
     if (string.substr(0, 6) == "mirror")
@@ -1203,6 +1220,12 @@ std::string wf::option_type::to_string(const output_config::mode_t& value)
     {
       case output_config::MODE_AUTO:
         return "auto";
+
+      case output_config::MODE_HIGHRR:
+        return "highrr";
+
+      case output_config::MODE_HIGHRES:
+        return "highres";
 
       case output_config::MODE_OFF:
         return "off";

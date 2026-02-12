@@ -416,6 +416,8 @@ TEST_CASE("wf::output_config::mode_t")
     using namespace wf::output_config;
 
     std::vector<mt> modes = {
+        mt{3},
+        mt{2},
         mt{true},
         mt{true},
         mt{false},
@@ -426,6 +428,8 @@ TEST_CASE("wf::output_config::mode_t")
     };
 
     std::vector<mode_type_t> types = {
+        MODE_HIGHRES,
+        MODE_HIGHRR,
         MODE_AUTO,
         MODE_AUTO,
         MODE_OFF,
@@ -436,6 +440,8 @@ TEST_CASE("wf::output_config::mode_t")
     };
 
     std::vector<std::string> desc = {
+        "highres",
+        "highrr",
         "auto",
         "default",
         "off",
@@ -452,10 +458,10 @@ TEST_CASE("wf::output_config::mode_t")
         "1920 1080",
     };
 
-    CHECK(modes[3].get_refresh() == 0);
-    CHECK(modes[4].get_refresh() == 59000);
-    CHECK(modes[5].get_refresh() == 59000);
-    CHECK(modes[6].get_mirror_from() == "eDP-1");
+    CHECK(modes[5].get_refresh() == 0);
+    CHECK(modes[6].get_refresh() == 59000);
+    CHECK(modes[7].get_refresh() == 59000);
+    CHECK(modes[8].get_mirror_from() == "eDP-1");
 
     for (size_t i = 0; i < modes.size(); i++)
     {
