@@ -22,7 +22,6 @@
 #include <wayfire/nonstd/wlroots-full.hpp>
 
 static void*const WF_NOOP_OUTPUT_MAGIC = (void*)0x1234;
-static wlr_output_mode __video_mode_all_zeroes{};
 
 // wlroots wrappers
 namespace wf
@@ -454,30 +453,57 @@ struct output_layout_output_t
     wlr_output_mode select_default_mode(wf::output_config::mode_type_t default_heuristic)
     {
         wlr_output_mode *mode;
+        static wlr_output_mode __video_mode_all_zeroes{};
 
-        if (default_heuristic == output_config::MODE_HIGHRR)
+        if (default_heuristic == output_config::MODE_AUTO)
         {
-            int32_t max_refresh = 0;
-            wlr_output_mode *biggest_mode = &__video_mode_all_zeroes;
-
-            // Get the highest refresh rate out of all modes.
-
             wl_list_for_each(mode, &handle->modes, link)
             {
-                if (mode->refresh > max_refresh)
+                if (mode->preferred)
                 {
-                    max_refresh = mode->refresh;
+                    return *mode;
                 }
             }
+        } else
+        {
+            wlr_output_mode *biggest_mode = &__video_mode_all_zeroes;
 
-            /* Get the highest resolution compatible with the highest refresh rate.
-             * We measure it by calculating the area of each video mode. */
-
-            wl_list_for_each(mode, &handle->modes, link)
+            if (default_heuristic == output_config::MODE_HIGHRES)
             {
-                if (mode->refresh == max_refresh && ((mode->width * mode->height) > (biggest_mode->width * biggest_mode->height)))
+                /* Get the highest resolution compatible with the highest refresh rate.
+                 * We measure it by calculating the area of each video mode. */
+
+                wl_list_for_each(mode, &handle->modes, link)
                 {
-                    biggest_mode = mode;
+                    if ((mode->width * mode->height) > (biggest_mode->width * biggest_mode->height))
+                    {
+                        biggest_mode = mode;
+                    }
+                }
+            } else if (default_heuristic == output_config::MODE_HIGHRR)
+            {
+                int32_t max_refresh = 0;
+
+                // Get the highest refresh rate out of all modes.
+
+                wl_list_for_each(mode, &handle->modes, link)
+                {
+                    if (mode->refresh > max_refresh)
+                    {
+                        max_refresh = mode->refresh;
+                    }
+                }
+
+                /* Get the highest resolution compatible with the highest refresh rate.
+                 * We measure it by calculating the area of each video mode. */
+
+                wl_list_for_each(mode, &handle->modes, link)
+                {
+                    if ((mode->refresh == max_refresh) &&
+                        ((mode->width * mode->height) > (biggest_mode->width * biggest_mode->height)))
+                    {
+                        biggest_mode = mode;
+                    }
                 }
             }
 
@@ -487,18 +513,7 @@ struct output_layout_output_t
                 return *biggest_mode;
             }
         }
-        else if (default_heuristic == output_config::MODE_AUTO)
-        {
-            wl_list_for_each(mode, &handle->modes, link)
-            {
-                if (mode->preferred)
-                {
-                    return *mode;
-                }
-            }
-        }
 
-                
         /* Couldn't find a preferred mode. Just return the last, which is
          * usually also the "largest" */
         wl_list_for_each_reverse(mode, &handle->modes, link)
