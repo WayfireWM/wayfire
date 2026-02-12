@@ -525,24 +525,62 @@ void view_action_interface_t::_set_geometry_ppt(int x, int y, int w, int h)
 
 void view_action_interface_t::_start_on_output(std::string name)
 {
-    auto output = wf::get_core().output_layout->find_output(name);
+    auto layout = wf::get_core().output_layout.get();
+
+    // First try normal connector name (DP-1, HDMI-A-1, etc.)
+    auto output = layout->find_output(name);
+
+    // If not found, try make + model
     if (!output)
     {
+        for (auto wo : layout->get_outputs())
+        {
+            if (!wo || !wo->handle)
+                continue;
+
+           std::string make   = wo->handle->make   ? wo->handle->make   : "";
+           std::string model  = wo->handle->model  ? wo->handle->model  : "";
+           std::string serial = wo->handle->serial ? wo->handle->serial : "";
+
+           LOGD("Output detected: connector=", wo->to_string(),
+                " make=", make,
+                " model=", model,
+                " serial=", serial);
+
+           // Build identifiers
+           std::string make_model = make + " " + model;
+
+           std::string full_id = make_model;
+           if (!serial.empty())
+	   {
+    		full_id += " " + serial;
+	   }
+
+	   // Match either full ID or shorter make+model
+	   if (full_id == name || make_model == name)
+           {
+                output = wo;
+                break;
+           }
+
+        }
+    }
+
+    if (!output)
+    {
+        LOGW("window-rules: No matching output found for ", name);
         return;
     }
 
     if (_view->parent)
-    {
         return;
-    }
 
     if (_view->get_output() == output)
-    {
         return;
-    }
 
     move_view_to_output(_view, output, true);
 }
+
 
 std::tuple<bool, wf::point_t> view_action_interface_t::_validate_ws(
     const std::vector<variant_t>& args)
