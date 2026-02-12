@@ -22,6 +22,7 @@
 #include <wayfire/nonstd/wlroots-full.hpp>
 
 static void*const WF_NOOP_OUTPUT_MAGIC = (void*)0x1234;
+static wlr_output_mode __video_mode_all_zeroes{};
 
 // wlroots wrappers
 namespace wf
@@ -450,22 +451,60 @@ struct output_layout_output_t
         }
     }
 
-    wlr_output_mode select_default_mode()
+    wlr_output_mode select_default_mode(wf::output_config::mode_type_t default_heuristic)
     {
         wlr_output_mode *mode;
-        wl_list_for_each(mode, &handle->modes, link)
+
+        if (default_heuristic == output_config::MODE_HIGHRR)
         {
-            if (mode->preferred)
+            int32_t max_refresh = 0;
+            wlr_output_mode *biggest_mode = &__video_mode_all_zeroes;
+
+            // Get the highest refresh rate out of all modes.
+
+            wl_list_for_each(mode, &handle->modes, link)
             {
-                return *mode;
+                if (mode->refresh > max_refresh)
+                {
+                    max_refresh = mode->refresh;
+                }
+            }
+
+            /* Get the highest resolution compatible with the highest refresh rate.
+             * We measure it by calculating the area of each video mode. */
+
+            wl_list_for_each(mode, &handle->modes, link)
+            {
+                if (mode->refresh == max_refresh && ((mode->width * mode->height) > (biggest_mode->width * biggest_mode->height)))
+                {
+                    biggest_mode = mode;
+                }
+            }
+
+            // Don't return the dummy video mode.
+            if (biggest_mode != &__video_mode_all_zeroes)
+            {
+                return *biggest_mode;
+            }
+        }
+        else if (default_heuristic == output_config::MODE_AUTO)
+        {
+            wl_list_for_each(mode, &handle->modes, link)
+            {
+                if (mode->preferred)
+                {
+                    return *mode;
+                }
             }
         }
 
+                
         /* Couldn't find a preferred mode. Just return the last, which is
          * usually also the "largest" */
         wl_list_for_each_reverse(mode, &handle->modes, link)
-
-        return *mode;
+        {
+            return *mode;
+        }
 
         /* Finally, if there isn't any mode (for ex. wayland backend),
          * try the wlr_output resolution, falling back to 1200x720
@@ -552,10 +591,13 @@ struct output_layout_output_t
         wf::output_config::mode_t mode = mode_opt;
         wlr_output_mode tmp{};
 
-        switch (mode.get_type())
+        wf::output_config::mode_type_t mode_type = mode.get_type();
+        switch (mode_type)
         {
+          case output_config::MODE_HIGHRES:
+          case output_config::MODE_HIGHRR:
           case output_config::MODE_AUTO:
-            state.mode   = select_default_mode();
+            state.mode   = select_default_mode(mode_type);
             state.source = OUTPUT_IMAGE_SOURCE_SELF;
             break;
 
@@ -564,7 +606,7 @@ struct output_layout_output_t
             tmp.width    = mode.get_width();
             tmp.height   = mode.get_height();
             tmp.refresh  = mode.get_refresh();
-            state.mode   = (is_mode_supported(tmp) ? tmp : select_default_mode());
+            state.mode   = (is_mode_supported(tmp) ? tmp : select_default_mode(output_config::MODE_AUTO));
             state.source = OUTPUT_IMAGE_SOURCE_SELF;
             break;
 
@@ -574,7 +616,7 @@ struct output_layout_output_t
 
           case output_config::MODE_MIRROR:
             state.source = OUTPUT_IMAGE_SOURCE_MIRROR;
-            state.mode   = select_default_mode();
+            state.mode   = select_default_mode(output_config::MODE_AUTO);
             state.mirror_from = mode.get_mirror_from();
             break;
         }
