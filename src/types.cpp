@@ -1067,14 +1067,11 @@ std::string wf::option_type::to_string(
 }
 
 /* ------------------------- Output config types ---------------------------- */
-wf::output_config::mode_t::mode_t(bool auto_on)
+wf::output_config::mode_t::mode_t(output_config::mode_type_t mode)
 {
-    this->type = auto_on ? MODE_AUTO : MODE_OFF;
-}
-
-wf::output_config::mode_t::mode_t(int prioritize_res)
-{
-    this->type = prioritize_res == 3 ? MODE_HIGHRES : MODE_HIGHRR;
+    if(mode == MODE_RESOLUTION || mode == MODE_MIRROR)
+        throw std::invalid_argument("Invalid mode definition");
+    this->type = mode;
 }
 
 wf::output_config::mode_t::mode_t(int32_t width, int32_t height, int32_t refresh)
@@ -1152,22 +1149,22 @@ std::optional<wf::output_config::mode_t> wf::option_type::from_string(
 {
     if (string == "off")
     {
-        return wf::output_config::mode_t{false};
+        return wf::output_config::mode_t{wf::output_config::mode_type_t::MODE_OFF};
     }
 
     if ((string == "auto") || (string == "default"))
     {
-        return wf::output_config::mode_t{true};
+        return wf::output_config::mode_t{wf::output_config::mode_type_t::MODE_AUTO};
     }
 
     if ((string == "highres"))
     {
-        return wf::output_config::mode_t{3};
+        return wf::output_config::mode_t{wf::output_config::mode_type_t::MODE_HIGHRES};
     }
 
     if ((string == "highrr"))
     {
-        return wf::output_config::mode_t{2};
+        return wf::output_config::mode_t{wf::output_config::mode_type_t::MODE_HIGHRR};
     }
 
     if (string.substr(0, 6) == "mirror")

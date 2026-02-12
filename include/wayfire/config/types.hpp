@@ -506,19 +506,12 @@ enum mode_type_t
 struct mode_t
 {
     /**
-     * Initialize an OFF or AUTO mode.
+     * Initialize a mode.
      *
-     * @param auto_on If true, the created mode will be an AUTO mode.
+     * @param mode One of: MODE_AUTO, MODE_HIGHRR, MODE_HIGHRES, MODE_OFF. MODE_HIGHRR prioritizes refresh rate, MODE_HIGHRES prioritises resolution and MODE_AUTO chooses whatever the display tells it to use.
+     * @throws std::invalid_argument if the mode isn't MODE_AUTO, MODEHIGHRR, MODEHIGHRES or MODE_OFF.
      */
-    mode_t(bool auto_on = false);
-
-    /**
-     * Initialize an alternative AUTO mode.
-     *
-     * @param auto_on Must be true in order to choose an alternative mode. Otherwise always OFF mode.
-     * @param prioritize_res If true, the created mode will be an HIGHRES mode. Otherwise, HIGHRR.
-     */
-    mode_t(int prioritize_res = 3);
+    mode_t(output_config::mode_type_t mode);
 
     /**
      * Initialize the mode with source self.

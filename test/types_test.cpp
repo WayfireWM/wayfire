@@ -416,11 +416,11 @@ TEST_CASE("wf::output_config::mode_t")
     using namespace wf::output_config;
 
     std::vector<mt> modes = {
-        mt{3},
-        mt{2},
-        mt{true},
-        mt{true},
-        mt{false},
+        mt{MODE_HIGHRES},
+        mt{MODE_HIGHRR},
+        mt{MODE_AUTO},
+        mt{MODE_AUTO},
+        mt{MODE_OFF},
         mt{1920, 1080, 0},
         mt{1920, 1080, 59000},
         mt{1920, 1080, 59000},
