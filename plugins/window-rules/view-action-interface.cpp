@@ -536,33 +536,34 @@ void view_action_interface_t::_start_on_output(std::string name)
         for (auto wo : layout->get_outputs())
         {
             if (!wo || !wo->handle)
+            {
                 continue;
+            }
 
-           std::string make   = wo->handle->make   ? wo->handle->make   : "";
-           std::string model  = wo->handle->model  ? wo->handle->model  : "";
-           std::string serial = wo->handle->serial ? wo->handle->serial : "";
+            std::string make   = wo->handle->make ? wo->handle->make : "";
+            std::string model  = wo->handle->model ? wo->handle->model : "";
+            std::string serial = wo->handle->serial ? wo->handle->serial : "";
 
-           LOGD("Output detected: connector=", wo->to_string(),
+            LOGD("Output detected: connector=", wo->to_string(),
                 " make=", make,
                 " model=", model,
                 " serial=", serial);
 
-           // Build identifiers
-           std::string make_model = make + " " + model;
+            // Build identifiers
+            std::string make_model = make + " " + model;
 
-           std::string full_id = make_model;
-           if (!serial.empty())
-	   {
-    		full_id += " " + serial;
-	   }
+            std::string full_id = make_model;
+            if (!serial.empty())
+            {
+                full_id += " " + serial;
+            }
 
-	   // Match either full ID or shorter make+model
-	   if (full_id == name || make_model == name)
-           {
+            // Match either full ID or shorter make+model
+            if ((full_id == name) || (make_model == name))
+            {
                 output = wo;
                 break;
-           }
-
+            }
         }
     }
 
@@ -573,14 +574,17 @@ void view_action_interface_t::_start_on_output(std::string name)
     }
 
     if (_view->parent)
+    {
         return;
+    }
 
     if (_view->get_output() == output)
+    {
         return;
+    }
 
     move_view_to_output(_view, output, true);
 }
-
 
 std::tuple<bool, wf::point_t> view_action_interface_t::_validate_ws(
     const std::vector<variant_t>& args)
