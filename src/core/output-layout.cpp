@@ -574,7 +574,10 @@ struct output_layout_output_t
 
           case output_config::MODE_MIRROR:
             state.source = OUTPUT_IMAGE_SOURCE_MIRROR;
-            state.mode   = select_default_mode();
+            tmp.width    = mode.get_width();
+            tmp.height   = mode.get_height();
+            tmp.refresh  = mode.get_refresh();
+            state.mode   = (tmp.width > 0 && is_mode_supported(tmp) ? tmp : select_default_mode());
             state.mirror_from = mode.get_mirror_from();
             break;
         }
