@@ -738,10 +738,10 @@ class wayfire_scale : public wf::per_output_plugin_instance_t,
         {
             auto vg = view->get_geometry();
             auto og = output->get_relative_geometry();
+            wf::region_t vr{vg};
             wf::region_t wr{og};
-            wf::point_t center{vg.x + vg.width / 2, vg.y + vg.height / 2};
 
-            if (wr.contains_point(center))
+            if (!(wr & vr).empty())
             {
                 views.push_back(view);
             }
