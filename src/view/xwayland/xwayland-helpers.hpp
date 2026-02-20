@@ -1,6 +1,7 @@
 #pragma once
 
 #include "config.h"
+#include "wayfire/output.hpp"
 #include <optional>
 #include <string>
 
@@ -29,6 +30,13 @@ extern xcb_atom_t _NET_WM_WINDOW_TYPE_DND;
 std::optional<xcb_atom_t> load_atom(xcb_connection_t *connection, const std::string& name);
 bool load_basic_atoms(const char *server_name);
 bool has_type(wlr_xwayland_surface *xw, xcb_atom_t type);
+
+wf::output_t *find_xwayland_surface_output(wlr_xwayland_surface *xw);
+
+/**
+ * Calculate the geometry from the Xwayland client to be used in Wayfire.
+ */
+wf::geometry_t calculate_wayfire_geometry(wf::output_t *ref_output, wf::geometry_t geometry);
 }
 }
 

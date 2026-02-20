@@ -149,9 +149,9 @@ void wf::compositor_core_impl_t::init()
     protocols.image_copy_capture    = wlr_ext_image_copy_capture_manager_v1_create(display, 1);
     protocols.image_capture_source  = wlr_ext_output_image_capture_source_manager_v1_create(display, 1);
     protocols.gamma_v1 = wlr_gamma_control_manager_v1_create(display);
-    protocols.export_dmabuf  = wlr_export_dmabuf_manager_v1_create(display);
-    protocols.output_manager = wlr_xdg_output_manager_v1_create(display,
-        output_layout->get_handle());
+    protocols.export_dmabuf = wlr_export_dmabuf_manager_v1_create(display);
+    xdg_output_manager = std::make_unique<wf::xdg_output_manager_v1>(display,
+        output_layout.get());
     protocols.drm_v1 = wlr_drm_lease_v1_manager_create(display, backend);
     drm_lease_request.set_callback([&] (void *data)
     {
@@ -294,8 +294,7 @@ void wf::compositor_core_impl_t::post_init()
 
     this->state = compositor_state_t::RUNNING;
     // Move pointer to the middle of the leftmost, topmost output
-    wf::pointf_t p;
-    wf::output_t *wo = wf::get_core().output_layout->get_output_coords_at({FLT_MIN, FLT_MIN}, p);
+    wf::output_t *wo = output_layout->find_closest_output({FLT_MIN, FLT_MIN});
     // Output might be noop but guaranteed to not be null
     wo->ensure_pointer(true);
     seat->focus_output(wo);

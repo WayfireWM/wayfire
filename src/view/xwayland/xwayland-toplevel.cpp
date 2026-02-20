@@ -5,6 +5,7 @@
 #include <wayfire/txn/transaction-manager.hpp>
 #include "../view-impl.hpp"
 #include "wayfire/toplevel.hpp"
+#include "core/xdg-output-management.hpp"
 
 #if WF_HAS_XWAYLAND
 
@@ -27,7 +28,7 @@ wf::xw::xwayland_toplevel_t::xwayland_toplevel_t(wlr_xwayland_surface *xw)
 }
 
 void wf::xw::xwayland_toplevel_t::set_main_surface(
-    std::shared_ptr<wf::scene::wlr_surface_node_t> main_surface)
+    std::shared_ptr<wf::xw::xwayland_surface_node_t> main_surface)
 {
     this->main_surface = main_surface;
     on_surface_commit.disconnect();
@@ -50,12 +51,44 @@ void wf::xw::xwayland_toplevel_t::set_main_surface(
         _pending.geometry.height   = size.height;
         _current.geometry.height   = size.height;
         _committed.geometry.height = size.height;
+        main_surface->set_scale(output_scale);
     }
 }
 
-void wf::xw::xwayland_toplevel_t::set_output_offset(wf::point_t output_offset)
+void wf::xw::xwayland_toplevel_t::update_output(wf::output_t *output)
 {
-    this->output_offset = output_offset;
+    if (output)
+    {
+        static wf::option_wrapper_t<bool> force_xwayland_scaling{"workarounds/force_xwayland_scaling"};
+        if (force_xwayland_scaling)
+        {
+            auto data = output->get_data_safe<wf::xdg_output_xwayland_geometry>();
+            if (data->geometry.has_value())
+            {
+                this->output_offset = wf::origin(data->geometry.value());
+            } else
+            {
+                LOGW("Xwayland geometry not set for output ", output->to_string(), ", using (0,0) as offset");
+                this->output_offset = {0, 0};
+            }
+
+            this->output_scale = output->get_scale();
+        } else
+        {
+            this->output_offset = wf::origin(output->get_layout_geometry());
+            this->output_scale  = 1.0;
+        }
+    } else
+    {
+        this->output_offset = {0, 0};
+        this->output_scale  = 1.0;
+    }
+
+    if (main_surface)
+    {
+        main_surface->set_scale(output_scale);
+    }
+
     if (pending().mapped)
     {
         // We want to reconfigure xwayland surfaces with output changes only if they are mapped.
@@ -74,8 +107,8 @@ void wf::xw::xwayland_toplevel_t::request_native_size()
 
     if ((xw->size_hints->base_width > 0) && (xw->size_hints->base_height > 0))
     {
-        this->pending().geometry.width  = xw->size_hints->base_width;
-        this->pending().geometry.height = xw->size_hints->base_height;
+        this->pending().geometry.width  = std::min(1, int(xw->size_hints->base_width / output_scale));
+        this->pending().geometry.height = std::min(1, int(xw->size_hints->base_height / output_scale));
         wf::get_core().tx_manager->schedule_object(this->shared_from_this());
     }
 }
@@ -145,7 +178,7 @@ void wf::xw::xwayland_toplevel_t::reconfigure_xwayland_surface()
     }
 
     const wf::geometry_t configure =
-        shrink_geometry_by_margins(_pending.geometry, _pending.margins) + output_offset;
+        shrink_geometry_by_margins(_pending.geometry, _pending.margins) * output_scale + output_offset;
 
     if ((configure.width <= 0) || (configure.height <= 0))
     {
@@ -288,7 +321,10 @@ wf::dimensions_t wf::xw::xwayland_toplevel_t::get_current_xw_size()
     }
 
     auto surf = main_surface->get_surface();
-    wf::dimensions_t size = wf::dimensions_t{surf->current.width, surf->current.height};
+    wf::dimensions_t size = wf::dimensions_t{
+        int(surf->current.width / output_scale),
+        int(surf->current.height / output_scale)
+    };
     return size;
 }
 
@@ -297,8 +333,8 @@ wf::dimensions_t wf::xw::xwayland_toplevel_t::get_min_size()
     if (xw && xw->size_hints)
     {
         return wf::dimensions_t{
-            std::max(0, xw->size_hints->min_width),
-            std::max(0, xw->size_hints->min_height)
+            std::max(0, int(xw->size_hints->min_width / output_scale)),
+            std::max(0, int(xw->size_hints->min_height / output_scale))
         };
     }
 
@@ -310,8 +346,8 @@ wf::dimensions_t wf::xw::xwayland_toplevel_t::get_max_size()
     if (xw && xw->size_hints)
     {
         return wf::dimensions_t{
-            std::max(0, xw->size_hints->max_width),
-            std::max(0, xw->size_hints->max_height)
+            std::max(0, int(xw->size_hints->max_width / output_scale)),
+            std::max(0, int(xw->size_hints->max_height / output_scale))
         };
     }
 

@@ -692,8 +692,18 @@ struct output_layout_output_t
         bool shutdown = is_shutting_down();
         if ((get_core().seat->get_active_output() == wo) && !shutdown)
         {
-            get_core().seat->focus_output(
-                get_core().output_layout->get_next_output(wo));
+            auto outputs = get_core().output_layout->get_outputs();
+            wf::dassert(!outputs.empty(),
+                "There should be at least one output left if we're not shutting down");
+
+            auto it = std::find(outputs.begin(), outputs.end(), wo);
+            if ((it == outputs.end()) || (std::next(it) == outputs.end()))
+            {
+                get_core().seat->focus_output(outputs[0]);
+            } else
+            {
+                get_core().seat->focus_output(*(std::next(it)));
+            }
         } else if (shutdown)
         {
             get_core().seat->focus_output(nullptr);
@@ -1855,11 +1865,6 @@ class output_layout_t::impl
         return output_layout;
     }
 
-    size_t get_num_outputs()
-    {
-        return get_outputs().size();
-    }
-
     wf::output_t *find_output(wlr_output *output)
     {
         if (outputs.count(output))
@@ -1912,28 +1917,13 @@ class output_layout_t::impl
         return result;
     }
 
-    wf::output_t *get_next_output(wf::output_t *output)
-    {
-        auto os = get_outputs();
-
-        auto it = std::find(os.begin(), os.end(), output);
-        if ((it == os.end()) || (std::next(it) == os.end()))
-        {
-            return os[0];
-        } else
-        {
-            return *(++it);
-        }
-    }
-
-    wf::output_t *get_output_coords_at(const wf::pointf_t& origin,
+    wf::output_t *find_closest_output(const wf::pointf_t& origin,
         wf::pointf_t& closest)
     {
         wlr_output_layout_closest_point(output_layout, NULL,
             origin.x, origin.y, &closest.x, &closest.y);
 
-        auto handle =
-            wlr_output_layout_output_at(output_layout, closest.x, closest.y);
+        auto handle = wlr_output_layout_output_at(output_layout, closest.x, closest.y);
         assert(handle || is_shutting_down());
         if (!handle)
         {
@@ -1947,13 +1937,6 @@ class output_layout_t::impl
         {
             return outputs[handle]->output.get();
         }
-    }
-
-    wf::output_t *get_output_at(int x, int y)
-    {
-        wf::pointf_t dummy;
-
-        return get_output_coords_at({1.0 * x, 1.0 * y}, dummy);
     }
 
     bool apply_configuration(const output_configuration_t& configuration,
@@ -1979,30 +1962,21 @@ wlr_output_layout*output_layout_t::get_handle()
     return pimpl->get_handle();
 }
 
-wf::output_t*output_layout_t::get_output_at(int x, int y)
+wf::output_t*output_layout_t::find_closest_output(wf::pointf_t point)
 {
-    return pimpl->get_output_at(x, y);
+    wf::pointf_t dummy;
+    return find_closest_output(point, dummy);
 }
 
-wf::output_t*output_layout_t::get_output_coords_at(wf::pointf_t origin,
+wf::output_t*output_layout_t::find_closest_output(wf::pointf_t origin,
     wf::pointf_t& closest)
 {
-    return pimpl->get_output_coords_at(origin, closest);
-}
-
-size_t output_layout_t::get_num_outputs()
-{
-    return pimpl->get_num_outputs();
+    return pimpl->find_closest_output(origin, closest);
 }
 
 std::vector<wf::output_t*> output_layout_t::get_outputs()
 {
     return pimpl->get_outputs();
-}
-
-wf::output_t*output_layout_t::get_next_output(wf::output_t *output)
-{
-    return pimpl->get_next_output(output);
 }
 
 wf::output_t*output_layout_t::find_output(wlr_output *output)

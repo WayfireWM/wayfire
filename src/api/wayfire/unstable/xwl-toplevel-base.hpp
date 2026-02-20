@@ -10,11 +10,17 @@
 
 #include <wayfire/nonstd/wlroots-full.hpp>
 #include <wayfire/view.hpp>
+#include <wayfire/util.hpp>
 #include <wayfire/unstable/wlr-surface-node.hpp>
 
 namespace wf
 {
 #if WF_HAS_XWAYLAND
+namespace xw
+{
+class xwayland_surface_node_t;
+}
+
 /**
  * A base class for views which base on a wlr_xwayland surface.
  * Contains the implementation of view_interface_t functions used in them.
@@ -50,7 +56,7 @@ class xwayland_view_base_t : public virtual wf::view_interface_t
     void handle_title_changed(std::string new_title);
 
     wf::wl_listener_wrapper on_destroy, on_set_title, on_set_app_id, on_ping_timeout;
-    std::shared_ptr<wf::scene::wlr_surface_node_t> main_surface;
+    std::shared_ptr<wf::xw::xwayland_surface_node_t> main_surface;
 };
 #endif
 }

@@ -1,5 +1,4 @@
 #include "wayfire/unstable/wlr-surface-node.hpp"
-#include "pixman.h"
 #include "wayfire/geometry.hpp"
 #include "wayfire/render-manager.hpp"
 #include "wayfire/scene-render.hpp"
@@ -32,6 +31,7 @@ wf::scene::surface_state_t& wf::scene::surface_state_t::operator =(surface_state
     current_buffer = other.current_buffer;
     texture = other.texture;
     accumulated_damage = other.accumulated_damage;
+    opaque_region = other.opaque_region;
     seq  = other.seq;
     size = other.size;
     src_viewport = other.src_viewport;
@@ -40,6 +40,7 @@ wf::scene::surface_state_t& wf::scene::surface_state_t::operator =(surface_state
     other.current_buffer = NULL;
     other.texture = NULL;
     other.accumulated_damage.clear();
+    other.opaque_region.clear();
     other.src_viewport.reset();
     other.seq.reset();
     return *this;
@@ -86,6 +87,7 @@ void wf::scene::surface_state_t::merge_state(wlr_surface *surface)
     wf::region_t current_damage;
     wlr_surface_get_effective_damage(surface, current_damage.to_pixman());
     this->accumulated_damage |= current_damage;
+    this->opaque_region = wf::region_t{&surface->current.opaque};
 }
 
 wf::scene::surface_state_t::~surface_state_t()
@@ -312,8 +314,7 @@ class wf::scene::wlr_surface_node_t::wlr_surface_render_instance_t : public rend
 
             if (self->surface)
             {
-                pixman_region32_subtract(damage.to_pixman(), damage.to_pixman(),
-                    &self->surface->opaque_region);
+                damage ^= self->current_state.opaque_region;
             }
         }
     }
@@ -402,8 +403,7 @@ class wf::scene::wlr_surface_node_t::wlr_surface_render_instance_t : public rend
             output->connect(&on_frame_done);
             if (use_opaque_optimizations && self->surface)
             {
-                pixman_region32_subtract(visible.to_pixman(), visible.to_pixman(),
-                    &self->surface->opaque_region);
+                visible ^= self->current_state.opaque_region;
             }
         }
     }

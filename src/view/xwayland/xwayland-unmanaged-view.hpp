@@ -1,6 +1,7 @@
 #pragma once
 
 #include "config.h"
+#include "view/xwayland/xwayland-surface.hpp" // IWYU pragma: keep
 #include "wayfire/core.hpp"
 #include "wayfire/output.hpp"
 #include "wayfire/unstable/translation-node.hpp"
@@ -99,22 +100,19 @@ class wayfire_unmanaged_xwayland_view : public wayfire_xwayland_view_internal_ba
 
     void update_geometry_from_xsurface()
     {
+        static wf::option_wrapper_t<bool> force_xwayland_scaling{"workarounds/force_xwayland_scaling"};
         wf::region_t damage_region = last_bounding_box; // last bounding box
         damage_region |= get_bounding_box(); // in case resize happened since last move
         wf::scene::damage_node(get_root_node(), damage_region);
 
-        wf::point_t new_position = {xw->x, xw->y};
-
-        // Move to the correct output, if the xsurface has changed geometry
-        wf::pointf_t midpoint = {xw->x + xw->width / 2.0, xw->y + xw->height / 2.0};
-        wf::output_t *wo = wf::get_core().output_layout->get_output_coords_at(midpoint, midpoint);
-
-        if (wo)
+        auto wo = wf::xw::find_xwayland_surface_output(xw);
+        auto new_geometry = wf::xw::calculate_wayfire_geometry(wo, {xw->x, xw->y, xw->width, xw->height});
+        surface_root_node->set_offset(wf::origin(new_geometry));
+        if (main_surface && force_xwayland_scaling)
         {
-            new_position = new_position - wf::origin(wo->get_layout_geometry());
+            main_surface->set_scale(wo ? wo->get_scale() : 1.0);
         }
 
-        surface_root_node->set_offset(new_position);
         if (wo != get_output())
         {
             LOGC(XWL, "Transferring xwayland unmanaged surface ", self(),
@@ -126,7 +124,7 @@ class wayfire_unmanaged_xwayland_view : public wayfire_xwayland_view_internal_ba
             }
         }
 
-        LOGC(XWL, "Xwayland unmanaged surface ", self(), " new position ", new_position);
+        LOGC(XWL, "Xwayland unmanaged surface ", self(), " new geometry ", new_geometry);
         last_bounding_box = get_bounding_box();
         wf::scene::damage_node(get_root_node(), last_bounding_box);
         wf::scene::update(surface_root_node, wf::scene::update_flag::GEOMETRY);
@@ -158,9 +156,16 @@ class wayfire_unmanaged_xwayland_view : public wayfire_xwayland_view_internal_ba
 
     void handle_map_request(wlr_surface *surface) override
     {
+        static wf::option_wrapper_t<bool> force_xwayland_scaling{"workarounds/force_xwayland_scaling"};
+
         LOGC(XWL, "Mapping unmanaged xwayland surface ", self());
         update_geometry_from_xsurface();
         do_map(surface, true, false);
+
+        if (main_surface && get_output() && force_xwayland_scaling)
+        {
+            main_surface->set_scale(get_output()->get_scale());
+        }
 
         /* We update the keyboard focus before emitting the map event, so that
          * plugins can detect that this view can have keyboard focus.
