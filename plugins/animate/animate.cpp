@@ -3,7 +3,9 @@
 #include <wayfire/signal-definitions.hpp>
 #include <wayfire/render-manager.hpp>
 #include <wayfire/workspace-set.hpp>
+#include <wayfire/view-helpers.hpp>
 #include <wayfire/core.hpp>
+#include <wayfire/util.hpp>
 #include "animate.hpp"
 #include "plugins/common/wayfire/plugins/common/shared-core-data.hpp"
 #include "system_fade.hpp"
@@ -202,6 +204,12 @@ class wayfire_animation : public wf::plugin_interface_t, private wf::per_output_
 
     wf::shared_data::ref_ptr_t<wf::animate::animate_effects_registry_t> effects_registry;
 
+    /**
+     * Single-shot inhibit timer to uninhibit output rendering in case a
+     * client fails to place a surface on the background layer in time.
+     */
+    std::map<wf::output_t*, wf::wl_timer<false>> inhibit_timers;
+
     template<class animation_t>
     void register_effect(std::string name, wf::option_sptr_t<wf::animation_description_t> option)
     {
@@ -237,11 +245,20 @@ class wayfire_animation : public wf::plugin_interface_t, private wf::per_output_
         output->connect(&on_view_pre_unmap);
         output->connect(&on_render_start);
         output->connect(&on_minimize_request);
+        if (startup_duration.value().length_ms != 0)
+        {
+            output->render->add_inhibit(true);
+            inhibit_timers[output].set_timeout(400, [=] ()
+            {
+                output->render->add_inhibit(false);
+            });
+        }
     }
 
     void handle_output_removed(wf::output_t *output) override
     {
         cleanup_views_on_output(output);
+        inhibit_timers.erase(output);
     }
 
     void fini() override
@@ -408,6 +425,21 @@ class wayfire_animation : public wf::plugin_interface_t, private wf::per_output_
     /* TODO: enhance - add more animations */
     wf::signal::connection_t<wf::view_mapped_signal> on_view_mapped = [=] (wf::view_mapped_signal *ev)
     {
+        /* If a client has attached a surface to the background layer,
+         * uninhibit outputs which were inhibited when wayfire started. */
+        if (wf::get_view_layer(ev->view) == wf::scene::layer::BACKGROUND)
+        {
+            auto output = ev->view->get_output();
+            if (output && inhibit_timers.count(output))
+            {
+                if (inhibit_timers[output].is_connected())
+                {
+                    inhibit_timers[output].disconnect();
+                    output->render->add_inhibit(false);
+                }
+            }
+        }
+
         auto animation = get_animation_for_view("open", open_animation, ev->view);
         set_animation(ev->view, animation.animation_name,
             wf::animate::ANIMATION_TYPE_MAP, animation.duration);

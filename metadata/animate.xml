@@ -94,7 +94,7 @@
 		<option name="startup_duration" type="animation">
 			<_short>System fade duration when Wayfire starts</_short>
 			<_long>Sets the duration of fading (in milliseconds) when Wayfire starts.</_long>
-			<default>600ms linear</default>
+			<default>250ms linear</default>
 		</option>
 		<!-- Fade animation -->
 		<option name="fade_enabled_for" type="string">

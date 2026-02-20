@@ -11,7 +11,6 @@
 #include "wayfire/output.hpp"
 #include "wayfire/core.hpp"
 #include "wayfire/output-layout.hpp"
-#include "wayfire/render-manager.hpp"
 #include "wayfire-shell-unstable-v2-protocol.h"
 #include "wayfire/signal-definitions.hpp"
 #include "wayfire/plugins/ipc/ipc-activator.hpp"
@@ -204,7 +203,6 @@ struct wayfire_shell_toggle_menu_signal
  */
 class wfs_output
 {
-    uint32_t num_inhibits = 0;
     wl_resource *shell_resource;
     wl_resource *resource;
     wf::output_t *output;
@@ -271,13 +269,6 @@ class wfs_output
         }
 
         disconnect_from_output();
-        /* Remove any remaining inhibits, otherwise the compositor will never
-         * be "unlocked" */
-        while (num_inhibits > 0)
-        {
-            this->output->render->add_inhibit(false);
-            --num_inhibits;
-        }
     }
 
     wfs_output(const wfs_output &) = delete;
@@ -287,26 +278,21 @@ class wfs_output
 
     void inhibit_output()
     {
-        ++this->num_inhibits;
         if (this->output)
         {
-            this->output->render->add_inhibit(true);
+            LOGW(
+                "Ignoring inhibit call, left in for historical reasons.\
+                Wayfire now manages all inhibits internally");
         }
     }
 
     void inhibit_output_done()
     {
-        if (this->num_inhibits == 0)
-        {
-            wl_resource_post_no_memory(resource);
-
-            return;
-        }
-
-        --this->num_inhibits;
         if (this->output)
         {
-            this->output->render->add_inhibit(false);
+            LOGW(
+                "Ignoring inhibit done call, left in for historical reasons.\
+                Wayfire now manages all inhibits internally");
         }
     }
 
