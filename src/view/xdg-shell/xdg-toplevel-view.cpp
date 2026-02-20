@@ -310,7 +310,8 @@ void wf::xdg_toplevel_view_t::map()
     adjust_view_output_on_map(this);
 
     xdg_toplevel_view_base_t::map();
-    wf::get_core().default_wm->focus_request(self());
+
+    focus_toplevel_on_map();
 
     /* Might trigger repositioning */
     set_toplevel_parent(this->parent);
