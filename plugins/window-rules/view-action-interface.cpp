@@ -544,11 +544,6 @@ void view_action_interface_t::_start_on_output(std::string name)
             std::string model  = wo->handle->model ? wo->handle->model : "";
             std::string serial = wo->handle->serial ? wo->handle->serial : "";
 
-            LOGD("Output detected: connector=", wo->to_string(),
-                " make=", make,
-                " model=", model,
-                " serial=", serial);
-
             // Build identifiers
             std::string make_model = make + " " + model;
 
