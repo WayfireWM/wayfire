@@ -508,6 +508,7 @@ int main(int argc, char *argv[])
         return -1;
     }
 
+    unsetenv("WAYFIRE_SOCKET");
     setenv("WAYLAND_DISPLAY", core.wayland_display.c_str(), 1);
     core.post_init();
 
