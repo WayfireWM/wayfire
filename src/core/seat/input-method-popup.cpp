@@ -165,6 +165,9 @@ void wf::text_input_v3_popup::update_geometry()
         {
             y -= cursor.height;
         }
+
+        // make sure down edge is inside screen even the submitted coordinates aren't
+        y = std::min(y, g_output.height - height);
     }
 
     // make sure top edge is on screen, sliding down and sacrificing down edge if unavoidable
