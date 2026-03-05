@@ -93,6 +93,9 @@ class wlr_surface_node_t : public node_t, public zero_copy_texturable_node_t
 
     const bool autocommit;
     surface_state_t current_state;
+
+    uint64_t perf_track_id = 0;
+    bool first_perf_event  = true;
 };
 }
 }

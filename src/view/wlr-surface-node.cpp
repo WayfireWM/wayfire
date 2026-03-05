@@ -11,6 +11,7 @@
 #include <memory>
 #include <sstream>
 #include <string>
+#include <wayfire/debug.hpp>
 #include <wayfire/signal-provider.hpp>
 #include <wlr/util/box.h>
 
@@ -115,6 +116,36 @@ wf::scene::wlr_surface_node_t::wlr_surface_node_t(wlr_surface *surface, bool aut
 
     this->on_surface_commit.set_callback([=] (void*)
     {
+#if WF_USE_PERFETTO
+        if (!this->perf_track_id)
+        {
+            if (auto view = node_to_view(this))
+            {
+                auto id = view->get_title() + " id=" + std::to_string(view->get_id()) +
+                    " surface=" + std::to_string((uintptr_t)surface);
+                this->perf_track_id = (int64_t)wf::perf::get_new_track(id);
+            }
+        }
+
+        if (this->perf_track_id)
+        {
+            if (!first_perf_event)
+            {
+                wf::perf::event_t::end_event(wf::perf::category::SURFACE, this->perf_track_id);
+            } else
+            {
+                first_perf_event = false;
+            }
+
+            wf::perf::event_t::start_event({
+                .cat  = wf::perf::category::SURFACE,
+                .name = "commit",
+                .track_id = this->perf_track_id,
+            });
+        }
+
+#endif
+
         if (this->autocommit)
         {
             apply_current_surface_state();
@@ -142,6 +173,14 @@ wf::scene::wlr_surface_node_t::wlr_surface_node_t(wlr_surface *surface, bool aut
 
 void wf::scene::wlr_surface_node_t::apply_state(surface_state_t&& state)
 {
+#if WF_USE_PERFETTO
+    wf::perf::event_t _event{{
+        .cat  = wf::perf::category::SURFACE,
+        .name = "apply_state",
+        .track_id = this->perf_track_id,
+    }};
+#endif
+
     const bool size_changed = current_state.size != state.size;
     if (size_changed)
     {

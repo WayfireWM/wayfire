@@ -488,9 +488,11 @@ uint64_t wf::perf::get_new_flow()
 #if WF_USE_PERFETTO
     #define PERF_RENDER "render"
     #define PERF_PLUGIN "plugin"
+    #define PERF_SURFACE "surface"
     #define HANDLE_ALL_CATEGORIES \
     HANDLE_CATEGORY(RENDER) \
-    HANDLE_CATEGORY(PLUGIN)
+    HANDLE_CATEGORY(PLUGIN) \
+    HANDLE_CATEGORY(SURFACE)
 
 // Define categories
     #define HANDLE_CATEGORY(CAT) perfetto::Category(PERF_ ## CAT).SetDescription(#CAT),

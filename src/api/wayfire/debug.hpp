@@ -90,8 +90,9 @@ namespace perf
 {
 enum class category
 {
-    RENDER = 0,
-    PLUGIN = 1,
+    RENDER  = 0,
+    PLUGIN  = 1,
+    SURFACE = 2,
     TOTAL,
 };
 
@@ -102,9 +103,6 @@ struct event_params_t
     std::optional<uint64_t> flow_id{};
     std::optional<uint64_t> track_id{};
 };
-
-struct dummy_event_t
-{};
 
 struct event_t
 {
