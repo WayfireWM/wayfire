@@ -358,7 +358,7 @@ struct output_layout_output_t
     bool is_nested_compositor  = false;
     bool inhibited = false;
     std::map<int, std::vector<uint32_t>> formats_for_depth;
-    int current_bit_depth = RENDER_BIT_DEPTH_DEFAULT;
+    int current_bit_depth = 0;
 
     std::unique_ptr<wf::output_impl_t> output;
     wl_listener_wrapper on_destroy, on_commit, on_request_state;
