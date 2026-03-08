@@ -43,7 +43,7 @@ pixman         = dependency('pixman-1')
 xkbcommon      = dependency('xkbcommon')
 libdl          = cpp.find_library('dl')
 udev           = dependency('libudev')
-json           = subproject('wf-json').get_variable('wfjson')
+json           = subproject('wf-json', default_options: ['install_header=true']).get_variable('wfjson')
 
 wlroots_base_version = '0.19'
 wlroots_dep_name = 'wlroots-' + wlroots_base_version
