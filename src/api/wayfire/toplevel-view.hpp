@@ -58,7 +58,17 @@ class toplevel_view_interface_t : public virtual wf::view_interface_t
     wayfire_toplevel_view parent = nullptr;
 
     /**
-     * A list of the children views (typically dialogs).
+     * A list of the children views (typically dialogs, but not xdg-popups / Xwayland menus).
+     *
+     * The purpose of children views is that they are kept together with the parent view in the stacking
+     * order and plugins usually try to keep them as part of the main view tree (for example presenting them
+     * together as a single unit when changing the focused view).
+     *
+     * Other views which have a parent-child relationship such as xdg-popups are not included in this list,
+     * as they are handled separately in a different layer.
+     *
+     * Note: xdg-popups / Xwayland menus associated with a view can be found by iterating through all
+     * available views and inspecting the associated wlroots surfaces and the relations defined there.
      */
     std::vector<wayfire_toplevel_view> children;
 

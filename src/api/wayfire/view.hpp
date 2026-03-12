@@ -63,7 +63,8 @@ class view_interface_t : public wf::signal::provider_t, public wf::object_base_t
   public:
     /**
      * Get the root of the view tree. This is the node which contains the view
-     * and all of its child views.
+     * and all of its child views (most notably dialogs but not xdg-popups, see
+     * @toplevel_view_interface_t::children).
      *
      * Usually, the tree root node has at least the transformed_node as its child,
      * and the tree root nodes of child views.
@@ -71,13 +72,17 @@ class view_interface_t : public wf::signal::provider_t, public wf::object_base_t
     const scene::floating_inner_ptr& get_root_node() const;
 
     /**
-     * Get the root of the view itself, including its main surface, subsurfaces
-     * and transformers, but not dialogs.
+     * Get a node which contains the view's transformers, main surface, its subsurfaces and decorations.
+     * This is the 'main' view as most plugins would see it, with transformations applied.
+     *
+     * Other views and nodes which would be included in @get_root_node() such as dialogs are not included.
      */
     const std::shared_ptr<scene::transform_manager_node_t>& get_transformed_node() const;
 
     /**
-     * Get the node which contains the main view (+subsurfaces) only.
+     * Get a node which contains only the view's main surface and its subsurfaces/decorations.
+     * Transformers are not (yet) applied to this node, so it contains the 'raw' view before it is transformed
+     * by plugins such as wrot, animate, etc.
      */
     const scene::floating_inner_ptr& get_surface_root_node() const;
 

@@ -350,7 +350,7 @@ class render_pass_t
      *    start and execute sub-passes.
      * 3. The wlroots render pass begins.
      * 4. Optionally, clear visible background areas with @background_color.
-     * 5. Render instructions are executed back-to-forth.
+     * 5. Render instructions are executed back-to-front, i.e starting with the last instruction in the list.
      * 6. Optionally, emit render-pass-end.
      * 7. The wlroots render pass is submitted.
      *
