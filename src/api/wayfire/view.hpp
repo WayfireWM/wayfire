@@ -70,7 +70,8 @@ class view_interface_t : public wf::signal::provider_t, public wf::object_base_t
      * child views.
      *
      * Note: the coordinate system expected by the root node is relative to the output the view is currently
-     * associated with, otherwise undefined.
+     * associated with, otherwise undefined. The coordinate systems of child nodes of the root node are
+     * typically also in output-local coordinates.
      */
     const scene::floating_inner_ptr& get_root_node() const;
 
@@ -81,7 +82,8 @@ class view_interface_t : public wf::signal::provider_t, public wf::object_base_t
      * Other views and nodes which would be included in @get_root_node() such as dialogs are not included.
      *
      * Note: the coordinate system expected by the root node is relative to the output the view is currently
-     * associated with, otherwise undefined.
+     * associated with, otherwise undefined. The coordinate systems of child nodes of the transformed node are
+     * typically also in output-local coordinates.
      */
     const std::shared_ptr<scene::transform_manager_node_t>& get_transformed_node() const;
 
