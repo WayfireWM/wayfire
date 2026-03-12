@@ -76,7 +76,7 @@ class view_interface_t : public wf::signal::provider_t, public wf::object_base_t
 
     /**
      * Get a node which contains the view's transformers, main surface, its subsurfaces and decorations.
-     * This is the 'main' view as most plugins would see it, with transformations applied.
+     * This is the 'main' view as most users would see it, with transformations applied.
      *
      * Other views and nodes which would be included in @get_root_node() such as dialogs are not included.
      *
