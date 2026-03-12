@@ -91,7 +91,9 @@ class view_interface_t : public wf::signal::provider_t, public wf::object_base_t
      * by plugins such as wrot, animate, etc.
      *
      * Note: the coordinate system expected by the root node is relative to the output the view is currently
-     * associated with, otherwise undefined.
+     * associated with, otherwise undefined. The coordinate system for children of the surface root node can
+     * be different for each view type, but Wayfire's built-in view types make each subsurface node relative
+     * to its parent surface (see wlr-surface-node.hpp / wlr-surface-controller.hpp for more details).
      */
     const scene::floating_inner_ptr& get_surface_root_node() const;
 

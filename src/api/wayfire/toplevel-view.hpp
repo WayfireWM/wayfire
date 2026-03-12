@@ -69,8 +69,8 @@ class toplevel_view_interface_t : public virtual wf::view_interface_t
      *
      * Note: xdg-popups / Xwayland menus associated with a view can be found by iterating through all
      * available views, fetching the associated wlroots surfaces (@get_wlr_surface()) and then checking for
-     * potential relations between any pair of views by looking at the specific wlr_xdg_surface / wlr_xwayland
-     * surface interfaces, which provide information about parent xdg surfaces or transient_for relations.
+     * potential relations between any pair of views by looking at shell-specific information, for example
+     * wlr_xdg_popup::parent / wlr_xwayland_surface::parent.
      */
     std::vector<wayfire_toplevel_view> children;
 
