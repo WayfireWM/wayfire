@@ -66,8 +66,11 @@ class view_interface_t : public wf::signal::provider_t, public wf::object_base_t
      * and all of its child views (most notably dialogs but not xdg-popups, see
      * @toplevel_view_interface_t::children).
      *
-     * Usually, the tree root node has at least the transformed_node as its child,
-     * and the tree root nodes of child views.
+     * Usually, the tree root node has @get_transformed_node() as its child and and the root nodes of
+     * child views.
+     *
+     * Note: the coordinate system expected by the root node is relative to the output the view is currently
+     * associated with, otherwise undefined.
      */
     const scene::floating_inner_ptr& get_root_node() const;
 
@@ -76,6 +79,9 @@ class view_interface_t : public wf::signal::provider_t, public wf::object_base_t
      * This is the 'main' view as most plugins would see it, with transformations applied.
      *
      * Other views and nodes which would be included in @get_root_node() such as dialogs are not included.
+     *
+     * Note: the coordinate system expected by the root node is relative to the output the view is currently
+     * associated with, otherwise undefined.
      */
     const std::shared_ptr<scene::transform_manager_node_t>& get_transformed_node() const;
 
@@ -83,6 +89,9 @@ class view_interface_t : public wf::signal::provider_t, public wf::object_base_t
      * Get a node which contains only the view's main surface and its subsurfaces/decorations.
      * Transformers are not (yet) applied to this node, so it contains the 'raw' view before it is transformed
      * by plugins such as wrot, animate, etc.
+     *
+     * Note: the coordinate system expected by the root node is relative to the output the view is currently
+     * associated with, otherwise undefined.
      */
     const scene::floating_inner_ptr& get_surface_root_node() const;
 
