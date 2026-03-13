@@ -340,10 +340,23 @@ class render_pass_t
     ~render_pass_t();
 
     /**
-     * Run a new render pass from start to finish.
-     * This includes generate instructions for the render pass and executing them.
+     * Create, run and submit a render pass in one go.
      *
-     * The render pass goes as described below:
+     * Equivalent to:
+     *
+     * ```
+     * render_pass_t pass{params};
+     * pass.run_partial();
+     * pass.submit();
+     * ```
+     *
+     * @return The full damage which was rendered on the render target, as described in @run_partial().
+     */
+    static wf::region_t run(const wf::render_pass_params_t& params);
+
+    /**
+     * Execute the main part of a render pass.
+     * This involves the following steps:
      *
      * 1. Optionally, emit render-pass-begin.
      * 2. Render instructions are generated from the given instances. During this phase, the instances may
@@ -352,18 +365,13 @@ class render_pass_t
      * 4. Optionally, clear visible background areas with @background_color.
      * 5. Render instructions are executed back-to-front, i.e starting with the last instruction in the list.
      * 6. Optionally, emit render-pass-end.
-     * 7. The wlroots render pass is submitted.
      *
-     * By specifying @flags, steps 1, 4, and 6 can be enabled and disabled.
+     * By specifying @render_pass_params_t::flags, steps 1, 4, and 6 can be enabled and disabled.
+     * After @run_partial() returns, additional render operations may be added to the pass, and finally
+     * the pass needs to be submitted with @submit() to ensure that all operations are executed.
      *
      * @return The full damage which was rendered on the render target. It may be more (or
-     *  less) than @params.damage because plugins are allowed to modify the
-     *  damage in render-pass-begin.
-     */
-    static wf::region_t run(const wf::render_pass_params_t& params);
-
-    /**
-     * Same as @run, but does not submit the wlroots render pass (i.e step 7 is omitted).
+     *  less) than @params.damage because plugins are allowed to modify the damage in render-pass-begin.
      */
     wf::region_t run_partial();
 
