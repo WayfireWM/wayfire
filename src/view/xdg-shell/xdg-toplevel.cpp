@@ -213,7 +213,7 @@ void wf::xdg_toplevel_t::handle_surface_commit()
         return;
     }
 
-    adjust_geometry_for_gravity(_pending, toplevel_size);
+    adjust_geometry_for_gravity(_pending, wf::dimensions(pending().geometry));
     LOGC(VIEWS, "Client-initiated resize to geometry ", pending().geometry);
     auto tx = wf::txn::transaction_t::create();
     tx->add_object(shared_from_this());
