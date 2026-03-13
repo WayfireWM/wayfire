@@ -1,0 +1,18 @@
+name: Manual Wayfire Dcoumentation Generation
+on:
+  workflow_dispatch:
+jobs:
+  wayfire_tests:
+    name: "Generate Latest Wayfire Documentation"
+    runs-on: ubuntu-24.04
+    container:
+      image: ubuntu:noble
+    steps:
+    - run: apt update && apt install -y doxygen
+    - uses: actions/checkout@v4
+    - run: doxygen
+    - uses: actions/upload-artifact@v4
+      with:
+        name: wayfire-doxygen-artifact
+        path: /__w/wayfire/wayfire/src/api/wayfire/html
+        retention-days: 1
