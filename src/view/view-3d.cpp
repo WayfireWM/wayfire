@@ -17,9 +17,9 @@
 #include <cmath>
 
 #if WF_HAS_VULKANFX
-#include <wayfire/vulkan.hpp>
-#include "shaders/core-basic.vert.h"
-#include "shaders/core-basic.frag.h"
+    #include <wayfire/vulkan.hpp>
+    #include "shaders/core-basic.vert.h"
+    #include "shaders/core-basic.frag.h"
 #endif
 
 #include <glm/gtc/matrix_transform.hpp>
