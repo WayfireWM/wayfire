@@ -605,7 +605,10 @@ class wobbly_transformer_node_t : public wf::scene::transformer_base_node_t
     }
 
     OpenGL::program_t *wobbly_program;
+
+#if WF_HAS_VULKANFX
     std::array<std::shared_ptr<wf::vk::gpu_buffer_t>, 4> vulkan_vertex_buffer;
+#endif
 
   private:
     wayfire_toplevel_view view;
