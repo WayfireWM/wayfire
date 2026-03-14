@@ -1,7 +1,6 @@
 #include "wayfire/debug.hpp"
 #include "wayfire/opengl.hpp"
 #include "wayfire/region.hpp"
-#include "wayfire/vulkan.hpp"
 #include <memory>
 #include <wayfire/plugin.hpp>
 #include <wayfire/signal-definitions.hpp>
@@ -11,8 +10,11 @@
 #include <wayfire/render-manager.hpp>
 #include <wayfire/plugins/common/util.hpp>
 
+#if WF_HAS_VULKANFX
+#include <wayfire/vulkan.hpp>
 #include "shaders/wobbly.vert.h"
 #include "shaders/wobbly.frag.h"
+#endif
 
 extern "C"
 {
