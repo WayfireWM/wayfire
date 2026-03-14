@@ -6,7 +6,7 @@
     #include <wayfire/config.h>
 #endif
 
-#if WF_HAS_VULKAN
+#if WF_HAS_VULKANFX
     #include <memory>
     #include <map>
     #include <string>

@@ -728,7 +728,7 @@ void wf::render_pass_t::finish_gles_subpass()
     GL_CALL(glDisable(GL_SCISSOR_TEST));
 }
 
-#if WF_HAS_VULKAN
+#if WF_HAS_VULKANFX
 wf::vulkan_render_state_t*wf::render_pass_t::prepare_vulkan_subpass()
 {
     if (!wlr_renderer_is_vk(this->get_wlr_renderer()))

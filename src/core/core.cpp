@@ -84,7 +84,7 @@ bool wf::compositor_core_t::is_gles2() const
 
 bool wf::compositor_core_t::is_vulkan() const
 {
-#if WF_HAS_VULKAN
+#if WLR_HAS_VULKAN_RENDERER
     return wlr_renderer_is_vk(renderer);
 #else
     return false;
@@ -251,7 +251,7 @@ void wf::compositor_core_impl_t::init()
         OpenGL::init();
     }
 
-#if WF_HAS_VULKAN
+#if WF_HAS_VULKANFX
     if (is_vulkan())
     {
         this->vulkan_state = std::make_unique<wf::vulkan_render_state_t>(renderer);
@@ -376,7 +376,7 @@ void wf::compositor_core_impl_t::fini()
     tx_manager.reset();
 
     OpenGL::fini();
-#if WF_HAS_VULKAN
+#if WF_HAS_VULKANFX
     vulkan_state.reset();
 #endif
 

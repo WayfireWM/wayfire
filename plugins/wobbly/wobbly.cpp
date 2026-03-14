@@ -889,6 +889,7 @@ class wobbly_render_instance_t :
         damage |= self->get_bounding_box();
     }
 
+#if WF_HAS_VULKANFX
     class vulkan_state_t : public wf::custom_data_t
     {
       public:
@@ -959,7 +960,6 @@ class wobbly_render_instance_t :
             // Try to reuse the vertex buffer if possible, to avoid reallocations.
             if (buffer && (buffer->get_size() >= total_size) && (buffer.use_count() == 1))
             {
-                // LOGI("Reuse buffer index ", i);
                 return buffers[i];
             }
         }
@@ -968,6 +968,8 @@ class wobbly_render_instance_t :
             VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
         return buffers[0];
     }
+
+#endif
 
     void render(const wf::scene::render_instruction_t& data) override
     {
@@ -989,6 +991,7 @@ class wobbly_render_instance_t :
             }
         });
 
+#if WF_HAS_VULKANFX
         data.pass->custom_vulkan_subpass([&] (wf::vulkan_render_state_t& state,
                                               wf::vk::command_buffer_t& cmd_buf)
         {
@@ -1033,6 +1036,7 @@ class wobbly_render_instance_t :
                 vkCmdDraw(cmd_buf, count_triangles * 3, 1, 0, 0);
             });
         });
+#endif
     }
 };
 

@@ -430,6 +430,7 @@ class view_3d_render_instance_t :
         transform_linear_damage(self.get(), damage);
     }
 
+#if WF_HAS_VULKANFX
     class vulkan_state_t : public wf::custom_data_t
     {
       public:
@@ -471,6 +472,8 @@ class view_3d_render_instance_t :
         return *ptr;
     }
 
+#endif
+
     void render(const wf::scene::render_instruction_t& data) override
     {
         auto bbox = self->get_children_bounding_box();
@@ -499,6 +502,7 @@ class view_3d_render_instance_t :
             }
         });
 
+#if WF_HAS_VULKANFX
         data.pass->custom_vulkan_subpass([&] (wf::vulkan_render_state_t& state, vk::command_buffer_t& cmd_buf)
         {
             auto& vk_state = ensure_vk(state);
@@ -523,6 +527,7 @@ class view_3d_render_instance_t :
                 vkCmdDraw(cmd_buf, 4, 1, 0, 0);
             });
         });
+#endif
     }
 };
 

@@ -22,7 +22,7 @@ class compositor_core_impl_t : public compositor_core_t
     wlr_egl *egl = NULL;
     wlr_compositor *compositor;
 
-#if WF_HAS_VULKAN
+#if WF_HAS_VULKANFX
     std::unique_ptr<wf::vulkan_render_state_t> vulkan_state;
 #endif
 

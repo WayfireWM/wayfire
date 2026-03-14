@@ -573,7 +573,7 @@ class render_pass_t
         return false;
     }
 
-#if WF_HAS_VULKAN
+#if WF_HAS_VULKANFX
     template<class F>
     bool custom_vulkan_subpass(F&& fn)
     {
@@ -591,7 +591,7 @@ class render_pass_t
 
   private:
 
-#if WF_HAS_VULKAN
+#if WF_HAS_VULKANFX
     vk::command_buffer_t *active_command_buffer = nullptr;
     vulkan_render_state_t *prepare_vulkan_subpass();
     void end_vulkan_subpass();

@@ -45,8 +45,13 @@ libdl          = cpp.find_library('dl')
 udev           = dependency('libudev')
 json           = subproject('wf-json', default_options: ['install_header=true']).get_variable('wfjson')
 
-wlroots_base_version = '0.19'
-wlroots_dep_name = 'wlroots-' + wlroots_base_version
+wlroots_base_version = '0.20'
+if get_option('vulkan_effects')
+  wlroots_dep_name = 'wlroots-vkfx-' + wlroots_base_version
+else
+  wlroots_dep_name = 'wlroots-' + wlroots_base_version
+endif
+
 wlroots_min_version = '>=' + wlroots_base_version + '.0'
 wlroots_max_version = '<=' + wlroots_base_version + '.99'
 
@@ -60,7 +65,6 @@ elif get_option('use_system_wlroots').enabled()
 	wlroots = dependency(wlroots_dep_name, version: [wlroots_min_version, wlroots_max_version], required: true)
 
 elif get_option('use_system_wlroots').auto()
-	message( 'SEARCHING FOR WLROOTS' )
 	wlroots = dependency(wlroots_dep_name, version: [wlroots_min_version, wlroots_max_version], required: false)
 	use_system_wlroots = true
 	if not wlroots.found()
@@ -195,12 +199,11 @@ else
 endif
 
 
-use_vulkan = vulkan.found() and wlroots_features['vulkan_renderer'] and not get_option('vulkan_effects').disabled()
-conf_data.set('WF_SHADER_DIR', join_paths(get_option('prefix'), 'share', 'wayfire', 'shaders'))
+use_vulkan = vulkan.found() and wlroots_features['vulkan_renderer'] and get_option('vulkan_effects')
 if use_vulkan
-  conf_data.set('WF_HAS_VULKAN', 1)
+  conf_data.set('WF_HAS_VULKANFX', 1)
 else
-  conf_data.set('WF_HAS_VULKAN', 0)
+  conf_data.set('WF_HAS_VULKANFX', 0)
 endif
 
 wayfire_conf_inc = include_directories(['.'])
@@ -278,6 +281,7 @@ summary = [
     '    x11-backend: @0@'.format(wlroots_features['x11_backend']),
     '        imageio: @0@'.format(conf_data.get('BUILD_WITH_IMAGEIO')),
     '         gles32: @0@'.format(conf_data.get('USE_GLES32')),
+    ' vulkan effects: @0@'.format(conf_data.get('WF_HAS_VULKANFX')),
     '    print trace: @0@'.format(print_trace),
     '     unit tests: @0@'.format(doctest.found()),
     '----------------',
