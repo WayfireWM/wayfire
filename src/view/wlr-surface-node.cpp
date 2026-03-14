@@ -36,11 +36,13 @@ wf::scene::surface_state_t& wf::scene::surface_state_t::operator =(surface_state
     size = other.size;
     src_viewport = other.src_viewport;
     transform    = other.transform;
+    color_transform = other.color_transform;
 
     other.current_buffer = NULL;
     other.texture = NULL;
     other.accumulated_damage.clear();
     other.src_viewport.reset();
+    other.color_transform = wf::color_transform_t{};
     other.seq.reset();
     return *this;
 }
@@ -69,6 +71,35 @@ void wf::scene::surface_state_t::merge_state(wlr_surface *surface)
         this->current_buffer = NULL;
         this->texture = NULL;
         this->size    = {0, 0};
+    }
+
+    this->color_transform = wf::color_transform_t{};
+    this->color_transform.transfer_function = WLR_COLOR_TRANSFER_FUNCTION_GAMMA22;
+    const wlr_image_description_v1_data *img_desc =
+        wlr_surface_get_image_description_v1_data(surface);
+    if (img_desc != NULL)
+    {
+        this->color_transform.transfer_function = wlr_color_manager_v1_transfer_function_to_wlr(
+            (wp_color_manager_v1_transfer_function)img_desc->tf_named);
+        this->color_transform.primaries = wlr_color_manager_v1_primaries_to_wlr(
+            (wp_color_manager_v1_primaries)img_desc->primaries_named);
+    }
+
+    const wlr_color_representation_v1_surface_state *color_repr =
+        wlr_color_representation_v1_get_surface_state(surface);
+    if (color_repr != NULL)
+    {
+        if (color_repr->coefficients != 0)
+        {
+            this->color_transform.color_encoding = wlr_color_representation_v1_color_encoding_to_wlr(
+                (wp_color_representation_surface_v1_coefficients)color_repr->coefficients);
+        }
+
+        if (color_repr->range != 0)
+        {
+            this->color_transform.color_range = wlr_color_representation_v1_color_range_to_wlr(
+                (wp_color_representation_surface_v1_range)color_repr->range);
+        }
     }
 
     if (surface->current.viewport.has_src)
@@ -325,7 +356,7 @@ class wf::scene::wlr_surface_node_t::wlr_surface_render_instance_t : public rend
             return;
         }
 
-        data.pass->add_texture(*self->to_texture(), data.target, self->get_bounding_box(), data.damage);
+        data.pass->add_texture(self->to_texture(), data.target, self->get_bounding_box(), data.damage);
     }
 
     void presentation_feedback(wf::output_t *output) override
@@ -427,14 +458,18 @@ wlr_surface*wf::scene::wlr_surface_node_t::get_surface() const
     return this->surface;
 }
 
-std::optional<wf::texture_t> wf::scene::wlr_surface_node_t::to_texture() const
+std::shared_ptr<wf::texture_t> wf::scene::wlr_surface_node_t::to_texture() const
 {
     if (this->current_state.current_buffer)
     {
-        return wf::texture_t{current_state.texture, current_state.src_viewport, current_state.transform};
+        auto tex = wf::texture_t::from_buffer(current_state.current_buffer, current_state.texture);
+        tex->set_source_box(current_state.src_viewport);
+        tex->set_transform(current_state.transform);
+        tex->set_color_transform(current_state.color_transform);
+        return tex;
     }
 
-    return {};
+    return nullptr;
 }
 
 // Idea of handling output enter/leave events: when the event comes, we store the number of enters/leaves

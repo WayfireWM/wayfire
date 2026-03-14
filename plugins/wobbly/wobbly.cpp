@@ -10,6 +10,12 @@
 #include <wayfire/render-manager.hpp>
 #include <wayfire/plugins/common/util.hpp>
 
+#if WF_HAS_VULKANFX
+    #include <wayfire/vulkan.hpp>
+    #include "shaders/wobbly.vert.h"
+    #include "shaders/wobbly.frag.h"
+#endif
+
 extern "C"
 {
 #include "wobbly.h"
@@ -600,6 +606,10 @@ class wobbly_transformer_node_t : public wf::scene::transformer_base_node_t
 
     OpenGL::program_t *wobbly_program;
 
+#if WF_HAS_VULKANFX
+    std::array<std::shared_ptr<wf::vk::gpu_buffer_t>, 4> vulkan_vertex_buffer;
+#endif
+
   private:
     wayfire_toplevel_view view;
 
@@ -884,24 +894,154 @@ class wobbly_render_instance_t :
         damage |= self->get_bounding_box();
     }
 
+#if WF_HAS_VULKANFX
+    class vulkan_state_t : public wf::custom_data_t
+    {
+      public:
+        std::shared_ptr<wf::vk::graphics_pipeline_t> pipeline;
+    };
+
+    vulkan_state_t& ensure_vk(wf::vulkan_render_state_t& state)
+    {
+        if (auto data = state.get_data<vulkan_state_t>())
+        {
+            return *data;
+        }
+
+        auto vs = state.get_context()->load_shader_module(wobbly_vert_data, sizeof(wobbly_vert_data));
+        auto fs = state.get_context()->load_shader_module(wobbly_frag_data, sizeof(wobbly_frag_data));
+
+        wf::vk::pipeline_params_t params{};
+        params.shaders = {
+            {.stage = VK_SHADER_STAGE_VERTEX_BIT, .shader = vs},
+            {.stage = VK_SHADER_STAGE_FRAGMENT_BIT, .shader = fs},
+        };
+
+        params.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+        params.vertexInputDescription = {{
+            .binding   = 0,
+            .stride    = sizeof(float) * 4,
+            .inputRate = VK_VERTEX_INPUT_RATE_VERTEX,
+        }};
+        params.vertexAttributeDescription = {
+            {
+                .location = 0,
+                .binding  = 0,
+                .format   = VK_FORMAT_R32G32_SFLOAT,
+                .offset   = 0,
+            },
+            {
+                .location = 1,
+                .binding  = 0,
+                .format   = VK_FORMAT_R32G32_SFLOAT,
+                .offset   = sizeof(float) * 2,
+            },
+        };
+
+        // One descriptor set for the uv texture.
+        params.descriptorSetLayouts = {state.get_context()->get_image_descriptor_set_layout()};
+        params.pushConstants = {
+            VkPushConstantRange{
+                .stageFlags = VK_SHADER_STAGE_VERTEX_BIT,
+                .offset     = 0,
+                .size = sizeof(glm::mat4),
+            },
+        };
+
+        auto data = std::make_unique<vulkan_state_t>();
+        data->pipeline = std::make_shared<wf::vk::graphics_pipeline_t>(state.get_context(), params);
+        auto ptr = data.get();
+        state.store_data<vulkan_state_t>(std::move(data));
+        return *ptr;
+    }
+
+    std::shared_ptr<wf::vk::gpu_buffer_t> find_buffer(
+        std::shared_ptr<wf::vk::context_t> ctx, VkDeviceSize total_size)
+    {
+        auto& buffers = self->vulkan_vertex_buffer;
+        for (size_t i = 0; i < buffers.size(); i++)
+        {
+            auto& buffer = buffers[i];
+            // Try to reuse the vertex buffer if possible, to avoid reallocations.
+            if (buffer && (buffer->get_size() >= total_size) && (buffer.use_count() == 1))
+            {
+                return buffers[i];
+            }
+        }
+
+        buffers[0] = ctx->create_buffer(total_size,
+            VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+        return buffers[0];
+    }
+
+#endif
+
     void render(const wf::scene::render_instruction_t& data) override
     {
         std::vector<float> vert, uv;
         auto subbox = self->get_children_bounding_box();
         wobbly_graphics::prepare_geometry(self->model.get(), subbox, vert, uv);
+        const int count_triangles = self->model->x_cells * self->model->y_cells * 2;
 
-        auto tex = wf::gles_texture_t{get_texture(data.target.scale)};
         data.pass->custom_gles_subpass(data.target, [&]
         {
+            auto tex = wf::gles_texture_t{this->get_texture(data.target.scale)};
+            wf::gles::bind_render_buffer(data.target);
             for (auto box : data.damage)
             {
                 wf::gles::render_target_logic_scissor(data.target, wlr_box_from_pixman_box(box));
                 wobbly_graphics::render_triangles(self->wobbly_program, tex,
                     wf::gles::render_target_orthographic_projection(data.target),
-                    vert.data(), uv.data(),
-                    self->model->x_cells * self->model->y_cells * 2);
+                    vert.data(), uv.data(), count_triangles);
             }
         });
+
+#if WF_HAS_VULKANFX
+        data.pass->custom_vulkan_subpass([&] (wf::vulkan_render_state_t& state,
+                                              wf::vk::command_buffer_t& cmd_buf)
+        {
+            auto& our_state = ensure_vk(state);
+
+            std::vector<float> unified_buffer;
+            for (size_t i = 0; i < vert.size() / 2; i++)
+            {
+                unified_buffer.push_back(vert[2 * i]);
+                unified_buffer.push_back(vert[2 * i + 1]);
+                unified_buffer.push_back(uv[2 * i]);
+                unified_buffer.push_back(uv[2 * i + 1]);
+            }
+
+            VkDeviceSize total_size = unified_buffer.size() * sizeof(float);
+
+            auto buffer = find_buffer(state.get_context(), total_size);
+            buffer->write(unified_buffer.data(), total_size);
+
+            auto texture  = get_texture(data.target.scale);
+            auto tex_dset = state.get_descriptor_pool()->get_descriptor_set(cmd_buf, texture);
+
+            wf::vk::pipeline_specialization_t specialization{};
+            specialization.add_specialization_for_texture(texture);
+
+            cmd_buf.bind_pipeline(our_state.pipeline, data.target, specialization);
+            cmd_buf.set_full_viewport(data.target);
+
+            vkCmdBindDescriptorSets(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, our_state.pipeline->layout(),
+                0, 1, &tex_dset, 0, nullptr);
+
+            auto transform = wf::vk::render_target_transform(data.target);
+            vkCmdPushConstants(cmd_buf, our_state.pipeline->layout(), VK_SHADER_STAGE_VERTEX_BIT,
+                0, sizeof(glm::mat4), &transform);
+
+            cmd_buf.bind_buffer(buffer);
+            VkDeviceSize offset = 0;
+            vkCmdBindVertexBuffers(cmd_buf, 0, 1, &buffer->get_buffer(), &offset);
+
+            cmd_buf.for_each_scissor_rect(data.target, (data.damage & data.target.geometry), [&]
+            {
+                vkCmdDraw(cmd_buf, count_triangles * 3, 1, 0, 0);
+            });
+        });
+#endif
     }
 };
 
@@ -923,14 +1063,6 @@ class wayfire_wobbly : public wf::plugin_interface_t
   public:
     void init() override
     {
-        if (!wf::get_core().is_gles2())
-        {
-            const char *render_type =
-                wf::get_core().is_vulkan() ? "vulkan" : (wf::get_core().is_pixman() ? "pixman" : "unknown");
-            LOGE("wobbly: requires GLES2 support, but current renderer is ", render_type);
-            return;
-        }
-
         wf::get_core().connect(&wobbly_changed);
         wf::gles::run_in_context_if_gles([&]
         {

@@ -69,6 +69,12 @@ wayfire_dependencies = [wayland_server, wlroots, xkbcommon, libinput,
                        wfconfig, libinotify, backtrace, wfutils, xcb,
                        wftouch, json_flags, udev]
 
+if use_vulkan
+  wayfire_dependencies += vulkan
+  wayfire_sources += vulkan_shaders
+  wayfire_sources += 'core/vulkan.cpp'
+endif
+
 if conf_data.get('BUILD_WITH_IMAGEIO')
     wayfire_dependencies += [jpeg, png]
 endif
@@ -157,7 +163,7 @@ if wlroots_features['gles2_renderer']
   public_api_requirements += glesv2
 endif
 
-if wlroots_features['vulkan_renderer']
+if use_vulkan
   public_api_requirements += vulkan
 endif
 

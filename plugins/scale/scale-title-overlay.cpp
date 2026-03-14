@@ -198,7 +198,7 @@ class title_overlay_node_t : public node_t
          * animated and maybe redraw less frequently
          */
         auto& tex = get_overlay_texture(find_topmost_parent(view));
-        if ((tex.overlay.get_texture().texture == nullptr) ||
+        if ((tex.overlay.get_texture() == nullptr) ||
             (output_scale != tex.par.output_scale) ||
             (tex.overlay.get_size().width > box.width * output_scale) ||
             (tex.overflow &&
@@ -240,7 +240,7 @@ class title_overlay_node_t : public node_t
         auto parent = find_topmost_parent(view);
         auto& title = get_overlay_texture(parent);
 
-        if (title.overlay.get_texture().texture != nullptr)
+        if (title.overlay.get_texture() != nullptr)
         {
             text_height = (unsigned int)std::ceil(
                 title.overlay.get_size().height / title.par.output_scale);
@@ -323,7 +323,7 @@ class title_overlay_render_instance_t : public render_instance_t
         auto tr     = self->view->get_transformed_node()
             ->get_transformer<wf::scene::view_2d_transformer_t>("scale");
 
-        if (!title.overlay.get_texture().texture)
+        if (!title.overlay.get_texture())
         {
             /* this should not happen */
             return;

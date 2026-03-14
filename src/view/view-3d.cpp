@@ -16,6 +16,12 @@
 #include <algorithm>
 #include <cmath>
 
+#if WF_HAS_VULKANFX
+    #include <wayfire/vulkan.hpp>
+    #include "shaders/core-basic.vert.h"
+    #include "shaders/core-basic.frag.h"
+#endif
+
 #include <glm/gtc/matrix_transform.hpp>
 
 static const double PI = std::acos(-1);
@@ -205,7 +211,7 @@ class view_2d_render_instance_t :
         {
             // No rotation, we can use render-agnostic functions.
             auto tex = this->get_texture(data.target.scale);
-            tex.filter_mode = WLR_SCALE_FILTER_BILINEAR;
+            tex->set_filter_mode(WLR_SCALE_FILTER_BILINEAR);
             auto bbox = self->get_bounding_box();
             data.pass->add_texture(tex, data.target, bbox, data.damage, self->get_alpha());
             return;
@@ -266,7 +272,13 @@ glm::mat4 view_3d_transformer_t::default_view_matrix()
 
 glm::mat4 view_3d_transformer_t::default_proj_matrix()
 {
-    return glm::perspective(fov, 1.0f, .1f, 100.f);
+    if (wf::get_core().is_vulkan())
+    {
+        return glm::perspectiveZO(fov, 1.0f, .1f, 100.f);
+    } else
+    {
+        return glm::perspective(fov, 1.0f, .1f, 100.f);
+    }
 }
 
 view_3d_transformer_t::view_3d_transformer_t(wayfire_view view) :
@@ -420,6 +432,50 @@ class view_3d_render_instance_t :
         transform_linear_damage(self.get(), damage);
     }
 
+#if WF_HAS_VULKANFX
+    class vulkan_state_t : public wf::custom_data_t
+    {
+      public:
+        std::shared_ptr<wf::vk::graphics_pipeline_t> pipeline;
+    };
+
+    vulkan_state_t& ensure_vk(wf::vulkan_render_state_t& state)
+    {
+        if (auto data = state.get_data<vulkan_state_t>())
+        {
+            return *data;
+        }
+
+        auto vs = state.get_context()->load_shader_module(
+            core_basic_vert_data, sizeof(core_basic_vert_data));
+        auto fs = state.get_context()->load_shader_module(
+            core_basic_frag_data, sizeof(core_basic_frag_data));
+
+        wf::vk::pipeline_params_t params{};
+        params.shaders = {
+            {.stage = VK_SHADER_STAGE_VERTEX_BIT, .shader = vs},
+            {.stage = VK_SHADER_STAGE_FRAGMENT_BIT, .shader = fs},
+        };
+
+        // One descriptor set for the uv texture.
+        params.descriptorSetLayouts = {state.get_context()->get_image_descriptor_set_layout()};
+        params.pushConstants = {
+            VkPushConstantRange{
+                .stageFlags = VK_SHADER_STAGE_VERTEX_BIT,
+                .offset     = 0,
+                .size = sizeof(glm::mat4),
+            },
+        };
+
+        auto data = std::make_unique<vulkan_state_t>();
+        data->pipeline = std::make_shared<wf::vk::graphics_pipeline_t>(state.get_context(), params);
+        auto ptr = data.get();
+        state.store_data<vulkan_state_t>(std::move(data));
+        return *ptr;
+    }
+
+#endif
+
     void render(const wf::scene::render_instruction_t& data) override
     {
         auto bbox = self->get_children_bounding_box();
@@ -435,6 +491,7 @@ class view_3d_render_instance_t :
 
         transform =
             wf::gles::render_target_gl_to_framebuffer(data.target) * scale * translate * transform;
+
         data.pass->custom_gles_subpass([&]
         {
             auto tex = wf::gles_texture_t{get_texture(data.target.scale)};
@@ -446,6 +503,33 @@ class view_3d_render_instance_t :
                     transform, self->color);
             }
         });
+
+#if WF_HAS_VULKANFX
+        data.pass->custom_vulkan_subpass([&] (wf::vulkan_render_state_t& state, vk::command_buffer_t& cmd_buf)
+        {
+            auto& vk_state = ensure_vk(state);
+            auto tex = state.get_descriptor_pool()->get_descriptor_set(cmd_buf,
+                get_texture(data.target.scale));
+
+            cmd_buf.bind_pipeline(vk_state.pipeline, data.target);
+            cmd_buf.set_full_viewport(data.target);
+
+            vkCmdBindDescriptorSets(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, vk_state.pipeline->layout(),
+                0, 1, &tex, 0, nullptr);
+
+            glm::mat4 scale = glm::scale(glm::mat4(1.0),
+                {quad.geometry.x2 - quad.geometry.x1, quad.geometry.y1 - quad.geometry.y2, 1.0f});
+            glm::mat4 translate = glm::translate(glm::mat4(1.0), {quad.geometry.x1, quad.geometry.y2, 0});
+            transform = transform * translate * scale;
+            vkCmdPushConstants(cmd_buf, vk_state.pipeline->layout(), VK_SHADER_STAGE_VERTEX_BIT,
+                0, sizeof(glm::mat4), &transform);
+
+            cmd_buf.for_each_scissor_rect(data.target, data.damage, [&]
+            {
+                vkCmdDraw(cmd_buf, 4, 1, 0, 0);
+            });
+        });
+#endif
     }
 };
 
@@ -477,8 +561,8 @@ uint32_t transformer_base_node_t::optimize_update(uint32_t flags)
     return optimize_nested_render_instances(shared_from_this(), flags);
 }
 
-wf::texture_t transformer_base_node_t::get_updated_contents(const wf::geometry_t& bbox, float scale,
-    std::vector<scene::render_instance_uptr>& children)
+std::shared_ptr<wf::texture_t> transformer_base_node_t::get_updated_contents(const wf::geometry_t& bbox,
+    float scale, std::vector<scene::render_instance_uptr>& children)
 {
     if (inner_content.allocate(wf::dimensions(bbox), scale) != buffer_reallocation_result_t::SAME)
     {
@@ -496,9 +580,9 @@ wf::texture_t transformer_base_node_t::get_updated_contents(const wf::geometry_t
     params.background_color = {0.0f, 0.0f, 0.0f, 0.0f};
     params.flags = RPASS_CLEAR_BACKGROUND;
     wf::render_pass_t::run(params);
-
     cached_damage.clear();
-    return wf::texture_t{inner_content.get_texture(), {}};
+
+    return wf::texture_t::from_buffer(inner_content.get_buffer(), inner_content.get_texture());
 }
 
 void transformer_base_node_t::release_buffers()

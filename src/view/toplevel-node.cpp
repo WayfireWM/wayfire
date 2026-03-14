@@ -125,12 +125,12 @@ void wf::toplevel_view_node_t::gen_render_instances(
     instances.push_back(std::make_unique<toplevel_view_render_instance_t>(this, push_damage, output));
 }
 
-std::optional<wf::texture_t> wf::toplevel_view_node_t::to_texture() const
+std::shared_ptr<wf::texture_t> wf::toplevel_view_node_t::to_texture() const
 {
     auto view = _view.lock();
     if (!view || !view->is_mapped() || (get_children().size() != 1))
     {
-        return {};
+        return nullptr;
     }
 
     if (auto texturable = dynamic_cast<zero_copy_texturable_node_t*>(get_children().front().get()))
@@ -138,7 +138,7 @@ std::optional<wf::texture_t> wf::toplevel_view_node_t::to_texture() const
         return texturable->to_texture();
     }
 
-    return {};
+    return nullptr;
 }
 
 wf::region_t wf::toplevel_view_node_t::get_opaque_region() const

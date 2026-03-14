@@ -22,6 +22,7 @@ struct surface_state_t
     wf::dimensions_t size = {0, 0};
     std::optional<wlr_fbox> src_viewport;
     wl_output_transform transform = WL_OUTPUT_TRANSFORM_NORMAL;
+    wf::color_transform_t color_transform;
 
     // Sequence number of the last commit read from a wlr_surface state
     std::optional<uint32_t> seq{};
@@ -66,7 +67,7 @@ class wlr_surface_node_t : public node_t, public zero_copy_texturable_node_t
     void gen_render_instances(std::vector<render_instance_uptr>& instances, damage_callback damage,
         wf::output_t *output) override;
     wf::geometry_t get_bounding_box() override;
-    std::optional<wf::texture_t> to_texture() const override;
+    std::shared_ptr<wf::texture_t> to_texture() const override;
 
     wlr_surface *get_surface() const;
     void apply_state(surface_state_t&& state);
