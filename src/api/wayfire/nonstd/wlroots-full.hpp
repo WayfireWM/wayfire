@@ -123,7 +123,6 @@ extern "C"
     #include <wlr/types/wlr_output_power_management_v1.h>
 #endif
 #include <wlr/types/wlr_gamma_control_v1.h>
-#include <wlr/types/wlr_xdg_output_v1.h>
 #include <wlr/types/wlr_drm_lease_v1.h>
 
 // Input

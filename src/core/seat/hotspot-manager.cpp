@@ -11,7 +11,7 @@ void wf::hotspot_instance_t::process_input_motion(wf::pointf_t gc)
         this->armed = true;
     };
 
-    auto target = wf::get_core().output_layout->get_output_coords_at(gc, gc);
+    auto target = wf::get_core().output_layout->find_closest_output(gc, gc);
     if (target != last_output)
     {
         reset_hotspot();

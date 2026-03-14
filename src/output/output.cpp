@@ -160,6 +160,11 @@ wf::geometry_t wf::output_t::get_layout_geometry() const
     }
 }
 
+float wf::output_t::get_scale() const
+{
+    return handle->scale;
+}
+
 void wf::output_t::ensure_pointer(bool center) const
 {
     auto ptr = wf::get_core().get_cursor_position();
@@ -402,7 +407,7 @@ void output_impl_t::add_activator(
         if (act.source == activator_source_t::HOTSPOT)
         {
             auto pos = wf::get_core().get_cursor_position();
-            auto wo  = wf::get_core().output_layout->get_output_at(pos.x, pos.y);
+            auto wo  = wf::get_core().output_layout->find_closest_output(pos);
             if (this != wo)
             {
                 return false;

@@ -49,7 +49,7 @@ class extra_gestures_plugin_t : public per_output_plugin_instance_t
         auto center_touch_point = state.get_center().current;
         wf::pointf_t center     = {center_touch_point.x, center_touch_point.y};
 
-        if (core.output_layout->get_output_at(center.x, center.y) != this->output)
+        if (core.output_layout->find_closest_output(center) != this->output)
         {
             return;
         }
