@@ -39,7 +39,11 @@ class workspace_stream_node_t::workspace_stream_instance_t : public scene::
         auto translate_and_push_damage = [this, push_damage] (wf::region_t damage)
         {
             damage += -get_offset();
-            push_damage(damage);
+            damage &= this->self->get_bounding_box();
+            if (!damage.empty())
+            {
+                push_damage(damage);
+            }
         };
 
         for (auto& output_node : wf::collect_output_nodes(wf::get_core().scene(), self->output))

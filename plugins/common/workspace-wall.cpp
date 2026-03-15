@@ -66,7 +66,10 @@ class workspace_wall_t::workspace_wall_node_t : public scene::node_t
                         }
 
                         // Also damage the 'screen' after transforming damage
-                        push_damage(our_damage);
+                        if (!our_damage.empty())
+                        {
+                            push_damage(our_damage);
+                        }
                     };
 
                     self->workspaces[i][j]->gen_render_instances(instances[i][j],
