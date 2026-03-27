@@ -172,8 +172,8 @@ wf::input_method_relay::input_method_relay()
     auto& core = wf::get_core();
     if (core.protocols.text_input && core.protocols.input_method)
     {
-        on_text_input_new.connect(&wf::get_core().protocols.text_input->events.text_input);
-        on_input_method_new.connect(&wf::get_core().protocols.input_method->events.input_method);
+        on_text_input_new.connect(&wf::get_core().protocols.text_input->events.new_text_input);
+        on_input_method_new.connect(&wf::get_core().protocols.input_method->events.new_input_method);
         wf::get_core().connect(&keyboard_focus_changed);
     }
 }

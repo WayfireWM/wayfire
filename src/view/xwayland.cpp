@@ -293,8 +293,7 @@ void wf::xwayland_update_default_cursor()
     if (cursor && (cursor->image_count > 0))
     {
         auto image = cursor->images[0];
-        wlr_xwayland_set_cursor(xwayland_handle, image->buffer,
-            image->width * 4, image->width, image->height,
+        wlr_xwayland_set_cursor(xwayland_handle, wlr_xcursor_image_get_buffer(image),
             image->hotspot_x, image->hotspot_y);
     }
 
