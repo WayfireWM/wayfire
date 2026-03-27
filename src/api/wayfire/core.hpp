@@ -169,7 +169,8 @@ class compositor_core_t : public wf::object_base_t, public signal::provider_t
         wlr_screencopy_manager_v1 *screencopy;
         wlr_ext_foreign_toplevel_list_v1 *foreign_toplevel_list;
         wlr_ext_image_copy_capture_manager_v1 *image_copy_capture;
-        wlr_ext_output_image_capture_source_manager_v1 *image_capture_source;
+        wlr_ext_output_image_capture_source_manager_v1 *output_image_capture_source;
+        wlr_ext_foreign_toplevel_image_capture_source_manager_v1 *foreign_toplevel_image_capture_source;
         wlr_export_dmabuf_manager_v1 *export_dmabuf;
         wlr_server_decoration_manager *decorator_manager;
         wlr_xdg_decoration_manager_v1 *xdg_decorator;
