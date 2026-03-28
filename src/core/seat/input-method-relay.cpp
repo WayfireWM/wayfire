@@ -68,9 +68,6 @@ wf::input_method_relay::input_method_relay()
 
     on_input_method_commit.set_callback([&] (void *data)
     {
-        auto evt_input_method = static_cast<wlr_input_method_v2*>(data);
-        assert(evt_input_method == input_method);
-
         // When we switch focus, we send a done event to the IM.
         // The IM may need time to process further events and may send additional commits after switching
         // focus, which belong to the old text input.
@@ -116,9 +113,6 @@ wf::input_method_relay::input_method_relay()
 
     on_input_method_destroy.set_callback([&] (void *data)
     {
-        auto evt_input_method = static_cast<wlr_input_method_v2*>(data);
-        assert(evt_input_method == input_method);
-
         on_input_method_commit.disconnect();
         on_input_method_destroy.disconnect();
         on_grab_keyboard.disconnect();
