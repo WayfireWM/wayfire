@@ -329,6 +329,11 @@ void wf::input_method_relay::set_focus(wlr_surface *surface)
 {
     for (auto & text_input : text_inputs)
     {
+        if (!text_input->input->current_enabled)
+        {
+            continue;
+        }
+
         if (text_input->pending_focused_surface != nullptr)
         {
             assert(text_input->input->focused_surface == nullptr);
@@ -372,9 +377,6 @@ wf::text_input::text_input(wf::input_method_relay *rel, wlr_text_input_v3 *in) :
 {
     on_text_input_enable.set_callback([&] (void *data)
     {
-        auto wlr_text_input = static_cast<wlr_text_input_v3*>(data);
-        assert(input == wlr_text_input);
-
         if (relay->input_method == nullptr)
         {
             LOGI("Enabling text input, but input method is gone");
@@ -388,9 +390,6 @@ wf::text_input::text_input(wf::input_method_relay *rel, wlr_text_input_v3 *in) :
 
     on_text_input_commit.set_callback([&] (void *data)
     {
-        auto wlr_text_input = static_cast<wlr_text_input_v3*>(data);
-        assert(input == wlr_text_input);
-
         if (!input->current_enabled)
         {
             LOGI("Inactive text input tried to commit");
@@ -414,20 +413,14 @@ wf::text_input::text_input(wf::input_method_relay *rel, wlr_text_input_v3 *in) :
 
     on_text_input_disable.set_callback([&] (void *data)
     {
-        auto wlr_text_input = static_cast<wlr_text_input_v3*>(data);
-        assert(input == wlr_text_input);
-
         relay->disable_text_input(input);
     });
 
     on_text_input_destroy.set_callback([&] (void *data)
     {
-        auto wlr_text_input = static_cast<wlr_text_input_v3*>(data);
-        assert(input == wlr_text_input);
-
         if (input->current_enabled)
         {
-            relay->disable_text_input(wlr_text_input);
+            relay->disable_text_input(input);
         }
 
         set_pending_focused_surface(nullptr);
@@ -437,7 +430,7 @@ wf::text_input::text_input(wf::input_method_relay *rel, wlr_text_input_v3 *in) :
         on_text_input_destroy.disconnect();
 
         // NOTE: the call destroys `this`
-        relay->remove_text_input(wlr_text_input);
+        relay->remove_text_input(input);
     });
 
     on_pending_focused_surface_destroy.set_callback([&] (void *data)
