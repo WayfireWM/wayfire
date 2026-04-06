@@ -41,13 +41,13 @@ wf::input_method_relay::input_method_relay()
         auto new_input_method = static_cast<wlr_input_method_v2*>(data);
         if (input_method != nullptr)
         {
-            LOGI("Attempted to connect second input method");
+            LOGC(IM, "Attempted to connect second input method");
             wlr_input_method_v2_send_unavailable(new_input_method);
 
             return;
         }
 
-        LOGD("new input method connected");
+        LOGC(IM, "new input method connected");
         input_method = new_input_method;
         last_done_serial.reset();
         next_done_serial = 0;
@@ -76,7 +76,7 @@ wf::input_method_relay::input_method_relay()
         // compositor.
         if (input_method->current_serial < last_done_serial.value_or(0))
         {
-            LOGD("focus just changed, ignore input method commit");
+            LOGC(IM, "focus just changed, ignore input method commit");
             return;
         }
 
@@ -199,7 +199,7 @@ void wf::input_method_relay::disable_text_input(wlr_text_input_v3 *input)
 {
     if (input_method == nullptr)
     {
-        LOGI("Disabling text input, but input method is gone");
+        LOGC(IM, "Disabling text input, but input method is gone");
 
         return;
     }
@@ -350,7 +350,7 @@ void wf::input_method_relay::set_focus(wlr_surface *surface)
                 wlr_text_input_v3_send_leave(text_input->input);
             } else
             {
-                LOGD("set_focus an already focused surface");
+                LOGC(IM, "set_focus an already focused surface");
                 continue;
             }
         }
@@ -379,7 +379,7 @@ wf::text_input::text_input(wf::input_method_relay *rel, wlr_text_input_v3 *in) :
     {
         if (relay->input_method == nullptr)
         {
-            LOGI("Enabling text input, but input method is gone");
+            LOGC(IM, "Enabling text input, but input method is gone");
 
             return;
         }
@@ -392,14 +392,14 @@ wf::text_input::text_input(wf::input_method_relay *rel, wlr_text_input_v3 *in) :
     {
         if (!input->current_enabled)
         {
-            LOGI("Inactive text input tried to commit");
+            LOGC(IM, "Inactive text input tried to commit");
 
             return;
         }
 
         if (relay->input_method == nullptr)
         {
-            LOGI("Committing text input, but input method is gone");
+            LOGC(IM, "Committing text input, but input method is gone");
 
             return;
         }
