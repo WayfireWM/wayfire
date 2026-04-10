@@ -67,7 +67,9 @@ struct SwitcherView
     SwitcherPaintAttribs attribs;
 
     int position;
-    SwitcherView(duration_t& duration) : attribs(duration)
+    int64_t expired_timestamp = 0;
+
+    SwitcherView(const duration_t& duration) : attribs(duration)
     {}
 
     /* Make animation start values the current progress of duration */
@@ -79,6 +81,13 @@ struct SwitcherView
     void to_end()
     {
         for_each([] (timed_transition_t& t) { t.set(t.end, t.end); });
+    }
+
+    bool animation_finished()
+    {
+        bool finished = true;
+        for_each([&] (timed_transition_t& t) { finished &= (t.end == (double)t); });
+        return finished;
     }
 
   private:
@@ -429,10 +438,28 @@ class WayfireSwitcher : public wf::per_output_plugin_instance_t, public wf::keyb
         float radians_rotation = -((float)view_thumbnail_rotation * (M_PI / 180.0));
         sv.attribs.rotation.restart_with_end(
             sv.attribs.rotation.end + radians_rotation * dir);
+        sv.attribs.alpha.restart_with_end(
+            view_expired(sv.position) ? 0.3 : 0.7);
 
         sv.position += dir;
-        sv.attribs.alpha.restart_with_end(
-            view_expired(sv.position) ? 0.3 : 1.0);
+        if (view_expired(sv.position))
+        {
+            // Copy view but with a different duration object, so that it expires in the end.
+            duration_t duration{speed};
+            duration.start();
+            SwitcherView expired{duration};
+            expired.view     = sv.view;
+            expired.position = sv.position;
+            expired.attribs.alpha.set(sv.attribs.alpha.start, 0.0);
+            expired.attribs.off_x.set(sv.attribs.off_x.start, sv.attribs.off_x.end);
+            expired.attribs.off_y.set(sv.attribs.off_y.start, sv.attribs.off_y.end);
+            expired.attribs.off_z.set(sv.attribs.off_z.start, sv.attribs.off_z.end);
+            expired.attribs.scale_x.set(sv.attribs.scale_x.start, sv.attribs.scale_x.end);
+            expired.attribs.scale_y.set(sv.attribs.scale_y.start, sv.attribs.scale_y.end);
+            expired.attribs.rotation.set(sv.attribs.rotation.start, sv.attribs.rotation.end);
+            expired.expired_timestamp = wf::get_current_time();
+            sv = std::move(expired);
+        }
     }
 
     /* Calculate how much a view should be scaled to fit into the slots */
@@ -489,7 +516,6 @@ class WayfireSwitcher : public wf::per_output_plugin_instance_t, public wf::keyb
     void arrange_view(SwitcherView& sv, int position)
     {
         arrange_center_view(sv);
-
         if (position == SWITCHER_POSITION_CENTER)
         {
             /* view already centered */
@@ -545,6 +571,12 @@ class WayfireSwitcher : public wf::per_output_plugin_instance_t, public wf::keyb
             return;
         }
 
+        if (ws_views.size() >= 2)
+        {
+            // Focus next view immediately
+            std::swap(views[0], views[1]);
+        }
+
         /* Add a copy of the unfocused view if we have just 2 */
         if (ws_views.size() == 2)
         {
@@ -565,8 +597,7 @@ class WayfireSwitcher : public wf::per_output_plugin_instance_t, public wf::keyb
         }
 
         // We want the next view to be focused right off the bat
-        // But we want it to be animated.
-        handle_switch_request(-1);
+        // wf::view_bring_to_front(views.front().view);
     }
 
     void dearrange()
@@ -583,6 +614,11 @@ class WayfireSwitcher : public wf::per_output_plugin_instance_t, public wf::keyb
 
         for (auto& sv : views)
         {
+            if (view_expired(sv.position))
+            {
+                continue;
+            }
+
             sv.attribs.off_x.restart_with_end(0);
             sv.attribs.off_y.restart_with_end(0);
             sv.attribs.off_z.restart_with_end(0);
@@ -706,6 +742,53 @@ class WayfireSwitcher : public wf::per_output_plugin_instance_t, public wf::keyb
         render_view_scene(sv.view, buffer);
     }
 
+    std::vector<SwitcherView*> calculate_render_order()
+    {
+        auto sorted_views = output->wset()->get_views(wf::WSET_SORT_STACKING);
+        std::map<wayfire_toplevel_view, int> view_order;
+        for (size_t i = 0; i < sorted_views.size(); i++)
+        {
+            view_order[sorted_views[i]] = i;
+        }
+
+        std::vector<SwitcherView*> render_order;
+        for (auto& sv : views)
+        {
+            render_order.push_back(&sv);
+        }
+
+        std::stable_sort(render_order.begin(), render_order.end(),
+            [&] (SwitcherView *a, SwitcherView *b)
+        {
+            bool a_expired = view_expired(a->position);
+            bool b_expired = view_expired(b->position);
+            if (a_expired ^ b_expired)
+            {
+                return !a_expired;
+            }
+
+            if (a_expired && b_expired)
+            {
+                return a->expired_timestamp < b->expired_timestamp;
+            } else
+            {
+                double z_a = a->attribs.off_z;
+                double z_b = b->attribs.off_z;
+                if (std::abs(z_a - z_b) > 1e-1)
+                {
+                    /* Render in the reverse order because we don't use depth testing */
+                    return z_a < z_b;
+                } else
+                {
+                    /* If Z is the same, render the one that is higher in the stacking order first */
+                    return view_order[a->view] > view_order[b->view];
+                }
+            }
+        });
+
+        return render_order;
+    }
+
     void render(const wf::scene::render_instruction_t& data)
     {
         data.pass->clear(data.target.geometry, {0, 0, 0, 1});
@@ -717,9 +800,9 @@ class WayfireSwitcher : public wf::per_output_plugin_instance_t, public wf::keyb
         }
 
         /* Render in the reverse order because we don't use depth testing */
-        for (auto& view : wf::reverse(views))
+        for (auto view : calculate_render_order())
         {
-            render_view(view, local_target);
+            render_view(*view, local_target);
         }
 
         for (auto view : get_overlay_views())
@@ -749,7 +832,9 @@ class WayfireSwitcher : public wf::per_output_plugin_instance_t, public wf::keyb
     void cleanup_expired()
     {
         cleanup_views([=] (SwitcherView& sv)
-        { return view_expired(sv.position); });
+        {
+            return view_expired(sv.position) && sv.animation_finished();
+        });
     }
 
     /* sort views according to their Z-order */
@@ -794,7 +879,6 @@ class WayfireSwitcher : public wf::per_output_plugin_instance_t, public wf::keyb
     void next_view(int dir)
     {
         cleanup_expired();
-
         if (count_different_active_views() <= 1)
         {
             return;
