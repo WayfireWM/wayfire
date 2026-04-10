@@ -48,6 +48,60 @@ wf::geometry_t get_bbox_for_node(scene::node_ptr node, wf::geometry_t box)
     return get_bbox_for_node(node.get(), box);
 }
 
+#if WF_HAS_VULKANFX
+namespace vk
+{
+class core_vulkan_state_t : public wf::custom_data_t
+{
+  public:
+    std::shared_ptr<wf::vk::graphics_pipeline_t> pipeline;
+};
+
+struct core_vulkan_push_data_t
+{
+    glm::mat4 transform;
+    glm::vec2 uv_scale;
+    glm::vec2 uv_offset;
+};
+
+core_vulkan_state_t& core_ensure_vk(wf::vulkan_render_state_t& state)
+{
+    if (auto data = state.get_data<core_vulkan_state_t>())
+    {
+        return *data;
+    }
+
+    auto vs = state.get_context()->load_shader_module(
+        core_basic_vert_data, sizeof(core_basic_vert_data));
+    auto fs = state.get_context()->load_shader_module(
+        core_basic_frag_data, sizeof(core_basic_frag_data));
+
+    wf::vk::pipeline_params_t params{};
+    params.shaders = {
+        {.stage = VK_SHADER_STAGE_VERTEX_BIT, .shader = vs},
+        {.stage = VK_SHADER_STAGE_FRAGMENT_BIT, .shader = fs},
+    };
+
+    // One descriptor set for the uv texture.
+    params.descriptor_set_layouts = {wf::vk::pipeline_params_t::texture_descriptor_set_t{}};
+    params.push_constants = {
+        VkPushConstantRange{
+            .stageFlags = VK_SHADER_STAGE_VERTEX_BIT,
+            .offset     = 0,
+            .size = sizeof(core_vulkan_push_data_t),
+        },
+    };
+
+    auto data = std::make_unique<core_vulkan_state_t>();
+    data->pipeline = std::make_shared<wf::vk::graphics_pipeline_t>(state.get_context(), params);
+    auto ptr = data.get();
+    state.store_data<core_vulkan_state_t>(std::move(data));
+    return *ptr;
+}
+}
+
+#endif
+
 namespace scene
 {
 void transform_manager_node_t::_add_transformer(
@@ -230,21 +284,59 @@ class view_2d_render_instance_t :
         auto translate = glm::translate(glm::mat4(1.0),
             glm::vec3{self->get_translation_x() + midpoint.x,
                 self->get_translation_y() + midpoint.y, 0.0});
-        auto ortho = wf::gles::render_target_orthographic_projection(data.target);
-        auto full_matrix = ortho * translate * rotate * scale * center_at;
+
+        auto flat_transform = translate * rotate * scale * center_at;
 
         data.pass->custom_gles_subpass([&]
         {
             auto tex = wf::gles_texture_t{this->get_texture(data.target.scale)};
             wf::gles::bind_render_buffer(data.target);
+            auto ortho = wf::gles::render_target_orthographic_projection(data.target);
+
             for (auto& box : data.damage)
             {
                 wf::gles::render_target_logic_scissor(data.target, wlr_box_from_pixman_box(box));
                 // OpenGL::clear({1, 0, 0, 1});
-                OpenGL::render_transformed_texture(tex, bbox, full_matrix,
+                OpenGL::render_transformed_texture(tex, bbox, ortho * flat_transform,
                     glm::vec4{1.0, 1.0, 1.0, self->get_alpha()});
             }
         });
+
+#if WF_HAS_VULKANFX
+        data.pass->custom_vulkan_subpass([&] (wf::vulkan_render_state_t& state, vk::command_buffer_t& cmd_buf)
+        {
+            auto& vk_state = vk::core_ensure_vk(state);
+            auto texture   = get_texture(data.target.scale);
+            auto tex_dset  = state.get_descriptor_pool()->get_descriptor_set(cmd_buf, texture);
+            wf::vk::texture_sampling_params_t sampling{texture};
+            wf::vk::pipeline_specialization_t specialization{};
+            specialization.add_specialization_for_texture(texture);
+
+            // The shader renders a hardcoded quad from (0,0) to (1,1) so scale to match view size first.
+            glm::mat4 scale     = glm::scale(glm::mat4(1.0), {1.0 * bbox.width, -1.0 * bbox.height, 1.0f});
+            glm::mat4 translate = glm::translate(glm::mat4(1.0), {bbox.x, bbox.y + bbox.height, 0});
+            auto transform = vk::render_target_transform(data.target) * flat_transform * translate * scale;
+
+            auto [layout, _] = cmd_buf.bind_pipeline(vk_state.pipeline, data.target, specialization);
+            cmd_buf.set_full_viewport(data.target);
+            cmd_buf.bind_texture(texture);
+
+            vkCmdBindDescriptorSets(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, layout,
+                0, 1, &tex_dset, 0, nullptr);
+
+            vk::core_vulkan_push_data_t push_constants{};
+            push_constants.transform = transform;
+            push_constants.uv_scale  = sampling.get_uv_scale();
+            push_constants.uv_offset = sampling.get_uv_offset();
+            vkCmdPushConstants(cmd_buf, layout, VK_SHADER_STAGE_VERTEX_BIT,
+                0, sizeof(vk::core_vulkan_push_data_t), &push_constants);
+
+            cmd_buf.for_each_scissor_rect(data.target, (data.damage & data.target.geometry), [&]
+            {
+                vkCmdDraw(cmd_buf, 4, 1, 0, 0);
+            });
+        });
+#endif
     }
 };
 
@@ -432,57 +524,6 @@ class view_3d_render_instance_t :
         transform_linear_damage(self.get(), damage);
     }
 
-#if WF_HAS_VULKANFX
-    class vulkan_state_t : public wf::custom_data_t
-    {
-      public:
-        std::shared_ptr<wf::vk::graphics_pipeline_t> pipeline;
-    };
-
-    struct vulkan_push_data_t
-    {
-        glm::mat4 transform;
-        glm::vec2 uv_scale;
-        glm::vec2 uv_offset;
-    };
-
-    vulkan_state_t& ensure_vk(wf::vulkan_render_state_t& state)
-    {
-        if (auto data = state.get_data<vulkan_state_t>())
-        {
-            return *data;
-        }
-
-        auto vs = state.get_context()->load_shader_module(
-            core_basic_vert_data, sizeof(core_basic_vert_data));
-        auto fs = state.get_context()->load_shader_module(
-            core_basic_frag_data, sizeof(core_basic_frag_data));
-
-        wf::vk::pipeline_params_t params{};
-        params.shaders = {
-            {.stage = VK_SHADER_STAGE_VERTEX_BIT, .shader = vs},
-            {.stage = VK_SHADER_STAGE_FRAGMENT_BIT, .shader = fs},
-        };
-
-        // One descriptor set for the uv texture.
-        params.descriptor_set_layouts = {wf::vk::pipeline_params_t::texture_descriptor_set_t{}};
-        params.push_constants = {
-            VkPushConstantRange{
-                .stageFlags = VK_SHADER_STAGE_VERTEX_BIT,
-                .offset     = 0,
-                .size = sizeof(vulkan_push_data_t),
-            },
-        };
-
-        auto data = std::make_unique<vulkan_state_t>();
-        data->pipeline = std::make_shared<wf::vk::graphics_pipeline_t>(state.get_context(), params);
-        auto ptr = data.get();
-        state.store_data<vulkan_state_t>(std::move(data));
-        return *ptr;
-    }
-
-#endif
-
     void render(const wf::scene::render_instruction_t& data) override
     {
         auto bbox = self->get_children_bounding_box();
@@ -514,7 +555,7 @@ class view_3d_render_instance_t :
 #if WF_HAS_VULKANFX
         data.pass->custom_vulkan_subpass([&] (wf::vulkan_render_state_t& state, vk::command_buffer_t& cmd_buf)
         {
-            auto& vk_state = ensure_vk(state);
+            auto& vk_state = vk::core_ensure_vk(state);
             auto texture   = get_texture(data.target.scale);
             auto tex_dset  = state.get_descriptor_pool()->get_descriptor_set(cmd_buf, texture);
             wf::vk::texture_sampling_params_t sampling{texture};
@@ -533,12 +574,12 @@ class view_3d_render_instance_t :
             vkCmdBindDescriptorSets(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, layout,
                 0, 1, &tex_dset, 0, nullptr);
 
-            vulkan_push_data_t push_constants{};
+            vk::core_vulkan_push_data_t push_constants{};
             push_constants.transform = transform;
             push_constants.uv_scale  = sampling.get_uv_scale();
             push_constants.uv_offset = sampling.get_uv_offset();
             vkCmdPushConstants(cmd_buf, layout, VK_SHADER_STAGE_VERTEX_BIT,
-                0, sizeof(vulkan_push_data_t), &push_constants);
+                0, sizeof(vk::core_vulkan_push_data_t), &push_constants);
 
             cmd_buf.for_each_scissor_rect(data.target, (data.damage & data.target.geometry), [&]
             {
