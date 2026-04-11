@@ -37,12 +37,14 @@ using namespace wf::animation;
 class SwitcherPaintAttribs
 {
   public:
-    SwitcherPaintAttribs(const duration_t& duration) :
-        scale_x(duration, 1, 1), scale_y(duration, 1, 1),
-        off_x(duration, 0, 0), off_y(duration, 0, 0), off_z(duration, 0, 0),
-        rotation(duration, 0, 0), alpha(duration, 1, 1)
+    SwitcherPaintAttribs(wf::option_sptr_t<wf::animation_description_t> speed) :
+        timer{speed},
+        scale_x(timer, 1, 1), scale_y(timer, 1, 1),
+        off_x(timer, 0, 0), off_y(timer, 0, 0), off_z(timer, 0, 0),
+        rotation(timer, 0, 0), alpha(timer, 1, 1)
     {}
 
+    duration_t timer;
     timed_transition_t scale_x, scale_y;
     timed_transition_t off_x, off_y, off_z;
     timed_transition_t rotation, alpha;
@@ -69,7 +71,7 @@ struct SwitcherView
     int position;
     int64_t expired_timestamp = 0;
 
-    SwitcherView(const duration_t& duration) : attribs(duration)
+    SwitcherView(const wf::option_sptr_t<wf::animation_description_t>& duration) : attribs(duration)
     {}
 
     /* Make animation start values the current progress of duration */
@@ -85,9 +87,7 @@ struct SwitcherView
 
     bool animation_finished()
     {
-        bool finished = true;
-        for_each([&] (timed_transition_t& t) { finished &= (t.end == (double)t); });
-        return finished;
+        return attribs.timer.running() == false;
     }
 
   private:
@@ -113,7 +113,6 @@ class WayfireSwitcher : public wf::per_output_plugin_instance_t, public wf::keyb
     wf::option_wrapper_t<int> view_thumbnail_rotation{
         "switcher/view_thumbnail_rotation"};
 
-    duration_t duration{speed};
     duration_t background_dim_duration{speed};
     timed_transition_t background_dim{background_dim_duration};
 
@@ -244,12 +243,20 @@ class WayfireSwitcher : public wf::per_output_plugin_instance_t, public wf::keyb
         return false;
     };
 
+    bool animations_running()
+    {
+        return std::any_of(views.begin(), views.end(), [] (SwitcherView& sv)
+        {
+            return !sv.animation_finished();
+        });
+    }
+
     wf::effect_hook_t pre_hook = [=] ()
     {
         dim_background(background_dim);
         wf::scene::damage_node(render_node, render_node->get_bounding_box());
 
-        if (!duration.running())
+        if (!animations_running())
         {
             cleanup_expired();
             if (!active)
@@ -290,7 +297,7 @@ class WayfireSwitcher : public wf::per_output_plugin_instance_t, public wf::keyb
 
         if (active)
         {
-            arrange();
+            arrange(false);
         } else
         {
             cleanup_views([=] (SwitcherView& sv)
@@ -320,9 +327,7 @@ class WayfireSwitcher : public wf::per_output_plugin_instance_t, public wf::keyb
         {
             active = true;
             input_grab->grab_input(wf::scene::layer::OVERLAY);
-
-            focus_next(dir);
-            arrange();
+            arrange(true);
             activating_modifiers = wf::get_core().seat->get_keyboard_modifiers();
         } else
         {
@@ -442,23 +447,10 @@ class WayfireSwitcher : public wf::per_output_plugin_instance_t, public wf::keyb
             view_expired(sv.position) ? 0.3 : 0.7);
 
         sv.position += dir;
+        sv.attribs.timer.start();
         if (view_expired(sv.position))
         {
-            // Copy view but with a different duration object, so that it expires in the end.
-            duration_t duration{speed};
-            duration.start();
-            SwitcherView expired{duration};
-            expired.view     = sv.view;
-            expired.position = sv.position;
-            expired.attribs.alpha.set(sv.attribs.alpha.start, 0.0);
-            expired.attribs.off_x.set(sv.attribs.off_x.start, sv.attribs.off_x.end);
-            expired.attribs.off_y.set(sv.attribs.off_y.start, sv.attribs.off_y.end);
-            expired.attribs.off_z.set(sv.attribs.off_z.start, sv.attribs.off_z.end);
-            expired.attribs.scale_x.set(sv.attribs.scale_x.start, sv.attribs.scale_x.end);
-            expired.attribs.scale_y.set(sv.attribs.scale_y.start, sv.attribs.scale_y.end);
-            expired.attribs.rotation.set(sv.attribs.rotation.start, sv.attribs.rotation.end);
-            expired.expired_timestamp = wf::get_current_time();
-            sv = std::move(expired);
+            sv.expired_timestamp = wf::get_current_time();
         }
     }
 
@@ -510,6 +502,7 @@ class WayfireSwitcher : public wf::per_output_plugin_instance_t, public wf::keyb
         sv.attribs.scale_x.set(1, scale);
         sv.attribs.scale_y.set(1, scale);
         sv.attribs.alpha.set(get_view_normal_alpha(sv.view), 1.0);
+        sv.attribs.timer.start();
     }
 
     /* Position the view, starting from untransformed position */
@@ -531,27 +524,12 @@ class WayfireSwitcher : public wf::per_output_plugin_instance_t, public wf::keyb
         return output->wset()->get_views(wf::WSET_MAPPED_ONLY | wf::WSET_CURRENT_WORKSPACE);
     }
 
-    /* Change the current focus to the next or the previous view */
-    void focus_next(int dir)
-    {
-        auto ws_views = get_workspace_views();
-        /* Change the focused view and rearrange views so that focused is on top */
-        int size = ws_views.size();
-
-        // calculate focus index & focus it
-        int focused_view_index = (size + dir) % size;
-        auto focused_view = ws_views[focused_view_index];
-        wf::view_bring_to_front(focused_view);
-    }
-
     /* Create the initial arrangement on the screen
      * Also changes the focus to the next or the last view, depending on dir */
-    void arrange()
+    void arrange(bool focus_next)
     {
         // clear views in case that deinit() hasn't been run
         views.clear();
-
-        duration.start();
         background_dim.set(1, background_dim_factor);
         background_dim_duration.start();
 
@@ -571,16 +549,17 @@ class WayfireSwitcher : public wf::per_output_plugin_instance_t, public wf::keyb
             return;
         }
 
-        if (ws_views.size() >= 2)
+        if ((ws_views.size() >= 2) && focus_next)
         {
             // Focus next view immediately
-            std::swap(views[0], views[1]);
+            views.push_back(create_switcher_view(views[0].view));
+            views.erase(views.begin());
         }
 
         /* Add a copy of the unfocused view if we have just 2 */
         if (ws_views.size() == 2)
         {
-            views.push_back(create_switcher_view(ws_views.back()));
+            views.push_back(create_switcher_view(views.back().view));
         }
 
         arrange_view(views[0], SWITCHER_POSITION_CENTER);
@@ -595,9 +574,6 @@ class WayfireSwitcher : public wf::per_output_plugin_instance_t, public wf::keyb
         {
             arrange_view(views[i], SWITCHER_POSITION_RIGHT);
         }
-
-        // We want the next view to be focused right off the bat
-        // wf::view_bring_to_front(views.front().view);
     }
 
     void dearrange()
@@ -636,11 +612,12 @@ class WayfireSwitcher : public wf::per_output_plugin_instance_t, public wf::keyb
                 // well
                 fading_view = nullptr;
             }
+
+            sv.attribs.timer.start();
         }
 
         background_dim.restart_with_end(1);
         background_dim_duration.start();
-        duration.start();
         active = false;
 
         /* Potentially restore view[0] if it was maximized */
@@ -702,7 +679,7 @@ class WayfireSwitcher : public wf::per_output_plugin_instance_t, public wf::keyb
                 wf::TRANSFORMER_3D, switcher_transformer);
         }
 
-        SwitcherView sw{duration};
+        SwitcherView sw{speed};
         sw.view     = view;
         sw.position = SWITCHER_POSITION_CENTER;
 
@@ -917,7 +894,6 @@ class WayfireSwitcher : public wf::per_output_plugin_instance_t, public wf::keyb
 
         rebuild_view_list();
         wf::view_bring_to_front(views.front().view);
-        duration.start();
     }
 
     int count_different_active_views()
