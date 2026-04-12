@@ -29,9 +29,27 @@ class command_buffer_t;
  */
 struct color_transform_t
 {
+    /**
+     * The transfer function describes how the color values should be interpreted when rendering the texture,
+     * and what corrections need to be applied when rendering them. Examples include gamma 2.2, srgb or
+     * linear encoding.
+     */
     wlr_color_transfer_function transfer_function = WLR_COLOR_TRANSFER_FUNCTION_SRGB;
+
+    /**
+     * Color primaries describe the color volume of the texture, i.e how the color values map to real colors.
+     * Examples: SRGB (default), BT.2020.
+     */
     wlr_color_named_primaries primaries = WLR_COLOR_NAMED_PRIMARIES_SRGB;
-    wlr_color_encoding color_encoding   = WLR_COLOR_ENCODING_NONE;
+
+    /**
+     * Color encoding for ycbcr textures, not used for rgb textures.
+     */
+    wlr_color_encoding color_encoding = WLR_COLOR_ENCODING_NONE;
+
+    /**
+     * Color range for ycbcr textures, not used for rgb textures.
+     */
     wlr_color_range color_range = WLR_COLOR_RANGE_NONE;
 
     bool operator ==(const color_transform_t& other) const;
@@ -41,6 +59,9 @@ struct color_transform_t
 /**
  * A wrapper around wlr_texture which ensures that the texture is kept alive as long as the wrapper object
  * is alive.
+ *
+ * It also provides some additional information about how the texture should be rendered, such as the source
+ * box, buffer transform, filter mode and color properties.
  */
 class texture_t : public wf::signal::provider_t
 {
@@ -53,20 +74,52 @@ class texture_t : public wf::signal::provider_t
         texture_t *self;
     };
 
-    // Getters and setters for source_box
+    /**
+     * Get the source box of the texture,
+     * i.e the subrectangle of the texture which should be used for rendering.
+     */
     std::optional<wlr_fbox> get_source_box() const;
+
+    /**
+     * Set the source box of the texture.
+     * If not set, the full texture should be used for rendering.
+     */
     void set_source_box(const std::optional<wlr_fbox>& box);
 
-    // Getters and setters for transform
+    /**
+     * Get the texture transform, defaults to WL_OUTPUT_TRANSFORM_NORMAL.
+     */
     wl_output_transform get_transform() const;
+
+    /**
+     * Set the texture transform.
+     * The texture transform can be used to specify additional rotation and flipping to apply to the texture
+     * when rendering it.
+     */
     void set_transform(wl_output_transform t);
 
-    // Getters and setters for filter_mode
+    /**
+     * Get the filter mode to use when rendering the texture (nearest or bilinear) at sizes which do not align
+     * perfectly with the texture pixels.
+     *
+     * If not set, the default filter mode of the renderer will be used.
+     */
     std::optional<wlr_scale_filter_mode> get_filter_mode() const;
+
+    /**
+     * Set the filter mode to use when rendering the texture at sizes different than the texture size.
+     */
     void set_filter_mode(const std::optional<wlr_scale_filter_mode>& mode);
 
-    // Getters and setters for color_transform
+    /**
+     * Get the color properties of the texture, which describes how the colors in the texture should be
+     * interpreted when rendering it. See @color_transform_t for details.
+     */
     color_transform_t get_color_transform() const;
+
+    /**
+     * Set the color properties of the texture, see @color_transform_t for details.
+     */
     void set_color_transform(const color_transform_t& ct);
 
     /**
