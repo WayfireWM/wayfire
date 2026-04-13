@@ -160,6 +160,11 @@ wf::geometry_t wf::output_t::get_layout_geometry() const
     }
 }
 
+float wf::output_t::get_scale() const
+{
+    return handle->scale;
+}
+
 void wf::output_t::ensure_pointer(bool center) const
 {
     auto ptr = wf::get_core().get_cursor_position();

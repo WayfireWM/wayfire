@@ -101,6 +101,11 @@ class output_t : public wf::object_base_t, public wf::signal::provider_t
     wf::geometry_t get_layout_geometry() const;
 
     /**
+     * Returns the current output scale.
+     */
+    float get_scale() const;
+
+    /**
      * Moves the pointer so that it is inside the output
      *
      * @param center If set to true, the pointer will be centered on the
