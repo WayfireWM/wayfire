@@ -10,6 +10,7 @@
     </option>
     <option name="scale" type="double">
       <default>1.0</default>
+      <min>0.1</min>
     </option>
     <option name="transform" type="string">
       <default>normal</default>
