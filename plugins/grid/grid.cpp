@@ -85,6 +85,16 @@ class wayfire_grid : public wf::plugin_interface_t, public wf::per_output_tracke
         return false;
     };
 
+    std::shared_ptr<wf::workspace_set_t> get_view_wset(wayfire_toplevel_view view)
+    {
+        if (auto parent = wf::find_topmost_parent(view))
+        {
+            return parent->get_wset();
+        }
+
+        return nullptr;
+    }
+
   public:
     void init() override
     {
@@ -127,8 +137,8 @@ class wayfire_grid : public wf::plugin_interface_t, public wf::per_output_tracke
             auto desired_size = wf::grid::get_slot_dimensions(ev->view->get_output(), new_slot_id);
             ev->view->get_data_safe<wf_grid_slot_data>()->slot = new_slot_id;
             ensure_grid_view(ev->view)->adjust_target_geometry(
-                adjust_for_workspace(ev->view->get_wset(), desired_size,
-                    ev->view->get_output()->wset()->get_current_workspace()),
+                adjust_for_workspace(get_view_wset(ev->view), desired_size,
+                    get_view_wset(ev->view)->get_current_workspace()),
                 ev->view->toplevel()->pending().tiled_edges);
             new_slot_id = wf::grid::slot_t::SLOT_NONE;
         }
@@ -250,7 +260,7 @@ class wayfire_grid : public wf::plugin_interface_t, public wf::per_output_tracke
         [=] (wf::view_tile_request_signal *data)
     {
         if (data->carried_out || (data->desired_size.width <= 0) || !data->view->get_output() ||
-            !data->view->get_wset() || !can_adjust_view(data->view))
+            !get_view_wset(data->view) || !can_adjust_view(data->view))
         {
             return;
         }
@@ -264,7 +274,7 @@ class wayfire_grid : public wf::plugin_interface_t, public wf::per_output_tracke
 
         data->view->get_data_safe<wf_grid_slot_data>()->slot = slot;
         ensure_grid_view(data->view)->adjust_target_geometry(
-            adjust_for_workspace(data->view->get_wset(), data->desired_size, data->workspace),
+            adjust_for_workspace(get_view_wset(data->view), data->desired_size, data->workspace),
             wf::grid::get_tiled_edges_for_slot(slot));
     };
 
@@ -273,7 +283,7 @@ class wayfire_grid : public wf::plugin_interface_t, public wf::per_output_tracke
     {
         static const std::string fs_data_name = "grid-saved-fs";
         if (data->carried_out || (data->desired_size.width <= 0) || !data->view->get_output() ||
-            !data->view->get_wset() || !can_adjust_view(data->view))
+            !get_view_wset(data->view) || !can_adjust_view(data->view))
         {
             return;
         }
@@ -293,7 +303,7 @@ class wayfire_grid : public wf::plugin_interface_t, public wf::per_output_tracke
 
         data->carried_out = true;
         ensure_grid_view(data->view)->adjust_target_geometry(
-            adjust_for_workspace(data->view->get_wset(), geom, data->workspace), edges);
+            adjust_for_workspace(get_view_wset(data->view), geom, data->workspace), edges);
     };
 
     wf::signal::connection_t<wf::view_tiled_signal> on_tiled = [=] (wf::view_tiled_signal *ev)
