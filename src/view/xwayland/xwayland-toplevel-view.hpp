@@ -106,9 +106,10 @@ class wayfire_xwayland_view : public wf::toplevel_view_interface_t, public wayfi
         // View workspace relative to current workspace
         if (main_view->get_wset())
         {
-            auto view_ws = main_view->get_wset()->get_view_main_workspace(main_view);
-            workarea.x += og.width * view_ws.x;
-            workarea.y += og.height * view_ws.y;
+            auto view_ws    = main_view->get_wset()->get_view_main_workspace(main_view);
+            auto current_ws = main_view->get_wset()->get_current_workspace();
+            workarea.x += og.width * (view_ws.x - current_ws.x);
+            workarea.y += og.height * (view_ws.y - current_ws.y);
         }
 
         // Ensure view remains visible
