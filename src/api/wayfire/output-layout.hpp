@@ -132,6 +132,13 @@ struct output_state_t
     double scale = 1.0;
     /* Whether or not adaptive sync is enabled */
     bool vrr = false;
+
+    /*
+     * Whether or not High Dynamic Range (HDR) is enabled for the output.
+     * Note that if HDR is enabled, the output render format should be a 10-bit format.
+     */
+    bool hdr = false;
+
     /* Output format bit depth */
     int depth = RENDER_BIT_DEPTH_DEFAULT;
 

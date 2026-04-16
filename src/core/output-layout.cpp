@@ -319,6 +319,7 @@ bool output_state_t::operator ==(const output_state_t& other) const
     eq &= (transform == other.transform);
     eq &= (scale == other.scale);
     eq &= (vrr == other.vrr);
+    eq &= (hdr == other.hdr);
     eq &= (depth == other.depth);
 
     return eq;
@@ -359,6 +360,7 @@ struct output_layout_output_t
     bool inhibited = false;
     std::map<int, std::vector<uint32_t>> formats_for_depth;
     int current_bit_depth = 0;
+    std::optional<bool> current_hdr_enabled;
 
     std::unique_ptr<wf::output_impl_t> output;
     wl_listener_wrapper on_destroy, on_commit, on_request_state;
@@ -369,6 +371,7 @@ struct output_layout_output_t
     wf::option_wrapper_t<double> scale_opt;
     wf::option_wrapper_t<std::string> transform_opt;
     wf::option_wrapper_t<bool> vrr_opt;
+    wf::option_wrapper_t<bool> hdr_opt;
     wf::option_wrapper_t<int> depth_opt;
 
     wf::option_wrapper_t<bool> use_ext_config{
@@ -382,6 +385,7 @@ struct output_layout_output_t
         scale_opt.load_option(config_section, "scale");
         transform_opt.load_option(config_section, "transform");
         vrr_opt.load_option(config_section, "vrr");
+        hdr_opt.load_option(config_section, "hdr");
         depth_opt.load_option(config_section, "depth");
     }
 
@@ -639,6 +643,7 @@ struct output_layout_output_t
         state.scale     = scale_opt;
         state.transform = get_transform_from_string(transform_opt);
         state.vrr   = vrr_opt;
+        state.hdr   = hdr_opt;
         state.depth = depth_opt;
         return state;
     }
@@ -773,9 +778,7 @@ struct output_layout_output_t
             /* Do not modeset if nothing changed */
             if ((handle->current_mode->width == mode.width) &&
                 (handle->current_mode->height == mode.height) &&
-                (handle->current_mode->refresh == mode.refresh) &&
-                ((handle->adaptive_sync_status == WLR_OUTPUT_ADAPTIVE_SYNC_ENABLED) == current_state.vrr) &&
-                (current_bit_depth == current_state.depth))
+                (handle->current_mode->refresh == mode.refresh))
             {
                 /* Commit the enabling of the output */
                 pending_state.commit(handle);
@@ -799,36 +802,93 @@ struct output_layout_output_t
         }
 
         pending_state.commit(handle);
+    }
 
+    void apply_vrr(bool want_vrr_enabled)
+    {
         const bool adaptive_sync_enabled = (handle->adaptive_sync_status == WLR_OUTPUT_ADAPTIVE_SYNC_ENABLED);
-
-        if (adaptive_sync_enabled != current_state.vrr)
+        if (adaptive_sync_enabled != want_vrr_enabled)
         {
             wlr_output_state_set_adaptive_sync_enabled(&pending_state.pending, current_state.vrr);
             if (pending_state.test_and_commit(handle))
             {
-                LOGD("Changed adaptive sync on output: ", handle->name, " to ", current_state.vrr);
+                LOGC(OUTPUT, "Changed adaptive sync on output: ", handle->name, " to ", current_state.vrr);
             } else
             {
                 LOGE("Failed to change adaptive sync on output: ", handle->name);
             }
         }
+    }
 
-        if (current_state.depth != current_bit_depth)
+    void apply_depth(int want_depth)
+    {
+        if (want_depth != current_bit_depth)
         {
-            for (auto fmt : formats_for_depth[current_state.depth])
+            for (auto fmt : formats_for_depth[want_depth])
             {
                 wlr_output_state_set_render_format(&pending_state.pending, fmt);
                 if (pending_state.test_and_commit(handle))
                 {
-                    current_bit_depth = current_state.depth;
-                    LOGD("Set output format to ", get_format_name(fmt), " on output ", handle->name);
+                    current_bit_depth = want_depth;
+                    LOGC(OUTPUT, "Set output format to ", get_format_name(fmt), " on output ", handle->name);
                     break;
                 }
 
-                LOGD("Failed to set output format ", get_format_name(fmt), " on output ", handle->name);
+                LOGW("Failed to set output format ", get_format_name(fmt), " on output ", handle->name);
             }
         }
+    }
+
+    void apply_hdr(bool want_hdr_enabled)
+    {
+        if (this->current_hdr_enabled.value_or(false) == want_hdr_enabled)
+        {
+            return;
+        }
+
+        const wlr_color_named_primaries primaries = WLR_COLOR_NAMED_PRIMARIES_BT2020;
+        const wlr_color_transfer_function tf = WLR_COLOR_TRANSFER_FUNCTION_ST2084_PQ;
+
+        if (!(handle->supported_primaries & primaries))
+        {
+            LOGE("Cannot enable HDR on output ", handle->name, ": BT2020 primaries not supported by output");
+            return;
+        }
+
+        if (!(handle->supported_transfer_functions & tf))
+        {
+            LOGE("Cannot enable HDR on output ", handle->name,
+                ": PQ transfer function not supported by output");
+            return;
+        }
+
+        if (!handle->renderer->features.output_color_transform)
+        {
+            LOGE("Cannot enable HDR on output ", handle->name,
+                ": renderer doesn't support output color transforms");
+            return;
+        }
+
+        if (current_hdr_enabled.value_or(false))
+        {
+            LOGC(OUTPUT, "Disabling HDR on output ", handle->name);
+            wlr_output_state_set_image_description(&pending_state.pending, NULL);
+            pending_state.commit(handle);
+        } else
+        {
+            LOGC(OUTPUT, "Enabling HDR on output ", handle->name);
+            const wlr_output_image_description image_desc = {
+                .primaries = primaries,
+                .transfer_function = tf,
+                .mastering_display_primaries = {},
+                .mastering_luminance = {},
+                .max_cll  = 0,
+                .max_fall = 0,
+            };
+            wlr_output_state_set_image_description(&pending_state.pending, &image_desc);
+        }
+
+        current_hdr_enabled = want_hdr_enabled;
     }
 
     /* Mirroring implementation */
@@ -1066,6 +1126,9 @@ struct output_layout_output_t
 
         set_enabled(!(state.source & OUTPUT_IMAGE_SOURCE_NONE));
         apply_mode(state.mode, state.uses_custom_mode);
+        apply_vrr(state.vrr);
+        apply_depth(state.depth);
+        apply_hdr(state.hdr);
 
         if (state.source & OUTPUT_IMAGE_SOURCE_SELF)
         {
@@ -1660,6 +1723,7 @@ class output_layout_t::impl
             LOGC(OUTPUT, "\t  scale: ", entry.second.scale);
             LOGC(OUTPUT, "\t  transform: ", layout_detail::wl_transform_to_string(entry.second.transform));
             LOGC(OUTPUT, "\t  vrr: ", entry.second.vrr);
+            LOGC(OUTPUT, "\t  hdr: ", entry.second.hdr);
             LOGC(OUTPUT, "\t  depth: ", entry.second.depth);
         }
 
