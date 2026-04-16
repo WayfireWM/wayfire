@@ -58,3 +58,9 @@ void wf::xw::xwayland_surface_node_t::apply_state(scene::surface_state_t&& state
 
     wlr_surface_node_t::apply_state(std::move(state));
 }
+
+std::optional<wf::scene::input_node_t> wf::xw::xwayland_surface_node_t::find_node_at(const wf::pointf_t& at)
+{
+    auto local = to_local(at);
+    return wlr_surface_node_t::find_node_at(local);
+}

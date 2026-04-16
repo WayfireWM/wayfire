@@ -19,6 +19,7 @@ class xwayland_surface_node_t : public wf::scene::wlr_surface_node_t
     std::string stringify() const override;
     wf::pointf_t to_local(const wf::pointf_t& point) override;
     wf::pointf_t to_global(const wf::pointf_t& point) override;
+    std::optional<wf::scene::input_node_t> find_node_at(const wf::pointf_t& at) override;
     void apply_state(scene::surface_state_t&& state) override;
 
     void set_scale(float scale);
