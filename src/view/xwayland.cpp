@@ -347,3 +347,64 @@ wl_client*wf::xwayland_get_client()
     return nullptr;
 #endif
 }
+
+#if WF_HAS_XWAYLAND
+static void update_xwayland_cursor_surface_scale(wlr_surface *surface, int32_t scale)
+{
+    if (!surface || (scale <= 0))
+    {
+        return;
+    }
+
+    surface->current.scale = scale;
+
+    int width  = surface->current.buffer_width;
+    int height = surface->current.buffer_height;
+    wlr_output_transform_coords(surface->current.transform, &width, &height);
+
+    width  /= scale;
+    height /= scale;
+
+    surface->current.width  = width;
+    surface->current.height = height;
+}
+
+#endif
+
+void wf::xwayland_adjust_cursor(wlr_surface *cursor_surface)
+{
+#if WF_HAS_XWAYLAND
+    if (wl_resource_get_client(cursor_surface->resource) == wf::xwayland_get_client())
+    {
+        static wf::option_wrapper_t<bool> force_xwayland_scaling{"workarounds/force_xwayland_scaling"};
+        static wf::wl_listener_wrapper on_cursor_destroy;
+        static wf::wl_listener_wrapper on_cursor_commit;
+        static wlr_surface *last_cursor_surface = nullptr;
+
+        if (force_xwayland_scaling && (last_cursor_surface != cursor_surface))
+        {
+            on_cursor_destroy.set_callback([] (void*)
+            {
+                on_cursor_destroy.disconnect();
+                on_cursor_commit.disconnect();
+                last_cursor_surface = nullptr;
+            });
+
+            on_cursor_commit.set_callback([] (void*)
+            {
+                auto& ol = wf::get_core().output_layout;
+                auto wo  = ol->find_closest_output(wf::get_core().get_cursor_position());
+                update_xwayland_cursor_surface_scale(last_cursor_surface, wo->handle->scale);
+            });
+
+            on_cursor_destroy.connect(&cursor_surface->events.destroy);
+            on_cursor_commit.connect(&cursor_surface->events.commit);
+            last_cursor_surface = cursor_surface;
+            on_cursor_commit.emit(NULL);
+        }
+    }
+
+#else
+    (void)cursor_surface;
+#endif
+}

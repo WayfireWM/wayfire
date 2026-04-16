@@ -236,6 +236,11 @@ void wf::cursor_t::set_cursor(
         }
     }
 
+    if (ev->surface)
+    {
+        wf::xwayland_adjust_cursor(ev->surface);
+    }
+
     wlr_cursor_set_surface(cursor, ev->surface, ev->hotspot_x, ev->hotspot_y);
 
     last_cursor_name.clear();
