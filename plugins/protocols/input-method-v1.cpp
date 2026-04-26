@@ -441,6 +441,11 @@ class wayfire_input_method_v1_panel_surface
 
             on_surface_destroy.disconnect();
             on_surface_commit.disconnect();
+
+            if (resource)
+            {
+                wl_resource_destroy(resource);
+            }
         });
         on_surface_destroy.connect(&surface->events.destroy);
     }
