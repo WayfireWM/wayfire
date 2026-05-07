@@ -99,9 +99,9 @@ static std::map<std::string, wl_output_transform> output_transforms = {
     {"270_flipped", WL_OUTPUT_TRANSFORM_FLIPPED_270},
 };
 
-static wl_output_transform get_transform_from_string(std::string transform)
+wl_output_transform wf::layout_detail::get_transform_from_string(std::string_view transform)
 {
-    auto it = output_transforms.find(transform);
+    auto it = output_transforms.find(std::string{transform});
     if (it != output_transforms.end())
     {
         return it->second;
@@ -145,6 +145,119 @@ std::string_view wf::layout_detail::get_output_source_name(output_image_source_t
     }
 
     return "unknown";
+}
+
+wf::geometry_t wf::layout_detail::calculate_output_geometry(const output_state_t& state)
+{
+    wf::geometry_t geometry = {
+        state.position.get_x(),
+        state.position.get_y(),
+        (int32_t)(state.mode.width / state.scale),
+        (int32_t)(state.mode.height / state.scale),
+    };
+
+    if (state.transform & 1)
+    {
+        std::swap(geometry.width, geometry.height);
+    }
+
+    return geometry;
+}
+
+std::vector<wf::geometry_t> wf::layout_detail::calculate_fixed_geometries(
+    const output_configuration_t& config)
+{
+    std::vector<wf::geometry_t> geometries;
+    for (auto& entry : config)
+    {
+        if (!(entry.second.source & OUTPUT_IMAGE_SOURCE_SELF) ||
+            entry.second.position.is_automatic_position())
+        {
+            continue;
+        }
+
+        geometries.push_back(calculate_output_geometry(entry.second));
+    }
+
+    return geometries;
+}
+
+bool wf::layout_detail::has_overlapping_outputs(const output_configuration_t& config)
+{
+    auto geometries = calculate_fixed_geometries(config);
+    for (size_t i = 0; i < geometries.size(); i++)
+    {
+        for (size_t j = i + 1; j < geometries.size(); j++)
+        {
+            if (geometries[i] & geometries[j])
+            {
+                return true;
+            }
+        }
+    }
+
+    return false;
+}
+
+bool wf::layout_detail::all_outputs_disabled(const output_configuration_t& config)
+{
+    int count_enabled = 0;
+    for (auto& entry : config)
+    {
+        if (entry.second.source & OUTPUT_IMAGE_SOURCE_SELF)
+        {
+            ++count_enabled;
+        }
+    }
+
+    return count_enabled == 0;
+}
+
+bool wf::layout_detail::are_rectangles_touching(const wf::geometry_t& a, const wf::geometry_t& b)
+{
+    return !(a.x + a.width < b.x || a.y + a.height < b.y ||
+        b.x + b.width < a.x || b.y + b.height < a.y);
+}
+
+bool wf::layout_detail::has_disjoint_outputs(const output_configuration_t& config)
+{
+    auto geometries = calculate_fixed_geometries(config);
+    if (geometries.empty())
+    {
+        return false;
+    }
+
+    std::vector<std::vector<int>> graph(geometries.size());
+    for (size_t i = 0; i < geometries.size(); i++)
+    {
+        for (size_t j = i + 1; j < geometries.size(); j++)
+        {
+            if (are_rectangles_touching(geometries[i], geometries[j]))
+            {
+                graph[i].push_back(j);
+                graph[j].push_back(i);
+            }
+        }
+    }
+
+    std::vector<int> visited(geometries.size(), 0);
+    std::function<void(int)> dfs;
+    dfs = [&] (int u)
+    {
+        if (visited[u] == 1)
+        {
+            return;
+        }
+
+        visited[u] = 1;
+        for (int v : graph[u])
+        {
+            dfs(v);
+        }
+    };
+
+    dfs(0);
+    return *std::min_element(visited.begin(), visited.end()) == 0;
 }
 
 wlr_output_mode *find_matching_mode(wlr_output *output,
@@ -193,7 +306,7 @@ wlr_output_mode *find_matching_mode(wlr_output *output,
 }
 
 // from rootston
-static bool parse_modeline(const char *modeline, drmModeModeInfo & mode)
+bool wf::layout_detail::parse_modeline(const char *modeline, drmModeModeInfo & mode)
 {
     char hsync[16];
     char vsync[16];
@@ -641,7 +754,7 @@ struct output_layout_output_t
         }
 
         state.scale     = scale_opt;
-        state.transform = get_transform_from_string(transform_opt);
+        state.transform = layout_detail::get_transform_from_string(std::string{transform_opt});
         state.vrr   = vrr_opt;
         state.hdr   = hdr_opt;
         state.depth = depth_opt;
@@ -735,7 +848,7 @@ struct output_layout_output_t
 
         added_custom_modes.insert(modeline);
         drmModeModeInfo *mode = new drmModeModeInfo;
-        if (!parse_modeline(modeline.c_str(), *mode))
+        if (!layout_detail::parse_modeline(modeline.c_str(), *mode))
         {
             LOGE("invalid modeline ", modeline, " in config file");
 
@@ -1522,129 +1635,39 @@ class output_layout_t::impl
      * Calculate the output layout geometry for the state.
      * The state represents a non-automatically positioned enabled output.
      */
-    wf::geometry_t calculate_geometry_from_state(
-        const output_state_t& state) const
+    wf::geometry_t calculate_geometry_from_state(const output_state_t& state) const
     {
-        wf::geometry_t geometry = {
-            state.position.get_x(),
-            state.position.get_y(),
-            (int32_t)(state.mode.width / state.scale),
-            (int32_t)(state.mode.height / state.scale),
-        };
-
-        if (state.transform & 1)
-        {
-            std::swap(geometry.width, geometry.height);
-        }
-
-        return geometry;
+        return layout_detail::calculate_output_geometry(state);
     }
 
     /** @return A list of geometries of fixed position outputs. */
-    std::vector<wf::geometry_t> calculate_fixed_geometries(
-        const output_configuration_t& config)
+    std::vector<wf::geometry_t> calculate_fixed_geometries(const output_configuration_t& config)
     {
-        std::vector<wf::geometry_t> geometries;
-        for (auto& entry : config)
-        {
-            if (!(entry.second.source & OUTPUT_IMAGE_SOURCE_SELF) ||
-                entry.second.position.is_automatic_position())
-            {
-                continue;
-            }
-
-            geometries.push_back(calculate_geometry_from_state(entry.second));
-        }
-
-        return geometries;
+        return layout_detail::calculate_fixed_geometries(config);
     }
 
     /** @return true if there are overlapping outputs */
     bool test_overlapping_outputs(const output_configuration_t& config)
     {
-        auto geometries = calculate_fixed_geometries(config);
-        for (size_t i = 0; i < geometries.size(); i++)
-        {
-            for (size_t j = i + 1; j < geometries.size(); j++)
-            {
-                if (geometries[i] & geometries[j])
-                {
-                    return true;
-                }
-            }
-        }
-
-        return false;
+        return layout_detail::has_overlapping_outputs(config);
     }
 
     /** @return true if all outputs are disabled. */
     bool test_all_disabled_outputs(const output_configuration_t& config)
     {
-        int count_enabled = 0;
-        for (auto& entry : config)
-        {
-            if (entry.second.source & OUTPUT_IMAGE_SOURCE_SELF)
-            {
-                ++count_enabled;
-            }
-        }
-
-        return count_enabled == 0;
+        return layout_detail::all_outputs_disabled(config);
     }
 
     /* @return true if rectangles have a common interior or border point. */
     bool rectangles_touching(const wf::geometry_t& a, const wf::geometry_t& b)
     {
-        return !(a.x + a.width < b.x || a.y + a.height < b.y ||
-            b.x + b.width < a.x || b.y + b.height < a.y);
+        return layout_detail::are_rectangles_touching(a, b);
     }
 
     /** @return true if fixed position outputs do not form a continuous space */
     bool test_disjoint_outputs(const output_configuration_t& config)
     {
-        auto geometries = calculate_fixed_geometries(config);
-        if (geometries.empty())
-        {
-            /* Not disjoint */
-            return false;
-        }
-
-        /* Create graph with a vertex for each rectangle.
-         * Configuration is disjoint iff the graph has more than one component */
-        std::vector<std::vector<int>> graph(geometries.size());
-        for (size_t i = 0; i < geometries.size(); i++)
-        {
-            for (size_t j = i + 1; j < geometries.size(); j++)
-            {
-                if (rectangles_touching(geometries[i], geometries[j]))
-                {
-                    graph[i].push_back(j);
-                    graph[j].push_back(i);
-                }
-            }
-        }
-
-        /* Do a depth-first-search */
-        std::vector<int> visited(geometries.size(), 0);
-        std::function<void(int)> dfs;
-        dfs = [&] (int u)
-        {
-            if (visited[u] == 1)
-            {
-                return;
-            }
-
-            visited[u] = 1;
-            for (int v : graph[u])
-            {
-                dfs(v);
-            }
-        };
-
-        dfs(0);
-
-        // If we have a zero somewhere it means the vertex was not reached
-        return *std::min_element(visited.begin(), visited.end()) == 0;
+        return layout_detail::has_disjoint_outputs(config);
     }
 
     /** Check whether the given configuration can be applied */
