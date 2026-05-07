@@ -4,3 +4,10 @@ geometry_test = executable(
     dependencies: libwayfire,
     install: false)
 test('Geometry test', geometry_test)
+
+region_test = executable(
+    'region_test',
+    'region_test.cpp',
+    dependencies: libwayfire,
+    install: false)
+test('Region test', region_test)
