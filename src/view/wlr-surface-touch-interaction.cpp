@@ -18,21 +18,29 @@ class wlr_surface_touch_interaction_t final : public wf::touch_interaction_t
     }
 
     void handle_touch_down(uint32_t time_ms, int finger_id,
-        wf::pointf_t local) override
+        wf::pointf_t local, input_grab_kind_t grab = input_grab_kind_t::NONE) override
     {
         auto& seat = wf::get_core_impl().seat;
+        LOGC(POINTER, "notify touch down to ", surface,
+            " finger=", finger_id,
+            " local=", local.x, ",", local.y,
+            " grab=", (int)grab);
         seat->priv->last_press_release_serial =
             wlr_seat_touch_notify_down(seat->seat, surface, time_ms, finger_id, local.x, local.y);
 
-        if (!seat->priv->drag_active)
+        if ((grab == input_grab_kind_t::NONE) && !seat->priv->drag_active)
         {
             wf::xwayland_bring_to_front(surface);
         }
     }
 
-    void handle_touch_up(uint32_t time_ms, int finger_id, wf::pointf_t) override
+    void handle_touch_up(uint32_t time_ms, int finger_id, wf::pointf_t,
+        input_grab_kind_t grab = input_grab_kind_t::NONE) override
     {
         auto& seat = wf::get_core_impl().seat;
+        LOGC(POINTER, "notify touch up to ", surface,
+            " finger=", finger_id,
+            " grab=", (int)grab);
         wlr_seat_touch_notify_up(seat->seat, time_ms, finger_id);
         // FIXME: wlroots does not give us the serial for touch up yet, so we just reset it to something
         // invalid.
@@ -40,29 +48,40 @@ class wlr_surface_touch_interaction_t final : public wf::touch_interaction_t
     }
 
     void handle_touch_motion(uint32_t time_ms, int finger_id,
-        wf::pointf_t local) override
+        wf::pointf_t local, input_grab_kind_t grab = input_grab_kind_t::NONE) override
     {
         auto& seat = wf::get_core_impl().seat;
-        if (seat->priv->drag_active)
+        if (grab == input_grab_kind_t::DND)
         {
-            auto gc    = wf::get_core().get_touch_position(finger_id);
-            auto node  = wf::get_core().scene()->find_node_at(gc);
-            auto snode = node ? dynamic_cast<scene::wlr_surface_node_t*>(node->node.get()) : nullptr;
-            if (snode && snode->get_surface())
+            auto point = wlr_seat_touch_get_point(seat->seat, finger_id);
+            if (!point || (point->surface != surface))
             {
-                wlr_seat_touch_point_focus(seat->seat, snode->get_surface(), time_ms, finger_id,
-                    node->local_coords.x, node->local_coords.y);
-                wlr_seat_touch_notify_motion(seat->seat, time_ms, finger_id,
-                    node->local_coords.x, node->local_coords.y);
-            } else
-            {
-                wlr_seat_touch_notify_clear_focus(seat->seat, time_ms, finger_id);
+                LOGC(POINTER, "refocus touch point on DnD motion for ", surface,
+                    " finger=", finger_id,
+                    " local=", local.x, ",", local.y,
+                    " point_surface=", point ? point->surface : nullptr);
+                wlr_seat_touch_point_focus(seat->seat, surface, time_ms,
+                    finger_id, local.x, local.y);
             }
-
-            return;
         }
 
+        LOGC(POINTER, "notify touch motion to ", surface,
+            " finger=", finger_id,
+            " local=", local.x, ",", local.y,
+            " grab=", (int)grab);
         wlr_seat_touch_notify_motion(seat->seat, time_ms, finger_id, local.x, local.y);
+    }
+
+    bool can_retarget_touch_grab(input_grab_kind_t kind,
+        nonstd::observer_ptr<scene::node_t> new_target, int,
+        wf::pointf_t) override
+    {
+        if ((kind != input_grab_kind_t::DND) || !new_target)
+        {
+            return false;
+        }
+
+        return dynamic_cast<scene::wlr_surface_node_t*>(new_target.get()) != nullptr;
     }
 };
 }

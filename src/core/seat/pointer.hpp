@@ -123,12 +123,19 @@ class pointer_t
     /** Check whether an implicit grab should start/end */
     void check_implicit_grab();
 
-    /** Implicitly grabbed node when a button is being held */
-    wf::scene::node_ptr grabbed_node = nullptr;
+    /** The node currently receiving pointer grab events, if any. */
+    wf::scene::node_ptr grabbed_node    = nullptr;
+    input_grab_kind_t current_grab_kind = input_grab_kind_t::NONE;
 
     /** Set the currently grabbed node
      * @param node The node to be grabbed, or nullptr to reset grab */
     void grab_surface(wf::scene::node_ptr node);
+    void set_grab(wf::scene::node_ptr node, input_grab_kind_t kind);
+    input_grab_kind_t get_current_grab_kind() const;
+
+    bool maybe_retarget_grab(nonstd::observer_ptr<wf::scene::node_t> new_focus,
+        input_grab_kind_t kind);
+    void retarget_grab(wf::scene::node_ptr node, input_grab_kind_t kind);
 
     /** Send a button event to the currently active receiver, i.e to the
      * active input grab(if any), or to the focused surface */

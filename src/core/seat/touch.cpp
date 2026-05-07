@@ -142,6 +142,22 @@ wf::scene::node_ptr wf::touch_interface_t::get_focus(int finger_id) const
     return (it == focus.end() ? nullptr : it->second);
 }
 
+wf::input_grab_kind_t wf::touch_interface_t::get_current_grab_kind(int32_t id) const
+{
+    auto it = focus_grab_kind.find(id);
+    if (it == focus_grab_kind.end())
+    {
+        return input_grab_kind_t::NONE;
+    }
+
+    if ((it->second == input_grab_kind_t::NONE) && wf::get_core_impl().seat->priv->drag_active)
+    {
+        return input_grab_kind_t::DND;
+    }
+
+    return it->second;
+}
+
 void wf::touch_interface_t::add_touch_gesture(
     nonstd::observer_ptr<touch::gesture_t> gesture)
 {
@@ -166,14 +182,20 @@ void wf::touch_interface_t::set_touch_focus(wf::scene::node_ptr node,
 
     if (focus[id])
     {
-        focus[id]->touch_interaction().handle_touch_up(time, id, point);
+        auto kind = get_current_grab_kind(id);
+        focus[id]->touch_interaction().handle_touch_up(time, id, point,
+            kind);
     }
 
     focus[id] = node;
     if (node)
     {
         auto local = get_node_local_coords(node.get(), point);
-        node->touch_interaction().handle_touch_down(time, id, local);
+        node->touch_interaction().handle_touch_down(time, id, local,
+            get_current_grab_kind(id));
+    } else
+    {
+        focus_grab_kind.erase(id);
     }
 
     wf::touch_focus_changed_signal ev;
@@ -191,10 +213,17 @@ void wf::touch_interface_t::transfer_grab(scene::node_ptr grab_node)
         {
             const auto lift_off_position = finger_state.fingers[id].current;
             focused_node->touch_interaction().handle_touch_up(get_current_time(), id,
-                {lift_off_position.x, lift_off_position.y});
+                {lift_off_position.x, lift_off_position.y}, get_current_grab_kind(id));
         }
 
         focused_node = new_focus;
+        if (new_focus)
+        {
+            focus_grab_kind[id] = input_grab_kind_t::EXPLICIT;
+        } else
+        {
+            focus_grab_kind.erase(id);
+        }
     }
 }
 
@@ -243,6 +272,7 @@ void wf::touch_interface_t::handle_touch_down(int32_t id, uint32_t time,
         return;
     }
 
+    focus_grab_kind[id] = input_grab_kind_t::NONE;
     auto focus = this->surface_at(point);
     set_touch_focus(focus, id, time, point);
 
@@ -272,10 +302,37 @@ void wf::touch_interface_t::handle_touch_motion(int32_t id, uint32_t time,
         finger_state.update(gesture_event);
     }
 
+    auto kind = get_current_grab_kind(id);
+
+    if ((kind != input_grab_kind_t::NONE) && focus[id])
+    {
+        auto hovered = this->surface_at(point);
+        if (hovered && (hovered != focus[id]) &&
+            focus[id]->touch_interaction().can_retarget_touch_grab(
+                kind, hovered.get(), id, point))
+        {
+            if (kind == input_grab_kind_t::DND)
+            {
+                focus[id] = hovered;
+            } else
+            {
+                auto old_focus = focus[id];
+                auto old_local = get_node_local_coords(old_focus.get(), point);
+                old_focus->touch_interaction().handle_touch_up(
+                    time, id, old_local, kind);
+
+                focus[id] = hovered;
+                auto new_local = get_node_local_coords(focus[id].get(), point);
+                focus[id]->touch_interaction().handle_touch_down(
+                    time, id, new_local, kind);
+            }
+        }
+    }
+
     if (focus[id])
     {
         auto local = get_node_local_coords(focus[id].get(), point);
-        focus[id]->touch_interaction().handle_touch_motion(time, id, local);
+        focus[id]->touch_interaction().handle_touch_motion(time, id, local, kind);
     }
 
     auto& seat = wf::get_core_impl().seat;

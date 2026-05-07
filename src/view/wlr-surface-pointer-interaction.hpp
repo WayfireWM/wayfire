@@ -10,6 +10,9 @@
 #include "wayfire/util.hpp"
 #include "wayfire/unstable/wlr-surface-controller.hpp"
 #include "wayfire/unstable/wlr-surface-node.hpp"
+#include <array>
+
+#include "xdg-shell.hpp"
 
 namespace wf
 {
@@ -20,6 +23,55 @@ class wlr_surface_pointer_interaction_t final : public wf::pointer_interaction_t
     wf::wl_listener_wrapper constraint_destroyed;
 
     scene::node_t *self;
+
+    wf::view_interface_t *get_view() const
+    {
+        if (!self)
+        {
+            return nullptr;
+        }
+
+        return wf::node_to_view(self->shared_from_this()).get();
+    }
+
+    static wf::view_interface_t *get_popup_grab_root(wf::view_interface_t *view)
+    {
+        wf::view_interface_t *current = view;
+        while (auto as_popup = dynamic_cast<wayfire_xdg_popup*>(current))
+        {
+            auto parent = as_popup->popup_parent.lock();
+            if (!parent)
+            {
+                break;
+            }
+
+            current = parent.get();
+        }
+
+        return current;
+    }
+
+    bool can_retarget_implicit_popup_grab(nonstd::observer_ptr<scene::node_t> new_target) const
+    {
+        auto current_view = get_view();
+        if (!current_view)
+        {
+            return false;
+        }
+
+        auto new_view = wf::node_to_view(new_target.get());
+        if (!new_view)
+        {
+            return false;
+        }
+
+        if (new_view.get() == current_view)
+        {
+            return false;
+        }
+
+        return get_popup_grab_root(current_view) == get_popup_grab_root(new_view.get());
+    }
 
     // From position relative to current focus to global scene coordinates
     wf::pointf_t get_absolute_position_from_relative(wf::pointf_t relative)
@@ -187,14 +239,17 @@ class wlr_surface_pointer_interaction_t final : public wf::pointer_interaction_t
         self->connect(&on_recheck_constraints);
     }
 
-    void handle_pointer_button(const wlr_pointer_button_event& event) final
+    void handle_pointer_button(const wlr_pointer_button_event& event,
+        input_grab_kind_t grab = input_grab_kind_t::NONE) final
     {
         auto& seat = wf::get_core_impl().seat;
-        bool drag_was_active = seat->priv->drag_active;
         seat->priv->last_press_release_serial = wlr_seat_pointer_notify_button(seat->seat,
             event.time_msec, event.button, event.state);
+        LOGC(POINTER, "notify button to ", surface, " state=", event.state,
+            " button=", event.button, " grab=", (int)grab,
+            " serial=", seat->priv->last_press_release_serial);
 
-        if (drag_was_active != seat->priv->drag_active)
+        if (grab == input_grab_kind_t::DND)
         {
             // Drag and drop ended. We should refocus the current surface, if we
             // still have focus, because we have set the wlroots focus in a
@@ -209,29 +264,77 @@ class wlr_surface_pointer_interaction_t final : public wf::pointer_interaction_t
         }
     }
 
-    void handle_pointer_enter(wf::pointf_t local) final
+    void handle_pointer_enter(wf::pointf_t local,
+        input_grab_kind_t grab = input_grab_kind_t::NONE) final
     {
         auto seat = wf::get_core_impl().get_current_seat();
+        std::array<wlr_seat_pointer_button, WLR_POINTER_BUTTONS_CAP> saved_buttons = {};
+        auto saved_button_count = seat->pointer_state.button_count;
+        std::copy_n(seat->pointer_state.buttons, saved_button_count, saved_buttons.begin());
+        LOGC(POINTER, "notify enter to ", surface,
+            " local=", local.x, ",", local.y,
+            " grab=", (int)grab,
+            " focused_before=", seat->pointer_state.focused_surface,
+            " buttons=", saved_button_count);
         wlr_seat_pointer_notify_enter(seat, surface, local.x, local.y);
 
-        _check_activate_constraint();
-        wf::xwayland_bring_to_front(surface);
-        wf::get_core().connect(&on_pointer_motion);
-    }
-
-    void handle_pointer_motion(wf::pointf_t local, uint32_t time_ms) final
-    {
-        auto& seat = wf::get_core_impl().seat;
-        if (seat->priv->drag_active)
+        if ((grab == input_grab_kind_t::IMPLICIT) || (grab == input_grab_kind_t::DND))
         {
-            // Special mode: when drag-and-drop is active, we get an implicit
-            // grab on the originating node. So, the original node receives all
-            // possible events. It then needs to make sure that the correct node
-            // receives the event.
-            handle_motion_dnd(time_ms);
-            return;
+            std::copy_n(saved_buttons.begin(), saved_button_count,
+                seat->pointer_state.buttons);
+            seat->pointer_state.button_count = saved_button_count;
+            LOGC(POINTER, "restore pressed state after enter for ", surface,
+                " button_count=", saved_button_count,
+                " grab=", (int)grab);
         }
 
+        if ((grab == input_grab_kind_t::NONE) || (grab == input_grab_kind_t::IMPLICIT))
+        {
+            _check_activate_constraint();
+            wf::xwayland_bring_to_front(surface);
+            wf::get_core().connect(&on_pointer_motion);
+        }
+    }
+
+    bool can_retarget_pointer_grab(input_grab_kind_t kind,
+        nonstd::observer_ptr<scene::node_t> new_target, wf::pointf_t) final
+    {
+        if (!new_target)
+        {
+            return false;
+        }
+
+        if (kind == input_grab_kind_t::DND)
+        {
+            return dynamic_cast<scene::wlr_surface_node_t*>(new_target.get()) != nullptr;
+        }
+
+        if (kind != input_grab_kind_t::IMPLICIT)
+        {
+            return false;
+        }
+
+        return can_retarget_implicit_popup_grab(new_target);
+    }
+
+    void handle_pointer_motion(wf::pointf_t local, uint32_t time_ms,
+        input_grab_kind_t grab = input_grab_kind_t::NONE) final
+    {
+        auto& seat = wf::get_core_impl().seat;
+        if ((grab == input_grab_kind_t::DND) &&
+            (seat->seat->pointer_state.focused_surface != surface))
+        {
+            LOGC(POINTER, "re-enter on DnD motion for ", surface,
+                " local=", local.x, ",", local.y,
+                " focused_before=", seat->seat->pointer_state.focused_surface);
+            handle_pointer_enter(local, grab);
+        }
+
+        LOGC(POINTER, "notify motion to ", surface,
+            " local=", local.x, ",", local.y,
+            " time=", time_ms,
+            " grab=", (int)grab,
+            " focused=", seat->seat->pointer_state.focused_surface);
         wlr_seat_pointer_notify_motion(seat->seat, time_ms, local.x, local.y);
     }
 
@@ -242,35 +345,26 @@ class wlr_surface_pointer_interaction_t final : public wf::pointer_interaction_t
             ev.delta, ev.delta_discrete, ev.source, WL_POINTER_AXIS_RELATIVE_DIRECTION_IDENTICAL);
     }
 
-    void handle_pointer_leave() final
+    void handle_pointer_leave(input_grab_kind_t grab = input_grab_kind_t::NONE) final
     {
         auto seat = wf::get_core_impl().get_current_seat();
-        if (seat->pointer_state.focused_surface == surface)
+        if ((grab == input_grab_kind_t::NONE) &&
+            (seat->pointer_state.focused_surface == surface))
         {
             // We defocus only if our surface is still focused on the seat.
+            LOGC(POINTER, "notify clear focus from ", surface,
+                " grab=", (int)grab);
             wlr_seat_pointer_notify_clear_focus(seat);
+        } else
+        {
+            LOGC(POINTER, "skip clear focus from ", surface,
+                " grab=", (int)grab,
+                " focused=", seat->pointer_state.focused_surface);
         }
 
         _warp_to_cursor_hint();
         _reset_constraint();
         on_pointer_motion.disconnect();
-    }
-
-    // ---------------------------- DnD implementation ---------------------- */
-    void handle_motion_dnd(uint32_t time_ms)
-    {
-        _reset_constraint();
-        auto seat  = wf::get_core().get_current_seat();
-        auto gc    = wf::get_core().get_cursor_position();
-        auto node  = wf::get_core().scene()->find_node_at(gc);
-        auto snode = node ? dynamic_cast<scene::wlr_surface_node_t*>(node->node.get()) : nullptr;
-        if (snode && snode->get_surface())
-        {
-            wlr_seat_pointer_notify_enter(seat, snode->get_surface(),
-                node->local_coords.x, node->local_coords.y);
-            wlr_seat_pointer_notify_motion(seat, time_ms,
-                node->local_coords.x, node->local_coords.y);
-        }
     }
 };
 }

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <wayfire/nonstd/wlroots.hpp>
+#include <wayfire/nonstd/observer_ptr.h>
 #include <wayfire/geometry.hpp>
 #include <wayfire/region.hpp>
 #include <optional>
@@ -14,6 +15,36 @@ namespace scene
 class node_t;
 using node_ptr = std::shared_ptr<node_t>;
 }
+
+/**
+ * Describes why input is delivered to a node even when another node may be
+ * under the pointer/touch position.
+ */
+enum class input_grab_kind_t
+{
+    /**
+     * No grab is active. Events are delivered to the node under the pointer/touch position.
+     */
+    NONE,
+    /**
+     * An implicit grab started by core after a node consumed a press/down event. Further events are normally
+     * kept on the same node until the interaction ends, but the grab may be retargeted if
+     * can_retarget_*_grab() allows it.
+     */
+    IMPLICIT,
+    /**
+     * Input delivery while a drag-and-drop operation is active. The grab started when the drag-and-drop
+     * operation started, and typically ends when the user releases the button or lifts the finger, or when
+     * the drag-and-drop operation is cancelled.
+     */
+    DND,
+    /**
+     * A node or protocol explicitly requested exclusive delivery of the ongoing interaction. The grab started
+     * when the node/protocol requested it, and typically ends when the user releases the button or lifts the
+     * finger, or when the grab is cancelled by the node/protocol.
+     */
+    EXPLICIT,
+};
 
 /**
  * When refocusing on a particular output, there may be multiple nodes
@@ -126,10 +157,47 @@ class pointer_interaction_t
     {}
 
     /**
+     * The pointer entered the node and thus the node gains pointer focus.
+     *
+     * @param grab Describes whether this enter is part of normal focus updates
+     *   or the result of an ongoing grab being delivered to this node.
+     */
+    virtual void handle_pointer_enter(wf::pointf_t position,
+        input_grab_kind_t grab)
+    {
+        handle_pointer_enter(position);
+    }
+
+    /**
      * Notify a node that it no longer has pointer focus.
      * This event is always sent after a corresponding pointer_enter event.
      */
     virtual void handle_pointer_leave()
+    {}
+
+    /**
+     * Notify a node that it no longer has pointer focus.
+     * This event is always sent after a corresponding pointer_enter event.
+     *
+     * @param grab Describes whether this leave is part of normal focus updates
+     *   or the result of an ongoing grab moving away from this node.
+     */
+    virtual void handle_pointer_leave(input_grab_kind_t grab)
+    {
+        handle_pointer_leave();
+    }
+
+    /**
+     * Handle a button press or release event.
+     *
+     * When a node consumes a button event, core starts an *implicit grab* for it. This has the effect that
+     * all subsequent input events are forwarded to that node, until all buttons are released. Thus, a node is
+     * guaranteed to always receive matching press and release events, except when it explicitly opts out via
+     * the RAW_INPUT node flag.
+     *
+     * @param button The wlr event describing the event.
+     */
+    virtual void handle_pointer_button(const wlr_pointer_button_event& event)
     {}
 
     /**
@@ -140,12 +208,17 @@ class pointer_interaction_t
      * guaranteed to always receive matching press and release events, except when it explicitly opts out via
      * the RAW_INPUT node flag.
      *
-     * @param pointer_position The position where the pointer is currently at.
      * @param button The wlr event describing the event.
+     * @param grab Describes whether the event is delivered normally or as part
+     *   of an ongoing grab. For the initial press this is typically NONE; for
+     *   later events it may be IMPLICIT, DND or EXPLICIT.
      */
     virtual void handle_pointer_button(
-        const wlr_pointer_button_event& event)
-    {}
+        const wlr_pointer_button_event& event,
+        input_grab_kind_t grab)
+    {
+        handle_pointer_button(event);
+    }
 
     /**
      * The user moved the pointer.
@@ -158,6 +231,20 @@ class pointer_interaction_t
     {}
 
     /**
+     * The user moved the pointer.
+     *
+     * @param pointer_position The new position of the pointer.
+     * @param time_ms The time reported by the device when the event happened.
+     * @param grab Describes whether the motion follows the hovered node
+     *   normally or is being redirected by an active grab.
+     */
+    virtual void handle_pointer_motion(wf::pointf_t pointer_position,
+        uint32_t time_ms, input_grab_kind_t grab)
+    {
+        handle_pointer_motion(pointer_position, time_ms);
+    }
+
+    /**
      * The user scrolled.
      *
      * @param pointer_position The position where the pointer is currently at.
@@ -165,6 +252,21 @@ class pointer_interaction_t
      */
     virtual void handle_pointer_axis(const wlr_pointer_axis_event& event)
     {}
+
+    /**
+     * Check whether an ongoing pointer grab may be retargeted to another node.
+     * The default behavior is conservative and denies retargeting.
+     *
+     * @param kind The type of active grab whose focus is about to move.
+     * @param new_target The candidate node which would receive future events.
+     * @param global_position The current pointer position in global layout
+     *   coordinates.
+     */
+    virtual bool can_retarget_pointer_grab(input_grab_kind_t kind,
+        nonstd::observer_ptr<scene::node_t> new_target, wf::pointf_t global_position)
+    {
+        return false;
+    }
 };
 
 /**
@@ -191,6 +293,24 @@ class touch_interaction_t
     {}
 
     /**
+     * The user pressed down with a finger on the node.
+     *
+     * @param finger_id The id of the finger pressed down (first is 0, then 1,
+     *   2, ..). Note that it is possible that the finger 0 is pressed down on
+     *   another node, then the current node may start receiving touch down
+     *   events beginning with finger 1, 2, ...
+     *
+     * @param position The coordinates of the finger.
+     * @param grab Describes whether the event is delivered normally or as part
+     *   of an ongoing touch grab.
+     */
+    virtual void handle_touch_down(uint32_t time_ms, int finger_id,
+        wf::pointf_t position, input_grab_kind_t grab)
+    {
+        handle_touch_down(time_ms, finger_id, position);
+    }
+
+    /**
      * The user lifted their finger off the node.
      *
      * @param finger_id The id of the finger being lifted. It is guaranteed that
@@ -203,10 +323,55 @@ class touch_interaction_t
     {}
 
     /**
+     * The user lifted their finger off the node.
+     *
+     * @param finger_id The id of the finger being lifted. It is guaranteed that
+     *   the finger will have been pressed on the node before.
+     * @param lift_off_position The last position the finger had before the
+     *   lift off.
+     * @param grab Describes whether the event is delivered normally or as part
+     *   of an ongoing touch grab.
+     */
+    virtual void handle_touch_up(uint32_t time_ms, int finger_id,
+        wf::pointf_t lift_off_position, input_grab_kind_t grab)
+    {
+        handle_touch_up(time_ms, finger_id, lift_off_position);
+    }
+
+    /**
      * The user moved their finger without lifting it off.
      */
     virtual void handle_touch_motion(uint32_t time_ms, int finger_id,
         wf::pointf_t position)
     {}
+
+    /**
+     * The user moved their finger without lifting it off.
+     *
+     * @param grab Describes whether the motion follows the touched node
+     *   normally or is being redirected by an active grab.
+     */
+    virtual void handle_touch_motion(uint32_t time_ms, int finger_id,
+        wf::pointf_t position, input_grab_kind_t grab)
+    {
+        handle_touch_motion(time_ms, finger_id, position);
+    }
+
+    /**
+     * Check whether an ongoing touch grab may be retargeted to another node.
+     * The default behavior is conservative and denies retargeting.
+     *
+     * @param kind The type of active grab whose focus is about to move.
+     * @param new_target The candidate node which would receive future events.
+     * @param finger_id The finger whose grab would be retargeted.
+     * @param global_position The current touch position in global layout
+     *   coordinates.
+     */
+    virtual bool can_retarget_touch_grab(input_grab_kind_t kind,
+        nonstd::observer_ptr<scene::node_t> new_target, int finger_id,
+        wf::pointf_t global_position)
+    {
+        return false;
+    }
 };
 }

@@ -70,17 +70,25 @@ bool wf::pointer_t::focus_enabled() const
 
 void wf::pointer_t::update_cursor_position(int64_t time_msec)
 {
-    wf::pointf_t gc = seat->priv->cursor->get_cursor_position();
+    wf::pointf_t gc   = seat->priv->cursor->get_cursor_position();
+    const auto& scene = wf::get_core().scene();
+    auto isec    = scene->find_node_at(gc);
+    auto hovered = isec ? isec->node->shared_from_this() : nullptr;
 
-    /* If we have a grabbed surface, but no drag, we want to continue sending
-     * events to the grabbed surface, even if the pointer goes outside of it.
-     * This enables Xwayland DnD to work correctly, and also lets the user for
-     * ex. grab a scrollbar and move their mouse freely. */
-    if (!grabbed_node && this->focus_enabled())
+    /* If we have an active grab, continue sending events to the grabbed
+     * surface even if the pointer goes outside of it. This enables DnD to work
+     * correctly, and also lets the user for ex. grab a scrollbar and move
+     * their mouse freely. */
+    auto kind = get_current_grab_kind();
+    bool sticky_grab = (kind == input_grab_kind_t::IMPLICIT) ||
+        (kind == input_grab_kind_t::DND) ||
+        ((kind == input_grab_kind_t::EXPLICIT) && has_pressed_buttons());
+    if (sticky_grab)
     {
-        const auto& scene = wf::get_core().scene();
-        auto isec = scene->find_node_at(gc);
-        update_cursor_focus(isec ? isec->node->shared_from_this() : nullptr);
+        maybe_retarget_grab(hovered.get(), kind);
+    } else if (this->focus_enabled())
+    {
+        update_cursor_focus(hovered);
     }
 
     this->send_motion(time_msec);
@@ -104,11 +112,12 @@ void wf::pointer_t::send_leave_to_focus(wf::scene::node_ptr old_focus)
                 event.button    = button;
                 event.state     = WL_POINTER_BUTTON_STATE_RELEASED;
                 event.time_msec = wf::get_current_time();
-                old_focus->pointer_interaction().handle_pointer_button(event);
+                old_focus->pointer_interaction().handle_pointer_button(event,
+                    input_grab_kind_t::NONE);
             }
         }
 
-        old_focus->pointer_interaction().handle_pointer_leave();
+        old_focus->pointer_interaction().handle_pointer_leave(input_grab_kind_t::NONE);
         this->last_focus_coords = {};
     }
 }
@@ -117,6 +126,7 @@ void wf::pointer_t::transfer_grab(scene::node_ptr node)
 {
     if (node == cursor_focus)
     {
+        set_grab(node, input_grab_kind_t::EXPLICIT);
         LOGC(POINTER, "transfer grab ", cursor_focus.get(), " -> ", node.get(), ": do nothing");
         // Node might already be focused, in case for example there was no input surface when the grab node
         // was added to the scenegraph.
@@ -127,6 +137,7 @@ void wf::pointer_t::transfer_grab(scene::node_ptr node)
     auto old_focus = std::move(cursor_focus);
     cursor_focus = node;
     send_leave_to_focus(old_focus);
+    set_grab(node, input_grab_kind_t::EXPLICIT);
 
     // Send pointer_enter to the grab
     send_enter_to_focus();
@@ -135,20 +146,58 @@ void wf::pointer_t::transfer_grab(scene::node_ptr node)
         currently_sent_buttons.clear();
     }
 
-    if (currently_sent_buttons.size())
+    set_grab(node, input_grab_kind_t::EXPLICIT);
+}
+
+void wf::pointer_t::retarget_grab(wf::scene::node_ptr node, input_grab_kind_t kind)
+{
+    if ((node == cursor_focus) || !node)
     {
-        grabbed_node = node;
-    } else
-    {
-        grabbed_node = nullptr;
+        return;
     }
+
+    LOGC(POINTER, "retarget grab ", cursor_focus.get(), " -> ", node.get());
+    auto old_focus    = std::move(cursor_focus);
+    auto sent_buttons = currently_sent_buttons;
+    cursor_focus = node;
+
+    if (old_focus)
+    {
+        old_focus->pointer_interaction().handle_pointer_leave(kind);
+    }
+
+    send_enter_to_focus();
+    // Force a motion event to the new target on the same cursor update.
+    last_focus_coords = {};
+    currently_sent_buttons = sent_buttons;
+
+    set_grab(node, kind);
+}
+
+bool wf::pointer_t::maybe_retarget_grab(nonstd::observer_ptr<wf::scene::node_t> new_focus,
+    input_grab_kind_t kind)
+{
+    if (!grabbed_node || !new_focus || (grabbed_node.get() == new_focus.get()))
+    {
+        return false;
+    }
+
+    auto gc = wf::get_core().get_cursor_position();
+    if (!grabbed_node->pointer_interaction().can_retarget_pointer_grab(kind, new_focus, gc))
+    {
+        return false;
+    }
+
+    retarget_grab(new_focus->shared_from_this(), kind);
+    return true;
 }
 
 void wf::pointer_t::send_enter_to_focus()
 {
     auto gc    = wf::get_core().get_cursor_position();
     auto local = get_node_local_coords(cursor_focus.get(), gc);
-    cursor_focus->pointer_interaction().handle_pointer_enter(local);
+    cursor_focus->pointer_interaction().handle_pointer_enter(local, get_current_grab_kind());
+
     this->last_focus_coords = local;
 }
 
@@ -189,21 +238,42 @@ wf::scene::node_ptr wf::pointer_t::get_focus() const
 /* -------------------------- Implicit grab --------------------------------- */
 void wf::pointer_t::grab_surface(wf::scene::node_ptr node)
 {
-    if (node == grabbed_node)
+    if ((node == grabbed_node) &&
+        ((node != nullptr) || (current_grab_kind == input_grab_kind_t::NONE)))
     {
         return;
     }
 
     if (node)
     {
-        /* Start a new grab */
-        this->grabbed_node = node;
+        set_grab(node, seat->priv->drag_active ? input_grab_kind_t::DND : input_grab_kind_t::IMPLICIT);
         return;
     }
 
     /* End grab */
-    grabbed_node = nullptr;
+    set_grab(nullptr, input_grab_kind_t::NONE);
     update_cursor_position(get_current_time());
+}
+
+void wf::pointer_t::set_grab(wf::scene::node_ptr node, input_grab_kind_t kind)
+{
+    grabbed_node = node;
+    current_grab_kind = node ? kind : input_grab_kind_t::NONE;
+}
+
+wf::input_grab_kind_t wf::pointer_t::get_current_grab_kind() const
+{
+    if (!grabbed_node)
+    {
+        return input_grab_kind_t::NONE;
+    }
+
+    if ((current_grab_kind == input_grab_kind_t::IMPLICIT) && seat->priv->drag_active)
+    {
+        return input_grab_kind_t::DND;
+    }
+
+    return current_grab_kind;
 }
 
 /* ----------------------- Input event processing --------------------------- */
@@ -243,14 +313,16 @@ void wf::pointer_t::check_implicit_grab()
 {
     /* start a button held grab, so that the window will receive all the
      * subsequent events, no matter what happens */
-    if ((count_pressed_buttons >= 1) && cursor_focus)
+    if ((count_pressed_buttons >= 1) && cursor_focus &&
+        (current_grab_kind == input_grab_kind_t::NONE))
     {
         grab_surface(cursor_focus);
     }
 
     /* end the button held grab. We need to to this here after we have send
      * the last button release event, so that buttons don't get stuck in clients */
-    if (count_pressed_buttons == 0)
+    if ((count_pressed_buttons == 0) &&
+        (current_grab_kind == input_grab_kind_t::IMPLICIT))
     {
         grab_surface(nullptr);
     }
@@ -266,11 +338,12 @@ void wf::pointer_t::send_button(wlr_pointer_button_event *ev, bool has_binding)
 
     if (cursor_focus)
     {
+        auto kind = get_current_grab_kind();
         if ((ev->state == WL_POINTER_BUTTON_STATE_PRESSED) && cursor_focus)
         {
             LOGC(POINTER, "normal button press ", ev->button);
             this->currently_sent_buttons.insert(ev->button);
-            cursor_focus->pointer_interaction().handle_pointer_button(*ev);
+            cursor_focus->pointer_interaction().handle_pointer_button(*ev, kind);
         } else if ((ev->state == WL_POINTER_BUTTON_STATE_RELEASED) &&
                    (currently_sent_buttons.count(ev->button) || cursor_focus->wants_raw_input()))
         {
@@ -280,7 +353,7 @@ void wf::pointer_t::send_button(wlr_pointer_button_event *ev, bool has_binding)
                 this->currently_sent_buttons.erase(currently_sent_buttons.find(ev->button));
             }
 
-            cursor_focus->pointer_interaction().handle_pointer_button(*ev);
+            cursor_focus->pointer_interaction().handle_pointer_button(*ev, kind);
         } else
         {
             LOGC(POINTER, "ignoring button event ", ev->button, " ", ev->state);
@@ -297,6 +370,7 @@ void wf::pointer_t::send_motion(uint32_t time_msec)
 {
     if (cursor_focus)
     {
+        auto kind  = get_current_grab_kind();
         auto gc    = wf::get_core().get_cursor_position();
         auto local = get_node_local_coords(cursor_focus.get(), gc);
 
@@ -307,7 +381,7 @@ void wf::pointer_t::send_motion(uint32_t time_msec)
             // trigger re-focus. We need to set the last focus coordinates early, so that we break out of
             // infinite loops.
             last_focus_coords = local;
-            cursor_focus->pointer_interaction().handle_pointer_motion(local, time_msec);
+            cursor_focus->pointer_interaction().handle_pointer_motion(local, time_msec, kind);
         }
     }
 }

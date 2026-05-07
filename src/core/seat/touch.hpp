@@ -69,6 +69,7 @@ class touch_interface_t
 
     /** Pressed a finger on a surface and dragging outside of it now */
     std::map<int, wf::scene::node_ptr> focus;
+    std::map<int, input_grab_kind_t> focus_grab_kind;
 
     void update_gestures(const wf::touch::gesture_event_t& event);
     std::vector<nonstd::observer_ptr<touch::gesture_t>> gestures;
@@ -81,6 +82,7 @@ class touch_interface_t
 
     /** Enable/disable cursor depending on how many touch points are there */
     void update_cursor_state();
+    input_grab_kind_t get_current_grab_kind(int32_t id) const;
 };
 }
 

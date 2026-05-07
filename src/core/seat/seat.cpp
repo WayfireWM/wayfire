@@ -336,7 +336,8 @@ wf::seat_t::seat_t(wl_display *display, std::string name) : seat(wlr_seat_create
             if (dynamic_cast<wlr_surface_pointer_interaction_t*>(&focus->pointer_interaction()))
             {
                 wf::pointf_t local = get_node_local_coords(focus.get(), priv->cursor->get_cursor_position());
-                focus->pointer_interaction().handle_pointer_enter(local);
+                focus->pointer_interaction().handle_pointer_enter(local,
+                    input_grab_kind_t::NONE);
             }
         }
     });
