@@ -11,7 +11,9 @@ bool wf::color_transform_t::operator ==(const color_transform_t& other) const
     return transfer_function == other.transfer_function &&
            primaries == other.primaries &&
            color_encoding == other.color_encoding &&
-           color_range == other.color_range;
+           color_range == other.color_range &&
+           alpha_mode == other.alpha_mode &&
+           chroma_location == other.chroma_location;
 }
 
 bool wf::color_transform_t::operator !=(const color_transform_t& other) const

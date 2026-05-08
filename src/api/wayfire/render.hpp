@@ -52,6 +52,19 @@ struct color_transform_t
      */
     wlr_color_range color_range = WLR_COLOR_RANGE_NONE;
 
+    /**
+     * Alpha mode of the texture, as set via wp_color_representation_v1. The default
+     * (premultiplied electrical) matches the wlroots renderer's compositing model. Other modes
+     * are not currently forwarded to the renderer.
+     */
+    wlr_alpha_mode alpha_mode = WLR_COLOR_ALPHA_MODE_PREMULTIPLIED_ELECTRICAL;
+
+    /**
+     * Chroma sample location, as set via wp_color_representation_v1. Used only for ycbcr textures.
+     * Not currently forwarded to the renderer.
+     */
+    wlr_color_chroma_location chroma_location = WLR_COLOR_CHROMA_LOCATION_NONE;
+
     bool operator ==(const color_transform_t& other) const;
     bool operator !=(const color_transform_t& other) const;
 };

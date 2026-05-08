@@ -90,6 +90,9 @@ void wf::scene::surface_state_t::merge_state(wlr_surface *surface)
         wlr_color_representation_v1_get_surface_state(surface);
     if (color_repr != NULL)
     {
+        this->color_transform.alpha_mode = wlr_color_representation_v1_alpha_mode_to_wlr(
+            color_repr->alpha_mode);
+
         if (color_repr->coefficients != 0)
         {
             this->color_transform.color_encoding = wlr_color_representation_v1_color_encoding_to_wlr(
@@ -100,6 +103,12 @@ void wf::scene::surface_state_t::merge_state(wlr_surface *surface)
         {
             this->color_transform.color_range = wlr_color_representation_v1_color_range_to_wlr(
                 (wp_color_representation_surface_v1_range)color_repr->range);
+        }
+
+        if (color_repr->chroma_location != 0)
+        {
+            this->color_transform.chroma_location = wlr_color_representation_v1_chroma_location_to_wlr(
+                (wp_color_representation_surface_v1_chroma_location)color_repr->chroma_location);
         }
     }
 
