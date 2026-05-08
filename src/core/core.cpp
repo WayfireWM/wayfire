@@ -245,7 +245,46 @@ void wf::compositor_core_impl_t::init()
 
     wlr_fractional_scale_manager_v1_create(display, 1);
     wlr_single_pixel_buffer_manager_v1_create(display);
-    wlr_color_representation_manager_v1_create_with_renderer(display, 1, renderer);
+    protocols.color_representation_v1 =
+        wlr_color_representation_manager_v1_create_with_renderer(display, 1, renderer);
+
+    if (renderer->features.input_color_transform)
+    {
+        static const enum wp_color_manager_v1_render_intent render_intents[] = {
+            WP_COLOR_MANAGER_V1_RENDER_INTENT_PERCEPTUAL,
+        };
+
+        size_t transfer_functions_len = 0;
+        enum wp_color_manager_v1_transfer_function *transfer_functions =
+            wlr_color_manager_v1_transfer_function_list_from_renderer(renderer, &transfer_functions_len);
+
+        size_t primaries_len = 0;
+        enum wp_color_manager_v1_primaries *primaries =
+            wlr_color_manager_v1_primaries_list_from_renderer(renderer, &primaries_len);
+
+        wlr_color_manager_v1_options cm_options{};
+        cm_options.features.parametric = true;
+        cm_options.features.set_mastering_display_primaries = true;
+        cm_options.render_intents     = render_intents;
+        cm_options.render_intents_len = sizeof(render_intents) / sizeof(render_intents[0]);
+        cm_options.transfer_functions = transfer_functions;
+        cm_options.transfer_functions_len = transfer_functions_len;
+        cm_options.primaries     = primaries;
+        cm_options.primaries_len = primaries_len;
+
+        protocols.color_manager_v1 = wlr_color_manager_v1_create(display, 2, &cm_options);
+        if (!protocols.color_manager_v1)
+        {
+            LOGE("Failed to create wlr_color_manager_v1 global");
+        }
+
+        free(transfer_functions);
+        free(primaries);
+    } else
+    {
+        LOGI("Renderer does not support input color transforms; "
+             "wp_color_management_v1 will not be available.");
+    }
 
     this->bindings = std::make_unique<bindings_repository_t>();
     image_io::init();

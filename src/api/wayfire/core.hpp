@@ -195,6 +195,9 @@ class compositor_core_t : public wf::object_base_t, public signal::provider_t
         wlr_xdg_foreign_v2 *foreign_v2;
 
         wlr_ext_data_control_manager_v1 *ext_data_control;
+
+        wlr_color_manager_v1 *color_manager_v1 = NULL;
+        wlr_color_representation_manager_v1 *color_representation_v1 = NULL;
     } protocols;
 
     std::string to_string() const
