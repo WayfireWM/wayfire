@@ -547,7 +547,57 @@ void wf::scene::wlr_surface_node_t::update_pending_outputs()
 
         wlr_fractional_scale_v1_notify_scale(surface, max_scale);
         wlr_surface_set_preferred_buffer_scale(surface, max_scale);
+        update_preferred_image_description();
     }
 
     pending_visibility_delta.clear();
+}
+
+void wf::scene::wlr_surface_node_t::update_preferred_image_description()
+{
+    if (!surface)
+    {
+        return;
+    }
+
+    auto cm = wf::get_core().protocols.color_manager_v1;
+    if (!cm)
+    {
+        return;
+    }
+
+    // Pick the "most capable" image description amongst the outputs we are visible on.
+    // HDR-capable outputs win over SDR ones so that clients are told they may use HDR if any
+    // of their outputs supports it.
+    const wlr_output_image_description *best = nullptr;
+    for (auto& [wo, _] : visibility)
+    {
+        const wlr_output_image_description *img = wo->handle->image_description;
+        if (!img)
+        {
+            continue;
+        }
+
+        if (!best ||
+            ((best->transfer_function != WLR_COLOR_TRANSFER_FUNCTION_ST2084_PQ) &&
+             (img->transfer_function == WLR_COLOR_TRANSFER_FUNCTION_ST2084_PQ)))
+        {
+            best = img;
+        }
+    }
+
+    if (!best)
+    {
+        wlr_image_description_v1_data data{};
+        data.tf_named = WP_COLOR_MANAGER_V1_TRANSFER_FUNCTION_GAMMA22;
+        data.primaries_named = WP_COLOR_MANAGER_V1_PRIMARIES_SRGB;
+        wlr_color_manager_v1_set_surface_preferred_image_description(cm, surface, &data);
+        return;
+    }
+
+    wlr_image_description_v1_data data{};
+    data.tf_named = wlr_color_manager_v1_transfer_function_from_wlr(best->transfer_function);
+    data.primaries_named = wlr_color_manager_v1_primaries_from_wlr(best->primaries);
+
+    wlr_color_manager_v1_set_surface_preferred_image_description(cm, surface, &data);
 }

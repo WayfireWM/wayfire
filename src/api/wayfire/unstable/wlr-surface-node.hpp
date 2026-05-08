@@ -88,6 +88,7 @@ class wlr_surface_node_t : public node_t, public zero_copy_texturable_node_t
     void handle_enter(wf::output_t *output);
     void handle_leave(wf::output_t *output);
     void update_pending_outputs();
+    void update_preferred_image_description();
     wf::wl_idle_call idle_update_outputs;
 
     wf::wl_listener_wrapper on_surface_destroyed;
