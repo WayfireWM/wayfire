@@ -708,6 +708,18 @@ void wf::render_pass_t::add_texture(const std::shared_ptr<wf::texture_t>& textur
     opts.primaries = &primaries;
     opts.transfer_function = ct.transfer_function;
 
+    // The wlroots renderer does no implicit luminance scaling: the forward EOTF for SDR transfer
+    // functions yields values in [0,1] relative to the SDR reference white, but the inverse EOTF
+    // for ST2084 PQ interprets [0,1] as 0–10000 cd/m² absolute. Without correction, SDR content
+    // composited on an HDR output would appear ~100× too bright. Compute a multiplier that brings
+    // the per-texture linear values into the target's expected absolute domain.
+    const float luminance_multiplier = compute_luminance_multiplier(
+        ct.transfer_function, adjusted_target.get_output_transfer_function());
+    if (luminance_multiplier != 1.0f)
+    {
+        opts.luminance_multiplier = &luminance_multiplier;
+    }
+
     wlr_render_pass_add_texture(get_wlr_pass(), &opts);
 }
 
