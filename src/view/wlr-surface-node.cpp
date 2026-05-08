@@ -74,16 +74,28 @@ void wf::scene::surface_state_t::merge_state(wlr_surface *surface)
         this->size    = {0, 0};
     }
 
+    // The wp_color_management_v1 protocol nominally treats surfaces without an image description
+    // as sRGB, but for compositing purposes sRGB and gamma 2.2 are approximately equivalent. We
+    // use gamma 2.2 here so that the surface forward-EOTF and the SDR output inverse-EOTF go
+    // through different code paths in the renderer (avoiding a fast-path that would short-circuit
+    // proper linear-space blending when both happen to be sRGB).
     this->color_transform = wf::color_transform_t{};
     this->color_transform.transfer_function = WLR_COLOR_TRANSFER_FUNCTION_GAMMA22;
     const wlr_image_description_v1_data *img_desc =
         wlr_surface_get_image_description_v1_data(surface);
     if (img_desc != NULL)
     {
-        this->color_transform.transfer_function = wlr_color_manager_v1_transfer_function_to_wlr(
-            (wp_color_manager_v1_transfer_function)img_desc->tf_named);
-        this->color_transform.primaries = wlr_color_manager_v1_primaries_to_wlr(
-            (wp_color_manager_v1_primaries)img_desc->primaries_named);
+        if (img_desc->tf_named != 0)
+        {
+            this->color_transform.transfer_function = wlr_color_manager_v1_transfer_function_to_wlr(
+                (wp_color_manager_v1_transfer_function)img_desc->tf_named);
+        }
+
+        if (img_desc->primaries_named != 0)
+        {
+            this->color_transform.primaries = wlr_color_manager_v1_primaries_to_wlr(
+                (wp_color_manager_v1_primaries)img_desc->primaries_named);
+        }
     }
 
     const wlr_color_representation_v1_surface_state *color_repr =

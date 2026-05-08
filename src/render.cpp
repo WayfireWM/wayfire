@@ -393,7 +393,8 @@ wf::render_target_t::render_target_t(const auxilliary_buffer_t& buffer) : render
 {
     // By default, we keep aux buffers in SRGB color space, as SRGB is efficiently implemented in Vulkan.
     set_color_transform(
-        wlr_color_transform_init_linear_to_inverse_eotf(WLR_COLOR_TRANSFER_FUNCTION_EXT_LINEAR));
+        wlr_color_transform_init_linear_to_inverse_eotf(WLR_COLOR_TRANSFER_FUNCTION_EXT_LINEAR),
+        WLR_COLOR_TRANSFER_FUNCTION_EXT_LINEAR);
 }
 
 void wf::render_target_t::copy_from(const render_target_t& other)
