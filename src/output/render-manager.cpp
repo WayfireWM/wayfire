@@ -923,6 +923,21 @@ class wf::render_manager::impl
             reload_icc_profile();
             damage_manager->damage_whole_idle();
         });
+        hdr.load_option(section, "hdr");
+        hdr.set_callback([=] ()
+        {
+            // Drop the cached inverse-EOTF: by the time the next frame is rendered, the
+            // output's image_description will have been re-committed by output-layout, and
+            // get_output_inverse_eotf() will lazily regenerate the transform to match.
+            if (output_inverse_eotf)
+            {
+                wlr_color_transform_unref(output_inverse_eotf);
+                output_inverse_eotf    = nullptr;
+                output_inverse_eotf_tf = (wlr_color_transfer_function)0;
+            }
+
+            damage_manager->damage_whole_idle();
+        });
 
         reload_icc_profile();
     }
