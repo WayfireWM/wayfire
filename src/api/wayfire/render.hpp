@@ -437,11 +437,28 @@ struct render_target_t : public render_buffer_t
 
     /**
      * Set a new color transform for the render target.
+     *
+     * @param transform The wlr_color_transform to apply when rendering to this target. Wayfire
+     *  takes a reference; the caller retains ownership of its own reference.
+     * @param target_tf The transfer function that the @transform encodes to. Used to compute
+     *  per-texture luminance multipliers when SDR content is rendered to HDR targets and vice
+     *  versa.
      */
-    void set_color_transform(wlr_color_transform *transform);
+    void set_color_transform(wlr_color_transform *transform,
+        wlr_color_transfer_function target_tf = WLR_COLOR_TRANSFER_FUNCTION_SRGB);
+
+    /**
+     * The transfer function that the render target's color transform encodes to. Read this to
+     * determine whether the target is HDR (ST2084_PQ) or SDR.
+     */
+    wlr_color_transfer_function get_output_transfer_function() const
+    {
+        return output_transfer_function;
+    }
 
   private:
     wlr_color_transform *inverse_eotf = nullptr;
+    wlr_color_transfer_function output_transfer_function = WLR_COLOR_TRANSFER_FUNCTION_SRGB;
     void copy_from(const render_target_t& other);
 };
 

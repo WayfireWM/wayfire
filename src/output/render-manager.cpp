@@ -809,6 +809,52 @@ class wf::render_manager::impl
     wf::option_wrapper_t<wf::color_t> background_color_opt;
     std::unique_ptr<wf::render_pass_t> current_pass;
     wf::option_wrapper_t<std::string> icc_profile;
+    wf::option_wrapper_t<bool> hdr;
+
+    /**
+     * The inverse-EOTF transform that matches the output's currently-committed image description.
+     * Cached so that it is not recreated each frame.
+     */
+    wlr_color_transform *output_inverse_eotf = nullptr;
+    wlr_color_transfer_function output_inverse_eotf_tf = (wlr_color_transfer_function)0;
+
+    /**
+     * The transfer function the output expects in its committed image description, or sRGB if no
+     * image description has been set.
+     */
+    wlr_color_transfer_function get_output_transfer_function()
+    {
+        if (output->handle->image_description)
+        {
+            return output->handle->image_description->transfer_function;
+        }
+
+        return WLR_COLOR_TRANSFER_FUNCTION_SRGB;
+    }
+
+    wlr_color_transform *get_output_inverse_eotf()
+    {
+        wlr_color_transfer_function tf = get_output_transfer_function();
+        if (output_inverse_eotf && (output_inverse_eotf_tf == tf))
+        {
+            return output_inverse_eotf;
+        }
+
+        if (output_inverse_eotf)
+        {
+            wlr_color_transform_unref(output_inverse_eotf);
+        }
+
+        output_inverse_eotf    = wlr_color_transform_init_linear_to_inverse_eotf(tf);
+        output_inverse_eotf_tf = tf;
+        if (!output_inverse_eotf)
+        {
+            LOGE("Failed to create inverse-EOTF transform for output ", output->to_string(),
+                " (transfer function ", (int)tf, ")");
+        }
+
+        return output_inverse_eotf;
+    }
 
     wlr_color_transform *get_color_transform()
     {
@@ -817,9 +863,7 @@ class wf::render_manager::impl
             return icc_color_transform;
         }
 
-        static wlr_color_transform *default_transform =
-            wlr_color_transform_init_linear_to_inverse_eotf(WLR_COLOR_TRANSFER_FUNCTION_SRGB);
-        return default_transform;
+        return get_output_inverse_eotf();
     }
 
     impl(output_t *o) : output(o), env_allow_scanout(check_scanout_enabled())
@@ -936,6 +980,11 @@ class wf::render_manager::impl
     ~impl()
     {
         set_icc_transform(nullptr);
+        if (output_inverse_eotf)
+        {
+            wlr_color_transform_unref(output_inverse_eotf);
+            output_inverse_eotf = nullptr;
+        }
     }
 
     const bool env_allow_scanout;
@@ -1012,6 +1061,10 @@ class wf::render_manager::impl
 
         params.target = postprocessing->get_target_framebuffer().translated(
             wf::origin(output->get_layout_geometry()));
+        // Set the target's transfer function to match the output, so that render_pass_t::add_texture
+        // can derive a luminance multiplier when SDR content is being composited onto an HDR output.
+        params.target.set_color_transform(params.target.get_color_transform(),
+            get_output_transfer_function());
         params.damage = damage_manager->get_scheduled_damage(params.target);
 
         params.background_color = background_color_opt;

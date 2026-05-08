@@ -403,6 +403,7 @@ void wf::render_target_t::copy_from(const render_target_t& other)
     scale     = other.scale;
     subbuffer = other.subbuffer;
     inverse_eotf = other.inverse_eotf;
+    output_transfer_function = other.output_transfer_function;
 }
 
 wf::render_target_t::render_target_t(const render_target_t& other) : render_buffer_t(other)
@@ -855,7 +856,8 @@ wlr_render_pass*wf::render_pass_t::_get_pass()
     return _pass;
 }
 
-void wf::render_target_t::set_color_transform(wlr_color_transform *transform)
+void wf::render_target_t::set_color_transform(wlr_color_transform *transform,
+    wlr_color_transfer_function target_tf)
 {
     if (transform)
     {
@@ -868,4 +870,5 @@ void wf::render_target_t::set_color_transform(wlr_color_transform *transform)
     }
 
     inverse_eotf = transform;
+    output_transfer_function = target_tf;
 }
