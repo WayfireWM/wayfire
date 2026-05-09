@@ -227,7 +227,7 @@ void wayfire_xdg_popup::map()
     emit_view_map();
     wf::get_core().connect(&on_keyboard_focus_changed);
 
-    if (popup->seat)
+    if (popup->seat && get_keyboard_focus_surface())
     {
         wf::get_core().seat->focus_view(self());
     }
@@ -416,6 +416,11 @@ wf::geometry_t wayfire_xdg_popup::get_geometry()
 
 wlr_surface*wayfire_xdg_popup::get_keyboard_focus_surface()
 {
+    if (!parent_allows_keyboard_focus())
+    {
+        return nullptr;
+    }
+
     static wf::option_wrapper_t<bool> focus_main_view{"workarounds/focus_main_surface_instead_of_popup"};
     if (focus_main_view)
     {
@@ -429,6 +434,12 @@ wlr_surface*wayfire_xdg_popup::get_keyboard_focus_surface()
     }
 
     return priv->wsurface;
+}
+
+bool wayfire_xdg_popup::parent_allows_keyboard_focus() const
+{
+    auto parent = popup_parent.lock();
+    return parent && (parent->get_keyboard_focus_surface() != nullptr);
 }
 
 /**

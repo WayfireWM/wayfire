@@ -76,6 +76,7 @@ class wayfire_xdg_popup : public wf::view_interface_t
     void handle_app_id_changed(std::string new_app_id);
     void handle_title_changed(std::string new_title);
     void update_size();
+    bool parent_allows_keyboard_focus() const;
 
     bool should_close_on_focus_change(wf::keyboard_focus_changed_signal *ev);
 };
