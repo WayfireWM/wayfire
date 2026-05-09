@@ -50,7 +50,14 @@ class crossfade_node_t : public scene::view_2d_transformer_t
         const wf::geometry_t bbox = root_node->get_bounding_box();
         const wf::geometry_t g    = view->get_geometry();
         const float scale = view->get_output()->handle->scale;
-        original_buffer.allocate(wf::dimensions(g), scale);
+        // The original-contents buffer is a linear-space view snapshot. On HDR outputs the view's
+        // PQ contents are bridged to SDR-relative linear by the per-source luminance multiplier,
+        // landing at values up to ~49.26 — request FP16 storage so they aren't clipped.
+        const auto *img_desc = view->get_output()->handle->image_description;
+        const bool is_hdr    = img_desc &&
+            img_desc->transfer_function == WLR_COLOR_TRANSFER_FUNCTION_ST2084_PQ;
+        original_buffer.allocate(wf::dimensions(g), scale,
+            wf::buffer_allocation_hints_t{.hdr_linear = is_hdr});
 
         wf::render_target_t target{original_buffer};
         target.geometry = view->get_geometry();

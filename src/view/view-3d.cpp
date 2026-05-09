@@ -619,9 +619,17 @@ uint32_t transformer_base_node_t::optimize_update(uint32_t flags)
 }
 
 std::shared_ptr<wf::texture_t> transformer_base_node_t::get_updated_contents(const wf::geometry_t& bbox,
-    float scale, std::vector<scene::render_instance_uptr>& children)
+    float scale, std::vector<scene::render_instance_uptr>& children, wf::output_t *output)
 {
-    if (inner_content.allocate(wf::dimensions(bbox), scale) != buffer_reallocation_result_t::SAME)
+    // The inner buffer is a linear-space composite of the children (target_tf == EXT_LINEAR).
+    // On HDR (PQ) outputs, HDR sources contribute SDR-relative linear values up to ~49.26
+    // (PQ peak / SDR reference white) which would be clipped by an 8-bit linear backing.
+    const auto *img_desc = output ? output->handle->image_description : nullptr;
+    const bool is_hdr    = img_desc &&
+        img_desc->transfer_function == WLR_COLOR_TRANSFER_FUNCTION_ST2084_PQ;
+
+    if (inner_content.allocate(wf::dimensions(bbox), scale,
+        wf::buffer_allocation_hints_t{.hdr_linear = is_hdr}) != buffer_reallocation_result_t::SAME)
     {
         cached_damage |= bbox;
     }

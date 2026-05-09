@@ -259,9 +259,17 @@ class workspace_wall_t::workspace_wall_node_t : public scene::node_t
 
                 auto bbox = workspaces[i][j]->get_bounding_box();
 
+                // The aux buffer stores a linear-space scene composite (target_tf == EXT_LINEAR).
+                // When the output is HDR (PQ), HDR sources contribute SDR-relative linear values up to
+                // ~49.26 (PQ peak / SDR reference white), which would clip in an 8-bit linear buffer.
+                const auto *img_desc = wall->output->handle->image_description;
+                const bool is_hdr    = img_desc &&
+                    img_desc->transfer_function == WLR_COLOR_TRANSFER_FUNCTION_ST2084_PQ;
+
                 aux_buffers[i][j].allocate(wf::dimensions(bbox), wall->output->handle->scale,
                     wf::buffer_allocation_hints_t{
                         .needs_alpha = false,
+                        .hdr_linear  = is_hdr,
                     });
                 aux_buffer_damage[i][j] |= bbox;
                 aux_buffer_current_scale[i][j]  = 1.0;
