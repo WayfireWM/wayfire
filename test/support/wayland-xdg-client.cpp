@@ -1,10 +1,5 @@
 #include "wayland-xdg-client.hpp"
 
-#include <sys/mman.h>
-#include <poll.h>
-#include <unistd.h>
-#include <fcntl.h>
-
 #include <stdexcept>
 #include <string>
 #include <vector>
@@ -12,29 +7,8 @@
 #include <wayland-client-core.h>
 #include <wayland-client-protocol.h>
 
+#include "wayland-client-utils.hpp"
 #include "xdg-shell-client-protocol.h"
-
-namespace
-{
-int create_shm_file(size_t size)
-{
-    char name[] = "/wayfire-test-XXXXXX";
-    int fd = shm_open(name, O_RDWR | O_CREAT | O_EXCL, 0600);
-    if (fd < 0)
-    {
-        return -1;
-    }
-
-    shm_unlink(name);
-    if (ftruncate(fd, size) < 0)
-    {
-        close(fd);
-        return -1;
-    }
-
-    return fd;
-}
-}
 
 struct wf::test::wayland_xdg_client_t::impl
 {
@@ -152,29 +126,7 @@ void wf::test::wayland_xdg_client_t::roundtrip()
 
 void wf::test::wayland_xdg_client_t::dispatch_once(int timeout_ms)
 {
-    wl_display_dispatch_pending(priv->display);
-    wl_display_flush(priv->display);
-
-    if (wl_display_prepare_read(priv->display) != 0)
-    {
-        wl_display_dispatch_pending(priv->display);
-        return;
-    }
-
-    pollfd pfd = {
-        .fd     = wl_display_get_fd(priv->display),
-        .events = POLLIN,
-        .revents = 0,
-    };
-
-    if (poll(&pfd, 1, timeout_ms) > 0)
-    {
-        wl_display_read_events(priv->display);
-        wl_display_dispatch_pending(priv->display);
-    } else
-    {
-        wl_display_cancel_read(priv->display);
-    }
+    wayland_dispatch_once(priv->display, timeout_ms);
 }
 
 bool wf::test::wayland_xdg_client_t::dispatch_until_configure(int max_iterations)
@@ -239,28 +191,7 @@ void wf::test::wayland_xdg_client_t::ack_last_configure()
 
 void wf::test::wayland_xdg_client_t::attach_and_commit(int width, int height)
 {
-    const int stride  = width * 4;
-    const size_t size = stride * height;
-    int fd = create_shm_file(size);
-    if (fd < 0)
-    {
-        throw std::runtime_error("Failed to create shared memory file for test buffer");
-    }
-
-    void *data = mmap(nullptr, size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
-    if (data == MAP_FAILED)
-    {
-        close(fd);
-        throw std::runtime_error("Failed to mmap test buffer");
-    }
-
-    std::fill_n(static_cast<uint32_t*>(data), width * height, 0xff336699u);
-    auto *pool = wl_shm_create_pool(priv->shm, fd, size);
-    priv->buffer = wl_shm_pool_create_buffer(pool, 0, width, height, stride,
-        WL_SHM_FORMAT_XRGB8888);
-    wl_shm_pool_destroy(pool);
-    munmap(data, size);
-    close(fd);
+    priv->buffer = create_shm_buffer(priv->shm, width, height, 0xff336699u);
 
     wl_surface_attach(priv->surface, priv->buffer, 0, 0);
     wl_surface_damage_buffer(priv->surface, 0, 0, width, height);
