@@ -1,0 +1,265 @@
+#include "headless-core-harness.hpp"
+
+#include <config.h>
+
+#include <cstdlib>
+#include <filesystem>
+#include <iostream>
+#include <stdexcept>
+#include <chrono>
+#include <array>
+
+#include <sys/stat.h>
+#include <unistd.h>
+
+#include <wayfire/config-backend.hpp>
+#include <wayfire/config/file.hpp>
+#include <wayfire/core.hpp>
+#include <wayfire/debug.hpp>
+#include <wayfire/nonstd/wlroots-full.hpp>
+#include <wayfire/output-layout.hpp>
+#include <wayfire/seat.hpp>
+#include <wayfire/signal-definitions.hpp>
+#include <wayfire/util/log.hpp>
+
+#include <wayland-server-core.h>
+
+#include "../../src/core/core-impl.hpp"
+#include "../../src/main.hpp"
+
+namespace
+{
+class test_config_backend_t : public wf::config_backend_t
+{
+  public:
+    void init(wl_display*, wf::config::config_manager_t& config,
+        const std::string&) override
+    {
+        setenv("WAYFIRE_PLUGIN_XML_PATH", TEST_METADATA_DIR, 1);
+        config = wf::config::build_configuration(get_xml_dirs(), "/dev/null",
+            "/dev/null");
+
+        wf::config::load_configuration_options_from_string(config,
+            "[core]\n"
+            "plugins = \n"
+            "xwayland = false\n"
+            "\n"
+            "[autostart]\n"
+            "autostart_wf_shell = false\n"
+            "\n"
+            "[workarounds]\n"
+            "auto_reload_config = false\n"
+            "enable_input_method_v2 = false\n"
+            "use_external_output_configuration = false\n",
+            "xdg-shell-test-config");
+    }
+};
+
+static std::string add_test_socket(wl_display *display)
+{
+    const char *socket = wl_display_add_socket_auto(display);
+    if (!socket)
+    {
+        throw std::runtime_error("Failed to create Wayland socket for test harness");
+    }
+
+    return socket;
+}
+
+static bool is_usable_runtime_dir(const char *path)
+{
+    if (!path || !path[0])
+    {
+        return false;
+    }
+
+    struct stat st;
+    return (stat(path, &st) == 0) && S_ISDIR(st.st_mode) && (access(path, W_OK | X_OK) == 0);
+}
+
+static std::string ensure_test_runtime_dir()
+{
+    if (is_usable_runtime_dir(getenv("XDG_RUNTIME_DIR")))
+    {
+        return {};
+    }
+
+    auto base = std::filesystem::temp_directory_path() / "wayfire-test-runtime-XXXXXX";
+    std::array<char, PATH_MAX> runtime_dir{};
+    auto path = base.string();
+    if (path.size() >= runtime_dir.size())
+    {
+        throw std::runtime_error("Temporary runtime directory path is too long");
+    }
+
+    std::snprintf(runtime_dir.data(), runtime_dir.size(), "%s", path.c_str());
+    if (!mkdtemp(runtime_dir.data()))
+    {
+        throw std::runtime_error("Failed to create temporary runtime directory for test harness");
+    }
+
+    std::filesystem::permissions(runtime_dir.data(),
+        std::filesystem::perms::owner_all,
+        std::filesystem::perm_options::replace);
+    setenv("XDG_RUNTIME_DIR", runtime_dir.data(), 1);
+    return runtime_dir.data();
+}
+}
+
+struct wf::test::headless_core_harness_t::impl
+{
+    wf::compositor_core_impl_t *core = nullptr;
+    std::string old_wayland_display;
+    std::string old_xdg_runtime_dir;
+    std::string test_runtime_dir;
+    bool had_wayland_display = false;
+    bool had_xdg_runtime_dir = false;
+};
+
+wf::test::headless_core_harness_t::headless_core_harness_t()
+{
+    wf::log::initialize_logging(std::cout, wf::log::LOG_LEVEL_DEBUG,
+        wf::log::LOG_COLOR_MODE_OFF);
+    wlr_log_init(WLR_ERROR, nullptr);
+
+    priv = std::make_unique<impl>();
+    priv->core = &wf::compositor_core_impl_t::allocate_core();
+
+    if (const char *old = getenv("WAYLAND_DISPLAY"))
+    {
+        priv->had_wayland_display = true;
+        priv->old_wayland_display = old;
+    }
+
+    if (const char *old = getenv("XDG_RUNTIME_DIR"))
+    {
+        priv->had_xdg_runtime_dir = true;
+        priv->old_xdg_runtime_dir = old;
+    }
+
+    priv->test_runtime_dir = ensure_test_runtime_dir();
+
+    auto& core = *priv->core;
+    core.display = wl_display_create();
+    core.session = nullptr;
+    if (!core.display)
+    {
+        throw std::runtime_error("Failed to create Wayland display");
+    }
+
+    core.ev_loop = wl_display_get_event_loop(core.display);
+    core.backend = wlr_headless_backend_create(core.ev_loop);
+    if (!core.backend)
+    {
+        throw std::runtime_error("Failed to create headless backend");
+    }
+
+    core.renderer = wlr_pixman_renderer_create();
+    if (!core.renderer)
+    {
+        throw std::runtime_error("Failed to create renderer");
+    }
+
+    core.allocator = wlr_allocator_autocreate(core.backend, core.renderer);
+    if (!core.allocator)
+    {
+        throw std::runtime_error("Failed to create allocator");
+    }
+
+    core.config_backend = std::make_unique<test_config_backend_t>();
+    core.config_backend->init(core.display, *core.config, "");
+    core.init();
+
+    core.wayland_display = add_test_socket(core.display);
+    setenv("WAYLAND_DISPLAY", core.wayland_display.c_str(), 1);
+
+    if (!wlr_backend_start(core.backend))
+    {
+        throw std::runtime_error("Failed to start headless backend");
+    }
+
+    auto *output_handle = wlr_headless_add_output(core.backend, 1280, 720);
+    if (!output_handle)
+    {
+        throw std::runtime_error("Failed to create headless output");
+    }
+
+    roundtrip();
+    auto outputs = core.output_layout->get_outputs();
+    if (!outputs.empty())
+    {
+        outputs.front()->ensure_pointer(true);
+        core.seat->focus_output(outputs.front());
+    }
+
+    roundtrip();
+}
+
+wf::test::headless_core_harness_t::~headless_core_harness_t()
+{
+    if (priv && priv->core)
+    {
+        wf::compositor_core_impl_t::deallocate_core();
+    }
+
+    if (priv && priv->had_wayland_display)
+    {
+        setenv("WAYLAND_DISPLAY", priv->old_wayland_display.c_str(), 1);
+    } else
+    {
+        unsetenv("WAYLAND_DISPLAY");
+    }
+
+    if (priv && priv->had_xdg_runtime_dir)
+    {
+        setenv("XDG_RUNTIME_DIR", priv->old_xdg_runtime_dir.c_str(), 1);
+    } else
+    {
+        unsetenv("XDG_RUNTIME_DIR");
+    }
+
+    if (priv && !priv->test_runtime_dir.empty())
+    {
+        std::error_code ec;
+        std::filesystem::remove_all(priv->test_runtime_dir, ec);
+    }
+}
+
+void wf::test::headless_core_harness_t::dispatch_once(int timeout_ms)
+{
+    wl_event_loop_dispatch(priv->core->ev_loop, timeout_ms);
+    wl_display_flush_clients(priv->core->display);
+}
+
+void wf::test::headless_core_harness_t::roundtrip()
+{
+    dispatch_once(0);
+    dispatch_once(0);
+}
+
+bool wf::test::headless_core_harness_t::run_until(const std::function<bool()>& predicate,
+    int max_iterations)
+{
+    for (int i = 0; i < max_iterations; ++i)
+    {
+        if (predicate())
+        {
+            return true;
+        }
+
+        dispatch_once(10);
+    }
+
+    return predicate();
+}
+
+wf::output_t*wf::test::headless_core_harness_t::output() const
+{
+    auto outputs = priv->core->output_layout->get_outputs();
+    return outputs.empty() ? nullptr : outputs.front();
+}
+
+const std::string& wf::test::headless_core_harness_t::socket_name() const
+{
+    return priv->core->wayland_display;
+}
