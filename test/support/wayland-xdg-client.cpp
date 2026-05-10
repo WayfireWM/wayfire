@@ -2,11 +2,15 @@
 
 #include <stdexcept>
 #include <string>
+#include <utility>
 #include <vector>
+#include <cmath>
 
 #include <wayland-client-core.h>
 #include <wayland-client-protocol.h>
 
+#include "fractional-scale-v1-client-protocol.h"
+#include "viewporter-client-protocol.h"
 #include "wayland-client-utils.hpp"
 #include "xdg-shell-client-protocol.h"
 
@@ -17,14 +21,23 @@ struct wf::test::wayland_xdg_client_t::impl
     wl_compositor *compositor = nullptr;
     wl_shm *shm = nullptr;
     xdg_wm_base *wm_base = nullptr;
+    wp_fractional_scale_manager_v1 *fractional_scale_manager = nullptr;
+    wp_viewporter *viewporter = nullptr;
 
     wl_surface *surface = nullptr;
     ::xdg_surface *shell_surface   = nullptr;
     ::xdg_toplevel *shell_toplevel = nullptr;
-    wl_buffer *buffer = nullptr;
+    wp_fractional_scale_v1 *fractional_scale = nullptr;
+    wp_viewport *viewport = nullptr;
+    wl_buffer *buffer     = nullptr;
 
     bool configured = false;
     uint32_t configure_serial = 0;
+    std::optional<std::pair<int, int>> toplevel_size;
+    bool toplevel_configure_fullscreen = false;
+    int preferred_buffer_scale = 1;
+    std::optional<uint32_t> preferred_fractional_scale;
+    std::pair<int, int> committed_buffer_size = {0, 0};
 
     static void handle_registry_global(void *data, wl_registry *registry,
         uint32_t name, const char *interface, uint32_t version)
@@ -41,7 +54,16 @@ struct wf::test::wayland_xdg_client_t::impl
         } else if (std::string{interface} == xdg_wm_base_interface.name)
         {
             self->wm_base = static_cast<xdg_wm_base*>(wl_registry_bind(registry,
-                name, &xdg_wm_base_interface, std::min(version, 2u)));
+                name, &xdg_wm_base_interface, std::min(version, 7u)));
+        } else if (std::string{interface} == wp_fractional_scale_manager_v1_interface.name)
+        {
+            self->fractional_scale_manager =
+                static_cast<wp_fractional_scale_manager_v1*>(wl_registry_bind(registry,
+                    name, &wp_fractional_scale_manager_v1_interface, 1));
+        } else if (std::string{interface} == wp_viewporter_interface.name)
+        {
+            self->viewporter = static_cast<wp_viewporter*>(wl_registry_bind(registry,
+                name, &wp_viewporter_interface, 1));
         }
     }
 
@@ -62,6 +84,38 @@ struct wf::test::wayland_xdg_client_t::impl
         .ping = handle_ping,
     };
 
+    static void handle_surface_enter(void*, wl_surface*, wl_output*)
+    {}
+
+    static void handle_surface_leave(void*, wl_surface*, wl_output*)
+    {}
+
+    static void handle_preferred_buffer_scale(void *data, wl_surface*, int32_t factor)
+    {
+        auto *self = static_cast<impl*>(data);
+        self->preferred_buffer_scale = factor;
+    }
+
+    static void handle_preferred_buffer_transform(void*, wl_surface*, uint32_t)
+    {}
+
+    static constexpr wl_surface_listener surface_listener = {
+        .enter = handle_surface_enter,
+        .leave = handle_surface_leave,
+        .preferred_buffer_scale     = handle_preferred_buffer_scale,
+        .preferred_buffer_transform = handle_preferred_buffer_transform,
+    };
+
+    static void handle_fractional_preferred_scale(void *data, wp_fractional_scale_v1*, uint32_t scale)
+    {
+        auto *self = static_cast<impl*>(data);
+        self->preferred_fractional_scale = scale;
+    }
+
+    static constexpr wp_fractional_scale_v1_listener fractional_scale_listener = {
+        .preferred_scale = handle_fractional_preferred_scale,
+    };
+
     static void handle_xdg_surface_configure(void *data, ::xdg_surface *surface,
         uint32_t serial)
     {
@@ -73,6 +127,41 @@ struct wf::test::wayland_xdg_client_t::impl
 
     static constexpr ::xdg_surface_listener xdg_surface_listener = {
         .configure = handle_xdg_surface_configure,
+    };
+
+    static void handle_toplevel_configure(void *data, ::xdg_toplevel*, int32_t width,
+        int32_t height, wl_array *states)
+    {
+        auto *self = static_cast<impl*>(data);
+        self->toplevel_size = {{width, height}};
+        self->toplevel_configure_fullscreen = false;
+
+        auto *state = static_cast<uint32_t*>(states->data);
+        const size_t count = states->size / sizeof(uint32_t);
+        for (size_t i = 0; i < count; ++i)
+        {
+            if (state[i] == XDG_TOPLEVEL_STATE_FULLSCREEN)
+            {
+                self->toplevel_configure_fullscreen = true;
+                break;
+            }
+        }
+    }
+
+    static void handle_toplevel_close(void*, ::xdg_toplevel*)
+    {}
+
+    static void handle_toplevel_configure_bounds(void*, ::xdg_toplevel*, int32_t, int32_t)
+    {}
+
+    static void handle_toplevel_wm_capabilities(void*, ::xdg_toplevel*, wl_array*)
+    {}
+
+    static constexpr ::xdg_toplevel_listener xdg_toplevel_listener = {
+        .configure = handle_toplevel_configure,
+        .close     = handle_toplevel_close,
+        .configure_bounds = handle_toplevel_configure_bounds,
+        .wm_capabilities  = handle_toplevel_wm_capabilities,
     };
 };
 
@@ -93,6 +182,16 @@ wf::test::wayland_xdg_client_t::wayland_xdg_client_t(const std::string& socket_n
 wf::test::wayland_xdg_client_t::~wayland_xdg_client_t()
 {
     destroy_toplevel();
+    if (priv->fractional_scale_manager)
+    {
+        wp_fractional_scale_manager_v1_destroy(priv->fractional_scale_manager);
+    }
+
+    if (priv->viewporter)
+    {
+        wp_viewporter_destroy(priv->viewporter);
+    }
+
     if (priv->wm_base)
     {
         xdg_wm_base_destroy(priv->wm_base);
@@ -146,7 +245,7 @@ bool wf::test::wayland_xdg_client_t::dispatch_until_configure(int max_iterations
 
 bool wf::test::wayland_xdg_client_t::has_required_globals() const
 {
-    return priv->compositor && priv->shm && priv->wm_base;
+    return priv->compositor && priv->shm && priv->wm_base && priv->viewporter;
 }
 
 void wf::test::wayland_xdg_client_t::create_toplevel(const std::string& title,
@@ -159,9 +258,21 @@ void wf::test::wayland_xdg_client_t::create_toplevel(const std::string& title,
 
     xdg_wm_base_add_listener(priv->wm_base, &impl::wm_base_listener, priv.get());
     priv->surface = wl_compositor_create_surface(priv->compositor);
+    wl_surface_add_listener(priv->surface, &impl::surface_listener, priv.get());
+    if (priv->fractional_scale_manager)
+    {
+        priv->fractional_scale = wp_fractional_scale_manager_v1_get_fractional_scale(
+            priv->fractional_scale_manager, priv->surface);
+        wp_fractional_scale_v1_add_listener(priv->fractional_scale,
+            &impl::fractional_scale_listener, priv.get());
+    }
+
+    priv->viewport = wp_viewporter_get_viewport(priv->viewporter, priv->surface);
+
     priv->shell_surface = xdg_wm_base_get_xdg_surface(priv->wm_base, priv->surface);
     xdg_surface_add_listener(priv->shell_surface, &impl::xdg_surface_listener, priv.get());
     priv->shell_toplevel = xdg_surface_get_toplevel(priv->shell_surface);
+    xdg_toplevel_add_listener(priv->shell_toplevel, &impl::xdg_toplevel_listener, priv.get());
 
     xdg_toplevel_set_title(priv->shell_toplevel, title.c_str());
     xdg_toplevel_set_app_id(priv->shell_toplevel, app_id.c_str());
@@ -179,6 +290,69 @@ uint32_t wf::test::wayland_xdg_client_t::last_configure_serial() const
     return priv->configure_serial;
 }
 
+std::optional<std::pair<int, int>> wf::test::wayland_xdg_client_t::last_toplevel_size() const
+{
+    return priv->toplevel_size;
+}
+
+bool wf::test::wayland_xdg_client_t::last_toplevel_configure_fullscreen() const
+{
+    return priv->toplevel_configure_fullscreen;
+}
+
+int wf::test::wayland_xdg_client_t::last_preferred_buffer_scale() const
+{
+    return priv->preferred_buffer_scale;
+}
+
+std::optional<uint32_t> wf::test::wayland_xdg_client_t::last_fractional_scale() const
+{
+    return priv->preferred_fractional_scale;
+}
+
+void wf::test::wayland_xdg_client_t::attach_with_fractional_scale(int surface_width, int surface_height)
+{
+    if (!priv->preferred_fractional_scale)
+    {
+        throw std::runtime_error("No preferred fractional scale advertised yet");
+    }
+
+    const double scale = *priv->preferred_fractional_scale / 120.0;
+    const auto round_half_away_from_zero = [] (double value)
+    {
+        return int(std::copysign(std::floor(std::abs(value) + 0.5), value));
+    };
+
+    const int buffer_width = round_half_away_from_zero(surface_width * scale);
+    const int buffer_height = round_half_away_from_zero(surface_height * scale);
+
+    wl_surface_set_buffer_scale(priv->surface, 1);
+    wp_viewport_set_destination(priv->viewport, surface_width, surface_height);
+    attach_and_commit(buffer_width, buffer_height);
+}
+
+void wf::test::wayland_xdg_client_t::attach_with_fractional_scale(int surface_width, int surface_height,
+    const std::vector<uint32_t>& pixels)
+{
+    if (!priv->preferred_fractional_scale)
+    {
+        throw std::runtime_error("No preferred fractional scale advertised yet");
+    }
+
+    const double scale = *priv->preferred_fractional_scale / 120.0;
+    const auto round_half_away_from_zero = [] (double value)
+    {
+        return int(std::copysign(std::floor(std::abs(value) + 0.5), value));
+    };
+
+    const int buffer_width = round_half_away_from_zero(surface_width * scale);
+    const int buffer_height = round_half_away_from_zero(surface_height * scale);
+
+    wl_surface_set_buffer_scale(priv->surface, 1);
+    wp_viewport_set_destination(priv->viewport, surface_width, surface_height);
+    attach_and_commit(buffer_width, buffer_height, pixels);
+}
+
 void wf::test::wayland_xdg_client_t::ack_last_configure()
 {
     if (!priv->configured)
@@ -189,14 +363,40 @@ void wf::test::wayland_xdg_client_t::ack_last_configure()
     xdg_surface_ack_configure(priv->shell_surface, priv->configure_serial);
 }
 
+void wf::test::wayland_xdg_client_t::clear_pending_configure()
+{
+    priv->configured = false;
+    priv->toplevel_size.reset();
+    priv->toplevel_configure_fullscreen = false;
+    priv->preferred_fractional_scale.reset();
+}
+
 void wf::test::wayland_xdg_client_t::attach_and_commit(int width, int height)
 {
     priv->buffer = create_shm_buffer(priv->shm, width, height, 0xff336699u);
+    priv->committed_buffer_size = {width, height};
 
     wl_surface_attach(priv->surface, priv->buffer, 0, 0);
     wl_surface_damage_buffer(priv->surface, 0, 0, width, height);
     wl_surface_commit(priv->surface);
     wl_display_flush(priv->display);
+}
+
+void wf::test::wayland_xdg_client_t::attach_and_commit(int width, int height,
+    const std::vector<uint32_t>& pixels)
+{
+    priv->buffer = create_shm_buffer(priv->shm, width, height, pixels);
+    priv->committed_buffer_size = {width, height};
+
+    wl_surface_attach(priv->surface, priv->buffer, 0, 0);
+    wl_surface_damage_buffer(priv->surface, 0, 0, width, height);
+    wl_surface_commit(priv->surface);
+    wl_display_flush(priv->display);
+}
+
+std::pair<int, int> wf::test::wayland_xdg_client_t::last_committed_buffer_size() const
+{
+    return priv->committed_buffer_size;
 }
 
 void wf::test::wayland_xdg_client_t::commit_surface()
@@ -211,6 +411,18 @@ void wf::test::wayland_xdg_client_t::destroy_toplevel()
     {
         wl_buffer_destroy(priv->buffer);
         priv->buffer = nullptr;
+    }
+
+    if (priv->viewport)
+    {
+        wp_viewport_destroy(priv->viewport);
+        priv->viewport = nullptr;
+    }
+
+    if (priv->fractional_scale)
+    {
+        wp_fractional_scale_v1_destroy(priv->fractional_scale);
+        priv->fractional_scale = nullptr;
     }
 
     if (priv->shell_toplevel)
