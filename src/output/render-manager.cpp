@@ -812,11 +812,17 @@ class wf::render_manager::impl
     wf::option_wrapper_t<bool> hdr;
 
     /**
-     * The inverse-EOTF transform that matches the output's currently-committed image description.
-     * Cached so that it is not recreated each frame.
+     * The output color transform that matches the output's currently-committed image description.
+     * For non-sRGB output primaries, this is a pipeline of [sRGB→output-primaries matrix,
+     * inverse-EOTF]; otherwise it is just the inverse-EOTF. The wlroots Vulkan two-pass renderer
+     * composites every add_texture into an sRGB-primaries FP16 blend image, so without the
+     * primaries-conversion stage Rec.2020/PQ outputs would have sRGB-primaries values encoded
+     * via PQ — which the display interprets as Rec.2020 primaries, producing oversaturated
+     * colors. Cached so that it is not recreated each frame.
      */
     wlr_color_transform *output_inverse_eotf = nullptr;
     wlr_color_transfer_function output_inverse_eotf_tf = (wlr_color_transfer_function)0;
+    wlr_color_named_primaries output_inverse_eotf_primaries = (wlr_color_named_primaries)0;
 
     /**
      * The transfer function the output expects in its committed image description, or sRGB if no
@@ -832,10 +838,26 @@ class wf::render_manager::impl
         return WLR_COLOR_TRANSFER_FUNCTION_SRGB;
     }
 
+    /**
+     * The primaries the output expects in its committed image description, or sRGB if no
+     * image description has been set.
+     */
+    wlr_color_named_primaries get_output_primaries()
+    {
+        if (output->handle->image_description && output->handle->image_description->primaries)
+        {
+            return output->handle->image_description->primaries;
+        }
+
+        return WLR_COLOR_NAMED_PRIMARIES_SRGB;
+    }
+
     wlr_color_transform *get_output_inverse_eotf()
     {
         wlr_color_transfer_function tf = get_output_transfer_function();
-        if (output_inverse_eotf && (output_inverse_eotf_tf == tf))
+        wlr_color_named_primaries prim = get_output_primaries();
+        if (output_inverse_eotf && (output_inverse_eotf_tf == tf) &&
+            (output_inverse_eotf_primaries == prim))
         {
             return output_inverse_eotf;
         }
@@ -845,14 +867,55 @@ class wf::render_manager::impl
             wlr_color_transform_unref(output_inverse_eotf);
         }
 
-        output_inverse_eotf    = wlr_color_transform_init_linear_to_inverse_eotf(tf);
-        output_inverse_eotf_tf = tf;
-        if (!output_inverse_eotf)
+        wlr_color_transform *eotf = wlr_color_transform_init_linear_to_inverse_eotf(tf);
+        if (!eotf)
         {
             LOGE("Failed to create inverse-EOTF transform for output ", output->to_string(),
                 " (transfer function ", (int)tf, ")");
+            output_inverse_eotf    = nullptr;
+            output_inverse_eotf_tf = tf;
+            output_inverse_eotf_primaries = prim;
+            return nullptr;
         }
 
+        if (prim == WLR_COLOR_NAMED_PRIMARIES_SRGB)
+        {
+            output_inverse_eotf    = eotf;
+            output_inverse_eotf_tf = tf;
+            output_inverse_eotf_primaries = prim;
+            return output_inverse_eotf;
+        }
+
+        wlr_color_primaries srgb_primaries{};
+        wlr_color_primaries dst_primaries{};
+        wlr_color_primaries_from_named(&srgb_primaries, WLR_COLOR_NAMED_PRIMARIES_SRGB);
+        wlr_color_primaries_from_named(&dst_primaries, prim);
+        float matrix[9];
+        wlr_color_primaries_transform_absolute_colorimetric(&srgb_primaries, &dst_primaries, matrix);
+        wlr_color_transform *mat = wlr_color_transform_init_matrix(matrix);
+        if (!mat)
+        {
+            LOGE("Failed to create primaries-conversion matrix transform for output ",
+                output->to_string());
+            output_inverse_eotf    = eotf;
+            output_inverse_eotf_tf = tf;
+            output_inverse_eotf_primaries = prim;
+            return output_inverse_eotf;
+        }
+
+        wlr_color_transform *stages[2] = {mat, eotf};
+        wlr_color_transform *pipeline  = wlr_color_transform_init_pipeline(stages, 2);
+        // init_pipeline references the stages; drop our own refs.
+        wlr_color_transform_unref(mat);
+        wlr_color_transform_unref(eotf);
+        if (!pipeline)
+        {
+            LOGE("Failed to create color-transform pipeline for output ", output->to_string());
+        }
+
+        output_inverse_eotf    = pipeline;
+        output_inverse_eotf_tf = tf;
+        output_inverse_eotf_primaries = prim;
         return output_inverse_eotf;
     }
 
@@ -926,14 +989,15 @@ class wf::render_manager::impl
         hdr.load_option(section, "hdr");
         hdr.set_callback([=] ()
         {
-            // Drop the cached inverse-EOTF: by the time the next frame is rendered, the
-            // output's image_description will have been re-committed by output-layout, and
+            // Drop the cached output color transform: by the time the next frame is rendered,
+            // the output's image_description will have been re-committed by output-layout, and
             // get_output_inverse_eotf() will lazily regenerate the transform to match.
             if (output_inverse_eotf)
             {
                 wlr_color_transform_unref(output_inverse_eotf);
                 output_inverse_eotf    = nullptr;
                 output_inverse_eotf_tf = (wlr_color_transfer_function)0;
+                output_inverse_eotf_primaries = (wlr_color_named_primaries)0;
             }
 
             damage_manager->damage_whole_idle();
