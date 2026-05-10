@@ -986,7 +986,6 @@ struct output_layout_output_t
         {
             LOGC(OUTPUT, "Disabling HDR on output ", handle->name);
             wlr_output_state_set_image_description(&pending_state.pending, NULL);
-            pending_state.commit(handle);
         } else
         {
             LOGC(OUTPUT, "Enabling HDR on output ", handle->name);
@@ -1000,6 +999,15 @@ struct output_layout_output_t
             };
             wlr_output_state_set_image_description(&pending_state.pending, &image_desc);
         }
+
+        // wlroots' set_image_description doesn't trigger empty-buffer allocation or set
+        // allow_reconfiguration, so re-pin the current render format and request a
+        // reconfiguration. That forces wlroots to attach a fresh primary buffer and the
+        // DRM backend to set DRM_MODE_ATOMIC_ALLOW_MODESET, which amdgpu requires for
+        // HDR_OUTPUT_METADATA changes.
+        wlr_output_state_set_render_format(&pending_state.pending, handle->render_format);
+        pending_state.pending.allow_reconfiguration = true;
+        pending_state.commit(handle);
 
         current_hdr_enabled = want_hdr_enabled;
     }
