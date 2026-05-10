@@ -36,8 +36,15 @@ class wayland_xdg_client_t
     void create_toplevel(const std::string& title, const std::string& app_id);
     bool has_pending_configure() const;
     uint32_t last_configure_serial() const;
+    std::optional<std::pair<int, int>> last_toplevel_size() const;
+    bool last_toplevel_configure_fullscreen() const;
+    int last_preferred_buffer_scale() const;
+    std::optional<uint32_t> last_fractional_scale() const;
+    void attach_with_fractional_scale(int surface_width, int surface_height);
     void ack_last_configure();
+    void clear_pending_configure();
     void attach_and_commit(int width, int height);
+    std::pair<int, int> last_committed_buffer_size() const;
     void commit_surface();
     void destroy_toplevel();
 

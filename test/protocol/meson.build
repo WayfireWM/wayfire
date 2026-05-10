@@ -15,12 +15,45 @@ layer_shell_client_header = custom_target(
     output: 'wlr-layer-shell-client-protocol.h',
     command: [wayland_scanner, 'client-header', '@INPUT@', '@OUTPUT@'])
 
+viewporter_client_xml = join_paths(wl_protocol_dir, 'stable/viewporter/viewporter.xml')
+
+viewporter_client_header = custom_target(
+    'viewporter-client-header',
+    input: viewporter_client_xml,
+    output: 'viewporter-client-protocol.h',
+    command: [wayland_scanner, 'client-header', '@INPUT@', '@OUTPUT@'])
+
+viewporter_client_code = custom_target(
+    'viewporter-client-code',
+    input: viewporter_client_xml,
+    output: 'viewporter-client-protocol.c',
+    command: [wayland_scanner, 'private-code', '@INPUT@', '@OUTPUT@'])
+
+fractional_scale_client_xml = join_paths(wl_protocol_dir,
+    'staging/fractional-scale/fractional-scale-v1.xml')
+
+fractional_scale_client_header = custom_target(
+    'fractional-scale-client-header',
+    input: fractional_scale_client_xml,
+    output: 'fractional-scale-v1-client-protocol.h',
+    command: [wayland_scanner, 'client-header', '@INPUT@', '@OUTPUT@'])
+
+fractional_scale_client_code = custom_target(
+    'fractional-scale-client-code',
+    input: fractional_scale_client_xml,
+    output: 'fractional-scale-v1-client-protocol.c',
+    command: [wayland_scanner, 'private-code', '@INPUT@', '@OUTPUT@'])
+
 test_support_sources = [
     '../support/headless-core-harness.cpp',
     '../support/wayland-client-utils.cpp',
     '../support/wayland-layer-shell-client-bridge.c',
     '../support/wayland-layer-shell-client.cpp',
     '../support/wayland-xdg-client.cpp',
+    fractional_scale_client_header,
+    fractional_scale_client_code,
+    viewporter_client_header,
+    viewporter_client_code,
     layer_shell_client_header,
     xdg_shell_client_header,
 ]
