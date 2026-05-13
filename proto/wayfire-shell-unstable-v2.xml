@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <protocol name="wayfire_shell_unstable_v2">
-  <interface name="zwf_shell_manager_v2" version="2">
+  <interface name="zwf_shell_manager_v2" version="3">
     <description summary="DE integration">
       This protocol provides additional events and requests for special DE
       clients like panels, docks, etc.
@@ -21,7 +21,7 @@
     </request>
   </interface>
 
-  <interface name="zwf_output_v2" version="2">
+  <interface name="zwf_output_v2" version="3">
     <description summary="A wrapper for wl_output">
       Represents a single output.
       Each output is managed independently from the others.
@@ -65,14 +65,14 @@
     </request>
 
     <enum name="hotspot_edge">
-      <entry name="top" value="1"/>
-      <entry name="bottom" value="2"/>
-      <entry name="left" value="4"/>
-      <entry name="right" value="8"/>
+      <entry name="top" value="1" summary="Top edge of the output"/>
+      <entry name="bottom" value="2" summary="Bottom edge of the output"/>
+      <entry name="left" value="4" summary="Left edge of the output"/>
+      <entry name="right" value="8" summary="Right edge of the output"/>
     </enum>
 
     <request name="create_hotspot">
-      <description summary="Create a hotspot on the output">
+      <description summary="Create a hotspot on the output edge or corner">
         A hotspot on the output is an edge or a corner region of the
         output where the mouse or touch point has been residing for a given
         amount of time.
@@ -80,11 +80,17 @@
         The hotspot can be used for example for autohiding panels, where the
         panel is shown when the input hovers on the edge of the output for a
         specific amount of time.
+
+        For edge hotspots (single edge), the entire edge region of 'threshold'
+        pixels depth triggers the hotspot.
+
+        For corner hotspots (two adjacent edges), the corner region of
+        'threshold' pixels by 'threshold' pixels triggers the hotspot.
       </description>
 
-      <arg name="hotspot" type="uint" summary="bitwise or of the edges the output"/>
-      <arg name="threshold" type="uint" summary="distance from the edge of the output"/>
-      <arg name="timeout" type="uint" summary="minimum time for the mouse to be in the hotspot"/>
+      <arg name="hotspot" type="uint" summary="bitwise or of the edges (1-2 edges)"/>
+      <arg name="threshold" type="uint" summary="distance from the edge or corner of the output in pixels"/>
+      <arg name="timeout" type="uint" summary="minimum time for input to be in the hotspot (ms)"/>
       <arg name="id" type="new_id" interface="zwf_hotspot_v2"/>
     </request>
 
@@ -96,15 +102,67 @@
         Emitted using an activator binding.
       </description>
     </event>
+
+    <!-- Version 3 additions -->
+    <request name="create_custom_hotspot" since="3">
+      <description summary="Create an arbitrary rectangular hotspot">
+        Creates a hotspot for an arbitrary axis-aligned rectangle on the output.
+        The rectangle is defined in output-local coordinates with (x, y) as the
+        top-left corner, and (w, h) as width and height.
+
+        The hotspot activates when the input pointer comes within 'threshold'
+        pixels of any point on the rectangle's boundary. The proximity event
+        reports the exact distance (0 to threshold) from the pointer to the
+        nearest point on the rectangle boundary.
+
+        This is a generalization of edge and corner hotspots:
+        - A top edge hotspot is a rectangle covering the entire top edge
+          with w = output.width, h = threshold, positioned at (0, 0)
+        - A corner hotspot is a square of size threshold x threshold
+          positioned at the output corner
+
+        Use cases include:
+        - Trigger zones that aren't aligned to output edges
+        - Complex panel layouts where activation regions are around specific UI elements
+        - Desktop widgets that expand/collapse based on pointer approach
+
+        Note: The rectangle should be within the output bounds. The compositor
+        may clamp it to output geometry or ignore rectangles entirely outside.
+      </description>
+      <arg name="x" type="uint" summary="X position of rectangle (output-local)"/>
+      <arg name="y" type="uint" summary="Y position of rectangle (output-local)"/>
+      <arg name="width" type="uint" summary="Width of rectangle in pixels"/>
+      <arg name="height" type="uint" summary="Height of rectangle in pixels"/>
+      <arg name="threshold" type="uint" summary="Distance from rectangle boundary that triggers hotspot"/>
+      <arg name="timeout" type="uint" summary="Timeout in milliseconds"/>
+      <arg name="id" type="new_id" interface="zwf_hotspot_v2"/>
+    </request>
   </interface>
 
-  <interface name="zwf_hotspot_v2" version="1">
-    <description summary="An edge of the output defined by 1 or 2 edges"/>
+  <interface name="zwf_hotspot_v2" version="3">
+    <description summary="A hotspot region on an output">
+      Represents a region on an output that triggers when the input pointer
+      remains within it for a specified timeout period.
+
+      Hotspots can be either edge-based (full edge or corner) or positioned
+      (a specific point on an edge).
+
+      The lifecycle of a hotspot interaction is:
+      1. Pointer enters hotspot area -> timeout timer starts
+      2. After timeout, enter event is sent
+      3. While pointer remains inside hotspot area, proximity_changed events
+         are sent as the pointer moves
+      4. Pointer leaves hotspot area -> leave event is sent
+    </description>
 
     <event name="enter">
-      <description summary="Hotspot was triggered">
+      <description summary="Hotspot was activated after timeout">
         Means that the mouse and/or touch finger was inside the indicated
-        hotspot for the given amount of time.
+        hotspot for the given amount of timeout time.
+
+        After receiving this event, the client can expect proximity_changed
+        events as the pointer moves within the hotspot, and eventually a
+        leave event when the pointer exits.
 
         Emitted at most once for each entry of the input inside the hotspot.
       </description>
@@ -115,12 +173,45 @@
         This event indicates that the mouse or touch point has left the hotspot
         area.
 
+        After this event, no further proximity_changed events will be sent
+        until a new enter event.
+
         Emitted only once after each enter.
       </description>
     </event>
+
+    <event name="proximity_changed" since="3">
+      <description summary="Proximity to trigger point changed">
+        Sent after an enter event and before the corresponding leave event,
+        whenever the input pointer moves within the hotspot area.
+
+        Proximity indicates the current distance in pixels from the input pointer
+        to the trigger point of the hotspot:
+        - 0: Input pointer is exactly at the trigger point
+        - threshold: Input pointer is at the outer edge of the hotspot radius
+          (just entered the hotspot area)
+        - Values in between: Linear distance from trigger point
+
+        This allows clients to implement pixel-perfect smooth feedback without
+        needing to know the threshold value used to create the hotspot.
+
+        For standard edge/corner hotspots (created via create_hotspot), the
+        "threshold" is the distance from the edge parameter. The trigger point
+        is defined as the closest point on the edge to the input pointer.
+
+        For positioned hotspots (created via create_positioned_hotspot), the
+        threshold is the radius parameter, and the trigger point is the exact
+        point on the edge specified by position.
+
+        The compositor should send this event at the same frequency as pointer
+        motion events to ensure smooth animations.
+      </description>
+
+      <arg name="proximity" type="uint" summary="Distance in pixels from trigger point (0 = at trigger, threshold = at edge)"/>
+    </event>
   </interface>
 
-  <interface name="zwf_surface_v2" version="1">
+  <interface name="zwf_surface_v2" version="3">
     <description summary="A special surface"/>
     <request name="interactive_move">
       <description summary="Start an interactive move of the surface"/>
