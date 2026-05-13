@@ -331,6 +331,28 @@ void wf::test::wayland_xdg_client_t::attach_with_fractional_scale(int surface_wi
     attach_and_commit(buffer_width, buffer_height);
 }
 
+void wf::test::wayland_xdg_client_t::attach_with_fractional_scale(int surface_width, int surface_height,
+    const std::vector<uint32_t>& pixels)
+{
+    if (!priv->preferred_fractional_scale)
+    {
+        throw std::runtime_error("No preferred fractional scale advertised yet");
+    }
+
+    const double scale = *priv->preferred_fractional_scale / 120.0;
+    const auto round_half_away_from_zero = [] (double value)
+    {
+        return int(std::copysign(std::floor(std::abs(value) + 0.5), value));
+    };
+
+    const int buffer_width = round_half_away_from_zero(surface_width * scale);
+    const int buffer_height = round_half_away_from_zero(surface_height * scale);
+
+    wl_surface_set_buffer_scale(priv->surface, 1);
+    wp_viewport_set_destination(priv->viewport, surface_width, surface_height);
+    attach_and_commit(buffer_width, buffer_height, pixels);
+}
+
 void wf::test::wayland_xdg_client_t::ack_last_configure()
 {
     if (!priv->configured)
@@ -352,6 +374,18 @@ void wf::test::wayland_xdg_client_t::clear_pending_configure()
 void wf::test::wayland_xdg_client_t::attach_and_commit(int width, int height)
 {
     priv->buffer = create_shm_buffer(priv->shm, width, height, 0xff336699u);
+    priv->committed_buffer_size = {width, height};
+
+    wl_surface_attach(priv->surface, priv->buffer, 0, 0);
+    wl_surface_damage_buffer(priv->surface, 0, 0, width, height);
+    wl_surface_commit(priv->surface);
+    wl_display_flush(priv->display);
+}
+
+void wf::test::wayland_xdg_client_t::attach_and_commit(int width, int height,
+    const std::vector<uint32_t>& pixels)
+{
+    priv->buffer = create_shm_buffer(priv->shm, width, height, pixels);
     priv->committed_buffer_size = {width, height};
 
     wl_surface_attach(priv->surface, priv->buffer, 0, 0);

@@ -5,10 +5,13 @@
 #include <cstdlib>
 #include <filesystem>
 #include <iostream>
+#include <optional>
 #include <stdexcept>
 #include <chrono>
 #include <array>
+#include <vector>
 
+#include <drm_fourcc.h>
 #include <sys/stat.h>
 #include <unistd.h>
 
@@ -18,6 +21,7 @@
 #include <wayfire/debug.hpp>
 #include <wayfire/nonstd/wlroots-full.hpp>
 #include <wayfire/output-layout.hpp>
+#include <wayfire/render-manager.hpp>
 #include <wayfire/seat.hpp>
 #include <wayfire/signal-definitions.hpp>
 #include <wayfire/util/log.hpp>
@@ -41,6 +45,7 @@ class test_config_backend_t : public wf::config_backend_t
 
         wf::config::load_configuration_options_from_string(config,
             "[core]\n"
+            "background_color = 0.0 0.0 0.0 1.0\n"
             "plugins = \n"
             "xwayland = false\n"
             "\n"
@@ -114,6 +119,59 @@ struct wf::test::headless_core_harness_t::impl
     std::string test_runtime_dir;
     bool had_wayland_display = false;
     bool had_xdg_runtime_dir = false;
+
+    std::vector<uint32_t> capture_output_pixels()
+    {
+        auto *wo = core->output_layout->get_outputs().front();
+        std::optional<std::vector<uint32_t>> captured_pixels;
+        wf::post_hook_t capture_hook = [&] (wf::auxilliary_buffer_t& source, const wf::render_buffer_t&)
+        {
+            auto framebuffer = source.get_renderbuffer();
+            auto *buffer     = framebuffer.get_buffer();
+            if (!buffer)
+            {
+                return;
+            }
+
+            auto *tex = wlr_texture_from_buffer(core->renderer, buffer);
+            if (!tex)
+            {
+                throw std::runtime_error("Failed to create texture from output buffer");
+            }
+
+            auto size = framebuffer.get_size();
+            std::vector<uint32_t> pixels(size.width * size.height);
+            wlr_texture_read_pixels_options opts{};
+            opts.data   = pixels.data();
+            opts.format = DRM_FORMAT_ABGR8888;
+            opts.stride = size.width * 4;
+            if (!wlr_texture_read_pixels(tex, &opts))
+            {
+                wlr_texture_destroy(tex);
+                throw std::runtime_error("Failed to read output pixels");
+            }
+
+            wlr_texture_destroy(tex);
+            captured_pixels = std::move(pixels);
+        };
+
+        wo->render->add_post(&capture_hook);
+        wo->render->damage_whole();
+        wo->render->schedule_redraw();
+        for (int i = 0; i < 50 && !captured_pixels.has_value(); ++i)
+        {
+            wl_event_loop_dispatch(core->ev_loop, 10);
+            wl_display_flush_clients(core->display);
+        }
+
+        wo->render->rem_post(&capture_hook);
+        if (!captured_pixels.has_value())
+        {
+            throw std::runtime_error("No output buffer available for capture");
+        }
+
+        return *captured_pixels;
+    }
 };
 
 wf::test::headless_core_harness_t::headless_core_harness_t()
@@ -262,4 +320,9 @@ wf::output_t*wf::test::headless_core_harness_t::output() const
 const std::string& wf::test::headless_core_harness_t::socket_name() const
 {
     return priv->core->wayland_display;
+}
+
+std::vector<uint32_t> wf::test::headless_core_harness_t::capture_output_pixels()
+{
+    return priv->capture_output_pixels();
 }
