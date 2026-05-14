@@ -96,13 +96,8 @@ void wf::view_interface_t::take_snapshot(wf::auxilliary_buffer_t& buffer)
     auto root_node = get_surface_root_node();
     const wf::geometry_t bbox = root_node->get_bounding_box();
     float scale = get_output()->handle->scale;
-    // On HDR outputs the snapshot is a linear-space composite that may receive PQ content scaled
-    // up by ~49.26x (SDR-relative linear). Use FP16 storage so HDR highlights aren't clipped.
-    const auto *img_desc = get_output()->handle->image_description;
-    const bool is_hdr    = img_desc &&
-        img_desc->transfer_function == WLR_COLOR_TRANSFER_FUNCTION_ST2084_PQ;
     buffer.allocate(wf::dimensions(bbox), scale,
-        wf::buffer_allocation_hints_t{.hdr_linear = is_hdr});
+        wf::buffer_allocation_hints_t{.hdr_linear = get_output() && get_output()->is_hdr()});
 
     wf::render_target_t target{buffer};
     target.geometry = bbox;

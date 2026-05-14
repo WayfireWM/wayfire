@@ -19,6 +19,7 @@ namespace wf
 {
 class output_t;
 struct auxilliary_buffer_t;
+
 namespace vk
 {
 class command_buffer_t;

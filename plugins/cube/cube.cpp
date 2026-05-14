@@ -98,13 +98,7 @@ class wayfire_cube : public wf::per_output_plugin_instance_t, public wf::pointer
 
                 damage ^= bbox;
 
-                // Per-workspace aux buffers are linear scene composites (target_tf == EXT_LINEAR).
-                // On HDR (PQ) outputs, HDR sources land in the SDR-relative linear domain at values
-                // up to ~49.26 (PQ peak / SDR reference white) and need an FP16 backing to avoid
-                // clipping.
-                const auto *img_desc = self->cube->output->handle->image_description;
-                const bool is_hdr    = img_desc &&
-                    img_desc->transfer_function == WLR_COLOR_TRANSFER_FUNCTION_ST2084_PQ;
+                const bool is_hdr = self->cube->output && self->cube->output->is_hdr();
 
                 for (int i = 0; i < (int)ws_instances.size(); i++)
                 {
