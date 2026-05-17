@@ -160,7 +160,7 @@ class lock_crashed_node : public lock_base_node<simple_text_node_t>
             wf::color_t{0.9, 0.9, 0.9, 1} /* fg_color */);
         params.rounded_rect = true;
         set_text_params(params);
-        set_size(output->get_screen_size());
+        set_size(wf::containing_size(output->get_screen_size()));
     }
 
     void display(std::string text)
@@ -260,7 +260,7 @@ class wf_session_lock_plugin : public wf::plugin_interface_t
             output_changed.set_callback([this] (wf::output_configuration_changed_signal *ev)
             {
                 auto output_state = output_states[ev->output];
-                auto size = ev->output->get_screen_size();
+                auto size = wf::containing_size(ev->output->get_screen_size());
                 if (output_state->surface_node)
                 {
                     output_state->surface_node->configure(size);
@@ -290,7 +290,7 @@ class wf_session_lock_plugin : public wf::plugin_interface_t
                 }
 
                 auto surface_node = std::make_shared<lock_surface_node>(lock_surface, output);
-                surface_node->configure(output->get_screen_size());
+                surface_node->configure(wf::containing_size(output->get_screen_size()));
 
                 output_states[output]->surface_destroy.set_callback(
                     [this, surface_node, output] (void*)

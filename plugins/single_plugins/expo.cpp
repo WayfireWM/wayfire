@@ -160,7 +160,7 @@ class wayfire_expo : public wf::per_output_plugin_instance_t, public wf::keyboar
 
     void handle_pointer_motion(wf::pointf_t pointer_position, uint32_t time_ms) override
     {
-        handle_input_move({(int)pointer_position.x, (int)pointer_position.y});
+        handle_input_move(pointer_position);
     }
 
     void handle_keyboard_key(wf::seat_t*, wlr_keyboard_key_event event) override
@@ -209,7 +209,7 @@ class wayfire_expo : public wf::per_output_plugin_instance_t, public wf::keyboar
             return;
         }
 
-        handle_input_move({(int)position.x, (int)position.y});
+        handle_input_move(position);
     }
 
     bool can_handle_drag()
@@ -419,7 +419,7 @@ class wayfire_expo : public wf::per_output_plugin_instance_t, public wf::keyboar
         }
     }
 
-    void start_moving(wayfire_toplevel_view view, wf::point_t local_grab)
+    void start_moving(wayfire_toplevel_view view, wf::pointf_t local_grab)
     {
         if (!(view->get_allowed_actions() & (wf::VIEW_ALLOW_WS_CHANGE | wf::VIEW_ALLOW_MOVE)))
         {
@@ -447,7 +447,7 @@ class wayfire_expo : public wf::per_output_plugin_instance_t, public wf::keyboar
     }
 
     const wf::point_t offscreen_point = {-10, -10};
-    void handle_input_move(wf::point_t to)
+    void handle_input_move(wf::pointf_t to)
     {
         if (!state.button_pressed)
         {
@@ -605,7 +605,7 @@ class wayfire_expo : public wf::per_output_plugin_instance_t, public wf::keyboar
      * Find the coordinate of the given point from output-local coordinates
      * to coordinates relative to the first workspace (i.e (0,0))
      */
-    void input_coordinates_to_global_coordinates(int & sx, int & sy)
+    void input_coordinates_to_global_coordinates(double& sx, double& sy)
     {
         auto og = output->get_layout_geometry();
 
@@ -626,7 +626,7 @@ class wayfire_expo : public wf::per_output_plugin_instance_t, public wf::keyboar
      * Find the coordinate of the given point from output-local coordinates
      * to output-workspace-local coordinates
      */
-    wf::point_t input_coordinates_to_output_local_coordinates(wf::point_t ip)
+    wf::pointf_t input_coordinates_to_output_local_coordinates(wf::pointf_t ip)
     {
         input_coordinates_to_global_coordinates(ip.x, ip.y);
 
@@ -643,9 +643,8 @@ class wayfire_expo : public wf::per_output_plugin_instance_t, public wf::keyboar
 
     wayfire_toplevel_view find_view_at_coordinates(int gx, int gy)
     {
-        auto local = input_coordinates_to_output_local_coordinates({gx, gy});
-        wf::pointf_t localf = {1.0 * local.x, 1.0 * local.y};
-        auto view = wf::find_output_view_at(output, localf);
+        auto local = input_coordinates_to_output_local_coordinates({(double)gx, (double)gy});
+        auto view  = wf::find_output_view_at(output, local);
         if (view && view->is_mapped())
         {
             return view;
@@ -659,7 +658,7 @@ class wayfire_expo : public wf::per_output_plugin_instance_t, public wf::keyboar
     {
         wlr_box box = {x, y, 1, 1};
         auto og     = output->get_relative_geometry();
-        auto in_grid = wf::origin(wf::scale_box(og, wall->get_viewport(), box));
+        auto in_grid = wf::origin(wf::scale_box(og, wall->get_viewport(), wf::from_integer_box(box)));
 
         auto grid = output->wset()->get_workspace_grid_size();
         for (int i = 0; i < grid.width; i++)

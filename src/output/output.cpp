@@ -131,9 +131,9 @@ void wf::output_impl_t::set_effective_size(const wf::dimensions_t& size)
     this->effective_size = size;
 }
 
-wf::dimensions_t wf::output_impl_t::get_screen_size() const
+wf::dimensionsf_t wf::output_impl_t::get_screen_size() const
 {
-    return this->effective_size;
+    return wf::dimensionsf_t{this->effective_size};
 }
 
 wf::geometry_t wf::output_t::get_relative_geometry() const
@@ -141,7 +141,7 @@ wf::geometry_t wf::output_t::get_relative_geometry() const
     auto size = get_screen_size();
 
     return {
-        0, 0, size.width, size.height
+        0.0, 0.0, size.width, size.height
     };
 }
 
@@ -153,10 +153,10 @@ wf::geometry_t wf::output_t::get_layout_geometry() const
     if (wlr_box_empty(&box))
     {
         // Can happen when initializing the output
-        return {0, 0, handle->width, handle->height};
+        return {0.0, 0.0, (double)handle->width, (double)handle->height};
     } else
     {
-        return box;
+        return wf::from_integer_box(box);
     }
 }
 
@@ -169,7 +169,7 @@ void wf::output_t::ensure_pointer(bool center) const
 {
     auto ptr = wf::get_core().get_cursor_position();
     if (!center &&
-        (get_layout_geometry() & wf::point_t{(int)ptr.x, (int)ptr.y}))
+        (get_layout_geometry() & ptr))
     {
         return;
     }

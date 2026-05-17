@@ -324,7 +324,7 @@ std::optional<wf::geometry_t> view_action_interface_t::_parse_x11_geometry(std::
     // parse X11 style geometry widthxheight+x+y
     std::istringstream g(geometry);
     wf::geometry_t workarea = _nontoplevel->get_output()->workarea->get_workarea();
-    wlr_box bb = _nontoplevel->get_bounding_box();
+    wf::geometry_t bb = _nontoplevel->get_bounding_box();
     int x = bb.x, y = bb.y, w = bb.width, h = bb.height;
     char c;
 
@@ -360,7 +360,7 @@ std::optional<wf::geometry_t> view_action_interface_t::_parse_x11_geometry(std::
 
         if (c == '-')
         {
-            x = std::max(workarea.width - w - x, 0);
+            x = std::max(workarea.width - w - x, 0.0);
         }
 
         x += workarea.x;
@@ -375,7 +375,7 @@ std::optional<wf::geometry_t> view_action_interface_t::_parse_x11_geometry(std::
 
             if (c == '-')
             {
-                y = std::max(workarea.height - h - y, 0);
+                y = std::max(workarea.height - h - y, 0.0);
             }
 
             y += workarea.y;
@@ -383,7 +383,7 @@ std::optional<wf::geometry_t> view_action_interface_t::_parse_x11_geometry(std::
         }
     }
 
-    return wf::geometry_t({x, y, w, h});
+    return wf::geometry_t({(double)x, (double)y, (double)w, (double)h});
 }
 
 std::tuple<bool, float> view_action_interface_t::_validate_alpha(
@@ -620,10 +620,10 @@ wf::geometry_t view_action_interface_t::_get_workspace_grid_geometry(
     auto res   = output->get_screen_size();
 
     return wf::geometry_t{
-        -vp.x * res.width,
-        -vp.y * res.height,
-        vsize.width * res.width,
-        vsize.height * res.height,
+        (double)(-vp.x * res.width),
+        (double)(-vp.y * res.height),
+        (double)(vsize.width * res.width),
+        (double)(vsize.height * res.height),
     };
 }
 
@@ -652,8 +652,8 @@ void view_action_interface_t::_resize(int w, int h)
     {
         auto dimensions = output->get_screen_size();
 
-        w = std::clamp(w, 40, dimensions.width);
-        h = std::clamp(h, 30, dimensions.height);
+        w = std::clamp(w, 40, (int)dimensions.width);
+        h = std::clamp(h, 30, (int)dimensions.height);
 
         _view->resize(w, h);
     }

@@ -316,7 +316,8 @@ void wayfire_xdg_popup::unconstrain()
     auto parent_offset = toplevel_parent->get_surface_root_node()->to_global({0, 0});
     box.x -= parent_offset.x;
     box.y -= parent_offset.y;
-    wlr_xdg_popup_unconstrain_from_box(popup, &box);
+    auto fb_box = wf::to_integer_box(box);
+    wlr_xdg_popup_unconstrain_from_box(popup, &fb_box);
 }
 
 void wayfire_xdg_popup::destroy()
@@ -401,7 +402,7 @@ std::string wayfire_xdg_popup::get_title()
 void wayfire_xdg_popup::move(int x, int y)
 {
     wf::scene::damage_node(get_root_node(), last_bounding_box);
-    surface_root_node->set_offset({x, y});
+    surface_root_node->set_offset({(double)x, (double)y});
     geometry.x = x;
     geometry.y = y;
     damage();

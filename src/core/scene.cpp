@@ -218,7 +218,7 @@ class default_render_instance_t : public render_instance_t
     }
 
     void schedule_instructions(std::vector<render_instruction_t>& instructions,
-        const wf::render_target_t& target, wf::region_t& damage) override
+        const wf::render_target_t& target, wf::regionf_t& damage) override
     {
         // nothing to render here
     }
@@ -260,10 +260,10 @@ wf::geometry_t node_t::get_children_bounding_box()
         return {0, 0, 0, 0};
     }
 
-    int min_x = std::numeric_limits<int>::max();
-    int min_y = std::numeric_limits<int>::max();
-    int max_x = std::numeric_limits<int>::min();
-    int max_y = std::numeric_limits<int>::min();
+    double min_x = std::numeric_limits<double>::max();
+    double min_y = std::numeric_limits<double>::max();
+    double max_x = std::numeric_limits<double>::lowest();
+    double max_y = std::numeric_limits<double>::lowest();
 
     for (auto& ch : children)
     {
@@ -421,7 +421,7 @@ class output_render_instance_t : public default_render_instance_t
 
     damage_callback transform_damage(damage_callback child_damage)
     {
-        return [=] (const wf::region_t& damage)
+        return [=] (const wf::regionf_t& damage)
         {
             if (self->get_output())
             {
@@ -434,7 +434,7 @@ class output_render_instance_t : public default_render_instance_t
     }
 
     void schedule_instructions(std::vector<render_instruction_t>& instructions,
-        const wf::render_target_t& target, wf::region_t& damage) override
+        const wf::render_target_t& target, wf::regionf_t& damage) override
     {
         if (!self->get_output())
         {
@@ -443,7 +443,7 @@ class output_render_instance_t : public default_render_instance_t
 
         if (self->limit_region)
         {
-            wf::region_t our_damage = damage & *self->limit_region;
+            wf::regionf_t our_damage = damage & *self->limit_region;
             our_damage &= target.geometry;
             if (!our_damage.empty())
             {
@@ -460,7 +460,7 @@ class output_render_instance_t : public default_render_instance_t
     }
 
     void _schedule_instructions(std::vector<render_instruction_t>& instructions,
-        const wf::render_target_t& target, wf::region_t& damage)
+        const wf::render_target_t& target, wf::regionf_t& damage)
     {
         // In principle, we just have to schedule the children.
         // However, we need to adjust the target's geometry and the damage to
@@ -498,7 +498,7 @@ class output_render_instance_t : public default_render_instance_t
         return direct_scanout::SKIP;
     }
 
-    void compute_visibility(wf::output_t *output, wf::region_t& visible) override
+    void compute_visibility(wf::output_t *output, wf::regionf_t& visible) override
     {
         auto offset = wf::origin(output->get_layout_geometry());
         compute_visibility_from_list(children, output, visible, offset);
@@ -706,7 +706,7 @@ void render_instance_manager_t::regen_instances()
     }
 }
 
-void render_instance_manager_t::set_visibility_region(wf::region_t region)
+void render_instance_manager_t::set_visibility_region(wf::regionf_t region)
 {
     this->visibility_region = region;
     update_visibility();
@@ -719,7 +719,7 @@ void render_instance_manager_t::update_visibility()
         return;
     }
 
-    wf::region_t visibility = this->visibility_region.value();
+    wf::regionf_t visibility = this->visibility_region.value();
     for (auto& instance : instances)
     {
         instance->compute_visibility(reference_output, visibility);

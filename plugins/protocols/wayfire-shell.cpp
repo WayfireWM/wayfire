@@ -45,9 +45,7 @@ class wfs_hotspot
     {
         idle_check_input.run_once([=] ()
         {
-            auto gcf = wf::get_core().get_cursor_position();
-            wf::point_t gc{(int)gcf.x, (int)gcf.y};
-            process_input_motion(gc);
+            process_input_motion(wf::get_core().get_cursor_position());
         });
     };
 
@@ -56,9 +54,7 @@ class wfs_hotspot
     {
         idle_check_input.run_once([=] ()
         {
-            auto gcf = wf::get_core().get_cursor_position();
-            wf::point_t gc{(int)gcf.x, (int)gcf.y};
-            process_input_motion(gc);
+            process_input_motion(wf::get_core().get_cursor_position());
         });
     };
 
@@ -66,15 +62,13 @@ class wfs_hotspot
     {
         idle_check_input.run_once([=] ()
         {
-            auto gcf = wf::get_core().get_touch_position(0);
-            wf::point_t gc{(int)gcf.x, (int)gcf.y};
-            process_input_motion(gc);
+            process_input_motion(wf::get_core().get_touch_position(0));
         });
     };
 
     wf::signal::connection_t<wf::output_removed_signal> on_output_removed;
 
-    void process_input_motion(wf::point_t gc)
+    void process_input_motion(wf::pointf_t gc)
     {
         if (is_cursor_in_hotspot(gc))
         {
@@ -122,7 +116,7 @@ class wfs_hotspot
         return result;
     }
 
-    uint32_t calculate_proximity(const wf::point_t& cursor) const
+    uint32_t calculate_proximity(const wf::pointf_t& cursor) const
     {
         const auto& rect = trigger;
         int dx = 0, dy = 0;
@@ -159,7 +153,7 @@ class wfs_hotspot
         }
     }
 
-    bool is_cursor_in_hotspot(const wf::point_t& cursor) const
+    bool is_cursor_in_hotspot(const wf::pointf_t& cursor) const
     {
         // Quick rejection using bounding box
         if (!(hotspot_geometry & cursor))
@@ -171,7 +165,7 @@ class wfs_hotspot
         return calculate_proximity(cursor) <= threshold;
     }
 
-    void send_proximity_if_needed(const wf::point_t& cursor)
+    void send_proximity_if_needed(const wf::pointf_t& cursor)
     {
         if (wl_resource_get_version(hotspot_resource) < ZWF_HOTSPOT_V2_PROXIMITY_CHANGED_SINCE_VERSION)
         {
@@ -217,9 +211,9 @@ class wfs_hotspot
         {
             if (ev->output == output)
             {
-                this->hotspot_geometry = {0, 0, 0, 0};
-                this->trigger = {0, 0, 0, 0};
-                process_input_motion({-1, -1});
+                this->hotspot_geometry = {0.0, 0.0, 0.0, 0.0};
+                this->trigger = {0.0, 0.0, 0.0, 0.0};
+                process_input_motion({-1.0, -1.0});
             }
         });
 
@@ -389,8 +383,8 @@ class wfs_output
         } else if (edge_count == 2)
         {
             // Corner: zero-area point at the corner
-            int x = output_geom.x;
-            int y = output_geom.y;
+            double x = output_geom.x;
+            double y = output_geom.y;
 
             if (edge_mask & ZWF_OUTPUT_V2_HOTSPOT_EDGE_RIGHT)
             {
@@ -467,7 +461,9 @@ static void handle_zwf_output_create_custom_hotspot(wl_client*, wl_resource *res
     uint32_t threshold, uint32_t timeout, uint32_t id)
 {
     auto output = (wfs_output*)wl_resource_get_user_data(resource);
-    wf::geometry_t trigger = output->calculate_trigger_geometry({(int)x, (int)y, (int)width, (int)height});
+    wf::geometry_t trigger = output->calculate_trigger_geometry({
+        (double)x, (double)y, (double)width, (double)height
+    });
 
     output->create_hotspot(trigger, threshold, timeout, id);
 }
@@ -523,7 +519,6 @@ class wfs_surface
 static void handle_zwf_surface_interactive_move(wl_client*, wl_resource *resource)
 {
     auto surface = (wfs_surface*)wl_resource_get_user_data(resource);
-
     surface->interactive_move();
 }
 

@@ -70,7 +70,7 @@ void wf::view_interface_t::close()
     /* no-op */
 }
 
-wlr_box wf::view_interface_t::get_bounding_box()
+wf::geometry_t wf::view_interface_t::get_bounding_box()
 {
     return get_transformed_node()->get_bounding_box();
 }

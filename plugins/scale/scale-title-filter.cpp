@@ -296,7 +296,7 @@ class scale_title_filter : public wf::per_output_plugin_instance_t
         auto dim = output->get_screen_size();
         auto new_size = filter_overlay.render_text(filter,
             wf::cairo_text_t::params(font_size, bg_color, text_color, output_scale,
-                dim));
+                wf::containing_size(dim)));
 
         if (!render_active)
         {
@@ -308,11 +308,11 @@ class scale_title_filter : public wf::per_output_plugin_instance_t
             filter_overlay.get_size().height});
         auto damage = max(surface_size, overlay_size);
 
-        output->render->damage({
-            dim.width / 2 - (int)(damage.width / output_scale / 2),
-            dim.height / 2 - (int)(damage.height / output_scale / 2),
-            (int)(damage.width / output_scale),
-            (int)(damage.height / output_scale)
+        output->render->damage(wf::geometry_t{
+            dim.width / 2.0 - (damage.width / output_scale / 2.0),
+            dim.height / 2.0 - (damage.height / output_scale / 2.0),
+            damage.width / output_scale,
+            damage.height / output_scale
         });
 
         overlay_size = surface_size;
@@ -336,10 +336,10 @@ class scale_title_filter : public wf::per_output_plugin_instance_t
         }
 
         wf::geometry_t geometry{
-            dim.width / 2 - (int)(overlay_size.width / output_scale / 2),
-            dim.height / 2 - (int)(overlay_size.height / output_scale / 2),
-            (int)(overlay_size.width / output_scale),
-            (int)(overlay_size.height / output_scale)
+            (double)(dim.width / 2 - (int)(overlay_size.width / output_scale / 2)),
+            (double)(dim.height / 2 - (int)(overlay_size.height / output_scale / 2)),
+            (double)(int)(overlay_size.width / output_scale),
+            (double)(int)(overlay_size.height / output_scale)
         };
 
         tex->set_source_box(wlr_fbox{

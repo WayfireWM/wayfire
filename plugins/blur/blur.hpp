@@ -120,7 +120,7 @@ class wf_blur_base
     /* copy the source pixels from region, storing into result
      * returns the result geometry, in framebuffer coords */
     wlr_box copy_region(wf::auxilliary_buffer_t& result,
-        const wf::render_target_t& source, const wf::region_t& region);
+        const wf::render_target_t& source, const wf::regionf_t& region);
 
     /* blur fb[0]
      * width and height are the scaled dimensions of the buffer
@@ -139,7 +139,7 @@ class wf_blur_base
      * @param target_fb A render target containing the background to be blurred.
      * @param damage    The region to be blurred.
      */
-    void prepare_blur(const wf::render_target_t& target_fb, const wf::region_t& damage);
+    void prepare_blur(const wf::render_target_t& target_fb, const wf::regionf_t& damage);
 
     /**
      * Render a view with a blended background as prepared from @prepare_blur.
@@ -150,7 +150,7 @@ class wf_blur_base
      * @param background_source_fb The framebuffer used to prepare the background blur.
      * @param target_fb The target to draw to.
      */
-    void render(wf::gles_texture_t src_tex, wlr_box src_box, const wf::region_t& damage,
+    void render(wf::gles_texture_t src_tex, wf::geometry_t src_box, const wf::regionf_t& damage,
         const wf::render_target_t& background_source_fb, const wf::render_target_t& target_fb);
 };
 

@@ -137,7 +137,7 @@ class view_interface_t : public wf::signal::provider_t, public wf::object_base_t
      * @return The bounding box of the view, which includes all (sub)surfaces,
      * menus, etc. after applying the view transformations.
      */
-    virtual wlr_box get_bounding_box();
+    virtual wf::geometry_t get_bounding_box();
 
     /**
      * @return the wlr_surface which should receive focus when focusing this

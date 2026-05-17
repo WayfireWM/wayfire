@@ -3,6 +3,7 @@
  */
 #include <map>
 #include <memory>
+#include <array>
 #include <wayfire/workarea.hpp>
 #include <wayfire/seat.hpp>
 #include <wayfire/per-output-plugin.hpp>
@@ -509,8 +510,7 @@ class wayfire_scale : public wf::per_output_plugin_instance_t,
 
     void handle_pointer_motion(wf::pointf_t to_f, uint32_t time) override
     {
-        wf::point_t to{(int)std::round(to_f.x), (int)std::round(to_f.y)};
-        if (!drag_helper->view && last_selected_view && drag_helper->should_start_pending_drag(to))
+        if (!drag_helper->view && last_selected_view && drag_helper->should_start_pending_drag(to_f))
         {
             wf::move_drag::drag_options_t opts;
             opts.join_views = true;
@@ -521,14 +521,14 @@ class wayfire_scale : public wf::per_output_plugin_instance_t,
             // another output.
             grab->set_wants_raw_input(true);
             drag_helper->start_drag(last_selected_view, opts);
-            drag_helper->handle_motion(to);
+            drag_helper->handle_motion(to_f);
         } else if (drag_helper->view)
         {
-            drag_helper->handle_motion(to);
+            drag_helper->handle_motion(to_f);
             if (last_selected_view)
             {
                 const double threshold = 20.0;
-                if (drag_helper->distance_to_grab_origin(to) > threshold)
+                if (drag_helper->distance_to_grab_origin(to_f) > threshold)
                 {
                     last_selected_view = nullptr;
                 }
@@ -540,14 +540,13 @@ class wayfire_scale : public wf::per_output_plugin_instance_t,
     wf::point_t get_view_main_workspace(wayfire_toplevel_view view)
     {
         view = wf::find_topmost_parent(view);
-        auto ws     = output->wset()->get_current_workspace();
-        auto og     = output->get_layout_geometry();
-        auto vg     = view->get_geometry();
-        auto center = wf::point_t{vg.x + vg.width / 2, vg.y + vg.height / 2};
+        auto ws = output->wset()->get_current_workspace();
+        auto og = output->get_layout_geometry();
+        auto vg = view->get_geometry();
 
         return wf::point_t{
-            ws.x + (int)std::floor((double)center.x / og.width),
-            ws.y + (int)std::floor((double)center.y / og.height)};
+            ws.x + (int)std::floor((vg.x + vg.width / 2.0) / og.width),
+            ws.y + (int)std::floor((vg.y + vg.height / 2.0) / og.height)};
     }
 
     /* Given row and column, return a view at this position in the scale grid,
@@ -738,10 +737,9 @@ class wayfire_scale : public wf::per_output_plugin_instance_t,
         {
             auto vg = view->get_geometry();
             auto og = output->get_relative_geometry();
-            wf::region_t wr{og};
-            wf::point_t center{vg.x + vg.width / 2, vg.y + vg.height / 2};
+            wf::pointf_t center{vg.x + vg.width / 2, vg.y + vg.height / 2};
 
-            if (wr.contains_point(center))
+            if (og & center)
             {
                 views.push_back(view);
             }
@@ -803,18 +801,38 @@ class wayfire_scale : public wf::per_output_plugin_instance_t,
     static bool view_compare_x(const wayfire_toplevel_view& a, const wayfire_toplevel_view& b)
     {
         auto vg_a = a->get_geometry();
-        std::vector<int> a_coords = {vg_a.x, vg_a.width, vg_a.y, vg_a.height};
+        std::array<double, 4> a_coords = {
+            vg_a.x,
+            vg_a.width,
+            vg_a.y,
+            vg_a.height,
+        };
         auto vg_b = b->get_geometry();
-        std::vector<int> b_coords = {vg_b.x, vg_b.width, vg_b.y, vg_b.height};
+        std::array<double, 4> b_coords = {
+            vg_b.x,
+            vg_b.width,
+            vg_b.y,
+            vg_b.height,
+        };
         return a_coords < b_coords;
     }
 
     static bool view_compare_y(const wayfire_toplevel_view& a, const wayfire_toplevel_view& b)
     {
         auto vg_a = a->get_geometry();
-        std::vector<int> a_coords = {vg_a.y, vg_a.height, vg_a.x, vg_a.width};
+        std::array<double, 4> a_coords = {
+            vg_a.y,
+            vg_a.height,
+            vg_a.x,
+            vg_a.width,
+        };
         auto vg_b = b->get_geometry();
-        std::vector<int> b_coords = {vg_b.y, vg_b.height, vg_b.x, vg_b.width};
+        std::array<double, 4> b_coords = {
+            vg_b.y,
+            vg_b.height,
+            vg_b.x,
+            vg_b.width,
+        };
         return a_coords < b_coords;
     }
 
@@ -961,7 +979,7 @@ class wayfire_scale : public wf::per_output_plugin_instance_t,
                 }
 
                 // Helper function to calculate the desired scale for a view
-                const auto& calculate_scale = [=] (wf::dimensions_t vg)
+                const auto& calculate_scale = [=] (wf::dimensionsf_t vg)
                 {
                     double w = std::max(1.0, scaled_width);
                     double h = std::max(1.0, scaled_height);
@@ -977,7 +995,7 @@ class wayfire_scale : public wf::per_output_plugin_instance_t,
 
                 add_transformer(view);
                 auto geom = view->get_geometry();
-                double view_scale = calculate_scale({geom.width, geom.height});
+                double view_scale = calculate_scale(wf::fdimensions(geom));
                 for (auto& child : view->enumerate_views(true))
                 {
                     // Ensure a transformer for the view, and make sure that
@@ -1017,7 +1035,7 @@ class wayfire_scale : public wf::per_output_plugin_instance_t,
                     wf::pointf_t center = {vg.x + vg.width / 2.0, vg.y + vg.height / 2.0};
 
                     // Take padding into account
-                    double scale = calculate_scale({vg.width, vg.height});
+                    double scale = calculate_scale(wf::fdimensions(vg));
                     // Ensure child is not scaled more than parent
                     if (!allow_scale_zoom &&
                         (child != view) &&

@@ -14,7 +14,10 @@ void wf::xw::xwayland_surface_node_t::set_scale(float scale)
         if (this->current_state.src_viewport.has_value())
         {
             wlr_fbox& box = this->current_state.src_viewport.value();
-            box = box * rescale;
+            box.x     *= rescale;
+            box.y     *= rescale;
+            box.width *= rescale;
+            box.height *= rescale;
         }
 
         this->current_scale = scale;

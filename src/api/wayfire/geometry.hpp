@@ -10,6 +10,12 @@ extern "C" {
 
 namespace wf
 {
+struct geometryf_t
+{
+    double x, y;
+    double width, height;
+};
+
 struct point_t
 {
     int x, y;
@@ -57,7 +63,7 @@ struct pointf_t
 
     point_t round_down() const
     {
-        return point_t{static_cast<int>(x), static_cast<int>(y)};
+        return point_t{(int)std::floor(x), (int)std::floor(y)};
     }
 };
 
@@ -67,12 +73,31 @@ struct dimensions_t
     int32_t height;
 };
 
-using geometry_t = wlr_box;
+struct dimensionsf_t
+{
+    double width;
+    double height;
 
-point_t origin(const geometry_t& geometry);
+    dimensionsf_t() : width(0), height(0)
+    {}
+    dimensionsf_t(double width, double height) : width(width), height(height)
+    {}
+    explicit dimensionsf_t(const dimensions_t& dims) : width(dims.width), height(dims.height)
+    {}
+};
+
+using geometry_t = geometryf_t;
+using framebuffer_box_t = wlr_box;
+
+pointf_t origin(const geometry_t& geometry);
 dimensions_t dimensions(const geometry_t& geometry);
+dimensions_t dimensions(const wlr_box& geometry);
+dimensionsf_t fdimensions(const geometry_t& geometry);
+dimensions_t containing_size(const dimensionsf_t& dimensions);
 geometry_t construct_box(
-    const wf::point_t& origin, const wf::dimensions_t& dimensions);
+    const wf::pointf_t& origin, const wf::dimensions_t& dimensions);
+geometry_t construct_box(
+    const wf::pointf_t& origin, const wf::dimensionsf_t& dimensions);
 
 /* Returns the intersection of the two boxes, if the boxes don't intersect,
  * the resulting geometry has undefined (x,y) and width == height == 0 */
@@ -82,23 +107,30 @@ geometry_t geometry_intersection(const geometry_t& r1,
 std::ostream& operator <<(std::ostream& stream, const wf::point_t& point);
 std::ostream& operator <<(std::ostream& stream, const wf::pointf_t& pointf);
 std::ostream& operator <<(std::ostream& stream, const wf::dimensions_t& dims);
+std::ostream& operator <<(std::ostream& stream, const wf::dimensionsf_t& dims);
 
 bool operator ==(const wf::dimensions_t& a, const wf::dimensions_t& b);
 bool operator !=(const wf::dimensions_t& a, const wf::dimensions_t& b);
 
+bool operator ==(const wf::dimensionsf_t& a, const wf::dimensionsf_t& b);
+bool operator !=(const wf::dimensionsf_t& a, const wf::dimensionsf_t& b);
+
 bool operator ==(const wf::point_t& a, const wf::point_t& b);
 bool operator !=(const wf::point_t& a, const wf::point_t& b);
+
+bool operator ==(const wf::pointf_t& a, const wf::pointf_t& b);
+bool operator !=(const wf::pointf_t& a, const wf::pointf_t& b);
 
 wf::point_t operator +(const wf::point_t& a, const wf::point_t& b);
 wf::point_t operator -(const wf::point_t& a, const wf::point_t& b);
 
 wf::point_t operator -(const wf::point_t& a);
 
-/** Return the closest valume to @value which is in [@min, @max] */
-template<class T>
-T clamp(T value, T min, T max)
+template<class T, class U, class V>
+auto clamp(T value, U min, V max)
 {
-    return std::min(std::max(value, min), max);
+    using R = std::common_type_t<T, U, V>;
+    return std::clamp<R>((R)value, (R)min, (R)max);
 }
 
 /**
@@ -106,50 +138,42 @@ T clamp(T value, T min, T max)
  * The returned geometry might be smaller, but never bigger than window.
  */
 geometry_t clamp(geometry_t window, geometry_t output);
+wlr_box clamp(wlr_box window, wlr_box output);
 
 // Transform a subbox from coordinate space A to coordinate space B.
 // The returned subbox will occupy the same relative part of @B as
 // @box occupies in @A.
 wf::geometry_t scale_box(wf::geometry_t A, wf::geometry_t B, wf::geometry_t box);
 
-// Transform a subbox from coordinate space A to coordinate space B.
-// The returned subbox will occupy the same relative part of @B as
-// @box occupies in @A.
-wlr_fbox scale_fbox(wlr_fbox A, wlr_fbox B, wlr_fbox box);
-
-// Helper function to convert wf::geometry_t to wlr_fbox
-wlr_fbox geometry_to_fbox(const geometry_t& geometry);
-
-// Helper function to convert wlr_fbox to wf::geometry_t
-geometry_t fbox_to_geometry(const wlr_fbox& fbox);
+framebuffer_box_t to_integer_box(const geometry_t& box);
+geometry_t from_integer_box(const framebuffer_box_t& box);
+framebuffer_box_t containing_box(const geometry_t& box);
+framebuffer_box_t containing_box(const wlr_fbox& box);
 }
 
-bool operator ==(const wf::geometry_t& a, const wf::geometry_t& b);
-bool operator !=(const wf::geometry_t& a, const wf::geometry_t& b);
+namespace wf
+{
+bool operator ==(const geometry_t& a, const geometry_t& b);
+bool operator !=(const geometry_t& a, const geometry_t& b);
 
-bool operator ==(const wlr_fbox& a, const wlr_fbox& b);
-bool operator !=(const wlr_fbox& a, const wlr_fbox& b);
-
-wf::point_t operator +(const wf::point_t& a, const wf::geometry_t& b);
-wf::geometry_t operator +(const wf::geometry_t & a, const wf::point_t& b);
-wf::geometry_t operator -(const wf::geometry_t & a, const wf::point_t& b);
+geometry_t operator +(const geometry_t& a, const pointf_t& b);
+geometry_t operator -(const geometry_t& a, const pointf_t& b);
 
 /** Scale the box */
-wf::geometry_t operator *(const wf::geometry_t& box, double scale);
-wlr_fbox operator *(const wlr_fbox& box, double scale);
+geometry_t operator *(const geometry_t& box, double scale);
 
 /* @return The length of the given vector */
-double abs(const wf::point_t & p);
+double abs(const pointf_t& p);
 
 /* Returns true if point is inside rect */
-bool operator &(const wf::geometry_t& rect, const wf::point_t& point);
+bool operator &(const geometry_t& rect, const point_t& point);
 /* Returns true if point is inside rect */
-bool operator &(const wf::geometry_t& rect, const wf::pointf_t& point);
+bool operator &(const geometry_t& rect, const pointf_t& point);
 /* Returns true if the two geometries have a common point */
-bool operator &(const wf::geometry_t& r1, const wf::geometry_t& r2);
+bool operator &(const geometry_t& r1, const geometry_t& r2);
 
 /* Make geometry and point printable */
-std::ostream& operator <<(std::ostream& stream, const wf::geometry_t& geometry);
-std::ostream& operator <<(std::ostream& stream, const wlr_fbox& geometry);
+std::ostream& operator <<(std::ostream& stream, const geometry_t& geometry);
+}
 
 #endif /* end of include guard: WF_GEOMETRY_HPP */

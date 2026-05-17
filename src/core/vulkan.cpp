@@ -183,7 +183,7 @@ void command_buffer_t::set_full_viewport(const wf::render_target_t& target)
     vkCmdSetViewport(*this, 0, 1, &viewport);
 }
 
-void command_buffer_t::for_each_scissor_rect(const wf::render_target_t& target, const wf::region_t& damage,
+void command_buffer_t::for_each_scissor_rect(const wf::render_target_t& target, const wf::regionf_t& damage,
     const std::function<void()> & callback)
 {
     auto buffer_damage = target.framebuffer_region_from_geometry_region(damage);
@@ -557,7 +557,7 @@ std::pair<VkPipelineLayout, VkPipeline> graphics_pipeline_t::pipeline_for(const 
 glm::mat4 render_target_transform(const wf::render_target_t& target)
 
 {
-    auto ortho = glm::ortho(
+    glm::mat4 ortho = glm::ortho(
         1.0f * target.geometry.x,
         1.0f * target.geometry.x + 1.0f * target.geometry.width,
         1.0f * target.geometry.y,

@@ -36,11 +36,11 @@ wf::geometry_t get_bbox_for_node(scene::node_t *node, wf::geometry_t box)
     const auto p4 = node->to_global(
         wf::pointf_t(box.x + box.width, box.y + box.height));
 
-    const int x1 = std::floor(std::min({p1.x, p2.x, p3.x, p4.x}));
-    const int x2 = std::ceil(std::max({p1.x, p2.x, p3.x, p4.x}));
-    const int y1 = std::floor(std::min({p1.y, p2.y, p3.y, p4.y}));
-    const int y2 = std::ceil(std::max({p1.y, p2.y, p3.y, p4.y}));
-    return wlr_box{x1, y1, x2 - x1, y2 - y1};
+    const double x1 = std::floor(std::min({p1.x, p2.x, p3.x, p4.x}));
+    const double x2 = std::ceil(std::max({p1.x, p2.x, p3.x, p4.x}));
+    const double y1 = std::floor(std::min({p1.y, p2.y, p3.y, p4.y}));
+    const double y2 = std::ceil(std::max({p1.y, p2.y, p3.y, p4.y}));
+    return {x1, y1, x2 - x1, y2 - y1};
 }
 
 wf::geometry_t get_bbox_for_node(scene::node_ptr node, wf::geometry_t box)
@@ -237,14 +237,13 @@ wf::geometry_t view_2d_transformer_t::get_bounding_box()
     return get_bbox_for_node(this, get_children_bounding_box());
 }
 
-static void transform_linear_damage(node_t *self, wf::region_t& damage)
+static void transform_linear_damage(node_t *self, wf::regionf_t& damage)
 {
     auto copy = damage;
     damage.clear();
     for (auto& box : copy)
     {
-        damage |=
-            get_bbox_for_node(self, wlr_box_from_pixman_box(box));
+        damage |= get_bbox_for_node(self, geometry_from_pixman_box(box));
     }
 }
 
@@ -254,7 +253,7 @@ class view_2d_render_instance_t :
   public:
     using transformer_render_instance_t::transformer_render_instance_t;
 
-    void transform_damage_region(wf::region_t& damage) override
+    void transform_damage_region(wf::regionf_t& damage) override
     {
         transform_linear_damage(self.get(), damage);
     }
@@ -295,7 +294,7 @@ class view_2d_render_instance_t :
 
             for (auto& box : data.damage)
             {
-                wf::gles::render_target_logic_scissor(data.target, wlr_box_from_pixman_box(box));
+                wf::gles::render_target_logic_scissor(data.target, box);
                 // OpenGL::clear({1, 0, 0, 1});
                 OpenGL::render_transformed_texture(tex, bbox, ortho * flat_transform,
                     glm::vec4{1.0, 1.0, 1.0, self->get_alpha()});
@@ -519,7 +518,7 @@ class view_3d_render_instance_t :
     using transformer_render_instance_t::transformer_render_instance_t;
 
 
-    void transform_damage_region(wf::region_t& damage) override
+    void transform_damage_region(wf::regionf_t& damage) override
     {
         transform_linear_damage(self.get(), damage);
     }
@@ -546,7 +545,7 @@ class view_3d_render_instance_t :
             wf::gles::bind_render_buffer(data.target);
             for (auto& box : data.damage)
             {
-                wf::gles::render_target_logic_scissor(data.target, wlr_box_from_pixman_box(box));
+                wf::gles::render_target_logic_scissor(data.target, box);
                 OpenGL::render_transformed_texture(tex, quad.geometry, {},
                     transform, self->color);
             }

@@ -188,15 +188,15 @@ class iwobbly_state_t
     {}
 
     /** Called when a grab starts */
-    virtual void handle_grab_start(wf::point_t grab, bool takeover)
+    virtual void handle_grab_start(wf::pointf_t grab, bool takeover)
     {}
 
     /** Called when the wobbly grab is moved. */
-    virtual void handle_grab_move(wf::point_t grab)
+    virtual void handle_grab_move(wf::pointf_t grab)
     {}
 
     /** Query the last grab point */
-    virtual wf::point_t get_grab_position() const
+    virtual wf::pointf_t get_grab_position() const
     {
         return {0, 0};
     }
@@ -238,7 +238,12 @@ class iwobbly_state_t
     iwobbly_state_t(const wobbly_model_t& m, wayfire_toplevel_view v) :
         view(v), model(m)
     {
-        bounding_box = {model->x, model->y, model->width, model->height};
+        bounding_box = {
+            (double)model->x,
+            (double)model->y,
+            (double)model->width,
+            (double)model->height,
+        };
     }
 
     /**
@@ -270,8 +275,8 @@ class iwobbly_state_t
 
         model->x     = base.x;
         model->y     = base.y;
-        model->width = std::max(1, base.width);
-        model->height = std::max(1, base.height);
+        model->width = std::max(1, (int)std::round(base.width));
+        model->height = std::max(1, (int)std::round(base.height));
     }
 
   protected:
@@ -288,16 +293,16 @@ class wobbly_state_grabbed_t : public iwobbly_state_t
 {
   public:
     using iwobbly_state_t::iwobbly_state_t;
-    virtual void handle_grab_start(wf::point_t grab, bool takeover) override
+    virtual void handle_grab_start(wf::pointf_t grab, bool takeover) override
     {
-        this->last_grab = {(int)grab.x, (int)grab.y};
+        this->last_grab = grab;
         if (!takeover)
         {
             wobbly_grab_notify(model.get(), last_grab.x, last_grab.y);
         }
     }
 
-    virtual wf::point_t get_grab_position() const override
+    virtual wf::pointf_t get_grab_position() const override
     {
         return this->last_grab;
     }
@@ -328,7 +333,7 @@ class wobbly_state_grabbed_t : public iwobbly_state_t
         auto old_bbox = bounding_box;
         iwobbly_state_t::handle_frame();
 
-        if (wf::dimensions(old_bbox) != wf::dimensions(bounding_box))
+        if (wf::fdimensions(old_bbox) != wf::fdimensions(bounding_box))
         {
             /* Directly accept new size, but keep position,
              * because it is managed by the grab. */
@@ -337,11 +342,11 @@ class wobbly_state_grabbed_t : public iwobbly_state_t
     }
 
   protected:
-    wf::point_t last_grab;
-    void handle_grab_move(wf::point_t grab) override
+    wf::pointf_t last_grab;
+    void handle_grab_move(wf::pointf_t grab) override
     {
         wobbly_move_notify(model.get(), grab.x, grab.y);
-        this->last_grab = {(int)grab.x, (int)grab.y};
+        this->last_grab = grab;
     }
 
     bool is_wobbly_done() const override
@@ -525,7 +530,7 @@ class wobbly_state_free_t : public iwobbly_state_t
         auto old_bbox = bounding_box;
         iwobbly_state_t::handle_frame();
 
-        if (wf::dimensions(old_bbox) != wf::dimensions(bounding_box))
+        if (wf::fdimensions(old_bbox) != wf::fdimensions(bounding_box))
         {
             wobbly_set_top_anchor(model.get(), bounding_box.x, bounding_box.y,
                 bounding_box.width, bounding_box.height);
@@ -585,12 +590,12 @@ class wobbly_transformer_node_t : public wf::scene::transformer_base_node_t
     {
         auto box = wobbly_boundingbox(model.get());
 
-        wlr_box result;
-        result.x     = box.tlx;
-        result.y     = box.tly;
-        result.width = std::ceil(box.brx - box.tlx);
-        result.height = std::ceil(box.bry - box.tly);
-        return result;
+        return {
+            (double)box.tlx,
+            (double)box.tly,
+            std::ceil(box.brx - box.tlx),
+            std::ceil(box.bry - box.tly),
+        };
     }
 
     void gen_render_instances(
@@ -668,12 +673,13 @@ class wobbly_transformer_node_t : public wf::scene::transformer_base_node_t
     void init_model()
     {
         model = std::make_unique<wobbly_surface>();
-        auto g = view->get_bounding_box();
+        auto g    = view->get_bounding_box();
+        auto dims = wf::dimensions(g);
 
         model->x     = g.x;
         model->y     = g.y;
-        model->width = std::max(1, g.width);
-        model->height = std::max(1, g.height);
+        model->width = std::max(1, dims.width);
+        model->height = std::max(1, dims.height);
 
         model->grabbed = 0;
         model->synced  = 1;
@@ -727,7 +733,7 @@ class wobbly_transformer_node_t : public wf::scene::transformer_base_node_t
      * @param grab The position of the starting grab.
      * @param end_grab Whether to end an existing grab.
      */
-    void update_wobbly_state(bool start_grab, wf::point_t grab, bool end_grab)
+    void update_wobbly_state(bool start_grab, wf::pointf_t grab, bool end_grab)
     {
         bool was_grabbed =
             (state->get_wobbly_state() == wf::WOBBLY_STATE_GRABBED ||
@@ -825,17 +831,17 @@ class wobbly_transformer_node_t : public wf::scene::transformer_base_node_t
     }
 
   public:
-    void start_grab(wf::point_t grab)
+    void start_grab(wf::pointf_t grab)
     {
         update_wobbly_state(true, grab, false);
     }
 
-    void move(wf::point_t point)
+    void move(wf::pointf_t point)
     {
         state->handle_grab_move(point);
     }
 
-    void translate(wf::point_t delta)
+    void translate(wf::pointf_t delta)
     {
         state->translate_model(delta.x, delta.y);
     }
@@ -889,7 +895,7 @@ class wobbly_render_instance_t :
         }
     }
 
-    void transform_damage_region(wf::region_t& damage) override
+    void transform_damage_region(wf::regionf_t& damage) override
     {
         damage |= self->get_bounding_box();
     }
@@ -996,7 +1002,7 @@ class wobbly_render_instance_t :
             wf::gles::bind_render_buffer(data.target);
             for (auto box : data.damage)
             {
-                wf::gles::render_target_logic_scissor(data.target, wlr_box_from_pixman_box(box));
+                wf::gles::render_target_logic_scissor(data.target, box);
                 wobbly_graphics::render_triangles(self->wobbly_program, tex,
                     wf::gles::render_target_orthographic_projection(data.target),
                     vert.data(), uv.data(), count_triangles);

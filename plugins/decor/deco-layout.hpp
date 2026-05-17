@@ -46,7 +46,7 @@ struct decoration_area_t
      * @param theme The theme to use for the button.
      */
     decoration_area_t(wf::geometry_t g,
-        std::function<void(wlr_box)> damage_callback,
+        std::function<void(wf::geometry_t)> damage_callback,
         const decoration_theme_t& theme);
 
     /** @return The geometry of the decoration area, relative to the layout */
@@ -102,7 +102,7 @@ class decoration_layout_t
      * layout needs a repaint.
      */
     decoration_layout_t(const decoration_theme_t& theme,
-        std::function<void(wlr_box)> damage_callback);
+        std::function<void(wf::geometry_t)> damage_callback);
 
     /** Regenerate layout using the new size */
     void resize(int width, int height);
@@ -114,7 +114,7 @@ class decoration_layout_t
     std::vector<nonstd::observer_ptr<decoration_area_t>> get_renderable_areas();
 
     /** @return The combined region of all layout areas */
-    wf::region_t calculate_region() const;
+    wf::regionf_t calculate_region() const;
 
     struct action_response_t
     {
@@ -150,15 +150,15 @@ class decoration_layout_t
     const int button_padding_height;
     const decoration_theme_t& theme;
 
-    std::function<void(wlr_box)> damage_callback;
+    std::function<void(wf::geometry_t)> damage_callback;
 
     std::vector<std::unique_ptr<decoration_area_t>> layout_areas;
 
     bool is_grabbed = false;
     /* Position where the grab has started */
-    wf::point_t grab_origin;
+    wf::pointf_t grab_origin;
     /* Last position of the input */
-    std::optional<wf::point_t> current_input;
+    std::optional<wf::pointf_t> current_input;
     /* double-click timer */
     wf::wl_timer<false> timer;
     bool double_click_at_release = false;
@@ -175,10 +175,10 @@ class decoration_layout_t
      * Find the layout area at the given coordinates, if any
      * @return The layout area or null on failure
      */
-    nonstd::observer_ptr<decoration_area_t> find_area_at(std::optional<wf::point_t> point);
+    nonstd::observer_ptr<decoration_area_t> find_area_at(std::optional<wf::pointf_t> point);
 
     /** Unset hover state of hovered button at @position, if any */
-    void unset_hover(std::optional<wf::point_t> position);
+    void unset_hover(std::optional<wf::pointf_t> position);
     wf::option_wrapper_t<std::string> button_order{"decoration/button_order"};
 };
 }

@@ -31,10 +31,10 @@ class workspace_wall_t::workspace_wall_node_t : public scene::node_t
         {
             auto output_size = self->wall->output->get_screen_size();
             return {
-                .x     = ws.x * (output_size.width + self->wall->gap_size),
-                .y     = ws.y * (output_size.height + self->wall->gap_size),
-                .width = output_size.width,
-                .height = output_size.height,
+                .x     = (double)(ws.x * (output_size.width + self->wall->gap_size)),
+                .y     = (double)(ws.y * (output_size.height + self->wall->gap_size)),
+                .width = (double)output_size.width,
+                .height = (double)output_size.height,
             };
         }
 
@@ -50,15 +50,15 @@ class workspace_wall_t::workspace_wall_node_t : public scene::node_t
             {
                 for (int j = 0; j < (int)self->workspaces[i].size(); j++)
                 {
-                    auto push_damage_child = [=] (const wf::region_t& damage)
+                    auto push_damage_child = [=] (const wf::regionf_t& damage)
                     {
                         // Store the damage because we'll have to update the buffers
                         self->aux_buffer_damage[i][j] |= damage;
 
-                        wf::region_t our_damage;
+                        wf::regionf_t our_damage;
                         for (auto& rect : damage)
                         {
-                            wf::geometry_t box = wlr_box_from_pixman_box(rect);
+                            wf::geometry_t box = geometry_from_pixman_box(rect);
                             box = box + wf::origin(get_workspace_rect({i, j}));
                             auto A = self->wall->viewport;
                             auto B = self->get_bounding_box();
@@ -78,9 +78,9 @@ class workspace_wall_t::workspace_wall_node_t : public scene::node_t
             }
         }
 
-        static int damage_sum_area(const wf::region_t& damage)
+        static double damage_sum_area(const wf::regionf_t& damage)
         {
-            int sum = 0;
+            double sum = 0;
             for (const auto& rect : damage)
             {
                 sum += (rect.y2 - rect.y1) * (rect.x2 - rect.x1);
@@ -89,7 +89,7 @@ class workspace_wall_t::workspace_wall_node_t : public scene::node_t
             return sum;
         }
 
-        bool consider_rescale_workspace_buffer(int i, int j, const wf::region_t& visible_damage)
+        bool consider_rescale_workspace_buffer(int i, int j, const wf::regionf_t& visible_damage)
         {
             // In general, when rendering the auxilliary buffers for each workspace, we can render the
             // workspace thumbnails in a lower resolution, because at the end they are shown scaled.
@@ -118,9 +118,9 @@ class workspace_wall_t::workspace_wall_node_t : public scene::node_t
             // In general, it is worth changing the buffer scale if we have a lot of damage to the old
             // buffer, so that for ex. a full re-scale is actually cheaper than repaiting the old buffer.
             // This could easily happen for example if we have a video player during Expo start animation.
-            const int repaint_cost_current_scale =
+            const double repaint_cost_current_scale =
                 damage_sum_area(visible_damage) * (current_scale * current_scale);
-            const int repaint_rescale_cost = (bbox.width * bbox.height) * (render_scale * render_scale);
+            const double repaint_rescale_cost = (bbox.width * bbox.height) * (render_scale * render_scale);
 
             if ((repaint_cost_current_scale > repaint_rescale_cost) || rescale_magnification)
             {
@@ -131,7 +131,8 @@ class workspace_wall_t::workspace_wall_node_t : public scene::node_t
                 const int scaled_height = std::clamp(std::ceil(render_scale * full_size.height),
                     1.0f, 1.0f * full_size.height);
 
-                self->aux_buffer_current_subbox[i][j] = wf::geometry_t{0, 0, scaled_width, scaled_height};
+                self->aux_buffer_current_subbox[i][j] =
+                    wf::geometry_t{0.0, 0.0, (double)scaled_width, (double)scaled_height};
                 self->aux_buffer_damage[i][j] |= self->workspaces[i][j]->get_bounding_box();
                 return true;
             }
@@ -141,7 +142,7 @@ class workspace_wall_t::workspace_wall_node_t : public scene::node_t
 
         void schedule_instructions(
             std::vector<scene::render_instruction_t>& instructions,
-            const wf::render_target_t& target, wf::region_t& damage) override
+            const wf::render_target_t& target, wf::regionf_t& damage) override
         {
             // Update workspaces in a render pass
             for (int i = 0; i < (int)self->workspaces.size(); i++)
@@ -151,7 +152,7 @@ class workspace_wall_t::workspace_wall_node_t : public scene::node_t
                     const auto ws_bbox     = self->wall->get_workspace_rectangle({i, j});
                     const auto visible_box =
                         geometry_intersection(self->wall->viewport, ws_bbox) - wf::origin(ws_bbox);
-                    wf::region_t visible_damage = self->aux_buffer_damage[i][j] & visible_box;
+                    wf::regionf_t visible_damage = self->aux_buffer_damage[i][j] & visible_box;
                     if (consider_rescale_workspace_buffer(i, j, visible_damage))
                     {
                         visible_damage |= visible_box;
@@ -196,10 +197,10 @@ class workspace_wall_t::workspace_wall_node_t : public scene::node_t
             {
                 for (int j = 0; j < (int)self->workspaces[i].size(); j++)
                 {
-                    auto box = wf::geometry_to_fbox(get_workspace_rect({i, j}));
-                    auto A   = wf::geometry_to_fbox(self->wall->viewport);
-                    auto B   = wf::geometry_to_fbox(self->get_bounding_box());
-                    auto render_geometry = wf::scale_fbox(A, B, box);
+                    auto box = get_workspace_rect({i, j});
+                    auto A   = self->wall->viewport;
+                    auto B   = self->get_bounding_box();
+                    auto render_geometry = wf::scale_box(A, B, box);
                     auto& buffer = self->aux_buffers[i][j];
 
                     float dim = self->wall->get_color_for_workspace({i, j});
@@ -225,13 +226,13 @@ class workspace_wall_t::workspace_wall_node_t : public scene::node_t
             self->wall->render_wall(data.target, data.damage);
         }
 
-        void compute_visibility(wf::output_t *output, wf::region_t& visible) override
+        void compute_visibility(wf::output_t *output, wf::regionf_t& visible) override
         {
             for (int i = 0; i < (int)self->workspaces.size(); i++)
             {
                 for (int j = 0; j < (int)self->workspaces[i].size(); j++)
                 {
-                    wf::region_t ws_region = self->workspaces[i][j]->get_bounding_box();
+                    wf::regionf_t ws_region{self->workspaces[i][j]->get_bounding_box()};
                     for (auto& ch : this->instances[i][j])
                     {
                         ch->compute_visibility(output, ws_region);
@@ -301,7 +302,7 @@ class workspace_wall_t::workspace_wall_node_t : public scene::node_t
     // Buffers keeping the contents of almost-static workspaces
     per_workspace_map_t<wf::auxilliary_buffer_t> aux_buffers;
     // Damage accumulated for those buffers
-    per_workspace_map_t<wf::region_t> aux_buffer_damage;
+    per_workspace_map_t<wf::regionf_t> aux_buffer_damage;
     // Current rendering scale for the workspace
     per_workspace_map_t<float> aux_buffer_current_scale;
     // Current subbox for the workspace
@@ -344,7 +345,7 @@ wf::geometry_t workspace_wall_t::get_viewport() const
 }
 
 void workspace_wall_t::render_wall(
-    const wf::render_target_t& fb, const wf::region_t& damage)
+    const wf::render_target_t& fb, const wf::regionf_t& damage)
 {
     wall_frame_event_t data{fb};
     this->emit(&data);
@@ -378,8 +379,8 @@ wf::geometry_t workspace_wall_t::get_workspace_rectangle(
 {
     auto size = this->output->get_screen_size();
 
-    return {ws.x * (size.width + gap_size), ws.y * (size.height + gap_size),
-        size.width, size.height};
+    return {(double)(ws.x * (size.width + gap_size)), (double)(ws.y * (size.height + gap_size)),
+        (double)size.width, (double)size.height};
 }
 
 wf::geometry_t workspace_wall_t::get_wall_rectangle() const
@@ -387,9 +388,9 @@ wf::geometry_t workspace_wall_t::get_wall_rectangle() const
     auto size = this->output->get_screen_size();
     auto workspace_size = this->output->wset()->get_workspace_grid_size();
 
-    return {-gap_size, -gap_size,
-        workspace_size.width * (size.width + gap_size) + gap_size,
-        workspace_size.height * (size.height + gap_size) + gap_size};
+    return {(double)-gap_size, (double)-gap_size,
+        (double)(workspace_size.width * (size.width + gap_size) + gap_size),
+        (double)(workspace_size.height * (size.height + gap_size) + gap_size)};
 }
 
 void workspace_wall_t::set_ws_dim(const wf::point_t& ws, float value)

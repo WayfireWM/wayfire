@@ -28,7 +28,7 @@ class geometry_animation_t : public duration_t
 
     operator wf::geometry_t() const
     {
-        return {(int)x, (int)y, (int)width, (int)height};
+        return {(double)x, (double)y, (double)width, (double)height};
     }
 
   protected:
@@ -46,9 +46,9 @@ class geometry_animation_t : public duration_t
 static inline wf::geometry_t interpolate(wf::geometry_t a, wf::geometry_t b,
     double alpha)
 {
-    const auto& interp = [=] (int32_t wf::geometry_t::*member) -> int32_t
+    const auto& interp = [=] (double wf::geometry_t::*member) -> double
     {
-        return std::round((1 - alpha) * a.*member + alpha * b.*member);
+        return (1 - alpha) * a.*member + alpha * b.*member;
     };
 
     return {

@@ -68,7 +68,8 @@ wf::output_t*wf::xw::find_xwayland_surface_output(wlr_xwayland_surface *xw)
 
         double dx;
         double dy;
-        wlr_box_closest_point(&data->geometry.value(), cx, cy, &dx, &dy);
+        auto geometry = wf::to_integer_box(data->geometry.value());
+        wlr_box_closest_point(&geometry, cx, cy, &dx, &dy);
         const double dist = (dx - cx) * (dx - cx) + (dy - cy) * (dy - cy);
         if (dist < closest_dist)
         {

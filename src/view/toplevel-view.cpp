@@ -22,10 +22,10 @@ static void reposition_relative_to_parent(wayfire_toplevel_view view)
 
     auto parent_geometry = view->parent->get_pending_geometry();
     auto wm_geometry     = view->get_pending_geometry();
-    // Guess which workspace the parent is on
-    wf::point_t center = {
-        parent_geometry.x + parent_geometry.width / 2,
-        parent_geometry.y + parent_geometry.height / 2,
+    // Guess which workspace the parent is on from its logical center.
+    wf::pointf_t center = {
+        parent_geometry.x + parent_geometry.width / 2.0,
+        parent_geometry.y + parent_geometry.height / 2.0,
     };
 
     if (view->parent->is_mapped())
@@ -39,12 +39,14 @@ static void reposition_relative_to_parent(wayfire_toplevel_view view)
     {
         auto scr_size = view->get_output()->get_screen_size();
         wf::point_t parent_ws = {
-            (int)std::floor(1.0 * center.x / scr_size.width),
-            (int)std::floor(1.0 * center.y / scr_size.height),
+            (int)std::floor(center.x / scr_size.width),
+            (int)std::floor(center.y / scr_size.height),
         };
 
-        auto workarea = view->get_output()->render->get_ws_box(
-            view->get_output()->wset()->get_current_workspace() + parent_ws);
+        auto workarea = view->get_output()->workarea->get_workarea();
+        workarea.x += scr_size.width * parent_ws.x;
+        workarea.y += scr_size.height * parent_ws.y;
+
         if (!view->parent->is_mapped())
         {
             /* if we have a parent which still isn't mapped, we cannot determine

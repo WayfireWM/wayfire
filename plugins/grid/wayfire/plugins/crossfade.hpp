@@ -114,7 +114,7 @@ class crossfade_render_instance_t : public scene::render_instance_t
         scene::damage_callback push_damage)
     {
         this->self = std::dynamic_pointer_cast<crossfade_node_t>(self->shared_from_this());
-        scene::damage_callback push_damage_child = [=] (const wf::region_t&)
+        scene::damage_callback push_damage_child = [=] (const wf::regionf_t&)
         {
             // XXX: we could attempt to calculate a meaningful damage, but
             // we update on each frame anyway so ..
@@ -130,7 +130,7 @@ class crossfade_render_instance_t : public scene::render_instance_t
 
     void schedule_instructions(
         std::vector<scene::render_instruction_t>& instructions,
-        const wf::render_target_t& target, wf::region_t& damage) override
+        const wf::render_target_t& target, wf::regionf_t& damage) override
     {
         instructions.push_back(wf::scene::render_instruction_t{
                     .instance = this,

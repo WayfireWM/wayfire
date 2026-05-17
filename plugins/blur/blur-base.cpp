@@ -128,10 +128,9 @@ static int round_up(int x, int mod)
  * Calculate the smallest box which contains @box and whose x, y, width, height
  * are divisible by @degrade, and clamp that box to @bounds.
  */
-static wf::geometry_t sanitize(wf::geometry_t box, int degrade,
-    wf::geometry_t bounds)
+static wlr_box sanitize(wlr_box box, int degrade, wlr_box bounds)
 {
-    wf::geometry_t out_box;
+    wlr_box out_box;
     out_box.x     = degrade * int(box.x / degrade);
     out_box.y     = degrade * int(box.y / degrade);
     out_box.width = round_up(box.width, degrade);
@@ -151,10 +150,10 @@ static wf::geometry_t sanitize(wf::geometry_t box, int degrade,
 }
 
 wlr_box wf_blur_base::copy_region(wf::auxilliary_buffer_t& result,
-    const wf::render_target_t& source, const wf::region_t& region)
+    const wf::render_target_t& source, const wf::regionf_t& region)
 {
     auto subbox = source.framebuffer_box_from_geometry_box(
-        wlr_box_from_pixman_box(region.get_extents()));
+        geometry_from_pixman_box(region.get_extents()));
 
     auto source_box =
         source.framebuffer_box_from_geometry_box(source.geometry);
@@ -180,7 +179,7 @@ wlr_box wf_blur_base::copy_region(wf::auxilliary_buffer_t& result,
     return subbox;
 }
 
-void wf_blur_base::prepare_blur(const wf::render_target_t& target_fb, const wf::region_t& damage)
+void wf_blur_base::prepare_blur(const wf::render_target_t& target_fb, const wf::regionf_t& damage)
 {
     if (damage.empty())
     {
@@ -193,12 +192,7 @@ void wf_blur_base::prepare_blur(const wf::render_target_t& target_fb, const wf::
     /* As an optimization, we create a region that blur can use
      * to perform minimal rendering required to blur. We start
      * by translating the input damage region */
-    wf::region_t blur_damage;
-    for (auto b : damage)
-    {
-        blur_damage |= target_fb.framebuffer_box_from_geometry_box(
-            wlr_box_from_pixman_box(b));
-    }
+    wf::region_t blur_damage = target_fb.framebuffer_region_from_geometry_region(damage);
 
     /* Scale and translate the region */
     blur_damage += -wf::point_t{damage_box.x, damage_box.y};
@@ -212,7 +206,7 @@ void wf_blur_base::prepare_blur(const wf::render_target_t& target_fb, const wf::
         std::swap(fb[0], fb[1]);
     }
 
-    prepared_geometry = damage_box;
+    prepared_geometry = wf::from_integer_box(damage_box);
 }
 
 static wf::pointf_t get_center(wf::geometry_t g)
@@ -220,7 +214,7 @@ static wf::pointf_t get_center(wf::geometry_t g)
     return {g.x + g.width / 2.0, g.y + g.height / 2.0};
 }
 
-void wf_blur_base::render(wf::gles_texture_t src_tex, wlr_box src_box, const wf::region_t& damage,
+void wf_blur_base::render(wf::gles_texture_t src_tex, wf::geometry_t src_box, const wf::regionf_t& damage,
     const wf::render_target_t& background_source_fb, const wf::render_target_t& target_fb)
 {
     wf::gles_texture_t blurred_background = wf::gles_texture_t::from_aux(fb[0]);
@@ -236,10 +230,11 @@ void wf_blur_base::render(wf::gles_texture_t src_tex, wlr_box src_box, const wf:
     };
 
     const float vertex_data_pos[] = {
-        1.0f * src_box.x, 1.0f * src_box.y + src_box.height,
-        1.0f * src_box.x + src_box.width, 1.0f * src_box.y + src_box.height,
-        1.0f * src_box.x + src_box.width, 1.0f * src_box.y,
-        1.0f * src_box.x, 1.0f * src_box.y,
+        static_cast<float>(1.0f * src_box.x), static_cast<float>(1.0f * src_box.y + src_box.height),
+        static_cast<float>(1.0f * src_box.x + src_box.width),
+        static_cast<float>(1.0f * src_box.y + src_box.height),
+        static_cast<float>(1.0f * src_box.x + src_box.width), static_cast<float>(1.0f * src_box.y),
+        static_cast<float>(1.0f * src_box.x), static_cast<float>(1.0f * src_box.y),
     };
 
     blend_program.attrib_pointer("position", 2, 0, vertex_data_pos);
@@ -264,7 +259,7 @@ void wf_blur_base::render(wf::gles_texture_t src_tex, wlr_box src_box, const wf:
     const auto scale_y = 1.0 * view_box.height / blurred_box.height;
     glm::mat4 scale    = glm::scale(glm::mat4(1.0), glm::vec3{scale_x, scale_y, 1.0});
 
-    const wf::pointf_t center_view     = get_center(view_box);
+    const wf::pointf_t center_view     = get_center(wf::from_integer_box(view_box));
     const wf::pointf_t center_prepared = get_center(blurred_box);
     const auto translate_x = 1.0 * (center_view.x - center_prepared.x) / view_box.width;
     const auto translate_y = 1.0 * (center_view.y - center_prepared.y) / view_box.height;
@@ -287,7 +282,7 @@ void wf_blur_base::render(wf::gles_texture_t src_tex, wlr_box src_box, const wf:
 
     for (const auto& box : damage)
     {
-        wf::gles::render_target_logic_scissor(target_fb, wlr_box_from_pixman_box(box));
+        wf::gles::render_target_logic_scissor(target_fb, box);
         GL_CALL(glDrawArrays(GL_TRIANGLE_FAN, 0, 4));
     }
 

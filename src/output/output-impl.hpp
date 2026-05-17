@@ -50,7 +50,7 @@ class output_impl_t : public output_t
     bool deactivate_plugin(wf::plugin_activation_data_t *owner) override;
     void cancel_active_plugins() override;
     bool is_plugin_active(std::string owner_name) const override;
-    wf::dimensions_t get_screen_size() const override;
+    wf::dimensionsf_t get_screen_size() const override;
 
     void add_key(option_sptr_t<keybinding_t> key, wf::key_callback*) override;
     void add_axis(option_sptr_t<keybinding_t> axis, wf::axis_callback*) override;

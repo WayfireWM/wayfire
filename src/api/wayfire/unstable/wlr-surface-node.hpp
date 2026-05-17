@@ -18,8 +18,8 @@ struct surface_state_t
     wlr_buffer *current_buffer = nullptr;
     wlr_texture *texture; // The texture of the wlr_client_buffer
 
-    wf::region_t accumulated_damage;
-    wf::region_t opaque_region;
+    wf::regionf_t accumulated_damage;
+    wf::regionf_t opaque_region;
     wf::dimensions_t size = {0, 0};
     std::optional<wlr_fbox> src_viewport;
     wl_output_transform transform = WL_OUTPUT_TRANSFORM_NORMAL;

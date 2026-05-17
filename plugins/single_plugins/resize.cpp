@@ -57,7 +57,7 @@ class wayfire_resize : public wf::per_output_plugin_instance_t, public wf::point
 
     bool was_client_request, is_using_touch;
     bool preserve_aspect = false;
-    wf::point_t grab_start;
+    wf::pointf_t grab_start;
     wf::geometry_t grabbed_geometry;
 
     uint32_t edges;
@@ -152,7 +152,7 @@ class wayfire_resize : public wf::per_output_plugin_instance_t, public wf::point
     }
 
     /* Returns the currently used input coordinates in global compositor space */
-    wf::point_t get_global_input_coords()
+    wf::pointf_t get_global_input_coords()
     {
         wf::pointf_t input;
         if (is_using_touch)
@@ -163,20 +163,21 @@ class wayfire_resize : public wf::per_output_plugin_instance_t, public wf::point
             input = wf::get_core().get_cursor_position();
         }
 
-        return {(int)input.x, (int)input.y};
+        return input;
     }
 
     /* Returns the currently used input coordinates in output-local space */
-    wf::point_t get_input_coords()
+    wf::pointf_t get_input_coords()
     {
         auto og = output->get_layout_geometry();
-
-        return get_global_input_coords() - wf::point_t{og.x, og.y};
+        return get_global_input_coords() - wf::origin(og);
     }
 
     /* Calculate resize edges, grab starts at (sx, sy), view's geometry is vg */
-    uint32_t calculate_edges(wf::geometry_t vg, int sx, int sy)
+    uint32_t calculate_edges(wf::geometry_t vg, wf::pointf_t input)
     {
+        int sx     = (int)input.x;
+        int sy     = (int)input.y;
         int view_x = sx - vg.x;
         int view_y = sy - vg.y;
 
@@ -208,8 +209,8 @@ class wayfire_resize : public wf::per_output_plugin_instance_t, public wf::point
             return false;
         }
 
-        this->edges = forced_edges ?: calculate_edges(view->get_bounding_box(),
-            get_input_coords().x, get_input_coords().y);
+        this->edges = forced_edges ?: calculate_edges(
+            view->get_bounding_box(), get_input_coords());
 
         if ((edges == 0) || !(view->get_allowed_actions() & wf::VIEW_ALLOW_RESIZE))
         {
@@ -308,8 +309,8 @@ class wayfire_resize : public wf::per_output_plugin_instance_t, public wf::point
         wf::dimensions_t min_size = view->toplevel()->get_min_size();
         min_size.width  = std::max(1, min_size.width);
         min_size.height = std::max(1, min_size.height);
-        min_size = wf::expand_dimensions_by_margins(min_size,
-            view->toplevel()->pending().margins);
+        min_size = wf::containing_size(wf::expand_dimensions_by_margins(
+            wf::dimensionsf_t{min_size}, view->toplevel()->pending().margins));
 
         min_size.width  = std::max(min_size.width, static_cast<int>(user_min_width));
         min_size.height = std::max(min_size.height, static_cast<int>(user_min_height));
@@ -322,11 +323,14 @@ class wayfire_resize : public wf::per_output_plugin_instance_t, public wf::point
         // Max size is whatever is set by the client, if not set, then it is MAX_INT
         wf::dimensions_t max_size = view->toplevel()->get_max_size();
         int64_t width, height;
+        const int horizontal_margins =
+            std::ceil(view->toplevel()->pending().margins.left + view->toplevel()->pending().margins.right);
+        const int vertical_margins =
+            std::ceil(view->toplevel()->pending().margins.top + view->toplevel()->pending().margins.bottom);
+
         if (max_size.width > 0)
         {
-            width = static_cast<int64_t>(max_size.width) +
-                view->toplevel()->pending().margins.left +
-                view->toplevel()->pending().margins.right;
+            width = static_cast<int64_t>(max_size.width) + horizontal_margins;
         } else
         {
             width = std::numeric_limits<decltype(max_size.width)>::max();
@@ -334,9 +338,7 @@ class wayfire_resize : public wf::per_output_plugin_instance_t, public wf::point
 
         if (max_size.height > 0)
         {
-            height = static_cast<int64_t>(max_size.height) +
-                view->toplevel()->pending().margins.top +
-                view->toplevel()->pending().margins.bottom;
+            height = static_cast<int64_t>(max_size.height) + vertical_margins;
         } else
         {
             height = std::numeric_limits<decltype(max_size.height)>::max();
@@ -367,8 +369,8 @@ class wayfire_resize : public wf::per_output_plugin_instance_t, public wf::point
     void input_motion()
     {
         auto input = get_input_coords();
-        int dx     = input.x - grab_start.x;
-        int dy     = input.y - grab_start.y;
+        int dx     = (int)input.x - (int)grab_start.x;
+        int dy     = (int)input.y - (int)grab_start.y;
 
         wf::geometry_t desired = grabbed_geometry;
         double ratio = 1.0;
@@ -426,8 +428,8 @@ class wayfire_resize : public wf::per_output_plugin_instance_t, public wf::point
             }
         } else
         {
-            desired.width  = std::clamp(desired.width, min_size.width, max_size.width);
-            desired.height = std::clamp(desired.height, min_size.height, max_size.height);
+            desired.width  = wf::clamp(desired.width, min_size.width, max_size.width);
+            desired.height = wf::clamp(desired.height, min_size.height, max_size.height);
         }
 
         // If we had to change the size due to ratio/min/max constraints, make sure to keep the gravity
@@ -442,7 +444,7 @@ class wayfire_resize : public wf::per_output_plugin_instance_t, public wf::point
             desired.y += desired_unconstrained.height - desired.height;
         }
 
-        if (wf::dimensions(view->toplevel()->pending().geometry) != wf::dimensions(desired))
+        if (wf::fdimensions(view->toplevel()->pending().geometry) != wf::fdimensions(desired))
         {
             view->toplevel()->pending().gravity  = calculate_gravity();
             view->toplevel()->pending().geometry = desired;

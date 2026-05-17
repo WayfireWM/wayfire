@@ -26,7 +26,7 @@ class drag_icon_t
 
     /** Last icon box. */
     wf::geometry_t last_box = {0, 0, 0, 0};
-    wf::point_t get_position();
+    wf::pointf_t get_position();
 
     std::shared_ptr<scene::dnd_root_icon_root_node_t> root_node;
 };

@@ -34,7 +34,7 @@ nonstd::observer_ptr<view_node_t> tree_node_t::as_view_node()
     return nonstd::make_observer(dynamic_cast<view_node_t*>(this));
 }
 
-wf::point_t get_wset_local_coordinates(std::shared_ptr<wf::workspace_set_t> wset, wf::point_t p)
+wf::pointf_t get_wset_local_coordinates(std::shared_ptr<wf::workspace_set_t> wset, wf::pointf_t p)
 {
     auto vp   = wset->get_current_workspace();
     auto size = wset->get_last_output_geometry().value_or(default_output_resolution);
@@ -45,11 +45,9 @@ wf::point_t get_wset_local_coordinates(std::shared_ptr<wf::workspace_set_t> wset
 
 wf::geometry_t get_wset_local_coordinates(std::shared_ptr<wf::workspace_set_t> wset, wf::geometry_t g)
 {
-    auto new_tl = get_wset_local_coordinates(wset, wf::point_t{g.x, g.y});
-    g.x = new_tl.x;
-    g.y = new_tl.y;
-
-    return g;
+    return wf::construct_box(
+        get_wset_local_coordinates(wset, wf::origin(g)),
+        wf::fdimensions(g));
 }
 
 /* ---------------------- split_node_t implementation ----------------------- */
@@ -434,8 +432,8 @@ wf::geometry_t view_node_t::calculate_target_geometry()
 
     if (view->sticky)
     {
-        local_geometry.x = (local_geometry.x % size.width + size.width) % size.width;
-        local_geometry.y = (local_geometry.y % size.height + size.height) % size.height;
+        local_geometry.x = std::fmod(std::fmod(local_geometry.x, size.width) + size.width, size.width);
+        local_geometry.y = std::fmod(std::fmod(local_geometry.y, size.height) + size.height, size.height);
     }
 
     return local_geometry;

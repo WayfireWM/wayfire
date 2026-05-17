@@ -80,12 +80,12 @@ class wayfire_zoom_screen : public wf::per_output_plugin_instance_t
 
         auto oc = output->get_cursor_position();
         double x, y;
-        wlr_box b = output->get_relative_geometry();
+        wlr_box b = wf::to_integer_box(output->get_relative_geometry());
         wlr_box_closest_point(&b, oc.x, oc.y, &x, &y);
 
         /* get rotation & scale */
-        wlr_box box = {int(x), int(y), 1, 1};
-        box = output->render->get_target_framebuffer().framebuffer_box_from_geometry_box(box);
+        wf::geometry_t box = {x, y, 1, 1};
+        box = output->render->get_target_framebuffer().framebuffer_geometry_from_geometry_box(box);
         x   = box.x;
         y   = box.y;
 
@@ -99,7 +99,7 @@ class wayfire_zoom_screen : public wf::per_output_plugin_instance_t
         const float th     = std::clamp(h / factor, 0.0f, h - y1);
         auto filter_mode   = (interpolation_method == (int)interpolation_method_t::NEAREST) ?
             WLR_SCALE_FILTER_NEAREST : WLR_SCALE_FILTER_BILINEAR;
-        destination.blit(source, {x1, y1, tw, th}, {0, 0, w, h}, filter_mode);
+        destination.blit(source, {x1, y1, tw, th}, {0.0, 0.0, (double)w, (double)h}, filter_mode);
         if (!progression.running() && (progression - 1 <= 0.01))
         {
             unset_hook();

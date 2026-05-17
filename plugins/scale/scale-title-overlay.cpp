@@ -135,8 +135,8 @@ class title_overlay_node_t : public node_t
             }
 
             auto bbox = get_scaled_bbox(v);
-            max_size.width  = std::max(max_size.width, bbox.width);
-            max_size.height = std::max(max_size.height, bbox.height);
+            max_size.width  = std::max(max_size.width, (int)std::ceil(bbox.width));
+            max_size.height = std::max(max_size.height, (int)std::ceil(bbox.height));
         }
 
         return max_size;
@@ -263,7 +263,7 @@ class title_overlay_node_t : public node_t
         std::vector<render_instance_uptr>& instances,
         damage_callback push_damage, wf::output_t *output) override;
 
-    void do_push_damage(wf::region_t updated_region)
+    void do_push_damage(wf::regionf_t updated_region)
     {
         node_damage_signal ev;
         ev.region = updated_region;
@@ -302,7 +302,7 @@ class title_overlay_render_instance_t : public render_instance_t
     }
 
     void schedule_instructions(std::vector<render_instruction_t>& instructions,
-        const wf::render_target_t& target, wf::region_t& damage) override
+        const wf::render_target_t& target, wf::regionf_t& damage) override
     {
         if (!self->overlay_shown || !self->view->has_data<view_title_texture_t>())
         {

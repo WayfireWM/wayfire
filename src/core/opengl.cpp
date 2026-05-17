@@ -356,10 +356,10 @@ void wf::gles::scissor_render_buffer(const wf::render_buffer_t& buffer, wlr_box 
 
 glm::mat4 wf::gles::render_target_orthographic_projection(const wf::render_target_t& target)
 {
-    auto ortho = glm::ortho(1.0f * target.geometry.x,
-        1.0f * target.geometry.x + 1.0f * target.geometry.width,
-        1.0f * target.geometry.y + 1.0f * target.geometry.height,
-        1.0f * target.geometry.y);
+    auto ortho = glm::ortho((float)target.geometry.x,
+        (float)(target.geometry.x + target.geometry.width),
+        (float)(target.geometry.y + target.geometry.height),
+        (float)target.geometry.y);
 
     return gles::render_target_gl_to_framebuffer(target) * ortho;
 }
@@ -398,9 +398,10 @@ glm::mat4 wf::gles::output_transform(const render_target_t& target)
         wlr_output_transform_compose(target.wl_transform, WL_OUTPUT_TRANSFORM_FLIPPED_180));
 }
 
-void wf::gles::render_target_logic_scissor(const wf::render_target_t& target, wlr_box box)
+void wf::gles::render_target_logic_scissor(const wf::render_target_t& target, const pixman_box64f_t& box)
 {
-    wf::gles::scissor_render_buffer(target, target.framebuffer_box_from_geometry_box(box));
+    wf::gles::scissor_render_buffer(target,
+        target.framebuffer_box_from_geometry_box(geometry_from_pixman_box(box)));
 }
 
 /* look up the actual values of wl_output_transform enum

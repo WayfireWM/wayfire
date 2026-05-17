@@ -99,7 +99,7 @@ class wayfire_layer_shell_view : public wf::view_interface_t
     void move(int x, int y)
     {
         wf::region_t damage = last_bounding_box;
-        surface_root_node->set_offset({x, y});
+        surface_root_node->set_offset({(double)x, (double)y});
         this->geometry.x = x;
         this->geometry.y = y;
 

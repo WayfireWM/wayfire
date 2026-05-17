@@ -141,16 +141,13 @@ std::shared_ptr<wf::texture_t> wf::toplevel_view_node_t::to_texture() const
     return nullptr;
 }
 
-wf::region_t wf::toplevel_view_node_t::get_opaque_region() const
+wf::regionf_t wf::toplevel_view_node_t::get_opaque_region() const
 {
     auto view = _view.lock();
     if (view && view->is_mapped() && view->get_wlr_surface())
     {
         auto surf = view->get_wlr_surface();
-
-        wf::region_t region{&surf->opaque_region};
-        region += get_offset();
-        return region;
+        return wf::regionf_t{&surf->opaque_region} + get_offset();
     }
 
     return {};

@@ -50,7 +50,7 @@ struct drag_focus_output_signal
  */
 struct drag_motion_signal
 {
-    wf::point_t current_position;
+    wf::pointf_t current_position;
 };
 
 /**
@@ -101,7 +101,7 @@ struct drag_done_signal
      * The position of the input when the view was dropped.
      * In output-layout coordinates.
      */
-    wf::point_t grab_position;
+    wf::pointf_t grab_position;
 };
 
 /**
@@ -109,7 +109,7 @@ struct drag_done_signal
  * Example: returns [0.5, 0.5] if the grab is the midpoint of the view.
  */
 inline static wf::pointf_t find_relative_grab(
-    wf::geometry_t view, wf::point_t grab)
+    wf::geometry_t view, wf::pointf_t grab)
 {
     return wf::pointf_t{
         1.0 * (grab.x - view.x) / view.width,
@@ -161,10 +161,10 @@ class core_drag_t : public signal::provider_t
      * Rebuild the wobbly model after a change in the scaling, so that the wobbly
      * model does not try to animate the scaling change itself.
      */
-    void rebuild_wobbly(wayfire_toplevel_view view, wf::point_t grab, wf::pointf_t relative);
+    void rebuild_wobbly(wayfire_toplevel_view view, wf::pointf_t grab, wf::pointf_t relative);
 
   public:
-    std::optional<wf::point_t> tentative_grab_position;
+    std::optional<wf::pointf_t> tentative_grab_position;
     core_drag_t();
     ~core_drag_t();
 
@@ -174,7 +174,7 @@ class core_drag_t : public signal::provider_t
     template<class Point>
     void set_pending_drag(const Point& current_position)
     {
-        this->tentative_grab_position = {(int)current_position.x, (int)current_position.y};
+        this->tentative_grab_position = {current_position.x, current_position.y};
     }
 
     /**
@@ -183,7 +183,7 @@ class core_drag_t : public signal::provider_t
      * Note that in some cases this functionality is not used at all, if the action for example was triggered
      * by a binding.
      */
-    bool should_start_pending_drag(wf::point_t current_position);
+    bool should_start_pending_drag(wf::pointf_t current_position);
 
     /**
      * Start the actual dragging operation. Note: this should be called **after** set_pending_drag().
@@ -195,9 +195,9 @@ class core_drag_t : public signal::provider_t
     void start_drag(wayfire_toplevel_view grab_view, wf::pointf_t relative, const drag_options_t& options);
     void start_drag(wayfire_toplevel_view view, const drag_options_t& options);
 
-    void handle_motion(wf::point_t to);
+    void handle_motion(wf::pointf_t to);
 
-    double distance_to_grab_origin(wf::point_t to) const;
+    double distance_to_grab_origin(wf::pointf_t to) const;
     void handle_input_released();
     void set_scale(double new_scale, double alpha = 1.0);
 
@@ -214,7 +214,7 @@ class core_drag_t : public signal::provider_t
     std::unique_ptr<impl> priv;
 
 
-    void update_current_output(wf::point_t grab);
+    void update_current_output(wf::pointf_t grab);
     void update_current_output(wf::output_t *output);
 };
 

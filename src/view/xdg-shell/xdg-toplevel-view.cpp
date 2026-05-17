@@ -525,7 +525,7 @@ void wf::fini_xdg_decoration_handlers()
 void wf::xdg_toplevel_view_t::start_map_tx()
 {
     LOGC(VIEWS, "Start mapping ", self());
-    wlr_box box  = xdg_toplevel->base->geometry;
+    wf::geometry_t box = wf::from_integer_box(xdg_toplevel->base->geometry);
     auto margins = wtoplevel->pending().margins;
     box.x = wtoplevel->pending().geometry.x + margins.left;
     box.y = wtoplevel->pending().geometry.y + margins.top;

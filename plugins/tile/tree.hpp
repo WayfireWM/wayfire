@@ -226,7 +226,7 @@ nonstd::observer_ptr<split_node_t> get_root(nonstd::observer_ptr<tree_node_t> no
  * Transform coordinates from the tiling trees coordinate system to wset-local coordinates.
  */
 wf::geometry_t get_wset_local_coordinates(std::shared_ptr<wf::workspace_set_t> wset, wf::geometry_t g);
-wf::point_t get_wset_local_coordinates(std::shared_ptr<wf::workspace_set_t> wset, wf::point_t g);
+wf::pointf_t get_wset_local_coordinates(std::shared_ptr<wf::workspace_set_t> wset, wf::pointf_t g);
 
 // Since wsets may not have been attached to any output yet, they may not have a native 'resolution'.
 // In this case, we use a default resolution of 1920x1080 in order to layout views. This resolution will be

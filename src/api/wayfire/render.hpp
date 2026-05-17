@@ -226,7 +226,7 @@ struct render_buffer_t
      * @param dst_box The subrectangle of the destination buffer to be copied to.
      * @param filter_mode The filter mode to use.
      */
-    void blit(wf::auxilliary_buffer_t& source, wlr_fbox src_box, wf::geometry_t dst_box,
+    void blit(wf::auxilliary_buffer_t& source, wf::geometry_t src_box, wf::geometry_t dst_box,
         wlr_scale_filter_mode filter_mode = WLR_SCALE_FILTER_BILINEAR) const;
 
     /**
@@ -239,7 +239,7 @@ struct render_buffer_t
      * @param dst_box The subrectangle of the destination buffer to be copied to.
      * @param filter_mode The filter mode to use.
      */
-    void blit(const wf::render_buffer_t& source, wlr_fbox src_box, wf::geometry_t dst_box,
+    void blit(const wf::render_buffer_t& source, wf::geometry_t src_box, wf::geometry_t dst_box,
         wlr_scale_filter_mode filter_mode = WLR_SCALE_FILTER_BILINEAR) const;
 
   private:
@@ -251,7 +251,7 @@ struct render_buffer_t
     wf::dimensions_t size = {0, 0};
 
     // Helper for copy operations
-    void do_blit(wlr_texture *src_wlr_tex, wlr_fbox src_box, wf::geometry_t dst_box,
+    void do_blit(wlr_texture *src_wlr_tex, wf::geometry_t src_box, wf::geometry_t dst_box,
         wlr_scale_filter_mode filter_mode) const;
 };
 
@@ -388,7 +388,7 @@ struct render_target_t : public render_buffer_t
      * Get a render target which is the same as this, but whose geometry is
      * translated by @offset.
      */
-    render_target_t translated(wf::point_t offset) const;
+    render_target_t translated(wf::pointf_t offset) const;
 
     /**
      * Get the geometry of the given box after projecting it onto the framebuffer.
@@ -397,22 +397,15 @@ struct render_target_t : public render_buffer_t
      * The resulting geometry is affected by the framebuffer geometry, scale and
      * transform.
      */
-    wlr_box framebuffer_box_from_geometry_box(wlr_box box) const;
+    wlr_box framebuffer_box_from_geometry_box(wf::geometry_t box) const;
 
-    /**
-     * Get the geometry of the given fbox after projecting it onto the framebuffer.
-     * In the values returned, (0,0) is top-left.
-     *
-     * The resulting geometry is affected by the framebuffer geometry, scale and
-     * transform.
-     */
-    wlr_fbox framebuffer_box_from_geometry_box(wlr_fbox box) const;
+    wf::geometry_t framebuffer_geometry_from_geometry_box(wf::geometry_t box) const;
 
     /**
      * Get the geometry of the given region after projecting it onto the framebuffer. This is the same as
      * iterating over the rects in the region and transforming them with framebuffer_box_from_geometry_box.
      */
-    wf::region_t framebuffer_region_from_geometry_region(const wf::region_t& region) const;
+    wf::region_t framebuffer_region_from_geometry_region(const wf::regionf_t& region) const;
 
     /**
      * Get the geometry of the given framebuffer box after projecting it back to the logical coordinate space.
@@ -420,16 +413,7 @@ struct render_target_t : public render_buffer_t
      * The resulting geometry is affected by the framebuffer geometry, scale and
      * transform.
      */
-    wlr_box geometry_box_from_framebuffer_box(wlr_box fb_box) const;
-
-    /**
-     * Get the geometry of the given framebuffer fbox after projecting it back to the logical coordinate
-     * space.
-     *
-     * The resulting geometry is affected by the framebuffer geometry, scale and
-     * transform.
-     */
-    wlr_fbox geometry_fbox_from_framebuffer_box(wlr_fbox fb_box) const;
+    wf::geometry_t geometry_box_from_framebuffer_box(wlr_box fb_box) const;
 
     /**
      * Get the geometry of the given framebuffer region after projecting it back to the logical coordinate
@@ -437,7 +421,7 @@ struct render_target_t : public render_buffer_t
      * This is the same as iterating over the rects in the region and transforming them with
      * geometry_box_from_framebuffer_box.
      */
-    wf::region_t geometry_region_from_framebuffer_region(const wf::region_t& region) const;
+    wf::regionf_t geometry_region_from_framebuffer_region(const wf::region_t& region) const;
 
     /**
      * The inverse of the color transform that will be applied to the render target in the next compositing
@@ -510,7 +494,7 @@ struct render_pass_params_t
     render_target_t target;
 
     /** The total damage accumulated from the instances since the last repaint. */
-    region_t damage;
+    regionf_t damage;
 
     /**
      * The background color visible below all instances, if
@@ -576,7 +560,7 @@ class render_pass_t
      *
      * @return The full damage which was rendered on the render target, as described in @run_partial().
      */
-    static wf::region_t run(const wf::render_pass_params_t& params);
+    static wf::regionf_t run(const wf::render_pass_params_t& params);
 
     /**
      * Execute the main part of a render pass.
@@ -597,7 +581,7 @@ class render_pass_t
      * @return The full damage which was rendered on the render target. It may be more (or
      *  less) than @params.damage because plugins are allowed to modify the damage in render-pass-begin.
      */
-    wf::region_t run_partial();
+    wf::regionf_t run_partial();
 
     /**
      * The current wlroots render pass.
@@ -610,7 +594,7 @@ class render_pass_t
     /**
      * Clear the given region (relative to the render target's geometry) with the given color.
      */
-    void clear(const wf::region_t& region, const wf::color_t& color);
+    void clear(const wf::regionf_t& region, const wf::color_t& color);
 
     /**
      * Add a texture rendering operation to the pass.
@@ -618,16 +602,7 @@ class render_pass_t
     void add_texture(const std::shared_ptr<wf::texture_t>& texture,
         const wf::render_target_t& adjusted_target,
         const wf::geometry_t& geometry,
-        const wf::region_t& damage,
-        float alpha = 1.0);
-
-    /**
-     * Add a texture rendering operation to the pass using wlr_fbox for geometry.
-     */
-    void add_texture(const std::shared_ptr<wf::texture_t>& texture,
-        const wf::render_target_t& adjusted_target,
-        const wlr_fbox& geometry,
-        const wf::region_t& damage,
+        const wf::regionf_t& damage,
         float alpha = 1.0);
 
     /**
@@ -636,15 +611,7 @@ class render_pass_t
     void add_rect(const wf::color_t& color,
         const wf::render_target_t& adjusted_target,
         const wf::geometry_t& geometry,
-        const wf::region_t& damage);
-
-    /**
-     * Add a colored rectangle to the pass using wlr_fbox for geometry.
-     */
-    void add_rect(const wf::color_t& color,
-        const wf::render_target_t& adjusted_target,
-        const wlr_fbox& geometry,
-        const wf::region_t& damage);
+        const wf::regionf_t& damage);
 
     /**
      * Get the wlr_renderer used in this pass.
@@ -741,7 +708,7 @@ class render_pass_t
  */
 struct render_pass_begin_signal
 {
-    render_pass_begin_signal(wf::render_pass_t& pass, wf::region_t& damage) :
+    render_pass_begin_signal(wf::render_pass_t& pass, wf::regionf_t& damage) :
         damage(damage), pass(pass)
     {}
 
@@ -749,7 +716,7 @@ struct render_pass_begin_signal
      * The initial damage for this render pass.
      * Plugins may expand it further.
      */
-    wf::region_t& damage;
+    wf::regionf_t& damage;
 
     /**
      * The render pass that is starting.

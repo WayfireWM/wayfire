@@ -140,7 +140,7 @@ class render_manager
      * frame. Note that a larger region might actually be repainted due to
      * double buffering.
      */
-    wf::region_t get_scheduled_damage();
+    wf::regionf_t get_scheduled_damage();
 
     /**
      * @return The current wlr_color_transform from the icc_profile option, or NULL if none is set.
@@ -166,7 +166,7 @@ class render_manager
      * @param box The output box to be damaged, in output-local coordinates.
      * @param repaint Whether to automatically schedule an output repaint.
      */
-    void damage(const wlr_box& box, bool repaint = true);
+    void damage(const wf::geometry_t& box, bool repaint = true);
 
     /**
      * Same as damage_whole(), but damages only a part of the output.
@@ -174,13 +174,7 @@ class render_manager
      * @param region The output region to be damaged, in output-local coordinates.
      * @param repaint Whether to automatically schedule an output repaint.
      */
-    void damage(const wf::region_t& region, bool repaint = true);
-
-    /**
-     * @return A box in output-local coordinates containing the given
-     * workspace of the output (returned value depends on current workspace).
-     */
-    wlr_box get_ws_box(wf::point_t ws) const;
+    void damage(const wf::regionf_t& region, bool repaint = true);
 
     /**
      * @return The framebuffer on which all rendering operations except post

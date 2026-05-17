@@ -59,10 +59,10 @@ glm::mat4 output_transform(const render_target_t& target);
  * In contrast to framebuffer_t::scissor(), this method takes its argument
  * as a box with "logical" coordinates, not raw framebuffer coordinates.
  *
- * @param box The scissor box, in the same coordinate system as the
- *   framebuffer's geometry.
+ * @param box The scissor box, in the same logical coordinate system as the
+ *   render target's geometry.
  */
-void render_target_logic_scissor(const render_target_t& target, wlr_box box);
+void render_target_logic_scissor(const render_target_t& target, const pixman_box64f_t& box);
 
 /**
  * Ensure that the default EGL/GLES context is current.

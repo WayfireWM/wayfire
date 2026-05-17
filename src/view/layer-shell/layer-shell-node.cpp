@@ -79,14 +79,13 @@ wf::keyboard_focus_node_t wf::layer_shell_node_t::keyboard_refocus(wf::output_t 
     return wf::keyboard_focus_node_t{};
 }
 
-wf::region_t wf::layer_shell_node_t::get_opaque_region() const
+wf::regionf_t wf::layer_shell_node_t::get_opaque_region() const
 {
     auto view = _view.lock();
     if (view && view->is_mapped() && view->get_wlr_surface())
     {
         auto surf = view->get_wlr_surface();
-
-        wf::region_t region{&surf->opaque_region};
+        wf::regionf_t region{&surf->opaque_region};
         region += this->get_offset();
         return region;
     }
