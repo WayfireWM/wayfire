@@ -70,7 +70,7 @@ using node_weak_ptr = std::weak_ptr<node_t>;
 
 class render_instance_t;
 using render_instance_uptr = std::unique_ptr<render_instance_t>;
-using damage_callback = std::function<void (const wf::region_t&)>;
+using damage_callback = std::function<void (const wf::regionf_t&)>;
 
 /**
  * Describes the current state of a node.

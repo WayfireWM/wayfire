@@ -43,11 +43,21 @@ wf::point_t get_wset_local_coordinates(std::shared_ptr<wf::workspace_set_t> wset
     return p;
 }
 
+wf::pointf_t get_wset_local_coordinates(std::shared_ptr<wf::workspace_set_t> wset, wf::pointf_t p)
+{
+    auto vp   = wset->get_current_workspace();
+    auto size = wset->get_last_output_geometry().value_or(default_output_resolution);
+    p.x -= vp.x * size.width;
+    p.y -= vp.y * size.height;
+    return p;
+}
+
 wf::geometry_t get_wset_local_coordinates(std::shared_ptr<wf::workspace_set_t> wset, wf::geometry_t g)
 {
-    auto new_tl = get_wset_local_coordinates(wset, wf::point_t{g.x, g.y});
-    g.x = new_tl.x;
-    g.y = new_tl.y;
+    auto vp   = wset->get_current_workspace();
+    auto size = wset->get_last_output_geometry().value_or(default_output_resolution);
+    g.x -= vp.x * size.width;
+    g.y -= vp.y * size.height;
 
     return g;
 }
@@ -434,8 +444,8 @@ wf::geometry_t view_node_t::calculate_target_geometry()
 
     if (view->sticky)
     {
-        local_geometry.x = (local_geometry.x % size.width + size.width) % size.width;
-        local_geometry.y = (local_geometry.y % size.height + size.height) % size.height;
+        local_geometry.x = std::fmod(std::fmod(local_geometry.x, size.width) + size.width, size.width);
+        local_geometry.y = std::fmod(std::fmod(local_geometry.y, size.height) + size.height, size.height);
     }
 
     return local_geometry;

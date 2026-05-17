@@ -77,7 +77,7 @@ class workspace_wall_t : public wf::signal::provider_t
      * @param geometry The rectangle in fb to draw to, in the same coordinate
      *   system as the framebuffer's geometry.
      */
-    void render_wall(const wf::render_target_t& fb, const wf::region_t& damage);
+    void render_wall(const wf::render_target_t& fb, const wf::regionf_t& damage);
 
     /**
      * Register a render hook and paint the whole output as a desktop wall

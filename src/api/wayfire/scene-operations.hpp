@@ -91,7 +91,7 @@ struct render_instance_manager_t
   public:
     render_instance_manager_t(std::vector<node_ptr> nodes,
         damage_callback on_damage, wf::output_t *reference_output);
-    void set_visibility_region(wf::region_t region);
+    void set_visibility_region(wf::regionf_t region);
     std::vector<render_instance_uptr>& get_instances();
 
   private:
@@ -99,7 +99,7 @@ struct render_instance_manager_t
     std::vector<render_instance_uptr> instances;
     damage_callback on_damage;
     wf::output_t *reference_output;
-    std::optional<wf::region_t> visibility_region;
+    std::optional<wf::regionf_t> visibility_region;
     wf::signal::connection_t<node_update_signal> on_update;
     wf::wl_idle_call idle_visibility;
 

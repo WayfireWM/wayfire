@@ -223,7 +223,7 @@ void window_manager_t::tile_request(wayfire_toplevel_view view,
     data.edges = tiled_edges;
     data.workspace    = workspace;
     data.desired_size = tiled_edges ? view->get_output()->workarea->get_workarea() :
-        get_last_windowed_geometry(view).value_or(wf::geometry_t{0, 0, -1, -1});
+        get_last_windowed_geometry(view).value_or(wf::geometry_t{0.0, 0.0, -1.0, -1.0});
 
     update_last_windowed_geometry(view);
     view->toplevel()->pending().tiled_edges = tiled_edges;
@@ -274,7 +274,7 @@ void window_manager_t::fullscreen_request(wayfire_toplevel_view view,
     if (!state)
     {
         data.desired_size = view->pending_tiled_edges() ? wo->workarea->get_workarea() :
-            get_last_windowed_geometry(view).value_or(wf::geometry_t{0, 0, -1, -1});
+            get_last_windowed_geometry(view).value_or(wf::geometry_t{0.0, 0.0, -1.0, -1.0});
     } else
     {
         update_last_windowed_geometry(view);

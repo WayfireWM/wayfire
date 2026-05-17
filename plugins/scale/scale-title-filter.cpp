@@ -336,10 +336,10 @@ class scale_title_filter : public wf::per_output_plugin_instance_t
         }
 
         wf::geometry_t geometry{
-            dim.width / 2 - (int)(overlay_size.width / output_scale / 2),
-            dim.height / 2 - (int)(overlay_size.height / output_scale / 2),
-            (int)(overlay_size.width / output_scale),
-            (int)(overlay_size.height / output_scale)
+            (double)(dim.width / 2 - (int)(overlay_size.width / output_scale / 2)),
+            (double)(dim.height / 2 - (int)(overlay_size.height / output_scale / 2)),
+            (double)(int)(overlay_size.width / output_scale),
+            (double)(int)(overlay_size.height / output_scale)
         };
 
         tex->set_source_box(wlr_fbox{

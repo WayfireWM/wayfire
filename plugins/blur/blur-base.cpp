@@ -128,10 +128,9 @@ static int round_up(int x, int mod)
  * Calculate the smallest box which contains @box and whose x, y, width, height
  * are divisible by @degrade, and clamp that box to @bounds.
  */
-static wf::geometry_t sanitize(wf::geometry_t box, int degrade,
-    wf::geometry_t bounds)
+static wlr_box sanitize(wlr_box box, int degrade, wlr_box bounds)
 {
-    wf::geometry_t out_box;
+    wlr_box out_box;
     out_box.x     = degrade * int(box.x / degrade);
     out_box.y     = degrade * int(box.y / degrade);
     out_box.width = round_up(box.width, degrade);
@@ -147,7 +146,8 @@ static wf::geometry_t sanitize(wf::geometry_t box, int degrade,
         out_box.height += degrade;
     }
 
-    return wf::clamp(out_box, bounds);
+    return wlr_box(wf::to_framebuffer_box(wf::clamp(wf::from_framebuffer_box(out_box),
+        wf::from_framebuffer_box(bounds))));
 }
 
 wlr_box wf_blur_base::copy_region(wf::auxilliary_buffer_t& result,
@@ -212,7 +212,7 @@ void wf_blur_base::prepare_blur(const wf::render_target_t& target_fb, const wf::
         std::swap(fb[0], fb[1]);
     }
 
-    prepared_geometry = damage_box;
+    prepared_geometry = wf::from_framebuffer_box(damage_box);
 }
 
 static wf::pointf_t get_center(wf::geometry_t g)
@@ -264,7 +264,7 @@ void wf_blur_base::render(wf::gles_texture_t src_tex, wlr_box src_box, const wf:
     const auto scale_y = 1.0 * view_box.height / blurred_box.height;
     glm::mat4 scale    = glm::scale(glm::mat4(1.0), glm::vec3{scale_x, scale_y, 1.0});
 
-    const wf::pointf_t center_view     = get_center(view_box);
+    const wf::pointf_t center_view     = get_center(wf::from_framebuffer_box(view_box));
     const wf::pointf_t center_prepared = get_center(blurred_box);
     const auto translate_x = 1.0 * (center_view.x - center_prepared.x) / view_box.width;
     const auto translate_y = 1.0 * (center_view.y - center_prepared.y) / view_box.height;
@@ -287,7 +287,8 @@ void wf_blur_base::render(wf::gles_texture_t src_tex, wlr_box src_box, const wf:
 
     for (const auto& box : damage)
     {
-        wf::gles::render_target_logic_scissor(target_fb, wlr_box_from_pixman_box(box));
+        wf::gles::render_target_logic_scissor(target_fb,
+            wf::from_framebuffer_box(wlr_box_from_pixman_box(box)));
         GL_CALL(glDrawArrays(GL_TRIANGLE_FAN, 0, 4));
     }
 

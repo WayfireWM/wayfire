@@ -361,7 +361,12 @@ class stipc_plugin_t : public wf::plugin_interface_t
                 move_view_to_output(toplevel, wo, false);
             }
 
-            wf::geometry_t g{x, y, width, height};
+            wf::geometry_t g{
+                (double)x,
+                (double)y,
+                (double)width,
+                (double)height,
+            };
             toplevel->set_geometry(g);
         }
 

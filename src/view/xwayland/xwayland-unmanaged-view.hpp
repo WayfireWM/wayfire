@@ -101,12 +101,14 @@ class wayfire_unmanaged_xwayland_view : public wayfire_xwayland_view_internal_ba
     void update_geometry_from_xsurface()
     {
         static wf::option_wrapper_t<bool> force_xwayland_scaling{"workarounds/force_xwayland_scaling"};
-        wf::region_t damage_region = last_bounding_box; // last bounding box
-        damage_region |= get_bounding_box(); // in case resize happened since last move
+        wf::regionf_t damage_region = last_bounding_box; // last bounding box
+        damage_region |= wf::from_framebuffer_box(get_bounding_box()); // in case resize happened since last
+                                                                       // move
         wf::scene::damage_node(get_root_node(), damage_region);
 
         auto wo = wf::xw::find_xwayland_surface_output(xw);
-        auto new_geometry = wf::xw::calculate_wayfire_geometry(wo, {xw->x, xw->y, xw->width, xw->height});
+        auto new_geometry = wf::xw::calculate_wayfire_geometry(wo, {
+            (double)xw->x, (double)xw->y, (double)xw->width, (double)xw->height});
         surface_root_node->set_offset(wf::origin(new_geometry));
         if (main_surface && force_xwayland_scaling)
         {
@@ -125,7 +127,7 @@ class wayfire_unmanaged_xwayland_view : public wayfire_xwayland_view_internal_ba
         }
 
         LOGC(XWL, "Xwayland unmanaged surface ", self(), " new geometry ", new_geometry);
-        last_bounding_box = get_bounding_box();
+        last_bounding_box = wf::from_framebuffer_box(get_bounding_box());
         wf::scene::damage_node(get_root_node(), last_bounding_box);
         wf::scene::update(surface_root_node, wf::scene::update_flag::GEOMETRY);
     }

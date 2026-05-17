@@ -10,14 +10,14 @@ namespace wf
 class unmapped_view_snapshot_node : public wf::scene::node_t
 {
     wf::auxilliary_buffer_t snapshot;
-    wf::dimensions_t snapshot_logical_size;
+    wf::dimensionsf_t snapshot_logical_size;
     std::weak_ptr<wf::view_interface_t> _view;
 
   public:
     unmapped_view_snapshot_node(wayfire_view view) : node_t(false)
     {
         view->take_snapshot(snapshot);
-        snapshot_logical_size = wf::dimensions(view->get_surface_root_node()->get_bounding_box());
+        snapshot_logical_size = wf::fdimensions(view->get_surface_root_node()->get_bounding_box());
         _view = view->weak_from_this();
     }
 

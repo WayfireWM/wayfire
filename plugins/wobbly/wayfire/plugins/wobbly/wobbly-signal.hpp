@@ -32,7 +32,7 @@ struct wobbly_signal
      * For EVENT_GRAB and EVENT_MOVE: the coordinates of the grab
      * For EVENT_TRANSLATE: the amount of translation
      */
-    wf::point_t pos;
+    wf::pointf_t pos;
 
     /**
      * For EVENT_SCALE: the new size of the base surface.
@@ -43,12 +43,12 @@ struct wobbly_signal
 /**
  * Start wobblying when the view is being grabbed, for ex. when moving it
  */
-inline void start_wobbly(wayfire_toplevel_view view, int grab_x, int grab_y)
+inline void start_wobbly(wayfire_toplevel_view view, double grab_x, double grab_y)
 {
     wobbly_signal sig;
     sig.view   = view;
     sig.events = WOBBLY_EVENT_GRAB;
-    sig.pos    = {grab_x, grab_y};
+    sig.pos    = {(double)grab_x, (double)grab_y};
 
     wf::get_core().emit(&sig);
 }
@@ -84,12 +84,12 @@ inline void end_wobbly(wayfire_toplevel_view view)
 /**
  * Indicate that the grab has moved (i.e cursor moved, touch moved, etc.)
  */
-inline void move_wobbly(wayfire_toplevel_view view, int grab_x, int grab_y)
+inline void move_wobbly(wayfire_toplevel_view view, double grab_x, double grab_y)
 {
     wobbly_signal sig;
     sig.view   = view;
     sig.events = WOBBLY_EVENT_MOVE;
-    sig.pos    = {grab_x, grab_y};
+    sig.pos    = {(double)grab_x, (double)grab_y};
     wf::get_core().emit(&sig);
 }
 
@@ -108,7 +108,7 @@ inline void activate_wobbly(wayfire_toplevel_view view)
 /**
  * Translate the wobbly model (and its grab point, if any).
  */
-inline void translate_wobbly(wayfire_toplevel_view view, wf::point_t delta)
+inline void translate_wobbly(wayfire_toplevel_view view, wf::pointf_t delta)
 {
     wobbly_signal sig;
     sig.view   = view;

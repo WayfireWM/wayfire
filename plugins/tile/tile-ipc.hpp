@@ -23,7 +23,7 @@ struct json_builder_data_t
  * Get a json description of the given tiling tree.
  */
 inline wf::json_t tree_to_json(const std::unique_ptr<tree_node_t>& root,
-    const wf::point_t& offset,
+    const wf::pointf_t& offset,
     double rel_size = 1.0)
 {
     wf::json_t js;
@@ -266,7 +266,10 @@ inline wf::json_t handle_ipc_get_layout(const json_t& params)
 
         auto cur_ws     = ws->get_current_workspace();
         auto resolution = ws->get_last_output_geometry().value_or(tile::default_output_resolution);
-        wf::point_t offset = {cur_ws.x * resolution.width, cur_ws.y * resolution.height};
+        wf::pointf_t offset = {
+            (double)(cur_ws.x * resolution.width),
+            (double)(cur_ws.y * resolution.height),
+        };
 
         response["layout"] =
             tree_to_json(tile_workspace_set_data_t::get(ws->shared_from_this()).roots[x][y], offset);

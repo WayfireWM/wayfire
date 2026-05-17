@@ -70,24 +70,25 @@ void wf::xdg_toplevel_t::commit()
 std::optional<uint32_t> wf::xdg_toplevel_t::configure_surface_with_state(
     const wf::toplevel_state_t& desired_state, const wf::toplevel_state_t& base_state)
 {
-    wf::dimensions_t current_size =
-        shrink_dimensions_by_margins(wf::dimensions(base_state.geometry), base_state.margins);
+    wf::dimensionsf_t current_size =
+        shrink_dimensions_by_margins(wf::fdimensions(base_state.geometry), base_state.margins);
     if (desired_state.mapped && !base_state.mapped)
     {
         // We are trying to map the toplevel => check whether we should wait until it sets the proper
         // geometry, or whether we are 'only' mapping without resizing.
-        current_size = get_current_wlr_toplevel_size();
+        current_size = wf::dimensionsf_t{get_current_wlr_toplevel_size()};
     }
 
-    const wf::dimensions_t desired_size =
-        wf::shrink_dimensions_by_margins(wf::dimensions(desired_state.geometry), desired_state.margins);
+    const wf::dimensionsf_t desired_size =
+        wf::shrink_dimensions_by_margins(wf::fdimensions(desired_state.geometry), desired_state.margins);
     std::optional<uint32_t> configure_serial;
 
     if ((current_size != desired_size) && (desired_state.geometry.width > 0) &&
         (desired_state.geometry.height > 0))
     {
-        const int configure_width  = std::max(1, desired_size.width);
-        const int configure_height = std::max(1, desired_size.height);
+        const auto configure_size  = wf::containing_size(desired_size);
+        const int configure_width  = std::max(1, configure_size.width);
+        const int configure_height = std::max(1, configure_size.height);
         configure_serial = wlr_xdg_toplevel_set_size(this->toplevel, configure_width, configure_height);
     }
 
@@ -193,15 +194,15 @@ void wf::xdg_toplevel_t::handle_surface_commit()
     }
 
     auto toplevel_size =
-        expand_dimensions_by_margins(get_current_wlr_toplevel_size(), _current.margins);
-    if ((toplevel_size == wf::dimensions(current().geometry)) || !current().mapped)
+        expand_dimensions_by_margins(wf::dimensionsf_t{get_current_wlr_toplevel_size()}, _current.margins);
+    if ((toplevel_size == wf::fdimensions(current().geometry)) || !current().mapped)
     {
         if (toplevel)
         {
-            if (this->wm_offset != wf::origin(toplevel->base->geometry))
+            if (this->wm_offset != wf::origin(wf::from_framebuffer_box(toplevel->base->geometry)))
             {
                 // Trigger reppositioning in the view implementation
-                this->wm_offset = wf::origin(toplevel->base->geometry);
+                this->wm_offset = wf::origin(wf::from_framebuffer_box(toplevel->base->geometry));
                 xdg_toplevel_applied_state_signal event_applied;
                 event_applied.old_state = current();
                 this->emit(&event_applied);
@@ -241,7 +242,7 @@ void wf::xdg_toplevel_t::apply_pending_state()
 
     if (toplevel)
     {
-        this->wm_offset = wf::origin(toplevel->base->geometry);
+        this->wm_offset = wf::origin(wf::from_framebuffer_box(toplevel->base->geometry));
     }
 }
 
@@ -257,7 +258,7 @@ void wf::xdg_toplevel_t::emit_ready()
 wf::dimensions_t wf::xdg_toplevel_t::get_current_wlr_toplevel_size()
 {
     // Size did change => Start a new transaction to change the size.
-    return wf::dimensions(toplevel->base->geometry);
+    return wf::dimensions(wf::from_framebuffer_box(toplevel->base->geometry));
 }
 
 wf::dimensions_t wf::xdg_toplevel_t::get_min_size()

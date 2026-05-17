@@ -79,14 +79,26 @@ wf::keyboard_focus_node_t wf::layer_shell_node_t::keyboard_refocus(wf::output_t 
     return wf::keyboard_focus_node_t{};
 }
 
-wf::region_t wf::layer_shell_node_t::get_opaque_region() const
+wf::regionf_t wf::layer_shell_node_t::get_opaque_region() const
 {
     auto view = _view.lock();
     if (view && view->is_mapped() && view->get_wlr_surface())
     {
         auto surf = view->get_wlr_surface();
 
-        wf::region_t region{&surf->opaque_region};
+        wf::regionf_t region;
+        int nrects = 0;
+        const auto rects = pixman_region32_rectangles(&surf->opaque_region, &nrects);
+        for (int i = 0; i < nrects; i++)
+        {
+            region |= wf::geometry_t{
+                (double)rects[i].x1,
+                (double)rects[i].y1,
+                (double)(rects[i].x2 - rects[i].x1),
+                (double)(rects[i].y2 - rects[i].y1),
+            };
+        }
+
         region += this->get_offset();
         return region;
     }

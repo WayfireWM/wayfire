@@ -218,7 +218,7 @@ struct workspace_set_t::impl
         }
 
         auto old_w = workspace_geometry->width, old_h = workspace_geometry->height;
-        if (wf::dimensions(*workspace_geometry) == wf::dimensions(new_geometry))
+        if (wf::fdimensions(*workspace_geometry) == wf::fdimensions(new_geometry))
         {
             // No actual change, stop here
             return;
@@ -240,7 +240,7 @@ struct workspace_set_t::impl
             } else
             {
                 view->set_geometry({
-                        int(px * new_geometry.width), int(py * new_geometry.height),
+                        (double)int(px * new_geometry.width), (double)int(py * new_geometry.height),
                         wm.width, wm.height
                     });
             }
@@ -596,7 +596,7 @@ struct workspace_set_t::impl
         current_vx = nws.x;
         current_vy = nws.y;
 
-        auto screen = wf::dimensions(*workspace_geometry);
+        auto screen = wf::fdimensions(*workspace_geometry);
         auto dx     = (data.old_viewport.x - nws.x) * screen.width;
         auto dy     = (data.old_viewport.y - nws.y) * screen.height;
 

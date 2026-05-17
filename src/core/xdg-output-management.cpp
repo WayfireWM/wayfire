@@ -156,7 +156,12 @@ void xdg_output_manager_v1::update_outputs()
             {
                 int width, height;
                 wlr_output_transformed_resolution(it->first, &width, &height);
-                wf::geometry_t xwayland_geometry = {xwayland_location_x, 0, width, height};
+                wf::geometry_t xwayland_geometry = {
+                    (double)xwayland_location_x,
+                    0.0,
+                    (double)width,
+                    (double)height,
+                };
                 update_output(it->first, geometry, xwayland_geometry);
                 xwayland_location_x += width;
                 wo->get_data_safe<wf::xdg_output_xwayland_geometry>()->geometry = xwayland_geometry;

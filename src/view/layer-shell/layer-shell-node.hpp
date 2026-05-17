@@ -24,7 +24,7 @@ class layer_shell_node_t : public wf::scene::translation_node_t,
         scene::damage_callback push_damage, wf::output_t *output) override;
 
     std::shared_ptr<wf::texture_t> to_texture() const override;
-    wf::region_t get_opaque_region() const override;
+    wf::regionf_t get_opaque_region() const override;
 
   protected:
     std::weak_ptr<wf::view_interface_t> _view;

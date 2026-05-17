@@ -37,7 +37,7 @@ class dnd_root_icon_root_node_t : public floating_inner_node_t
             this->push_damage = push_damage;
             self->connect(&on_damage);
 
-            auto transformed_push_damage = [this] (wf::region_t region)
+            auto transformed_push_damage = [this] (wf::regionf_t region)
             {
                 if (auto self = _self.lock())
                 {
@@ -57,7 +57,7 @@ class dnd_root_icon_root_node_t : public floating_inner_node_t
 
         void schedule_instructions(
             std::vector<render_instruction_t>& instructions,
-            const wf::render_target_t& target, wf::region_t& damage) override
+            const wf::render_target_t& target, wf::regionf_t& damage) override
         {
             auto self = _self.lock();
             if (!self)
@@ -81,11 +81,12 @@ class dnd_root_icon_root_node_t : public floating_inner_node_t
             wf::dassert(false, "Rendering a drag icon root node?");
         }
 
-        void compute_visibility(wf::output_t *output, wf::region_t& visible) override
+        void compute_visibility(wf::output_t *output, wf::regionf_t& visible) override
         {
             if (auto self = _self.lock())
             {
-                compute_visibility_from_list(children, output, visible, self->get_position());
+                compute_visibility_from_list(children, output, visible,
+                    self->get_position());
             }
         }
     };
@@ -129,7 +130,7 @@ class dnd_root_icon_root_node_t : public floating_inner_node_t
         return "dnd-icon " + stringify_flags();
     }
 
-    wf::point_t get_position()
+    wf::pointf_t get_position()
     {
         if (icon)
         {
@@ -194,7 +195,7 @@ wf::drag_icon_t::~drag_icon_t()
     wf::scene::remove_child(root_node);
 }
 
-wf::point_t wf::drag_icon_t::get_position()
+wf::pointf_t wf::drag_icon_t::get_position()
 {
     auto pos = icon->drag->grab_type == WLR_DRAG_GRAB_KEYBOARD_TOUCH ?
         wf::get_core().get_touch_position(icon->drag->touch_id) :
@@ -206,16 +207,17 @@ wf::point_t wf::drag_icon_t::get_position()
         pos.y += icon->surface->current.dy;
     }
 
-    return {(int)pos.x, (int)pos.y};
+    return pos;
 }
 
 void wf::drag_icon_t::update_position()
 {
     // damage previous position
-    wf::region_t dmg_region;
+    wf::regionf_t dmg_region;
     dmg_region |= last_box;
     last_box    =
-        wf::construct_box(get_position(), {icon->surface->current.width, icon->surface->current.height});
+        wf::construct_box(get_position(), wf::dimensions_t{
+        icon->surface->current.width, icon->surface->current.height});
     dmg_region |= last_box;
     scene::damage_node(root_node, dmg_region);
 }

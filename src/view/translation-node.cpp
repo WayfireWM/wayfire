@@ -9,12 +9,12 @@ wf::scene::translation_node_t::translation_node_t(bool is_structure) :
 
 wf::pointf_t wf::scene::translation_node_t::to_local(const wf::pointf_t& point)
 {
-    return point - wf::pointf_t{get_offset()};
+    return point - get_offset();
 }
 
 wf::pointf_t wf::scene::translation_node_t::to_global(const wf::pointf_t& point)
 {
-    return point + wf::pointf_t{get_offset()};
+    return point + get_offset();
 }
 
 std::string wf::scene::translation_node_t::stringify() const
@@ -36,12 +36,12 @@ wf::geometry_t wf::scene::translation_node_t::get_bounding_box()
     return get_children_bounding_box() + get_offset();
 }
 
-wf::point_t wf::scene::translation_node_t::get_offset() const
+wf::pointf_t wf::scene::translation_node_t::get_offset() const
 {
     return offset;
 }
 
-void wf::scene::translation_node_t::set_offset(wf::point_t offset)
+void wf::scene::translation_node_t::set_offset(wf::pointf_t offset)
 {
     this->offset = offset;
 }
@@ -76,7 +76,7 @@ wf::scene::translation_node_instance_t::translation_node_instance_t(
 void wf::scene::translation_node_instance_t::regen_instances()
 {
     children.clear();
-    auto push_damage_child = [=] (wf::region_t child_damage)
+    auto push_damage_child = [=] (wf::regionf_t child_damage)
     {
         child_damage += self->get_offset();
         push_damage(child_damage);
@@ -93,12 +93,12 @@ void wf::scene::translation_node_instance_t::regen_instances()
 
 void wf::scene::translation_node_instance_t::schedule_instructions(
     std::vector<wf::scene::render_instruction_t>& instructions,
-    const wf::render_target_t& target, wf::region_t& damage)
+    const wf::render_target_t& target, wf::regionf_t& damage)
 {
-    wf::region_t our_damage = damage & self->get_bounding_box();
+    wf::regionf_t our_damage = damage & self->get_bounding_box();
     if (!our_damage.empty())
     {
-        wf::point_t offset = self->get_offset();
+        wf::pointf_t offset = self->get_offset();
         damage += -offset;
         auto our_target = target.translated(-offset);
 
@@ -121,7 +121,7 @@ void wf::scene::translation_node_instance_t::presentation_feedback(wf::output_t 
 
 wf::scene::direct_scanout wf::scene::translation_node_instance_t::try_scanout(wf::output_t *output)
 {
-    if (self->get_offset() != wf::point_t{0, 0})
+    if (self->get_offset() != wf::pointf_t{0.0, 0.0})
     {
         return wf::scene::direct_scanout::OCCLUSION;
     }
@@ -129,7 +129,7 @@ wf::scene::direct_scanout wf::scene::translation_node_instance_t::try_scanout(wf
     return try_scanout_from_list(this->children, output);
 }
 
-void wf::scene::translation_node_instance_t::compute_visibility(wf::output_t *output, wf::region_t& visible)
+void wf::scene::translation_node_instance_t::compute_visibility(wf::output_t *output, wf::regionf_t& visible)
 {
     compute_visibility_from_list(children, output, visible, self->get_offset());
 }

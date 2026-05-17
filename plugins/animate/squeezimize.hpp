@@ -209,7 +209,7 @@ class squeezimize_transformer : public wf::scene::view_2d_transformer_t
 
         void schedule_instructions(
             std::vector<render_instruction_t>& instructions,
-            const wf::render_target_t& target, wf::region_t& damage) override
+            const wf::render_target_t& target, wf::regionf_t& damage) override
         {
             instructions.push_back(render_instruction_t{
                         .instance = this,
@@ -218,9 +218,9 @@ class squeezimize_transformer : public wf::scene::view_2d_transformer_t
                     });
         }
 
-        void transform_damage_region(wf::region_t& damage) override
+        void transform_damage_region(wf::regionf_t& damage) override
         {
-            damage |= wf::region_t{self->animation_geometry};
+            damage |= self->animation_geometry;
         }
 
         void render(const render_instruction_t& data) override
@@ -247,14 +247,19 @@ class squeezimize_transformer : public wf::scene::view_2d_transformer_t
                     (self->minimize_target.y + self->minimize_target.height) - src_box.y),
                     (src_box.y + src_box.height) - self->minimize_target.y);
 
+            const float geometry_x     = (float)self->animation_geometry.x;
+            const float geometry_y     = (float)self->animation_geometry.y;
+            const float geometry_width = (float)self->animation_geometry.width;
+            const float geometry_height = (float)self->animation_geometry.height;
+
             const float vertex_data_pos[] = {
-                1.0f * self->animation_geometry.x,
-                1.0f * self->animation_geometry.y + self->animation_geometry.height,
-                1.0f * self->animation_geometry.x + self->animation_geometry.width,
-                1.0f * self->animation_geometry.y + self->animation_geometry.height,
-                1.0f * self->animation_geometry.x + self->animation_geometry.width,
-                1.0f * self->animation_geometry.y,
-                1.0f * self->animation_geometry.x, 1.0f * self->animation_geometry.y,
+                geometry_x,
+                geometry_y + geometry_height,
+                geometry_x + geometry_width,
+                geometry_y + geometry_height,
+                geometry_x + geometry_width,
+                geometry_y,
+                geometry_x, geometry_y,
             };
 
             const glm::vec4 src_box_pos{
@@ -290,7 +295,7 @@ class squeezimize_transformer : public wf::scene::view_2d_transformer_t
                 self->program.set_active_texture(src_tex);
                 for (auto box : data.damage)
                 {
-                    gles::render_target_logic_scissor(data.target, wlr_box_from_pixman_box(box));
+                    gles::render_target_logic_scissor(data.target, box);
                     GL_CALL(glDrawArrays(GL_TRIANGLE_FAN, 0, 4));
                 }
             });
@@ -418,7 +423,8 @@ class squeezimize_animation : public animate::animation_base_t
         wf::dassert(toplevel != nullptr, "We cannot minimize non-toplevel views!");
         auto hint = toplevel->get_minimize_hint();
         auto tmgr = view->get_transformed_node();
-        auto node = std::make_shared<wf::squeezimize::squeezimize_transformer>(view, dur, hint, bbox);
+        auto node = std::make_shared<wf::squeezimize::squeezimize_transformer>(view, dur,
+            wf::from_framebuffer_box(hint), bbox);
         tmgr->add_transformer(node, wf::TRANSFORMER_HIGHLEVEL + 1, squeezimize_transformer_name);
         node->init_animation(type & WF_ANIMATE_HIDING_ANIMATION);
     }

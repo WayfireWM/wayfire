@@ -141,7 +141,7 @@ wf::geometry_t wf::output_t::get_relative_geometry() const
     auto size = get_screen_size();
 
     return {
-        0, 0, size.width, size.height
+        0.0, 0.0, (double)size.width, (double)size.height
     };
 }
 
@@ -153,10 +153,10 @@ wf::geometry_t wf::output_t::get_layout_geometry() const
     if (wlr_box_empty(&box))
     {
         // Can happen when initializing the output
-        return {0, 0, handle->width, handle->height};
+        return {0.0, 0.0, (double)handle->width, (double)handle->height};
     } else
     {
-        return box;
+        return wf::from_framebuffer_box(box);
     }
 }
 
@@ -169,7 +169,7 @@ void wf::output_t::ensure_pointer(bool center) const
 {
     auto ptr = wf::get_core().get_cursor_position();
     if (!center &&
-        (get_layout_geometry() & wf::point_t{(int)ptr.x, (int)ptr.y}))
+        (get_layout_geometry() & ptr))
     {
         return;
     }
@@ -194,7 +194,7 @@ wf::pointf_t wf::output_t::get_cursor_position() const
 
 bool wf::output_t::ensure_visible(wayfire_view v)
 {
-    auto bbox = v->get_bounding_box();
+    auto bbox = wf::from_framebuffer_box(v->get_bounding_box());
     auto g    = this->get_relative_geometry();
 
     /* Compute the percentage of the view which is visible */

@@ -103,12 +103,12 @@ class resize_view_controller_t : public tile_controller_t
     wf::output_t *output;
 
     /** Last input event location */
-    wf::point_t last_point;
+    wf::pointf_t last_point;
 
     /** Edges of the grabbed view that we're resizing */
     uint32_t resizing_edges;
     /** Calculate the resizing edges for the grabbing view. */
-    uint32_t calculate_resizing_edges(wf::point_t point);
+    uint32_t calculate_resizing_edges(wf::pointf_t point);
 
     /** The view we are resizing */
     nonstd::observer_ptr<view_node_t> grabbed_view;
@@ -143,8 +143,8 @@ class resize_view_controller_t : public tile_controller_t
      *
      * @param delta How much change to apply
      */
-    void adjust_geometry(int32_t& x1, int32_t& len1,
-        int32_t& x2, int32_t& len2, int32_t delta);
+    void adjust_geometry(double& x1, double& len1,
+        double& x2, double& len2, double delta);
 };
 
 /**
@@ -152,13 +152,13 @@ class resize_view_controller_t : public tile_controller_t
  *
  * Returns null if no view nodes are present.
  */
-nonstd::observer_ptr<view_node_t> find_view_at(nonstd::observer_ptr<tree_node_t> root, wf::point_t input);
+nonstd::observer_ptr<view_node_t> find_view_at(nonstd::observer_ptr<tree_node_t> root, wf::pointf_t input);
 
 /**
  * Translate coordinates from output-local coordinates to the coordinate
  * system of the tiling trees, depending on the current workspace
  */
-wf::point_t get_global_input_coordinates(wf::output_t *output);
+wf::pointf_t get_global_input_coordinates(wf::output_t *output);
 }
 }
 

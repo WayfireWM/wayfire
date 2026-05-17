@@ -153,7 +153,8 @@ class wayfire_grid : public wf::plugin_interface_t, public wf::per_output_tracke
         if (slot.preview)
         {
             auto input = ev->input;
-            slot.preview->set_target_geometry({input.x, input.y, 1, 1}, 0, true);
+            slot.preview->set_target_geometry(wf::pointf_t{(double)input.x, (double)input.y}, 0,
+                true);
             slot.preview = nullptr;
         }
 
@@ -171,7 +172,7 @@ class wayfire_grid : public wf::plugin_interface_t, public wf::per_output_tracke
 
             auto input = ev->input;
             slot.preview = std::make_shared<wf::preview_indication_t>(
-                wf::geometry_t{input.x, input.y, 1, 1}, ev->output, "move");
+                wf::pointf_t{(double)input.x, (double)input.y}, ev->output, "move");
             slot.preview->set_target_geometry(slot_geometry, 1);
         }
     };
@@ -201,7 +202,7 @@ class wayfire_grid : public wf::plugin_interface_t, public wf::per_output_tracke
         return is_floating && (view->get_output() != nullptr) && view->toplevel()->pending().mapped;
     }
 
-    void handle_slot(wayfire_toplevel_view view, int slot, wf::point_t delta = {0, 0})
+    void handle_slot(wayfire_toplevel_view view, int slot, wf::pointf_t delta = {0, 0})
     {
         if (!can_adjust_view(view))
         {

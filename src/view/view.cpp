@@ -72,7 +72,7 @@ void wf::view_interface_t::close()
 
 wlr_box wf::view_interface_t::get_bounding_box()
 {
-    return get_transformed_node()->get_bounding_box();
+    return wf::to_framebuffer_box(get_transformed_node()->get_bounding_box());
 }
 
 bool wf::view_interface_t::is_focusable() const

@@ -47,7 +47,7 @@ class wayfire_cube : public wf::per_output_plugin_instance_t, public wf::pointer
             wf::scene::damage_callback push_damage;
 
             std::vector<std::vector<wf::scene::render_instance_uptr>> ws_instances;
-            std::vector<wf::region_t> ws_damage;
+            std::vector<wf::regionf_t> ws_damage;
             std::vector<wf::auxilliary_buffer_t> framebuffers;
 
             wf::signal::connection_t<wf::scene::node_damage_signal> on_cube_damage =
@@ -68,7 +68,7 @@ class wayfire_cube : public wf::per_output_plugin_instance_t, public wf::pointer
                 ws_instances.resize(self->workspaces.size());
                 for (int i = 0; i < (int)self->workspaces.size(); i++)
                 {
-                    auto push_damage_child = [=] (const wf::region_t& damage)
+                    auto push_damage_child = [=] (const wf::regionf_t& damage)
                     {
                         ws_damage[i] |= damage;
                         push_damage(self->get_bounding_box());
@@ -86,7 +86,7 @@ class wayfire_cube : public wf::per_output_plugin_instance_t, public wf::pointer
 
             void schedule_instructions(
                 std::vector<wf::scene::render_instruction_t>& instructions,
-                const wf::render_target_t& target, wf::region_t& damage) override
+                const wf::render_target_t& target, wf::regionf_t& damage) override
             {
                 instructions.push_back(wf::scene::render_instruction_t{
                     .instance = this,
@@ -125,11 +125,11 @@ class wayfire_cube : public wf::per_output_plugin_instance_t, public wf::pointer
                 self->cube->render(data, framebuffers);
             }
 
-            void compute_visibility(wf::output_t *output, wf::region_t& visible) override
+            void compute_visibility(wf::output_t *output, wf::regionf_t& visible) override
             {
                 for (int i = 0; i < (int)self->workspaces.size(); i++)
                 {
-                    wf::region_t ws_region = self->workspaces[i]->get_bounding_box();
+                    wf::regionf_t ws_region = self->workspaces[i]->get_bounding_box();
                     for (auto& ch : this->ws_instances[i])
                     {
                         ch->compute_visibility(output, ws_region);

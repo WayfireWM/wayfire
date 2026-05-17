@@ -68,8 +68,8 @@ class preview_indication_t : public std::enable_shared_from_this<preview_indicat
     }
 
     /** A convenience wrapper around the full version */
-    preview_indication_t(wf::point_t start, wf::output_t *output, const std::string & prefix) :
-        preview_indication_t(wf::geometry_t{start.x, start.y, 1, 1}, output, prefix)
+    preview_indication_t(wf::pointf_t start, wf::output_t *output, const std::string& prefix) :
+        preview_indication_t(wf::geometry_t{start.x, start.y, 1.0, 1.0}, output, prefix)
     {}
 
     /**
@@ -98,20 +98,20 @@ class preview_indication_t : public std::enable_shared_from_this<preview_indicat
     /**
      * A wrapper around set_target_geometry(wf::geometry_t, double, bool)
      */
-    void set_target_geometry(wf::point_t point, double alpha,
+    void set_target_geometry(wf::pointf_t point, double alpha,
         bool should_close = false)
     {
-        return set_target_geometry({point.x, point.y, 1, 1},
+        return set_target_geometry({point.x, point.y, 1.0, 1.0},
             alpha, should_close);
     }
 
     wf::geometry_t get_target_geometry() const
     {
         return wf::geometry_t{
-            .x     = int(animation.x.end),
-            .y     = int(animation.y.end),
-            .width = int(animation.width.end),
-            .height = int(animation.height.end),
+            .x     = animation.x.end,
+            .y     = animation.y.end,
+            .width = animation.width.end,
+            .height = animation.height.end,
         };
     }
 

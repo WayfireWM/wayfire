@@ -62,9 +62,9 @@ class wayfire_oswitch : public wf::plugin_interface_t
         }
 
         auto current_geo = current_output->get_layout_geometry();
-        wf::point_t current_center = {
-            current_geo.x + current_geo.width / 2,
-            current_geo.y + current_geo.height / 2
+        wf::pointf_t current_center = {
+            current_geo.x + current_geo.width / 2.0,
+            current_geo.y + current_geo.height / 2.0
         };
 
         wf::output_t *best_output = nullptr;
@@ -80,9 +80,9 @@ class wayfire_oswitch : public wf::plugin_interface_t
             }
 
             auto geo = output->get_layout_geometry();
-            wf::point_t center = {
-                geo.x + geo.width / 2,
-                geo.y + geo.height / 2
+            wf::pointf_t center = {
+                geo.x + geo.width / 2.0,
+                geo.y + geo.height / 2.0
             };
 
             double dx = center.x - current_center.x;
