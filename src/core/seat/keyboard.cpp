@@ -217,7 +217,7 @@ void wf::keyboard_t::reload_input_options()
 
     wlr_keyboard_set_repeat_info(handle, repeat_rate, repeat_delay);
 
-    wlr_keyboard_notify_modifiers(handle, 0, 0, locked_mods, 0);
+    wlr_keyboard_notify_modifiers(handle, handle->modifiers.depressed, 0, locked_mods, 0);
 }
 
 wf::keyboard_t::~keyboard_t()
