@@ -6,6 +6,19 @@
 
 namespace wf
 {
+enum class xdg_toplevel_decoration_mode_t
+{
+    CLIENT_SIDE,
+    SERVER_SIDE,
+};
+
+/**
+ * Request that an xdg-toplevel surface renegotiate its decoration mode.
+ *
+ * Returns false if the surface is not an xdg-toplevel surface.
+ */
+bool renegotiate_xdg_decoration(wlr_surface *surface, xdg_toplevel_decoration_mode_t mode);
+
 /**
  * A base class for xdg_toplevel-based views which implements the view_interface_t (but not toplevel_view_t,
  * see @xdg_toplevel_view_t for the full implementation).
