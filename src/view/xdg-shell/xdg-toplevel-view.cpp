@@ -13,6 +13,8 @@
 #include "wayfire/seat.hpp"
 #include "wayfire/util.hpp"
 #include "wayfire/view.hpp"
+#include <optional>
+#include <wlr/util/addon.h>
 #include <wayfire/output-layout.hpp>
 #include <wayfire/workspace-set.hpp>
 #include <wlr/util/edges.h>
@@ -366,6 +368,74 @@ void wf::xdg_toplevel_view_t::set_decoration_mode(bool use_csd)
 }
 
 /* decorations impl */
+struct wf_xdg_decoration_t;
+
+namespace
+{
+using decoration_mode_t = wlr_xdg_toplevel_decoration_v1_mode;
+
+static decoration_mode_t to_wlr_mode(wf::xdg_toplevel_decoration_mode_t mode)
+{
+    switch (mode)
+    {
+      case wf::xdg_toplevel_decoration_mode_t::CLIENT_SIDE:
+        return WLR_XDG_TOPLEVEL_DECORATION_V1_MODE_CLIENT_SIDE;
+
+      case wf::xdg_toplevel_decoration_mode_t::SERVER_SIDE:
+        return WLR_XDG_TOPLEVEL_DECORATION_V1_MODE_SERVER_SIDE;
+    }
+
+    return WLR_XDG_TOPLEVEL_DECORATION_V1_MODE_CLIENT_SIDE;
+}
+
+struct xdg_decoration_surface_state_t
+{
+    wlr_addon addon;
+    std::optional<decoration_mode_t> forced_mode;
+    wf_xdg_decoration_t *decor = nullptr;
+
+    xdg_decoration_surface_state_t(wlr_surface *surface)
+    {
+        wlr_addon_init(&addon, &surface->addons, nullptr, &addon_impl);
+    }
+
+    ~xdg_decoration_surface_state_t()
+    {
+        wlr_addon_finish(&addon);
+    }
+
+    static xdg_decoration_surface_state_t *get(wlr_surface *surface)
+    {
+        auto addon = wlr_addon_find(&surface->addons, nullptr, &addon_impl);
+        return addon ? wl_container_of(addon, (xdg_decoration_surface_state_t*)nullptr, addon) : nullptr;
+    }
+
+    static xdg_decoration_surface_state_t *get_or_create(wlr_surface *surface)
+    {
+        auto state = get(surface);
+        if (state)
+        {
+            return state;
+        }
+
+        return new xdg_decoration_surface_state_t(surface);
+    }
+
+    static void destroy_addon(wlr_addon *addon)
+    {
+        auto state = wl_container_of(addon, (xdg_decoration_surface_state_t*)nullptr, addon);
+        delete state;
+    }
+
+    static const wlr_addon_interface addon_impl;
+};
+
+const wlr_addon_interface xdg_decoration_surface_state_t::addon_impl = {
+    .name    = "wayfire-xdg-decoration-state",
+    .destroy = xdg_decoration_surface_state_t::destroy_addon,
+};
+}
+
 struct wf_server_decoration_t
 {
     wlr_server_decoration *decor;
@@ -409,8 +479,28 @@ struct wf_xdg_decoration_t
     wf::option_wrapper_t<std::string> deco_mode{"core/preferred_decoration_mode"};
     wf::option_wrapper_t<bool> force_preferred{"workarounds/force_preferred_decoration_mode"};
 
+    xdg_decoration_surface_state_t *surface_state()
+    {
+        return xdg_decoration_surface_state_t::get_or_create(decor->toplevel->base->surface);
+    }
+
+    void apply_mode(decoration_mode_t mode)
+    {
+        if (decor->toplevel->base->initialized)
+        {
+            wlr_xdg_toplevel_decoration_v1_set_mode(decor, mode);
+        }
+    }
+
     std::function<void(void*)> mode_request = [&] (void*)
     {
+        auto state = surface_state();
+        if (state->forced_mode)
+        {
+            apply_mode(*state->forced_mode);
+            return;
+        }
+
         wlr_xdg_toplevel_decoration_v1_mode default_mode =
             WLR_XDG_TOPLEVEL_DECORATION_V1_MODE_CLIENT_SIDE;
         if ((std::string)deco_mode == "server")
@@ -424,10 +514,7 @@ struct wf_xdg_decoration_t
             mode = default_mode;
         }
 
-        if (decor->toplevel->base->initialized)
-        {
-            wlr_xdg_toplevel_decoration_v1_set_mode(decor, mode);
-        }
+        apply_mode(mode);
     };
 
     std::function<void(void*)> commit = [&] (void*)
@@ -453,10 +540,13 @@ struct wf_xdg_decoration_t
     wf_xdg_decoration_t(wlr_xdg_toplevel_decoration_v1 *_decor) :
         decor(_decor)
     {
+        surface_state()->decor = this;
+
         on_mode_request.set_callback(mode_request);
         on_commit.set_callback(commit);
         on_destroy.set_callback([&] (void*)
         {
+            surface_state()->decor = nullptr;
             uses_csd.erase(decor->toplevel->base->surface);
             delete this;
         });
@@ -466,6 +556,30 @@ struct wf_xdg_decoration_t
         on_destroy.connect(&decor->events.destroy);
     }
 };
+
+bool wf::renegotiate_xdg_decoration(wlr_surface *surface, xdg_toplevel_decoration_mode_t mode)
+{
+    if (!surface)
+    {
+        return false;
+    }
+
+    auto xdg_surface = wlr_xdg_surface_try_from_wlr_surface(surface);
+    if (!xdg_surface || (xdg_surface->role != WLR_XDG_SURFACE_ROLE_TOPLEVEL) || !xdg_surface->toplevel)
+    {
+        return false;
+    }
+
+    auto state = xdg_decoration_surface_state_t::get_or_create(surface);
+    state->forced_mode = to_wlr_mode(mode);
+
+    if (state->decor)
+    {
+        state->decor->apply_mode(*state->forced_mode);
+    }
+
+    return true;
+}
 
 static wf::wl_listener_wrapper on_org_kde_decoration_created;
 static void init_legacy_decoration()
