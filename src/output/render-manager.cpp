@@ -18,6 +18,7 @@
 #include <algorithm>
 #include <filesystem>
 #include <fstream>
+#include <optional>
 #include <wayfire/nonstd/reverse.hpp>
 #include <wayfire/nonstd/safe-list.hpp>
 #include <wayfire/util/log.hpp>
@@ -795,6 +796,27 @@ struct repaint_delay_manager_t
 class wf::render_manager::impl
 {
   public:
+    struct color_transform_deleter_t
+    {
+        void operator ()(wlr_color_transform *transform) const
+        {
+            if (transform)
+            {
+                wlr_color_transform_unref(transform);
+            }
+        }
+    };
+
+    using color_transform_ptr =
+        std::unique_ptr<wlr_color_transform, color_transform_deleter_t>;
+
+    struct output_inverse_eotf_cache_t
+    {
+        color_transform_ptr transform;
+        wlr_color_transfer_function tf;
+        wlr_color_named_primaries primaries;
+    };
+
     wf::wl_listener_wrapper on_frame;
     wf::wl_timer<false> repaint_timer;
 
@@ -820,9 +842,8 @@ class wf::render_manager::impl
      * via PQ — which the display interprets as Rec.2020 primaries, producing oversaturated
      * colors. Cached so that it is not recreated each frame.
      */
-    wlr_color_transform *output_inverse_eotf = nullptr;
-    wlr_color_transfer_function output_inverse_eotf_tf = (wlr_color_transfer_function)0;
-    wlr_color_named_primaries output_inverse_eotf_primaries = (wlr_color_named_primaries)0;
+    std::optional<output_inverse_eotf_cache_t> output_inverse_eotf_cache;
+    color_transform_ptr icc_color_transform;
 
     /**
      * The transfer function the output expects in its committed image description, or sRGB if no
@@ -856,34 +877,26 @@ class wf::render_manager::impl
     {
         wlr_color_transfer_function tf = get_output_transfer_function();
         wlr_color_named_primaries prim = get_output_primaries();
-        if (output_inverse_eotf && (output_inverse_eotf_tf == tf) &&
-            (output_inverse_eotf_primaries == prim))
+        if (output_inverse_eotf_cache && (output_inverse_eotf_cache->tf == tf) &&
+            (output_inverse_eotf_cache->primaries == prim))
         {
-            return output_inverse_eotf;
+            return output_inverse_eotf_cache->transform.get();
         }
 
-        if (output_inverse_eotf)
-        {
-            wlr_color_transform_unref(output_inverse_eotf);
-        }
+        output_inverse_eotf_cache.reset();
 
         wlr_color_transform *eotf = wlr_color_transform_init_linear_to_inverse_eotf(tf);
         if (!eotf)
         {
             LOGE("Failed to create inverse-EOTF transform for output ", output->to_string(),
                 " (transfer function ", (int)tf, ")");
-            output_inverse_eotf    = nullptr;
-            output_inverse_eotf_tf = tf;
-            output_inverse_eotf_primaries = prim;
             return nullptr;
         }
 
         if (prim == WLR_COLOR_NAMED_PRIMARIES_SRGB)
         {
-            output_inverse_eotf    = eotf;
-            output_inverse_eotf_tf = tf;
-            output_inverse_eotf_primaries = prim;
-            return output_inverse_eotf;
+            output_inverse_eotf_cache = output_inverse_eotf_cache_t{color_transform_ptr{eotf}, tf, prim};
+            return output_inverse_eotf_cache->transform.get();
         }
 
         wlr_color_primaries srgb_primaries{};
@@ -897,10 +910,8 @@ class wf::render_manager::impl
         {
             LOGE("Failed to create primaries-conversion matrix transform for output ",
                 output->to_string());
-            output_inverse_eotf    = eotf;
-            output_inverse_eotf_tf = tf;
-            output_inverse_eotf_primaries = prim;
-            return output_inverse_eotf;
+            output_inverse_eotf_cache = output_inverse_eotf_cache_t{color_transform_ptr{eotf}, tf, prim};
+            return output_inverse_eotf_cache->transform.get();
         }
 
         wlr_color_transform *stages[2] = {mat, eotf};
@@ -911,19 +922,18 @@ class wf::render_manager::impl
         if (!pipeline)
         {
             LOGE("Failed to create color-transform pipeline for output ", output->to_string());
+            return nullptr;
         }
 
-        output_inverse_eotf    = pipeline;
-        output_inverse_eotf_tf = tf;
-        output_inverse_eotf_primaries = prim;
-        return output_inverse_eotf;
+        output_inverse_eotf_cache = output_inverse_eotf_cache_t{color_transform_ptr{pipeline}, tf, prim};
+        return output_inverse_eotf_cache->transform.get();
     }
 
     wlr_color_transform *get_color_transform()
     {
         if (icc_color_transform)
         {
-            return icc_color_transform;
+            return icc_color_transform.get();
         }
 
         return get_output_inverse_eotf();
@@ -992,13 +1002,7 @@ class wf::render_manager::impl
             // Drop the cached output color transform: by the time the next frame is rendered,
             // the output's image_description will have been re-committed by output-layout, and
             // get_output_inverse_eotf() will lazily regenerate the transform to match.
-            if (output_inverse_eotf)
-            {
-                wlr_color_transform_unref(output_inverse_eotf);
-                output_inverse_eotf    = nullptr;
-                output_inverse_eotf_tf = (wlr_color_transfer_function)0;
-                output_inverse_eotf_primaries = (wlr_color_named_primaries)0;
-            }
+            output_inverse_eotf_cache.reset();
 
             damage_manager->damage_whole_idle();
         });
@@ -1006,7 +1010,6 @@ class wf::render_manager::impl
         reload_icc_profile();
     }
 
-    wlr_color_transform *icc_color_transform = NULL;
     wlr_buffer_pass_options pass_opts{};
 
     void reload_icc_profile()
@@ -1048,22 +1051,13 @@ class wf::render_manager::impl
 
     void set_icc_transform(wlr_color_transform *transform)
     {
-        if (icc_color_transform)
-        {
-            wlr_color_transform_unref(icc_color_transform);
-        }
-
-        icc_color_transform = transform;
+        icc_color_transform.reset(transform);
     }
 
     ~impl()
     {
         set_icc_transform(nullptr);
-        if (output_inverse_eotf)
-        {
-            wlr_color_transform_unref(output_inverse_eotf);
-            output_inverse_eotf = nullptr;
-        }
+        output_inverse_eotf_cache.reset();
     }
 
     const bool env_allow_scanout;
@@ -1263,18 +1257,82 @@ class wf::render_manager::impl
 
     void render_sw_cursors(swapchain_damage_manager_t::frame_object_t *next_frame)
     {
-        wlr_buffer_pass_options options{};
-        options.color_transform = get_color_transform();
-        auto sw_cursor_pass =
-            wlr_renderer_begin_buffer_pass(output->handle->renderer, next_frame->buffer, &options);
+        if (swap_damage.empty())
+        {
+            return;
+        }
+
+        wlr_buffer_pass_options pass_options{};
+        pass_options.color_transform = get_color_transform();
+        auto *sw_cursor_pass = wlr_renderer_begin_buffer_pass(
+            output->handle->renderer, next_frame->buffer, &pass_options);
         if (!sw_cursor_pass)
         {
             LOGE("Failed to render software cursors!");
             return;
         }
 
-        wlr_output_add_software_cursors_to_render_pass(output->handle,
-            sw_cursor_pass, swap_damage.to_pixman());
+        const auto output_tf = get_output_transfer_function();
+        const float luminance_multiplier = wf::compute_luminance_multiplier(
+            WLR_COLOR_TRANSFER_FUNCTION_GAMMA22, output_tf);
+
+        wlr_color_primaries srgb_primaries{};
+        wlr_color_primaries_from_named(&srgb_primaries, WLR_COLOR_NAMED_PRIMARIES_SRGB);
+
+        int transformed_width, transformed_height;
+        wlr_output_transformed_resolution(output->handle, &transformed_width, &transformed_height);
+
+        wlr_output_cursor *cursor;
+        wl_list_for_each(cursor, &output->handle->cursors, link)
+        {
+            if (!cursor->enabled || !cursor->visible ||
+                (output->handle->hardware_cursor == cursor) || !cursor->texture)
+            {
+                continue;
+            }
+
+            // wlr_output_cursor stores x/y/width/height/hotspot in scaled
+            // buffer-pixel units, pre-output-transform (see wlr_output_cursor_move
+            // and wlr_output_cursor_set_buffer in wlroots). Mirror the wlroots
+            // helper: build the integer fb-coord box, then apply the inverse
+            // output transform so the final dst_box is in framebuffer pixels.
+            wlr_box box{
+                static_cast<int>(cursor->x - cursor->hotspot_x),
+                static_cast<int>(cursor->y - cursor->hotspot_y),
+                static_cast<int>(cursor->width),
+                static_cast<int>(cursor->height),
+            };
+            wlr_box_transform(&box, &box,
+                wlr_output_transform_invert(output->handle->transform),
+                transformed_width, transformed_height);
+
+            wf::region_t cursor_damage{box};
+            cursor_damage &= swap_damage;
+            if (cursor_damage.empty())
+            {
+                continue;
+            }
+
+            // Tag the cursor as sRGB-primaries / gamma2.2 — same treatment
+            // wlr_surface_node gives regular surfaces — so the wlroots renderer
+            // applies the primaries conversion and SDR→PQ luminance multiplier
+            // needed for correct compositing on HDR (PQ) outputs.
+            wlr_render_texture_options opts{};
+            opts.texture = cursor->texture;
+            opts.src_box = cursor->src_box;
+            opts.dst_box = box;
+            opts.clip    = cursor_damage.to_pixman();
+            opts.transform = output->handle->transform;
+            opts.transfer_function = WLR_COLOR_TRANSFER_FUNCTION_GAMMA22;
+            opts.primaries = &srgb_primaries;
+            if (luminance_multiplier != 1.0f)
+            {
+                opts.luminance_multiplier = &luminance_multiplier;
+            }
+
+            wlr_render_pass_add_texture(sw_cursor_pass, &opts);
+        }
+
         wlr_render_pass_submit(sw_cursor_pass);
     }
 

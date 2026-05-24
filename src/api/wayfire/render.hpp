@@ -71,6 +71,16 @@ struct color_transform_t
 };
 
 /**
+ * Compute the luminance multiplier needed when a texture with @source_tf is rendered to a
+ * target with @target_tf. The wlroots renderer does no implicit luminance scaling between
+ * SDR and HDR domains, so SDR content composited onto a PQ output (or vice-versa) needs
+ * an explicit factor to bridge the [0,1]-relative SDR linear range and the 0–10000 cd/m²
+ * absolute PQ linear range. Returns 1.0f when no bridging is needed.
+ */
+float compute_luminance_multiplier(wlr_color_transfer_function source_tf,
+    wlr_color_transfer_function target_tf);
+
+/**
  * A wrapper around wlr_texture which ensures that the texture is kept alive as long as the wrapper object
  * is alive.
  *

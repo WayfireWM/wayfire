@@ -21,13 +21,7 @@ static bool is_hdr_transfer_function(wlr_color_transfer_function tf)
     return tf == WLR_COLOR_TRANSFER_FUNCTION_ST2084_PQ;
 }
 
-/**
- * Compute the luminance multiplier needed when a texture with @source_tf is rendered to a target
- * with @target_tf. The wlroots renderer does no implicit luminance scaling between SDR and HDR
- * domains, so SDR content composited onto a PQ output (or vice-versa) needs an explicit factor
- * to bridge the [0,1]-relative SDR linear range and the 0–10000 cd/m² absolute PQ linear range.
- */
-static float compute_luminance_multiplier(wlr_color_transfer_function source_tf,
+float wf::compute_luminance_multiplier(wlr_color_transfer_function source_tf,
     wlr_color_transfer_function target_tf)
 {
     const bool source_pq = is_hdr_transfer_function(source_tf);
@@ -814,7 +808,7 @@ void wf::render_pass_t::add_texture(const std::shared_ptr<wf::texture_t>& textur
     // for ST2084 PQ interprets [0,1] as 0–10000 cd/m² absolute. Without correction, SDR content
     // composited on an HDR output would appear ~100× too bright. Compute a multiplier that brings
     // the per-texture linear values into the target's expected absolute domain.
-    const float luminance_multiplier = compute_luminance_multiplier(
+    const float luminance_multiplier = wf::compute_luminance_multiplier(
         ct.transfer_function, adjusted_target.get_output_transfer_function());
     if (luminance_multiplier != 1.0f)
     {
