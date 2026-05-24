@@ -227,6 +227,18 @@ wf::auxilliary_buffer_t::~auxilliary_buffer_t()
 static const wlr_drm_format *choose_format_from_set(const wlr_drm_format_set *set,
     wf::buffer_allocation_hints_t hints)
 {
+    // Half-float formats: preferred when storing extended-range linear values
+    // (HDR scene intermediate). RGBA16F has alpha; we use it for both alpha and
+    // no-alpha cases since we need the precision regardless.
+    static std::vector<uint32_t> hdr_linear_formats = {
+        DRM_FORMAT_ABGR16161616F,
+        DRM_FORMAT_XBGR16161616F,
+        // 16-bit fixed-point fallback. Sufficient range for SDR-relative linear
+        // values up to ~49.26 (HDR peak in our domain).
+        DRM_FORMAT_ABGR16161616,
+        DRM_FORMAT_XBGR16161616,
+    };
+
     static std::vector<uint32_t> alpha_formats = {
         DRM_FORMAT_ARGB8888,
         DRM_FORMAT_ABGR8888,
@@ -240,6 +252,19 @@ static const wlr_drm_format *choose_format_from_set(const wlr_drm_format_set *se
         DRM_FORMAT_RGBX8888,
         DRM_FORMAT_BGRX8888,
     };
+
+    if (hints.hdr_linear)
+    {
+        for (auto drm_format : hdr_linear_formats)
+        {
+            if (auto layout = wlr_drm_format_set_get(set, drm_format))
+            {
+                return layout;
+            }
+        }
+
+        // Fall through to 8-bit if no high-precision format is available.
+    }
 
     const auto& possible_formats = hints.needs_alpha ? alpha_formats : no_alpha_formats;
     for (auto drm_format : possible_formats)

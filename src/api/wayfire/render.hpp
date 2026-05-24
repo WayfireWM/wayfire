@@ -250,6 +250,13 @@ struct render_buffer_t
 struct buffer_allocation_hints_t
 {
     bool needs_alpha = true;
+    /**
+     * If set, prefer a half-float (FP16) per-channel format so the buffer can store
+     * extended-range linear values without clipping or banding. Used for HDR linear
+     * compositing intermediates. Falls back to a 16-bit fixed format and then to 8-bit
+     * if no FP16 format is available.
+     */
+    bool hdr_linear = false;
 };
 
 /**

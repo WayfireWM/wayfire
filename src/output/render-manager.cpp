@@ -1076,10 +1076,9 @@ class wf::render_manager::impl
 
         params.target = postprocessing->get_target_framebuffer().translated(
             wf::origin(output->get_layout_geometry()));
-        // Set the target's transfer function to match the output, so that render_pass_t::add_texture
-        // can derive a luminance multiplier when SDR content is being composited onto an HDR output.
-        params.target.set_color_transform(params.target.get_color_transform(),
-            get_output_transfer_function());
+        params.target.set_color_transform(get_color_transform(), get_output_transfer_function());
+        pass_opts.color_transform = get_color_transform();
+
         params.damage = damage_manager->get_scheduled_damage(params.target);
 
         params.background_color = background_color_opt;
@@ -1087,8 +1086,8 @@ class wf::render_manager::impl
         params.renderer = output->handle->renderer;
         params.flags    = RPASS_CLEAR_BACKGROUND | RPASS_EMIT_SIGNALS;
 
-        pass_opts.timer = NULL; // TODO: do we care about this? could be useful for dynamic frame scheduling
-        pass_opts.color_transform = get_color_transform();
+        pass_opts.timer = NULL; // TODO: do we care about this? could be useful for dynamic frame
+                                // scheduling
         params.pass_opts   = std::move(pass_opts);
         this->current_pass = std::make_unique<render_pass_t>(params);
 
