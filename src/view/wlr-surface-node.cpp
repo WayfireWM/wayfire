@@ -414,6 +414,22 @@ class wf::scene::wlr_surface_node_t::wlr_surface_render_instance_t : public rend
             return direct_scanout::OCCLUSION;
         }
 
+        // Direct scanout bypasses the renderer's color conversion. On an HDR (PQ/BT.2020)
+        // output, an SDR surface's pixels would reach the display unconverted, producing
+        // wrong colors on AMDGPU. Nvidia additionally has a long-standing bug where it
+        // ignores SRC_W/SRC_H/SRC_X/SRC_Y on scanout, which breaks composition of SDR
+        // surfaces onto HDR outputs via this path; working around that is out of scope
+        // here. Require the surface's color description to match the output.
+        if (output->is_hdr())
+        {
+            const auto& ct = self->current_state.color_transform;
+            if ((ct.transfer_function != WLR_COLOR_TRANSFER_FUNCTION_ST2084_PQ) ||
+                (ct.primaries != WLR_COLOR_NAMED_PRIMARIES_BT2020))
+            {
+                return direct_scanout::OCCLUSION;
+            }
+        }
+
         wlr_output_state state;
         wlr_output_state_init(&state);
         wlr_output_state_set_buffer(&state, &wlr_surf->buffer->base);
