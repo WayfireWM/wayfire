@@ -19,6 +19,7 @@ namespace wf
 {
 class output_t;
 struct auxilliary_buffer_t;
+
 namespace vk
 {
 class command_buffer_t;
@@ -52,9 +53,32 @@ struct color_transform_t
      */
     wlr_color_range color_range = WLR_COLOR_RANGE_NONE;
 
+    /**
+     * Alpha mode of the texture, as set via wp_color_representation_v1. The default
+     * (premultiplied electrical) matches the wlroots renderer's compositing model. Other modes
+     * are not currently forwarded to the renderer.
+     */
+    wlr_alpha_mode alpha_mode = WLR_COLOR_ALPHA_MODE_PREMULTIPLIED_ELECTRICAL;
+
+    /**
+     * Chroma sample location, as set via wp_color_representation_v1. Used only for ycbcr textures.
+     * Not currently forwarded to the renderer.
+     */
+    wlr_color_chroma_location chroma_location = WLR_COLOR_CHROMA_LOCATION_NONE;
+
     bool operator ==(const color_transform_t& other) const;
     bool operator !=(const color_transform_t& other) const;
 };
+
+/**
+ * Compute the luminance multiplier needed when a texture with @source_tf is rendered to a
+ * target with @target_tf. The wlroots renderer does no implicit luminance scaling between
+ * SDR and HDR domains, so SDR content composited onto a PQ output (or vice-versa) needs
+ * an explicit factor to bridge the [0,1]-relative SDR linear range and the 0–10000 cd/m²
+ * absolute PQ linear range. Returns 1.0f when no bridging is needed.
+ */
+float compute_luminance_multiplier(wlr_color_transfer_function source_tf,
+    wlr_color_transfer_function target_tf);
 
 /**
  * A wrapper around wlr_texture which ensures that the texture is kept alive as long as the wrapper object
@@ -237,6 +261,13 @@ struct render_buffer_t
 struct buffer_allocation_hints_t
 {
     bool needs_alpha = true;
+    /**
+     * If set, prefer a half-float (FP16) per-channel format so the buffer can store
+     * extended-range linear values without clipping or banding. Used for HDR linear
+     * compositing intermediates. Falls back to a 16-bit fixed format and then to 8-bit
+     * if no FP16 format is available.
+     */
+    bool hdr_linear = false;
 };
 
 /**
@@ -424,11 +455,28 @@ struct render_target_t : public render_buffer_t
 
     /**
      * Set a new color transform for the render target.
+     *
+     * @param transform The wlr_color_transform to apply when rendering to this target. Wayfire
+     *  takes a reference; the caller retains ownership of its own reference.
+     * @param target_tf The transfer function that the @transform encodes to. Used to compute
+     *  per-texture luminance multipliers when SDR content is rendered to HDR targets and vice
+     *  versa.
      */
-    void set_color_transform(wlr_color_transform *transform);
+    void set_color_transform(wlr_color_transform *transform,
+        wlr_color_transfer_function target_tf = WLR_COLOR_TRANSFER_FUNCTION_SRGB);
+
+    /**
+     * The transfer function that the render target's color transform encodes to. Read this to
+     * determine whether the target is HDR (ST2084_PQ) or SDR.
+     */
+    wlr_color_transfer_function get_output_transfer_function() const
+    {
+        return output_transfer_function;
+    }
 
   private:
     wlr_color_transform *inverse_eotf = nullptr;
+    wlr_color_transfer_function output_transfer_function = WLR_COLOR_TRANSFER_FUNCTION_SRGB;
     void copy_from(const render_target_t& other);
 };
 

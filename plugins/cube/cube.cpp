@@ -98,11 +98,14 @@ class wayfire_cube : public wf::per_output_plugin_instance_t, public wf::pointer
 
                 damage ^= bbox;
 
+                const bool is_hdr = self->cube->output && self->cube->output->is_hdr();
+
                 for (int i = 0; i < (int)ws_instances.size(); i++)
                 {
                     const float scale = self->cube->output->handle->scale;
                     auto bbox = self->workspaces[i]->get_bounding_box();
-                    framebuffers[i].allocate(wf::dimensions(bbox), scale);
+                    framebuffers[i].allocate(wf::dimensions(bbox), scale,
+                        wf::buffer_allocation_hints_t{.hdr_linear = is_hdr});
 
                     wf::render_target_t target{framebuffers[i]};
                     target.geometry = self->workspaces[i]->get_bounding_box();

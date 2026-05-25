@@ -262,6 +262,7 @@ class workspace_wall_t::workspace_wall_node_t : public scene::node_t
                 aux_buffers[i][j].allocate(wf::dimensions(bbox), wall->output->handle->scale,
                     wf::buffer_allocation_hints_t{
                         .needs_alpha = false,
+                        .hdr_linear  = wall->output && wall->output->is_hdr(),
                     });
                 aux_buffer_damage[i][j] |= bbox;
                 aux_buffer_current_scale[i][j]  = 1.0;

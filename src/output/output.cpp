@@ -441,6 +441,17 @@ void wf::output_impl_t::rem_binding(void *callback)
     remove_binding(activator_map, (activator_callback*)callback);
 }
 
+static bool is_hdr_transfer_function(wlr_color_transfer_function tf)
+{
+    return tf == WLR_COLOR_TRANSFER_FUNCTION_ST2084_PQ;
+}
+
+bool wf::output_t::is_hdr() const
+{
+    const auto *img_desc = this->handle->image_description;
+    return img_desc && is_hdr_transfer_function(img_desc->transfer_function);
+}
+
 wayfire_view get_active_view_for_output(wf::output_t *output)
 {
     if (output == wf::get_core().seat->get_active_output())

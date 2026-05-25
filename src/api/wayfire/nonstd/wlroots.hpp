@@ -57,6 +57,8 @@ extern "C"
     struct wlr_viewporter;
 
     struct wlr_ext_data_control_manager_v1;
+    struct wlr_color_manager_v1;
+    struct wlr_color_representation_manager_v1;
 
 #include <wlr/types/wlr_input_device.h>
 #include <wlr/types/wlr_pointer.h>

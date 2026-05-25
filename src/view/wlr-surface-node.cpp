@@ -74,22 +74,37 @@ void wf::scene::surface_state_t::merge_state(wlr_surface *surface)
         this->size    = {0, 0};
     }
 
+    // The wp_color_management_v1 protocol nominally treats surfaces without an image description
+    // as sRGB, but for compositing purposes sRGB and gamma 2.2 are approximately equivalent. We
+    // use gamma 2.2 here so that the surface forward-EOTF and the SDR output inverse-EOTF go
+    // through different code paths in the renderer (avoiding a fast-path that would short-circuit
+    // proper linear-space blending when both happen to be sRGB).
     this->color_transform = wf::color_transform_t{};
     this->color_transform.transfer_function = WLR_COLOR_TRANSFER_FUNCTION_GAMMA22;
     const wlr_image_description_v1_data *img_desc =
         wlr_surface_get_image_description_v1_data(surface);
     if (img_desc != NULL)
     {
-        this->color_transform.transfer_function = wlr_color_manager_v1_transfer_function_to_wlr(
-            (wp_color_manager_v1_transfer_function)img_desc->tf_named);
-        this->color_transform.primaries = wlr_color_manager_v1_primaries_to_wlr(
-            (wp_color_manager_v1_primaries)img_desc->primaries_named);
+        if (img_desc->tf_named != 0)
+        {
+            this->color_transform.transfer_function = wlr_color_manager_v1_transfer_function_to_wlr(
+                (wp_color_manager_v1_transfer_function)img_desc->tf_named);
+        }
+
+        if (img_desc->primaries_named != 0)
+        {
+            this->color_transform.primaries = wlr_color_manager_v1_primaries_to_wlr(
+                (wp_color_manager_v1_primaries)img_desc->primaries_named);
+        }
     }
 
     const wlr_color_representation_v1_surface_state *color_repr =
         wlr_color_representation_v1_get_surface_state(surface);
     if (color_repr != NULL)
     {
+        this->color_transform.alpha_mode = wlr_color_representation_v1_alpha_mode_to_wlr(
+            color_repr->alpha_mode);
+
         if (color_repr->coefficients != 0)
         {
             this->color_transform.color_encoding = wlr_color_representation_v1_color_encoding_to_wlr(
@@ -100,6 +115,12 @@ void wf::scene::surface_state_t::merge_state(wlr_surface *surface)
         {
             this->color_transform.color_range = wlr_color_representation_v1_color_range_to_wlr(
                 (wp_color_representation_surface_v1_range)color_repr->range);
+        }
+
+        if (color_repr->chroma_location != 0)
+        {
+            this->color_transform.chroma_location = wlr_color_representation_v1_chroma_location_to_wlr(
+                (wp_color_representation_surface_v1_chroma_location)color_repr->chroma_location);
         }
     }
 
@@ -393,6 +414,22 @@ class wf::scene::wlr_surface_node_t::wlr_surface_render_instance_t : public rend
             return direct_scanout::OCCLUSION;
         }
 
+        // Direct scanout bypasses the renderer's color conversion. On an HDR (PQ/BT.2020)
+        // output, an SDR surface's pixels would reach the display unconverted, producing
+        // wrong colors on AMDGPU. Nvidia additionally has a long-standing bug where it
+        // ignores SRC_W/SRC_H/SRC_X/SRC_Y on scanout, which breaks composition of SDR
+        // surfaces onto HDR outputs via this path; working around that is out of scope
+        // here. Require the surface's color description to match the output.
+        if (output->is_hdr())
+        {
+            const auto& ct = self->current_state.color_transform;
+            if ((ct.transfer_function != WLR_COLOR_TRANSFER_FUNCTION_ST2084_PQ) ||
+                (ct.primaries != WLR_COLOR_NAMED_PRIMARIES_BT2020))
+            {
+                return direct_scanout::OCCLUSION;
+            }
+        }
+
         wlr_output_state state;
         wlr_output_state_init(&state);
         wlr_output_state_set_buffer(&state, &wlr_surf->buffer->base);
@@ -526,7 +563,57 @@ void wf::scene::wlr_surface_node_t::update_pending_outputs()
 
         wlr_fractional_scale_v1_notify_scale(surface, max_scale);
         wlr_surface_set_preferred_buffer_scale(surface, max_scale);
+        update_preferred_image_description();
     }
 
     pending_visibility_delta.clear();
+}
+
+void wf::scene::wlr_surface_node_t::update_preferred_image_description()
+{
+    if (!surface)
+    {
+        return;
+    }
+
+    auto cm = wf::get_core().protocols.color_manager_v1;
+    if (!cm)
+    {
+        return;
+    }
+
+    // Pick the "most capable" image description amongst the outputs we are visible on.
+    // HDR-capable outputs win over SDR ones so that clients are told they may use HDR if any
+    // of their outputs supports it.
+    const wlr_output_image_description *best = nullptr;
+    for (auto& [wo, _] : visibility)
+    {
+        const wlr_output_image_description *img = wo->handle->image_description;
+        if (!img)
+        {
+            continue;
+        }
+
+        if (!best ||
+            ((best->transfer_function != WLR_COLOR_TRANSFER_FUNCTION_ST2084_PQ) &&
+             (img->transfer_function == WLR_COLOR_TRANSFER_FUNCTION_ST2084_PQ)))
+        {
+            best = img;
+        }
+    }
+
+    if (!best)
+    {
+        wlr_image_description_v1_data data{};
+        data.tf_named = WP_COLOR_MANAGER_V1_TRANSFER_FUNCTION_GAMMA22;
+        data.primaries_named = WP_COLOR_MANAGER_V1_PRIMARIES_SRGB;
+        wlr_color_manager_v1_set_surface_preferred_image_description(cm, surface, &data);
+        return;
+    }
+
+    wlr_image_description_v1_data data{};
+    data.tf_named = wlr_color_manager_v1_transfer_function_from_wlr(best->transfer_function);
+    data.primaries_named = wlr_color_manager_v1_primaries_from_wlr(best->primaries);
+
+    wlr_color_manager_v1_set_surface_preferred_image_description(cm, surface, &data);
 }

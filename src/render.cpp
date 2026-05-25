@@ -3,15 +3,87 @@
 #include "wayfire/dassert.hpp"
 #include "wayfire/nonstd/reverse.hpp"
 #include "wayfire/opengl.hpp"
+#include "wayfire/output.hpp"
 #include <wayfire/scene-render.hpp>
+#include <cmath>
 #include <drm_fourcc.h>
+
+/**
+ * SDR reference white luminance in cd/m², used when bridging between [0,1]-relative SDR linear
+ * values and the absolute PQ luminance range. Matches BT.2408 ("graphics white") and the default
+ * used by KDE/GNOME for SDR-on-HDR compositing.
+ */
+constexpr float SDR_REFERENCE_WHITE_NITS = 203.0f;
+constexpr float PQ_MAX_NITS = 10000.0f;
+
+static bool is_hdr_transfer_function(wlr_color_transfer_function tf)
+{
+    return tf == WLR_COLOR_TRANSFER_FUNCTION_ST2084_PQ;
+}
+
+float wf::compute_luminance_multiplier(wlr_color_transfer_function source_tf,
+    wlr_color_transfer_function target_tf)
+{
+    const bool source_pq = is_hdr_transfer_function(source_tf);
+    const bool target_pq = is_hdr_transfer_function(target_tf);
+
+    if (source_pq == target_pq)
+    {
+        return 1.0f;
+    }
+
+    if (target_pq)
+    {
+        // SDR source → HDR target: scale [0,1] relative down so 1.0 maps to the SDR
+        // reference white in the PQ-relative range.
+        return SDR_REFERENCE_WHITE_NITS / PQ_MAX_NITS;
+    }
+
+    // HDR source → SDR target: scale up so the SDR reference luminance maps to 1.0.
+    return PQ_MAX_NITS / SDR_REFERENCE_WHITE_NITS;
+}
+
+static float gamma22_to_linear(float c)
+{
+    return powf(std::max(c, 0.0f), 2.2f);
+}
+
+static float linear_to_gamma22(float c)
+{
+    return powf(std::max(c, 0.0f), (1.0f / 2.2f));
+}
+
+static wlr_render_color color_to_render_color(const wf::color_t& color,
+    wlr_color_transfer_function target_tf)
+{
+    if (!is_hdr_transfer_function(target_tf))
+    {
+        return wlr_render_color{
+            .r = static_cast<float>(color.r),
+            .g = static_cast<float>(color.g),
+            .b = static_cast<float>(color.b),
+            .a = static_cast<float>(color.a)
+        };
+    }
+
+    const float scale = SDR_REFERENCE_WHITE_NITS / PQ_MAX_NITS;
+    const float alpha = static_cast<float>(color.a);
+    return wlr_render_color{
+        .r = linear_to_gamma22(gamma22_to_linear(static_cast<float>(color.r) / alpha) * scale) * alpha,
+        .g = linear_to_gamma22(gamma22_to_linear(static_cast<float>(color.g) / alpha) * scale) * alpha,
+        .b = linear_to_gamma22(gamma22_to_linear(static_cast<float>(color.b) / alpha) * scale) * alpha,
+        .a = alpha,
+    };
+}
 
 bool wf::color_transform_t::operator ==(const color_transform_t& other) const
 {
     return transfer_function == other.transfer_function &&
            primaries == other.primaries &&
            color_encoding == other.color_encoding &&
-           color_range == other.color_range;
+           color_range == other.color_range &&
+           alpha_mode == other.alpha_mode &&
+           chroma_location == other.chroma_location;
 }
 
 bool wf::color_transform_t::operator !=(const color_transform_t& other) const
@@ -150,6 +222,18 @@ wf::auxilliary_buffer_t::~auxilliary_buffer_t()
 static const wlr_drm_format *choose_format_from_set(const wlr_drm_format_set *set,
     wf::buffer_allocation_hints_t hints)
 {
+    // Half-float formats: preferred when storing extended-range linear values
+    // (HDR scene intermediate). RGBA16F has alpha; we use it for both alpha and
+    // no-alpha cases since we need the precision regardless.
+    static std::vector<uint32_t> hdr_linear_formats = {
+        DRM_FORMAT_ABGR16161616F,
+        DRM_FORMAT_XBGR16161616F,
+        // 16-bit fixed-point fallback. Sufficient range for SDR-relative linear
+        // values up to ~49.26 (HDR peak in our domain).
+        DRM_FORMAT_ABGR16161616,
+        DRM_FORMAT_XBGR16161616,
+    };
+
     static std::vector<uint32_t> alpha_formats = {
         DRM_FORMAT_ARGB8888,
         DRM_FORMAT_ABGR8888,
@@ -163,6 +247,19 @@ static const wlr_drm_format *choose_format_from_set(const wlr_drm_format_set *se
         DRM_FORMAT_RGBX8888,
         DRM_FORMAT_BGRX8888,
     };
+
+    if (hints.hdr_linear)
+    {
+        for (auto drm_format : hdr_linear_formats)
+        {
+            if (auto layout = wlr_drm_format_set_get(set, drm_format))
+            {
+                return layout;
+            }
+        }
+
+        // Fall through to 8-bit if no high-precision format is available.
+    }
 
     const auto& possible_formats = hints.needs_alpha ? alpha_formats : no_alpha_formats;
     for (auto drm_format : possible_formats)
@@ -391,7 +488,8 @@ wf::render_target_t::render_target_t(const auxilliary_buffer_t& buffer) : render
 {
     // By default, we keep aux buffers in SRGB color space, as SRGB is efficiently implemented in Vulkan.
     set_color_transform(
-        wlr_color_transform_init_linear_to_inverse_eotf(WLR_COLOR_TRANSFER_FUNCTION_EXT_LINEAR));
+        wlr_color_transform_init_linear_to_inverse_eotf(WLR_COLOR_TRANSFER_FUNCTION_EXT_LINEAR),
+        WLR_COLOR_TRANSFER_FUNCTION_EXT_LINEAR);
 }
 
 void wf::render_target_t::copy_from(const render_target_t& other)
@@ -401,6 +499,7 @@ void wf::render_target_t::copy_from(const render_target_t& other)
     scale     = other.scale;
     subbuffer = other.subbuffer;
     inverse_eotf = other.inverse_eotf;
+    output_transfer_function = other.output_transfer_function;
 }
 
 wf::render_target_t::render_target_t(const render_target_t& other) : render_buffer_t(other)
@@ -704,6 +803,18 @@ void wf::render_pass_t::add_texture(const std::shared_ptr<wf::texture_t>& textur
     opts.primaries = &primaries;
     opts.transfer_function = ct.transfer_function;
 
+    // The wlroots renderer does no implicit luminance scaling: the forward EOTF for SDR transfer
+    // functions yields values in [0,1] relative to the SDR reference white, but the inverse EOTF
+    // for ST2084 PQ interprets [0,1] as 0–10000 cd/m² absolute. Without correction, SDR content
+    // composited on an HDR output would appear ~100× too bright. Compute a multiplier that brings
+    // the per-texture linear values into the target's expected absolute domain.
+    const float luminance_multiplier = wf::compute_luminance_multiplier(
+        ct.transfer_function, adjusted_target.get_output_transfer_function());
+    if (luminance_multiplier != 1.0f)
+    {
+        opts.luminance_multiplier = &luminance_multiplier;
+    }
+
     wlr_render_pass_add_texture(get_wlr_pass(), &opts);
 }
 
@@ -717,12 +828,7 @@ void wf::render_pass_t::add_rect(const wf::color_t& color, const wf::render_targ
 
     wf::region_t fb_damage = adjusted_target.framebuffer_region_from_geometry_region(damage);
     wlr_render_rect_options opts;
-    opts.color = {
-        .r = static_cast<float>(color.r),
-        .g = static_cast<float>(color.g),
-        .b = static_cast<float>(color.b),
-        .a = static_cast<float>(color.a),
-    };
+    opts.color = color_to_render_color(color, adjusted_target.get_output_transfer_function());
     opts.blend_mode = WLR_RENDER_BLEND_MODE_PREMULTIPLIED;
     opts.clip = fb_damage.to_pixman();
     opts.box  = fbox_to_geometry(adjusted_target.framebuffer_box_from_geometry_box(geometry));
@@ -853,7 +959,8 @@ wlr_render_pass*wf::render_pass_t::_get_pass()
     return _pass;
 }
 
-void wf::render_target_t::set_color_transform(wlr_color_transform *transform)
+void wf::render_target_t::set_color_transform(wlr_color_transform *transform,
+    wlr_color_transfer_function target_tf)
 {
     if (transform)
     {
@@ -866,4 +973,5 @@ void wf::render_target_t::set_color_transform(wlr_color_transform *transform)
     }
 
     inverse_eotf = transform;
+    output_transfer_function = target_tf;
 }

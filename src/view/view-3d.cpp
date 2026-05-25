@@ -619,9 +619,11 @@ uint32_t transformer_base_node_t::optimize_update(uint32_t flags)
 }
 
 std::shared_ptr<wf::texture_t> transformer_base_node_t::get_updated_contents(const wf::geometry_t& bbox,
-    float scale, std::vector<scene::render_instance_uptr>& children)
+    float scale, std::vector<scene::render_instance_uptr>& children, wf::output_t *output)
 {
-    if (inner_content.allocate(wf::dimensions(bbox), scale) != buffer_reallocation_result_t::SAME)
+    if (inner_content.allocate(wf::dimensions(bbox), scale,
+        wf::buffer_allocation_hints_t{.hdr_linear = output && output->is_hdr()}) !=
+        buffer_reallocation_result_t::SAME)
     {
         cached_damage |= bbox;
     }

@@ -61,8 +61,14 @@ class transformer_base_node_t : public scene::floating_inner_node_t
     // children's current content.
     wf::region_t cached_damage;
 
+    /**
+     * @param output Optional. When provided, the inner buffer will be allocated with
+     *   the @hdr_linear hint if the output is currently in an HDR (PQ) configuration,
+     *   so HDR contents above SDR reference white aren't clipped or banded by an
+     *   8-bit linear backing.
+     */
     std::shared_ptr<wf::texture_t> get_updated_contents(const wf::geometry_t& bbox, float scale,
-        std::vector<scene::render_instance_uptr>& children);
+        std::vector<scene::render_instance_uptr>& children, wf::output_t *output = nullptr);
 
     void release_buffers();
     ~transformer_base_node_t();
@@ -134,7 +140,7 @@ class transformer_render_instance_t : public render_instance_t
             return tex;
         }
 
-        return self->get_updated_contents(self->get_children_bounding_box(), scale, children);
+        return self->get_updated_contents(self->get_children_bounding_box(), scale, children, _shown_on);
     }
 
     void presentation_feedback(wf::output_t *output) override

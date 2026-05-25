@@ -203,6 +203,18 @@ class output_t : public wf::object_base_t, public wf::signal::provider_t
     virtual void add_axis(option_sptr_t<keybinding_t> axis, wf::axis_callback*) = 0;
     virtual void add_button(option_sptr_t<buttonbinding_t> button, wf::button_callback*) = 0;
     virtual void add_activator(option_sptr_t<activatorbinding_t> activator, wf::activator_callback*) = 0;
+    /**
+     * Check whether the output is currently driving an HDR (ST2084 PQ) image description.
+     *
+     * Plugins keep their linear-space auxilliary buffers in the SDR-relative linear domain
+     * (target_tf == EXT_LINEAR). On HDR (PQ) outputs, HDR sources contribute SDR-relative linear
+     * values up to ~49.26 (PQ peak / SDR reference white), which would be clipped or quantized by
+     * an 8-bit linear backing. Plugins use this hint to request FP16 storage
+     * (@buffer_allocation_hints_t::hdr_linear) for such intermediates.
+     *
+     * Returns false when no image description has been negotiated.
+     */
+    bool is_hdr() const;
 
     /**
      * Remove all bindings which have the given callback, regardless of the type.
