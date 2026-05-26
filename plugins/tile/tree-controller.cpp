@@ -32,7 +32,7 @@ void for_each_view(nonstd::observer_ptr<tree_node_t> root,
 }
 
 nonstd::observer_ptr<view_node_t> find_view_at(
-    nonstd::observer_ptr<tree_node_t> root, wf::point_t input)
+    nonstd::observer_ptr<tree_node_t> root, wf::pointf_t input)
 {
     if (root->as_view_node())
     {
@@ -58,34 +58,34 @@ nonstd::observer_ptr<view_node_t> find_first_view_in_direction(
 
     /* Since nodes are arranged tightly into a grid, we can just find the
      * proper edge and find the view there */
-    wf::point_t point;
+    wf::pointf_t point;
     switch (direction)
     {
       case INSERT_ABOVE:
         point = {
-            window.x + window.width / 2,
-            window.y - 1,
+            window.x + window.width / 2.0,
+            window.y - 1.0,
         };
         break;
 
       case INSERT_BELOW:
         point = {
-            window.x + window.width / 2,
+            window.x + window.width / 2.0,
             window.y + window.height,
         };
         break;
 
       case INSERT_LEFT:
         point = {
-            window.x - 1,
-            window.y + window.height / 2,
+            window.x - 1.0,
+            window.y + window.height / 2.0,
         };
         break;
 
       case INSERT_RIGHT:
         point = {
             window.x + window.width,
-            window.y + window.height / 2,
+            window.y + window.height / 2.0,
         };
         break;
 
@@ -127,7 +127,7 @@ move_view_controller_t::~move_view_controller_t()
 
 void move_view_controller_t::input_motion()
 {
-    drag_helper->handle_motion(wf::get_core().get_cursor_position().round_down());
+    drag_helper->handle_motion(wf::get_core().get_cursor_position());
 }
 
 void move_view_controller_t::input_released(bool force_stop)
@@ -137,7 +137,7 @@ void move_view_controller_t::input_released(bool force_stop)
 
 wf::geometry_t eval(nonstd::observer_ptr<tree_node_t> node)
 {
-    return node ? node->geometry : wf::geometry_t{0, 0, 0, 0};
+    return node ? node->geometry : wf::geometry_t{0.0, 0.0, 0.0, 0.0};
 }
 
 /* ----------------------- resize tile controller --------------------------- */
@@ -158,7 +158,7 @@ resize_view_controller_t::resize_view_controller_t(wf::workspace_set_t *wset, wa
 resize_view_controller_t::~resize_view_controller_t()
 {}
 
-uint32_t resize_view_controller_t::calculate_resizing_edges(wf::point_t grab)
+uint32_t resize_view_controller_t::calculate_resizing_edges(wf::pointf_t grab)
 {
     uint32_t result_edges = 0;
     auto window = this->grabbed_view->geometry;
@@ -268,8 +268,8 @@ resize_view_controller_t::resizing_pair_t resize_view_controller_t::find_resizin
     return result_pair;
 }
 
-void resize_view_controller_t::adjust_geometry(int32_t& x1, int32_t& len1,
-    int32_t& x2, int32_t& len2, int32_t delta)
+void resize_view_controller_t::adjust_geometry(double& x1, double& len1,
+    double& x2, double& len2, double delta)
 {
     /*
      * On the line:
@@ -277,10 +277,10 @@ void resize_view_controller_t::adjust_geometry(int32_t& x1, int32_t& len1,
      * x1        (x1+len1)=x2         x2+len2-1
      * ._______________.___________________.
      */
-    constexpr int MIN_SIZE = 50;
+    constexpr double MIN_SIZE = 50;
 
-    int maxPositive = std::max(0, len2 - MIN_SIZE);
-    int maxNegative = std::max(0, len1 - MIN_SIZE);
+    double maxPositive = std::max(0.0, len2 - MIN_SIZE);
+    double maxNegative = std::max(0.0, len1 - MIN_SIZE);
 
     /* Make sure we don't shrink one dimension too much */
     delta = clamp(delta, -maxNegative, maxPositive);
@@ -302,7 +302,7 @@ void resize_view_controller_t::input_motion()
     auto tx = wf::txn::transaction_t::create();
     if (horizontal_pair.first && horizontal_pair.second)
     {
-        int dy = input.y - last_point.y;
+        double dy = input.y - last_point.y;
 
         auto g1 = horizontal_pair.first->geometry;
         auto g2 = horizontal_pair.second->geometry;
@@ -314,7 +314,7 @@ void resize_view_controller_t::input_motion()
 
     if (vertical_pair.first && vertical_pair.second)
     {
-        int dx = input.x - last_point.x;
+        double dx = input.x - last_point.x;
 
         auto g1 = vertical_pair.first->geometry;
         auto g2 = vertical_pair.second->geometry;
@@ -328,7 +328,7 @@ void resize_view_controller_t::input_motion()
     this->last_point = input;
 }
 
-wf::point_t get_global_input_coordinates(wf::output_t *output)
+wf::pointf_t get_global_input_coordinates(wf::output_t *output)
 {
     wf::pointf_t local = output->get_cursor_position();
 
@@ -337,7 +337,7 @@ wf::point_t get_global_input_coordinates(wf::output_t *output)
     local.x += size.width * vp.x;
     local.y += size.height * vp.y;
 
-    return {(int)local.x, (int)local.y};
+    return local;
 }
 } // namespace tile
 }

@@ -360,7 +360,7 @@ std::optional<wf::geometry_t> view_action_interface_t::_parse_x11_geometry(std::
 
         if (c == '-')
         {
-            x = std::max(workarea.width - w - x, 0);
+            x = std::max(workarea.width - w - x, 0.0);
         }
 
         x += workarea.x;
@@ -375,7 +375,7 @@ std::optional<wf::geometry_t> view_action_interface_t::_parse_x11_geometry(std::
 
             if (c == '-')
             {
-                y = std::max(workarea.height - h - y, 0);
+                y = std::max(workarea.height - h - y, 0.0);
             }
 
             y += workarea.y;
@@ -383,7 +383,7 @@ std::optional<wf::geometry_t> view_action_interface_t::_parse_x11_geometry(std::
         }
     }
 
-    return wf::geometry_t({x, y, w, h});
+    return wf::geometry_t({(double)x, (double)y, (double)w, (double)h});
 }
 
 std::tuple<bool, float> view_action_interface_t::_validate_alpha(
@@ -620,10 +620,10 @@ wf::geometry_t view_action_interface_t::_get_workspace_grid_geometry(
     auto res   = output->get_screen_size();
 
     return wf::geometry_t{
-        -vp.x * res.width,
-        -vp.y * res.height,
-        vsize.width * res.width,
-        vsize.height * res.height,
+        (double)(-vp.x * res.width),
+        (double)(-vp.y * res.height),
+        (double)(vsize.width * res.width),
+        (double)(vsize.height * res.height),
     };
 }
 

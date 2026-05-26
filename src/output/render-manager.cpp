@@ -48,20 +48,20 @@ struct swapchain_damage_manager_t
     std::unique_ptr<wf::scene::render_instance_manager_t> instance_manager;
     void start_rendering()
     {
-        scene::damage_callback push_damage = [=] (wf::region_t region)
+        scene::damage_callback push_damage = [=] (wf::regionf_t region)
         {
             // Damage is pushed up to the root in root coordinate system,
             // we need it in output-buffer-local coordinate system.
             region += -wf::origin(wo->get_layout_geometry());
-            region  =
+            auto framebuffer_damage =
                 wo->render->get_target_framebuffer().framebuffer_region_from_geometry_region(region);
-            this->damage_buffer(region, true);
+            this->damage_buffer(framebuffer_damage, true);
         };
 
         std::vector<scene::node_ptr> nodes;
         nodes.push_back(wf::get_core().scene());
         instance_manager = std::make_unique<wf::scene::render_instance_manager_t>(nodes, push_damage, wo);
-        instance_manager->set_visibility_region(wo->get_layout_geometry());
+        instance_manager->set_visibility_region(wf::regionf_t{wo->get_layout_geometry()});
     }
 
     swapchain_damage_manager_t(output_t *output)
@@ -114,7 +114,7 @@ struct swapchain_damage_manager_t
         }
 
         schedule_repaint();
-        instance_manager->set_visibility_region(wo->get_layout_geometry());
+        instance_manager->set_visibility_region(wf::regionf_t{wo->get_layout_geometry()});
     };
 
     /**
@@ -144,7 +144,8 @@ struct swapchain_damage_manager_t
 
         /* Wlroots expects damage after scaling */
         frame_damage |= box;
-        wlr_damage_ring_add_box(&damage_ring, &box);
+        auto fb_box = wf::to_framebuffer_box(box);
+        wlr_damage_ring_add_box(&damage_ring, &fb_box);
         if (repaint)
         {
             schedule_repaint();
@@ -329,7 +330,7 @@ struct swapchain_damage_manager_t
      * Return the damage that has been scheduled for the next frame up to now,
      * or, if in a repaint, the damage for the current frame
      */
-    wf::region_t get_scheduled_damage(const wf::render_target_t& target)
+    wf::regionf_t get_scheduled_damage(const wf::render_target_t& target)
     {
         return target.geometry_region_from_framebuffer_region(frame_damage) & target.geometry;
     }
@@ -358,7 +359,7 @@ struct swapchain_damage_manager_t
     {
         auto current = wo->wset()->get_current_workspace();
 
-        wlr_box box = wo->get_relative_geometry();
+        wlr_box box = wf::to_framebuffer_box(wo->get_relative_geometry());
         box.x = (ws.x - current.x) * box.width;
         box.y = (ws.y - current.y) * box.height;
 
@@ -1028,7 +1029,7 @@ class wf::render_manager::impl
         if (runtime_config.damage_debug)
         {
             /* Clear the screen to yellow, so that the repainted parts are visible */
-            wf::region_t yellow = params.target.geometry;
+            wf::regionf_t yellow = params.target.geometry;
             yellow ^= total_damage;
 
             total_damage |= params.target.geometry;
@@ -1036,9 +1037,9 @@ class wf::render_manager::impl
         }
 
         // Transform to buffer-local damage
-        total_damage  = params.target.framebuffer_region_from_geometry_region(total_damage);
-        total_damage &= damage_manager->get_buffer_extents();
-        return total_damage;
+        auto framebuffer_damage = params.target.framebuffer_region_from_geometry_region(total_damage);
+        framebuffer_damage &= damage_manager->get_buffer_extents();
+        return framebuffer_damage;
     }
 
     void update_bound_output(wlr_buffer *buffer)
@@ -1177,7 +1178,7 @@ scene::direct_scanout scene::try_scanout_from_list(
 }
 
 void scene::compute_visibility_from_list(const std::vector<render_instance_uptr>& instances,
-    wf::output_t *output, wf::region_t& region, const wf::point_t& offset)
+    wf::output_t *output, wf::regionf_t& region, const wf::pointf_t& offset)
 {
     region -= offset;
     for (auto& ch : instances)
@@ -1233,7 +1234,7 @@ void render_manager::rem_post(post_hook_t *hook)
     pimpl->postprocessing->rem_post(hook);
 }
 
-wf::region_t render_manager::get_scheduled_damage()
+wf::regionf_t render_manager::get_scheduled_damage()
 {
     return pimpl->damage_manager->get_scheduled_damage(get_target_framebuffer());
 }
@@ -1254,7 +1255,7 @@ void render_manager::damage(const wlr_box& box, bool repaint)
     pimpl->damage_manager->damage_buffer(fb.framebuffer_box_from_geometry_box(box), repaint);
 }
 
-void render_manager::damage(const wf::region_t& region, bool repaint)
+void render_manager::damage(const wf::regionf_t& region, bool repaint)
 {
     auto fb = pimpl->postprocessing->get_target_framebuffer();
     pimpl->damage_manager->damage_buffer(fb.framebuffer_region_from_geometry_region(region), repaint);

@@ -14,10 +14,10 @@ namespace wf
  */
 struct decoration_margins_t
 {
-    int left;
-    int right;
-    int bottom;
-    int top;
+    double left;
+    double right;
+    double bottom;
+    double top;
 };
 
 struct toplevel_state_t
@@ -132,7 +132,7 @@ class toplevel_t : public wf::txn::transaction_object_t, public wf::object_base_
 };
 
 // Helper functions when working with toplevel state
-inline wf::dimensions_t expand_dimensions_by_margins(wf::dimensions_t dim,
+inline wf::dimensionsf_t expand_dimensions_by_margins(wf::dimensionsf_t dim,
     const decoration_margins_t& margins)
 {
     dim.width  += margins.left + margins.right;
@@ -140,12 +140,28 @@ inline wf::dimensions_t expand_dimensions_by_margins(wf::dimensions_t dim,
     return dim;
 }
 
-inline wf::dimensions_t shrink_dimensions_by_margins(wf::dimensions_t dim,
+inline wf::dimensions_t expand_dimensions_by_margins(wf::dimensions_t dim,
+    const decoration_margins_t& margins)
+{
+    return wf::containing_size(expand_dimensions_by_margins(wf::dimensionsf_t{dim}, margins));
+}
+
+inline wf::dimensionsf_t shrink_dimensions_by_margins(wf::dimensionsf_t dim,
     const decoration_margins_t& margins)
 {
     dim.width  -= margins.left + margins.right;
     dim.height -= margins.top + margins.bottom;
     return dim;
+}
+
+inline wf::dimensions_t shrink_dimensions_by_margins(wf::dimensions_t dim,
+    const decoration_margins_t& margins)
+{
+    auto shrunk = shrink_dimensions_by_margins(wf::dimensionsf_t{dim}, margins);
+    return {
+        (int32_t)std::floor(shrunk.width),
+        (int32_t)std::floor(shrunk.height),
+    };
 }
 
 inline wf::geometry_t expand_geometry_by_margins(wf::geometry_t geometry, const decoration_margins_t& margins)

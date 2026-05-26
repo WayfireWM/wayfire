@@ -34,7 +34,7 @@ class simple_text_node_t : public wf::scene::node_t
         return wf::construct_box(position, size.value_or(cr_text.get_size()));
     }
 
-    void set_position(wf::point_t position)
+    void set_position(wf::pointf_t position)
     {
         this->position = position;
     }
@@ -59,5 +59,5 @@ class simple_text_node_t : public wf::scene::node_t
   private:
     wf::cairo_text_t::params params;
     std::optional<wf::dimensions_t> size;
-    wf::point_t position;
+    wf::pointf_t position;
 };

@@ -99,7 +99,10 @@ std::string wf::text_input_v3_popup::get_title()
 
 void wf::text_input_v3_popup::update_cursor_rect(wlr_box *cursor_rect)
 {
-    if (old_cursor_rect == *cursor_rect)
+    if ((old_cursor_rect.x == cursor_rect->x) &&
+        (old_cursor_rect.y == cursor_rect->y) &&
+        (old_cursor_rect.width == cursor_rect->width) &&
+        (old_cursor_rect.height == cursor_rect->height))
     {
         return;
     }
@@ -129,7 +132,7 @@ void wf::text_input_v3_popup::update_geometry()
 
     bool cursor_rect = text_input->current.features & WLR_TEXT_INPUT_V3_FEATURE_CURSOR_RECTANGLE;
     auto cursor = text_input->current.cursor_rectangle;
-    int x = 0, y = 0;
+    double x = 0, y = 0;
     if (cursor_rect)
     {
         x = cursor.x;
@@ -145,18 +148,18 @@ void wf::text_input_v3_popup::update_geometry()
 
     damage();
 
-    wf::pointf_t popup_offset = wf::place_popup_at(wlr_surface, surface, {x* 1.0, y * 1.0});
+    wf::pointf_t popup_offset = wf::place_popup_at(wlr_surface, surface, {x, y});
     x = popup_offset.x;
     y = popup_offset.y;
 
-    auto width  = surface->current.width;
-    auto height = surface->current.height;
+    double width  = surface->current.width;
+    double height = surface->current.height;
 
     auto output   = view->get_output();
     auto g_output = output->get_layout_geometry();
     // make sure right edge is on screen, sliding to the left when needed,
     // but keep left edge on screen nonetheless.
-    x = std::max(0, std::min(x, g_output.width - width));
+    x = std::max(0.0, std::min(x, g_output.width - width));
     // down edge is going to be out of screen; flip upwards
     if (y + height > g_output.height)
     {
@@ -171,7 +174,7 @@ void wf::text_input_v3_popup::update_geometry()
     }
 
     // make sure top edge is on screen, sliding down and sacrificing down edge if unavoidable
-    y = std::max(0, y);
+    y = std::max(0.0, y);
 
     surface_root_node->set_offset({x, y});
     geometry.x     = x;

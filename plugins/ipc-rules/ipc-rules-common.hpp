@@ -186,8 +186,9 @@ static inline wf::json_t view_to_json(wayfire_view view)
     auto toplevel = wf::toplevel_cast(view);
     description["parent"]   = toplevel && toplevel->parent ? (int)toplevel->parent->get_id() : -1;
     description["geometry"] =
-        wf::ipc::geometry_to_json(toplevel ? toplevel->get_pending_geometry() : view->get_bounding_box());
-    description["bbox"] = wf::ipc::geometry_to_json(view->get_bounding_box());
+        wf::ipc::geometry_to_json(toplevel ? toplevel->get_pending_geometry() :
+            wf::from_framebuffer_box(view->get_bounding_box()));
+    description["bbox"] = wf::ipc::geometry_to_json(wf::from_framebuffer_box(view->get_bounding_box()));
     description["output-id"]   = view->get_output() ? view->get_output()->get_id() : -1;
     description["output-name"] = output ? output->to_string() : "null";
     description["last-focus-timestamp"] = wf::get_focus_timestamp(view);

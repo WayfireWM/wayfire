@@ -3,6 +3,7 @@
 #include <functional>
 #include <memory>
 #include <string>
+#include <vector>
 #include <wayfire/core.hpp>
 
 namespace wf::test
@@ -24,6 +25,7 @@ class headless_core_harness_t
 
     wf::output_t *output() const;
     const std::string& socket_name() const;
+    std::vector<uint32_t> capture_output_pixels();
 
   private:
     struct impl;

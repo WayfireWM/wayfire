@@ -40,9 +40,7 @@ class wfs_hotspot
     {
         idle_check_input.run_once([=] ()
         {
-            auto gcf = wf::get_core().get_cursor_position();
-            wf::point_t gc{(int)gcf.x, (int)gcf.y};
-            process_input_motion(gc);
+            process_input_motion(wf::get_core().get_cursor_position());
         });
     };
 
@@ -51,9 +49,7 @@ class wfs_hotspot
     {
         idle_check_input.run_once([=] ()
         {
-            auto gcf = wf::get_core().get_cursor_position();
-            wf::point_t gc{(int)gcf.x, (int)gcf.y};
-            process_input_motion(gc);
+            process_input_motion(wf::get_core().get_cursor_position());
         });
     };
 
@@ -61,15 +57,13 @@ class wfs_hotspot
     {
         idle_check_input.run_once([=] ()
         {
-            auto gcf = wf::get_core().get_touch_position(0);
-            wf::point_t gc{(int)gcf.x, (int)gcf.y};
-            process_input_motion(gc);
+            process_input_motion(wf::get_core().get_touch_position(0));
         });
     };
 
     wf::signal::connection_t<wf::output_removed_signal> on_output_removed;
 
-    void process_input_motion(wf::point_t gc)
+    void process_input_motion(wf::pointf_t gc)
     {
         if (!(hotspot_geometry & gc))
         {
@@ -155,8 +149,8 @@ class wfs_hotspot
             if (ev->output == output)
             {
                 /* Make hotspot inactive by setting the region to empty */
-                hotspot_geometry = {0, 0, 0, 0};
-                process_input_motion({0, 0});
+                hotspot_geometry = {0.0, 0.0, 0.0, 0.0};
+                process_input_motion({0.0, 0.0});
             }
         });
 

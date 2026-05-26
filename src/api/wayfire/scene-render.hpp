@@ -50,7 +50,7 @@ struct render_instruction_t
     render_pass_t *pass = NULL; // auto-filled by the render pass scheduling instructions
     render_instance_t *instance = NULL;
     render_target_t target;
-    wf::region_t damage;
+    wf::regionf_t damage;
     std::any data = {};
 };
 
@@ -94,7 +94,7 @@ class render_instance_t
      */
     virtual void schedule_instructions(
         std::vector<render_instruction_t>& instructions,
-        const wf::render_target_t& target, wf::region_t& damage) = 0;
+        const wf::render_target_t& target, wf::regionf_t& damage) = 0;
 
     /**
      * Render the node with the given parameters.
@@ -140,11 +140,11 @@ class render_instance_t
      * The visible region can be used for things like determining when to send frame done events to
      * wlr_surfaces and to ignore damage to invisible parts of a render instance.
      */
-    virtual void compute_visibility(wf::output_t *output, wf::region_t& visible)
+    virtual void compute_visibility(wf::output_t *output, wf::regionf_t& visible)
     {}
 };
 
-using damage_callback = std::function<void (const wf::region_t&)>;
+using damage_callback = std::function<void (const wf::regionf_t&)>;
 
 /**
  * A signal emitted when a part of the node is damaged.
@@ -152,18 +152,24 @@ using damage_callback = std::function<void (const wf::region_t&)>;
  */
 struct node_damage_signal
 {
-    wf::region_t region;
+    wf::regionf_t region;
 };
 
 /**
  * A helper function to emit the damage signal on a node.
  */
 template<class NodePtr>
-inline void damage_node(NodePtr node, wf::region_t damage)
+inline void damage_node(NodePtr node, wf::regionf_t damage)
 {
     node_damage_signal data;
     data.region = damage;
     node->emit(&data);
+}
+
+template<class NodePtr>
+inline void damage_node(NodePtr node, wf::geometry_t damage)
+{
+    damage_node(node, wf::regionf_t{damage});
 }
 
 /**
@@ -181,7 +187,7 @@ direct_scanout try_scanout_from_list(
  * afterwards. It also calls compute_visibility for the children instances.
  */
 void compute_visibility_from_list(const std::vector<render_instance_uptr>& instances, wf::output_t *output,
-    wf::region_t& region, const wf::point_t& offset);
+    wf::regionf_t& region, const wf::pointf_t& offset);
 
 /**
  * A helper class for easier implementation of render instances.
@@ -200,7 +206,7 @@ class simple_render_instance_t : public render_instance_t
     }
 
     void schedule_instructions(std::vector<render_instruction_t>& instructions,
-        const wf::render_target_t& target, wf::region_t& damage) override
+        const wf::render_target_t& target, wf::regionf_t& damage) override
     {
         instructions.push_back(render_instruction_t{
                     .instance = this,

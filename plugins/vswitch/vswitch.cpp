@@ -311,8 +311,8 @@ class workspace_switch_t
             output->wset()->get_current_workspace());
         auto size = output->get_screen_size();
         geometry_t viewport = {
-            (int)std::round(animation.dx * (size.width + gap) + start.x),
-            (int)std::round(animation.dy * (size.height + gap) + start.y),
+            (double)std::round(animation.dx * (size.width + gap) + start.x),
+            (double)std::round(animation.dy * (size.height + gap) + start.y),
             start.width,
             start.height,
         };

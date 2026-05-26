@@ -99,11 +99,11 @@ class wayfire_layer_shell_view : public wf::view_interface_t
     void move(int x, int y)
     {
         wf::region_t damage = last_bounding_box;
-        surface_root_node->set_offset({x, y});
+        surface_root_node->set_offset({(double)x, (double)y});
         this->geometry.x = x;
         this->geometry.y = y;
 
-        last_bounding_box = get_bounding_box();
+        last_bounding_box = wf::from_framebuffer_box(get_bounding_box());
         damage |= last_bounding_box;
         wf::scene::damage_node(get_root_node(), last_bounding_box);
         wf::scene::update(get_root_node(), wf::scene::update_flag::GEOMETRY);
@@ -542,7 +542,7 @@ void wayfire_layer_shell_view::commit()
         wf::scene::damage_node(get_root_node(), last_bounding_box);
     }
 
-    this->last_bounding_box = get_bounding_box();
+    this->last_bounding_box = wf::from_framebuffer_box(get_bounding_box());
 
     auto state = &lsurface->current;
     /* Update the keyboard focus enabled state. If a refocusing is needed, i.e

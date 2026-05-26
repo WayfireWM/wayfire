@@ -3,6 +3,8 @@
 
 #include <wayfire/core.hpp>
 #include <wayfire/signal-definitions.hpp>
+#include <wayfire/toplevel-view.hpp>
+#include <wayfire/window-manager.hpp>
 
 #include <vector>
 

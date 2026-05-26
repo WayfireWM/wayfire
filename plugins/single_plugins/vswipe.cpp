@@ -34,9 +34,9 @@ static inline wf::geometry_t interpolate(wf::geometry_t a, wf::geometry_t b,
     double xalpha, double yalpha)
 {
     const auto& interp =
-        [=] (int32_t wf::geometry_t::*member, double alpha) -> int32_t
+        [=] (double wf::geometry_t::*member, double alpha) -> double
     {
-        return std::round((1 - alpha) * a.*member + alpha * b.*member);
+        return (1 - alpha) * a.*member + alpha * b.*member;
     };
 
     return {

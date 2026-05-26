@@ -36,7 +36,7 @@ class opaque_region_node_t
     /**
      * Get the opaque region of the node in its parent's coordinate system (same as get_bounding_box()).
      */
-    virtual wf::region_t get_opaque_region() const
+    virtual wf::regionf_t get_opaque_region() const
     {
         return {};
     }
@@ -59,7 +59,7 @@ class transformer_base_node_t : public scene::floating_inner_node_t
     // Damage from the children, which is the region of @inner_content that
     // should be repainted on the next frame to have a valid copy of the
     // children's current content.
-    wf::region_t cached_damage;
+    wf::regionf_t cached_damage;
 
     std::shared_ptr<wf::texture_t> get_updated_contents(const wf::geometry_t& bbox, float scale,
         std::vector<scene::render_instance_uptr>& children);
@@ -145,7 +145,7 @@ class transformer_render_instance_t : public render_instance_t
         }
     }
 
-    virtual void transform_damage_region(wf::region_t& damage)
+    virtual void transform_damage_region(wf::regionf_t& damage)
     {}
 
     wf::output_t *_shown_on;
@@ -175,7 +175,7 @@ class transformer_render_instance_t : public render_instance_t
 
     void regen_instances()
     {
-        auto push_damage_child = [=] (wf::region_t region)
+        auto push_damage_child = [=] (wf::regionf_t region)
         {
             self->cached_damage |= region;
             transform_damage_region(region);
@@ -194,7 +194,7 @@ class transformer_render_instance_t : public render_instance_t
 
     void schedule_instructions(
         std::vector<render_instruction_t>& instructions,
-        const wf::render_target_t& target, wf::region_t& damage) override
+        const wf::render_target_t& target, wf::regionf_t& damage) override
     {
         if (!damage.empty())
         {
@@ -223,14 +223,14 @@ class transformer_render_instance_t : public render_instance_t
         return !children.empty();
     }
 
-    void compute_visibility(wf::output_t *output, wf::region_t& visible) override
+    void compute_visibility(wf::output_t *output, wf::regionf_t& visible) override
     {
         if (!(visible & self->get_bounding_box()).empty())
         {
             // By default, we are not sure how the visibility region is affected, so we take a simple 0-or-1
             // approach: if anything of the bounding box is visible, we assume the whole view is visible, and
             // we do not subtract anything from the visibility region of the nodes below.
-            wf::region_t copy = self->get_children_bounding_box();
+            wf::regionf_t copy{self->get_children_bounding_box()};
             for (auto& ch : this->children)
             {
                 ch->compute_visibility(output, copy);

@@ -43,7 +43,7 @@ class xdg_toplevel_t : public toplevel_t, public std::enable_shared_from_this<xd
     wf::wl_listener_wrapper on_surface_commit;
     wf::wl_listener_wrapper on_toplevel_destroy;
     wlr_xdg_toplevel *toplevel;
-    wf::point_t wm_offset = {0, 0};
+    wf::pointf_t wm_offset = {0, 0};
 
     void handle_surface_commit();
     uint32_t target_configure = 0;

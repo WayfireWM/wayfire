@@ -19,12 +19,12 @@ class translation_node_t : public wf::scene::floating_inner_node_t
      * Set the offset the node applies to its children.
      * Note that damage is not automatically applied.
      */
-    void set_offset(wf::point_t offset);
+    void set_offset(wf::pointf_t offset);
 
     /**
      * Get the current offset (set via @set_offset). Default offset is {0, 0}.
      */
-    wf::point_t get_offset() const;
+    wf::pointf_t get_offset() const;
 
   public: // Implementation of node_t interface
     wf::pointf_t to_local(const wf::pointf_t& point) override;
@@ -37,7 +37,7 @@ class translation_node_t : public wf::scene::floating_inner_node_t
     uint32_t optimize_update(uint32_t flags) override;
 
   protected:
-    wf::point_t offset = {0, 0};
+    wf::pointf_t offset = {0, 0};
 };
 
 class translation_node_instance_t : public render_instance_t
@@ -57,10 +57,10 @@ class translation_node_instance_t : public render_instance_t
 
     // Implementation of render_instance_t
     void schedule_instructions(std::vector<wf::scene::render_instruction_t>& instructions,
-        const wf::render_target_t& target, wf::region_t& damage) override;
+        const wf::render_target_t& target, wf::regionf_t& damage) override;
     void presentation_feedback(wf::output_t *output) override;
     wf::scene::direct_scanout try_scanout(wf::output_t *output) override;
-    void compute_visibility(wf::output_t *output, wf::region_t& visible) override;
+    void compute_visibility(wf::output_t *output, wf::regionf_t& visible) override;
 };
 }
 }

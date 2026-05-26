@@ -139,7 +139,7 @@ class fire_render_instance_t : public wf::scene::render_instance_t
         wf::output_t *output)
     {
         this->self = std::dynamic_pointer_cast<fire_node_t>(self->shared_from_this());
-        auto child_damage = [=] (const wf::region_t& damage)
+        auto child_damage = [=] (const wf::regionf_t& damage)
         {
             push_damage(damage | self->get_bounding_box());
         };
@@ -155,7 +155,7 @@ class fire_render_instance_t : public wf::scene::render_instance_t
 
     void schedule_instructions(
         std::vector<wf::scene::render_instruction_t>& instructions,
-        const wf::render_target_t& target, wf::region_t& damage) override
+        const wf::render_target_t& target, wf::regionf_t& damage) override
     {
         if (children.empty())
         {
@@ -191,7 +191,7 @@ class fire_render_instance_t : public wf::scene::render_instance_t
         {
             for (auto box : data.damage)
             {
-                wf::gles::render_target_logic_scissor(data.target, wlr_box_from_pixman_box(box));
+                wf::gles::render_target_logic_scissor(data.target, box);
                 self->ps->render(wf::gles::render_target_orthographic_projection(data.target) * translate);
             }
         });
@@ -205,7 +205,7 @@ class fire_render_instance_t : public wf::scene::render_instance_t
         }
     }
 
-    void compute_visibility(wf::output_t *output, wf::region_t& visible) override
+    void compute_visibility(wf::output_t *output, wf::regionf_t& visible) override
     {
         for (auto& ch : this->children)
         {

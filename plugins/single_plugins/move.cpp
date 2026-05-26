@@ -145,7 +145,7 @@ class wayfire_move : public wf::per_output_plugin_instance_t,
     // move.
     //
     // We do the same for touch events.
-    wf::point_t last_input_press_position = {0, 0};
+    wf::pointf_t last_input_press_position = {0, 0};
     wf::signal::connection_t<wf::input_event_signal<wlr_pointer_button_event>> on_raw_pointer_button =
         [=] (wf::input_event_signal<wlr_pointer_button_event> *ev)
     {
@@ -311,10 +311,10 @@ class wayfire_move : public wf::per_output_plugin_instance_t,
         return true;
     }
 
-    bool initiate(wayfire_toplevel_view view, wf::point_t grab_position)
+    bool initiate(wayfire_toplevel_view view, wf::pointf_t grab_position)
     {
         // First, make sure that the view is on the output the input is.
-        auto target_output = wf::get_core().output_layout->find_closest_output(wf::pointf_t{grab_position});
+        auto target_output = wf::get_core().output_layout->find_closest_output(grab_position);
         if (target_output && (view->get_output() != target_output))
         {
             auto parent = wf::find_topmost_parent(view);
@@ -428,7 +428,7 @@ class wayfire_move : public wf::per_output_plugin_instance_t,
         wf::point_t tws = {cws.x + dx, cws.y + dy};
         wf::dimensions_t ws_dim = output->wset()->get_workspace_grid_size();
         wf::geometry_t possible = {
-            0, 0, ws_dim.width, ws_dim.height
+            0.0, 0.0, (double)ws_dim.width, (double)ws_dim.height
         };
 
         /* Outside of workspace grid */
@@ -481,7 +481,8 @@ class wayfire_move : public wf::per_output_plugin_instance_t,
 
         if (slot.preview)
         {
-            slot.preview->set_target_geometry({input.x, input.y, 1, 1}, 0, true);
+            slot.preview->set_target_geometry(wf::pointf_t{(double)input.x, (double)input.y}, 0,
+                true);
             slot.preview = nullptr;
         }
 
@@ -492,7 +493,7 @@ class wayfire_move : public wf::per_output_plugin_instance_t,
             if ((slot_geometry.width > 0) || (slot_geometry.height > 0))
             {
                 slot.preview = std::make_shared<wf::preview_indication_t>(
-                    wf::geometry_t{input.x, input.y, 1, 1}, output, "move");
+                    wf::pointf_t{(double)input.x, (double)input.y}, output, "move");
                 slot.preview->set_target_geometry(slot_geometry, 1);
             }
         }
@@ -501,7 +502,7 @@ class wayfire_move : public wf::per_output_plugin_instance_t,
     }
 
     /* Returns the currently used input coordinates in global compositor space */
-    wf::point_t get_global_input_coords()
+    wf::pointf_t get_global_input_coords()
     {
         wf::pointf_t input;
         if (wf::get_core().get_touch_state().fingers.empty())
@@ -513,15 +514,15 @@ class wayfire_move : public wf::per_output_plugin_instance_t,
             input = {center.x, center.y};
         }
 
-        return {(int)input.x, (int)input.y};
+        return input;
     }
 
     /* Returns the currently used input coordinates in output-local space */
     wf::point_t get_input_coords()
     {
         auto og     = output->get_layout_geometry();
-        auto coords = get_global_input_coords() - wf::point_t{og.x, og.y};
-        return coords;
+        auto coords = get_global_input_coords() - wf::origin(og);
+        return {(int)std::floor(coords.x), (int)std::floor(coords.y)};
     }
 
     bool is_snap_enabled()

@@ -96,7 +96,7 @@ class blur_render_instance_t : public transformer_render_instance_t<blur_node_t>
 
   public:
     using transformer_render_instance_t::transformer_render_instance_t;
-    bool is_fully_opaque(wf::region_t damage)
+    bool is_fully_opaque(wf::regionf_t damage)
     {
         if (self->get_children().size() == 1)
         {
@@ -109,7 +109,7 @@ class blur_render_instance_t : public transformer_render_instance_t<blur_node_t>
         return false;
     }
 
-    wf::region_t calculate_translucent_damage(const wf::render_target_t& target, wf::region_t damage)
+    wf::regionf_t calculate_translucent_damage(const wf::render_target_t& target, wf::regionf_t damage)
     {
         if (self->get_children().size() == 1)
         {
@@ -120,7 +120,7 @@ class blur_render_instance_t : public transformer_render_instance_t<blur_node_t>
                 auto opaque_region = opaque->get_opaque_region();
                 opaque_region.expand_edges(-padding);
 
-                wf::region_t translucent_region = damage ^ opaque_region;
+                wf::regionf_t translucent_region = damage ^ opaque_region;
                 return translucent_region;
             }
         }
@@ -129,7 +129,7 @@ class blur_render_instance_t : public transformer_render_instance_t<blur_node_t>
     }
 
     void schedule_instructions(std::vector<render_instruction_t>& instructions,
-        const wf::render_target_t& target, wf::region_t& damage) override
+        const wf::render_target_t& target, wf::regionf_t& damage) override
     {
         const int padding = calculate_damage_padding(target, self->provider()->calculate_blur_radius());
         auto bbox = self->get_bounding_box();
@@ -164,7 +164,7 @@ class blur_render_instance_t : public transformer_render_instance_t<blur_node_t>
         padded_region &= target.geometry;
 
         // Actual region which will be repainted by this render instance.
-        wf::region_t we_repaint = padded_region;
+        wf::regionf_t we_repaint = padded_region;
 
         this->saved_pixels   = self->acquire_saved_pixel_buffer();
         saved_pixels->region =
@@ -204,15 +204,18 @@ class blur_render_instance_t : public transformer_render_instance_t<blur_node_t>
 
     void render(const wf::scene::render_instruction_t& data) override
     {
-        auto bounding_box = self->get_bounding_box();
+        auto bounding_box = wf::to_framebuffer_box(self->get_bounding_box());
         data.pass->custom_gles_subpass([&]
         {
             auto tex = wf::gles_texture_t{get_texture(data.target.scale)};
             if (!data.damage.empty())
             {
-                auto translucent_damage = calculate_translucent_damage(data.target, data.damage);
-                self->provider()->prepare_blur(data.target, translucent_damage);
-                self->provider()->render(tex, bounding_box, data.damage, data.target, data.target);
+                auto translucent_damage    = calculate_translucent_damage(data.target, data.damage);
+                auto translucent_damage_fb =
+                    data.target.framebuffer_region_from_geometry_region(translucent_damage);
+                auto render_damage_fb = data.target.framebuffer_region_from_geometry_region(data.damage);
+                self->provider()->prepare_blur(data.target, translucent_damage_fb);
+                self->provider()->render(tex, bounding_box, render_damage_fb, data.target, data.target);
             }
 
             GL_CALL(glDisable(GL_SCISSOR_TEST));

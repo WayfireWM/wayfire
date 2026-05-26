@@ -147,7 +147,7 @@ class WayfireSwitcher : public wf::per_output_plugin_instance_t, public wf::keyb
 
             void schedule_instructions(
                 std::vector<wf::scene::render_instruction_t>& instructions,
-                const wf::render_target_t& target, wf::region_t& damage) override
+                const wf::render_target_t& target, wf::regionf_t& damage) override
             {
                 instructions.push_back(wf::scene::render_instruction_t{
                     .instance = this,

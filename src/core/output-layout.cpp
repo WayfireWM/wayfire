@@ -150,10 +150,10 @@ std::string_view wf::layout_detail::get_output_source_name(output_image_source_t
 wf::geometry_t wf::layout_detail::calculate_output_geometry(const output_state_t& state)
 {
     wf::geometry_t geometry = {
-        state.position.get_x(),
-        state.position.get_y(),
-        (int32_t)(state.mode.width / state.scale),
-        (int32_t)(state.mode.height / state.scale),
+        (double)state.position.get_x(),
+        (double)state.position.get_y(),
+        (double)(int32_t)(state.mode.width / state.scale),
+        (double)(int32_t)(state.mode.height / state.scale),
     };
 
     if (state.transform & 1)
@@ -1027,7 +1027,7 @@ struct output_layout_output_t
         opts.filter_mode = WLR_SCALE_FILTER_BILINEAR;
         opts.clip    = NULL;
         opts.src_box = {0, 0, 0, 0};
-        opts.dst_box = {0, 0, handle->width, handle->height};
+        opts.dst_box = {0, 0, (int)handle->width, (int)handle->height};
         opts.transform = WL_OUTPUT_TRANSFORM_NORMAL;
         wlr_render_pass_add_texture(pass, &opts);
 

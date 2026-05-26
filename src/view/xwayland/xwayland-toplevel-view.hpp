@@ -40,7 +40,8 @@ class wayfire_xwayland_view : public wf::toplevel_view_interface_t, public wayfi
 
     void handle_client_configure(wlr_xwayland_surface_configure_event *ev) override
     {
-        wf::geometry_t configure_geometry = wlr_box{ev->x, ev->y, ev->width, ev->height};
+        wf::geometry_t configure_geometry = wf::from_framebuffer_box(
+            wlr_box{ev->x, ev->y, ev->width, ev->height});
         if (get_output())
         {
             configure_geometry = wf::xw::calculate_wayfire_geometry(get_output(), configure_geometry);
@@ -276,7 +277,7 @@ class wayfire_xwayland_view : public wf::toplevel_view_interface_t, public wayfi
         {
             /* Save geometry which the window has put itself in */
             wf::geometry_t save_geometry = {
-                xw->x, xw->y, xw->width, xw->height
+                (double)xw->x, (double)xw->y, (double)xw->width, (double)xw->height
             };
 
             /* Make sure geometry is properly visible on the view output */
@@ -303,10 +304,10 @@ class wayfire_xwayland_view : public wf::toplevel_view_interface_t, public wayfi
         }
 
         wf::geometry_t desired_geometry = {
-            xw->x,
-            xw->y,
-            xw->surface->current.width,
-            xw->surface->current.height
+            (double)xw->x,
+            (double)xw->y,
+            (double)xw->surface->current.width,
+            (double)xw->surface->current.height
         };
 
         desired_geometry = wf::xw::calculate_wayfire_geometry(get_output(), desired_geometry);

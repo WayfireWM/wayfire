@@ -181,11 +181,35 @@ static const wlr_drm_format *choose_format_from_set(const wlr_drm_format_set *se
  */
 static wlr_box round_fbox_to_containing_box(wlr_fbox fbox)
 {
+    return wf::containing_box(fbox);
+}
+
+/**
+ * Rasterize a projected destination box for texture rendering.
+ *
+ * wlroots render passes only accept integer destination boxes. For exact
+ * integer-sized projected content rendered at a fractional origin, using a
+ * containing box expands the destination by one extra pixel and forces
+ * resampling. Snap the origin down to the framebuffer grid, but preserve an
+ * exact integer projected size when we have one.
+ */
+static wlr_box round_fbox_to_texture_dst_box(wlr_fbox fbox)
+{
+    static constexpr double epsilon = 1e-6;
+    const int x = (int)std::floor(fbox.x);
+    const int y = (int)std::floor(fbox.y);
+    const double rounded_width  = std::round(fbox.width);
+    const double rounded_height = std::round(fbox.height);
+    const int x2 = (int)((std::abs(fbox.width - rounded_width) < epsilon) ?
+        (x + rounded_width) : std::ceil(fbox.x + fbox.width));
+    const int y2 = (int)((std::abs(fbox.height - rounded_height) < epsilon) ?
+        (y + rounded_height) : std::ceil(fbox.y + fbox.height));
+
     return wlr_box{
-        .x     = (int)std::floor(fbox.x),
-        .y     = (int)std::floor(fbox.y),
-        .width = (int)std::ceil(fbox.x + fbox.width) - (int)std::floor(fbox.x),
-        .height = (int)std::ceil(fbox.y + fbox.height) - (int)std::floor(fbox.y),
+        .x     = x,
+        .y     = y,
+        .width = x2 - x,
+        .height = y2 - y,
     };
 }
 
@@ -238,8 +262,8 @@ wf::buffer_reallocation_result_t wf::auxilliary_buffer_t::allocate(wf::dimension
     // the code.
     static wf::option_wrapper_t<int> max_buffer_size{"workarounds/max_buffer_size"};
     const int FALLBACK_MAX_BUFFER_SIZE = 4096;
-    size.width  = std::max(1.0f, std::ceil(size.width * scale));
-    size.height = std::max(1.0f, std::ceil(size.height * scale));
+    size.width  = std::max(1, (int)std::ceil(size.width * scale));
+    size.height = std::max(1, (int)std::ceil(size.height * scale));
     size = sanitize_buffer_size(size, max_buffer_size);
 
     if (buffer.get_size() == size)
@@ -350,7 +374,7 @@ void wf::render_buffer_t::do_blit(wlr_texture *src_wlr_tex, wlr_fbox src_box,
     opts.transform   = WL_OUTPUT_TRANSFORM_NORMAL;
     opts.clip    = NULL;
     opts.src_box = src_box;
-    opts.dst_box = dst_box;
+    opts.dst_box = wf::to_framebuffer_box(dst_box);
     wlr_render_pass_add_texture(pass, &opts);
     if (!wlr_render_pass_submit(pass))
     {
@@ -463,10 +487,11 @@ wf::render_target_t::~render_target_t()
     }
 }
 
-wf::render_target_t wf::render_target_t::translated(wf::point_t offset) const
+wf::render_target_t wf::render_target_t::translated(wf::pointf_t offset) const
 {
     render_target_t copy = *this;
-    copy.geometry = copy.geometry + offset;
+    copy.geometry.x += offset.x;
+    copy.geometry.y += offset.y;
     return copy;
 }
 
@@ -503,17 +528,27 @@ wlr_fbox wf::render_target_t::framebuffer_box_from_geometry_box(wlr_fbox box) co
 
 wlr_box wf::render_target_t::framebuffer_box_from_geometry_box(wlr_box box) const
 {
-    wlr_fbox fbox = geometry_to_fbox(box);
+    wlr_fbox fbox = geometry_to_fbox(from_framebuffer_box(box));
     wlr_fbox scaled_fbox = framebuffer_box_from_geometry_box(fbox);
     return round_fbox_to_containing_box(scaled_fbox);
 }
 
-wf::region_t wf::render_target_t::framebuffer_region_from_geometry_region(const wf::region_t& region) const
+wlr_box wf::render_target_t::framebuffer_box_from_geometry_box(wf::geometry_t box) const
+{
+    return round_fbox_to_containing_box(framebuffer_box_from_geometry_box(geometry_to_fbox(box)));
+}
+
+wf::region_t wf::render_target_t::framebuffer_region_from_geometry_region(const wf::regionf_t& region) const
 {
     wf::region_t result;
     for (const auto& rect : region)
     {
-        result |= framebuffer_box_from_geometry_box(wlr_box_from_pixman_box(rect));
+        result |= round_fbox_to_containing_box(framebuffer_box_from_geometry_box(wlr_fbox{
+            rect.x1,
+            rect.y1,
+            rect.x2 - rect.x1,
+            rect.y2 - rect.y1,
+        }));
     }
 
     return result;
@@ -548,15 +583,21 @@ wlr_fbox wf::render_target_t::geometry_fbox_from_framebuffer_box(wlr_fbox fb_box
 
 wlr_box wf::render_target_t::geometry_box_from_framebuffer_box(wlr_box fb_box) const
 {
-    return round_fbox_to_containing_box(geometry_fbox_from_framebuffer_box(geometry_to_fbox(fb_box)));
+    return round_fbox_to_containing_box(
+        geometry_fbox_from_framebuffer_box(geometry_to_fbox(from_framebuffer_box(fb_box))));
 }
 
-wf::region_t wf::render_target_t::geometry_region_from_framebuffer_region(const wf::region_t& region) const
+wf::regionf_t wf::render_target_t::geometry_region_from_framebuffer_region(const wf::region_t& region) const
 {
-    wf::region_t result;
+    wf::regionf_t result;
     for (const auto& rect : region)
     {
-        result |= geometry_box_from_framebuffer_box(wlr_box_from_pixman_box(rect));
+        result |= fbox_to_geometry(geometry_fbox_from_framebuffer_box(wlr_fbox{
+            (double)rect.x1,
+            (double)rect.y1,
+            (double)(rect.x2 - rect.x1),
+            (double)(rect.y2 - rect.y1),
+        }));
     }
 
     return result;
@@ -570,7 +611,7 @@ wf::render_pass_t::render_pass_t(const render_pass_params_t& p)
     wf::dassert(p.target.get_buffer(), "Cannot run a render pass without a valid target!");
 }
 
-wf::region_t wf::render_pass_t::run(const wf::render_pass_params_t& params)
+wf::regionf_t wf::render_pass_t::run(const wf::render_pass_params_t& params)
 {
     wf::render_pass_t pass{params};
     auto damage = pass.run_partial();
@@ -578,7 +619,7 @@ wf::region_t wf::render_pass_t::run(const wf::render_pass_params_t& params)
     return damage;
 }
 
-wf::region_t wf::render_pass_t::run_partial()
+wf::regionf_t wf::render_pass_t::run_partial()
 {
     auto accumulated_damage = params.damage;
     if (params.flags & RPASS_EMIT_SIGNALS)
@@ -588,7 +629,7 @@ wf::region_t wf::render_pass_t::run_partial()
         wf::get_core().emit(&ev);
     }
 
-    wf::region_t swap_damage = accumulated_damage;
+    wf::regionf_t swap_damage = accumulated_damage;
 
     // Gather instructions
     std::vector<wf::scene::render_instruction_t> instructions;
@@ -645,14 +686,14 @@ wlr_render_pass*wf::render_pass_t::get_wlr_pass()
     return _get_pass();
 }
 
-void wf::render_pass_t::clear(const wf::region_t& region, const wf::color_t& color)
+void wf::render_pass_t::clear(const wf::regionf_t& region, const wf::color_t& color)
 {
     auto box    = wf::construct_box({0, 0}, params.target.get_size());
     auto damage = params.target.framebuffer_region_from_geometry_region(region);
 
     wlr_render_rect_options opts;
     opts.blend_mode = WLR_RENDER_BLEND_MODE_NONE;
-    opts.box   = box;
+    opts.box   = wf::to_framebuffer_box(box);
     opts.clip  = damage.to_pixman();
     opts.color = {
         .r = static_cast<float>(color.r),
@@ -666,7 +707,7 @@ void wf::render_pass_t::clear(const wf::region_t& region, const wf::color_t& col
 
 void wf::render_pass_t::add_texture(const std::shared_ptr<wf::texture_t>& texture,
     const wf::render_target_t& adjusted_target, const wlr_fbox& geometry,
-    const wf::region_t& damage, float alpha)
+    const wf::regionf_t& damage, float alpha)
 {
     if (wlr_renderer_is_gles2(this->get_wlr_renderer()))
     {
@@ -694,7 +735,7 @@ void wf::render_pass_t::add_texture(const std::shared_ptr<wf::texture_t>& textur
         adjusted_target.wl_transform);
     opts.clip    = fb_damage.to_pixman();
     opts.src_box = texture->get_source_box().value_or(wlr_fbox{0, 0, 0, 0});
-    opts.dst_box = fbox_to_geometry(adjusted_target.framebuffer_box_from_geometry_box(geometry));
+    opts.dst_box = round_fbox_to_texture_dst_box(adjusted_target.framebuffer_box_from_geometry_box(geometry));
 
     auto ct = texture->get_color_transform();
     wlr_color_primaries primaries{};
@@ -708,7 +749,7 @@ void wf::render_pass_t::add_texture(const std::shared_ptr<wf::texture_t>& textur
 }
 
 void wf::render_pass_t::add_rect(const wf::color_t& color, const wf::render_target_t& adjusted_target,
-    const wlr_fbox& geometry, const wf::region_t& damage)
+    const wlr_fbox& geometry, const wf::regionf_t& damage)
 {
     if (wlr_renderer_is_gles2(this->get_wlr_renderer()))
     {
@@ -725,21 +766,21 @@ void wf::render_pass_t::add_rect(const wf::color_t& color, const wf::render_targ
     };
     opts.blend_mode = WLR_RENDER_BLEND_MODE_PREMULTIPLIED;
     opts.clip = fb_damage.to_pixman();
-    opts.box  = fbox_to_geometry(adjusted_target.framebuffer_box_from_geometry_box(geometry));
+    opts.box  = round_fbox_to_containing_box(adjusted_target.framebuffer_box_from_geometry_box(geometry));
     wf::dassert(opts.box.width >= 0);
     wf::dassert(opts.box.height >= 0);
     wlr_render_pass_add_rect(_get_pass(), &opts);
 }
 
 void wf::render_pass_t::add_texture(const std::shared_ptr<wf::texture_t>& texture,
-    const wf::render_target_t& adjusted_target, const wf::geometry_t& geometry, const wf::region_t& damage,
+    const wf::render_target_t& adjusted_target, const wf::geometry_t& geometry, const wf::regionf_t& damage,
     float alpha)
 {
     add_texture(texture, adjusted_target, geometry_to_fbox(geometry), damage, alpha);
 }
 
 void wf::render_pass_t::add_rect(const wf::color_t& color, const wf::render_target_t& adjusted_target,
-    const wf::geometry_t& geometry, const wf::region_t& damage)
+    const wf::geometry_t& geometry, const wf::regionf_t& damage)
 {
     add_rect(color, adjusted_target, geometry_to_fbox(geometry), damage);
 }

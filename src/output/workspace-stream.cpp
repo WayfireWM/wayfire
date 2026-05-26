@@ -21,13 +21,13 @@ class workspace_stream_node_t::workspace_stream_instance_t : public scene::
     // True for each instance generated from a desktop environment view.
     std::vector<bool> is_desktop_environment;
 
-    wf::point_t get_offset()
+    wf::pointf_t get_offset()
     {
         auto g   = self->output->get_relative_geometry();
         auto cws = self->output->wset()->get_current_workspace();
-        return wf::point_t{
-            (self->ws.x - cws.x) * g.width,
-            (self->ws.y - cws.y) * g.height,
+        return wf::pointf_t{
+            (double)((self->ws.x - cws.x) * g.width),
+            (double)((self->ws.y - cws.y) * g.height),
         };
     }
 
@@ -36,7 +36,7 @@ class workspace_stream_node_t::workspace_stream_instance_t : public scene::
         scene::damage_callback push_damage)
     {
         this->self = self;
-        auto translate_and_push_damage = [this, push_damage] (wf::region_t damage)
+        auto translate_and_push_damage = [this, push_damage] (wf::regionf_t damage)
         {
             damage += -get_offset();
             damage &= this->self->get_bounding_box();
@@ -76,7 +76,7 @@ class workspace_stream_node_t::workspace_stream_instance_t : public scene::
 
     void schedule_instructions(
         std::vector<scene::render_instruction_t>& instructions,
-        const wf::render_target_t& target, wf::region_t& damage) override
+        const wf::render_target_t& target, wf::regionf_t& damage) override
     {
         auto bbox = self->get_bounding_box();
         auto our_damage = damage & bbox;
@@ -132,9 +132,10 @@ class workspace_stream_node_t::workspace_stream_instance_t : public scene::
         }
     }
 
-    void compute_visibility(wf::output_t *output, wf::region_t& visible) override
+    void compute_visibility(wf::output_t *output, wf::regionf_t& visible) override
     {
-        scene::compute_visibility_from_list(instances, output, visible, -get_offset());
+        scene::compute_visibility_from_list(instances, output, visible,
+            -get_offset());
     }
 };
 

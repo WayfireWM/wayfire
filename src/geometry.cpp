@@ -3,7 +3,7 @@
 #include <iomanip>
 
 /* Geometry helpers */
-std::ostream& operator <<(std::ostream& stream, const wf::geometry_t& geometry)
+std::ostream & wf::operator <<(std::ostream& stream, const wf::geometry_t& geometry)
 {
     stream << '(' << geometry.x << ',' << geometry.y <<
         ' ' << geometry.width << 'x' << geometry.height << ')';
@@ -11,7 +11,7 @@ std::ostream& operator <<(std::ostream& stream, const wf::geometry_t& geometry)
     return stream;
 }
 
-std::ostream& operator <<(std::ostream& stream, const wlr_fbox& geometry)
+std::ostream& wf::operator <<(std::ostream& stream, const wlr_fbox& geometry)
 {
     stream << std::fixed << std::setprecision(2) << '(' << geometry.x << ',' << geometry.y <<
         ' ' << geometry.width << 'x' << geometry.height << ')';
@@ -32,6 +32,12 @@ std::ostream& wf::operator <<(std::ostream& stream, const wf::dimensions_t& dims
     return stream;
 }
 
+std::ostream& wf::operator <<(std::ostream& stream, const wf::dimensionsf_t& dims)
+{
+    stream << std::fixed << std::setprecision(4) << dims.width << 'x' << dims.height;
+    return stream;
+}
+
 std::ostream& wf::operator <<(std::ostream& stream, const wf::pointf_t& pointf)
 {
     stream << std::fixed << std::setprecision(4) <<
@@ -40,14 +46,27 @@ std::ostream& wf::operator <<(std::ostream& stream, const wf::pointf_t& pointf)
     return stream;
 }
 
-wf::point_t wf::origin(const geometry_t& geometry)
+wf::pointf_t wf::origin(const geometry_t& geometry)
 {
     return {geometry.x, geometry.y};
 }
 
 wf::dimensions_t wf::dimensions(const geometry_t& geometry)
 {
+    return {(int)std::ceil(geometry.width), (int)std::ceil(geometry.height)};
+}
+
+wf::dimensionsf_t wf::fdimensions(const geometry_t& geometry)
+{
     return {geometry.width, geometry.height};
+}
+
+wf::dimensions_t wf::containing_size(const dimensionsf_t& dimensions)
+{
+    return {
+        (int32_t)std::ceil(dimensions.width),
+        (int32_t)std::ceil(dimensions.height),
+    };
 }
 
 bool wf::operator ==(const wf::dimensions_t& a, const wf::dimensions_t& b)
@@ -56,6 +75,16 @@ bool wf::operator ==(const wf::dimensions_t& a, const wf::dimensions_t& b)
 }
 
 bool wf::operator !=(const wf::dimensions_t& a, const wf::dimensions_t& b)
+{
+    return !(a == b);
+}
+
+bool wf::operator ==(const wf::dimensionsf_t& a, const wf::dimensionsf_t& b)
+{
+    return a.width == b.width && a.height == b.height;
+}
+
+bool wf::operator !=(const wf::dimensionsf_t& a, const wf::dimensionsf_t& b)
 {
     return !(a == b);
 }
@@ -70,22 +99,32 @@ bool wf::operator !=(const wf::point_t& a, const wf::point_t& b)
     return !(a == b);
 }
 
-bool operator ==(const wf::geometry_t& a, const wf::geometry_t& b)
+bool wf::operator ==(const wf::pointf_t& a, const wf::pointf_t& b)
 {
-    return a.x == b.x && a.y == b.y && a.width == b.width && a.height == b.height;
+    return a.x == b.x && a.y == b.y;
 }
 
-bool operator !=(const wf::geometry_t& a, const wf::geometry_t& b)
+bool wf::operator !=(const wf::pointf_t& a, const wf::pointf_t& b)
 {
     return !(a == b);
 }
 
-bool operator ==(const wlr_fbox& a, const wlr_fbox& b)
+bool wf::operator ==(const wf::geometry_t& a, const wf::geometry_t& b)
 {
     return a.x == b.x && a.y == b.y && a.width == b.width && a.height == b.height;
 }
 
-bool operator !=(const wlr_fbox& a, const wlr_fbox& b)
+bool wf::operator !=(const wf::geometry_t& a, const wf::geometry_t& b)
+{
+    return !(a == b);
+}
+
+bool wf::operator ==(const wlr_fbox& a, const wlr_fbox& b)
+{
+    return a.x == b.x && a.y == b.y && a.width == b.width && a.height == b.height;
+}
+
+bool wf::operator !=(const wlr_fbox& a, const wlr_fbox& b)
 {
     return !(a == b);
 }
@@ -100,12 +139,12 @@ wf::point_t wf::operator -(const wf::point_t& a, const wf::point_t& b)
     return {a.x - b.x, a.y - b.y};
 }
 
-wf::point_t operator +(const wf::point_t& a, const wf::geometry_t& b)
+wf::pointf_t wf::operator +(const wf::pointf_t& a, const wf::geometry_t& b)
 {
     return {a.x + b.x, a.y + b.y};
 }
 
-wf::geometry_t operator +(const wf::geometry_t & a, const wf::point_t& b)
+wf::geometry_t wf::operator +(const wf::geometry_t & a, const wf::pointf_t& b)
 {
     return {
         a.x + b.x,
@@ -115,9 +154,19 @@ wf::geometry_t operator +(const wf::geometry_t & a, const wf::point_t& b)
     };
 }
 
-wf::geometry_t operator -(const wf::geometry_t & a, const wf::point_t& b)
+wf::geometry_t wf::operator -(const wf::geometry_t & a, const wf::pointf_t& b)
 {
-    return a + -b;
+    return a + wf::pointf_t{-b.x, -b.y};
+}
+
+wf::geometry_t wf::operator +(const wf::geometry_t & a, const wf::framebuffer_box_t& b)
+{
+    return a + wf::origin(wf::from_framebuffer_box(b));
+}
+
+wf::geometry_t wf::operator -(const wf::geometry_t & a, const wf::framebuffer_box_t& b)
+{
+    return a - wf::origin(wf::from_framebuffer_box(b));
 }
 
 wf::point_t wf::operator -(const wf::point_t& a)
@@ -125,20 +174,17 @@ wf::point_t wf::operator -(const wf::point_t& a)
     return {-a.x, -a.y};
 }
 
-wf::geometry_t operator *(const wf::geometry_t& box, double scale)
+wf::geometry_t wf::operator *(const wf::geometry_t& box, double scale)
 {
-    wlr_box scaled;
-    scaled.x = std::floor(box.x * scale);
-    scaled.y = std::floor(box.y * scale);
-    /* Scale it the same way that regions are scaled, otherwise
-     * we get numerical issues. */
-    scaled.width  = std::ceil((box.x + box.width) * scale) - scaled.x;
-    scaled.height = std::ceil((box.y + box.height) * scale) - scaled.y;
-
-    return scaled;
+    return {
+        box.x * scale,
+        box.y * scale,
+        box.width * scale,
+        box.height * scale,
+    };
 }
 
-wlr_fbox operator *(const wlr_fbox& box, double scale)
+wlr_fbox wf::operator *(const wlr_fbox& box, double scale)
 {
     wlr_fbox scaled;
     scaled.x     = box.x * scale;
@@ -148,22 +194,24 @@ wlr_fbox operator *(const wlr_fbox& box, double scale)
     return scaled;
 }
 
-double abs(const wf::point_t& p)
+double wf::abs(const wf::pointf_t& p)
 {
     return std::sqrt(p.x * p.x + p.y * p.y);
 }
 
-bool operator &(const wf::geometry_t& rect, const wf::point_t& point)
+bool wf::operator &(const wf::geometry_t& rect, const wf::point_t& point)
 {
-    return wlr_box_contains_point(&rect, point.x, point.y);
+    return (rect.x <= point.x) && (point.x < rect.x + rect.width) &&
+           (rect.y <= point.y) && (point.y < rect.y + rect.height);
 }
 
-bool operator &(const wf::geometry_t& rect, const wf::pointf_t& point)
+bool wf::operator &(const wf::geometry_t& rect, const wf::pointf_t& point)
 {
-    return wlr_box_contains_point(&rect, point.x, point.y);
+    return (rect.x <= point.x) && (point.x < rect.x + rect.width) &&
+           (rect.y <= point.y) && (point.y < rect.y + rect.height);
 }
 
-bool operator &(const wf::geometry_t& r1, const wf::geometry_t& r2)
+bool wf::operator &(const wf::geometry_t& r1, const wf::geometry_t& r2)
 {
     if ((r1.x + r1.width <= r2.x) || (r2.x + r2.width <= r1.x) ||
         (r1.y + r1.height <= r2.y) || (r2.y + r2.height <= r1.y))
@@ -177,13 +225,16 @@ bool operator &(const wf::geometry_t& r1, const wf::geometry_t& r2)
 wf::geometry_t wf::geometry_intersection(const wf::geometry_t& r1,
     const wf::geometry_t& r2)
 {
-    wlr_box result;
-    if (wlr_box_intersection(&result, &r1, &r2))
+    const double x1 = std::max(r1.x, r2.x);
+    const double y1 = std::max(r1.y, r2.y);
+    const double x2 = std::min(r1.x + r1.width, r2.x + r2.width);
+    const double y2 = std::min(r1.y + r1.height, r2.y + r2.height);
+    if ((x1 < x2) && (y1 < y2))
     {
-        return result;
+        return {x1, y1, x2 - x1, y2 - y1};
     }
 
-    return {0, 0, 0, 0};
+    return {0.0, 0.0, 0.0, 0.0};
 }
 
 wf::geometry_t wf::clamp(wf::geometry_t window, wf::geometry_t output)
@@ -200,10 +251,48 @@ wf::geometry_t wf::clamp(wf::geometry_t window, wf::geometry_t output)
 }
 
 wf::geometry_t wf::construct_box(
-    const wf::point_t& origin, const wf::dimensions_t& dimensions)
+    const wf::pointf_t& origin, const wf::dimensions_t& dimensions)
+{
+    return {
+        origin.x, origin.y, (double)dimensions.width, (double)dimensions.height
+    };
+}
+
+wf::geometry_t wf::construct_box(
+    const wf::pointf_t& origin, const wf::dimensionsf_t& dimensions)
 {
     return {
         origin.x, origin.y, dimensions.width, dimensions.height
+    };
+}
+
+wf::framebuffer_box_t wf::to_framebuffer_box(const geometry_t& box)
+{
+    return containing_box(box);
+}
+
+wf::geometry_t wf::from_framebuffer_box(const framebuffer_box_t& box)
+{
+    return {(double)box.x, (double)box.y, (double)box.width, (double)box.height};
+}
+
+wf::framebuffer_box_t wf::containing_box(const geometry_t& box)
+{
+    return containing_box(geometry_to_fbox(box));
+}
+
+wf::framebuffer_box_t wf::containing_box(const wlr_fbox& box)
+{
+    int x  = (int)std::floor(box.x);
+    int y  = (int)std::floor(box.y);
+    int x2 = (int)std::ceil(box.x + box.width);
+    int y2 = (int)std::ceil(box.y + box.height);
+
+    return {
+        .x     = x,
+        .y     = y,
+        .width = x2 - x,
+        .height = y2 - y,
     };
 }
 
@@ -211,17 +300,7 @@ wf::geometry_t wf::scale_box(
     wf::geometry_t A, wf::geometry_t B, wf::geometry_t box)
 {
     wlr_fbox scaled_fbox = scale_fbox(geometry_to_fbox(A), geometry_to_fbox(B), geometry_to_fbox(box));
-    int x  = (int)std::floor(scaled_fbox.x);
-    int y  = (int)std::floor(scaled_fbox.y);
-    int x2 = (int)std::ceil(scaled_fbox.x + scaled_fbox.width);
-    int y2 = (int)std::floor(scaled_fbox.y + scaled_fbox.height);
-
-    return wf::geometry_t{
-        .x     = x,
-        .y     = y,
-        .width = x2 - x,
-        .height = y2 - y,
-    };
+    return wf::fbox_to_geometry(scaled_fbox);
 }
 
 wlr_fbox wf::scale_fbox(wlr_fbox A, wlr_fbox B, wlr_fbox box)
@@ -254,15 +333,5 @@ wlr_fbox wf::geometry_to_fbox(const geometry_t& geometry)
 
 wf::geometry_t wf::fbox_to_geometry(const wlr_fbox& fbox)
 {
-    int x  = (int)std::floor(fbox.x);
-    int y  = (int)std::floor(fbox.y);
-    int x2 = (int)std::ceil(fbox.x + fbox.width);
-    int y2 = (int)std::ceil(fbox.y + fbox.height);
-
-    return wf::geometry_t{
-        .x     = x,
-        .y     = y,
-        .width = x2 - x,
-        .height = y2 - y,
-    };
+    return {fbox.x, fbox.y, fbox.width, fbox.height};
 }

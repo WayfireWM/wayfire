@@ -129,17 +129,17 @@ void wf::xw::xwayland_toplevel_t::commit()
         return;
     }
 
-    wf::dimensions_t current_size =
-        shrink_dimensions_by_margins(wf::dimensions(_current.geometry), _current.margins);
+    wf::dimensionsf_t current_size =
+        shrink_dimensions_by_margins(wf::fdimensions(_current.geometry), _current.margins);
     if (_pending.mapped && !_current.mapped)
     {
         // We are trying to map the toplevel => check whether we should wait until it sets the proper
         // geometry, or whether we are 'only' mapping without resizing.
-        current_size = get_current_xw_size();
+        current_size = wf::dimensionsf_t{get_current_xw_size()};
     }
 
-    const wf::dimensions_t desired_size = wf::shrink_dimensions_by_margins(
-        wf::dimensions(_pending.geometry), _pending.margins);
+    const wf::dimensionsf_t desired_size = wf::shrink_dimensions_by_margins(
+        wf::fdimensions(_pending.geometry), _pending.margins);
 
     bool wait_for_client = false;
     if (desired_size != current_size)
@@ -248,10 +248,10 @@ void wf::xw::xwayland_toplevel_t::handle_surface_commit()
     const bool is_committed = wf::get_core().tx_manager->is_object_committed(shared_from_this());
     if (is_committed)
     {
-        const wf::dimensions_t desired_size =
-            shrink_dimensions_by_margins(wf::dimensions(_committed.geometry), _committed.margins);
+        const wf::dimensionsf_t desired_size =
+            shrink_dimensions_by_margins(wf::fdimensions(_committed.geometry), _committed.margins);
 
-        if (get_current_xw_size() != desired_size)
+        if (wf::dimensionsf_t{get_current_xw_size()} != desired_size)
         {
             // Desired state not reached => wait for the desired state to be reached. In the meantime, send a
             // frame done so that the client can redraw faster.
@@ -270,8 +270,9 @@ void wf::xw::xwayland_toplevel_t::handle_surface_commit()
         return;
     }
 
-    auto toplevel_size = expand_dimensions_by_margins(get_current_xw_size(), current().margins);
-    if (toplevel_size == wf::dimensions(current().geometry))
+    auto toplevel_size = expand_dimensions_by_margins(
+        wf::dimensionsf_t{get_current_xw_size()}, current().margins);
+    if (toplevel_size == wf::fdimensions(current().geometry))
     {
         // Size did not change, there are no transactions going on - apply the new texture directly
         apply_pending_state();

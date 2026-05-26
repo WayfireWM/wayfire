@@ -26,11 +26,11 @@ namespace wf
 {
 namespace move_drag
 {
-static wf::geometry_t find_geometry_around(wf::dimensions_t size, wf::point_t grab, wf::pointf_t relative)
+static wf::geometry_t find_geometry_around(wf::dimensionsf_t size, wf::pointf_t grab, wf::pointf_t relative)
 {
     return wf::geometry_t{
-        grab.x - (int)std::floor(relative.x * size.width),
-        grab.y - (int)std::floor(relative.y * size.height),
+        grab.x - relative.x * size.width,
+        grab.y - relative.y * size.height,
         size.width,
         size.height,
     };
@@ -65,7 +65,7 @@ class scale_around_grab_t : public wf::scene::transformer_base_node_t
      * The position where the grab appears on the outputs, in output-layout
      * coordinates.
      */
-    wf::point_t grab_position;
+    wf::pointf_t grab_position;
 
     scale_around_grab_t() : transformer_base_node_t(false)
     {}
@@ -100,8 +100,8 @@ class scale_around_grab_t : public wf::scene::transformer_base_node_t
     wf::geometry_t get_bounding_box() override
     {
         auto bbox = get_children_bounding_box();
-        int w     = std::floor(bbox.width / scale_factor);
-        int h     = std::floor(bbox.height / scale_factor);
+        double w  = bbox.width / scale_factor;
+        double h  = bbox.height / scale_factor;
         return find_geometry_around({w, h}, grab_position, relative_grab);
     }
 
@@ -111,7 +111,7 @@ class scale_around_grab_t : public wf::scene::transformer_base_node_t
       public:
         using transformer_render_instance_t::transformer_render_instance_t;
 
-        void transform_damage_region(wf::region_t& region) override
+        void transform_damage_region(wf::regionf_t& region) override
         {
             region |= self->get_bounding_box();
         }
@@ -178,7 +178,7 @@ class dragged_view_node_t : public wf::scene::node_t
 
     wf::geometry_t get_bounding_box() override
     {
-        wf::region_t bounding;
+        wf::regionf_t bounding;
         for (auto& view : views)
         {
             // Note: bbox will be in output layout coordinates now, since this is
@@ -187,7 +187,13 @@ class dragged_view_node_t : public wf::scene::node_t
             bounding |= bbox;
         }
 
-        return wlr_box_from_pixman_box(bounding.get_extents());
+        auto extents = bounding.get_extents();
+        return {
+            extents.x1,
+            extents.y1,
+            extents.x2 - extents.x1,
+            extents.y2 - extents.y1,
+        };
     }
 
     class dragged_view_render_instance_t : public wf::scene::render_instance_t
@@ -217,7 +223,7 @@ class dragged_view_node_t : public wf::scene::node_t
                 all_rendered.push_back(view.view->get_transformed_node());
             }
 
-            auto push_damage_child = [=] (wf::region_t child_damage)
+            auto push_damage_child = [=] (wf::regionf_t child_damage)
             {
                 push_damage(last_bbox);
                 last_bbox = this->self.lock()->get_bounding_box();
@@ -229,14 +235,15 @@ class dragged_view_node_t : public wf::scene::node_t
                 push_damage_child,
                 shown_on);
 
-            const int BIG_NUMBER    = 1e5;
-            wf::region_t big_region =
-                wf::geometry_t{-BIG_NUMBER, -BIG_NUMBER, 2 * BIG_NUMBER, 2 * BIG_NUMBER};
+            const int BIG_NUMBER = 1e5;
+            wf::regionf_t big_region{wf::geometry_t{(double)-BIG_NUMBER, (double)-BIG_NUMBER,
+                    2.0 * BIG_NUMBER,
+                    2.0 * BIG_NUMBER}};
             children_manager->set_visibility_region(big_region);
         }
 
         void schedule_instructions(std::vector<scene::render_instruction_t>& instructions,
-            const wf::render_target_t& target, wf::region_t& damage) override
+            const wf::render_target_t& target, wf::regionf_t& damage) override
         {
             for (auto& inst : children_manager->get_instances())
             {
@@ -304,13 +311,13 @@ core_drag_t::core_drag_t()
 
 core_drag_t::~core_drag_t() = default;
 
-void core_drag_t::rebuild_wobbly(wayfire_toplevel_view view, wf::point_t grab, wf::pointf_t relative)
+void core_drag_t::rebuild_wobbly(wayfire_toplevel_view view, wf::pointf_t grab, wf::pointf_t relative)
 {
-    auto dim = wf::dimensions(wf::view_bounding_box_up_to(view, "wobbly"));
+    auto dim = wf::fdimensions(wf::view_bounding_box_up_to(view, "wobbly"));
     modify_wobbly(view, find_geometry_around(dim, grab, relative));
 }
 
-bool core_drag_t::should_start_pending_drag(wf::point_t current_position)
+bool core_drag_t::should_start_pending_drag(wf::pointf_t current_position)
 {
     if (!tentative_grab_position.has_value())
     {
@@ -329,9 +336,9 @@ void core_drag_t::start_drag(wayfire_toplevel_view grab_view, wf::pointf_t relat
     wf::dassert(!this->view, "Drag operation already in progress!");
 
     auto bbox = wf::view_bounding_box_up_to(grab_view, "wobbly");
-    wf::point_t rel_grab_pos = {
-        int(bbox.x + relative.x * bbox.width),
-        int(bbox.y + relative.y * bbox.height),
+    wf::pointf_t rel_grab_pos = {
+        bbox.x + relative.x * bbox.width,
+        bbox.y + relative.y * bbox.height,
     };
 
     if (options.join_views)
@@ -408,7 +415,7 @@ void core_drag_t::start_drag(wayfire_toplevel_view view, const drag_options_t& o
     start_drag(view, find_relative_grab(bbox, *tentative_grab_position), options);
 }
 
-void core_drag_t::handle_motion(wf::point_t to)
+void core_drag_t::handle_motion(wf::pointf_t to)
 {
     if (priv->view_held_in_place)
     {
@@ -448,7 +455,7 @@ void core_drag_t::handle_motion(wf::point_t to)
     emit(&data);
 }
 
-double core_drag_t::distance_to_grab_origin(wf::point_t to) const
+double core_drag_t::distance_to_grab_origin(wf::pointf_t to) const
 {
     return abs(to - *tentative_grab_position);
 }
@@ -537,10 +544,9 @@ bool core_drag_t::is_view_held_in_place()
     return priv->view_held_in_place;
 }
 
-void core_drag_t::update_current_output(wf::point_t grab)
+void core_drag_t::update_current_output(wf::pointf_t grab)
 {
-    wf::pointf_t origin = {1.0 * grab.x, 1.0 * grab.y};
-    auto output = wf::get_core().output_layout->find_closest_output(origin);
+    auto output = wf::get_core().output_layout->find_closest_output(grab);
     update_current_output(output);
 }
 
@@ -597,8 +603,8 @@ void adjust_view_on_output(drag_done_signal *ev)
     auto output_geometry = ev->focused_output->get_relative_geometry();
     auto current_ws = ev->focused_output->wset()->get_current_workspace();
     wf::point_t target_ws{
-        (int)std::floor(1.0 * grab.x / output_geometry.width),
-        (int)std::floor(1.0 * grab.y / output_geometry.height),
+        (int)std::floor(grab.x / output_geometry.width),
+        (int)std::floor(grab.y / output_geometry.height),
     };
     target_ws = target_ws + current_ws;
 
@@ -620,11 +626,11 @@ void adjust_view_on_output(drag_done_signal *ev)
         auto bbox = wf::view_bounding_box_up_to(v.view, "wobbly");
         auto wm   = v.view->get_geometry();
 
-        wf::point_t wm_offset = wf::origin(wm) + -wf::origin(bbox);
+        wf::pointf_t wm_offset = wf::origin(wm) + -wf::origin(bbox);
         bbox = wf::move_drag::find_geometry_around(
-            wf::dimensions(bbox), grab, v.relative_grab);
+            wf::fdimensions(bbox), grab, v.relative_grab);
 
-        wf::point_t target = wf::origin(bbox) + wm_offset;
+        wf::pointf_t target = wf::origin(bbox) + wm_offset;
         v.view->move(target.x, target.y);
         if (v.view->pending_fullscreen())
         {

@@ -115,10 +115,35 @@ void wf::scene::surface_state_t::merge_state(wlr_surface *surface)
 
     this->seq = surface->current.seq;
 
-    wf::region_t current_damage;
-    wlr_surface_get_effective_damage(surface, current_damage.to_pixman());
+    wf::region_t current_damage_raw;
+    wlr_surface_get_effective_damage(surface, current_damage_raw.to_pixman());
+    wf::regionf_t current_damage;
+    for (const auto& rect : current_damage_raw)
+    {
+        current_damage |= geometry_from_pixman_box({
+            (double)rect.x1,
+            (double)rect.y1,
+            (double)rect.x2,
+            (double)rect.y2,
+        });
+    }
+
     this->accumulated_damage |= current_damage;
-    this->opaque_region = wf::region_t{&surface->opaque_region};
+
+    wf::regionf_t opaque_region;
+    int nrects = 0;
+    const auto rects = pixman_region32_rectangles(&surface->opaque_region, &nrects);
+    for (int i = 0; i < nrects; i++)
+    {
+        opaque_region |= wf::geometry_t{
+            (double)rects[i].x1,
+            (double)rects[i].y1,
+            (double)(rects[i].x2 - rects[i].x1),
+            (double)(rects[i].y2 - rects[i].y1),
+        };
+    }
+
+    this->opaque_region = std::move(opaque_region);
 }
 
 wf::scene::surface_state_t::~surface_state_t()
@@ -278,7 +303,7 @@ class wf::scene::wlr_surface_node_t::wlr_surface_render_instance_t : public rend
 
     wf::output_t *visible_on;
     damage_callback push_damage;
-    wf::region_t last_visibility;
+    wf::regionf_t last_visibility;
 
     wf::signal::connection_t<node_damage_signal> on_surface_damage =
         [=] (node_damage_signal *data)
@@ -320,7 +345,8 @@ class wf::scene::wlr_surface_node_t::wlr_surface_render_instance_t : public rend
         this->push_damage = push_damage;
         this->visible_on  = visible_on;
         self->connect(&on_surface_damage);
-        this->last_visibility |= wlr_box{INT_MIN / 2, INT_MIN / 2, INT_MAX, INT_MAX};
+        this->last_visibility |= wf::geometry_t{(double)(INT_MIN / 2), (double)(INT_MIN / 2), (double)INT_MAX,
+            (double)INT_MAX};
     }
 
     ~wlr_surface_render_instance_t()
@@ -332,9 +358,9 @@ class wf::scene::wlr_surface_node_t::wlr_surface_render_instance_t : public rend
     }
 
     void schedule_instructions(std::vector<render_instruction_t>& instructions,
-        const wf::render_target_t& target, wf::region_t& damage) override
+        const wf::render_target_t& target, wf::regionf_t& damage) override
     {
-        wf::region_t our_damage = damage & self->get_bounding_box();
+        wf::regionf_t our_damage = damage & self->get_bounding_box();
         if (!our_damage.empty())
         {
             instructions.push_back(render_instruction_t{
@@ -386,7 +412,7 @@ class wf::scene::wlr_surface_node_t::wlr_surface_render_instance_t : public rend
         }
 
         // Finally, the opaque region must be the full surface.
-        wf::region_t non_opaque = output->get_relative_geometry();
+        wf::region_t non_opaque = wf::region_t{wf::to_framebuffer_box(output->get_relative_geometry())};
         non_opaque ^= wf::region_t{&wlr_surf->opaque_region};
         if (!non_opaque.empty())
         {
@@ -409,7 +435,7 @@ class wf::scene::wlr_surface_node_t::wlr_surface_render_instance_t : public rend
         }
     }
 
-    void compute_visibility(wf::output_t *output, wf::region_t& visible) override
+    void compute_visibility(wf::output_t *output, wf::regionf_t& visible) override
     {
         auto our_box = self->get_bounding_box();
         on_frame_done.disconnect();

@@ -154,7 +154,7 @@ class command_buffer_t : public wf::signal::provider_t
      * Typical usage:
      * for_each_scissor_rect(target, damage, [&] { vkCmdDraw(...); });
      */
-    void for_each_scissor_rect(const wf::render_target_t& target, const wf::region_t& damage,
+    void for_each_scissor_rect(const wf::render_target_t& target, const wf::regionf_t& damage,
         const std::function<void()> & callback);
 
     /**

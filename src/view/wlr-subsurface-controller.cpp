@@ -69,7 +69,7 @@ wf::wlr_subsurface_root_node_t::wlr_subsurface_root_node_t(wlr_subsurface *subsu
     on_subsurface_destroy.connect(&subsurface->events.destroy);
     on_subsurface_commit.connect(&subsurface->surface->events.commit);
     // Set initial offset but don't damage yet
-    this->offset = {subsurface->current.x, subsurface->current.y};
+    this->offset = {(double)subsurface->current.x, (double)subsurface->current.y};
 }
 
 std::string wf::wlr_subsurface_root_node_t::stringify() const
@@ -79,8 +79,8 @@ std::string wf::wlr_subsurface_root_node_t::stringify() const
 
 bool wf::wlr_subsurface_root_node_t::update_offset(bool apply_damage)
 {
-    wf::point_t offset = {subsurface->current.x, subsurface->current.y};
-    const bool changed = offset != get_offset();
+    wf::pointf_t offset = {(double)subsurface->current.x, (double)subsurface->current.y};
+    const bool changed  = offset != get_offset();
 
     if (changed && apply_damage)
     {

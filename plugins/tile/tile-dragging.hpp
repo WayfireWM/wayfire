@@ -95,7 +95,7 @@ class drag_manager_t
         if (this->preview)
         {
             auto target = preview->get_output() ?
-                preview->get_output()->get_cursor_position().round_down() : wf::point_t{0, 0};
+                preview->get_output()->get_cursor_position() : wf::pointf_t{0.0, 0.0};
             this->preview->set_target_geometry(target, 0.0, true);
             this->preview.reset();
         }
@@ -119,7 +119,8 @@ class drag_manager_t
         if (!this->preview)
         {
             auto start_coords = get_wset_local_coordinates(output->wset(), input);
-            preview = std::make_shared<wf::preview_indication_t>(start_coords, output, "simple-tile");
+            preview = std::make_shared<wf::preview_indication_t>(
+                start_coords, output, "simple-tile");
         }
 
         auto preview_geometry = calculate_split_preview(view, split);
@@ -319,7 +320,7 @@ class drag_manager_t
      *                    for INSERT_NONE
      */
     static split_insertion_t calculate_insert_type(
-        nonstd::observer_ptr<tree_node_t> node, wf::point_t input, double sensitivity)
+        nonstd::observer_ptr<tree_node_t> node, wf::pointf_t input, double sensitivity)
     {
         auto window = node->geometry;
 
@@ -369,7 +370,7 @@ class drag_manager_t
      * dropped at @input over @node
      */
     split_insertion_t calculate_insert_type(
-        nonstd::observer_ptr<tree_node_t> node, wf::point_t input)
+        nonstd::observer_ptr<tree_node_t> node, wf::pointf_t input)
     {
         return calculate_insert_type(node, input, SPLIT_PREVIEW_PERCENTAGE);
     }
@@ -409,7 +410,7 @@ class drag_manager_t
     /**
      * Return the node under the input which is suitable for dropping on.
      */
-    nonstd::observer_ptr<view_node_t> check_drop_destination(wf::output_t *output, wf::point_t global_coords,
+    nonstd::observer_ptr<view_node_t> check_drop_destination(wf::output_t *output, wf::pointf_t global_coords,
         wayfire_toplevel_view dragged_view)
     {
         auto ws = output->wset()->get_current_workspace();

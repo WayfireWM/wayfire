@@ -98,7 +98,7 @@ class toplevel_view_render_instance_t : public wf::scene::translation_node_insta
         }
 
         auto og = output->get_relative_geometry();
-        if (!(view->get_bounding_box() & og))
+        if (!(wf::from_framebuffer_box(view->get_bounding_box()) & og))
         {
             return wf::scene::direct_scanout::SKIP;
         }
@@ -141,14 +141,26 @@ std::shared_ptr<wf::texture_t> wf::toplevel_view_node_t::to_texture() const
     return nullptr;
 }
 
-wf::region_t wf::toplevel_view_node_t::get_opaque_region() const
+wf::regionf_t wf::toplevel_view_node_t::get_opaque_region() const
 {
     auto view = _view.lock();
     if (view && view->is_mapped() && view->get_wlr_surface())
     {
         auto surf = view->get_wlr_surface();
 
-        wf::region_t region{&surf->opaque_region};
+        wf::regionf_t region;
+        int nrects = 0;
+        const auto rects = pixman_region32_rectangles(&surf->opaque_region, &nrects);
+        for (int i = 0; i < nrects; i++)
+        {
+            region |= wf::geometry_t{
+                (double)rects[i].x1,
+                (double)rects[i].y1,
+                (double)(rects[i].x2 - rects[i].x1),
+                (double)(rects[i].y2 - rects[i].y1),
+            };
+        }
+
         region += get_offset();
         return region;
     }
