@@ -150,7 +150,7 @@ wf::input_grab_kind_t wf::touch_interface_t::get_current_grab_kind(int32_t id) c
         return input_grab_kind_t::NONE;
     }
 
-    if ((it->second == input_grab_kind_t::NONE) && wf::get_core_impl().seat->priv->drag_active)
+    if ((it->second == input_grab_kind_t::NONE) && wf::get_core_impl().seat->priv->is_drag_active())
     {
         return input_grab_kind_t::DND;
     }

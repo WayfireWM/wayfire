@@ -91,8 +91,15 @@ struct seat_t::impl
 
     // Current drag icon
     std::unique_ptr<wf::drag_icon_t> drag_icon;
+    // The active drag, or NULL if no drag is in progress. Note we can have a
+    // drag without a drag icon, and active_drag->source may be NULL.
+    wlr_drag *active_drag = nullptr;
+
     // Is dragging active. Note we can have a drag without a drag icon.
-    bool drag_active = false;
+    bool is_drag_active() const
+    {
+        return active_drag != nullptr;
+    }
 
     /** Update the position of the drag icon, if it exists */
     void update_drag_icon();

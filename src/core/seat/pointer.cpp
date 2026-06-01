@@ -246,7 +246,7 @@ void wf::pointer_t::grab_surface(wf::scene::node_ptr node)
 
     if (node)
     {
-        set_grab(node, seat->priv->drag_active ? input_grab_kind_t::DND : input_grab_kind_t::IMPLICIT);
+        set_grab(node, seat->priv->is_drag_active() ? input_grab_kind_t::DND : input_grab_kind_t::IMPLICIT);
         return;
     }
 
@@ -268,7 +268,7 @@ wf::input_grab_kind_t wf::pointer_t::get_current_grab_kind() const
         return input_grab_kind_t::NONE;
     }
 
-    if ((current_grab_kind == input_grab_kind_t::IMPLICIT) && seat->priv->drag_active)
+    if ((current_grab_kind == input_grab_kind_t::IMPLICIT) && seat->priv->is_drag_active())
     {
         return input_grab_kind_t::DND;
     }

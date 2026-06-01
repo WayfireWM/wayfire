@@ -11,6 +11,7 @@
 #include "touch.hpp"
 #include "input-manager.hpp"
 #include "input-method-relay.hpp"
+#include "seat-impl.hpp"
 #include "wayfire/signal-definitions.hpp"
 #include <wayfire/config-backend.hpp>
 
@@ -109,6 +110,27 @@ void wf::keyboard_t::setup_listeners()
             }
 
             wlr_seat_keyboard_send_modifiers(seat, &kbd->modifiers);
+        }
+
+        auto& seat_priv = wf::get_core().seat->priv;
+        if (seat_priv->active_drag && seat_priv->active_drag->source)
+        {
+            uint32_t mods = wlr_keyboard_get_modifiers(kbd);
+            bool ctrl     = mods & WLR_MODIFIER_CTRL;
+            bool shift    = mods & WLR_MODIFIER_SHIFT;
+            uint32_t action = WL_DATA_DEVICE_MANAGER_DND_ACTION_NONE;
+            if (ctrl && shift)
+            {
+                action = WL_DATA_DEVICE_MANAGER_DND_ACTION_ASK;
+            } else if (ctrl)
+            {
+                action = WL_DATA_DEVICE_MANAGER_DND_ACTION_COPY;
+            } else if (shift)
+            {
+                action = WL_DATA_DEVICE_MANAGER_DND_ACTION_MOVE;
+            }
+
+            seat_priv->active_drag->source->compositor_action = action;
         }
 
         wf::get_core().seat->notify_activity();

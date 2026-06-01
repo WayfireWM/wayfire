@@ -28,7 +28,7 @@ class wlr_surface_touch_interaction_t final : public wf::touch_interaction_t
         seat->priv->last_press_release_serial =
             wlr_seat_touch_notify_down(seat->seat, surface, time_ms, finger_id, local.x, local.y);
 
-        if ((grab == input_grab_kind_t::NONE) && !seat->priv->drag_active)
+        if ((grab == input_grab_kind_t::NONE) && !seat->priv->is_drag_active())
         {
             wf::xwayland_bring_to_front(surface);
         }

@@ -289,10 +289,10 @@ wf::seat_t::seat_t(wl_display *display, std::string name) : seat(wlr_seat_create
             this->priv->drag_icon = std::make_unique<wf::drag_icon_t>(d->icon);
         }
 
-        this->priv->drag_active = true;
+        this->priv->active_drag = d;
         priv->end_drag.set_callback([&] (void*)
         {
-            this->priv->drag_active = false;
+            this->priv->active_drag = nullptr;
             priv->end_drag.disconnect();
         });
         priv->end_drag.connect(&d->events.destroy);
@@ -325,7 +325,7 @@ wf::seat_t::seat_t(wl_display *display, std::string name) : seat(wlr_seat_create
 
     priv->on_wlr_pointer_grab_end.set_callback([&] (void*)
     {
-        if (priv->drag_active)
+        if (priv->is_drag_active())
         {
             // Drag is handled separately.
             return;
