@@ -2,6 +2,7 @@
 
 #include <vector>
 #include <wayfire/region.hpp>
+#include <linux/input-event-codes.h>
 #include "deco-button.hpp"
 
 namespace wf
@@ -79,6 +80,8 @@ enum decoration_layout_action_t
     DECORATION_ACTION_CLOSE           = 3,
     DECORATION_ACTION_TOGGLE_MAXIMIZE = 4,
     DECORATION_ACTION_MINIMIZE        = 5,
+    DECORATION_ACTION_TOGGLE_MAXIMIZE_VERTICAL   = 6,
+    DECORATION_ACTION_TOGGLE_MAXIMIZE_HORIZONTAL = 7,
 };
 
 class decoration_theme_t;
@@ -127,10 +130,11 @@ class decoration_layout_t
      * Handle press or release event.
      * @param pressed Whether the event is a press(true) or release(false)
      *  event.
+     * @param pressed Button id from event.
      * @return The action which needs to be carried out in response to this
      *  event.
      */
-    action_response_t handle_press_event(bool pressed = true);
+    action_response_t handle_press_event(bool pressed = true, uint32_t button = BTN_LEFT);
 
     /**
      * Handle focus lost event.

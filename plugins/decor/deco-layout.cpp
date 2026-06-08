@@ -244,7 +244,7 @@ decoration_layout_t::action_response_t decoration_layout_t::handle_motion(
  *  event.
  * */
 decoration_layout_t::action_response_t decoration_layout_t::handle_press_event(
-    bool pressed)
+    bool pressed, uint32_t button)
 {
     if (pressed)
     {
@@ -260,24 +260,25 @@ decoration_layout_t::action_response_t decoration_layout_t::handle_press_event(
             }
         }
 
-        if (area && (area->get_type() & DECORATION_AREA_RESIZE_BIT))
+        if (area && (area->get_type() & DECORATION_AREA_RESIZE_BIT) && button == BTN_LEFT)
         {
             return {DECORATION_ACTION_RESIZE, calculate_resize_edges()};
         }
 
-        if (area && (area->get_type() == DECORATION_AREA_BUTTON))
+        if (area && (area->get_type() == DECORATION_AREA_BUTTON) && button == BTN_LEFT)
         {
             area->as_button().set_pressed(true);
         }
 
-        is_grabbed  = true;
+        is_grabbed = true;
         grab_origin = current_input.value_or(wf::point_t{0, 0});
     }
 
     if (!pressed && double_click_at_release)
     {
         double_click_at_release = false;
-        return {DECORATION_ACTION_TOGGLE_MAXIMIZE, 0};
+        if (button == BTN_LEFT)
+          return {DECORATION_ACTION_TOGGLE_MAXIMIZE, 0};
     } else if (!pressed && is_grabbed)
     {
         is_grabbed = false;
@@ -292,13 +293,23 @@ decoration_layout_t::action_response_t decoration_layout_t::handle_press_event(
                 switch (begin_area->as_button().get_button_type())
                 {
                   case BUTTON_CLOSE:
-                    return {DECORATION_ACTION_CLOSE, 0};
+                    if (button == BTN_LEFT)
+                      return {DECORATION_ACTION_CLOSE, 0};
+                    break;
 
                   case BUTTON_TOGGLE_MAXIMIZE:
-                    return {DECORATION_ACTION_TOGGLE_MAXIMIZE, 0};
+                    if (button == BTN_LEFT)
+                      return {DECORATION_ACTION_TOGGLE_MAXIMIZE, 0};
+                    else if (button == BTN_MIDDLE)
+                      return {DECORATION_ACTION_TOGGLE_MAXIMIZE_VERTICAL, 0};
+                    else if (button == BTN_RIGHT)
+                      return {DECORATION_ACTION_TOGGLE_MAXIMIZE_HORIZONTAL, 0};
+                    break;
 
                   case BUTTON_MINIMIZE:
-                    return {DECORATION_ACTION_MINIMIZE, 0};
+                    if (button == BTN_LEFT)
+                      return {DECORATION_ACTION_MINIMIZE, 0};
+                    break;
 
                   default:
                     break;

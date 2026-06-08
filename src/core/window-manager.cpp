@@ -217,13 +217,22 @@ void window_manager_t::tile_request(wayfire_toplevel_view view,
     }
 
     const wf::point_t workspace = ws.value_or(view->get_output()->wset()->get_current_workspace());
+    auto wa_geometry = view->get_output()->workarea->get_workarea();
 
     view_tile_request_signal data;
     data.view  = view;
     data.edges = tiled_edges;
     data.workspace    = workspace;
-    data.desired_size = tiled_edges ? view->get_output()->workarea->get_workarea() :
-        get_last_windowed_geometry(view).value_or(wf::geometry_t{0, 0, -1, -1});
+    data.desired_size = get_last_windowed_geometry(view).value_or(
+        tiled_edges ? view->get_geometry() : wf::geometry_t{0, 0, -1, -1});
+    if (tiled_edges & (WLR_EDGE_TOP | WLR_EDGE_BOTTOM)) {
+        data.desired_size.y = wa_geometry.y;
+        data.desired_size.height = wa_geometry.height;
+    }
+    if (tiled_edges & (WLR_EDGE_LEFT | WLR_EDGE_RIGHT)) {
+        data.desired_size.x = wa_geometry.x;
+        data.desired_size.width = wa_geometry.width;
+    }
 
     update_last_windowed_geometry(view);
     view->toplevel()->pending().tiled_edges = tiled_edges;
