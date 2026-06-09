@@ -21,6 +21,10 @@ class decoration_theme_t
     int get_title_height() const;
     /** @return The available border for resizing */
     int get_border_size() const;
+    /** @return The scale factor for buttons */
+    double get_button_scale() const;
+    /** @return The vertical padding for buttons */
+    int get_button_padding() const;
     /** Set the flags for buttons */
     void set_buttons(button_type_t flags);
     button_type_t button_flags;
@@ -69,6 +73,9 @@ class decoration_theme_t
     wf::option_wrapper_t<wf::color_t> font_color{"decoration/font_color"};
     wf::option_wrapper_t<int> title_height{"decoration/title_height"};
     wf::option_wrapper_t<int> border_size{"decoration/border_size"};
+    wf::option_wrapper_t<double> font_scale{"decoration/font_scale"};
+    wf::option_wrapper_t<double> button_scale{"decoration/button_scale"};
+    wf::option_wrapper_t<int> button_padding{"decoration/button_padding"};
     wf::option_wrapper_t<wf::color_t> active_color{"decoration/active_color"};
     wf::option_wrapper_t<wf::color_t> inactive_color{"decoration/inactive_color"};
 };

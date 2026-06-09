@@ -142,7 +142,8 @@ class decoration_layout_t
     const int border_size;
     const int button_width;
     const int button_height;
-    const int button_padding;
+    const int button_padding_width;
+    const int button_padding_height;
     const decoration_theme_t& theme;
 
     std::function<void(wlr_box)> damage_callback;

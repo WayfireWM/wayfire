@@ -6,8 +6,6 @@
 #include <wayfire/util.hpp>
 #include <sstream>
 
-#define BUTTON_HEIGHT_PC 0.7
-
 namespace wf
 {
 namespace decor
@@ -64,9 +62,10 @@ decoration_layout_t::decoration_layout_t(const decoration_theme_t& th,
      * overly huge button. 70% of the titlebar height
      * is a decent size. (Equals 21 px by default)
      */
-    button_width(titlebar_size * BUTTON_HEIGHT_PC),
-    button_height(titlebar_size * BUTTON_HEIGHT_PC),
-    button_padding((titlebar_size - button_height) / 2),
+    button_width(titlebar_size * th.get_button_scale()),
+    button_height(titlebar_size * th.get_button_scale()),
+    button_padding_width(th.get_button_padding()),
+    button_padding_height((titlebar_size - button_height) / 2),
     theme(th),
     damage_callback(callback)
 {}
@@ -94,10 +93,10 @@ wf::geometry_t decoration_layout_t::create_buttons(int width, int)
         }
     }
 
-    int per_button = 2 * button_padding + button_width;
+    int per_button = 2 * button_padding_width + button_width;
     wf::geometry_t button_geometry = {
-        width - border_size + button_padding, /* 1 more padding initially */
-        button_padding + border_size,
+        width - border_size + button_padding_width, /* 1 more padding initially */
+        button_padding_height + border_size,
         button_width,
         button_height,
     };
@@ -110,7 +109,7 @@ wf::geometry_t decoration_layout_t::create_buttons(int width, int)
         this->layout_areas.back()->as_button().set_button_type(type);
     }
 
-    int total_width = -button_padding + buttons.size() * per_button;
+    int total_width = -button_padding_width + buttons.size() * per_button;
 
     return {
         button_geometry.x, border_size,
