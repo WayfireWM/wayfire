@@ -124,6 +124,37 @@ class control_bindings_t
 #undef SETUP_LAST
         /* *INDENT-ON* */
 
+        // Setup the bindings for switching to the next/previous workspace for the output
+        /* *INDENT-OFF* */ // Uncrustify has problems with this macro
+#define SETUP_NEXT_PREV(name, dir, view, only) \
+        wf::option_wrapper_t<wf::activatorbinding_t> binding_##name { \
+            "vswitch/"#name}; \
+        activator_cbs.push_back(std::make_unique<activator_callback>()); \
+        *activator_cbs.back() = [=] (const wf::activator_data_t&) \
+        {\
+            auto [wsize, hsize] = output->wset()->get_workspace_grid_size(); \
+            wf::point_t current = output->wset()->get_current_workspace(); \
+            int nr = current.y * wsize + current.x + dir; \
+            if (wraparound && nr < 0) { \
+                nr = wsize * hsize -1; \
+            } \
+            wf::point_t target{ \
+                nr % wsize, \
+                nr / wsize, \
+            }; \
+            return handle_dir(target - current, view, only, callback); \
+        };\
+        output->add_activator(binding_##name, activator_cbs.back().get());
+
+        SETUP_NEXT_PREV(binding_next, 1, nullptr, false);
+        SETUP_NEXT_PREV(with_win_next, 1, get_target_view(), false);
+        SETUP_NEXT_PREV(send_win_next, 1, get_target_view(), true);
+        SETUP_NEXT_PREV(binding_prev, -1, nullptr, false);
+        SETUP_NEXT_PREV(with_win_prev, -1, get_target_view(), false);
+        SETUP_NEXT_PREV(send_win_prev, -1, get_target_view(), true);
+#undef SETUP_NEXT_PREV
+        /* *INDENT-ON* */
+
         // Setup a binding for going directly to a workspace identified by a name
         const auto& setup_direct_binding = [=] (wf::activatorbinding_t binding,
                                                 std::string workspace_name,

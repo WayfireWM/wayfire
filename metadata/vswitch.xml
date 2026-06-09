@@ -80,6 +80,37 @@
 			<default></default>
 		</option>
 
+		<option name="binding_next" type="activator">
+			<_short>Next</_short>
+			<_long>Switches to next (by numeric order) workspace with the specified activator.</_long>
+			<default>&lt;super&gt; &lt;alt&gt; KEY_PAGEUP</default>
+		</option>
+		<option name="binding_prev" type="activator">
+			<_short>Previous</_short>
+			<_long>Switches to previous (by numeric order) workspace with the specified activator.</_long>
+			<default>&lt;super&gt; &lt;alt&gt; KEY_PAGEDOWN</default>
+		</option>
+		<option name="with_win_next" type="activator">
+			<_short>Next with window</_short>
+			<_long>Switches next (by numeric order) workspace with the focused window with the specified activator.</_long>
+			<default>&lt;super&gt; &lt;alt&gt; &lt;shift&gt; KEY_PAGEUP</default>
+		</option>
+		<option name="with_win_prev" type="activator">
+			<_short>Previous with window</_short>
+			<_long>Switches to previous (by numeric order) with the focused window with the specified activator.</_long>
+			<default>&lt;super&gt; &lt;alt&gt; &lt;shift&gt; KEY_PAGEDOWN</default>
+		</option>
+		<option name="send_win_next" type="activator">
+			<_short>Send window to the next</_short>
+			<_long>Send the focused window to next (by numeric order) workspace.</_long>
+			<default></default>
+		</option>
+		<option name="send_win_prev" type="activator">
+			<_short>Send window to the previous</_short>
+			<_long>Send the focused window to the workspace on previous (by numeric order).</_long>
+			<default></default>
+		</option>
+
 		<option name="workspace_bindings" type="dynamic-list" type-hint="dict">
 			<_short>Go-To-Workspace bindings</_short>
 			<_long>Go-To-Workspace bindings</_long>
