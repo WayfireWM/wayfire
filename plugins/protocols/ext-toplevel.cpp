@@ -160,6 +160,7 @@ class wayfire_ext_foreign_toplevel_protocol_impl : public wf::plugin_interface_t
             }
 
             handle_for_view[toplevel] = std::make_unique<wayfire_ext_foreign_toplevel>(toplevel, handle);
+            handle->data = ev->view.get();
         }
     };
 
