@@ -265,12 +265,12 @@ decoration_layout_t::action_response_t decoration_layout_t::handle_press_event(
             return {DECORATION_ACTION_RESIZE, calculate_resize_edges()};
         }
 
-        if (area && (area->get_type() == DECORATION_AREA_BUTTON) && button == BTN_LEFT)
+        if (area && (area->get_type() == DECORATION_AREA_BUTTON))
         {
             area->as_button().set_pressed(true);
         }
 
-        is_grabbed = true;
+        is_grabbed  = true;
         grab_origin = current_input.value_or(wf::point_t{0, 0});
     }
 
