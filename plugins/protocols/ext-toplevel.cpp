@@ -14,6 +14,11 @@
 
 #include "toplevel-common.hpp"
 
+extern "C"
+{
+#include <wlr/types/wlr_ext_foreign_toplevel_list_v1.h>
+}
+
 class wayfire_foreign_toplevel;
 using foreign_toplevel_map_type = std::map<wayfire_toplevel_view, std::unique_ptr<wayfire_foreign_toplevel>>;
 
