@@ -36,6 +36,7 @@ class wayfire_ext_foreign_toplevel
 {
     wayfire_toplevel_view view;
     wlr_ext_foreign_toplevel_handle_v1 *handle;
+    wlr_scene *scene;
 
   public:
     wayfire_ext_foreign_toplevel(wayfire_toplevel_view view, wlr_ext_foreign_toplevel_handle_v1 *hndl) :
@@ -59,12 +60,34 @@ class wayfire_ext_foreign_toplevel
 
         /** Connect various view signals to their handlers */
         init_connections();
+
+        scene = wlr_scene_create();
     }
 
     virtual ~wayfire_ext_foreign_toplevel()
     {
+        wlr_scene_node_destroy(&scene->tree.node);
         disconnect_request_handlers();
         destroy_handle();
+    }
+
+    void image_capture_start(wlr_ext_foreign_toplevel_image_capture_source_manager_v1_request *req)
+    {
+        wlr_surface *surface = view->get_wlr_surface();
+        if (!surface)
+        {
+            return;
+        }
+
+        wlr_scene_surface_create(&scene->tree, surface);
+
+        auto source = wlr_ext_image_capture_source_v1_create_with_scene_node(
+            &scene->tree.node,
+            wf::get_core().ev_loop,
+            wf::get_core().allocator,
+            wf::get_core().renderer);
+
+        wlr_ext_foreign_toplevel_image_capture_source_manager_v1_request_accept(req, source);
     }
 
   protected:
@@ -141,6 +164,27 @@ class wayfire_ext_foreign_toplevel_protocol_impl : public wf::plugin_interface_t
             data.view = view;
             on_view_mapped.emit(&data);
         }
+
+        image_capture_source_manager = wlr_ext_foreign_toplevel_image_capture_source_manager_v1_create(
+            wf::get_core().display, 1);
+        if (!image_capture_source_manager)
+        {
+            LOGE("Failed to create image capture source manager");
+            return;
+        }
+
+        foreign_toplevel_capture_request.set_callback([this] (void *data)
+        {
+            auto req  = static_cast<wlr_ext_foreign_toplevel_image_capture_source_manager_v1_request*>(data);
+            auto view = static_cast<wf::view_interface_t*>(req->toplevel_handle->data);
+            auto it   = handle_for_view.find(wf::toplevel_cast(view));
+            if (it != handle_for_view.end())
+            {
+                it->second->image_capture_start(req);
+            }
+        });
+
+        foreign_toplevel_capture_request.connect(&image_capture_source_manager->events.new_request);
     }
 
     void fini() override
@@ -182,7 +226,10 @@ class wayfire_ext_foreign_toplevel_protocol_impl : public wf::plugin_interface_t
     };
 
     wlr_ext_foreign_toplevel_list_v1 *toplevel_manager;
+    wlr_ext_foreign_toplevel_image_capture_source_manager_v1 *image_capture_source_manager;
+
     std::map<wayfire_toplevel_view, std::unique_ptr<wayfire_ext_foreign_toplevel>> handle_for_view;
+    wf::wl_listener_wrapper foreign_toplevel_capture_request;
 };
 
 DECLARE_WAYFIRE_PLUGIN(wayfire_ext_foreign_toplevel_protocol_impl);

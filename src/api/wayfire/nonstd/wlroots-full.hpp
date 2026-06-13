@@ -171,4 +171,8 @@ extern "C"
 
 // Ext protocols
 #include <wlr/types/wlr_ext_data_control_v1.h>
+
+#define static
+#include <wlr/types/wlr_scene.h>
+#undef static
 }
