@@ -1,7 +1,7 @@
 <?xml version="1.0" ?>
 <wayfire>
 	<plugin name="ext-toplevel">
-		<_short>Foreign Toplevel List Protocol</_short>
+		<_short>Ext Foreign Toplevel List Protocol</_short>
 		<_long>An implementation of the ext-foreign-toplevel-list-v1 protocol.</_long>
 		<category>Utility</category>
 	</plugin>
