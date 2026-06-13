@@ -74,7 +74,7 @@ cairo_surface_t*decoration_theme_t::render_text(std::string text,
     wf::color_t color = font_color;
     auto cr = cairo_create(surface);
 
-    const float font_size  = height * font_scale;
+    const float font_size = height * font_scale;
 
     PangoFontDescription *font_desc;
     PangoLayout *layout;
