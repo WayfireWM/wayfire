@@ -218,7 +218,7 @@ class control_bindings_t
     wf::option_wrapper_t<wf::config::compound_list_t<wf::activatorbinding_t>>
     bindings_win{"vswitch/bindings_win"};
 
-    wf::option_wrapper_t<bool> wraparound{"vswitch/wraparound"};
+    wf::option_wrapper_t<std::string> wraparound{"vswitch/wraparound"};
 
     wf::output_t *output;
 
@@ -257,11 +257,28 @@ class control_bindings_t
         auto target_ws = ws + dir;
         if (!output->wset()->is_workspace_valid(target_ws))
         {
-            if (wraparound)
+            if ((std::string)wraparound == "true")
             {
                 auto grid_size = output->wset()->get_workspace_grid_size();
                 target_ws.x = (target_ws.x + grid_size.width) % grid_size.width;
                 target_ws.y = (target_ws.y + grid_size.height) % grid_size.height;
+            } else if (((std::string)wraparound == "on_end") && (dir.x != 0))
+            {
+                auto grid_size = output->wset()->get_workspace_grid_size();
+                int nr = ws.y * grid_size.width + ws.x + dir.x;
+                if (nr < 0)
+                {
+                    target_ws.x = grid_size.width - 1;
+                    target_ws.y = grid_size.height - 1;
+                } else if (nr >= grid_size.width * grid_size.height)
+                {
+                    target_ws.x = 0;
+                    target_ws.y = 0;
+                } else
+                {
+                    target_ws.x = (dir.x > 0) ? 0 : (grid_size.width - 1);
+                    target_ws.y = ws.y + dir.x;
+                }
             } else
             {
                 target_ws = ws;

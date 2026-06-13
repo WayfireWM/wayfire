@@ -122,10 +122,22 @@
 			<_long>Sets the background color of gaps.</_long>
 			<default>0.1 0.1 0.1 1.0</default>
 		</option>
-		<option name="wraparound" type="bool">
+		<option name="wraparound" type="string">
 			<_short>Wraparound</_short>
-			<_long>Whether to wrap around when at the edge of the workspace grid.</_long>
+			<_long>Sets wraparound mode.</_long>
 			<default>false</default>
+			<desc>
+				<value>false</value>
+				<_name>disabled</_name>
+			</desc>
+			<desc>
+				<value>true</value>
+				<_name>at the edge of the workspace grid</_name>
+			</desc>
+			<desc>
+				<value>on_end</value>
+				<_name>at the last/first workspace in numeric order</_name>
+			</desc>
 		</option>
 	</plugin>
 </wayfire>
