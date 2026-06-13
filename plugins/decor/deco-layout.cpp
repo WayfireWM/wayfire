@@ -260,7 +260,7 @@ decoration_layout_t::action_response_t decoration_layout_t::handle_press_event(
             }
         }
 
-        if (area && (area->get_type() & DECORATION_AREA_RESIZE_BIT) && button == BTN_LEFT)
+        if (area && (area->get_type() & DECORATION_AREA_RESIZE_BIT) && (button == BTN_LEFT))
         {
             return {DECORATION_ACTION_RESIZE, calculate_resize_edges()};
         }
@@ -278,7 +278,9 @@ decoration_layout_t::action_response_t decoration_layout_t::handle_press_event(
     {
         double_click_at_release = false;
         if (button == BTN_LEFT)
-          return {DECORATION_ACTION_TOGGLE_MAXIMIZE, 0};
+        {
+            return {DECORATION_ACTION_TOGGLE_MAXIMIZE, 0};
+        }
     } else if (!pressed && is_grabbed)
     {
         is_grabbed = false;
@@ -294,21 +296,32 @@ decoration_layout_t::action_response_t decoration_layout_t::handle_press_event(
                 {
                   case BUTTON_CLOSE:
                     if (button == BTN_LEFT)
-                      return {DECORATION_ACTION_CLOSE, 0};
+                    {
+                        return {DECORATION_ACTION_CLOSE, 0};
+                    }
+
                     break;
 
                   case BUTTON_TOGGLE_MAXIMIZE:
                     if (button == BTN_LEFT)
-                      return {DECORATION_ACTION_TOGGLE_MAXIMIZE, 0};
-                    else if (button == BTN_MIDDLE)
-                      return {DECORATION_ACTION_TOGGLE_MAXIMIZE_VERTICAL, 0};
-                    else if (button == BTN_RIGHT)
-                      return {DECORATION_ACTION_TOGGLE_MAXIMIZE_HORIZONTAL, 0};
+                    {
+                        return {DECORATION_ACTION_TOGGLE_MAXIMIZE, 0};
+                    } else if (button == BTN_MIDDLE)
+                    {
+                        return {DECORATION_ACTION_TOGGLE_MAXIMIZE_VERTICAL, 0};
+                    } else if (button == BTN_RIGHT)
+                    {
+                        return {DECORATION_ACTION_TOGGLE_MAXIMIZE_HORIZONTAL, 0};
+                    }
+
                     break;
 
                   case BUTTON_MINIMIZE:
                     if (button == BTN_LEFT)
-                      return {DECORATION_ACTION_MINIMIZE, 0};
+                    {
+                        return {DECORATION_ACTION_MINIMIZE, 0};
+                    }
+
                     break;
 
                   default:

@@ -237,7 +237,8 @@ class simple_decoration_node_t : public wf::scene::node_t, public wf::pointer_in
         handle_action(layout.handle_press_event(ev.state == WL_POINTER_BUTTON_STATE_PRESSED, ev.button));
     }
 
-    void toogle_maximize_all_edges(std::shared_ptr<wf::toplevel_view_interface_t> view, uint32_t edges_to_switch)
+    void toogle_maximize_all_edges(std::shared_ptr<wf::toplevel_view_interface_t> view,
+        uint32_t edges_to_switch)
     {
         uint32_t current_edges = view->pending_tiled_edges();
         if ((current_edges & edges_to_switch) == edges_to_switch)

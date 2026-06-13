@@ -225,12 +225,15 @@ void window_manager_t::tile_request(wayfire_toplevel_view view,
     data.workspace    = workspace;
     data.desired_size = get_last_windowed_geometry(view).value_or(
         tiled_edges ? view->get_geometry() : wf::geometry_t{0, 0, -1, -1});
-    if (tiled_edges & (WLR_EDGE_TOP | WLR_EDGE_BOTTOM)) {
+    if (tiled_edges & (WLR_EDGE_TOP | WLR_EDGE_BOTTOM))
+    {
         data.desired_size.y = wa_geometry.y;
         data.desired_size.height = wa_geometry.height;
     }
-    if (tiled_edges & (WLR_EDGE_LEFT | WLR_EDGE_RIGHT)) {
-        data.desired_size.x = wa_geometry.x;
+
+    if (tiled_edges & (WLR_EDGE_LEFT | WLR_EDGE_RIGHT))
+    {
+        data.desired_size.x     = wa_geometry.x;
         data.desired_size.width = wa_geometry.width;
     }
 

@@ -72,15 +72,15 @@ struct decoration_area_t
  */
 enum decoration_layout_action_t
 {
-    DECORATION_ACTION_NONE            = 0,
+    DECORATION_ACTION_NONE                     = 0,
     /* Drag actions */
-    DECORATION_ACTION_MOVE            = 1,
-    DECORATION_ACTION_RESIZE          = 2,
+    DECORATION_ACTION_MOVE                     = 1,
+    DECORATION_ACTION_RESIZE                   = 2,
     /* Button actions */
-    DECORATION_ACTION_CLOSE           = 3,
-    DECORATION_ACTION_TOGGLE_MAXIMIZE = 4,
-    DECORATION_ACTION_MINIMIZE        = 5,
-    DECORATION_ACTION_TOGGLE_MAXIMIZE_VERTICAL   = 6,
+    DECORATION_ACTION_CLOSE                    = 3,
+    DECORATION_ACTION_TOGGLE_MAXIMIZE          = 4,
+    DECORATION_ACTION_MINIMIZE                 = 5,
+    DECORATION_ACTION_TOGGLE_MAXIMIZE_VERTICAL = 6,
     DECORATION_ACTION_TOGGLE_MAXIMIZE_HORIZONTAL = 7,
 };
 
