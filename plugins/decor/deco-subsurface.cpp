@@ -234,12 +234,32 @@ class simple_decoration_node_t : public wf::scene::node_t, public wf::pointer_in
 
     void handle_pointer_button(const wlr_pointer_button_event& ev) override
     {
-        if (ev.button != BTN_LEFT)
-        {
-            return;
-        }
+        handle_action(layout.handle_press_event(ev.state == WL_POINTER_BUTTON_STATE_PRESSED, ev.button));
+    }
 
-        handle_action(layout.handle_press_event(ev.state == WL_POINTER_BUTTON_STATE_PRESSED));
+    void toogle_maximize_all_edges(std::shared_ptr<wf::toplevel_view_interface_t> view,
+        uint32_t edges_to_switch)
+    {
+        uint32_t current_edges = view->pending_tiled_edges();
+        if ((current_edges & edges_to_switch) == edges_to_switch)
+        {
+            return wf::get_core().default_wm->tile_request(view, 0);
+        } else
+        {
+            return wf::get_core().default_wm->tile_request(view, edges_to_switch);
+        }
+    }
+
+    void toogle_maximize_edges(std::shared_ptr<wf::toplevel_view_interface_t> view, uint32_t edges_to_switch)
+    {
+        uint32_t current_edges = view->pending_tiled_edges();
+        if (current_edges & edges_to_switch)
+        {
+            return wf::get_core().default_wm->tile_request(view, current_edges & ~edges_to_switch);
+        } else
+        {
+            return wf::get_core().default_wm->tile_request(view, current_edges | edges_to_switch);
+        }
     }
 
     void handle_action(wf::decor::decoration_layout_t::action_response_t action)
@@ -258,15 +278,13 @@ class simple_decoration_node_t : public wf::scene::node_t, public wf::pointer_in
                 return view->close();
 
               case wf::decor::DECORATION_ACTION_TOGGLE_MAXIMIZE:
-                if (view->pending_tiled_edges())
-                {
-                    return wf::get_core().default_wm->tile_request(view, 0);
-                } else
-                {
-                    return wf::get_core().default_wm->tile_request(view, wf::TILED_EDGES_ALL);
-                }
+                return toogle_maximize_all_edges(view, wf::TILED_EDGES_ALL);
 
-                break;
+              case wf::decor::DECORATION_ACTION_TOGGLE_MAXIMIZE_VERTICAL:
+                return toogle_maximize_edges(view, WLR_EDGE_TOP | WLR_EDGE_BOTTOM);
+
+              case wf::decor::DECORATION_ACTION_TOGGLE_MAXIMIZE_HORIZONTAL:
+                return toogle_maximize_edges(view, WLR_EDGE_LEFT | WLR_EDGE_RIGHT);
 
               case wf::decor::DECORATION_ACTION_MINIMIZE:
                 return wf::get_core().default_wm->minimize_request(view, true);

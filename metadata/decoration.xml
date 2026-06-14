@@ -14,6 +14,13 @@
 			<_long>Sets the font color to use for the title bars.</_long>
 			<default>#ffffffff</default>
 		</option>
+		<option name="font_scale" type="double">
+			<_short>Font scale</_short>
+			<_long>Sets the font scale to use for the title bars.</_long>
+			<default>0.8</default>
+			<max>1.0</max>
+			<min>0.1</min>
+		</option>
 		<option name="title_height" type="int">
 			<_short>Title bar height</_short>
 			<_long>Sets the height of the title bars in pixels.</_long>
@@ -32,6 +39,18 @@
 			<_short>Order of window buttons</_short>
 			<_long>Sets the order of the window buttons.</_long>
 			<default>minimize maximize close</default>
+		</option>
+		<option name="button_scale" type="double">
+			<_short>Buttons scale</_short>
+			<_long>Sets the scale for window buttons.</_long>
+			<default>0.7</default>
+			<max>1.0</max>
+			<min>0.1</min>
+		</option>
+		<option name="button_padding" type="int">
+			<_short>Buttons padding</_short>
+			<_long>Sets the vertical padding for window buttons.</_long>
+			<default>4</default>
 		</option>
 		<!-- Colors -->
 		<option name="active_color" type="color">

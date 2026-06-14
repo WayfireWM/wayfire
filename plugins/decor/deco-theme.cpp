@@ -23,6 +23,18 @@ int decoration_theme_t::get_border_size() const
     return border_size;
 }
 
+/** @return The scale factor for buttons */
+double decoration_theme_t::get_button_scale() const
+{
+    return button_scale;
+}
+
+/** @return The vertical padding for buttons */
+int decoration_theme_t::get_button_padding() const
+{
+    return button_padding;
+}
+
 /** @return The available border for resizing */
 void decoration_theme_t::set_buttons(button_type_t flags)
 {
@@ -62,8 +74,7 @@ cairo_surface_t*decoration_theme_t::render_text(std::string text,
     wf::color_t color = font_color;
     auto cr = cairo_create(surface);
 
-    const float font_scale = 0.8;
-    const float font_size  = height * font_scale;
+    const float font_size = height * font_scale;
 
     PangoFontDescription *font_desc;
     PangoLayout *layout;
