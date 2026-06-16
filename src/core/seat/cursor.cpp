@@ -161,6 +161,7 @@ void wf::cursor_t::init_cursor_shape_manager()
         if (can_client_set_cursor())
         {
             wlr_cursor_set_xcursor(cursor, xcursor, shape_name);
+            last_cursor_name = shape_name;
         }
     });
     request_set_cursor_shape.connect(&cursor_shape_manager->events.request_set_shape);
