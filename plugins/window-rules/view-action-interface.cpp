@@ -662,11 +662,19 @@ void view_action_interface_t::_resize(int w, int h)
 void view_action_interface_t::_assign_ws(wf::point_t point)
 {
     auto output = _view->get_output();
+    auto wset   = output->wset();
 
-    auto delta = point - output->wset()->get_current_workspace();
-    auto size  = output->get_screen_size();
+    wf::point_t from = wset->get_view_main_workspace(_view);
 
-    auto wm = _view->get_pending_geometry();
-    _view->move(wm.x + delta.x * size.width, wm.y + delta.y * size.height);
+    for (auto& v : _view->enumerate_views(false))
+    {
+        wset->move_to_workspace(v, point);
+    }
+
+    wf::view_change_workspace_signal signal;
+    signal.view = _view;
+    signal.from = from;
+    signal.to   = point;
+    output->emit(&signal);
 }
 } // End namespace wf.
