@@ -73,6 +73,7 @@ class wayfire_command : public wf::plugin_interface_t
         uint32_t pressed_button = 0;
         uint32_t pressed_key    = 0;
         command_callback callback;
+        wf::activator_callback *callback_owner = nullptr;
     } repeat;
 
     wl_event_source *repeat_source = NULL;
@@ -86,7 +87,7 @@ class wayfire_command : public wf::plugin_interface_t
     };
 
     bool on_binding(command_callback callback, binding_mode mode, bool exec_always,
-        const wf::activator_data_t& data)
+        const wf::activator_data_t& data, wf::activator_callback *callback_owner = nullptr)
     {
         /* We already have a repeatable command, do not accept further bindings */
         if (repeat.pressed_key || repeat.pressed_button)
@@ -103,6 +104,7 @@ class wayfire_command : public wf::plugin_interface_t
         if (mode == BINDING_RELEASE)
         {
             repeat.callback = callback;
+            repeat.callback_owner = callback_owner;
             if ((data.source == wf::activator_source_t::KEYBINDING) ||
                 (data.source == wf::activator_source_t::MODIFIERBINDING))
             {
@@ -129,6 +131,7 @@ class wayfire_command : public wf::plugin_interface_t
         }
 
         repeat.callback = callback;
+        repeat.callback_owner = callback_owner;
         if (data.source == wf::activator_source_t::KEYBINDING)
         {
             repeat.pressed_key = data.activation_data;
@@ -181,6 +184,8 @@ class wayfire_command : public wf::plugin_interface_t
         }
 
         repeat.pressed_key = repeat.pressed_button = 0;
+        repeat.callback    = nullptr;
+        repeat.callback_owner = nullptr;
         on_button_event.disconnect();
         on_key_event.disconnect();
     }
@@ -213,6 +218,8 @@ class wayfire_command : public wf::plugin_interface_t
         {
             repeat.callback();
             repeat.pressed_key = repeat.pressed_button = 0;
+            repeat.callback    = nullptr;
+            repeat.callback_owner = nullptr;
             on_key_event_release.disconnect();
         }
     };
@@ -225,6 +232,8 @@ class wayfire_command : public wf::plugin_interface_t
         {
             repeat.callback();
             repeat.pressed_key = repeat.pressed_button = 0;
+            repeat.callback    = nullptr;
+            repeat.callback_owner = nullptr;
             on_button_event_release.disconnect();
         }
     };
@@ -269,7 +278,8 @@ class wayfire_command : public wf::plugin_interface_t
                 std::string cmd     = _cmd;
                 command_callback cb = [cmd] () -> bool { return wf::get_core().run(cmd); };
                 bindings[i] =
-                    std::bind(std::mem_fn(&wayfire_command::on_binding), this, cb, mode, always_exec, _1);
+                    std::bind(std::mem_fn(&wayfire_command::on_binding), this, cb, mode, always_exec, _1,
+                        nullptr);
                 wf::get_core().bindings->add_activator(wf::create_option(activator), &bindings[i]);
                 ++i;
             }
@@ -362,6 +372,7 @@ class wayfire_command : public wf::plugin_interface_t
 
         wf::activator_callback act_callback;
         bool temporary_binding = false;
+        auto *stored_callback  = &ipc_bindings.back().callback;
 
         if (call_method.has_value())
         {
@@ -371,7 +382,7 @@ class wayfire_command : public wf::plugin_interface_t
                 {
                     method_repository->call_method(js["call-method"], js["call-data"]);
                     return true;
-                }, mode, exec_always, data);
+                }, mode, exec_always, data, stored_callback);
             };
         } else if (command.has_value())
         {
@@ -380,7 +391,7 @@ class wayfire_command : public wf::plugin_interface_t
                 return on_binding([js] () -> bool
                 {
                     return wf::get_core().run(js["command"]);
-                }, mode, exec_always, data);
+                }, mode, exec_always, data, stored_callback);
             };
         } else
         {
@@ -393,7 +404,7 @@ class wayfire_command : public wf::plugin_interface_t
                     event["event"] = "command-binding";
                     event["binding-id"] = id;
                     return client->send_json(event);
-                }, mode, exec_always, data);
+                }, mode, exec_always, data, stored_callback);
             };
         }
 
@@ -409,15 +420,9 @@ class wayfire_command : public wf::plugin_interface_t
     wf::ipc::method_callback on_unregister_binding = [&] (const wf::json_t& js)
     {
         auto binding_id = wf::ipc::json_get_uint64(js, "binding-id");
-        ipc_bindings.remove_if([&] (const ipc_binding_t& binding)
+        clear_ipc_bindings([&] (const ipc_binding_t& binding)
         {
-            if (binding_to_id(binding) == binding_id)
-            {
-                wf::get_core().bindings->rem_binding((void*)&binding.callback);
-                return true;
-            }
-
-            return false;
+            return binding_to_id(binding) == binding_id;
         });
 
         return wf::ipc::json_ok();
@@ -429,6 +434,11 @@ class wayfire_command : public wf::plugin_interface_t
         {
             if (filter(binding))
             {
+                if (repeat.callback_owner == &binding.callback)
+                {
+                    reset_repeat();
+                }
+
                 wf::get_core().bindings->rem_binding((void*)&binding.callback);
                 return true;
             }

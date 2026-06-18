@@ -31,7 +31,13 @@ namespace
 {
 class test_config_backend_t : public wf::config_backend_t
 {
+    std::string extra_config;
+
   public:
+    explicit test_config_backend_t(std::string extra_config = {}) :
+        extra_config(std::move(extra_config))
+    {}
+
     void init(wl_display*, wf::config::config_manager_t& config,
         const std::string&) override
     {
@@ -52,6 +58,12 @@ class test_config_backend_t : public wf::config_backend_t
             "enable_input_method_v2 = false\n"
             "use_external_output_configuration = false\n",
             "xdg-shell-test-config");
+
+        if (!extra_config.empty())
+        {
+            wf::config::load_configuration_options_from_string(config,
+                extra_config, "headless-core-harness-extra-config");
+        }
     }
 };
 
@@ -116,7 +128,7 @@ struct wf::test::headless_core_harness_t::impl
     bool had_xdg_runtime_dir = false;
 };
 
-wf::test::headless_core_harness_t::headless_core_harness_t()
+wf::test::headless_core_harness_t::headless_core_harness_t(std::string extra_config, bool start_plugins)
 {
     wf::log::initialize_logging(std::cout, wf::log::LOG_LEVEL_DEBUG,
         wf::log::LOG_COLOR_MODE_OFF);
@@ -166,7 +178,7 @@ wf::test::headless_core_harness_t::headless_core_harness_t()
         throw std::runtime_error("Failed to create allocator");
     }
 
-    core.config_backend = std::make_unique<test_config_backend_t>();
+    core.config_backend = std::make_unique<test_config_backend_t>(std::move(extra_config));
     core.config_backend->init(core.display, *core.config, "");
     core.init();
 
@@ -190,6 +202,11 @@ wf::test::headless_core_harness_t::headless_core_harness_t()
     {
         outputs.front()->ensure_pointer(true);
         core.seat->focus_output(outputs.front());
+    }
+
+    if (start_plugins)
+    {
+        core.post_init();
     }
 
     roundtrip();

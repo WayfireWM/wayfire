@@ -19,10 +19,14 @@ extra_libs = {
 }
 
 foreach plugin : plugins
-  shared_module(plugin, plugin + '.cpp',
+  plugin_module = shared_module(plugin, plugin + '.cpp',
       include_directories: all_include_dirs,
       dependencies: all_deps,
       link_with: extra_libs.get(plugin, []),
       install: true,
       install_dir: conf_data.get('PLUGIN_PATH'))
+
+  if plugin == 'command'
+    command_plugin = plugin_module
+  endif
 endforeach

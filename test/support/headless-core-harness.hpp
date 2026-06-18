@@ -10,7 +10,7 @@ namespace wf::test
 class headless_core_harness_t
 {
   public:
-    headless_core_harness_t();
+    explicit headless_core_harness_t(std::string extra_config = {}, bool start_plugins = false);
     ~headless_core_harness_t();
 
     headless_core_harness_t(const headless_core_harness_t&) = delete;
