@@ -2,6 +2,7 @@ command_plugin_test = executable(
     'command-plugin-test',
     'command-plugin-test.cpp',
     '../../support/headless-core-harness.cpp',
+    '../../support/ipc-client.cpp',
     dependencies: [doctest, libwayfire],
     cpp_args: [
         '-DTEST_METADATA_DIR="' + meson.project_source_root() + '/metadata"',
