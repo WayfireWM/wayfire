@@ -26,6 +26,7 @@ static void handle_hotspot_destroy(wl_resource *resource);
 class wfs_hotspot
 {
   private:
+    wl_resource *shell_resource;
     wf::geometry_t trigger;
     wf::geometry_t hotspot_geometry;
 
@@ -193,14 +194,20 @@ class wfs_hotspot
      * Create a new hotspot.
      * It is guaranteedd that edge_mask contains at most 2 non-opposing edges.
      */
-    wfs_hotspot(wf::output_t *output, wf::geometry_t trigger, uint32_t threshold, uint32_t timeout,
+    wfs_hotspot(wf::output_t *output, wl_resource *shell_resource, wf::geometry_t trigger, uint32_t threshold,
+        uint32_t timeout,
         wl_client *client, uint32_t id) : trigger(trigger), threshold(threshold), timeout_ms(timeout)
     {
         // Calculate expanded bounding box
         this->hotspot_geometry = calculate_hotspot_geometry(output, trigger, threshold);
 
+        // For version checking
+        this->shell_resource = shell_resource;
+
         // Create resource and setup signals (same as before)
-        hotspot_resource = wl_resource_create(client, &zwf_hotspot_v2_interface, 3, id);
+        hotspot_resource =
+            wl_resource_create(client, &zwf_hotspot_v2_interface, wl_resource_get_version(
+                shell_resource) < ZWF_HOTSPOT_V2_PROXIMITY_CHANGED_SINCE_VERSION ? 1 : 3, id);
         wl_resource_set_implementation(hotspot_resource, NULL, this, handle_hotspot_destroy);
 
         // output destroy handler
@@ -310,7 +317,8 @@ class wfs_output
         this->shell_resource = shell_resource;
 
         resource =
-            wl_resource_create(client, &zwf_output_v2_interface, 3, id);
+            wl_resource_create(client, &zwf_output_v2_interface,
+                std::min(wl_resource_get_version(shell_resource), 3), id);
         wl_resource_set_implementation(resource, &zwf_output_impl, this, handle_output_destroy);
         output->connect(&on_fullscreen_layer_focused);
         output->connect(&on_toggle_menu);
@@ -418,12 +426,13 @@ class wfs_output
         if (!this->output)
         {
             auto resource = wl_resource_create(wl_resource_get_client(
-                this->resource), &zwf_hotspot_v2_interface, 3, id);
+                this->resource), &zwf_hotspot_v2_interface, wl_resource_get_version(
+                    shell_resource) < ZWF_HOTSPOT_V2_PROXIMITY_CHANGED_SINCE_VERSION ? 1 : 3, id);
             wl_resource_set_implementation(resource, NULL, NULL, NULL);
             return;
         }
 
-        new wfs_hotspot(this->output, trigger_rect, threshold, timeout, wl_resource_get_client(
+        new wfs_hotspot(this->output, this->shell_resource, trigger_rect, threshold, timeout, wl_resource_get_client(
             this->resource), id);
     }
 };
