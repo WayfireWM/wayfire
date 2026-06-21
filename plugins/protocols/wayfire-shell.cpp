@@ -16,6 +16,8 @@
 #include "wayfire/plugins/ipc/ipc-activator.hpp"
 #include "wayfire/util.hpp"
 
+#define ZWF_SHELL_MANAGER_V2_CURRENT_VERSION 3
+
 /* ----------------------------- wfs_hotspot -------------------------------- */
 static void handle_hotspot_destroy(wl_resource *resource);
 
@@ -206,8 +208,8 @@ class wfs_hotspot
 
         // Create resource and setup signals (same as before)
         hotspot_resource =
-            wl_resource_create(client, &zwf_hotspot_v2_interface, wl_resource_get_version(
-                shell_resource) < ZWF_HOTSPOT_V2_PROXIMITY_CHANGED_SINCE_VERSION ? 1 : 3, id);
+            wl_resource_create(client, &zwf_hotspot_v2_interface,
+                std::min(wl_resource_get_version(shell_resource), ZWF_SHELL_MANAGER_V2_CURRENT_VERSION), id);
         wl_resource_set_implementation(hotspot_resource, NULL, this, handle_hotspot_destroy);
 
         // output destroy handler
@@ -318,7 +320,7 @@ class wfs_output
 
         resource =
             wl_resource_create(client, &zwf_output_v2_interface,
-                std::min(wl_resource_get_version(shell_resource), 3), id);
+                std::min(wl_resource_get_version(shell_resource), ZWF_SHELL_MANAGER_V2_CURRENT_VERSION), id);
         wl_resource_set_implementation(resource, &zwf_output_impl, this, handle_output_destroy);
         output->connect(&on_fullscreen_layer_focused);
         output->connect(&on_toggle_menu);
@@ -426,8 +428,8 @@ class wfs_output
         if (!this->output)
         {
             auto resource = wl_resource_create(wl_resource_get_client(
-                this->resource), &zwf_hotspot_v2_interface, wl_resource_get_version(
-                    shell_resource) < ZWF_HOTSPOT_V2_PROXIMITY_CHANGED_SINCE_VERSION ? 1 : 3, id);
+                this->resource), &zwf_hotspot_v2_interface,
+                std::min(wl_resource_get_version(shell_resource), ZWF_SHELL_MANAGER_V2_CURRENT_VERSION), id);
             wl_resource_set_implementation(resource, NULL, NULL, NULL);
             return;
         }
@@ -505,7 +507,8 @@ class wfs_surface
     wfs_surface(wayfire_view view, wl_client *client, int id)
     {
         this->view = view;
-        resource   = wl_resource_create(client, &zwf_surface_v2_interface, 3, id);
+        resource   = wl_resource_create(client, &zwf_surface_v2_interface,
+            ZWF_SHELL_MANAGER_V2_CURRENT_VERSION, id);
         wl_resource_set_implementation(resource, &zwf_surface_impl, this, handle_surface_destroy);
         view->connect(&on_unmap);
     }
@@ -580,7 +583,8 @@ wayfire_shell *wayfire_shell_create(wl_display *display)
 {
     wayfire_shell *ws = new wayfire_shell;
 
-    ws->shell_manager = wl_global_create(display, &zwf_shell_manager_v2_interface, 3, NULL,
+    ws->shell_manager = wl_global_create(display, &zwf_shell_manager_v2_interface,
+        ZWF_SHELL_MANAGER_V2_CURRENT_VERSION, NULL,
         bind_zwf_shell_manager);
 
     if (ws->shell_manager == NULL)
