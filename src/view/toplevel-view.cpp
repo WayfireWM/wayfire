@@ -8,6 +8,7 @@
 #include <wayfire/window-manager.hpp>
 #include <wayfire/txn/transaction-manager.hpp>
 #include <wayfire/seat.hpp>
+#include <wayfire/view-helpers.hpp>
 #include "view-impl.hpp"
 #include "wayfire/core.hpp"
 #include "wayfire/scene.hpp"
@@ -327,6 +328,35 @@ void wf::toplevel_view_interface_t::set_toplevel(
     std::shared_ptr<wf::toplevel_t> toplevel)
 {
     priv->toplevel = toplevel;
+}
+
+void wf::toplevel_view_interface_t::focus_toplevel_on_map()
+{
+    /* We only focus a newly mapped view if the corresponding option is
+     * set or if there is no currently active view. */
+    wayfire_view active_view = nullptr;
+    bool should_focus = wf::get_core().default_wm->focus_on_map;
+    if (!should_focus)
+    {
+        active_view = wf::get_core().seat->get_active_view();
+        if (active_view && (active_view->role == wf::VIEW_ROLE_DESKTOP_ENVIRONMENT))
+        {
+            active_view = nullptr;
+        }
+
+        if (!active_view || (active_view == this->parent))
+        {
+            should_focus = true;
+        }
+    }
+
+    if (should_focus)
+    {
+        wf::get_core().default_wm->focus_request(self());
+    } else if (active_view)
+    {
+        wf::view_bring_to_front(active_view);
+    }
 }
 
 wayfire_toplevel_view wf::find_view_for_toplevel(
