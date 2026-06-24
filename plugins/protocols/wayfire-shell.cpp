@@ -359,6 +359,11 @@ class wfs_output
 
     wf::geometry_t calculate_trigger_geometry(uint32_t edge_mask)
     {
+        if (!this->output)
+        {
+            return {0.0, 0.0, 0.0, 0.0};
+        }
+
         wf::geometry_t output_geom = this->output->get_layout_geometry();
 
         // Count how many edge flags are set in the mask
