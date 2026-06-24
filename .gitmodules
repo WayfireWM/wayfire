@@ -13,3 +13,6 @@
 [submodule "subprojects/wf-json"]
 	path = subprojects/wf-json
 	url = https://github.com/WayfireWM/wf-json
+[submodule "subprojects/wlroots-vkfx"]
+	path = subprojects/wlroots-vkfx
+	url = https://gitlab.freedesktop.org/ammen99/wlroots
