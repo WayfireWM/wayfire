@@ -130,6 +130,7 @@ struct swapchain_damage_manager_t
 
         frame_damage |= region;
         wlr_damage_ring_add(&damage_ring, region.to_pixman());
+        pending_frame_request = true;
         if (repaint)
         {
             schedule_repaint();
@@ -146,6 +147,7 @@ struct swapchain_damage_manager_t
         /* Wlroots expects damage after scaling */
         frame_damage |= box;
         wlr_damage_ring_add_box(&damage_ring, &box);
+        pending_frame_request = true;
         if (repaint)
         {
             schedule_repaint();
@@ -239,6 +241,29 @@ struct swapchain_damage_manager_t
     }
 
     bool force_next_frame = false;
+
+    // Set when new content was damaged, cleared when a frame (composited or direct scanout) is presented.
+    // Tracks whether a new frame is needed at all.
+    bool pending_frame_request = false;
+
+    /**
+     * Check whether a new frame should be produced for the output.
+     */
+    bool should_repaint() const
+    {
+        return force_next_frame || output->needs_frame || pending_frame_request ||
+               (constant_redraw_counter > 0);
+    }
+
+    /**
+     * Notify the damage manager that a frame was presented via direct scanout.
+     */
+    void handle_scanout_frame()
+    {
+        force_next_frame = false;
+        pending_frame_request = false;
+    }
+
     /**
      * Start rendering a new frame.
      * If the operation could not be started, or if a new frame is not needed, the function returns false.
@@ -252,6 +277,7 @@ struct swapchain_damage_manager_t
         const bool needs_swap = force_next_frame | output->needs_frame |
             pixman_region32_not_empty(&damage_ring.current) | (constant_redraw_counter > 0);
         force_next_frame = false;
+        pending_frame_request = false;
 
         if (!needs_swap)
         {
@@ -1182,10 +1208,18 @@ class wf::render_manager::impl
         effects->run_effects(OUTPUT_EFFECT_PRE);
         effects->run_effects(OUTPUT_EFFECT_DAMAGE);
 
+        if (!damage_manager->should_repaint())
+        {
+            // Nothing changed since the last frame => no need to commit a new frame.
+            delay_manager->skip_frame();
+            return;
+        }
+
         if (do_direct_scanout())
         {
             // Yet another optimization: if we can directly scanout, we should
             // stop the rest of the repaint cycle.
+            damage_manager->handle_scanout_frame();
             return;
         }
 
