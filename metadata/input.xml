@@ -253,6 +253,13 @@
 				<min>0.1</min>
 				<max>5.0</max>
 			</option>
+			<option name="edge_swipe_section_length" type="double">
+				<_short>Touchscreen edge swipe section length</_short>
+				<_long>Split the edge swipe in to 3 sections. If 0.0, the full length of the edge will be recognized as edge-swipe. With 0.1, 10% -> edge-s1-swipe, 80% -> edge-swipe, 10% edge-s2-swipe</_long>
+				<default>0.0</default>
+				<min>0.0</min>
+				<max>0.4</max>
+			</option>
 			<option name="touchpad_scroll_speed" type="double">
 				<_short>Touchpad scroll speed</_short>
 				<_long>Changes the touchpad scroll factor.  Scroll speed will be scaled by the given value, which must be non-negative.</_long>
