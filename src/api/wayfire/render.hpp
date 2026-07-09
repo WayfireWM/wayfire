@@ -402,6 +402,20 @@ struct render_target_t : public render_buffer_t
     wf::geometry_t framebuffer_geometry_from_geometry_box(wf::geometry_t box) const;
 
     /**
+     * Get the integer framebuffer box suitable for rendering a texture or rect to @box.
+     *
+     * Unlike framebuffer_box_from_geometry_box(), this preserves exact integer projected sizes when possible,
+     * avoiding an unnecessary extra pixel and resampling when only the projected origin is fractional.
+     */
+    wlr_box framebuffer_texture_dst_box_from_geometry_box(wf::geometry_t box) const;
+
+    /**
+     * Get the logical geometry corresponding to framebuffer_texture_dst_box_from_geometry_box(@box).
+     * This is useful for custom renderers which build their own logical-coordinate quads.
+     */
+    wf::geometry_t aligned_geometry_from_geometry_box(wf::geometry_t box) const;
+
+    /**
      * Get the geometry of the given region after projecting it onto the framebuffer. This is the same as
      * iterating over the rects in the region and transforming them with framebuffer_box_from_geometry_box.
      */

@@ -217,6 +217,7 @@ static wf::pointf_t get_center(wf::geometry_t g)
 void wf_blur_base::render(wf::gles_texture_t src_tex, wf::geometry_t src_box, const wf::regionf_t& damage,
     const wf::render_target_t& background_source_fb, const wf::render_target_t& target_fb)
 {
+    src_box = target_fb.aligned_geometry_from_geometry_box(src_box);
     wf::gles_texture_t blurred_background = wf::gles_texture_t::from_aux(fb[0]);
     wf::gles::ensure_render_buffer_fb_id(target_fb);
     blend_program.use(src_tex.type);
