@@ -992,8 +992,9 @@ class wobbly_render_instance_t :
     void render(const wf::scene::render_instruction_t& data) override
     {
         std::vector<float> vert, uv;
-        auto subbox = self->get_children_bounding_box();
+        auto subbox = data.target.aligned_geometry_from_geometry_box(self->get_children_bounding_box());
         wobbly_graphics::prepare_geometry(self->model.get(), subbox, vert, uv);
+
         const int count_triangles = self->model->x_cells * self->model->y_cells * 2;
 
         data.pass->custom_gles_subpass(data.target, [&]

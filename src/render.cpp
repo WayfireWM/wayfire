@@ -634,6 +634,16 @@ wlr_box wf::render_target_t::framebuffer_box_from_geometry_box(wf::geometry_t bo
     return containing_box(framebuffer_geometry_from_geometry_box(box));
 }
 
+wlr_box wf::render_target_t::framebuffer_texture_dst_box_from_geometry_box(wf::geometry_t box) const
+{
+    return round_fbox_to_texture_dst_box(framebuffer_geometry_from_geometry_box(box));
+}
+
+wf::geometry_t wf::render_target_t::aligned_geometry_from_geometry_box(wf::geometry_t box) const
+{
+    return geometry_box_from_framebuffer_box(framebuffer_texture_dst_box_from_geometry_box(box));
+}
+
 wf::region_t wf::render_target_t::framebuffer_region_from_geometry_region(const wf::regionf_t& region) const
 {
     wf::region_t result;
@@ -830,8 +840,7 @@ void wf::render_pass_t::add_texture(const std::shared_ptr<wf::texture_t>& textur
         adjusted_target.wl_transform);
     opts.clip    = fb_damage.to_pixman();
     opts.src_box = texture->get_source_box().value_or(wlr_fbox{0, 0, 0, 0});
-    opts.dst_box = round_fbox_to_texture_dst_box(
-        adjusted_target.framebuffer_geometry_from_geometry_box(geometry));
+    opts.dst_box = adjusted_target.framebuffer_texture_dst_box_from_geometry_box(geometry);
 
     auto ct = texture->get_color_transform();
     wlr_color_primaries primaries{};
@@ -869,8 +878,7 @@ void wf::render_pass_t::add_rect(const wf::color_t& color, const wf::render_targ
     opts.color = color_to_render_color(color, adjusted_target.get_output_transfer_function());
     opts.blend_mode = WLR_RENDER_BLEND_MODE_PREMULTIPLIED;
     opts.clip = fb_damage.to_pixman();
-    opts.box  = round_fbox_to_texture_dst_box(
-        adjusted_target.framebuffer_geometry_from_geometry_box(geometry));
+    opts.box  = adjusted_target.framebuffer_texture_dst_box_from_geometry_box(geometry);
     wf::dassert(opts.box.width >= 0);
     wf::dassert(opts.box.height >= 0);
     wlr_render_pass_add_rect(_get_pass(), &opts);
