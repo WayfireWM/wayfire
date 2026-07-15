@@ -231,11 +231,11 @@ void wf_blur_base::render(wf::gles_texture_t src_tex, wf::geometry_t src_box, co
     };
 
     const float vertex_data_pos[] = {
-        static_cast<float>(1.0f * src_box.x), static_cast<float>(1.0f * src_box.y + src_box.height),
-        static_cast<float>(1.0f * src_box.x + src_box.width),
-        static_cast<float>(1.0f * src_box.y + src_box.height),
-        static_cast<float>(1.0f * src_box.x + src_box.width), static_cast<float>(1.0f * src_box.y),
-        static_cast<float>(1.0f * src_box.x), static_cast<float>(1.0f * src_box.y),
+        static_cast<float>(src_box.x), static_cast<float>(src_box.y + src_box.height),
+        static_cast<float>(src_box.x + src_box.width),
+        static_cast<float>(src_box.y + src_box.height),
+        static_cast<float>(src_box.x + src_box.width), static_cast<float>(src_box.y),
+        static_cast<float>(src_box.x), static_cast<float>(src_box.y),
     };
 
     blend_program.attrib_pointer("position", 2, 0, vertex_data_pos);
@@ -269,7 +269,7 @@ void wf_blur_base::render(wf::gles_texture_t src_tex, wf::geometry_t src_box, co
     blend_program.uniformMatrix4f("background_uv_matrix", composite);
 
     /* Blend blurred background with window texture src_tex */
-    blend_program.uniformMatrix4f("mvp", wf::gles::render_target_orthographic_projection(target_fb));
+    blend_program.uniformMatrix4f("mvp", wf::gles::render_target_aligned_orthographic_projection(target_fb));
     /* XXX: core should give us the number of texture units used */
     blend_program.uniform1i("bg_texture", 1);
     blend_program.uniform1f("sat", saturation_opt);

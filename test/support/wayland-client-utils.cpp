@@ -126,7 +126,7 @@ wl_buffer*wf::test::create_shm_buffer(wl_shm *shm, int width, int height, const 
     std::memcpy(data, pixels.data(), size);
     auto *pool   = wl_shm_create_pool(shm, fd, size);
     auto *buffer = wl_shm_pool_create_buffer(pool, 0, width, height, stride,
-        WL_SHM_FORMAT_XRGB8888);
+        WL_SHM_FORMAT_RGBX8888);
     wl_shm_pool_destroy(pool);
     munmap(data, size);
     close(fd);

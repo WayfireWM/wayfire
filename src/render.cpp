@@ -3,7 +3,6 @@
 #include "wayfire/dassert.hpp"
 #include "wayfire/nonstd/reverse.hpp"
 #include "wayfire/opengl.hpp"
-#include "wayfire/output.hpp"
 #include <wayfire/scene-render.hpp>
 #include <cmath>
 #include <drm_fourcc.h>
