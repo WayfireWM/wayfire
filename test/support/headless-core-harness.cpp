@@ -7,7 +7,6 @@
 #include <iostream>
 #include <optional>
 #include <stdexcept>
-#include <chrono>
 #include <array>
 #include <vector>
 
@@ -29,7 +28,6 @@
 #include <wayland-server-core.h>
 
 #include "../../src/core/core-impl.hpp"
-#include "../../src/main.hpp"
 
 namespace
 {
@@ -62,7 +60,7 @@ class test_config_backend_t : public wf::config_backend_t
             "auto_reload_config = false\n"
             "enable_input_method_v2 = false\n"
             "use_external_output_configuration = false\n",
-            "xdg-shell-test-config");
+            "default-test-config");
 
         if (!extra_config.empty())
         {
@@ -155,7 +153,7 @@ struct wf::test::headless_core_harness_t::impl
             std::vector<uint32_t> pixels(size.width * size.height);
             wlr_texture_read_pixels_options opts{};
             opts.data   = pixels.data();
-            opts.format = DRM_FORMAT_ABGR8888;
+            opts.format = DRM_FORMAT_RGBA8888;
             opts.stride = size.width * 4;
             if (!wlr_texture_read_pixels(tex, &opts))
             {

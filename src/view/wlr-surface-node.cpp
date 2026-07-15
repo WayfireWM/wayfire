@@ -196,6 +196,40 @@ wf::scene::wlr_surface_node_t::wlr_surface_node_t(wlr_surface *surface, bool aut
 
 void wf::scene::wlr_surface_node_t::apply_state(surface_state_t&& state)
 {
+    wf::dimensionsf_t new_size = wf::dimensionsf_t{state.size};
+    static wf::option_wrapper_t<bool> use_native_buffer_size{"workarounds/use_native_buffer_size"};
+
+    // Guess surface size based on the primary output scale.
+    // This is aimed at fixing issues with fractional scaling, where the surface size in logical and
+    // buffer coordinates differ.
+    //
+    // By calculating the floating size in logical coordinates, we can ensure we render aligned with the
+    // underlying pixel grid and avoid blurriness.
+    if (auto primary_output = guess_primary_output();
+        primary_output && state.current_buffer && use_native_buffer_size)
+    {
+        auto vp = state.src_viewport.value_or(wlr_fbox{0, 0,
+            (float)state.current_buffer->width, (float)state.current_buffer->height});
+
+        if (state.transform & WL_OUTPUT_TRANSFORM_90)
+        {
+            std::swap(vp.width, vp.height);
+        }
+
+        const float pixel_aligned_width  = vp.width / primary_output->get_scale();
+        const float pixel_aligned_height = vp.height / primary_output->get_scale();
+
+        if (std::abs(pixel_aligned_width - new_size.width) < 1.0f / primary_output->get_scale())
+        {
+            new_size.width = pixel_aligned_width;
+        }
+
+        if (std::abs(pixel_aligned_height - new_size.height) < 1.0f / primary_output->get_scale())
+        {
+            new_size.height = pixel_aligned_height;
+        }
+    }
+
     const bool size_changed = current_state.size != state.size;
     if (size_changed)
     {
@@ -204,6 +238,8 @@ void wf::scene::wlr_surface_node_t::apply_state(surface_state_t&& state)
     }
 
     this->current_state = std::move(state);
+    this->size_on_primary_output = new_size;
+
     wf::scene::damage_node(this, current_state.accumulated_damage);
     if (size_changed)
     {
@@ -356,7 +392,7 @@ class wf::scene::wlr_surface_node_t::wlr_surface_render_instance_t : public rend
     void schedule_instructions(std::vector<render_instruction_t>& instructions,
         const wf::render_target_t& target, wf::regionf_t& damage) override
     {
-        wf::regionf_t our_damage = damage & self->get_bounding_box();
+        wf::regionf_t our_damage = damage & self->get_render_geometry();
         if (!our_damage.empty())
         {
             instructions.push_back(render_instruction_t{
@@ -376,7 +412,7 @@ class wf::scene::wlr_surface_node_t::wlr_surface_render_instance_t : public rend
             return;
         }
 
-        data.pass->add_texture(self->to_texture(), data.target, self->get_bounding_box(), data.damage);
+        data.pass->add_texture(self->to_texture(), data.target, self->get_render_geometry(), data.damage);
     }
 
     void presentation_feedback(wf::output_t *output) override
@@ -483,6 +519,11 @@ void wf::scene::wlr_surface_node_t::gen_render_instances(
         std::dynamic_pointer_cast<wlr_surface_node_t>(this->shared_from_this()), damage, output));
 }
 
+wf::geometry_t wf::scene::wlr_surface_node_t::get_render_geometry() const
+{
+    return wf::construct_box({0, 0}, size_on_primary_output);
+}
+
 wf::geometry_t wf::scene::wlr_surface_node_t::get_bounding_box()
 {
     return wf::construct_box({0, 0}, current_state.size);
@@ -554,20 +595,33 @@ void wf::scene::wlr_surface_node_t::update_pending_outputs()
         }
     }
 
-    if (surface && (visibility.size() > 0))
+    if (auto primary_output = guess_primary_output();primary_output && surface)
     {
-        float max_scale = 1;
-        for (auto x : visibility)
-        {
-            max_scale = std::max(max_scale, x.first->handle->scale);
-        }
-
-        wlr_fractional_scale_v1_notify_scale(surface, max_scale);
-        wlr_surface_set_preferred_buffer_scale(surface, max_scale);
+        wlr_fractional_scale_v1_notify_scale(surface, primary_output->get_scale());
+        wlr_surface_set_preferred_buffer_scale(surface, primary_output->get_scale());
         update_preferred_image_description();
     }
 
     pending_visibility_delta.clear();
+}
+
+wf::output_t*wf::scene::wlr_surface_node_t::guess_primary_output()
+{
+    if (visibility.empty())
+    {
+        return nullptr;
+    }
+
+    wf::output_t *primary = nullptr;
+    for (auto& [wo, _] : visibility)
+    {
+        if (!primary || (wo->handle->scale > primary->handle->scale))
+        {
+            primary = wo;
+        }
+    }
+
+    return primary;
 }
 
 void wf::scene::wlr_surface_node_t::update_preferred_image_description()

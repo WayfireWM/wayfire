@@ -46,6 +46,20 @@ void scissor_render_buffer(const render_buffer_t& buffer, wlr_box box);
  * coordinates to the framebuffer coordinates. */
 glm::mat4 render_target_orthographic_projection(const render_target_t& target);
 
+/*
+ * Returns a matrix which contains an orthographic projection from aligned "geometry"
+ * coordinates to the framebuffer coordinates.
+ *
+ * Here aligned is to be understood as target.aligned_geometry_from_geometry_box(target.geometry).
+ *
+ * The difference with the function above is that the given orthographic projection is more precise for
+ * fractional scaling, i.e where it is possible that the logical size of the render target is some fractional
+ * value. Example: if we have a scale of 2.0 and a buffer size of 51, then the 'full' logical size is 25.5,
+ * however, for window management purposes targets very often have logical sizes rounded down, for example to
+ * 25 in the previous example. This happens because for example the logical size of outputs is always integer.
+ */
+glm::mat4 render_target_aligned_orthographic_projection(const render_target_t& target);
+
 /* Returns a matrix which contains an orthographic projection from OpenGL [-1, 1]
  * coordinates coordinates to the framebuffer coordinates (includes rotation,
  * subbuffer, etc). */

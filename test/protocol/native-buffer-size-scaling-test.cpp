@@ -1,3 +1,4 @@
+#include "wayfire/img.hpp"
 #define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
 #include <doctest/doctest.h>
 
@@ -7,23 +8,26 @@
 #include <wayfire/toplevel-view.hpp>
 
 #include <algorithm>
-#include <sstream>
-#include <set>
 #include <vector>
 
 #include "../support/headless-core-harness.hpp"
 #include "../support/wayland-xdg-client.hpp"
 
-TEST_CASE("fractional-scale render stays pixel-aligned away from origin")
+TEST_CASE("fractional-scale rounded client buffers render pixel-aligned")
 {
-    wf::test::headless_core_harness_t harness;
+    wf::test::headless_core_harness_t harness{
+        "[core]\n"
+        "background_color = 0 0 0 1\n"
+        "[workarounds]\n"
+        "use_native_buffer_size = true\n"
+    };
     auto *output = harness.output();
     REQUIRE(output != nullptr);
 
     auto config = wf::get_core().output_layout->get_current_configuration();
     REQUIRE(config.count(output->handle) == 1);
 
-    config.at(output->handle).scale = 5.0 / 3.0;
+    config.at(output->handle).scale = 1.99;
     REQUIRE(wf::get_core().output_layout->apply_configuration(config));
 
     wf::test::wayland_xdg_client_t client{harness.socket_name()};
@@ -40,7 +44,7 @@ TEST_CASE("fractional-scale render stays pixel-aligned away from origin")
     };
     wf::get_core().connect(&on_map);
 
-    client.create_toplevel("rendering test", "org.wayfire.RenderingTest");
+    client.create_toplevel("rounded fractional scale test", "org.wayfire.RoundedFractionalScaleTest");
     REQUIRE(harness.run_until([&]
     {
         client.dispatch_once();
@@ -53,8 +57,9 @@ TEST_CASE("fractional-scale render stays pixel-aligned away from origin")
     auto view = wf::toplevel_cast(mapped.front());
     REQUIRE(view != nullptr);
     REQUIRE(view->get_output() == output);
-
-    view->move(1, 1);
+    const int view_x = 300;
+    const int view_y = 200;
+    view->move(view_x, view_y);
 
     REQUIRE(harness.run_until([&]
     {
@@ -63,21 +68,14 @@ TEST_CASE("fractional-scale render stays pixel-aligned away from origin")
     }));
 
     REQUIRE(client.last_fractional_scale().has_value());
-    const uint32_t fractional_scale = client.last_fractional_scale().value();
-    const int preferred_scale = client.last_preferred_buffer_scale();
+    CHECK(client.last_fractional_scale().value() == 239);
 
-    CHECK(preferred_scale == 1);
-    CHECK(fractional_scale == 200);
-
-    const int logical_width = 6;
-    const int logical_height = 6;
-    const int buffer_width = 10;
-    const int buffer_height = 10;
-
+    const int logical_width = 300;
+    const int logical_height = 30;
+    const int buffer_width = 598;
+    const int buffer_height = 60;
     const uint32_t red = 0xff0000ffu;
     const uint32_t green = 0x00ff00ffu;
-    const uint32_t background = 0x000000ffu;
-
     std::vector<uint32_t> pixels(buffer_width * buffer_height);
     for (int y = 0; y < buffer_height; ++y)
     {
@@ -91,7 +89,8 @@ TEST_CASE("fractional-scale render stays pixel-aligned away from origin")
     REQUIRE(harness.run_until([&]
     {
         client.dispatch_once();
-        return view->get_geometry().x == 1 && view->get_geometry().y == 1 &&
+        return view->get_geometry().x == view_x &&
+        view->get_geometry().y == view_y &&
         view->get_geometry().width == logical_width &&
         view->get_geometry().height == logical_height;
     }));
@@ -100,33 +99,25 @@ TEST_CASE("fractional-scale render stays pixel-aligned away from origin")
     const int output_width = output->handle->width;
     const int output_height = output->handle->height;
 
-    std::set<uint32_t> unique_pixels(output_pixels.begin(), output_pixels.end());
-
     int min_x = output_width;
     int min_y = output_height;
     int max_x = -1;
     int max_y = -1;
     int mixed_pixels = 0;
-
     const auto is_background = [] (uint32_t pixel)
     {
         return (pixel & 0xffffff00u) == 0;
     };
 
-    INFO("unique pixel count: ", unique_pixels.size());
-    for (auto pixel : unique_pixels)
-    {
-        std::ostringstream out;
-        out << std::hex << pixel;
-        INFO("pixel value: 0x", out.str());
-    }
+    image_io::write_to_file("/tmp/pixels.png",
+        (uint8_t*)output_pixels.data(), output_width, output_height, "png", false);
 
     for (int y = 0; y < output_height; ++y)
     {
         for (int x = 0; x < output_width; ++x)
         {
             auto pixel = output_pixels[y * output_width + x];
-            if (pixel != background)
+            if ((pixel == red) || (pixel == green))
             {
                 min_x = std::min(min_x, x);
                 min_y = std::min(min_y, y);
@@ -143,9 +134,14 @@ TEST_CASE("fractional-scale render stays pixel-aligned away from origin")
 
     REQUIRE(max_x >= min_x);
     REQUIRE(max_y >= min_y);
-    CHECK(min_x == 1);
-    CHECK(min_y == 1);
+    const int expected_x = static_cast<int>(std::floor(view_x * output->get_scale()));
+    const int expected_y = static_cast<int>(std::floor(view_y * output->get_scale()));
+
+    CHECK(min_x == expected_x);
+    CHECK(min_y == expected_y);
     CHECK(max_x - min_x + 1 == buffer_width);
     CHECK(max_y - min_y + 1 == buffer_height);
+    CHECK(is_background(output_pixels[expected_y * output_width + expected_x - 1]));
+    CHECK(is_background(output_pixels[(expected_y - 1) * output_width + expected_x]));
     CHECK(mixed_pixels == 0);
 }

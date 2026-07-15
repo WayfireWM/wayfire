@@ -110,5 +110,10 @@
 			<_long>Disables the default blurry scaling for Xwayland and forces client-side scaling for Xwayland windows dependent on the DPI settings.</_long>
 			<default>false</default>
 		</option>
+		<option name="use_native_buffer_size" type="bool">
+			<_short>Use the native buffer size for client surfaces</_short>
+			<_long>When this option is enabled, Wayfire will use the buffer size in pixels to determine a surface size, instead of relying on the client-provided logical size. This ensures that text remains crisp at fractional scales, but may result in cropping or empty pixels at surface boundaries.</_long>
+			<default>false</default>
+		</option>
 	</plugin>
 </wayfire>

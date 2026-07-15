@@ -176,4 +176,6 @@ bool operator &(const geometry_t& r1, const geometry_t& r2);
 std::ostream& operator <<(std::ostream& stream, const geometry_t& geometry);
 }
 
+std::ostream& operator <<(std::ostream& stream, const wlr_box& geometry);
+
 #endif /* end of include guard: WF_GEOMETRY_HPP */
