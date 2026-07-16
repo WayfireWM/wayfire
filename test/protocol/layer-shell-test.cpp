@@ -2,8 +2,10 @@
 #include <doctest/doctest.h>
 
 #include <wayfire/core.hpp>
+#include <wayfire/output.hpp>
 #include <wayfire/seat.hpp>
 #include <wayfire/signal-definitions.hpp>
+#include <wayfire/workarea.hpp>
 
 #include <vector>
 
@@ -15,8 +17,50 @@ namespace
 {
 constexpr uint32_t LAYER_OVERLAY = 3;
 constexpr uint32_t LAYER_KEYBOARD_NONE = 0;
+constexpr uint32_t LAYER_ANCHOR_TOP    = 1;
 constexpr uint32_t LAYER_ANCHOR_BOTTOM = 2;
+constexpr uint32_t LAYER_ANCHOR_LEFT   = 4;
 constexpr uint32_t LAYER_ANCHOR_RIGHT  = 8;
+}
+
+TEST_CASE("layer-shell exclusive zone includes margin")
+{
+    wf::test::headless_core_harness_t harness;
+    wf::test::wayland_layer_shell_client_t layer_client{harness.socket_name()};
+    REQUIRE(harness.run_until([&]
+    {
+        layer_client.dispatch_once();
+        return layer_client.has_required_globals();
+    }));
+
+    const auto initial_workarea = harness.output()->workarea->get_workarea();
+    const int panel_height = 40;
+    const int top_margin   = 12;
+
+    layer_client.create_layer_surface("exclusive-margin-regression",
+        LAYER_OVERLAY,
+        LAYER_KEYBOARD_NONE,
+        0, panel_height,
+        LAYER_ANCHOR_TOP | LAYER_ANCHOR_LEFT | LAYER_ANCHOR_RIGHT);
+    layer_client.set_layer_margin(top_margin, 0, 0, 0);
+    layer_client.set_layer_exclusive_zone(panel_height);
+
+    REQUIRE(harness.run_until([&]
+    {
+        layer_client.dispatch_once();
+        return layer_client.has_pending_layer_configure();
+    }));
+
+    layer_client.attach_layer_and_commit(initial_workarea.width, panel_height);
+    REQUIRE(harness.run_until([&]
+    {
+        layer_client.dispatch_once();
+        const auto workarea = harness.output()->workarea->get_workarea();
+        return workarea.y == initial_workarea.y + panel_height + top_margin;
+    }));
+
+    const auto workarea = harness.output()->workarea->get_workarea();
+    CHECK(workarea.height == initial_workarea.height - panel_height - top_margin);
 }
 
 TEST_CASE("layer-shell popup with keyboard none does not steal focus")

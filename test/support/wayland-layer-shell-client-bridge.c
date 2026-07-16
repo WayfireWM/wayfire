@@ -46,6 +46,19 @@ void wf_test_layer_surface_set_keyboard_interactivity(
         keyboard_interactivity);
 }
 
+void wf_test_layer_surface_set_exclusive_zone(
+    struct zwlr_layer_surface_v1 *layer_surface,
+    int32_t zone)
+{
+    zwlr_layer_surface_v1_set_exclusive_zone(layer_surface, zone);
+}
+
+void wf_test_layer_surface_set_margin(struct zwlr_layer_surface_v1 *layer_surface,
+    int32_t top, int32_t right, int32_t bottom, int32_t left)
+{
+    zwlr_layer_surface_v1_set_margin(layer_surface, top, right, bottom, left);
+}
+
 void wf_test_layer_surface_get_popup(struct zwlr_layer_surface_v1 *layer_surface,
     struct xdg_popup *popup)
 {

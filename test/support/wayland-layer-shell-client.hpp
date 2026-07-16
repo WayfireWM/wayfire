@@ -35,6 +35,8 @@ class wayland_layer_shell_client_t
 
     void create_layer_surface(const std::string& namespace_name, uint32_t layer,
         uint32_t keyboard_interactivity, int width, int height, uint32_t anchor);
+    void set_layer_exclusive_zone(int zone);
+    void set_layer_margin(int top, int right, int bottom, int left);
     bool has_pending_layer_configure() const;
     uint32_t last_layer_configure_serial() const;
     void attach_layer_and_commit(int width, int height);

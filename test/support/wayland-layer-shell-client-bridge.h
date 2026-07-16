@@ -33,6 +33,11 @@ void wf_test_layer_surface_set_anchor(struct zwlr_layer_surface_v1 *layer_surfac
 void wf_test_layer_surface_set_keyboard_interactivity(
     struct zwlr_layer_surface_v1 *layer_surface,
     uint32_t keyboard_interactivity);
+void wf_test_layer_surface_set_exclusive_zone(
+    struct zwlr_layer_surface_v1 *layer_surface,
+    int32_t zone);
+void wf_test_layer_surface_set_margin(struct zwlr_layer_surface_v1 *layer_surface,
+    int32_t top, int32_t right, int32_t bottom, int32_t left);
 void wf_test_layer_surface_get_popup(struct zwlr_layer_surface_v1 *layer_surface,
     struct xdg_popup *popup);
 void wf_test_layer_surface_ack_configure(
