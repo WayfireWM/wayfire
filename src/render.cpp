@@ -421,7 +421,11 @@ wf::dimensions_t wf::auxilliary_buffer_t::get_size() const
 
 wlr_texture*wf::auxilliary_buffer_t::get_texture()
 {
-    wf::dassert(buffer.get_buffer(), "No buffer allocated yet!");
+    if (!buffer.get_buffer())
+    {
+        return nullptr;
+    }
+
     if (!texture)
     {
         texture = wlr_texture_from_buffer(wf::get_core().renderer, buffer.get_buffer());
