@@ -111,6 +111,16 @@ wl_output_transform wf::layout_detail::get_transform_from_string(std::string_vie
     return WL_OUTPUT_TRANSFORM_NORMAL;
 }
 
+/**
+ * Ensure that scale is a multiple of 1/120, which makes clients using fractional-scale protocols happy.
+ * See #2967 for more details.
+ */
+float round_scale_to_1_120(float scale)
+{
+    int numerator = std::round(scale * 120);
+    return numerator / 120.0f;
+}
+
 std::string wf::layout_detail::wl_transform_to_string(wl_output_transform transform)
 {
     for (auto& it : output_transforms)
@@ -753,7 +763,7 @@ struct output_layout_output_t
             break;
         }
 
-        state.scale     = scale_opt;
+        state.scale     = round_scale_to_1_120(scale_opt);
         state.transform = layout_detail::get_transform_from_string(std::string{transform_opt});
         state.vrr   = vrr_opt;
         state.hdr   = hdr_opt;
@@ -1435,7 +1445,7 @@ class output_layout_t::impl
             }
 
             state.position  = {head->state.x, head->state.y};
-            state.scale     = head->state.scale;
+            state.scale     = round_scale_to_1_120(head->state.scale);
             state.transform = head->state.transform;
             state.vrr = head->state.adaptive_sync_enabled;
             if ((handle->render_format == DRM_FORMAT_XRGB2101010) ||
