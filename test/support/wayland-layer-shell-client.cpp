@@ -195,6 +195,17 @@ bool wf::test::wayland_layer_shell_client_t::has_required_globals() const
     return priv->compositor && priv->shm && priv->seat && priv->wm_base && priv->layer_shell;
 }
 
+void wf::test::wayland_layer_shell_client_t::set_layer_exclusive_zone(int zone)
+{
+    wf_test_layer_surface_set_exclusive_zone(priv->shell_layer_surface, zone);
+}
+
+void wf::test::wayland_layer_shell_client_t::set_layer_margin(int top, int right,
+    int bottom, int left)
+{
+    wf_test_layer_surface_set_margin(priv->shell_layer_surface, top, right, bottom, left);
+}
+
 void wf::test::wayland_layer_shell_client_t::create_layer_surface(
     const std::string& namespace_name, uint32_t layer, uint32_t keyboard_interactivity,
     int width, int height, uint32_t anchor)

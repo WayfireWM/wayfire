@@ -265,7 +265,28 @@ struct wf_layer_shell_manager
         }
 
         v->anchored_area->edge = anchor_to_edge(edges);
-        v->anchored_area->reserved_size = v->lsurface->current.exclusive_zone;
+        auto margin = v->lsurface->current.margin;
+        int relevant_margin = 0;
+        switch (edges)
+        {
+          case ZWLR_LAYER_SURFACE_V1_ANCHOR_TOP:
+            relevant_margin = margin.top;
+            break;
+
+          case ZWLR_LAYER_SURFACE_V1_ANCHOR_BOTTOM:
+            relevant_margin = margin.bottom;
+            break;
+
+          case ZWLR_LAYER_SURFACE_V1_ANCHOR_LEFT:
+            relevant_margin = margin.left;
+            break;
+
+          case ZWLR_LAYER_SURFACE_V1_ANCHOR_RIGHT:
+            relevant_margin = margin.right;
+            break;
+        }
+
+        v->anchored_area->reserved_size = v->lsurface->current.exclusive_zone + relevant_margin;
         LOGC(LSHELL, "Set exclusive zone for ", v->self(), " edges=", edges,
             " excl=", v->anchored_area->reserved_size);
     }
