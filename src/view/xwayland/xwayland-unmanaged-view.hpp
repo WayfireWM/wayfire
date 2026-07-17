@@ -102,14 +102,22 @@ class wayfire_unmanaged_xwayland_view : public wayfire_xwayland_view_internal_ba
     {
         static wf::option_wrapper_t<bool> force_xwayland_scaling{"workarounds/force_xwayland_scaling"};
         wf::regionf_t damage_region = last_bounding_box; // last bounding box
-        damage_region |= get_bounding_box(); // in case resize happened since last
-        // move
+        damage_region |= get_bounding_box(); // in case resize happened since last move
         wf::scene::damage_node(get_root_node(), damage_region);
 
         auto wo = wf::xw::find_xwayland_surface_output(xw);
         auto new_geometry = wf::xw::calculate_wayfire_geometry(wo, {
             (double)xw->x, (double)xw->y, (double)xw->width, (double)xw->height});
-        surface_root_node->set_offset(wf::origin(new_geometry));
+
+        auto offset = wf::origin(new_geometry);
+        if (wo && (get_current_impl_type() == wf::xw::view_type::DND))
+        {
+            // DnD icons are attached directly to the scenegraph root,
+            // so we need to offset them by the output geometry.
+            offset = offset + wf::origin(wo->get_layout_geometry());
+        }
+
+        surface_root_node->set_offset(offset);
         if (main_surface && force_xwayland_scaling)
         {
             main_surface->set_scale(wo ? wo->get_scale() : 1.0);
@@ -229,7 +237,7 @@ class wayfire_dnd_xwayland_view : public wayfire_unmanaged_xwayland_view
 
     void handle_unmap_request() override
     {
-        LOGC(XWL, "Mapping a Xwayland drag icon");
+        LOGC(XWL, "Unmapping a Xwayland drag icon");
         wayfire_unmanaged_xwayland_view::handle_unmap_request();
         wf::scene::remove_child(this->get_root_node());
     }
