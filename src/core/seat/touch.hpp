@@ -10,6 +10,11 @@
 // TODO: tests
 namespace wf
 {
+namespace test
+{
+class headless_core_harness_t;
+}
+
 using input_surface_selector_t =
     std::function<wf::scene::node_ptr(const wf::pointf_t&)>;
 
@@ -61,6 +66,7 @@ class touch_interface_t
         bool real_event, input_event_processing_mode_t mode);
     void handle_touch_up(int32_t id, uint32_t time,
         input_event_processing_mode_t mode);
+    void cancel_client_touches();
 
     void set_touch_focus(wf::scene::node_ptr node,
         int32_t id, int64_t time, wf::pointf_t current);
@@ -70,6 +76,7 @@ class touch_interface_t
     /** Pressed a finger on a surface and dragging outside of it now */
     std::map<int, wf::scene::node_ptr> focus;
     std::map<int, input_grab_kind_t> focus_grab_kind;
+    bool client_touches_cancelled = false;
 
     void update_gestures(const wf::touch::gesture_event_t& event);
     std::vector<nonstd::observer_ptr<touch::gesture_t>> gestures;
@@ -83,6 +90,9 @@ class touch_interface_t
     /** Enable/disable cursor depending on how many touch points are there */
     void update_cursor_state();
     input_grab_kind_t get_current_grab_kind(int32_t id) const;
+    wf::option_wrapper_t<int> gesture_finger_count{"input/gesture_finger_count"};
+
+    friend class wf::test::headless_core_harness_t;
 };
 }
 

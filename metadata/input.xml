@@ -253,6 +253,12 @@
 				<min>0.1</min>
 				<max>5.0</max>
 			</option>
+			<option name="gesture_finger_count" type="int">
+				<_short>Touchscreen gesture finger count</_short>
+				<_long>The number of touch points required before touchscreen input is treated as a gesture and cancelled for clients.</_long>
+				<default>3</default>
+				<min>1</min>
+			</option>
 			<option name="touchpad_scroll_speed" type="double">
 				<_short>Touchpad scroll speed</_short>
 				<_long>Changes the touchpad scroll factor.  Scroll speed will be scaled by the given value, which must be non-negative.</_long>

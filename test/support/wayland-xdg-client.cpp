@@ -19,7 +19,9 @@ struct wf::test::wayland_xdg_client_t::impl
     wl_display *display   = nullptr;
     wl_registry *registry = nullptr;
     wl_compositor *compositor = nullptr;
-    wl_shm *shm = nullptr;
+    wl_shm *shm     = nullptr;
+    wl_seat *seat   = nullptr;
+    wl_touch *touch = nullptr;
     xdg_wm_base *wm_base = nullptr;
     wp_fractional_scale_manager_v1 *fractional_scale_manager = nullptr;
     wp_viewporter *viewporter = nullptr;
@@ -38,6 +40,7 @@ struct wf::test::wayland_xdg_client_t::impl
     int preferred_buffer_scale = 1;
     std::optional<uint32_t> preferred_fractional_scale;
     std::pair<int, int> committed_buffer_size = {0, 0};
+    std::vector<touch_event_t> touch_events;
 
     static void handle_registry_global(void *data, wl_registry *registry,
         uint32_t name, const char *interface, uint32_t version)
@@ -51,6 +54,11 @@ struct wf::test::wayland_xdg_client_t::impl
         {
             self->shm = static_cast<wl_shm*>(wl_registry_bind(registry,
                 name, &wl_shm_interface, 1));
+        } else if (std::string{interface} == wl_seat_interface.name)
+        {
+            self->seat = static_cast<wl_seat*>(wl_registry_bind(registry,
+                name, &wl_seat_interface, std::min(version, 7u)));
+            wl_seat_add_listener(self->seat, &seat_listener, self);
         } else if (std::string{interface} == xdg_wm_base_interface.name)
         {
             self->wm_base = static_cast<xdg_wm_base*>(wl_registry_bind(registry,
@@ -73,6 +81,78 @@ struct wf::test::wayland_xdg_client_t::impl
     static constexpr wl_registry_listener registry_listener = {
         .global = handle_registry_global,
         .global_remove = handle_registry_remove,
+    };
+
+    static void handle_seat_capabilities(void *data, wl_seat *seat, uint32_t capabilities)
+    {
+        auto *self = static_cast<impl*>(data);
+        if ((capabilities & WL_SEAT_CAPABILITY_TOUCH) && !self->touch)
+        {
+            self->touch = wl_seat_get_touch(seat);
+            wl_touch_add_listener(self->touch, &touch_listener, self);
+        } else if (!(capabilities & WL_SEAT_CAPABILITY_TOUCH) && self->touch)
+        {
+            wl_touch_destroy(self->touch);
+            self->touch = nullptr;
+        }
+    }
+
+    static void handle_seat_name(void*, wl_seat*, const char*)
+    {}
+
+    static constexpr wl_seat_listener seat_listener = {
+        .capabilities = handle_seat_capabilities,
+        .name = handle_seat_name,
+    };
+
+    static void handle_touch_down(void *data, wl_touch*, uint32_t, uint32_t,
+        wl_surface*, int32_t id, wl_fixed_t x, wl_fixed_t y)
+    {
+        auto *self = static_cast<impl*>(data);
+        self->touch_events.push_back({touch_event_t::DOWN, id,
+            wl_fixed_to_double(x), wl_fixed_to_double(y)});
+    }
+
+    static void handle_touch_up(void *data, wl_touch*, uint32_t, uint32_t, int32_t id)
+    {
+        auto *self = static_cast<impl*>(data);
+        self->touch_events.push_back({touch_event_t::UP, id});
+    }
+
+    static void handle_touch_motion(void *data, wl_touch*, uint32_t,
+        int32_t id, wl_fixed_t x, wl_fixed_t y)
+    {
+        auto *self = static_cast<impl*>(data);
+        self->touch_events.push_back({touch_event_t::MOTION, id,
+            wl_fixed_to_double(x), wl_fixed_to_double(y)});
+    }
+
+    static void handle_touch_frame(void *data, wl_touch*)
+    {
+        auto *self = static_cast<impl*>(data);
+        self->touch_events.push_back({touch_event_t::FRAME});
+    }
+
+    static void handle_touch_cancel(void *data, wl_touch*)
+    {
+        auto *self = static_cast<impl*>(data);
+        self->touch_events.push_back({touch_event_t::CANCEL});
+    }
+
+    static void handle_touch_shape(void*, wl_touch*, int32_t, wl_fixed_t, wl_fixed_t)
+    {}
+
+    static void handle_touch_orientation(void*, wl_touch*, int32_t, wl_fixed_t)
+    {}
+
+    static constexpr wl_touch_listener touch_listener = {
+        .down   = handle_touch_down,
+        .up     = handle_touch_up,
+        .motion = handle_touch_motion,
+        .frame  = handle_touch_frame,
+        .cancel = handle_touch_cancel,
+        .shape  = handle_touch_shape,
+        .orientation = handle_touch_orientation,
     };
 
     static void handle_ping(void*, xdg_wm_base *wm_base, uint32_t serial)
@@ -197,6 +277,16 @@ wf::test::wayland_xdg_client_t::~wayland_xdg_client_t()
         xdg_wm_base_destroy(priv->wm_base);
     }
 
+    if (priv->touch)
+    {
+        wl_touch_destroy(priv->touch);
+    }
+
+    if (priv->seat)
+    {
+        wl_seat_destroy(priv->seat);
+    }
+
     if (priv->registry)
     {
         wl_registry_destroy(priv->registry);
@@ -246,6 +336,11 @@ bool wf::test::wayland_xdg_client_t::dispatch_until_configure(int max_iterations
 bool wf::test::wayland_xdg_client_t::has_required_globals() const
 {
     return priv->compositor && priv->shm && priv->wm_base && priv->viewporter;
+}
+
+bool wf::test::wayland_xdg_client_t::has_touch() const
+{
+    return priv->touch;
 }
 
 void wf::test::wayland_xdg_client_t::create_toplevel(const std::string& title,
@@ -447,4 +542,14 @@ void wf::test::wayland_xdg_client_t::destroy_toplevel()
     {
         wl_display_flush(priv->display);
     }
+}
+
+const std::vector<wf::test::touch_event_t>& wf::test::wayland_xdg_client_t::touch_events() const
+{
+    return priv->touch_events;
+}
+
+void wf::test::wayland_xdg_client_t::clear_touch_events()
+{
+    priv->touch_events.clear();
 }
