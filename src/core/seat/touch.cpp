@@ -10,6 +10,7 @@
 #include "wayfire/util.hpp"
 #include "wayfire/output-layout.hpp"
 #include <glm/glm.hpp>
+#include <algorithm>
 
 class touch_timer_adapter_t : public wf::touch::timer_interface_t
 {
@@ -241,6 +242,34 @@ void wf::touch_interface_t::update_gestures(const wf::touch::gesture_event_t& ev
     }
 }
 
+void wf::touch_interface_t::cancel_client_touches()
+{
+    std::vector<wlr_seat_client*> clients;
+    for (auto& [id, node] : focus)
+    {
+        if (!node)
+        {
+            continue;
+        }
+
+        auto *point = wlr_seat_touch_get_point(seat, id);
+        if (point && point->client &&
+            (std::find(clients.begin(), clients.end(), point->client) == clients.end()))
+        {
+            clients.push_back(point->client);
+        }
+    }
+
+    for (auto *client : clients)
+    {
+        wlr_seat_touch_notify_cancel(seat, client);
+    }
+
+    focus.clear();
+    focus_grab_kind.clear();
+    client_touches_cancelled = true;
+}
+
 void wf::touch_interface_t::handle_touch_down(int32_t id, uint32_t time,
     wf::pointf_t point, input_event_processing_mode_t mode)
 {
@@ -265,7 +294,13 @@ void wf::touch_interface_t::handle_touch_down(int32_t id, uint32_t time,
     };
     finger_state.update(gesture_event);
 
-    if (mode != input_event_processing_mode_t::FULL)
+    if (!client_touches_cancelled &&
+        ((int)finger_state.fingers.size() >= gesture_finger_count))
+    {
+        cancel_client_touches();
+    }
+
+    if ((mode != input_event_processing_mode_t::FULL) || client_touches_cancelled)
     {
         update_gestures(gesture_event);
         update_cursor_state();
@@ -329,7 +364,7 @@ void wf::touch_interface_t::handle_touch_motion(int32_t id, uint32_t time,
         }
     }
 
-    if (focus[id])
+    if (!client_touches_cancelled && focus[id])
     {
         auto local = get_node_local_coords(focus[id].get(), point);
         focus[id]->touch_interaction().handle_touch_motion(time, id, local, kind);
@@ -354,8 +389,20 @@ void wf::touch_interface_t::handle_touch_up(int32_t id, uint32_t time,
     update_gestures(gesture_event);
     finger_state.update(gesture_event);
 
+    if (finger_state.fingers.empty())
+    {
+        client_touches_cancelled = false;
+    }
+
     update_cursor_state();
-    set_touch_focus(nullptr, id, time, {lift_off_position.x, lift_off_position.y});
+    if (!client_touches_cancelled)
+    {
+        set_touch_focus(nullptr, id, time, {lift_off_position.x, lift_off_position.y});
+    } else
+    {
+        focus.erase(id);
+        focus_grab_kind.erase(id);
+    }
 }
 
 void wf::touch_interface_t::update_cursor_state()

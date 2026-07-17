@@ -26,8 +26,11 @@
 #include <wayfire/util/log.hpp>
 
 #include <wayland-server-core.h>
+#include <wayland-server-protocol.h>
 
 #include "../../src/core/core-impl.hpp"
+#include "../../src/core/seat/seat-impl.hpp"
+#include "../../src/core/seat/touch.hpp"
 
 namespace
 {
@@ -129,6 +132,7 @@ struct wf::test::headless_core_harness_t::impl
     std::string test_runtime_dir;
     bool had_wayland_display = false;
     bool had_xdg_runtime_dir = false;
+    uint32_t touch_time = 1000;
 
     std::vector<uint32_t> capture_output_pixels()
     {
@@ -324,6 +328,37 @@ bool wf::test::headless_core_harness_t::run_until(const std::function<bool()>& p
     }
 
     return predicate();
+}
+
+void wf::test::headless_core_harness_t::enable_touch_input()
+{
+    auto *seat = priv->core->seat->seat;
+    wlr_seat_set_capabilities(seat,
+        seat->capabilities | WL_SEAT_CAPABILITY_TOUCH);
+}
+
+void wf::test::headless_core_harness_t::touch_down(int32_t id, double x, double y)
+{
+    priv->core->seat->priv->touch->handle_touch_down(id, priv->touch_time++,
+        {x, y}, wf::input_event_processing_mode_t::FULL);
+}
+
+void wf::test::headless_core_harness_t::touch_motion(int32_t id, double x, double y)
+{
+    priv->core->seat->priv->touch->handle_touch_motion(id, priv->touch_time++,
+        {x, y}, true, wf::input_event_processing_mode_t::FULL);
+}
+
+void wf::test::headless_core_harness_t::touch_up(int32_t id)
+{
+    priv->core->seat->priv->touch->handle_touch_up(id, priv->touch_time++,
+        wf::input_event_processing_mode_t::FULL);
+}
+
+void wf::test::headless_core_harness_t::touch_frame()
+{
+    wlr_seat_touch_notify_frame(priv->core->seat->seat);
+    wl_display_flush_clients(priv->core->display);
 }
 
 wf::output_t*wf::test::headless_core_harness_t::output() const
