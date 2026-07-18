@@ -216,6 +216,9 @@ wf::test::headless_core_harness_t::headless_core_harness_t(std::string extra_con
     }
 
     core.ev_loop = wl_display_get_event_loop(core.display);
+    core.wayland_display = add_test_socket(core.display);
+    setenv("WAYLAND_DISPLAY", core.wayland_display.c_str(), 1);
+
     core.backend = wlr_headless_backend_create(core.ev_loop);
     if (!core.backend)
     {
@@ -237,9 +240,6 @@ wf::test::headless_core_harness_t::headless_core_harness_t(std::string extra_con
     core.config_backend = std::make_unique<test_config_backend_t>(std::move(extra_config));
     core.config_backend->init(core.display, *core.config, "");
     core.init();
-
-    core.wayland_display = add_test_socket(core.display);
-    setenv("WAYLAND_DISPLAY", core.wayland_display.c_str(), 1);
 
     if (!wlr_backend_start(core.backend))
     {

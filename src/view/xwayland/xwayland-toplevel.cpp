@@ -170,7 +170,7 @@ void wf::xw::xwayland_toplevel_t::commit()
     }
 }
 
-void wf::xw::xwayland_toplevel_t::reconfigure_xwayland_surface()
+void wf::xw::xwayland_toplevel_t::reconfigure_xwayland_surface(bool position_only)
 {
     if (!xw)
     {
@@ -179,6 +179,14 @@ void wf::xw::xwayland_toplevel_t::reconfigure_xwayland_surface()
 
     const wf::geometry_t configure =
         shrink_geometry_by_margins(_pending.geometry, _pending.margins) * output_scale + output_offset;
+
+    if (position_only)
+    {
+        LOGC(XWL, "Configuring xwayland surface position ", nonull(xw->title), " ", nonull(xw->class_t), " ",
+            wf::origin(configure));
+        wlr_xwayland_surface_configure(xw, configure.x, configure.y, xw->width, xw->height);
+        return;
+    }
 
     if ((configure.width <= 0) || (configure.height <= 0))
     {
@@ -228,7 +236,7 @@ void wf::xw::xwayland_toplevel_t::apply()
     {
         // Adjust for potential moves due to gravity
         _pending = committed();
-        reconfigure_xwayland_surface();
+        reconfigure_xwayland_surface(true);
     }
 
     apply_pending_state();
