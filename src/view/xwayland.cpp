@@ -275,6 +275,7 @@ void wf::fini_xwayland()
         on_xwayland_surface_created.disconnect();
         on_xwayland_ready.disconnect();
         wlr_xwayland_destroy(xwayland_handle);
+        xwayland_handle = nullptr;
     }
 
 #endif
