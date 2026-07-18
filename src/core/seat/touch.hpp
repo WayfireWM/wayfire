@@ -67,6 +67,7 @@ class touch_interface_t
     void handle_touch_up(int32_t id, uint32_t time,
         input_event_processing_mode_t mode);
     void cancel_client_touches();
+    bool should_consume_touch(const wf::touch::gesture_event_t& event) const;
 
     void set_touch_focus(wf::scene::node_ptr node,
         int32_t id, int64_t time, wf::pointf_t current);

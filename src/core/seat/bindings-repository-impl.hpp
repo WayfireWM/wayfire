@@ -28,6 +28,24 @@ struct wf::bindings_repository_t::impl
 
     void reparse_extensions();
 
+    bool has_gesture(const wf::touchgesture_t& gesture) const
+    {
+        if (!enabled)
+        {
+            return false;
+        }
+
+        for (auto& binding : activators)
+        {
+            if (binding->activated_by->get_value().has_match(gesture))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     binding_container_t<wf::keybinding_t, key_callback> keys;
     binding_container_t<wf::keybinding_t, axis_callback> axes;
     binding_container_t<wf::buttonbinding_t, button_callback> buttons;
