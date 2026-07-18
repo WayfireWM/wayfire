@@ -258,8 +258,19 @@ void wf::cursor_t::set_touchscreen_mode(bool enabled)
     if (enabled)
     {
         hide_cursor();
+        if (!touchscreen_mode_disabled_pointer_focus)
+        {
+            seat->priv->lpointer->set_enable_focus(false);
+            touchscreen_mode_disabled_pointer_focus = true;
+        }
     } else
     {
+        if (touchscreen_mode_disabled_pointer_focus)
+        {
+            seat->priv->lpointer->set_enable_focus(true);
+            touchscreen_mode_disabled_pointer_focus = false;
+        }
+
         unhide_cursor();
     }
 }

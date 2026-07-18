@@ -13,6 +13,7 @@ struct wl_shm;
 struct wl_surface;
 struct wl_buffer;
 struct wl_seat;
+struct wl_pointer;
 struct wl_touch;
 struct xdg_wm_base;
 struct xdg_surface;
@@ -36,6 +37,20 @@ struct touch_event_t
     double y   = 0.0;
 };
 
+struct pointer_event_t
+{
+    enum type_t
+    {
+        ENTER,
+        LEAVE,
+        MOTION,
+        FRAME,
+    } type;
+
+    double x = 0.0;
+    double y = 0.0;
+};
+
 class wayland_xdg_client_t
 {
   public:
@@ -52,6 +67,7 @@ class wayland_xdg_client_t
     bool dispatch_until_configure(int max_iterations = 200);
 
     bool has_required_globals() const;
+    bool has_pointer() const;
     bool has_touch() const;
     void create_toplevel(const std::string& title, const std::string& app_id);
     bool has_pending_configure() const;
@@ -70,6 +86,8 @@ class wayland_xdg_client_t
     std::pair<int, int> last_committed_buffer_size() const;
     void commit_surface();
     void destroy_toplevel();
+    const std::vector<pointer_event_t>& pointer_events() const;
+    void clear_pointer_events();
     const std::vector<touch_event_t>& touch_events() const;
     void clear_touch_events();
 

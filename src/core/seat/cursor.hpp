@@ -77,6 +77,7 @@ struct cursor_t
     std::string last_cursor_name;
 
     bool touchscreen_mode_active = false;
+    bool touchscreen_mode_disabled_pointer_focus = false;
 };
 }
 

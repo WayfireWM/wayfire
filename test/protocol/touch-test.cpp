@@ -23,7 +23,8 @@ static void flush_touch(wf::test::headless_core_harness_t& harness,
 }
 
 static wayfire_toplevel_view map_touch_client(wf::test::headless_core_harness_t& harness,
-    wf::test::wayland_xdg_client_t& client, const std::string& title)
+    wf::test::wayland_xdg_client_t& client, const std::string& title,
+    bool require_pointer = false)
 {
     std::vector<wayfire_view> mapped;
     wf::signal::connection_t<wf::view_mapped_signal> on_map = [&] (wf::view_mapped_signal *ev)
@@ -35,7 +36,8 @@ static wayfire_toplevel_view map_touch_client(wf::test::headless_core_harness_t&
     REQUIRE(harness.run_until([&]
     {
         client.dispatch_once();
-        return client.has_required_globals() && client.has_touch();
+        return client.has_required_globals() && client.has_touch() &&
+        (!require_pointer || client.has_pointer());
     }));
 
     client.create_toplevel(title, "org.wayfire.TouchTest");
@@ -184,4 +186,32 @@ TEST_CASE("custom touch gestures can consume client touch sequences")
     CHECK(client.touch_events().empty());
 
     wf::get_core().rem_touch_gesture(&custom_gesture);
+}
+
+TEST_CASE("touch input clears pointer focus")
+{
+    wf::test::headless_core_harness_t harness;
+    harness.enable_pointer_input();
+    harness.enable_touch_input();
+
+    wf::test::wayland_xdg_client_t client{harness.socket_name()};
+    auto view     = map_touch_client(harness, client, "touch clears pointer focus test", true);
+    auto geometry = view->get_geometry();
+    const double x = geometry.x + 20.0;
+    const double y = geometry.y + 20.0;
+
+    harness.pointer_motion(x, y);
+    client.dispatch_once();
+
+    REQUIRE(client.pointer_events().size() >= 2);
+    CHECK(client.pointer_events()[0].type == wf::test::pointer_event_t::ENTER);
+    CHECK(client.pointer_events()[1].type == wf::test::pointer_event_t::FRAME);
+
+    client.clear_pointer_events();
+    harness.touch_down(0, x, y);
+    flush_touch(harness, client);
+
+    REQUIRE(client.pointer_events().size() >= 2);
+    CHECK(client.pointer_events()[0].type == wf::test::pointer_event_t::LEAVE);
+    CHECK(client.pointer_events()[1].type == wf::test::pointer_event_t::FRAME);
 }
