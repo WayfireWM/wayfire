@@ -29,6 +29,8 @@
 #include <wayland-server-protocol.h>
 
 #include "../../src/core/core-impl.hpp"
+#include "../../src/core/seat/cursor.hpp"
+#include "../../src/core/seat/pointer.hpp"
 #include "../../src/core/seat/seat-impl.hpp"
 #include "../../src/core/seat/touch.hpp"
 
@@ -337,6 +339,13 @@ void wf::test::headless_core_harness_t::enable_touch_input()
         seat->capabilities | WL_SEAT_CAPABILITY_TOUCH);
 }
 
+void wf::test::headless_core_harness_t::enable_pointer_input()
+{
+    auto *seat = priv->core->seat->seat;
+    wlr_seat_set_capabilities(seat,
+        seat->capabilities | WL_SEAT_CAPABILITY_POINTER);
+}
+
 void wf::test::headless_core_harness_t::touch_down(int32_t id, double x, double y)
 {
     priv->core->seat->priv->touch->handle_touch_down(id, priv->touch_time++,
@@ -358,6 +367,14 @@ void wf::test::headless_core_harness_t::touch_up(int32_t id)
 void wf::test::headless_core_harness_t::touch_frame()
 {
     wlr_seat_touch_notify_frame(priv->core->seat->seat);
+    wl_display_flush_clients(priv->core->display);
+}
+
+void wf::test::headless_core_harness_t::pointer_motion(double x, double y)
+{
+    priv->core->seat->priv->cursor->warp_cursor({x, y});
+    priv->core->seat->priv->lpointer->update_cursor_position(priv->touch_time++);
+    wlr_seat_pointer_notify_frame(priv->core->seat->seat);
     wl_display_flush_clients(priv->core->display);
 }
 

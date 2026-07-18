@@ -19,9 +19,10 @@ struct wf::test::wayland_xdg_client_t::impl
     wl_display *display   = nullptr;
     wl_registry *registry = nullptr;
     wl_compositor *compositor = nullptr;
-    wl_shm *shm     = nullptr;
-    wl_seat *seat   = nullptr;
-    wl_touch *touch = nullptr;
+    wl_shm *shm   = nullptr;
+    wl_seat *seat = nullptr;
+    wl_pointer *pointer = nullptr;
+    wl_touch *touch     = nullptr;
     xdg_wm_base *wm_base = nullptr;
     wp_fractional_scale_manager_v1 *fractional_scale_manager = nullptr;
     wp_viewporter *viewporter = nullptr;
@@ -40,6 +41,7 @@ struct wf::test::wayland_xdg_client_t::impl
     int preferred_buffer_scale = 1;
     std::optional<uint32_t> preferred_fractional_scale;
     std::pair<int, int> committed_buffer_size = {0, 0};
+    std::vector<pointer_event_t> pointer_events;
     std::vector<touch_event_t> touch_events;
 
     static void handle_registry_global(void *data, wl_registry *registry,
@@ -86,6 +88,16 @@ struct wf::test::wayland_xdg_client_t::impl
     static void handle_seat_capabilities(void *data, wl_seat *seat, uint32_t capabilities)
     {
         auto *self = static_cast<impl*>(data);
+        if ((capabilities & WL_SEAT_CAPABILITY_POINTER) && !self->pointer)
+        {
+            self->pointer = wl_seat_get_pointer(seat);
+            wl_pointer_add_listener(self->pointer, &pointer_listener, self);
+        } else if (!(capabilities & WL_SEAT_CAPABILITY_POINTER) && self->pointer)
+        {
+            wl_pointer_destroy(self->pointer);
+            self->pointer = nullptr;
+        }
+
         if ((capabilities & WL_SEAT_CAPABILITY_TOUCH) && !self->touch)
         {
             self->touch = wl_seat_get_touch(seat);
@@ -103,6 +115,69 @@ struct wf::test::wayland_xdg_client_t::impl
     static constexpr wl_seat_listener seat_listener = {
         .capabilities = handle_seat_capabilities,
         .name = handle_seat_name,
+    };
+
+    static void handle_pointer_enter(void *data, wl_pointer*, uint32_t,
+        wl_surface*, wl_fixed_t x, wl_fixed_t y)
+    {
+        auto *self = static_cast<impl*>(data);
+        self->pointer_events.push_back({pointer_event_t::ENTER,
+            wl_fixed_to_double(x), wl_fixed_to_double(y)});
+    }
+
+    static void handle_pointer_leave(void *data, wl_pointer*, uint32_t, wl_surface*)
+    {
+        auto *self = static_cast<impl*>(data);
+        self->pointer_events.push_back({pointer_event_t::LEAVE});
+    }
+
+    static void handle_pointer_motion(void *data, wl_pointer*, uint32_t,
+        wl_fixed_t x, wl_fixed_t y)
+    {
+        auto *self = static_cast<impl*>(data);
+        self->pointer_events.push_back({pointer_event_t::MOTION,
+            wl_fixed_to_double(x), wl_fixed_to_double(y)});
+    }
+
+    static void handle_pointer_button(void*, wl_pointer*, uint32_t, uint32_t, uint32_t, uint32_t)
+    {}
+
+    static void handle_pointer_axis(void*, wl_pointer*, uint32_t, uint32_t, wl_fixed_t)
+    {}
+
+    static void handle_pointer_frame(void *data, wl_pointer*)
+    {
+        auto *self = static_cast<impl*>(data);
+        self->pointer_events.push_back({pointer_event_t::FRAME});
+    }
+
+    static void handle_pointer_axis_source(void*, wl_pointer*, uint32_t)
+    {}
+
+    static void handle_pointer_axis_stop(void*, wl_pointer*, uint32_t, uint32_t)
+    {}
+
+    static void handle_pointer_axis_discrete(void*, wl_pointer*, uint32_t, int32_t)
+    {}
+
+    static void handle_pointer_axis_value120(void*, wl_pointer*, uint32_t, int32_t)
+    {}
+
+    static void handle_pointer_axis_relative_direction(void*, wl_pointer*, uint32_t, uint32_t)
+    {}
+
+    static constexpr wl_pointer_listener pointer_listener = {
+        .enter  = handle_pointer_enter,
+        .leave  = handle_pointer_leave,
+        .motion = handle_pointer_motion,
+        .button = handle_pointer_button,
+        .axis   = handle_pointer_axis,
+        .frame  = handle_pointer_frame,
+        .axis_source   = handle_pointer_axis_source,
+        .axis_stop     = handle_pointer_axis_stop,
+        .axis_discrete = handle_pointer_axis_discrete,
+        .axis_value120 = handle_pointer_axis_value120,
+        .axis_relative_direction = handle_pointer_axis_relative_direction,
     };
 
     static void handle_touch_down(void *data, wl_touch*, uint32_t, uint32_t,
@@ -282,6 +357,11 @@ wf::test::wayland_xdg_client_t::~wayland_xdg_client_t()
         wl_touch_destroy(priv->touch);
     }
 
+    if (priv->pointer)
+    {
+        wl_pointer_destroy(priv->pointer);
+    }
+
     if (priv->seat)
     {
         wl_seat_destroy(priv->seat);
@@ -336,6 +416,11 @@ bool wf::test::wayland_xdg_client_t::dispatch_until_configure(int max_iterations
 bool wf::test::wayland_xdg_client_t::has_required_globals() const
 {
     return priv->compositor && priv->shm && priv->wm_base && priv->viewporter;
+}
+
+bool wf::test::wayland_xdg_client_t::has_pointer() const
+{
+    return priv->pointer;
 }
 
 bool wf::test::wayland_xdg_client_t::has_touch() const
@@ -542,6 +627,16 @@ void wf::test::wayland_xdg_client_t::destroy_toplevel()
     {
         wl_display_flush(priv->display);
     }
+}
+
+const std::vector<wf::test::pointer_event_t>& wf::test::wayland_xdg_client_t::pointer_events() const
+{
+    return priv->pointer_events;
+}
+
+void wf::test::wayland_xdg_client_t::clear_pointer_events()
+{
+    priv->pointer_events.clear();
 }
 
 const std::vector<wf::test::touch_event_t>& wf::test::wayland_xdg_client_t::touch_events() const

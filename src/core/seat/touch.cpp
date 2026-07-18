@@ -730,8 +730,8 @@ void wf::touch_interface_t::add_default_gestures()
         return (int)state.fingers.size() >= gesture_finger_count;
     };
 
-    auto consume_edge_swipe = [this, consume_multitouch] (const wf::touch::gesture_state_t& state,
-                                                          const wf::touch::gesture_event_t& event)
+    auto consume_edge_swipe = [consume_multitouch] (const wf::touch::gesture_state_t& state,
+                                                    const wf::touch::gesture_event_t& event)
     {
         return consume_multitouch(state, event) ||
                ((event.type == wf::touch::EVENT_TYPE_TOUCH_DOWN) &&

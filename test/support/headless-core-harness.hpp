@@ -22,11 +22,13 @@ class headless_core_harness_t
     void dispatch_once(int timeout_ms = 0);
     void roundtrip();
     bool run_until(const std::function<bool()>& predicate, int max_iterations = 200);
+    void enable_pointer_input();
     void enable_touch_input();
     void touch_down(int32_t id, double x, double y);
     void touch_motion(int32_t id, double x, double y);
     void touch_up(int32_t id);
     void touch_frame();
+    void pointer_motion(double x, double y);
 
     wf::output_t *output() const;
     const std::string& socket_name() const;
