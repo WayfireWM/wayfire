@@ -56,7 +56,7 @@ class xwayland_toplevel_t : public wf::toplevel_t, public std::enable_shared_fro
     wf::pointf_t output_offset = {0, 0};
     void handle_surface_commit();
 
-    void reconfigure_xwayland_surface();
+    void reconfigure_xwayland_surface(bool position_only = false);
     void emit_ready();
     bool pending_ready = false;
 };

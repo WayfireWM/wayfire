@@ -108,3 +108,18 @@ test('Xdg-shell test', xdg_shell_test)
 test('Layer-shell test', layer_shell_test)
 test('Scaling test', scaling_test)
 test('Native buffer size scaling test', native_buffer_size_scaling_test)
+
+if not get_option('xwayland').disabled() and wlroots_features['xwayland']
+    xwayland_test = executable(
+        'xwayland-test',
+        'xwayland-test.cpp',
+        test_support_sources,
+        dependencies: [doctest, libwayfire, wayland_client, xcb],
+        cpp_args: [
+            '-DTEST_METADATA_DIR="' + meson.project_source_root() + '/metadata"',
+            '-DTEST_DEFAULTS_INI="' + meson.project_source_root() + '/wayfire.ini"',
+        ],
+        install: false)
+
+    test('Xwayland test', xwayland_test)
+endif
