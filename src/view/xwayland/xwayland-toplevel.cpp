@@ -6,6 +6,7 @@
 #include "../view-impl.hpp"
 #include "wayfire/toplevel.hpp"
 #include "core/xdg-output-management.hpp"
+#include <cmath>
 
 #if WF_HAS_XWAYLAND
 
@@ -197,7 +198,8 @@ void wf::xw::xwayland_toplevel_t::reconfigure_xwayland_surface(bool position_onl
     }
 
     LOGC(XWL, "Configuring xwayland surface ", nonull(xw->title), " ", nonull(xw->class_t), " ", configure);
-    wlr_xwayland_surface_configure(xw, configure.x, configure.y, configure.width, configure.height);
+    wlr_xwayland_surface_configure(xw, configure.x, configure.y,
+        std::ceil(configure.width), std::ceil(configure.height));
 }
 
 void wf::xw::xwayland_toplevel_t::apply()
@@ -256,10 +258,10 @@ void wf::xw::xwayland_toplevel_t::handle_surface_commit()
     const bool is_committed = wf::get_core().tx_manager->is_object_committed(shared_from_this());
     if (is_committed)
     {
-        const wf::dimensionsf_t desired_size =
+        const wf::dimensionsf_t configure_size =
             shrink_dimensions_by_margins(wf::fdimensions(_committed.geometry), _committed.margins);
 
-        if (wf::dimensionsf_t{get_current_xw_size()} != desired_size)
+        if (get_current_xw_size() != wf::dimensions_t{(int)configure_size.width, (int)configure_size.height})
         {
             // Desired state not reached => wait for the desired state to be reached. In the meantime, send a
             // frame done so that the client can redraw faster.
@@ -267,7 +269,10 @@ void wf::xw::xwayland_toplevel_t::handle_surface_commit()
             return;
         }
 
-        adjust_geometry_for_gravity(_committed, wf::dimensionsf_t{this->get_current_xw_size()});
+        const wf::dimensionsf_t real_size = expand_dimensions_by_margins(
+            wf::dimensionsf_t{get_current_xw_size()}, _committed.margins);
+
+        adjust_geometry_for_gravity(_committed, real_size);
         emit_ready();
         return;
     }
