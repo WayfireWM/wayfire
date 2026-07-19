@@ -762,8 +762,7 @@ class WayfireSwitcher : public wf::per_output_plugin_instance_t, public wf::keyb
             render_order.push_back(&sv);
         }
 
-        std::stable_sort(render_order.begin(), render_order.end(),
-            [&] (SwitcherView *a, SwitcherView *b)
+        auto comes_before = [&] (SwitcherView *a, SwitcherView *b)
         {
             bool a_expired = view_expired(a->position);
             bool b_expired = view_expired(b->position);
@@ -789,7 +788,22 @@ class WayfireSwitcher : public wf::per_output_plugin_instance_t, public wf::keyb
                     return view_order[a->view] > view_order[b->view];
                 }
             }
-        });
+        };
+
+        // We do not have depth testing on vulkan yet so we try to sort the views by Z-order but for close
+        // z-values we want to keep the stacking order.
+        // Note that the comparator is not transitive, so we cannot use std::sort.
+        // Instead we use a bubble sort which produces correct results in the majority of cases.
+        for (size_t pass = 0; pass < 2 * render_order.size(); pass++)
+        {
+            for (size_t i = 1; i < render_order.size(); i++)
+            {
+                if (comes_before(render_order[i], render_order[i - 1]))
+                {
+                    std::swap(render_order[i], render_order[i - 1]);
+                }
+            }
+        }
 
         return render_order;
     }
