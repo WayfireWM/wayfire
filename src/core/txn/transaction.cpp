@@ -79,6 +79,11 @@ void wf::txn::transaction_t::apply(bool did_timeout)
     LOGC(TXN, "Applying transaction ", this, " timed_out: ", did_timeout);
     for (auto& obj : this->objects)
     {
+        obj->prepare_apply();
+    }
+
+    for (auto& obj : this->objects)
+    {
         obj->apply();
     }
 
