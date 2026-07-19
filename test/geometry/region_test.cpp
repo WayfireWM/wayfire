@@ -2,6 +2,7 @@
 #include <doctest/doctest.h>
 
 #include <wayfire/region.hpp>
+#include <wayfire/render.hpp>
 
 #include <algorithm>
 #include <tuple>
@@ -165,6 +166,121 @@ TEST_CASE("floating region supports logical geometry operations")
     REQUIRE(scaled.contains_pointf({6.5, 11.0}));
     REQUIRE(scaled.contains_pointf({13.25, 19.25}));
     REQUIRE_FALSE(scaled.contains_pointf({13.75, 19.75}));
+}
+
+TEST_CASE("floating region preserves coordinates after reversed translations")
+{
+    const wf::geometry_t original_box{0.2, 0.3, 100.4, 200.5};
+    wf::regionf_t region{original_box};
+
+    region += wf::pointf_t{1920.1, 1080.1};
+    region -= wf::pointf_t{1920.1, 1080.1};
+
+    REQUIRE(as_boxes(region) == std::vector<wf::geometry_t>{original_box});
+
+    region -= wf::pointf_t{1920.1, 1080.1};
+    region -= wf::pointf_t{-743.3, 512.7};
+    region += wf::pointf_t{-743.3, 512.7};
+    region += wf::pointf_t{1920.1, 1080.1};
+
+    REQUIRE(as_boxes(region) == std::vector<wf::geometry_t>{original_box});
+}
+
+TEST_CASE("floating region set operations respect pending translations")
+{
+    wf::regionf_t region{{0.25, 0.5, 10.0, 10.0}};
+    region += wf::pointf_t{100.5, 200.25};
+
+    auto intersection = region & wf::geometry_t{105.75, 205.75, 10.0, 10.0};
+    REQUIRE(as_boxes(intersection) ==
+        std::vector<wf::geometry_t>{{105.75, 205.75, 5.0, 5.0}});
+
+    region ^= wf::geometry_t{100.75, 200.75, 5.0, 10.0};
+    REQUIRE_FALSE(region.contains_pointf({101.0, 201.0}));
+    REQUIRE(region.contains_pointf({106.0, 201.0}));
+}
+
+TEST_CASE("floating region operations account for independent translations")
+{
+    wf::regionf_t left{{0.25, 0.5, 10.0, 10.0}};
+    wf::regionf_t right{{5.75, 5.25, 10.0, 10.0}};
+    left  += wf::pointf_t{100.5, 200.25};
+    right += wf::pointf_t{100.0, 200.5};
+
+    auto intersection = left & right;
+    REQUIRE(as_boxes(intersection) ==
+        std::vector<wf::geometry_t>{{105.75, 205.75, 5.0, 5.0}});
+
+    auto united = left | right;
+    REQUIRE(united.contains_pointf({101.0, 201.0}));
+    REQUIRE(united.contains_pointf({115.0, 215.0}));
+
+    left ^= right;
+    left -= wf::pointf_t{100.5, 200.25};
+    REQUIRE(left.contains_pointf({1.0, 1.0}));
+    REQUIRE_FALSE(left.contains_pointf({6.0, 6.0}));
+}
+
+TEST_CASE("floating region raw access exposes translated coordinates")
+{
+    wf::regionf_t region{{0.25, 0.5, 10.0, 20.0}};
+    region += wf::pointf_t{100.5, 200.25};
+
+    auto *raw    = region.to_pixman();
+    auto extents = *pixman_region64f_extents(raw);
+    REQUIRE(extents.x1 == 100.75);
+    REQUIRE(extents.y1 == 200.75);
+    REQUIRE(extents.x2 == 110.75);
+    REQUIRE(extents.y2 == 220.75);
+}
+
+TEST_CASE("framebuffer region conversion rounds rectangle edges directly")
+{
+    wf::render_buffer_t buffer{nullptr, {100, 100}};
+    wf::render_target_t target{buffer};
+    target.geometry = {0, 0, 100, 100};
+
+    wf::regionf_t region{{-9.9998, 2.25, 4.9998, 3.5}};
+    auto boxes = as_boxes(target.framebuffer_region_from_geometry_region(region));
+
+    REQUIRE(boxes.size() == 1);
+    REQUIRE(boxes[0].x == -10);
+    REQUIRE(boxes[0].y == 2);
+    REQUIRE(boxes[0].width == 5);
+    REQUIRE(boxes[0].height == 4);
+}
+
+TEST_CASE("framebuffer region conversion preserves target transforms")
+{
+    wf::render_buffer_t buffer{nullptr, {100, 200}};
+    wf::render_target_t target{buffer};
+    target.geometry = {0, 0, 100, 200};
+    wf::geometry_t box{10.25, 20.25, 5.5, 10.5};
+
+    for (int transform = WL_OUTPUT_TRANSFORM_NORMAL;
+         transform <= WL_OUTPUT_TRANSFORM_FLIPPED_270; transform++)
+    {
+        CAPTURE(transform);
+        target.wl_transform = (wl_output_transform)transform;
+        auto expected = target.framebuffer_box_from_geometry_box(box);
+        auto boxes    = as_boxes(target.framebuffer_region_from_geometry_region(wf::regionf_t{box}));
+
+        REQUIRE(boxes.size() == 1);
+        REQUIRE(boxes[0].x == expected.x);
+        REQUIRE(boxes[0].y == expected.y);
+        REQUIRE(boxes[0].width == expected.width);
+        REQUIRE(boxes[0].height == expected.height);
+    }
+
+    target.wl_transform = WL_OUTPUT_TRANSFORM_NORMAL;
+    target.subbuffer    = wf::geometry_t{5, 10, 50, 100};
+    auto expected = target.framebuffer_box_from_geometry_box(box);
+    auto boxes    = as_boxes(target.framebuffer_region_from_geometry_region(wf::regionf_t{box}));
+    REQUIRE(boxes.size() == 1);
+    REQUIRE(boxes[0].x == expected.x);
+    REQUIRE(boxes[0].y == expected.y);
+    REQUIRE(boxes[0].width == expected.width);
+    REQUIRE(boxes[0].height == expected.height);
 }
 
 TEST_CASE("geometry to integer box conversion contains fractional extents")
