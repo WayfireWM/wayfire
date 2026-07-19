@@ -45,9 +45,14 @@ class crossfade_node_t : public scene::view_2d_transformer_t
 
     crossfade_node_t(wayfire_toplevel_view view) : view_2d_transformer_t(view)
     {
+        this->view = view;
+        capture_current_contents();
+    }
+
+    void capture_current_contents()
+    {
         displayed_geometry = view->get_geometry();
         overlay_alpha = 0.0;
-        this->view    = view;
 
         auto root_node = view->get_surface_root_node();
         const wf::geometry_t bbox = root_node->get_bounding_box();
@@ -362,16 +367,21 @@ class grid_animation_t : public wf::custom_data_t
 
     void start_crossfade(wf::geometry_t start_geometry, wf::geometry_t target_geometry)
     {
-        if (!view->get_transformed_node()->get_transformer<crossfade_node_t>())
+        const auto current_displayed = animation.running() ? wf::geometry_t(animation) : start_geometry;
+        auto tr = view->get_transformed_node()->get_transformer<crossfade_node_t>();
+        if (!tr)
         {
             view->get_transformed_node()->add_transformer(
                 std::make_shared<crossfade_node_t>(view),
                 wf::TRANSFORMER_2D);
+        } else
+        {
+            tr->capture_current_contents();
         }
 
         waiting_for_transaction = false;
-        original = start_geometry;
-        animation.set_start(start_geometry);
+        original = current_displayed;
+        animation.set_start(current_displayed);
         animation.set_end(target_geometry);
         animation.start();
     }
