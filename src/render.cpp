@@ -273,6 +273,31 @@ static const wlr_drm_format *choose_format_from_set(const wlr_drm_format_set *se
 }
 
 /**
+ * Account for small errors introduced while projecting geometry through
+ * wlr_fbox without changing the global containing_box() contract.
+ */
+static constexpr double framebuffer_rounding_epsilon = 1e-2;
+
+static int floor_framebuffer_coordinate(double value)
+{
+    return std::floor(value + framebuffer_rounding_epsilon);
+}
+
+static int ceil_framebuffer_coordinate(double value)
+{
+    return std::ceil(value - framebuffer_rounding_epsilon);
+}
+
+static wlr_box containing_framebuffer_box(const wf::geometry_t& box)
+{
+    int x1 = floor_framebuffer_coordinate(box.x);
+    int y1 = floor_framebuffer_coordinate(box.y);
+    int x2 = ceil_framebuffer_coordinate(box.x + box.width);
+    int y2 = ceil_framebuffer_coordinate(box.y + box.height);
+    return {x1, y1, x2 - x1, y2 - y1};
+}
+
+/**
  * Rasterize a projected destination box for texture rendering.
  *
  * wlroots render passes only accept integer destination boxes. For exact
@@ -283,15 +308,15 @@ static const wlr_drm_format *choose_format_from_set(const wlr_drm_format_set *se
  */
 static wlr_box round_fbox_to_texture_dst_box(wf::geometry_t fbox)
 {
-    static constexpr double epsilon = 1e-6;
-    const int x = (int)std::floor(fbox.x);
-    const int y = (int)std::floor(fbox.y);
+    static constexpr double size_epsilon = 1e-6;
+    const int x = floor_framebuffer_coordinate(fbox.x);
+    const int y = floor_framebuffer_coordinate(fbox.y);
     const double rounded_width  = std::round(fbox.width);
     const double rounded_height = std::round(fbox.height);
-    const int x2 = (int)((std::abs(fbox.width - rounded_width) < epsilon) ?
-        (x + rounded_width) : std::ceil(fbox.x + fbox.width));
-    const int y2 = (int)((std::abs(fbox.height - rounded_height) < epsilon) ?
-        (y + rounded_height) : std::ceil(fbox.y + fbox.height));
+    const int x2 = (int)((std::abs(fbox.width - rounded_width) < size_epsilon) ?
+        (x + rounded_width) : ceil_framebuffer_coordinate(fbox.x + fbox.width));
+    const int y2 = (int)((std::abs(fbox.height - rounded_height) < size_epsilon) ?
+        (y + rounded_height) : ceil_framebuffer_coordinate(fbox.y + fbox.height));
 
     return wlr_box{
         .x     = x,
@@ -634,7 +659,7 @@ wf::geometry_t wf::render_target_t::framebuffer_geometry_from_geometry_box(wf::g
 
 wlr_box wf::render_target_t::framebuffer_box_from_geometry_box(wf::geometry_t box) const
 {
-    return containing_box(framebuffer_geometry_from_geometry_box(box));
+    return containing_framebuffer_box(framebuffer_geometry_from_geometry_box(box));
 }
 
 wlr_box wf::render_target_t::framebuffer_texture_dst_box_from_geometry_box(wf::geometry_t box) const
@@ -652,12 +677,13 @@ wf::region_t wf::render_target_t::framebuffer_region_from_geometry_region(const 
     wf::region_t result;
     for (const auto& rect : region)
     {
-        result |= containing_box(framebuffer_geometry_from_geometry_box({
+        auto box = framebuffer_geometry_from_geometry_box({
             rect.x1,
             rect.y1,
             rect.x2 - rect.x1,
             rect.y2 - rect.y1,
-        }));
+        });
+        result |= containing_framebuffer_box(box);
     }
 
     return result;

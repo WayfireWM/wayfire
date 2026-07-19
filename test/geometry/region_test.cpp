@@ -234,7 +234,7 @@ TEST_CASE("floating region raw access exposes translated coordinates")
     REQUIRE(extents.y2 == 220.75);
 }
 
-TEST_CASE("framebuffer region conversion rounds rectangle edges directly")
+TEST_CASE("framebuffer region conversion tolerates rounding near integer edges")
 {
     wf::render_buffer_t buffer{nullptr, {100, 100}};
     wf::render_target_t target{buffer};
@@ -248,6 +248,23 @@ TEST_CASE("framebuffer region conversion rounds rectangle edges directly")
     REQUIRE(boxes[0].y == 2);
     REQUIRE(boxes[0].width == 5);
     REQUIRE(boxes[0].height == 4);
+
+    auto box = target.framebuffer_box_from_geometry_box({-9.9998, 2.25, 4.9998, 3.5});
+    REQUIRE(box.x == -10);
+    REQUIRE(box.y == 2);
+    REQUIRE(box.width == 5);
+    REQUIRE(box.height == 4);
+
+    box = target.framebuffer_texture_dst_box_from_geometry_box({-9.9998, 2.25, 4.9998, 3.5});
+    REQUIRE(box.x == -10);
+    REQUIRE(box.y == 2);
+    REQUIRE(box.width == 5);
+    REQUIRE(box.height == 4);
+
+    wf::regionf_t fractional_edge{{0, 0, 5.02, 1}};
+    boxes = as_boxes(target.framebuffer_region_from_geometry_region(fractional_edge));
+    REQUIRE(boxes.size() == 1);
+    REQUIRE(boxes[0].width == 6);
 }
 
 TEST_CASE("framebuffer region conversion preserves target transforms")
