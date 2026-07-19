@@ -29,7 +29,7 @@ wf::regionf_t::regionf_t()
 
 wf::regionf_t::regionf_t(const pixman_region64f_t *region) : wf::regionf_t()
 {
-    pixman_region64f_copy(this->to_pixman(), region);
+    pixman_region64f_copy(&_region, region);
 }
 
 wf::regionf_t::regionf_t(const wf::geometry_t& box)
@@ -63,12 +63,14 @@ wf::regionf_t::~regionf_t()
 
 wf::regionf_t::regionf_t(const wf::regionf_t& other) : wf::regionf_t()
 {
-    pixman_region64f_copy(this->to_pixman(), other.unconst());
+    pixman_region64f_copy(&_region, &other._region);
+    pending_translations = other.pending_translations;
 }
 
 wf::regionf_t::regionf_t(wf::regionf_t&& other) : wf::regionf_t()
 {
     std::swap(this->_region, other._region);
+    std::swap(pending_translations, other.pending_translations);
 }
 
 wf::regionf_t& wf::regionf_t::operator =(const wf::regionf_t& other)
@@ -78,7 +80,8 @@ wf::regionf_t& wf::regionf_t::operator =(const wf::regionf_t& other)
         return *this;
     }
 
-    pixman_region64f_copy(&_region, other.unconst());
+    pixman_region64f_copy(&_region, &other._region);
+    pending_translations = other.pending_translations;
     return *this;
 }
 
@@ -90,22 +93,24 @@ wf::regionf_t& wf::regionf_t::operator =(wf::regionf_t&& other)
     }
 
     std::swap(_region, other._region);
+    std::swap(pending_translations, other.pending_translations);
     return *this;
 }
 
 bool wf::regionf_t::empty() const
 {
-    return !pixman_region64f_not_empty(this->unconst());
+    return !pixman_region64f_not_empty(&_region);
 }
 
 void wf::regionf_t::clear()
 {
     pixman_region64f_clear(&_region);
+    pending_translations.clear();
 }
 
 void wf::regionf_t::expand_edges(double amount)
 {
-    pixman_region64f_t *region = this->to_pixman();
+    pixman_region64f_t *region = &_region;
     if (amount == 0.0)
     {
         return;
@@ -146,55 +151,77 @@ void wf::regionf_t::expand_edges(double amount)
 
 pixman_box64f_t wf::regionf_t::get_extents() const
 {
-    return *pixman_region64f_extents(this->unconst());
+    auto extents = *pixman_region64f_extents(&_region);
+    if (empty())
+    {
+        return extents;
+    }
+
+    auto translation = get_translation();
+    extents.x1 += translation.x;
+    extents.x2 += translation.x;
+    extents.y1 += translation.y;
+    extents.y2 += translation.y;
+    return extents;
 }
 
 bool wf::regionf_t::contains_point(const wf::point_t& point) const
 {
-    return pixman_region64f_contains_pointf(this->unconst(), point.x, point.y, NULL);
+    auto translation = get_translation();
+    return pixman_region64f_contains_pointf(&_region,
+        point.x - translation.x, point.y - translation.y, NULL);
 }
 
 bool wf::regionf_t::contains_pointf(const wf::pointf_t& point) const
 {
-    return pixman_region64f_contains_pointf(this->unconst(), point.x, point.y, NULL);
+    auto translation = get_translation();
+    return pixman_region64f_contains_pointf(&_region,
+        point.x - translation.x, point.y - translation.y, NULL);
 }
 
 wf::regionf_t wf::regionf_t::operator +(const wf::pointf_t& vector) const
 {
     wf::regionf_t result{*this};
-    pixman_region64f_translatef(&result._region, vector.x, vector.y);
+    result.add_translation(vector);
     return result;
 }
 
 wf::regionf_t& wf::regionf_t::operator +=(const wf::pointf_t& vector)
 {
-    pixman_region64f_translatef(&_region, vector.x, vector.y);
+    add_translation(vector);
     return *this;
 }
 
 wf::regionf_t wf::regionf_t::operator -(const wf::pointf_t& vector) const
 {
     wf::regionf_t result{*this};
-    pixman_region64f_translatef(&result._region, -vector.x, -vector.y);
+    result.add_translation({-vector.x, -vector.y});
     return result;
 }
 
 wf::regionf_t& wf::regionf_t::operator -=(const wf::pointf_t& vector)
 {
-    pixman_region64f_translatef(&_region, -vector.x, -vector.y);
+    add_translation({-vector.x, -vector.y});
     return *this;
 }
 
 wf::regionf_t wf::regionf_t::operator *(double scale) const
 {
     wf::regionf_t result;
-    for (auto it = begin(); it != end(); ++it)
+    int count;
+    auto rectangles = pixman_region64f_rectangles(&_region, &count);
+    for (int i = 0; i < count; ++i)
     {
-        pixman_region64f_union_rectf(result.to_pixman(), result.to_pixman(),
-            it->x1 * scale,
-            it->y1 * scale,
-            (it->x2 - it->x1) * scale,
-            (it->y2 - it->y1) * scale);
+        pixman_region64f_union_rectf(&result._region, &result._region,
+            rectangles[i].x1 * scale,
+            rectangles[i].y1 * scale,
+            (rectangles[i].x2 - rectangles[i].x1) * scale,
+            (rectangles[i].y2 - rectangles[i].y1) * scale);
+    }
+
+    for (const auto& translation : pending_translations)
+    {
+        result.add_translation({translation.x * scale, translation.y * scale});
     }
 
     return result;
@@ -208,101 +235,176 @@ wf::regionf_t& wf::regionf_t::operator *=(double scale)
 
 wf::regionf_t wf::regionf_t::operator &(const wf::geometry_t& box) const
 {
-    wf::regionf_t result;
-    pixman_region64f_intersect_rectf(result.to_pixman(), this->unconst(),
-        box.x, box.y, box.width, box.height);
+    wf::regionf_t result{*this};
+    result &= box;
     return result;
 }
 
 wf::regionf_t wf::regionf_t::operator &(const wf::regionf_t& other) const
 {
-    wf::regionf_t result;
-    pixman_region64f_intersect(result.to_pixman(), this->unconst(), other.unconst());
+    wf::regionf_t result{*this};
+    result &= other;
     return result;
 }
 
 wf::regionf_t& wf::regionf_t::operator &=(const wf::geometry_t& box)
 {
-    pixman_region64f_intersect_rectf(this->to_pixman(), this->to_pixman(),
-        box.x, box.y, box.width, box.height);
+    auto translation = get_translation();
+    pixman_region64f_intersect_rectf(&_region, &_region,
+        box.x - translation.x, box.y - translation.y, box.width, box.height);
     return *this;
 }
 
 wf::regionf_t& wf::regionf_t::operator &=(const wf::regionf_t& other)
 {
-    pixman_region64f_intersect(this->to_pixman(), this->to_pixman(), other.unconst());
+    wf::regionf_t aligned{other};
+    auto translation = get_storage_translation(other);
+    pixman_region64f_translatef(&aligned._region, translation.x, translation.y);
+    pixman_region64f_intersect(&_region, &_region, &aligned._region);
     return *this;
 }
 
 wf::regionf_t wf::regionf_t::operator |(const wf::geometry_t& other) const
 {
-    wf::regionf_t result;
-    pixman_region64f_union_rectf(result.to_pixman(), this->unconst(),
-        other.x, other.y, other.width, other.height);
+    wf::regionf_t result{*this};
+    result |= other;
     return result;
 }
 
 wf::regionf_t wf::regionf_t::operator |(const wf::regionf_t& other) const
 {
-    wf::regionf_t result;
-    pixman_region64f_union(result.to_pixman(), this->unconst(), other.unconst());
+    wf::regionf_t result{*this};
+    result |= other;
     return result;
 }
 
 wf::regionf_t& wf::regionf_t::operator |=(const wf::geometry_t& other)
 {
-    pixman_region64f_union_rectf(this->to_pixman(), this->to_pixman(),
-        other.x, other.y, other.width, other.height);
+    auto translation = get_translation();
+    pixman_region64f_union_rectf(&_region, &_region,
+        other.x - translation.x, other.y - translation.y, other.width, other.height);
     return *this;
 }
 
 wf::regionf_t& wf::regionf_t::operator |=(const wf::regionf_t& other)
 {
-    pixman_region64f_union(this->to_pixman(), this->to_pixman(), other.unconst());
+    wf::regionf_t aligned{other};
+    auto translation = get_storage_translation(other);
+    pixman_region64f_translatef(&aligned._region, translation.x, translation.y);
+    pixman_region64f_union(&_region, &_region, &aligned._region);
     return *this;
 }
 
 wf::regionf_t wf::regionf_t::operator ^(const wf::geometry_t& box) const
 {
-    wf::regionf_t result;
-    wf::regionf_t sub{box};
-    pixman_region64f_subtract(result.to_pixman(), this->unconst(), sub.to_pixman());
+    wf::regionf_t result{*this};
+    result ^= box;
     return result;
 }
 
 wf::regionf_t wf::regionf_t::operator ^(const wf::regionf_t& other) const
 {
-    wf::regionf_t result;
-    pixman_region64f_subtract(result.to_pixman(), this->unconst(), other.unconst());
+    wf::regionf_t result{*this};
+    result ^= other;
     return result;
 }
 
 wf::regionf_t& wf::regionf_t::operator ^=(const wf::geometry_t& box)
 {
-    wf::regionf_t sub{box};
-    pixman_region64f_subtract(this->to_pixman(), this->to_pixman(), sub.to_pixman());
+    auto translation = get_translation();
+    wf::regionf_t sub{{box.x - translation.x, box.y - translation.y,
+        box.width, box.height}};
+    pixman_region64f_subtract(&_region, &_region, &sub._region);
     return *this;
 }
 
 wf::regionf_t& wf::regionf_t::operator ^=(const wf::regionf_t& other)
 {
-    pixman_region64f_subtract(this->to_pixman(), this->to_pixman(), other.unconst());
+    wf::regionf_t aligned{other};
+    auto translation = get_storage_translation(other);
+    pixman_region64f_translatef(&aligned._region, translation.x, translation.y);
+    pixman_region64f_subtract(&_region, &_region, &aligned._region);
     return *this;
+}
+
+void wf::regionf_t::add_translation(const wf::pointf_t& vector)
+{
+    if ((vector.x == 0.0) && (vector.y == 0.0))
+    {
+        return;
+    }
+
+    if (!pending_translations.empty() &&
+        (pending_translations.back().x == -vector.x) &&
+        (pending_translations.back().y == -vector.y))
+    {
+        pending_translations.pop_back();
+    } else
+    {
+        pending_translations.push_back(vector);
+    }
+}
+
+wf::pointf_t wf::regionf_t::get_translation() const
+{
+    long double x = 0.0;
+    long double y = 0.0;
+    for (const auto& translation : pending_translations)
+    {
+        x += translation.x;
+        y += translation.y;
+    }
+
+    return {(double)x, (double)y};
+}
+
+wf::pointf_t wf::regionf_t::get_storage_translation(const wf::regionf_t& other) const
+{
+    long double x = 0.0;
+    long double y = 0.0;
+    for (const auto& translation : other.pending_translations)
+    {
+        x += translation.x;
+        y += translation.y;
+    }
+
+    for (const auto& translation : pending_translations)
+    {
+        x -= translation.x;
+        y -= translation.y;
+    }
+
+    return {(double)x, (double)y};
+}
+
+void wf::regionf_t::materialize() const
+{
+    if (pending_translations.empty())
+    {
+        return;
+    }
+
+    auto translation = get_translation();
+    pixman_region64f_translatef(&_region, translation.x, translation.y);
+    pending_translations.clear();
 }
 
 pixman_region64f_t*wf::regionf_t::to_pixman()
 {
+    materialize();
     return &_region;
 }
 
 const pixman_region64f_t*wf::regionf_t::to_pixman() const
 {
+    materialize();
     return &_region;
 }
 
 pixman_region64f_t*wf::regionf_t::unconst() const
 {
-    return const_cast<pixman_region64f_t*>(&_region);
+    materialize();
+    return &_region;
 }
 
 const pixman_box64f_t*wf::regionf_t::begin() const

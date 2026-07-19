@@ -1,6 +1,7 @@
 #pragma once
 
 #include <pixman.h>
+#include <vector>
 #include "wayfire/geometry.hpp"
 
 /* ---------------------- pixman utility functions -------------------------- */
@@ -62,7 +63,13 @@ struct regionf_t
     const pixman_box64f_t *end() const;
 
   private:
-    pixman_region64f_t _region;
+    mutable pixman_region64f_t _region;
+    mutable std::vector<pointf_t> pending_translations;
+
+    void add_translation(const pointf_t& vector);
+    pointf_t get_translation() const;
+    pointf_t get_storage_translation(const regionf_t& other) const;
+    void materialize() const;
     pixman_region64f_t *unconst() const;
 };
 
