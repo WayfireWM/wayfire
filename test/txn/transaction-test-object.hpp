@@ -7,7 +7,9 @@ class txn_test_object_t : public wf::txn::transaction_object_t
 {
   public:
     int number_committed = 0;
+    int number_prepared  = 0;
     int number_applied   = 0;
+    std::function<void()> prepare_apply_callback;
     std::function<void()> apply_callback;
 
     bool autoready;
@@ -23,6 +25,15 @@ class txn_test_object_t : public wf::txn::transaction_object_t
         if (autoready)
         {
             emit_ready();
+        }
+    }
+
+    void prepare_apply() override
+    {
+        number_prepared++;
+        if (prepare_apply_callback)
+        {
+            prepare_apply_callback();
         }
     }
 

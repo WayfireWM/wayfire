@@ -50,8 +50,10 @@ static void run_transaction_test(bool timeout, bool autoready)
 
     if (autoready)
     {
+        REQUIRE(object1->number_prepared == 1);
         REQUIRE(object1->number_applied == 1);
         REQUIRE(object1->number_committed == 1);
+        REQUIRE(object2->number_prepared == 1);
         REQUIRE(object2->number_applied == 1);
         REQUIRE(object2->number_committed == 1);
         REQUIRE(applied == true);
@@ -59,14 +61,18 @@ static void run_transaction_test(bool timeout, bool autoready)
     }
 
     REQUIRE(object1->number_applied == 0);
+    REQUIRE(object1->number_prepared == 0);
     REQUIRE(object1->number_committed == 1);
     REQUIRE(object2->number_applied == 0);
+    REQUIRE(object2->number_prepared == 0);
     REQUIRE(object2->number_committed == 1);
 
     object1->emit_ready();
     REQUIRE(object1->number_applied == 0);
+    REQUIRE(object1->number_prepared == 0);
     REQUIRE(object1->number_committed == 1);
     REQUIRE(object2->number_applied == 0);
+    REQUIRE(object2->number_prepared == 0);
     REQUIRE(object2->number_committed == 1);
     REQUIRE(applied == false);
 
@@ -78,8 +84,10 @@ static void run_transaction_test(bool timeout, bool autoready)
         tx_timeout_callback();
     }
 
+    REQUIRE(object1->number_prepared == 1);
     REQUIRE(object1->number_applied == 1);
     REQUIRE(object1->number_committed == 1);
+    REQUIRE(object2->number_prepared == 1);
     REQUIRE(object2->number_applied == 1);
     REQUIRE(object2->number_committed == 1);
     REQUIRE(applied == true);
@@ -137,4 +145,29 @@ TEST_CASE("Edge cases")
 
     tx.commit();
     REQUIRE(applied == 1);
+}
+
+TEST_CASE("Transaction prepares all objects before applying any object")
+{
+    setup_wayfire_debugging_state();
+    wf::txn::transaction_t::timer_setter_t timer_setter = [] (uint64_t, wf::wl_timer<false>::callback_t)
+    {};
+
+    wf::txn::transaction_t tx(1234, timer_setter);
+    std::vector<std::string> events;
+    auto object1 = std::make_shared<txn_test_object_t>(false);
+    auto object2 = std::make_shared<txn_test_object_t>(false);
+
+    object1->prepare_apply_callback = [&] () { events.push_back("prepare1"); };
+    object1->apply_callback = [&] () { events.push_back("apply1"); };
+    object2->prepare_apply_callback = [&] () { events.push_back("prepare2"); };
+    object2->apply_callback = [&] () { events.push_back("apply2"); };
+
+    tx.add_object(object1);
+    tx.add_object(object2);
+    tx.commit();
+    object1->emit_ready();
+    object2->emit_ready();
+
+    REQUIRE(events == std::vector<std::string>{"prepare1", "prepare2", "apply1", "apply2"});
 }

@@ -39,6 +39,14 @@ class transaction_object_t : public signal::provider_t
     virtual void commit() = 0;
 
     /**
+     * Prepare to apply the committed state.
+     * This function is called when all transaction objects in a transaction are ready, immediately before
+     * apply() is called for any transaction object in the transaction.
+     */
+    virtual void prepare_apply()
+    {}
+
+    /**
      * Make the committed state current.
      * This function is called when all transaction objects in a transaction are ready to apply the committed
      * state.
