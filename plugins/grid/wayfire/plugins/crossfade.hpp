@@ -8,6 +8,7 @@
 #include "wayfire/scene.hpp"
 #include "wayfire/signal-definitions.hpp"
 #include "wayfire/signal-provider.hpp"
+#include <functional>
 #include <memory>
 #include <wayfire/view-transform.hpp>
 #include <wayfire/toplevel-view.hpp>
@@ -18,6 +19,7 @@
 #include <wayfire/plugins/wobbly/wobbly-signal.hpp>
 #include <wayfire/toplevel.hpp>
 #include <wayfire/txn/transaction-manager.hpp>
+#include <wayfire/txn/transaction-object.hpp>
 #include <wayfire/window-manager.hpp>
 
 namespace wf
@@ -44,7 +46,8 @@ class crossfade_node_t : public scene::view_2d_transformer_t
     crossfade_node_t(wayfire_toplevel_view view) : view_2d_transformer_t(view)
     {
         displayed_geometry = view->get_geometry();
-        this->view = view;
+        overlay_alpha = 0.0;
+        this->view    = view;
 
         auto root_node = view->get_surface_root_node();
         const wf::geometry_t bbox = root_node->get_bounding_box();
@@ -102,6 +105,35 @@ class crossfade_node_t : public scene::view_2d_transformer_t
 
     void gen_render_instances(std::vector<scene::render_instance_uptr>& instances,
         scene::damage_callback push_damage, wf::output_t *shown_on) override;
+};
+
+class animation_start_transaction_object_t : public wf::txn::transaction_object_t
+{
+  public:
+    animation_start_transaction_object_t(std::function<void()> prepare_apply_callback) :
+        prepare_apply_callback(prepare_apply_callback)
+    {}
+
+    std::string stringify() const override
+    {
+        return "grid-animation-start";
+    }
+
+    void commit() override
+    {
+        wf::txn::emit_object_ready(this);
+    }
+
+    void prepare_apply() override
+    {
+        prepare_apply_callback();
+    }
+
+    void apply() override
+    {}
+
+  private:
+    std::function<void()> prepare_apply_callback;
 };
 
 class crossfade_render_instance_t : public scene::render_instance_t
@@ -212,6 +244,8 @@ class grid_animation_t : public wf::custom_data_t
      */
     void adjust_target_geometry(wf::geometry_t geometry, int32_t target_edges, wf::txn::transaction_uptr& tx)
     {
+        const auto serial = ++animation_serial;
+
         // Apply the desired attributes to the view
         const auto& set_state = [&] ()
         {
@@ -234,24 +268,47 @@ class grid_animation_t : public wf::custom_data_t
             set_state();
             if (type == WOBBLY)
             {
-                activate_wobbly(view);
+                auto weak_view = view->weak_from_this();
+                tx->add_object(std::make_shared<animation_start_transaction_object_t>([weak_view] ()
+                {
+                    // Activate wobbly in prepare_apply, so that wobbly can detect the view resize and animate
+                    // it
+                    auto view = weak_view.lock();
+                    if (view && view->is_mapped())
+                    {
+                        activate_wobbly(view);
+                    }
+                }));
             }
 
             return destroy();
         }
 
         // Crossfade animation
-        original = view->get_geometry();
-        animation.set_start(original);
-        animation.set_end(geometry);
-        animation.start();
-
-        // Add crossfade transformer
-        ensure_view_transformer<crossfade_node_t>(
-            view, wf::TRANSFORMER_2D, view);
+        const auto start_geometry = view->get_geometry();
+        original = start_geometry;
+        waiting_for_transaction = true;
 
         // Start the transition
         set_state();
+        auto weak_view = view->weak_from_this();
+        tx->add_object(std::make_shared<animation_start_transaction_object_t>([weak_view, serial,
+                                                                               start_geometry, geometry] ()
+        {
+            auto view = weak_view.lock();
+            if (!view || !view->has_data<grid_animation_t>())
+            {
+                return;
+            }
+
+            auto data = view->get_data<grid_animation_t>();
+            if (data->animation_serial != serial)
+            {
+                return;
+            }
+
+            data->start_crossfade(start_geometry, geometry);
+        }));
     }
 
     void adjust_target_geometry(wf::geometry_t geometry, int32_t target_edges)
@@ -277,6 +334,11 @@ class grid_animation_t : public wf::custom_data_t
     {
         if (!animation.running())
         {
+            if (waiting_for_transaction)
+            {
+                return;
+            }
+
             return destroy();
         }
 
@@ -298,6 +360,22 @@ class grid_animation_t : public wf::custom_data_t
         view->erase_data<grid_animation_t>();
     }
 
+    void start_crossfade(wf::geometry_t start_geometry, wf::geometry_t target_geometry)
+    {
+        if (!view->get_transformed_node()->get_transformer<crossfade_node_t>())
+        {
+            view->get_transformed_node()->add_transformer(
+                std::make_shared<crossfade_node_t>(view),
+                wf::TRANSFORMER_2D);
+        }
+
+        waiting_for_transaction = false;
+        original = start_geometry;
+        animation.set_start(start_geometry);
+        animation.set_end(target_geometry);
+        animation.start();
+    }
+
     wf::geometry_t original;
     wayfire_toplevel_view view;
     wf::output_t *output;
@@ -310,6 +388,8 @@ class grid_animation_t : public wf::custom_data_t
     };
 
     wf::geometry_animation_t animation;
+    bool waiting_for_transaction = false;
+    uint64_t animation_serial = 0;
     type_t type;
 };
 }
