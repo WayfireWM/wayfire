@@ -49,9 +49,10 @@ class scale_around_grab_t : public wf::scene::transformer_base_node_t
      * Factor for scaling down the view.
      * A factor 2.0 means that the view will have half of its width and height.
      */
-    wf::animation::simple_animation_t scale_factor{wf::create_option(300)};
-
-    wf::animation::simple_animation_t alpha_factor{wf::create_option(300)};
+    wf::animation::simple_animation_t scale_animation{wf::create_option(300)};
+    wf::animation::simple_animation_t alpha_animation{wf::create_option(300)};
+    double scale_factor = 1.0;
+    double alpha_factor = 1.0;
 
     /**
      * A place relative to the view, where it is grabbed.
@@ -272,9 +273,14 @@ struct core_drag_t::impl
     {
         for (auto& v : this->all_views)
         {
-            if (v.transformer->scale_factor.running())
+            const bool scale_running = v.transformer->scale_animation.running();
+            const bool alpha_running = v.transformer->alpha_animation.running();
+            if (scale_running || alpha_running)
             {
-                v.view->damage();
+                v.view->get_transformed_node()->begin_transform_update();
+                v.transformer->scale_factor = v.transformer->scale_animation;
+                v.transformer->alpha_factor = v.transformer->alpha_animation;
+                v.view->get_transformed_node()->end_transform_update();
             }
         }
     };
@@ -358,8 +364,10 @@ void core_drag_t::start_drag(wayfire_toplevel_view grab_view, wf::pointf_t relat
         tr->relative_grab = find_relative_grab(
             wf::view_bounding_box_up_to(v, "wobbly"), rel_grab_pos);
         tr->grab_position = *tentative_grab_position;
-        tr->scale_factor.animate(options.initial_scale, options.initial_scale);
-        tr->alpha_factor.animate(1, 1);
+        tr->scale_animation.animate(options.initial_scale, options.initial_scale);
+        tr->alpha_animation.animate(1, 1);
+        tr->scale_factor = options.initial_scale;
+        tr->alpha_factor = 1;
         v->get_transformed_node()->add_transformer(
             tr, wf::TRANSFORMER_HIGHLEVEL - 1);
 
@@ -528,8 +536,8 @@ void core_drag_t::set_scale(double new_scale, double alpha)
 {
     for (auto& view : priv->all_views)
     {
-        view.transformer->scale_factor.animate(new_scale);
-        view.transformer->alpha_factor.animate(alpha);
+        view.transformer->scale_animation.animate(new_scale);
+        view.transformer->alpha_animation.animate(alpha);
     }
 }
 
