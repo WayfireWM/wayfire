@@ -149,6 +149,8 @@ backtrace = cpp.find_library('execinfo', required: false)
 conf_data = configuration_data()
 
 conf_data.set('INSTALL_PREFIX', get_option('prefix'))
+conf_data.set('WAYFIRE_VERSION', meson.project_version())
+conf_data.set('WAYFIRE_API_ABI_VERSION', '20260720')
 conf_data.set('PLUGIN_PATH', join_paths(get_option('prefix'), get_option('libdir'), 'wayfire'))
 metadata_dir_suffix = 'share/wayfire/metadata'
 conf_data.set('PLUGIN_XML_DIR', join_paths(get_option('prefix'), metadata_dir_suffix))
@@ -250,6 +252,7 @@ if use_vulkan
 endif
 subdir('proto')
 subdir('src')
+subdir('scripts')
 subdir('man')
 subdir('metadata')
 subdir('plugins')

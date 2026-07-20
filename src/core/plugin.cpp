@@ -134,6 +134,13 @@ std::vector<std::string> wf::config_backend_t::get_xml_dirs() const
 
     if (!xdg_data_dir.empty())
     {
+        auto managed_metadata_path = xdg_data_dir / "wayfire" / "plugin-manager" /
+            "install" / "share" / "wayfire" / "metadata";
+        if (fs::exists(managed_metadata_path))
+        {
+            xmldirs.push_back(managed_metadata_path.string());
+        }
+
         auto metadata_path = xdg_data_dir / "wayfire" / "metadata";
         if (fs::exists(metadata_path))
         {
@@ -143,5 +150,15 @@ std::vector<std::string> wf::config_backend_t::get_xml_dirs() const
 
     xmldirs.push_back(PLUGIN_XML_DIR);
     return xmldirs;
+}
+
+bool wf::config_backend_t::reload_config_metadata(config::config_manager_t& config)
+{
+    return false;
+}
+
+bool wf::config_backend_t::reload_config(config::config_manager_t& config)
+{
+    return false;
 }
 }

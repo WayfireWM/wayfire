@@ -26,11 +26,6 @@ static void add_watch(int fd)
     wd_cfg_file = inotify_add_watch(fd, config_file.c_str(), IN_CLOSE_WRITE);
 }
 
-static void reload_config()
-{
-    wf::config::load_configuration_options_from_file(*cfg_manager, config_file);
-}
-
 static const char *CONFIG_FILE_ENV = "WAYFIRE_CONFIG_FILE";
 
 namespace wf
@@ -83,6 +78,17 @@ class dynamic_ini_config_t : public wf::config_backend_t
             inotify_evtsrc = wl_event_loop_add_fd(wl_display_get_event_loop(display),
                 inotify_fd, WL_EVENT_READABLE, handle_config_updated, this);
         }
+    }
+
+    bool reload_config_metadata(config::config_manager_t& config) override
+    {
+        wf::config::load_configuration_options_from_xml_dirs(config, get_xml_dirs());
+        return reload_config(config);
+    }
+
+    bool reload_config(config::config_manager_t& config) override
+    {
+        return wf::config::load_configuration_options_from_file(config, config_file);
     }
 
     std::string choose_cfg_file(const std::string& cmdline_cfg_file)
@@ -143,7 +149,7 @@ class dynamic_ini_config_t : public wf::config_backend_t
     void do_reload_config()
     {
         LOGD("Reloading configuration file now!");
-        reload_config();
+        this->reload_config(*cfg_manager);
         wf::reload_config_signal ev;
         wf::get_core().emit(&ev);
         check_auto_reload_option(); // Re-check auto-reload option after config has been reloaded

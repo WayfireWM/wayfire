@@ -322,6 +322,9 @@ class compositor_core_t : public wf::object_base_t, public signal::provider_t
      */
     virtual std::string get_xwayland_display() = 0;
 
+    /** Reload dynamic plugins from the current core/plugins option. */
+    virtual void reload_plugins() = 0;
+
     /**
      * Execute the given command in a POSIX shell. (/bin/sh)
      *

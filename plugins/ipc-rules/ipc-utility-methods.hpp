@@ -4,7 +4,10 @@
 #include "wayfire/plugins/ipc/ipc-method-repository.hpp"
 #include "wayfire/debug.hpp"
 #include "wayfire/signal-definitions.hpp"
+#include "wayfire/config-backend.hpp"
 #include <set>
+#include <cstdlib>
+#include <filesystem>
 #include <wayfire/plugin.hpp>
 #include <wayfire/nonstd/wlroots-full.hpp>
 #include <wayfire/output-layout.hpp>
@@ -33,6 +36,8 @@ class ipc_rules_utility_methods_t
         method_repository->register_method("wayfire/get-config-option", get_config_option);
         method_repository->register_method("wayfire/list-config-options", list_config_options);
         method_repository->register_method("wayfire/set-config-options", set_config_options);
+        method_repository->register_method("wayfire/reload-config-metadata", reload_config_metadata);
+        method_repository->register_method("wayfire/reload-plugins", reload_plugins);
         method_repository->register_method("wayfire/get-keyboard-state", get_kb_state);
         method_repository->register_method("wayfire/set-keyboard-state", set_kb_state);
     }
@@ -44,7 +49,9 @@ class ipc_rules_utility_methods_t
         method_repository->unregister_method("wayfire/destroy-headless-output");
         method_repository->unregister_method("wayfire/get-config-option");
         method_repository->unregister_method("wayfire/list-config-options");
-        method_repository->unregister_method("wayfire/set-config-option");
+        method_repository->unregister_method("wayfire/set-config-options");
+        method_repository->unregister_method("wayfire/reload-config-metadata");
+        method_repository->unregister_method("wayfire/reload-plugins");
         method_repository->unregister_method("wayfire/get-keyboard-state");
         method_repository->unregister_method("wayfire/set-keyboard-state");
     }
@@ -53,14 +60,50 @@ class ipc_rules_utility_methods_t
     {
         wf::json_t response;
 
-        response["api-version"]    = WAYFIRE_API_ABI_VERSION;
-        response["plugin-path"]    = PLUGIN_PATH;
-        response["plugin-xml-dir"] = PLUGIN_XML_DIR;
+        response["wayfire-version"] = WAYFIRE_VERSION;
+        response["api-version"]     = WAYFIRE_API_ABI_VERSION;
+        response["plugin-path"]     = PLUGIN_PATH;
+        response["plugin-xml-dir"]  = PLUGIN_XML_DIR;
         response["xwayland-support"] = WF_HAS_XWAYLAND;
+
+        std::filesystem::path xdg_data_home;
+        if (char *data_home = std::getenv("XDG_DATA_HOME"))
+        {
+            xdg_data_home = data_home;
+        } else if (char *home = std::getenv("HOME"))
+        {
+            xdg_data_home = std::filesystem::path(home) / ".local" / "share";
+        }
+
+        response["external-plugin-path"] = xdg_data_home.empty() ? "" :
+            (xdg_data_home / "wayfire" / "plugins").string();
+        response["external-plugin-xml-dir"] = xdg_data_home.empty() ? "" :
+            (xdg_data_home / "wayfire" / "metadata").string();
+        response["managed-install-prefix"] = xdg_data_home.empty() ? "" :
+            (xdg_data_home / "wayfire" / "plugin-manager" / "install").string();
 
         response["build-commit"] = wf::version::git_commit;
         response["build-branch"] = wf::version::git_branch;
         return response;
+    };
+
+    wf::ipc::method_callback reload_config_metadata = [=] (wf::json_t)
+    {
+        auto& core = wf::get_core();
+        if (!core.config_backend->reload_config_metadata(*core.config))
+        {
+            return wf::ipc::json_error("The current config backend does not support metadata reload");
+        }
+
+        reload_config_signal event;
+        core.emit(&event);
+        return wf::ipc::json_ok();
+    };
+
+    wf::ipc::method_callback reload_plugins = [=] (wf::json_t)
+    {
+        wf::get_core().reload_plugins();
+        return wf::ipc::json_ok();
     };
 
     wf::ipc::method_callback create_headless_output = [=] (const wf::json_t& data)

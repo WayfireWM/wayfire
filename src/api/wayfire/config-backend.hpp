@@ -51,6 +51,16 @@ class config_backend_t
     virtual std::shared_ptr<config::section_t> get_input_device_section(
         std::string const & prefix, wlr_input_device *device);
 
+    /**
+     * Reload option metadata, for example after installing external plugin XML
+     * files. Backends which support this should merge newly discovered options
+     * into @config and then reload user values for these options.
+     */
+    virtual bool reload_config_metadata(config::config_manager_t& config);
+
+    /** Reload option values from the backend's current source. */
+    virtual bool reload_config(config::config_manager_t& config);
+
     virtual ~config_backend_t() = default;
 
   protected:
