@@ -106,6 +106,11 @@ This is the default if they are not present on your system.
 
 Installing [wf-shell](https://github.com/WayfireWM/wf-shell) is recommended for a complete experience.
 
+External plugins can be managed with `wayfire-plugin`. See
+[`docs/wayfire-plugin.md`](docs/wayfire-plugin.md) for user instructions and
+[`docs/wayfire-plugin-author.md`](docs/wayfire-plugin-author.md) for plugin
+author requirements.
+
 ###### Arch Linux
 
 [wayfire](https://aur.archlinux.org/packages/wayfire/) and [wayfire-git] are available in the [AUR].
