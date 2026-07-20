@@ -242,8 +242,12 @@ struct swapchain_damage_manager_t
 
     bool force_next_frame = false;
 
-    // Set when new content was damaged, cleared when a frame (composited or direct scanout) is presented.
     // Tracks whether a new frame is needed at all.
+    // Set when new content was damaged, cleared when a frame (composited or direct scanout) is presented.
+    // We cannot use the empty damage ring for this check, because the ring is only cleared for 'regular'
+    // composited frames. Direct scanout does not clear the ring: the compositor's own render buffers are
+    // not updated during scanout, so the accumulated damage must be kept to prevent corrupted frames
+    // when transitioning from scanout to compositing.
     bool pending_frame_request = false;
 
     /**
@@ -1200,7 +1204,7 @@ class wf::render_manager::impl
         effects->run_effects(OUTPUT_EFFECT_PRE);
         effects->run_effects(OUTPUT_EFFECT_DAMAGE);
 
-        // Optimization: the output doesn't need a new frame (so isn't damaged), so we can
+        // Optimization: the output doesn't need a new frame, so we can
         // just skip the whole repaint
         if (!damage_manager->should_repaint())
         {
