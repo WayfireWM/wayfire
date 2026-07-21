@@ -351,7 +351,7 @@ class workspace_switch_t
 }
 }
 
-class vswitch : public wf::per_output_plugin_instance_t
+class vswitch : public wf::vswitch::per_output_vswitch_handler_t
 {
   private:
 
@@ -400,40 +400,42 @@ class vswitch : public wf::per_output_plugin_instance_t
             [=] () { output->deactivate_plugin(&grab_interface); });
 
         bindings = std::make_unique<wf::vswitch::control_bindings_t>(output);
-        bindings->setup([this] (wf::point_t delta, wayfire_toplevel_view view, bool only_view)
+        bindings->setup(this);
+    }
+
+    bool handle_transition(wf::point_t delta, wayfire_toplevel_view view, bool only_view) override
+    {
+        // Do not switch workspace with sticky view, they are on all
+        // workspaces anyway
+        if (view && view->sticky)
         {
-            // Do not switch workspace with sticky view, they are on all
-            // workspaces anyway
-            if (view && view->sticky)
+            view = nullptr;
+        }
+
+        if (this->set_capabilities(wf::CAPABILITY_MANAGE_DESKTOP))
+        {
+            if (delta == wf::point_t{0, 0})
             {
-                view = nullptr;
+                // Consume input event
+                return true;
             }
 
-            if (this->set_capabilities(wf::CAPABILITY_MANAGE_DESKTOP))
+            if (only_view && view)
             {
-                if (delta == wf::point_t{0, 0})
+                if (!view->get_wset())
                 {
-                    // Consume input event
-                    return true;
+                    return false;
                 }
 
-                if (only_view && view)
-                {
-                    if (!view->get_wset())
-                    {
-                        return false;
-                    }
-
-                    wf::vswitch::move_view(view, delta, true);
-                    return true;
-                }
-
-                return add_direction(delta, view);
-            } else
-            {
-                return false;
+                wf::vswitch::move_view(view, delta, true);
+                return true;
             }
-        });
+
+            return add_direction(delta, view);
+        } else
+        {
+            return false;
+        }
     }
 
     inline bool is_active()
@@ -523,6 +525,7 @@ class vswitch : public wf::per_output_plugin_instance_t
             return;
         }
 
+        last_ws = ev->old_viewport;
         if (is_active())
         {
             ev->carried_out = add_direction(ev->new_viewport - ev->old_viewport);
