@@ -130,6 +130,7 @@ struct swapchain_damage_manager_t
 
         frame_damage |= region;
         wlr_damage_ring_add(&damage_ring, region.to_pixman());
+        pending_frame_request = true;
         if (repaint)
         {
             schedule_repaint();
@@ -146,6 +147,7 @@ struct swapchain_damage_manager_t
         /* Wlroots expects damage after scaling */
         frame_damage |= box;
         wlr_damage_ring_add_box(&damage_ring, &box);
+        pending_frame_request = true;
         if (repaint)
         {
             schedule_repaint();
@@ -239,24 +241,44 @@ struct swapchain_damage_manager_t
     }
 
     bool force_next_frame = false;
+
+    // Tracks whether a new frame is needed at all.
+    // Set when new content was damaged, cleared when a frame (composited or direct scanout) is presented.
+    // We cannot use the empty damage ring for this check, because the ring is only cleared for 'regular'
+    // composited frames. Direct scanout does not clear the ring: the compositor's own render buffers are
+    // not updated during scanout, so the accumulated damage must be kept to prevent corrupted frames
+    // when transitioning from scanout to compositing.
+    bool pending_frame_request = false;
+
+    /**
+     * Check whether a new frame should be produced for the output.
+     */
+    bool should_repaint() const
+    {
+        return force_next_frame || output->needs_frame || pending_frame_request ||
+               (constant_redraw_counter > 0);
+    }
+
+    /**
+     * Notify the damage manager that a new frame is about to be presented.
+     */
+    void frame_started()
+    {
+        force_next_frame = false;
+        pending_frame_request = false;
+    }
+
     /**
      * Start rendering a new frame.
-     * If the operation could not be started, or if a new frame is not needed, the function returns false.
-     * If the operation succeeds, true is returned, and the output (E)GL context is bound.
+     * The caller is responsible for checking that a new frame is needed (should_repaint()).
+     * If the operation could not be started, the function returns null.
+     * If the operation succeeds, a frame object is returned, and the output (E)GL context is bound.
      */
     std::unique_ptr<frame_object_t> start_frame()
     {
         auto buffer_extents = this->get_buffer_extents();
         pixman_region32_intersect_rect(&damage_ring.current, &damage_ring.current,
             buffer_extents.x, buffer_extents.y, buffer_extents.width, buffer_extents.height);
-        const bool needs_swap = force_next_frame | output->needs_frame |
-            pixman_region32_not_empty(&damage_ring.current) | (constant_redraw_counter > 0);
-        force_next_frame = false;
-
-        if (!needs_swap)
-        {
-            return {};
-        }
 
         auto next_frame = std::make_unique<frame_object_t>();
         next_frame->state.committed |= WLR_OUTPUT_STATE_DAMAGE;
@@ -1182,6 +1204,15 @@ class wf::render_manager::impl
         effects->run_effects(OUTPUT_EFFECT_PRE);
         effects->run_effects(OUTPUT_EFFECT_DAMAGE);
 
+        // Optimization: the output doesn't need a new frame, so we can
+        // just skip the whole repaint
+        if (!damage_manager->should_repaint())
+        {
+            delay_manager->skip_frame();
+            return;
+        }
+
+        damage_manager->frame_started();
         if (do_direct_scanout())
         {
             // Yet another optimization: if we can directly scanout, we should
@@ -1192,8 +1223,6 @@ class wf::render_manager::impl
         auto next_frame = damage_manager->start_frame();
         if (!next_frame)
         {
-            // Optimization: the output doesn't need a new frame (so isn't damaged), so we can
-            // just skip the whole repaint
             delay_manager->skip_frame();
             return;
         }
