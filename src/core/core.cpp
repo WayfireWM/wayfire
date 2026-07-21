@@ -892,3 +892,11 @@ std::shared_ptr<wf::config::option_base_t> wf::detail::load_raw_option(const std
 {
     return wf::get_core().config->get_option(name);
 }
+
+void wf::compositor_core_impl_t::reload_plugins()
+{
+    if (plugin_mgr)
+    {
+        plugin_mgr->reload_dynamic_plugins();
+    }
+}

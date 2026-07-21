@@ -75,6 +75,7 @@ class compositor_core_impl_t : public compositor_core_t
     virtual wlr_cursor *get_wlr_cursor() override;
 
     std::string get_xwayland_display() override;
+    void reload_plugins() override;
     pid_t run(std::string command) override;
     void shutdown() override;
     compositor_state_t get_current_state() override;
