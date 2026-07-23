@@ -36,10 +36,10 @@ wf::geometry_t get_bbox_for_node(scene::node_t *node, wf::geometry_t box)
     const auto p4 = node->to_global(
         wf::pointf_t(box.x + box.width, box.y + box.height));
 
-    const double x1 = std::floor(std::min({p1.x, p2.x, p3.x, p4.x}));
-    const double x2 = std::ceil(std::max({p1.x, p2.x, p3.x, p4.x}));
-    const double y1 = std::floor(std::min({p1.y, p2.y, p3.y, p4.y}));
-    const double y2 = std::ceil(std::max({p1.y, p2.y, p3.y, p4.y}));
+    const double x1 = std::min({p1.x, p2.x, p3.x, p4.x});
+    const double x2 = std::max({p1.x, p2.x, p3.x, p4.x});
+    const double y1 = std::min({p1.y, p2.y, p3.y, p4.y});
+    const double y2 = std::max({p1.y, p2.y, p3.y, p4.y});
     return {x1, y1, x2 - x1, y2 - y1};
 }
 
@@ -651,6 +651,24 @@ void transformer_base_node_t::release_buffers()
 transformer_base_node_t::~transformer_base_node_t()
 {
     release_buffers();
+}
+
+std::shared_ptr<wf::texture_t> transformer_base_node_t::zero_copy_texture(
+    wf::dimensionsf_t *out_logical_size) const
+{
+    if (get_children().size() == 1)
+    {
+        auto child = get_children().front().get();
+        if (auto zcopy = dynamic_cast<zero_copy_texturable_node_t*>(child))
+        {
+            if (auto tex = zcopy->to_texture(out_logical_size))
+            {
+                return tex;
+            }
+        }
+    }
+
+    return nullptr;
 }
 } // namespace scene
 }

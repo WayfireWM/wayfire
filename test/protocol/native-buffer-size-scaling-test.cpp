@@ -6,12 +6,51 @@
 #include <wayfire/output-layout.hpp>
 #include <wayfire/signal-definitions.hpp>
 #include <wayfire/toplevel-view.hpp>
+#include <wayfire/view-transform.hpp>
 
 #include <algorithm>
 #include <vector>
 
 #include "../support/headless-core-harness.hpp"
 #include "../support/wayland-xdg-client.hpp"
+
+namespace
+{
+class logical_size_transformer_t : public wf::scene::transformer_base_node_t
+{
+  public:
+    logical_size_transformer_t() : transformer_base_node_t(false)
+    {}
+
+    std::string stringify() const override
+    {
+        return "logical-size-test-transformer";
+    }
+
+    class render_instance_t :
+        public wf::scene::transformer_render_instance_t<logical_size_transformer_t>
+    {
+      public:
+        using transformer_render_instance_t::transformer_render_instance_t;
+
+        void render(const wf::scene::render_instruction_t& data) override
+        {
+            wf::dimensionsf_t logical_size;
+            auto texture  = get_texture(data.target.scale, &logical_size);
+            auto geometry = wf::construct_box(
+                wf::origin(self->get_children_bounding_box()), logical_size);
+            geometry = data.target.aligned_geometry_from_geometry_box(geometry);
+            data.pass->add_texture(texture, data.target, geometry, data.damage);
+        }
+    };
+
+    void gen_render_instances(std::vector<wf::scene::render_instance_uptr>& instances,
+        wf::scene::damage_callback push_damage, wf::output_t *shown_on) override
+    {
+        instances.push_back(std::make_unique<render_instance_t>(this, push_damage, shown_on));
+    }
+};
+}
 
 TEST_CASE("fractional-scale rounded client buffers render pixel-aligned")
 {
@@ -95,6 +134,18 @@ TEST_CASE("fractional-scale rounded client buffers render pixel-aligned")
         view->get_geometry().height == logical_height;
     }));
 
+    SUBCASE("direct surface path")
+    {
+        CHECK(view->get_transformed_node()->get_transformer("logical-size-test-transformer") == nullptr);
+    }
+
+    SUBCASE("transformed zero-copy path")
+    {
+        auto transformer = std::make_shared<logical_size_transformer_t>();
+        view->get_transformed_node()->add_transformer(transformer, wf::TRANSFORMER_HIGHLEVEL,
+            "logical-size-test-transformer");
+    }
+
     auto output_pixels = harness.capture_output_pixels();
     const int output_width = output->handle->width;
     const int output_height = output->handle->height;
@@ -136,12 +187,18 @@ TEST_CASE("fractional-scale rounded client buffers render pixel-aligned")
     REQUIRE(max_y >= min_y);
     const int expected_x = static_cast<int>(std::floor(view_x * output->get_scale()));
     const int expected_y = static_cast<int>(std::floor(view_y * output->get_scale()));
+    const int bounding_width = static_cast<int>(std::ceil(
+        (view_x + logical_width) * output->get_scale())) - expected_x;
+    const int bounding_height = static_cast<int>(std::ceil(
+        (view_y + logical_height) * output->get_scale())) - expected_y;
 
     CHECK(min_x == expected_x);
     CHECK(min_y == expected_y);
-    CHECK(max_x - min_x + 1 == buffer_width);
-    CHECK(max_y - min_y + 1 == buffer_height);
+    CHECK(max_x - min_x + 1 == std::min(buffer_width, bounding_width));
+    CHECK(max_y - min_y + 1 == std::min(buffer_height, bounding_height));
     CHECK(is_background(output_pixels[expected_y * output_width + expected_x - 1]));
     CHECK(is_background(output_pixels[(expected_y - 1) * output_width + expected_x]));
+    CHECK(is_background(output_pixels[expected_y * output_width + max_x + 1]));
+    CHECK(is_background(output_pixels[(max_y + 1) * output_width + expected_x]));
     CHECK(mixed_pixels == 0);
 }

@@ -285,7 +285,7 @@ class node_t : public std::enable_shared_from_this<node_t>,
      * node. It is simply the bounding box of the bounding boxes of the children
      * as reported by their get_bounding_box() method.
      */
-    wf::geometry_t get_children_bounding_box();
+    wf::geometry_t get_children_bounding_box() const;
 
     /**
      * Structure nodes are special nodes which core usually creates when Wayfire

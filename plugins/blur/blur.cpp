@@ -207,12 +207,8 @@ class blur_render_instance_t : public transformer_render_instance_t<blur_node_t>
         auto bounding_box = self->get_bounding_box();
         data.pass->custom_gles_subpass([&]
         {
-            auto contents = get_texture(data.target.scale);
-            const bool is_zerocopy = (contents->get_wlr_texture() == self->inner_content.get_texture());
-            double render_width    = is_zerocopy ? self->inner_content.get_size().width / data.target.scale :
-                bounding_box.width;
-            double render_height = is_zerocopy ? self->inner_content.get_size().height / data.target.scale :
-                bounding_box.height;
+            wf::dimensionsf_t render_size;
+            auto contents = get_texture(data.target.scale, &render_size);
 
             auto tex = wf::gles_texture_t{contents};
             if (!data.damage.empty())
@@ -220,10 +216,7 @@ class blur_render_instance_t : public transformer_render_instance_t<blur_node_t>
                 auto translucent_damage = calculate_translucent_damage(data.target, data.damage);
                 self->provider()->prepare_blur(data.target, translucent_damage);
 
-                wf::geometry_t render_geometry = {
-                    bounding_box.x, bounding_box.y, render_width, render_height
-                };
-
+                wf::geometry_t render_geometry = wf::construct_box(wf::origin(bounding_box), render_size);
                 render_geometry = data.target.aligned_geometry_from_geometry_box(render_geometry);
                 self->provider()->render(tex, render_geometry, data.damage, data.target, data.target);
             }

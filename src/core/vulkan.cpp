@@ -554,14 +554,22 @@ std::pair<VkPipelineLayout, VkPipeline> graphics_pipeline_t::pipeline_for(const 
     return {layout, pipeline};
 }
 
-glm::mat4 render_target_transform(const wf::render_target_t& target)
-
+glm::mat4 render_target_transform(const wf::render_target_t& target, bool aligned)
 {
-    glm::mat4 ortho = glm::ortho(
-        1.0f * target.geometry.x,
-        1.0f * target.geometry.x + 1.0f * target.geometry.width,
-        1.0f * target.geometry.y,
-        1.0f * target.geometry.y + 1.0f * target.geometry.height);
+    glm::mat4 ortho;
+    if (aligned)
+    {
+        ortho = glm::ortho(0.0f, (float)target.get_size().width, (float)target.get_size().height, 0.0f) *
+            glm::scale(glm::mat4(1.0), glm::vec3(target.scale, target.scale, 1.0)) *
+            glm::translate(glm::mat4(1.0), glm::vec3(-target.geometry.x, -target.geometry.y, 1.0));
+    } else
+    {
+        ortho = glm::ortho(
+            1.0f * target.geometry.x,
+            1.0f * target.geometry.x + 1.0f * target.geometry.width,
+            1.0f * target.geometry.y,
+            1.0f * target.geometry.y + 1.0f * target.geometry.height);
+    }
 
     ortho[1][1] *= -1; // Invert Y axis to match Vulkan's coordinate system
     return ortho * gles::render_target_gl_to_framebuffer(target);
