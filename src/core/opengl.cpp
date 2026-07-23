@@ -412,6 +412,17 @@ void wf::gles::render_target_logic_scissor(const wf::render_target_t& target, co
         target.framebuffer_box_from_geometry_box(geometry_from_pixman_box(box)));
 }
 
+void wf::gles::for_each_scissor_rect(const wf::render_target_t& target, const wf::regionf_t& damage,
+    const std::function<void()> & callback)
+{
+    auto buffer_damage = target.framebuffer_region_from_geometry_region(damage);
+    for (const auto& box : buffer_damage)
+    {
+        wf::gles::scissor_render_buffer(target, wlr_box_from_pixman_box(box));
+        callback();
+    }
+}
+
 /* look up the actual values of wl_output_transform enum
  * All _flipped transforms have values (regular_transform + 4) */
 glm::mat4 get_output_matrix_from_transform(wl_output_transform transform)

@@ -3,6 +3,7 @@
 
 #include "wayfire/render.hpp"
 #include <GLES3/gl3.h>
+#include <functional>
 
 #include <wayfire/config/types.hpp>
 #include <wayfire/util.hpp>
@@ -76,7 +77,18 @@ glm::mat4 output_transform(const render_target_t& target);
  * @param box The scissor box, in the same logical coordinate system as the
  *   render target's geometry.
  */
+[[deprecated("Use for_each_scissor_rect() instead")]]
 void render_target_logic_scissor(const render_target_t& target, const pixman_box64f_t& box);
+
+/**
+ * Iterate over the framebuffer rectangles covering the given logical damage
+ * region, set each rectangle as the scissor and call the callback.
+ *
+ * Typical usage:
+ * for_each_scissor_rect(target, damage, [&] { glDrawArrays(...); });
+ */
+void for_each_scissor_rect(const render_target_t& target, const regionf_t& damage,
+    const std::function<void()> & callback);
 
 /**
  * Ensure that the default EGL/GLES context is current.

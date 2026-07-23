@@ -292,13 +292,12 @@ class view_2d_render_instance_t :
             wf::gles::bind_render_buffer(data.target);
             auto ortho = wf::gles::render_target_orthographic_projection(data.target);
 
-            for (auto& box : data.damage)
+            wf::gles::for_each_scissor_rect(data.target, data.damage, [&]
             {
-                wf::gles::render_target_logic_scissor(data.target, box);
                 // OpenGL::clear({1, 0, 0, 1});
                 OpenGL::render_transformed_texture(tex, bbox, ortho * flat_transform,
                     glm::vec4{1.0, 1.0, 1.0, self->get_alpha()});
-            }
+            });
         });
 
 #if WF_HAS_VULKANFX
@@ -543,12 +542,11 @@ class view_3d_render_instance_t :
         {
             auto tex = wf::gles_texture_t{get_texture(data.target.scale)};
             wf::gles::bind_render_buffer(data.target);
-            for (auto& box : data.damage)
+            wf::gles::for_each_scissor_rect(data.target, data.damage, [&]
             {
-                wf::gles::render_target_logic_scissor(data.target, box);
                 OpenGL::render_transformed_texture(tex, quad.geometry, {},
                     transform, self->color);
-            }
+            });
         });
 
 #if WF_HAS_VULKANFX
