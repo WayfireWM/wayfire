@@ -183,7 +183,7 @@ void wf::compositor_core_impl_t::init()
 
     /* decoration_manager setup */
     protocols.decorator_manager = wlr_server_decoration_manager_create(display);
-    protocols.xdg_decorator     = wlr_xdg_decoration_manager_v1_create(display);
+    protocols.xdg_decorator     = wlr_xdg_decoration_manager_v1_create(display, 2);
     init_xdg_decoration_handlers();
 
     protocols.vkbd_manager = wlr_virtual_keyboard_manager_v1_create(display);
