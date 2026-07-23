@@ -1031,7 +1031,12 @@ struct output_layout_output_t
     void render_output(wlr_texture *texture)
     {
         // TODO: use render-manager's functions, apply gamma, use our normal pass functions.
-        struct wlr_render_pass *pass = wlr_output_begin_render_pass(handle, &pending_state.pending, NULL);
+        auto render_point = output->render->next_explicit_sync_render_point();
+        wlr_buffer_pass_options pass_options{};
+        pass_options.signal_timeline = render_point.timeline;
+        pass_options.signal_point    = render_point.point;
+        struct wlr_render_pass *pass = wlr_output_begin_render_pass(
+            handle, &pending_state.pending, &pass_options);
         if (pass == NULL)
         {
             return;
@@ -1046,15 +1051,36 @@ struct output_layout_output_t
         opts.clip    = NULL;
         opts.src_box = {0, 0, 0, 0};
         opts.dst_box = {0, 0, (int)handle->width, (int)handle->height};
-        opts.transform = WL_OUTPUT_TRANSFORM_NORMAL;
+        opts.transform     = WL_OUTPUT_TRANSFORM_NORMAL;
+        opts.wait_timeline = source_wait_point.timeline;
+        opts.wait_point    = source_wait_point.point;
         wlr_render_pass_add_texture(pass, &opts);
 
-        wlr_render_pass_submit(pass);
+        if (!wlr_render_pass_submit(pass))
+        {
+            pending_state.reset();
+            return;
+        }
+
+        if (render_point)
+        {
+            wlr_output_state_set_wait_timeline(
+                &pending_state.pending, render_point.timeline, render_point.point);
+        }
+
+        auto release_point = output->render->next_explicit_sync_release_point();
+        if (release_point)
+        {
+            wlr_output_state_set_signal_timeline(
+                &pending_state.pending, release_point.timeline, release_point.point);
+        }
+
         pending_state.commit(handle);
     }
 
     /* Load output contents and render them */
     wlr_buffer *source_back_buffer = NULL;
+    wf::explicit_sync_point_t source_wait_point;
 
     void handle_frame()
     {
@@ -1148,6 +1174,10 @@ struct output_layout_output_t
 
                 source_back_buffer = ev->state->buffer;
                 wlr_buffer_lock(ev->state->buffer);
+                source_wait_point = {
+                    ev->state->wait_timeline,
+                    ev->state->wait_point,
+                };
             }
 
             /* The mirrored output was repainted, schedule repaint
@@ -1173,6 +1203,8 @@ struct output_layout_output_t
             wlr_buffer_unlock(source_back_buffer);
             source_back_buffer = NULL;
         }
+
+        source_wait_point = {};
 
         on_mirrored_frame.disconnect();
         on_frame.disconnect();

@@ -15,10 +15,32 @@
 #include <wayfire/region.hpp>
 #include <optional>
 
+struct wlr_drm_syncobj_timeline;
+
 namespace wf
 {
 class output_t;
 struct auxilliary_buffer_t;
+
+/** An owned DRM synchronization timeline point. */
+struct explicit_sync_point_t
+{
+    wlr_drm_syncobj_timeline *timeline = nullptr;
+    uint64_t point = 0;
+
+    explicit_sync_point_t() = default;
+    explicit_sync_point_t(wlr_drm_syncobj_timeline *timeline, uint64_t point);
+    explicit_sync_point_t(const explicit_sync_point_t& other);
+    explicit_sync_point_t(explicit_sync_point_t&& other);
+    explicit_sync_point_t& operator =(const explicit_sync_point_t& other);
+    explicit_sync_point_t& operator =(explicit_sync_point_t&& other);
+    ~explicit_sync_point_t();
+
+    explicit operator bool() const
+    {
+        return timeline != nullptr;
+    }
+};
 
 namespace vk
 {
@@ -146,6 +168,12 @@ class texture_t : public wf::signal::provider_t
      */
     void set_color_transform(const color_transform_t& ct);
 
+    /** Get the explicit synchronization point which must be awaited before sampling. */
+    const explicit_sync_point_t& get_wait_timeline() const;
+
+    /** Set the explicit synchronization point which must be awaited before sampling. */
+    void set_wait_timeline(const explicit_sync_point_t& point);
+
     /**
      * Manage an existing wlr_texture created from a wlr_buffer.
      * We keep the texture alive by keeping the associated buffer alive.
@@ -192,6 +220,7 @@ class texture_t : public wf::signal::provider_t
     wl_output_transform transform = WL_OUTPUT_TRANSFORM_NORMAL;
     std::optional<wlr_scale_filter_mode> filter_mode = {};
     color_transform_t color_transform;
+    explicit_sync_point_t wait_point;
 };
 
 /**

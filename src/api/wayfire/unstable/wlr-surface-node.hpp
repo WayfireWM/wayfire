@@ -17,10 +17,12 @@ struct surface_state_t
     // state is current.
     wlr_buffer *current_buffer = nullptr;
     wlr_texture *texture; // The texture of the wlr_client_buffer
+    wf::explicit_sync_point_t acquire_point;
 
     wf::regionf_t accumulated_damage;
     wf::regionf_t opaque_region;
     wf::dimensions_t size = {0, 0};
+    int32_t scale = 1;
     std::optional<wlr_fbox> src_viewport;
     wl_output_transform transform = WL_OUTPUT_TRANSFORM_NORMAL;
     wf::color_transform_t color_transform;
