@@ -239,6 +239,7 @@ void wf::scene::wlr_surface_node_t::apply_state(surface_state_t&& state)
 
     this->current_state = std::move(state);
     this->size_on_primary_output = new_size;
+    this->current_state.opaque_region &= get_render_geometry();
 
     wf::scene::damage_node(this, current_state.accumulated_damage);
     if (size_changed)
@@ -392,7 +393,7 @@ class wf::scene::wlr_surface_node_t::wlr_surface_render_instance_t : public rend
     void schedule_instructions(std::vector<render_instruction_t>& instructions,
         const wf::render_target_t& target, wf::regionf_t& damage) override
     {
-        wf::regionf_t our_damage = damage & self->get_render_geometry();
+        wf::regionf_t our_damage = damage & self->get_bounding_box();
         if (!our_damage.empty())
         {
             instructions.push_back(render_instruction_t{
@@ -534,7 +535,8 @@ wlr_surface*wf::scene::wlr_surface_node_t::get_surface() const
     return this->surface;
 }
 
-std::shared_ptr<wf::texture_t> wf::scene::wlr_surface_node_t::to_texture() const
+std::shared_ptr<wf::texture_t> wf::scene::wlr_surface_node_t::to_texture(
+    wf::dimensionsf_t *out_logical_size) const
 {
     if (this->current_state.current_buffer)
     {
@@ -542,6 +544,11 @@ std::shared_ptr<wf::texture_t> wf::scene::wlr_surface_node_t::to_texture() const
         tex->set_source_box(current_state.src_viewport);
         tex->set_transform(current_state.transform);
         tex->set_color_transform(current_state.color_transform);
+        if (out_logical_size)
+        {
+            *out_logical_size = size_on_primary_output;
+        }
+
         return tex;
     }
 

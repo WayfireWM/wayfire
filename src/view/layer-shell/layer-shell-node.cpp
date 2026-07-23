@@ -93,7 +93,8 @@ wf::regionf_t wf::layer_shell_node_t::get_opaque_region() const
     return {};
 }
 
-std::shared_ptr<wf::texture_t> wf::layer_shell_node_t::to_texture() const
+std::shared_ptr<wf::texture_t> wf::layer_shell_node_t::to_texture(
+    wf::dimensionsf_t *out_logical_size) const
 {
     auto view = _view.lock();
     if (!view || !view->is_mapped() || (get_children().size() != 1))
@@ -103,7 +104,7 @@ std::shared_ptr<wf::texture_t> wf::layer_shell_node_t::to_texture() const
 
     if (auto texturable = dynamic_cast<zero_copy_texturable_node_t*>(get_children().front().get()))
     {
-        return texturable->to_texture();
+        return texturable->to_texture(out_logical_size);
     }
 
     return nullptr;

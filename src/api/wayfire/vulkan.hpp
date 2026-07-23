@@ -458,8 +458,13 @@ glm::mat4 geometry_mat(const wf::geometry_t& box);
 
 /**
  * Helper method to calculate a transformation from logical render target coordinates to final NDC space.
+ *
+ * @param aligned Here aligned is to be understood as
+ *   aligned = target.aligned_geometry_from_geometry_box(target.geometry).
+ *   When set to true, the orthographic projection will map the aligned geometry to the final NDC space.
+ *   When set to false, it will map the unaligned target.geometry to the NDC space.
  */
-glm::mat4 render_target_transform(const wf::render_target_t& target);
+glm::mat4 render_target_transform(const wf::render_target_t& target, bool aligned = false);
 }
 
 /**

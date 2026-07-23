@@ -366,11 +366,10 @@ glm::mat4 wf::gles::render_target_orthographic_projection(const wf::render_targe
 
 glm::mat4 wf::gles::render_target_aligned_orthographic_projection(const wf::render_target_t& target)
 {
-    auto aligned = target.aligned_geometry_from_geometry_box(target.geometry);
-    auto ortho   = glm::ortho((float)aligned.x, (float)(aligned.x + aligned.width),
-        (float)(aligned.y + aligned.height), (float)aligned.y);
-
-    return gles::render_target_gl_to_framebuffer(target) * ortho;
+    return render_target_gl_to_framebuffer(target) *
+           glm::ortho(0.0f, (float)target.get_size().width, (float)target.get_size().height, 0.0f) *
+           glm::scale(glm::mat4(1.0), glm::vec3(target.scale, target.scale, 1.0)) *
+           glm::translate(glm::mat4(1.0), glm::vec3(-target.geometry.x, -target.geometry.y, 1.0));
 }
 
 glm::mat4 wf::gles::render_target_gl_to_framebuffer(const wf::render_target_t& target)

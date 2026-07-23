@@ -253,7 +253,7 @@ void node_t::gen_render_instances(std::vector<render_instance_uptr> & instances,
     }
 }
 
-wf::geometry_t node_t::get_children_bounding_box()
+wf::geometry_t node_t::get_children_bounding_box() const
 {
     if (children.empty())
     {

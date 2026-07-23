@@ -21,8 +21,11 @@ class zero_copy_texturable_node_t
     /**
      * Get a texture from the node without copying.
      * Note that this operation might fail for non-trivial transformers.
+     *
+     * @param out_logical_size If provided, the logical size of the returned texture is written here.
      */
-    virtual std::shared_ptr<wf::texture_t> to_texture() const
+    virtual std::shared_ptr<wf::texture_t> to_texture(
+        wf::dimensionsf_t *out_logical_size = nullptr) const
     {
         return nullptr;
     }
@@ -50,6 +53,15 @@ class transformer_base_node_t : public scene::floating_inner_node_t
 {
   public:
     using floating_inner_node_t::floating_inner_node_t;
+
+    /**
+     * Attempt to convert the children to a texture without copying.
+     * Works only if the node has a single child which supports zero-copy texture generation via @to_texture.
+     *
+     * @param out_logical_size If provided, the logical size of the returned texture is written here.
+     */
+    std::shared_ptr<wf::texture_t> zero_copy_texture(
+        wf::dimensionsf_t *out_logical_size = nullptr) const;
 
     uint32_t optimize_update(uint32_t flags) override;
 
@@ -94,23 +106,6 @@ template<class NodeType>
 class transformer_render_instance_t : public render_instance_t
 {
   protected:
-    std::shared_ptr<wf::texture_t> zero_copy_texture()
-    {
-        if (self->get_children().size() == 1)
-        {
-            auto child = self->get_children().front().get();
-            if (auto zcopy = dynamic_cast<zero_copy_texturable_node_t*>(child))
-            {
-                if (auto tex = zcopy->to_texture())
-                {
-                    return tex;
-                }
-            }
-        }
-
-        return nullptr;
-    }
-
     // A pointer to the transformer node this render instance belongs to.
     std::shared_ptr<NodeType> self;
 
@@ -128,19 +123,31 @@ class transformer_render_instance_t : public render_instance_t
      * @param scale The scale to use when generating the texture. The scale
      *   indicates how much bigger the temporary buffer should be than its logical
      *   size.
+     *
+     * @param out_logical_size If provided, the logical size of the texture is written to this pointer.
      */
-    std::shared_ptr<wf::texture_t> get_texture(float scale)
+    std::shared_ptr<wf::texture_t> get_texture(float scale, wf::dimensionsf_t *out_logical_size = nullptr)
     {
         // Optimization: if we have a single child (usually the surface root node)
         // and we can directly convert it to texture, we don't need a full render
         // pass.
-        if (auto tex = zero_copy_texture())
+        if (auto tex = self->zero_copy_texture(out_logical_size))
         {
             self->release_buffers();
             return tex;
         }
 
-        return self->get_updated_contents(self->get_children_bounding_box(), scale, children, _shown_on);
+        auto contents =
+            self->get_updated_contents(self->get_children_bounding_box(), scale, children, _shown_on);
+        if (out_logical_size)
+        {
+            *out_logical_size = wf::dimensionsf_t{
+                self->inner_content.get_size().width / scale,
+                self->inner_content.get_size().height / scale
+            };
+        }
+
+        return contents;
     }
 
     void presentation_feedback(wf::output_t *output) override
