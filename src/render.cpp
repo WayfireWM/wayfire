@@ -15,6 +15,50 @@
 constexpr float SDR_REFERENCE_WHITE_NITS = 203.0f;
 constexpr float PQ_MAX_NITS = 10000.0f;
 
+wf::explicit_sync_point_t::explicit_sync_point_t(
+    wlr_drm_syncobj_timeline *timeline, uint64_t point) :
+    timeline(timeline ? wlr_drm_syncobj_timeline_ref(timeline) : nullptr), point(point)
+{}
+
+wf::explicit_sync_point_t::explicit_sync_point_t(const explicit_sync_point_t& other) :
+    explicit_sync_point_t(other.timeline, other.point)
+{}
+
+wf::explicit_sync_point_t::explicit_sync_point_t(explicit_sync_point_t&& other)
+{
+    *this = std::move(other);
+}
+
+wf::explicit_sync_point_t& wf::explicit_sync_point_t::operator =(const explicit_sync_point_t& other)
+{
+    if (this != &other)
+    {
+        explicit_sync_point_t copy{other};
+        *this = std::move(copy);
+    }
+
+    return *this;
+}
+
+wf::explicit_sync_point_t& wf::explicit_sync_point_t::operator =(explicit_sync_point_t&& other)
+{
+    if (this != &other)
+    {
+        wlr_drm_syncobj_timeline_unref(timeline);
+        timeline = other.timeline;
+        point    = other.point;
+        other.timeline = nullptr;
+        other.point    = 0;
+    }
+
+    return *this;
+}
+
+wf::explicit_sync_point_t::~explicit_sync_point_t()
+{
+    wlr_drm_syncobj_timeline_unref(timeline);
+}
+
 static bool is_hdr_transfer_function(wlr_color_transfer_function tf)
 {
     return tf == WLR_COLOR_TRANSFER_FUNCTION_ST2084_PQ;
@@ -141,6 +185,16 @@ wf::color_transform_t wf::texture_t::get_color_transform() const
 void wf::texture_t::set_color_transform(const wf::color_transform_t& ct)
 {
     color_transform = ct;
+}
+
+const wf::explicit_sync_point_t& wf::texture_t::get_wait_timeline() const
+{
+    return wait_point;
+}
+
+void wf::texture_t::set_wait_timeline(const explicit_sync_point_t& point)
+{
+    wait_point = point;
 }
 
 std::shared_ptr<wf::texture_t> wf::texture_t::from_buffer(wlr_buffer *buffer, wlr_texture *texture)
@@ -870,6 +924,9 @@ void wf::render_pass_t::add_texture(const std::shared_ptr<wf::texture_t>& textur
     opts.clip    = fb_damage.to_pixman();
     opts.src_box = texture->get_source_box().value_or(wlr_fbox{0, 0, 0, 0});
     opts.dst_box = adjusted_target.framebuffer_texture_dst_box_from_geometry_box(geometry);
+    const auto& wait_point = texture->get_wait_timeline();
+    opts.wait_timeline = wait_point.timeline;
+    opts.wait_point    = wait_point.point;
 
     auto ct = texture->get_color_transform();
     wlr_color_primaries primaries{};

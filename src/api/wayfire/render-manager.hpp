@@ -188,6 +188,12 @@ class render_manager
      */
     void set_require_depth_buffer(bool require);
 
+    /** Reserve the next point on the output backend-release timeline. */
+    wf::explicit_sync_point_t next_explicit_sync_release_point();
+
+    /** Reserve the next point on the output render-completion timeline. */
+    wf::explicit_sync_point_t next_explicit_sync_render_point();
+
   public:
     class impl;
     std::unique_ptr<impl> pimpl;

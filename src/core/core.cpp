@@ -115,6 +115,18 @@ void wf::compositor_core_impl_t::init()
     /* Needed for subsurfaces */
     wlr_subcompositor_create(display);
 
+    int drm_fd = wlr_renderer_get_drm_fd(renderer);
+    if ((drm_fd >= 0) && renderer->features.timeline && backend->features.timeline)
+    {
+        if (!wlr_linux_drm_syncobj_manager_v1_create(display, 1, drm_fd))
+        {
+            LOGE("Failed to create linux-drm-syncobj-v1 manager");
+        }
+    } else
+    {
+        LOGI("Explicit synchronization is not supported by the renderer and backend");
+    }
+
     /* Legacy DRM */
     if (runtime_config.legacy_wl_drm &&
         wlr_renderer_get_texture_formats(renderer, WLR_BUFFER_CAP_DMABUF))

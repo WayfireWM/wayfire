@@ -31,6 +31,7 @@ extern "C"
 #include <wlr/render/swapchain.h>
 #include <wlr/render/allocator.h>
 #include <wlr/render/color.h>
+#include <wlr/render/drm_syncobj.h>
 
 #if WLR_HAS_GLES2_RENDERER
     #include <wlr/render/gles2.h>
@@ -50,6 +51,7 @@ extern "C"
 #include <wlr/types/wlr_viewporter.h>
 #include <wlr/types/wlr_color_management_v1.h>
 #include <wlr/types/wlr_color_representation_v1.h>
+#include <wlr/types/wlr_linux_drm_syncobj_v1.h>
 
 #include <wlr/types/wlr_damage_ring.h>
 #include <wlr/types/wlr_presentation_time.h>

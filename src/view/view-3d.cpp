@@ -663,7 +663,10 @@ std::shared_ptr<wf::texture_t> transformer_base_node_t::zero_copy_texture(
         {
             if (auto tex = zcopy->to_texture(out_logical_size))
             {
-                return tex;
+                if (!tex->get_wait_timeline())
+                {
+                    return tex;
+                }
             }
         }
     }
