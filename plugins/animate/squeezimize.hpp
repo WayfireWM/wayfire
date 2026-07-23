@@ -293,11 +293,10 @@ class squeezimize_transformer : public wf::scene::view_2d_transformer_t
                 self->program.uniform4f("src_box", src_box_pos);
                 self->program.uniform4f("target_box", target_box_pos);
                 self->program.set_active_texture(src_tex);
-                for (auto box : data.damage)
+                gles::for_each_scissor_rect(data.target, data.damage, [&]
                 {
-                    gles::render_target_logic_scissor(data.target, box);
                     GL_CALL(glDrawArrays(GL_TRIANGLE_FAN, 0, 4));
-                }
+                });
             });
         }
     };

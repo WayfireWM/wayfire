@@ -281,11 +281,10 @@ void wf_blur_base::render(wf::gles_texture_t src_tex, wf::geometry_t src_box, co
     /* Render it to target_fb */
     wf::gles::bind_render_buffer(target_fb);
 
-    for (const auto& box : damage)
+    wf::gles::for_each_scissor_rect(target_fb, damage, [&]
     {
-        wf::gles::render_target_logic_scissor(target_fb, box);
         GL_CALL(glDrawArrays(GL_TRIANGLE_FAN, 0, 4));
-    }
+    });
 
     /*
      * Disable stuff

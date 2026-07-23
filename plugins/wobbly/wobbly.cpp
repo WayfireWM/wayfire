@@ -1001,13 +1001,12 @@ class wobbly_render_instance_t :
         {
             auto tex = wf::gles_texture_t{this->get_texture(data.target.scale)};
             wf::gles::bind_render_buffer(data.target);
-            for (auto box : data.damage)
+            wf::gles::for_each_scissor_rect(data.target, data.damage, [&]
             {
-                wf::gles::render_target_logic_scissor(data.target, box);
                 wobbly_graphics::render_triangles(self->wobbly_program, tex,
                     wf::gles::render_target_aligned_orthographic_projection(data.target),
                     vert.data(), uv.data(), count_triangles);
-            }
+            });
         });
 
 #if WF_HAS_VULKANFX
