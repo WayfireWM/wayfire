@@ -25,6 +25,8 @@ struct plugin_manager_t
     plugin_manager_t();
     ~plugin_manager_t();
 
+    void start();
+
     void reload_dynamic_plugins();
     wf::wl_idle_call idle_reload_plugins;
     bool is_loading_plugin() const
