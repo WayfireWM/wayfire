@@ -96,7 +96,7 @@ install_data('metadata/my-plugin.xml',
   install_dir: get_option('prefix') / 'share' / 'wayfire' / 'metadata')
 ```
 
-Do not install external plugins to `wayfire.get_variable(pkgconfig: 'plugindir')` or metadata to `wayfire.get_variable(pkgconfig: 'metadatadir')`. Those variables describe the Wayfire installation, not the managed plugin prefix.
+`wayfire-plugin` supplies a temporary `wayfire.pc` during setup, build, and installation. Its `plugindir` and `metadatadir` variables point to the XDG user directories, so plugins using those variables remain user-writable. Other Wayfire pkg-config values are copied unchanged from the selected installation.
 
 Additional resources may be installed under the same prefix, for example:
 
@@ -113,4 +113,4 @@ The plugin `.so` must export the usual Wayfire plugin entry points. Using `DECLA
 DECLARE_WAYFIRE_PLUGIN(my_plugin_t);
 ```
 
-After installation, `wayfire-plugin` scans the managed prefix for plugin `.so` files and XML metadata, validates the required symbols, records the build in its registry, and asks the running compositor to reload metadata and plugins when IPC is available.
+After installation, `wayfire-plugin` reads Meson's install log, validates installed plugin `.so` files, and records all reported destinations in its registry. Destinations outside the managed prefix are recorded as absolute paths. The retained Meson build is used to uninstall those files when the plugin is removed. Files created by custom install scripts are not included in Meson's install log and may need to be removed manually.

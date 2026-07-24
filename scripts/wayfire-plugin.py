@@ -9,6 +9,7 @@ import re
 import shutil
 import subprocess
 import sys
+import tempfile
 from pathlib import Path
 from collections.abc import Sequence
 from typing import Any
@@ -108,6 +109,40 @@ def user_metadata_dir() -> Path:
 
 def managed_install_prefix() -> Path:
     return manager_root() / "install"
+
+
+def plugin_build_env(pkg_config_dir: Path) -> dict[str, str]:
+    pcfiledir = pkg_config_variable("pcfiledir", "")
+    wayfire_pc = Path(pcfiledir) / "wayfire.pc"
+    if not pcfiledir or not wayfire_pc.exists():
+        raise SystemExit("Could not locate the active wayfire.pc file")
+
+    overrides = {
+        "plugindir": str(user_plugin_dir()),
+        "metadatadir": str(user_metadata_dir()),
+    }
+    lines: list[str] = []
+    replaced: set[str] = set()
+    for line in wayfire_pc.read_text().splitlines():
+        name, separator, _value = line.partition("=")
+        if separator and name.strip() in overrides:
+            name = name.strip()
+            lines.append(f"{name}={overrides[name]}")
+            replaced.add(name)
+        else:
+            lines.append(line)
+
+    for name, value in overrides.items():
+        if name not in replaced:
+            lines.append(f"{name}={value}")
+
+    pkg_config_dir.mkdir(parents=True, exist_ok=True)
+    (pkg_config_dir / "wayfire.pc").write_text("\n".join(lines) + "\n")
+
+    env = os.environ.copy()
+    existing_path = env.get("PKG_CONFIG_PATH", "")
+    env["PKG_CONFIG_PATH"] = str(pkg_config_dir) + (os.pathsep + existing_path if existing_path else "")
+    return env
 
 
 def pkg_config_variable(name: str, default: str = "") -> str:
@@ -283,6 +318,37 @@ def scan_install_prefix(prefix: Path) -> tuple[list[Path], list[Path]]:
     return sorted(plugins), sorted(metadata)
 
 
+def read_meson_install_log(build_dir: Path) -> list[Path]:
+    install_log = build_dir / "meson-logs" / "install-log.txt"
+    if not install_log.exists():
+        return []
+
+    paths: list[Path] = []
+    for line in install_log.read_text().splitlines():
+        if line and not line.startswith("#"):
+            paths.append(Path(line))
+    return paths
+
+
+def classify_installed_files(paths: Sequence[Path]) -> tuple[list[Path], list[Path]]:
+    plugins = [
+        path for path in paths
+        if path.suffix == ".so" and path.name.startswith("lib") and path.parent.name == "wayfire"
+    ]
+    metadata = [
+        path for path in paths
+        if path.suffix == ".xml" and path.parent.name == "metadata" and path.parent.parent.name == "wayfire"
+    ]
+    return sorted(plugins), sorted(metadata)
+
+
+def registry_install_path(path: Path, install_prefix: Path) -> str:
+    try:
+        return str(path.relative_to(install_prefix))
+    except ValueError:
+        return str(path)
+
+
 def apply_placeholders(command: Sequence[str] | str, replacements: dict[str, str]) -> Sequence[str] | str:
     def replace(value: str) -> str:
         for key, replacement in replacements.items():
@@ -299,8 +365,9 @@ def run_manifest_command(
     command: Sequence[str] | str,
     source_dir: Path,
     replacements: dict[str, str],
+    env: dict[str, str],
 ) -> None:
-    run(apply_placeholders(command, replacements), cwd=source_dir)
+    run(apply_placeholders(command, replacements), cwd=source_dir, env=env)
 
 
 def exported_symbols(path: Path) -> str | None:
@@ -327,7 +394,7 @@ def configure_and_install(
     source_dir: Path,
     plugin_name: str,
     manifest: JsonDict,
-) -> tuple[Path, list[Path], list[Path]]:
+) -> tuple[Path, list[Path], list[Path], list[Path]]:
     build_dir = plugin_state_dir(plugin_name) / "build"
     if build_dir.exists():
         log_verbose(f"Removing previous build dir: {build_dir}")
@@ -351,35 +418,48 @@ def configure_and_install(
     build_command = commands.get("build")
     install_command = commands.get("install")
 
-    log_phase("Configuring plugin")
-    if setup_command:
-        log_verbose("Using manifest setup command")
-        run_manifest_command(setup_command, source_dir, replacements)
-    else:
-        log_verbose("Using default Meson setup command")
-        run(["meson", "setup", str(build_dir), str(source_dir), "--prefix", str(install_prefix)])
+    with tempfile.TemporaryDirectory(prefix="wayfire-plugin-pkgconfig-") as pkg_config_dir:
+        env = plugin_build_env(Path(pkg_config_dir))
+        log_verbose(f"Using temporary wayfire.pc from {pkg_config_dir}")
 
-    log_phase("Building plugin")
-    if build_command:
-        log_verbose("Using manifest build command")
-        run_manifest_command(build_command, source_dir, replacements)
-    else:
-        log_verbose("Using default Meson build command")
-        run(["meson", "compile", "-C", str(build_dir)])
+        log_phase("Configuring plugin")
+        if setup_command:
+            log_verbose("Using manifest setup command")
+            run_manifest_command(setup_command, source_dir, replacements, env)
+        else:
+            log_verbose("Using default Meson setup command")
+            run(
+                ["meson", "setup", str(build_dir), str(source_dir), "--prefix", str(install_prefix)],
+                env=env)
 
-    log_phase("Installing plugin")
-    if install_command:
-        log_verbose("Using manifest install command")
-        run_manifest_command(install_command, source_dir, replacements)
-    else:
-        log_verbose("Using default Meson install command")
-        run(["meson", "install", "-C", str(build_dir)])
+        log_phase("Building plugin")
+        if build_command:
+            log_verbose("Using manifest build command")
+            run_manifest_command(build_command, source_dir, replacements, env)
+        else:
+            log_verbose("Using default Meson build command")
+            run(["meson", "compile", "-C", str(build_dir)], env=env)
 
-    plugins, metadata = scan_install_prefix(install_prefix)
+        log_phase("Installing plugin")
+        if install_command:
+            log_verbose("Using manifest install command")
+            run_manifest_command(install_command, source_dir, replacements, env)
+        else:
+            log_verbose("Using default Meson install command")
+            run(["meson", "install", "-C", str(build_dir)], env=env)
+
+    installed = read_meson_install_log(build_dir)
+    if installed:
+        log_verbose(f"Found {len(installed)} paths in the Meson install log")
+        plugins, metadata = classify_installed_files(installed)
+    else:
+        log_verbose("No Meson install log found; scanning the managed prefix")
+        plugins, metadata = scan_install_prefix(install_prefix)
+        installed = [*plugins, *metadata]
     if not plugins:
         raise SystemExit("Build succeeded, but no Wayfire plugin .so files were installed")
     validate_plugins(plugins)
-    return install_prefix, plugins, metadata
+    return install_prefix, installed, plugins, metadata
 
 
 def running_wayfire_info() -> tuple[Any | None, JsonDict | str | None]:
@@ -477,10 +557,11 @@ def install_or_update(source: str, update: bool = False) -> None:
         print(f"{name} is up to date.")
         return
 
-    install_prefix, plugin_files, metadata_files = configure_and_install(source_dir, name, manifest)
+    install_prefix, all_files, plugin_files, metadata_files = configure_and_install(source_dir, name, manifest)
     installed_files = {
-        "plugins": sorted(str(path.relative_to(install_prefix)) for path in plugin_files),
-        "metadata": sorted(str(path.relative_to(install_prefix)) for path in metadata_files),
+        "files": sorted(registry_install_path(path, install_prefix) for path in all_files),
+        "plugins": sorted(registry_install_path(path, install_prefix) for path in plugin_files),
+        "metadata": sorted(registry_install_path(path, install_prefix) for path in metadata_files),
     }
 
     state = {
@@ -514,17 +595,36 @@ def install_or_update(source: str, update: bool = False) -> None:
 
 
 def remove_plugin(name: str) -> None:
-    log_phase(f"Removing manager state for {name}")
-    log_verbose(f"Removing manager state for plugin: {name}")
     registry = load_registry()
     state = registry["plugins"].get(name)
     if not state:
         raise SystemExit(f"Plugin is not managed: {name}")
+
+    build_dir = plugin_state_dir(name) / "build"
+    meson_build = build_dir / "meson-private" / "coredata.dat"
+    uninstalled = False
+    if meson_build.exists():
+        installed_paths = read_meson_install_log(build_dir)
+        installed_files = [path for path in installed_paths if not path.is_dir() or path.is_symlink()]
+        log_phase(f"Uninstalling {name}")
+        with tempfile.TemporaryDirectory(prefix="wayfire-plugin-pkgconfig-") as pkg_config_dir:
+            env = plugin_build_env(Path(pkg_config_dir))
+            run(["meson", "compile", "-C", str(build_dir), "uninstall"], env=env)
+        remaining = [path for path in installed_files if path.exists() or path.is_symlink()]
+        if remaining:
+            raise SystemExit("Meson uninstall left installed files: " + ", ".join(map(str, remaining)))
+        uninstalled = bool(installed_paths)
+    else:
+        log_verbose(f"No Meson build state found for {name}; skipping uninstall")
+
+    log_phase(f"Removing manager state for {name}")
+    log_verbose(f"Removing manager state for plugin: {name}")
     registry["plugins"].pop(name, None)
     save_registry(registry)
     shutil.rmtree(plugin_state_dir(name), ignore_errors=True)
-    print(f"Removed manager state for {name}.")
-    print(f"Installed files under {managed_install_prefix()} were left untouched.")
+    print(f"Removed {name}.")
+    if not uninstalled:
+        print("Meson had no install log; files installed by custom scripts may remain.")
 
 
 def list_plugins() -> None:

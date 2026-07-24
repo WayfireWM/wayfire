@@ -18,7 +18,7 @@ Wayfire searches the managed prefix for plugins and metadata at startup. If the 
 
 The `wayfire-plugin.json` manifest is optional. Without one, `wayfire-plugin` uses the repository directory as the plugin name, builds it with Meson, and prints the default reminder to enable the installed plugin in `core/plugins`.
 
-The plugin must install its files relative to the configured install prefix. Do not install plugins by using Wayfire's pkg-config `plugindir` or `metadatadir` variables, because those point to Wayfire's system installation.
+During plugin builds, `wayfire-plugin` provides a temporary `wayfire.pc` that points `plugindir` and `metadatadir` at the XDG user directories. The original dependency flags, version, and ABI remain unchanged. Installations that hardcode other destinations are still tracked through Meson's install log when possible.
 
 ## Commands
 
@@ -64,13 +64,13 @@ Show paths and the Wayfire version detected through pkg-config:
 wayfire-plugin paths
 ```
 
-Remove manager state for a plugin:
+Uninstall a plugin and remove its manager state:
 
 ```sh
 wayfire-plugin remove plugin-name
 ```
 
-`remove` does not delete installed files from the managed install prefix. Delete stale files manually if needed.
+`remove` runs the Meson uninstall target before deleting the retained build and manager state. If tracked files cannot be removed, the state is retained so the command can be retried with appropriate permissions. If no Meson build state is available, installed files are left untouched.
 
 ## Useful Options
 
