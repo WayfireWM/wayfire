@@ -70,7 +70,7 @@ Uninstall a plugin and remove its manager state:
 wayfire-plugin remove plugin-name
 ```
 
-`remove` runs the Meson uninstall target before deleting the retained build and manager state. If tracked files cannot be removed, the state is retained so the command can be retried with appropriate permissions. If no Meson build state is available, installed files are left untouched.
+`remove` runs the manifest's uninstall command when one was provided, otherwise it runs the generated Ninja uninstall target. If tracked files cannot be removed, the state is retained so the command can be retried with appropriate permissions. If neither uninstall method is available, installed files are left untouched.
 
 ## Useful Options
 
