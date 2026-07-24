@@ -235,9 +235,7 @@ def git_commit(source_dir: Path) -> str:
 def load_manifest(source_dir: Path) -> JsonDict:
     manifest = source_dir / MANIFEST
     if not manifest.exists():
-        raise SystemExit(
-            f"{source_dir} does not contain {MANIFEST}. "
-            "This plugin has not opted into wayfire-plugin; manage it manually.")
+        return {}
 
     return load_json(manifest, {})
 
