@@ -1,6 +1,6 @@
 # Writing Plugins For `wayfire-plugin`
 
-A plugin repository must include `wayfire-plugin.json` at its root to opt into management by `wayfire-plugin`.
+A plugin repository may include `wayfire-plugin.json` at its root to customize management by `wayfire-plugin`. Without a manifest, the manager uses the repository directory as the plugin name, uses the default Meson commands, and reminds the user to enable the plugin in `core/plugins`.
 
 ## Minimal Manifest
 

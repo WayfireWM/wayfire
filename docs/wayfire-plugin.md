@@ -16,7 +16,7 @@ Wayfire searches the managed prefix for plugins and metadata at startup. If the 
 
 ## Requirements
 
-Managed plugins must provide a `wayfire-plugin.json` manifest. Repositories without this manifest are not managed by `wayfire-plugin` and should be installed manually.
+The `wayfire-plugin.json` manifest is optional. Without one, `wayfire-plugin` uses the repository directory as the plugin name, builds it with Meson, and prints the default reminder to enable the installed plugin in `core/plugins`.
 
 The plugin must install its files relative to the configured install prefix. Do not install plugins by using Wayfire's pkg-config `plugindir` or `metadatadir` variables, because those point to Wayfire's system installation.
 
