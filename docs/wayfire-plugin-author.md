@@ -59,13 +59,15 @@ You can override any phase:
   "build_commands": {
     "setup": ["meson", "setup", "%builddir%", "%sourcedir%", "--prefix", "%prefix%"],
     "build": ["meson", "compile", "-C", "%builddir%"],
-    "install": ["meson", "install", "-C", "%builddir%"]
+    "install": ["meson", "install", "-C", "%builddir%"],
+    "uninstall": ["ninja", "-C", "%builddir%", "uninstall"]
   },
   "setup": "Add my-plugin to [core] plugins."
 }
 ```
 
 Commands may be argv arrays or shell strings. Prefer argv arrays unless shell syntax is needed.
+The uninstall command is saved when the plugin is installed, so removal does not depend on the manifest remaining available.
 
 Available placeholders:
 

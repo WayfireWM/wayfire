@@ -567,11 +567,13 @@ def install_or_update(source: str, update: bool = False) -> None:
     state = {
         "name": name,
         "source": source_ref,
+        "source_dir": str(source_dir),
         "selected_ref": selected_ref or "",
         "installed_commit": commit,
         "built_for_wayfire_version": target["version"],
         "built_for_abi": target["abi"],
         "installed_files": installed_files,
+        "uninstall_command": manifest.get("build_commands", {}).get("uninstall"),
         "setup": manifest.get("setup", ""),
     }
     log_phase("Updating plugin manager registry")
@@ -602,20 +604,39 @@ def remove_plugin(name: str) -> None:
 
     build_dir = plugin_state_dir(name) / "build"
     meson_build = build_dir / "meson-private" / "coredata.dat"
+    uninstall_command = state.get("uninstall_command")
     uninstalled = False
-    if meson_build.exists():
-        installed_paths = read_meson_install_log(build_dir)
-        installed_files = [path for path in installed_paths if not path.is_dir() or path.is_symlink()]
+    verify_paths: list[Path] = []
+    if uninstall_command:
+        source_dir = Path(state.get("source_dir", build_dir))
+        for value in state.get("installed_files", {}).get("files", []):
+            path = Path(value)
+            verify_paths.append(path if path.is_absolute() else managed_install_prefix() / path)
+        replacements = {
+            "%prefix%": str(managed_install_prefix()),
+            "%builddir%": str(build_dir),
+            "%sourcedir%": str(source_dir),
+        }
         log_phase(f"Uninstalling {name}")
         with tempfile.TemporaryDirectory(prefix="wayfire-plugin-pkgconfig-") as pkg_config_dir:
             env = plugin_build_env(Path(pkg_config_dir))
-            run(["meson", "compile", "-C", str(build_dir), "uninstall"], env=env)
-        remaining = [path for path in installed_files if path.exists() or path.is_symlink()]
-        if remaining:
-            raise SystemExit("Meson uninstall left installed files: " + ", ".join(map(str, remaining)))
+            run_manifest_command(uninstall_command, source_dir, replacements, env)
+        uninstalled = True
+    elif meson_build.exists():
+        installed_paths = read_meson_install_log(build_dir)
+        verify_paths = installed_paths
+        log_phase(f"Uninstalling {name}")
+        with tempfile.TemporaryDirectory(prefix="wayfire-plugin-pkgconfig-") as pkg_config_dir:
+            env = plugin_build_env(Path(pkg_config_dir))
+            run(["ninja", "-C", str(build_dir), "uninstall"], env=env)
         uninstalled = bool(installed_paths)
     else:
-        log_verbose(f"No Meson build state found for {name}; skipping uninstall")
+        log_verbose(f"No uninstall command or Meson build state found for {name}; skipping uninstall")
+
+    installed_files = [path for path in verify_paths if not path.is_dir() or path.is_symlink()]
+    remaining = [path for path in installed_files if path.exists() or path.is_symlink()]
+    if remaining:
+        raise SystemExit("Uninstall left installed files: " + ", ".join(map(str, remaining)))
 
     log_phase(f"Removing manager state for {name}")
     log_verbose(f"Removing manager state for plugin: {name}")
