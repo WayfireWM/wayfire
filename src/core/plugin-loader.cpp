@@ -11,6 +11,9 @@
 #include <wayfire/util/log.hpp>
 
 wf::plugin_manager_t::plugin_manager_t()
+{}
+
+void wf::plugin_manager_t::start()
 {
     this->plugins_opt.load_option("core/plugins");
     this->enable_so_unloading.load_option("workarounds/enable_so_unloading");

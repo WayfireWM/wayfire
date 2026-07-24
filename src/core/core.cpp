@@ -349,6 +349,7 @@ void wf::compositor_core_impl_t::post_init()
     this->emit(&backend_started_ev);
     this->state = compositor_state_t::START_PLUGINS;
     plugin_mgr  = std::make_unique<wf::plugin_manager_t>();
+    plugin_mgr->start();
     this->bindings->reparse_extensions();
 
     this->state = compositor_state_t::RUNNING;
