@@ -106,10 +106,13 @@ This is the default if they are not present on your system.
 
 Installing [wf-shell](https://github.com/WayfireWM/wf-shell) is recommended for a complete experience.
 
-External plugins can be managed with `wayfire-plugin`. See
-[`docs/wayfire-plugin.md`](docs/wayfire-plugin.md) for user instructions and
-[`docs/wayfire-plugin-author.md`](docs/wayfire-plugin-author.md) for plugin
-author requirements.
+External plugins can be installed either manually or with `wayfire-plugin`, for example:
+
+```sh
+wayfire-plugin install https://github.com/soreau/pixdecor
+```
+
+See [Managing External Plugins](docs/wayfire-plugin.md) for more information.
 
 ###### Arch Linux
 
