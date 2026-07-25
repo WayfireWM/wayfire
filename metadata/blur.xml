@@ -52,6 +52,13 @@
 			<min>0.01</min>
 			<max>1.0</max>
 		</option>
+		<option name="alpha_exponent" type="double">
+			<_short>Blur alpha exponent</_short>
+			<_long>Controls the curve of the blur transition below the alpha threshold. Lower values strengthen blur at low opacity, while higher values weaken it.</_long>
+			<default>1.0</default>
+			<min>0.1</min>
+			<max>10.0</max>
+		</option>
 		<!-- Box -->
 		<option name="box_offset" type="double">
 			<_short>Box offset</_short>
