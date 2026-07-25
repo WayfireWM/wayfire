@@ -36,6 +36,7 @@ precision highp float;
 
 @builtin@
 uniform float sat;
+uniform float alpha_threshold;
 uniform sampler2D bg_texture;
 
 varying highp vec2 uvpos[2];
@@ -53,7 +54,7 @@ void main()
     vec4 bp = texture2D(bg_texture, uvpos[1]);
     bp = vec4(saturation(bp.rgb, sat), bp.a);
     vec4 wp = get_pixel(uvpos[0]);
-    vec4 c = clamp(4.0 * wp.a, 0.0, 1.0) * bp;
+    vec4 c = clamp(wp.a / alpha_threshold, 0.0, 1.0) * bp;
     gl_FragColor = wp + (1.0 - wp.a) * c;
 })";
 
@@ -62,6 +63,7 @@ wf_blur_base::wf_blur_base(std::string name)
     this->algorithm_name = name;
 
     this->saturation_opt.load_option("blur/saturation");
+    this->alpha_threshold_opt.load_option("blur/alpha_threshold");
     this->offset_opt.load_option("blur/" + algorithm_name + "_offset");
     this->degrade_opt.load_option("blur/" + algorithm_name + "_degrade");
     this->iterations_opt.load_option("blur/" + algorithm_name + "_iterations");
@@ -71,6 +73,7 @@ wf_blur_base::wf_blur_base(std::string name)
         wf::scene::damage_node(wf::get_core().scene(), wf::get_core().scene()->get_bounding_box());
     };
     this->saturation_opt.set_callback(options_changed);
+    this->alpha_threshold_opt.set_callback(options_changed);
     this->offset_opt.set_callback(options_changed);
     this->degrade_opt.set_callback(options_changed);
     this->iterations_opt.set_callback(options_changed);
@@ -273,6 +276,7 @@ void wf_blur_base::render(wf::gles_texture_t src_tex, wf::geometry_t src_box, co
     /* XXX: core should give us the number of texture units used */
     blend_program.uniform1i("bg_texture", 1);
     blend_program.uniform1f("sat", saturation_opt);
+    blend_program.uniform1f("alpha_threshold", alpha_threshold_opt);
 
     blend_program.set_active_texture(src_tex);
     GL_CALL(glActiveTexture(GL_TEXTURE0 + 1));
