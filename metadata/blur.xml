@@ -48,7 +48,7 @@
 		<option name="alpha_threshold" type="double">
 			<_short>Blur alpha threshold</_short>
 			<_long>Pixel opacity at which background blur reaches full strength. Lower values produce stronger blur behind highly transparent content.</_long>
-			<default>0.25</default>
+			<default>0.5</default>
 			<min>0.01</min>
 			<max>1.0</max>
 		</option>
