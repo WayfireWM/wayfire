@@ -165,8 +165,8 @@ inline wf::json_t geometry_to_json(wf::geometry_t g)
 
 inline std::optional<wf::geometry_t> geometry_from_json(const wf::json_t& j)
 {
-    if (!CHECK("x", int) || !CHECK("y", int) ||
-        !CHECK("width", int) || !CHECK("height", int))
+    if (!CHECK("x", double) || !CHECK("y", double) ||
+        !CHECK("width", double) || !CHECK("height", double))
     {
         return {};
     }

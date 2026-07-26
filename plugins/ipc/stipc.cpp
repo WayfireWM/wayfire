@@ -325,12 +325,12 @@ class stipc_plugin_t : public wf::plugin_interface_t
         for (size_t i = 0; i < data["views"].size(); i++)
         {
             const auto& v = data["views"][i];
-            auto id   = wf::ipc::json_get_uint64(v, "id");
-            int x     = wf::ipc::json_get_int64(v, "x");
-            int y     = wf::ipc::json_get_int64(v, "y");
-            int width = wf::ipc::json_get_int64(v, "width");
-            int height  = wf::ipc::json_get_int64(v, "height");
-            auto output = wf::ipc::json_get_optional_string(v, "output");
+            auto id  = wf::ipc::json_get_uint64(v, "id");
+            double x = wf::ipc::json_get_double(v, "x");
+            double y = wf::ipc::json_get_double(v, "y");
+            double width  = wf::ipc::json_get_double(v, "width");
+            double height = wf::ipc::json_get_double(v, "height");
+            auto output   = wf::ipc::json_get_optional_string(v, "output");
 
             auto it = std::find_if(views.begin(), views.end(), [&] (auto& view)
             {
@@ -362,10 +362,10 @@ class stipc_plugin_t : public wf::plugin_interface_t
             }
 
             wf::geometry_t g{
-                (double)x,
-                (double)y,
-                (double)width,
-                (double)height,
+                x,
+                y,
+                width,
+                height,
             };
             toplevel->set_geometry(g);
         }
