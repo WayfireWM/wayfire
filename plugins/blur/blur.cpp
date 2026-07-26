@@ -144,9 +144,13 @@ class blur_render_instance_t : public transformer_render_instance_t<blur_node_t>
         // were never damaged.
         auto padded_region = damage & bbox;
 
-        if (is_fully_opaque(padded_region & target.geometry))
+        if (is_fully_opaque(padded_region & target.geometry) && target.is_integer_scale())
         {
             // If there are no regions to blur, we can directly render them.
+            // However, on non-integer scale, rendering with a transformer vs rendering without one may
+            // align subsurfaces in a different way due to rounding.
+            //
+            // As a result, we can apply this optimization only when the target is integer scaled.
             for (auto& ch : this->children)
             {
                 ch->schedule_instructions(instructions, target, damage);

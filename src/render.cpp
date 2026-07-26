@@ -916,7 +916,7 @@ void wf::render_pass_t::add_texture(const std::shared_ptr<wf::texture_t>& textur
     // use GL_NEAREST for integer scale.
     // GL_NEAREST makes scaled text blocky instead of blurry, which looks better
     // but only for integer scale.
-    const auto preferred_filter = ((adjusted_target.scale - floor(adjusted_target.scale)) < 0.001) ?
+    const auto preferred_filter = adjusted_target.is_integer_scale() ?
         WLR_SCALE_FILTER_NEAREST : WLR_SCALE_FILTER_BILINEAR;
     opts.filter_mode = texture->get_filter_mode().value_or(preferred_filter);
     opts.transform   = wlr_output_transform_compose(wlr_output_transform_invert(texture->get_transform()),
@@ -1094,4 +1094,9 @@ void wf::render_target_t::set_color_transform(wlr_color_transform *transform,
 
     inverse_eotf = transform;
     output_transfer_function = target_tf;
+}
+
+bool wf::render_target_t::is_integer_scale() const
+{
+    return std::abs(scale - std::round(scale)) < 0.001;
 }

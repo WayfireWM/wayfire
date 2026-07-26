@@ -501,6 +501,11 @@ struct render_target_t : public render_buffer_t
         return output_transfer_function;
     }
 
+    /**
+     * Check whether the render target's scale is an integer value.
+     */
+    bool is_integer_scale() const;
+
   private:
     wlr_color_transform *inverse_eotf = nullptr;
     wlr_color_transfer_function output_transfer_function = WLR_COLOR_TRANSFER_FUNCTION_SRGB;
