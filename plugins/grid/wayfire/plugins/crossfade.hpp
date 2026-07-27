@@ -266,7 +266,13 @@ class grid_animation_t : public wf::custom_data_t
         };
 
         // A not mapped view has no geometry on to animate from, just set the desired state in that case.
-        if ((type != CROSSFADE) || !view->is_mapped())
+        if (!view->is_mapped())
+        {
+            set_state();
+            return destroy();
+        }
+
+        if (type != CROSSFADE)
         {
             /* Order is important here: first we set the view geometry, and
              * after that we set the snap request. Otherwise the wobbly plugin
