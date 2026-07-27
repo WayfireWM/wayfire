@@ -2,7 +2,7 @@ project(
 	'wayfire',
 	'c',
 	'cpp',
-	version: '0.11.0',
+	version: '0.12.0',
 	license: 'MIT',
 	meson_version: '>=0.64.0',
 	default_options: [
@@ -108,7 +108,7 @@ if missing_wlroots_features.length() > 0
   error('wlroots is missing the following required features: @0@'.format(' '.join(missing_wlroots_features)))
 endif
 
-wfconfig_version = ['>=0.11.0', '<0.12.0']
+wfconfig_version = ['>=0.12.0', '<0.13.0']
 
 # We're not to use system wlroots: So we'll use the subproject
 if get_option('use_system_wfconfig').disabled()
