@@ -250,6 +250,13 @@ class wayfire_grid : public wf::plugin_interface_t, public wf::per_output_tracke
     wf::geometry_t adjust_for_workspace(std::shared_ptr<wf::workspace_set_t> wset,
         wf::geometry_t geometry, wf::point_t workspace)
     {
+        if (!wset)
+        {
+            // The view is added to a workspace set when it is mapped, so a view which is still
+            // being mapped does not have one yet (applicable to 'on created' window rules)
+            return geometry;
+        }
+
         auto delta_ws = workspace - wset->get_current_workspace();
         auto scr_size = wset->get_last_output_geometry().value();
         geometry.x += delta_ws.x * scr_size.width;
@@ -261,7 +268,7 @@ class wayfire_grid : public wf::plugin_interface_t, public wf::per_output_tracke
         [=] (wf::view_tile_request_signal *data)
     {
         if (data->carried_out || (data->desired_size.width <= 0) || !data->view->get_output() ||
-            !get_view_wset(data->view) || !can_adjust_view(data->view))
+            !can_adjust_view(data->view))
         {
             return;
         }
@@ -284,7 +291,7 @@ class wayfire_grid : public wf::plugin_interface_t, public wf::per_output_tracke
     {
         static const std::string fs_data_name = "grid-saved-fs";
         if (data->carried_out || (data->desired_size.width <= 0) || !data->view->get_output() ||
-            !get_view_wset(data->view) || !can_adjust_view(data->view))
+            !can_adjust_view(data->view))
         {
             return;
         }
