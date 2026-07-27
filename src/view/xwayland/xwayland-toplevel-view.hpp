@@ -400,7 +400,9 @@ class wayfire_xwayland_view : public wf::toplevel_view_interface_t, public wayfi
             break;
         }
 
-        if (wants_focus)
+        // A view can be minimized before it is mapped, (on created ... then minimize
+        // window rule). Focusing it would unminimize it.
+        if (wants_focus && !this->minimized)
         {
             wf::get_core().default_wm->focus_request(self());
         }
