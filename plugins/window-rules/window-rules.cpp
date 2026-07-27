@@ -14,10 +14,14 @@
 #include <wayfire/util/log.hpp>
 #include <wayfire/option-wrapper.hpp>
 #include <wayfire/toplevel-view.hpp>
+#include <wayfire/txn/transaction-manager.hpp>
 
 #include "lambda-rules-registration.hpp"
 #include "view-action-interface.hpp"
 #include "wayfire/signal-provider.hpp"
+
+// Marks a view whose "created" rules have been applied while its map transaction was pending.
+static const std::string created_rules_applied = "window-rules-created-applied";
 
 class wayfire_window_rules_t : public wf::per_output_plugin_instance_t
 {
@@ -30,11 +34,54 @@ class wayfire_window_rules_t : public wf::per_output_plugin_instance_t
     void setup_rules_from_config();
     wf::lexer_t _lexer;
 
-    // Created rule handler.
+    // Created rule handler for views without a toplevel (e.g. popups). They are not part of any
+    // transaction, so the rules for them are applied after they have been mapped.
     wf::signal::connection_t<wf::view_mapped_signal> on_view_mapped = [=] (wf::view_mapped_signal *ev)
     {
-        apply("created", ev->view);
+        if (!toplevel_cast(ev->view))
+        {
+            apply("created", ev->view);
+            return;
+        }
+
+        // Allow rules to be applied again when the view is mapped next time.
+        ev->view->erase_data(created_rules_applied);
     };
+
+    // Created rule handler for toplevel views. The rules are applied when the map transaction of
+    // a view is scheduled, but before it is committed.
+    wf::signal::connection_t<wf::txn::new_transaction_signal> on_new_tx =
+        [=] (wf::txn::new_transaction_signal *ev)
+    {
+        for (const auto& obj : ev->tx->get_objects())
+        {
+            auto toplevel = std::dynamic_pointer_cast<wf::toplevel_t>(obj);
+            if (!toplevel || !map_pending(toplevel))
+            {
+                continue;
+            }
+
+            auto view = wf::find_view_for_toplevel(toplevel);
+            if (!view || (view->get_output() != output))
+            {
+                continue;
+            }
+
+            // Handler may be invoked several times before the view is mapped, apply the rules only once.
+            if (view->has_data(created_rules_applied))
+            {
+                continue;
+            }
+
+            view->store_data(std::make_unique<wf::custom_data_t>(), created_rules_applied);
+            apply("created", view);
+        }
+    };
+
+    bool map_pending(std::shared_ptr<wf::toplevel_t> toplevel)
+    {
+        return !toplevel->current().mapped && toplevel->pending().mapped;
+    }
 
     // Maximized rule handler.
     wf::signal::connection_t<wf::view_tiled_signal> _tiled = [=] (wf::view_tiled_signal *ev)
@@ -78,6 +125,7 @@ void wayfire_window_rules_t::init()
     setup_rules_from_config();
 
     output->connect(&on_view_mapped);
+    wf::get_core().tx_manager->connect(&on_new_tx);
     output->connect(&_tiled);
     output->connect(&_minimized);
     output->connect(&_fullscreened);

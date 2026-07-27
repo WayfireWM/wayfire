@@ -50,6 +50,7 @@ class view_action_interface_t : public action_interface_t
     void _start_on_output(std::string output);
     void _move(int x, int y);
     void _resize(int w, int h);
+    void _set_pending_geometry(wf::geometry_t geometry);
 
     void _assign_ws(wf::point_t point);
 
