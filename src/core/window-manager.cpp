@@ -167,7 +167,7 @@ void window_manager_t::focus_raise_view(wayfire_view view, bool allow_switch_ws)
 
 void window_manager_t::minimize_request(wayfire_toplevel_view view, bool minimized)
 {
-    if ((view->minimized == minimized) || !view->is_mapped())
+    if (view->minimized == minimized)
     {
         return;
     }
@@ -239,10 +239,7 @@ void window_manager_t::tile_request(wayfire_toplevel_view view,
 
     update_last_windowed_geometry(view);
     view->toplevel()->pending().tiled_edges = tiled_edges;
-    if (view->is_mapped())
-    {
-        view->get_output()->emit(&data);
-    }
+    view->get_output()->emit(&data);
 
     if (!data.carried_out)
     {
@@ -293,10 +290,7 @@ void window_manager_t::fullscreen_request(wayfire_toplevel_view view,
     }
 
     view->toplevel()->pending().fullscreen = state;
-    if (view->is_mapped())
-    {
-        wo->emit(&data);
-    }
+    wo->emit(&data);
 
     if (!data.carried_out)
     {
