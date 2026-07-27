@@ -104,6 +104,7 @@ class wlr_surface_node_t : public node_t, public zero_copy_texturable_node_t
     wf::dimensionsf_t size_on_primary_output = {0, 0};
     wf::output_t *guess_primary_output();
     wf::geometry_t get_render_geometry() const;
+    wf::dimensionsf_t calculate_primary_output_size(const surface_state_t& state);
 };
 }
 }

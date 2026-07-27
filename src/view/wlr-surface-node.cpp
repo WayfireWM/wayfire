@@ -207,6 +207,7 @@ wf::scene::wlr_surface_node_t::wlr_surface_node_t(wlr_surface *surface, bool aut
     send_frame_done(false);
 
     current_state.merge_state(surface);
+    this->size_on_primary_output = calculate_primary_output_size(current_state);
 
     on_output_remove.set_callback([&] (wf::output_removed_signal *ev)
     {
@@ -216,7 +217,7 @@ wf::scene::wlr_surface_node_t::wlr_surface_node_t(wlr_surface *surface, bool aut
     wf::get_core().output_layout->connect(&on_output_remove);
 }
 
-void wf::scene::wlr_surface_node_t::apply_state(surface_state_t&& state)
+wf::dimensionsf_t wf::scene::wlr_surface_node_t::calculate_primary_output_size(const surface_state_t& state)
 {
     wf::dimensionsf_t new_size = wf::dimensionsf_t{state.size};
     static wf::option_wrapper_t<bool> use_native_buffer_size{"workarounds/use_native_buffer_size"};
@@ -252,6 +253,11 @@ void wf::scene::wlr_surface_node_t::apply_state(surface_state_t&& state)
         }
     }
 
+    return new_size;
+}
+
+void wf::scene::wlr_surface_node_t::apply_state(surface_state_t&& state)
+{
     const bool size_changed = current_state.size != state.size;
     if (size_changed)
     {
@@ -260,7 +266,7 @@ void wf::scene::wlr_surface_node_t::apply_state(surface_state_t&& state)
     }
 
     this->current_state = std::move(state);
-    this->size_on_primary_output = new_size;
+    this->size_on_primary_output = calculate_primary_output_size(current_state);
     this->current_state.opaque_region &= get_render_geometry();
 
     wf::scene::damage_node(this, current_state.accumulated_damage);

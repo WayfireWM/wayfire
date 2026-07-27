@@ -924,6 +924,7 @@ void wf::render_pass_t::add_texture(const std::shared_ptr<wf::texture_t>& textur
     opts.clip    = fb_damage.to_pixman();
     opts.src_box = texture->get_source_box().value_or(wlr_fbox{0, 0, 0, 0});
     opts.dst_box = adjusted_target.framebuffer_texture_dst_box_from_geometry_box(geometry);
+
     const auto& wait_point = texture->get_wait_timeline();
     opts.wait_timeline = wait_point.timeline;
     opts.wait_point    = wait_point.point;
