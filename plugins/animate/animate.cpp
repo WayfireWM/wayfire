@@ -440,6 +440,16 @@ class wayfire_animation : public wf::plugin_interface_t, private wf::per_output_
             }
         }
 
+        if (auto toplevel = toplevel_cast(ev->view))
+        {
+            if (toplevel->minimized)
+            {
+                // The view was minimized before it was mapped, so it should not be shown at all.
+                // An animation would make it visible for as long as it runs.
+                return;
+            }
+        }
+
         auto animation = get_animation_for_view("open", open_animation, ev->view);
         set_animation(ev->view, animation.animation_name,
             wf::animate::ANIMATION_TYPE_MAP, animation.duration);
@@ -456,6 +466,13 @@ class wayfire_animation : public wf::plugin_interface_t, private wf::per_output_
     wf::signal::connection_t<wf::view_minimize_request_signal> on_minimize_request =
         [=] (wf::view_minimize_request_signal *ev)
     {
+        if (!ev->view->is_mapped())
+        {
+            // The view has never been shown on the screen, so there is nothing to animate. An
+            // animation would also keep it visible for as long as it runs.
+            return;
+        }
+
         auto animation = get_animation_for_view("minimize", minimize_animation, ev->view);
         set_animation(ev->view, minimize_animation,
             ev->state ? wf::animate::ANIMATION_TYPE_MINIMIZE : wf::animate::ANIMATION_TYPE_RESTORE,
