@@ -378,6 +378,19 @@ void wf::test::headless_core_harness_t::pointer_motion(double x, double y)
     wl_display_flush_clients(priv->core->display);
 }
 
+void wf::test::headless_core_harness_t::pointer_button(uint32_t button, uint32_t state)
+{
+    wlr_pointer_button_event ev = {};
+    ev.time_msec = priv->touch_time++;
+    ev.button    = button;
+    ev.state     = static_cast<wl_pointer_button_state>(state);
+
+    priv->core->seat->priv->lpointer->handle_pointer_button(&ev,
+        wf::input_event_processing_mode_t::FULL);
+    wlr_seat_pointer_notify_frame(priv->core->seat->seat);
+    wl_display_flush_clients(priv->core->display);
+}
+
 wf::output_t*wf::test::headless_core_harness_t::output() const
 {
     auto outputs = priv->core->output_layout->get_outputs();

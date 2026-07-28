@@ -16,14 +16,22 @@
 			<default>0</default>
 			<min>0</min>
 		</option>
-		
+
 		<option name="min_height" type="int">
 			<_short>Minimum view height</_short>
 			<_long>If set, views cannot be resized smaller than this height.</_long>
 			<default>0</default>
 			<min>0</min>
 		</option>
-        
+
+		<option name="corner_threshold" type="double">
+			<_short>Corner resize threshold</_short>
+			<_long>Fraction of the view width and height used for corner resize zones.</_long>
+			<default>0.33</default>
+			<min>0.0</min>
+			<max>0.5</max>
+		</option>
+
 		<option name="activate_preserve_aspect" type="button">
 			<_short>Activate resize while preserving aspect</_short>
 			<_long>When the specified button is held down, you can drag a window to resize it while preserving its original aspect.</_long>

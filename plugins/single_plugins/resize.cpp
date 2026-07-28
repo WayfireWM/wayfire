@@ -64,6 +64,7 @@ class wayfire_resize : public wf::per_output_plugin_instance_t, public wf::point
 
     wf::option_wrapper_t<int> user_min_width{"resize/min_width"};
     wf::option_wrapper_t<int> user_min_height{"resize/min_height"};
+    wf::option_wrapper_t<double> corner_threshold{"resize/corner_threshold"};
     wf::option_wrapper_t<wf::buttonbinding_t> button{"resize/activate"};
     wf::option_wrapper_t<wf::buttonbinding_t> button_preserve_aspect{
         "resize/activate_preserve_aspect"};
@@ -181,6 +182,34 @@ class wayfire_resize : public wf::per_output_plugin_instance_t, public wf::point
         int view_x = sx - vg.x;
         int view_y = sy - vg.y;
 
+        const double threshold = static_cast<double>(corner_threshold);
+        const bool in_left     = view_x < vg.width * threshold;
+        const bool in_right    = view_x >= vg.width * (1.0 - threshold);
+        const bool in_top    = view_y < vg.height * threshold;
+        const bool in_bottom = view_y >= vg.height * (1.0 - threshold);
+
+        if (in_left || in_right || in_top || in_bottom)
+        {
+            uint32_t edges = 0;
+            if (in_left)
+            {
+                edges |= WLR_EDGE_LEFT;
+            } else if (in_right)
+            {
+                edges |= WLR_EDGE_RIGHT;
+            }
+
+            if (in_top)
+            {
+                edges |= WLR_EDGE_TOP;
+            } else if (in_bottom)
+            {
+                edges |= WLR_EDGE_BOTTOM;
+            }
+
+            return edges;
+        }
+
         uint32_t edges = 0;
         if (view_x < vg.width / 2)
         {
@@ -277,25 +306,25 @@ class wayfire_resize : public wf::per_output_plugin_instance_t, public wf::point
     }
 
     // Convert resize edges to gravity
-    uint32_t calculate_gravity()
+    uint32_t calculate_gravity(uint32_t resize_edges)
     {
         uint32_t gravity = 0;
-        if (edges & WLR_EDGE_LEFT)
+        if (resize_edges & WLR_EDGE_LEFT)
         {
             gravity |= WLR_EDGE_RIGHT;
         }
 
-        if (edges & WLR_EDGE_RIGHT)
+        if (resize_edges & WLR_EDGE_RIGHT)
         {
             gravity |= WLR_EDGE_LEFT;
         }
 
-        if (edges & WLR_EDGE_TOP)
+        if (resize_edges & WLR_EDGE_TOP)
         {
             gravity |= WLR_EDGE_BOTTOM;
         }
 
-        if (edges & WLR_EDGE_BOTTOM)
+        if (resize_edges & WLR_EDGE_BOTTOM)
         {
             gravity |= WLR_EDGE_TOP;
         }
@@ -446,7 +475,7 @@ class wayfire_resize : public wf::per_output_plugin_instance_t, public wf::point
 
         if (wf::fdimensions(view->toplevel()->pending().geometry) != wf::fdimensions(desired))
         {
-            view->toplevel()->pending().gravity  = calculate_gravity();
+            view->toplevel()->pending().gravity  = calculate_gravity(edges);
             view->toplevel()->pending().geometry = desired;
             wf::get_core().tx_manager->schedule_object(view->toplevel());
         }

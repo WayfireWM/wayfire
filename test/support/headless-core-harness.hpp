@@ -29,6 +29,7 @@ class headless_core_harness_t
     void touch_up(int32_t id);
     void touch_frame();
     void pointer_motion(double x, double y);
+    void pointer_button(uint32_t button, uint32_t state);
 
     wf::output_t *output() const;
     const std::string& socket_name() const;

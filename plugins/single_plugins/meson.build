@@ -29,4 +29,7 @@ foreach plugin : plugins
   if plugin == 'command'
     command_plugin = plugin_module
   endif
+  if plugin == 'resize'
+    resize_plugin = plugin_module
+  endif
 endforeach

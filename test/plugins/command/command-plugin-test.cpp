@@ -19,39 +19,10 @@
 
 #include "../../support/headless-core-harness.hpp"
 #include "../../support/ipc-client.hpp"
+#include "../../support/scoped-env.hpp"
 
 namespace
 {
-class scoped_env_t
-{
-    std::string name;
-    std::string old_value;
-    bool had_old_value = false;
-
-  public:
-    scoped_env_t(std::string name, std::string value) : name(std::move(name))
-    {
-        if (const char *old = getenv(this->name.c_str()))
-        {
-            had_old_value = true;
-            old_value     = old;
-        }
-
-        setenv(this->name.c_str(), value.c_str(), 1);
-    }
-
-    ~scoped_env_t()
-    {
-        if (had_old_value)
-        {
-            setenv(name.c_str(), old_value.c_str(), 1);
-        } else
-        {
-            unsetenv(name.c_str());
-        }
-    }
-};
-
 static void emit_key_release(uint32_t keycode)
 {
     wlr_keyboard_key_event key_event = {};
@@ -71,8 +42,8 @@ TEST_CASE("command repeat IPC binding disconnect does not crash Wayfire")
         ("wayfire-command-test-" + std::to_string(getpid()) + ".socket")).string();
     unlink(ipc_path.c_str());
 
-    scoped_env_t plugin_path{"WAYFIRE_PLUGIN_PATH", TEST_PLUGIN_PATH};
-    scoped_env_t ipc_socket{"_WAYFIRE_SOCKET", ipc_path};
+    wf::test::scoped_env_t plugin_path{"WAYFIRE_PLUGIN_PATH", TEST_PLUGIN_PATH};
+    wf::test::scoped_env_t ipc_socket{"_WAYFIRE_SOCKET", ipc_path};
 
     wf::test::headless_core_harness_t harness{
         "[core]\n"
@@ -122,8 +93,8 @@ TEST_CASE("command repeat IPC binding unregister and disconnect does not crash W
         ("wayfire-command-unregister-test-" + std::to_string(getpid()) + ".socket")).string();
     unlink(ipc_path.c_str());
 
-    scoped_env_t plugin_path{"WAYFIRE_PLUGIN_PATH", TEST_PLUGIN_PATH};
-    scoped_env_t ipc_socket{"_WAYFIRE_SOCKET", ipc_path};
+    wf::test::scoped_env_t plugin_path{"WAYFIRE_PLUGIN_PATH", TEST_PLUGIN_PATH};
+    wf::test::scoped_env_t ipc_socket{"_WAYFIRE_SOCKET", ipc_path};
 
     wf::test::headless_core_harness_t harness{
         "[core]\n"

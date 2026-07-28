@@ -102,6 +102,18 @@ touch_test = executable(
     ],
     install: false)
 
+resize_test = executable(
+    'resize-test',
+    'resize-test.cpp',
+    test_support_sources,
+    dependencies: [doctest, libwayfire, wayland_client],
+    cpp_args: [
+        '-DTEST_METADATA_DIR="' + meson.project_source_root() + '/metadata"',
+        '-DTEST_DEFAULTS_INI="' + meson.project_source_root() + '/wayfire.ini"',
+        '-DTEST_PLUGIN_PATH="' + meson.project_build_root() + '/plugins/single_plugins"',
+    ],
+    install: false)
+
 # This test uses a different value for a workaround option. Keep it in a separate
 # executable because static option_wrapper_t instances cache options per process.
 native_buffer_size_scaling_test = executable(
@@ -135,6 +147,7 @@ test('Xdg-shell test', xdg_shell_test)
 test('Layer-shell test', layer_shell_test)
 test('Scaling test', scaling_test)
 test('Touch test', touch_test)
+test('Resize test', resize_test, depends: resize_plugin)
 test('Native buffer size scaling test', native_buffer_size_scaling_test)
 
 if not get_option('xwayland').disabled() and wlroots_features['xwayland']
