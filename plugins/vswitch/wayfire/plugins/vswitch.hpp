@@ -36,11 +36,14 @@ class control_bindings_t
      */
     control_bindings_t(wf::output_t *output)
     {
-        this->output = output;
+        this->output   = output;
+        last_workspace = output->wset()->get_current_workspace();
 
         workspace_bindings.set_callback(on_cfg_reload);
         workspace_bindings_win.set_callback(on_cfg_reload);
         bindings_win.set_callback(on_cfg_reload);
+
+        output->connect(&on_workspace_changed);
     }
 
     virtual ~control_bindings_t()
@@ -194,7 +197,13 @@ class control_bindings_t
     binding_callback_t user_cb;
     std::vector<std::unique_ptr<wf::activator_callback>> activator_cbs;
 
-    wf::point_t last_dir = {0, 0};
+    wf::point_t last_workspace = {0, 0};
+
+    wf::signal::connection_t<wf::workspace_changed_signal> on_workspace_changed =
+        [=] (wf::workspace_changed_signal *ev)
+    {
+        last_workspace = ev->old_viewport;
+    };
 
     wf::wl_idle_call idle_reload;
     wf::config::option_base_t::updated_callback_t on_cfg_reload = [=] ()
@@ -236,7 +245,7 @@ class control_bindings_t
 
     virtual wf::point_t get_last_dir()
     {
-        return this->last_dir;
+        return output->wset()->get_current_workspace() - this->last_workspace;
     }
 
     /**
@@ -282,17 +291,6 @@ class control_bindings_t
             } else
             {
                 target_ws = ws;
-            }
-        }
-
-        // Remember the direction we are moving now so that we can potentially
-        // move back. Only remember when we are actually changing the workspace
-        // and not just move a view around.
-        if (!window_only)
-        {
-            if (target_ws != ws)
-            {
-                this->last_dir = target_ws - ws;
             }
         }
 

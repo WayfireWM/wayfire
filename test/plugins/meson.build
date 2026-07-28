@@ -1,1 +1,2 @@
 subdir('command')
+subdir('vswitch')
