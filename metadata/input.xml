@@ -46,6 +46,11 @@
 				<_long>Sets the layout of the keyboard, like `us` or `fr`.  Multiple layouts can be specified by separating them with commas.</_long>
 				<default>us</default>
 			</option>
+			<option name="xkb_file" type="string">
+				<_short>XKB keymap file</_short>
+				<_long>Loads a complete XKB keymap from the specified file.  When set, this overrides the other XKB configuration options.</_long>
+				<default></default>
+			</option>
 			<option name="xkb_model" type="string">
 				<_short>XKB model</_short>
 				<_long>Sets the model of the keyboard.  This has an influence for some extra keys your keyboard might have.</_long>

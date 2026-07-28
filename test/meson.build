@@ -1,5 +1,6 @@
 subdir('geometry')
 subdir('txn')
 subdir('misc')
+subdir('input')
 subdir('protocol')
 subdir('plugins')

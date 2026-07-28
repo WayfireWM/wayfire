@@ -46,7 +46,7 @@ class keyboard_t
     wf::signal::connection_t<wf::reload_config_signal> on_config_reload;
     void reload_input_options();
 
-    wf::option_wrapper_t<std::string> model, variant, layout, options, rules;
+    wf::option_wrapper_t<std::string> model, variant, layout, options, rules, file;
     wf::option_wrapper_t<int> repeat_rate, repeat_delay;
 
     std::chrono::steady_clock::time_point mod_binding_start;

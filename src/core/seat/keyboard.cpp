@@ -1,3 +1,4 @@
+#include <cstdio>
 #include <cstring>
 #include <wayfire/bindings-repository.hpp>
 #include <linux/input-event-codes.h>
@@ -159,6 +160,7 @@ wf::keyboard_t::keyboard_t(wlr_input_device *dev) :
     layout.load_option(section, "xkb_layout");
     options.load_option(section, "xkb_options");
     rules.load_option(section, "xkb_rules");
+    file.load_option(section, "xkb_file");
     repeat_rate.load_option(section, "kb_repeat_rate");
     repeat_delay.load_option(section, "kb_repeat_delay");
 
@@ -167,6 +169,7 @@ wf::keyboard_t::keyboard_t(wlr_input_device *dev) :
     layout.set_callback([=] () { schedule_idle_reload();});
     options.set_callback([=] () { schedule_idle_reload();});
     rules.set_callback([=] () { schedule_idle_reload();});
+    file.set_callback([=] () { schedule_idle_reload();});
     repeat_rate.set_callback([=] () { schedule_idle_reload();});
     repeat_delay.set_callback([=] () { schedule_idle_reload();});
 
@@ -200,6 +203,24 @@ void wf::keyboard_t::reload_input_options()
     std::string layout  = this->layout;
     std::string variant = this->variant;
     std::string options = this->options;
+    std::string file    = this->file;
+
+    xkb_keymap *keymap = nullptr;
+    if (!file.empty())
+    {
+        auto keymap_file = std::fopen(file.c_str(), "r");
+        if (keymap_file)
+        {
+            keymap = xkb_keymap_new_from_file(ctx, keymap_file,
+                XKB_KEYMAP_FORMAT_TEXT_V1, XKB_KEYMAP_COMPILE_NO_FLAGS);
+            std::fclose(keymap_file);
+        }
+
+        if (!keymap)
+        {
+            LOGE("Could not create keymap from file: ", file);
+        }
+    }
 
     xkb_rule_names names;
     names.rules   = rules.c_str();
@@ -207,8 +228,11 @@ void wf::keyboard_t::reload_input_options()
     names.layout  = layout.c_str();
     names.variant = variant.c_str();
     names.options = options.c_str();
-    auto keymap = xkb_map_new_from_names(ctx, &names,
-        XKB_KEYMAP_COMPILE_NO_FLAGS);
+    if (!keymap)
+    {
+        keymap = xkb_map_new_from_names(ctx, &names,
+            XKB_KEYMAP_COMPILE_NO_FLAGS);
+    }
 
     if (!keymap)
     {
