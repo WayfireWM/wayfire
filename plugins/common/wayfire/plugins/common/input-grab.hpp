@@ -18,10 +18,72 @@ namespace scene
  */
 class grab_node_t : public node_t
 {
+    class grab_pointer_interaction_t : public pointer_interaction_t
+    {
+        pointer_interaction_t *impl = nullptr;
+
+      public:
+        void set_impl(pointer_interaction_t *impl)
+        {
+            this->impl = impl;
+        }
+
+        void handle_pointer_enter(wf::pointf_t position,
+            input_grab_kind_t grab) override
+        {
+            wf::get_core().set_cursor("default");
+            if (impl)
+            {
+                impl->handle_pointer_enter(position, grab);
+            }
+        }
+
+        void handle_pointer_leave(input_grab_kind_t grab) override
+        {
+            if (impl)
+            {
+                impl->handle_pointer_leave(grab);
+            }
+        }
+
+        void handle_pointer_button(
+            const wlr_pointer_button_event& event,
+            input_grab_kind_t grab) override
+        {
+            if (impl)
+            {
+                impl->handle_pointer_button(event, grab);
+            }
+        }
+
+        void handle_pointer_motion(wf::pointf_t pointer_position,
+            uint32_t time_ms, input_grab_kind_t grab) override
+        {
+            if (impl)
+            {
+                impl->handle_pointer_motion(pointer_position, time_ms, grab);
+            }
+        }
+
+        void handle_pointer_axis(const wlr_pointer_axis_event& event) override
+        {
+            if (impl)
+            {
+                impl->handle_pointer_axis(event);
+            }
+        }
+
+        bool can_retarget_pointer_grab(input_grab_kind_t kind,
+            nonstd::observer_ptr<scene::node_t> new_target, wf::pointf_t global_position) override
+        {
+            return impl && impl->can_retarget_pointer_grab(kind, new_target, global_position);
+        }
+    };
+
     std::string name;
     wf::output_t *output;
     keyboard_interaction_t *keyboard = nullptr;
-    pointer_interaction_t *pointer   = nullptr;
+    grab_pointer_interaction_t pointer;
     touch_interaction_t *touch   = nullptr;
     node_flags_bitmask_t m_flags = 0;
 
@@ -31,8 +93,10 @@ class grab_node_t : public node_t
         pointer_interaction_t *pointer   = NULL,
         touch_interaction_t *touch = NULL) :
         node_t(false), name(name), output(output),
-        keyboard(keyboard), pointer(pointer), touch(touch)
-    {}
+        keyboard(keyboard), touch(touch)
+    {
+        this->pointer.set_impl(pointer);
+    }
 
     node_flags_bitmask_t flags() const override
     {
@@ -88,7 +152,7 @@ class grab_node_t : public node_t
 
     pointer_interaction_t& pointer_interaction() override
     {
-        return pointer ? *pointer : node_t::pointer_interaction();
+        return pointer;
     }
 
     touch_interaction_t& touch_interaction() override
