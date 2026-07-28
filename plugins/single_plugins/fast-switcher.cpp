@@ -136,7 +136,7 @@ class wayfire_fast_switcher : public wf::per_output_plugin_instance_t, public wf
         });
     }
 
-    bool do_switch(bool forward)
+    bool do_switch(bool forward, const wf::keybinding_t& binding)
     {
         if (active)
         {
@@ -167,21 +167,27 @@ class wayfire_fast_switcher : public wf::per_output_plugin_instance_t, public wf
         }
 
         input_grab->grab_input(wf::scene::layer::OVERLAY);
-        activating_modifiers = wf::get_core().seat->get_keyboard_modifiers();
+        activating_modifiers = binding.get_modifiers();
         switch_next(forward);
+
+        if (!activating_modifiers)
+        {
+            switch_terminate();
+            return true;
+        }
 
         output->connect(&cleanup_view);
         return true;
     }
 
-    wf::key_callback fast_switch = [=] (auto)
+    wf::key_callback fast_switch = [=] (const wf::keybinding_t& binding)
     {
-        return do_switch(true);
+        return do_switch(true, binding);
     };
 
-    wf::key_callback fast_switch_backward = [=] (auto)
+    wf::key_callback fast_switch_backward = [=] (const wf::keybinding_t& binding)
     {
-        return do_switch(false);
+        return do_switch(false, binding);
     };
 
     void switch_terminate()

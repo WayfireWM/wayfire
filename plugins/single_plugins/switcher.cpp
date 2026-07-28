@@ -224,23 +224,31 @@ class WayfireSwitcher : public wf::per_output_plugin_instance_t, public wf::keyb
 
     void handle_keyboard_key(wf::seat_t*, wlr_keyboard_key_event event) override
     {
-        auto mod = wf::get_core().seat->modifier_from_keycode(event.keycode);
-        if ((event.state == WLR_KEY_RELEASED) && (mod & activating_modifiers))
+        if (should_finish_on_key(event))
         {
             handle_done();
         }
     }
 
-    wf::key_callback next_view_binding = [=] (auto)
+    bool should_finish_on_key(wlr_keyboard_key_event event)
     {
-        handle_switch_request(-1);
-        return false;
+        if (event.state != WLR_KEY_RELEASED)
+        {
+            return false;
+        }
+
+        auto mod = wf::get_core().seat->modifier_from_keycode(event.keycode);
+        return mod & activating_modifiers;
+    }
+
+    wf::key_callback next_view_binding = [=] (const wf::keybinding_t& binding)
+    {
+        return handle_switch_request(-1, binding);
     };
 
-    wf::key_callback prev_view_binding = [=] (auto)
+    wf::key_callback prev_view_binding = [=] (const wf::keybinding_t& binding)
     {
-        handle_switch_request(1);
-        return false;
+        return handle_switch_request(1, binding);
     };
 
     bool animations_running()
@@ -305,7 +313,7 @@ class WayfireSwitcher : public wf::per_output_plugin_instance_t, public wf::keyb
         }
     }
 
-    bool handle_switch_request(int dir)
+    bool handle_switch_request(int dir, const wf::keybinding_t& binding)
     {
         if (get_workspace_views().empty())
         {
@@ -328,7 +336,11 @@ class WayfireSwitcher : public wf::per_output_plugin_instance_t, public wf::keyb
             active = true;
             input_grab->grab_input(wf::scene::layer::OVERLAY);
             arrange(dir);
-            activating_modifiers = wf::get_core().seat->get_keyboard_modifiers();
+            activating_modifiers = binding.get_modifiers();
+            if (!activating_modifiers)
+            {
+                handle_done();
+            }
         } else
         {
             next_view(dir);
