@@ -2,7 +2,7 @@ plugins = [
   'move', 'resize', 'command', 'autostart', 'vswipe', 'wrot', 'expo',
   'switcher', 'fast-switcher', 'oswitch', 'place', 'invert',
   'zoom', 'alpha', 'idle', 'extra-gestures', 'preserve-output',
-  'wsets', 'xkb-bindings',
+  'wsets', 'xkb-bindings', 'wlr-workspaces',
 ]
 
 all_include_dirs = [wayfire_api_inc, wayfire_conf_inc, plugins_common_inc, vswitch_inc, wobbly_inc, grid_inc, ipc_include_dirs]
