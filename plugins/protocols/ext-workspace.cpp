@@ -48,14 +48,15 @@ class ext_workspaces_intergration : public wf::per_output_plugin_instance_t
     wf::signal::connection_t<wf::workspace_changed_signal> on_workspace_changed =
         [=] (wf::workspace_changed_signal *ev)
     {
-        if (ev->old_viewport.y < (int)workspaces.size() &&
-            ev->old_viewport.x < (int)workspaces[ev->old_viewport.y].size())
+        if ((ev->old_viewport.y < (int)workspaces.size()) &&
+            (ev->old_viewport.x < (int)workspaces[ev->old_viewport.y].size()))
         {
             wlr_ext_workspace_handle_v1_set_active(
                 workspaces[ev->old_viewport.y][ev->old_viewport.x], false);
         }
-        if (ev->new_viewport.y < (int)workspaces.size() &&
-            ev->new_viewport.x < (int)workspaces[ev->new_viewport.y].size())
+
+        if ((ev->new_viewport.y < (int)workspaces.size()) &&
+            (ev->new_viewport.x < (int)workspaces[ev->new_viewport.y].size()))
         {
             wlr_ext_workspace_handle_v1_set_active(
                 workspaces[ev->new_viewport.y][ev->new_viewport.x], true);
@@ -88,7 +89,10 @@ class ext_workspaces_intergration : public wf::per_output_plugin_instance_t
     void setup_workspaces()
     {
         auto wset = output->wset();
-        if (!wset) return;
+        if (!wset)
+        {
+            return;
+        }
 
         dimensions_t ws_dim = wset->get_workspace_grid_size();
         workspaces.resize(ws_dim.height,
@@ -120,7 +124,7 @@ class ext_workspaces_intergration : public wf::per_output_plugin_instance_t
         }
 
         auto current = wset->get_current_workspace();
-        if (current.y < ws_dim.height && current.x < ws_dim.width)
+        if ((current.y < ws_dim.height) && (current.x < ws_dim.width))
         {
             wlr_ext_workspace_handle_v1_set_active(
                 workspaces[current.y][current.x], true);
@@ -137,6 +141,7 @@ class ext_workspaces_intergration : public wf::per_output_plugin_instance_t
                 wlr_ext_workspace_handle_v1_destroy(ws);
             }
         }
+
         workspaces.clear();
     }
 
@@ -188,28 +193,37 @@ void wlr_ext_workspaces_manager::handle_commit(wlr_ext_workspace_v1_commit_event
         switch (req->type)
         {
           case WLR_EXT_WORKSPACE_V1_REQUEST_ACTIVATE:
-          {
-              auto *ws = req->activate.workspace;
-              if (!ws || !ws->group) break;
-              auto *ws_data = static_cast<workspace_handle_data*>(ws->data);
-              auto *integration = static_cast<ext_workspaces_intergration*>(ws->group->data);
-              if (ws_data && integration)
-              {
-                  integration->handle_activate(ws_data->grid_pos);
-              }
-              break;
-          }
+        {
+            auto *ws = req->activate.workspace;
+            if (!ws || !ws->group)
+            {
+                break;
+            }
+
+            auto *ws_data     = static_cast<workspace_handle_data*>(ws->data);
+            auto *integration = static_cast<ext_workspaces_intergration*>(ws->group->data);
+            if (ws_data && integration)
+            {
+                integration->handle_activate(ws_data->grid_pos);
+            }
+
+            break;
+        }
+
           case WLR_EXT_WORKSPACE_V1_REQUEST_CREATE_WORKSPACE:
             LOGD("Client requested workspace creation");
             break;
+
           case WLR_EXT_WORKSPACE_V1_REQUEST_REMOVE:
             LOGD("Client requested workspace removal");
             break;
+
           default:
             break;
         }
     }
 }
+
 class ext_workspaces_plugin_t : public wf::per_output_plugin_t<wf::ext_workspaces_intergration>
 {
     bool is_unloadable() override
