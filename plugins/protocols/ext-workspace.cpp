@@ -133,12 +133,8 @@ class ext_workspaces_intergration : public wf::per_output_plugin_instance_t
         {
             for (auto *ws : row)
             {
-                if (ws)
-                {
-                    delete static_cast<workspace_handle_data*>(ws->data);
-                    ws->data = nullptr;
-                    wlr_ext_workspace_handle_v1_destroy(ws);
-                }
+                delete static_cast<workspace_handle_data*>(ws->data);
+                wlr_ext_workspace_handle_v1_destroy(ws);
             }
         }
         workspaces.clear();
