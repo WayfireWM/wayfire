@@ -20,6 +20,7 @@ class simple_decorator_t : public wf::custom_data_t
     wf::signal::connection_t<wf::view_activated_state_signal> on_view_activated;
     wf::signal::connection_t<wf::view_geometry_changed_signal> on_view_geometry_changed;
     wf::signal::connection_t<wf::view_fullscreen_signal> on_view_fullscreen;
+    wf::signal::connection_t<wf::view_tiled_signal> on_view_tiled;
 
   public:
     simple_decorator_t(wayfire_toplevel_view view);

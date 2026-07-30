@@ -25,6 +25,7 @@ enum decoration_area_type_t
     DECORATION_AREA_RESIZE_RIGHT  = WLR_EDGE_RIGHT | DECORATION_AREA_RESIZE_BIT,
     DECORATION_AREA_RESIZE_TOP    = WLR_EDGE_TOP | DECORATION_AREA_RESIZE_BIT,
     DECORATION_AREA_RESIZE_BOTTOM = WLR_EDGE_BOTTOM | DECORATION_AREA_RESIZE_BIT,
+    DECORATION_AREA_EMPTY         = 0,
 };
 
 /**
@@ -105,7 +106,7 @@ class decoration_layout_t
         std::function<void(wf::geometry_t)> damage_callback);
 
     /** Regenerate layout using the new size */
-    void resize(int width, int height);
+    void resize(int width, int height, bool allow_resize);
 
     /**
      * @return The decoration areas which need to be rendered, in top to bottom

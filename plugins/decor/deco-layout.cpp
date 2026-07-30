@@ -118,7 +118,7 @@ wf::geometry_t decoration_layout_t::create_buttons(int width, int)
 }
 
 /** Regenerate layout using the new size */
-void decoration_layout_t::resize(int width, int height)
+void decoration_layout_t::resize(int width, int height, bool allow_resize)
 {
     this->layout_areas.clear();
     if (this->titlebar_size > 0)
@@ -145,22 +145,22 @@ void decoration_layout_t::resize(int width, int height)
     /* Resizing edges - left */
     wf::geometry_t border_geometry = {0.0, 0.0, (double)border_size, (double)height};
     this->layout_areas.push_back(std::make_unique<decoration_area_t>(
-        DECORATION_AREA_RESIZE_LEFT, border_geometry));
+        allow_resize ? DECORATION_AREA_RESIZE_LEFT : DECORATION_AREA_EMPTY, border_geometry));
 
     /* Resizing edges - right */
     border_geometry = {(double)(width - border_size), 0.0, (double)border_size, (double)height};
     this->layout_areas.push_back(std::make_unique<decoration_area_t>(
-        DECORATION_AREA_RESIZE_RIGHT, border_geometry));
+        allow_resize ? DECORATION_AREA_RESIZE_RIGHT : DECORATION_AREA_EMPTY, border_geometry));
 
     /* Resizing edges - top */
     border_geometry = {0.0, 0.0, (double)width, (double)border_size};
     this->layout_areas.push_back(std::make_unique<decoration_area_t>(
-        DECORATION_AREA_RESIZE_TOP, border_geometry));
+        allow_resize ? DECORATION_AREA_RESIZE_TOP : DECORATION_AREA_EMPTY, border_geometry));
 
     /* Resizing edges - bottom */
     border_geometry = {0.0, (double)(height - border_size), (double)width, (double)border_size};
     this->layout_areas.push_back(std::make_unique<decoration_area_t>(
-        DECORATION_AREA_RESIZE_BOTTOM, border_geometry));
+        allow_resize ? DECORATION_AREA_RESIZE_BOTTOM : DECORATION_AREA_EMPTY, border_geometry));
 }
 
 /**

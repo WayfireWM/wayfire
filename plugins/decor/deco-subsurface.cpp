@@ -324,7 +324,8 @@ class simple_decoration_node_t : public wf::scene::node_t, public wf::pointer_in
         {
             view->damage();
             size = dims;
-            layout.resize(size.width, size.height);
+            bool allow_resize = view->toplevel()->current().tiled_edges != wf::TILED_EDGES_ALL;
+            layout.resize(size.width, size.height, allow_resize);
             if (!view->toplevel()->current().fullscreen)
             {
                 this->cached_region = layout.calculate_region();
@@ -362,6 +363,7 @@ wf::simple_decorator_t::simple_decorator_t(wayfire_toplevel_view view)
     view->connect(&on_view_activated);
     view->connect(&on_view_geometry_changed);
     view->connect(&on_view_fullscreen);
+    view->connect(&on_view_tiled);
 
     on_view_activated = [this] (auto)
     {
@@ -380,6 +382,11 @@ wf::simple_decorator_t::simple_decorator_t(wayfire_toplevel_view view)
         {
             deco->resize(wf::dimensions(this->view->get_geometry()));
         }
+    };
+
+    on_view_tiled = [this] (auto)
+    {
+        deco->resize(wf::dimensions(this->view->get_geometry()));
     };
 }
 
