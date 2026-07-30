@@ -1,0 +1,8 @@
+<?xml version="1.0" ?>
+<wayfire>
+	<plugin name="ext-workspace">
+	<_short>Ext Workspace Protocol</_short>
+<_long>An implementation of the ext-workspace-v1 protocol.</_long>
+<category>Utility</category>
+</plugin>
+</wayfire>
