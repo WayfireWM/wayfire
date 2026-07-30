@@ -215,6 +215,13 @@ void wlr_ext_workspaces_manager::handle_commit(wlr_ext_workspace_v1_commit_event
         }
     }
 }
+class ext_workspaces_plugin_t : public wf::per_output_plugin_t<wf::ext_workspaces_intergration>
+{
+    bool is_unloadable() override
+    {
+        return false;
+    }
+};
 } // namespace wf
 
-DECLARE_WAYFIRE_PLUGIN(wf::per_output_plugin_t<wf::ext_workspaces_intergration>);
+DECLARE_WAYFIRE_PLUGIN(wf::ext_workspaces_plugin_t);
