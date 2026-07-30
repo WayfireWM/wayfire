@@ -152,8 +152,7 @@ class ext_workspaces_intergration : public wf::per_output_plugin_instance_t
 
     void init() override
     {
-        group = wlr_ext_workspace_group_handle_v1_create(manager->manager,
-            EXT_WORKSPACE_GROUP_HANDLE_V1_GROUP_CAPABILITIES_CREATE_WORKSPACE);
+        group = wlr_ext_workspace_group_handle_v1_create(manager->manager, 0);
         group->data = this;
 
         wlr_ext_workspace_group_handle_v1_output_enter(group, output->handle);
