@@ -4,6 +4,7 @@
 #include <wayfire/output.hpp>
 #include <wayfire/workspace-set.hpp>
 #include <wayfire/signal-definitions.hpp>
+#include <wayfire/plugins/common/shared-core-data.hpp>
 
 extern "C"
 {
@@ -22,7 +23,6 @@ class ext_workspaces_intergration;
 class wlr_ext_workspaces_manager : public custom_data_t
 {
   public:
-    int refcount = 0;
     wlr_ext_workspace_manager_v1 *manager;
     wf::wl_listener_wrapper on_commit;
 
@@ -41,6 +41,7 @@ class wlr_ext_workspaces_manager : public custom_data_t
 
 class ext_workspaces_intergration : public wf::per_output_plugin_instance_t
 {
+    wf::shared_data::ref_ptr_t<wlr_ext_workspaces_manager> manager;
     wlr_ext_workspace_group_handle_v1 *group = nullptr;
     std::vector<std::vector<wlr_ext_workspace_handle_v1*>> workspaces;
 
@@ -92,8 +93,6 @@ class ext_workspaces_intergration : public wf::per_output_plugin_instance_t
         dimensions_t ws_dim = wset->get_workspace_grid_size();
         workspaces.resize(ws_dim.height,
             std::vector<wlr_ext_workspace_handle_v1*>(ws_dim.width, nullptr));
-
-        auto manager = wf::get_core().get_data_safe<wlr_ext_workspaces_manager>();
 
         for (int i = 0; i < ws_dim.height; i++)
         {
@@ -153,9 +152,6 @@ class ext_workspaces_intergration : public wf::per_output_plugin_instance_t
 
     void init() override
     {
-        auto manager = wf::get_core().get_data_safe<wlr_ext_workspaces_manager>();
-        ++manager->refcount;
-
         group = wlr_ext_workspace_group_handle_v1_create(manager->manager,
             EXT_WORKSPACE_GROUP_HANDLE_V1_GROUP_CAPABILITIES_CREATE_WORKSPACE);
         group->data = this;
@@ -185,13 +181,6 @@ class ext_workspaces_intergration : public wf::per_output_plugin_instance_t
         {
             wlr_ext_workspace_group_handle_v1_destroy(group);
             group = nullptr;
-        }
-
-        auto manager = wf::get_core().get_data<wlr_ext_workspaces_manager>();
-        --manager->refcount;
-        if (manager->refcount <= 0)
-        {
-            wf::get_core().erase_data<wlr_ext_workspaces_manager>();
         }
     }
 };
@@ -228,4 +217,4 @@ void wlr_ext_workspaces_manager::handle_commit(wlr_ext_workspace_v1_commit_event
 }
 } // namespace wf
 
-DECLARE_WAYFIRE_PLUGIN(wf::per_output_plugin_t<wf::wlr_ext_workspaces_intergration>);
+DECLARE_WAYFIRE_PLUGIN(wf::per_output_plugin_t<wf::ext_workspaces_intergration>);
