@@ -465,14 +465,6 @@ std::pair<VkPipelineLayout, VkPipeline> graphics_pipeline_t::pipeline_for(const 
     input_assembly.topology = params.topology;
     input_assembly.primitiveRestartEnable = VK_FALSE;
 
-    VkViewport viewport{};
-    viewport.x     = 0.0f;
-    viewport.y     = 0.0f;
-    viewport.width = 1.0f;
-    viewport.height   = 1.0f;
-    viewport.minDepth = 0.0f;
-    viewport.maxDepth = 1.0f;
-
     VkRect2D scissor{};
     scissor.offset = {0, 0};
     scissor.extent = {1, 1};
