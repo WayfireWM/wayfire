@@ -26,6 +26,7 @@ class view_action_interface_t : public action_interface_t
     void _unminimize();
     void _make_sticky();
     void _always_on_top();
+    void _always_on_bottom();
 
     std::tuple<bool, float> _expect_float(const std::vector<variant_t> & args,
         std::size_t position);

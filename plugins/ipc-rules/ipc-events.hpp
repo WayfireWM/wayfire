@@ -394,6 +394,13 @@ class ipc_rules_events_methods_t : public wf::per_output_tracker_mixin_t<>
         send_view_to_subscribes(ev->view, "view-always-on-top");
     };
 
+    // Always on bottom state handler
+    wf::signal::connection_t<wf::wm_actions_below_changed_signal> _below_state =
+        [=] (wf::wm_actions_below_changed_signal *ev)
+    {
+        send_view_to_subscribes(ev->view, "view-always-on-bottom");
+    };
+
     wf::signal::connection_t<wf::view_change_workspace_signal> _view_workspace =
         [=] (wf::view_change_workspace_signal *ev)
     {

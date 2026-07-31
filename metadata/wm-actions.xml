@@ -9,6 +9,11 @@
 			<_long>Toggle the always-on-top state of a view.</_long>
 			<default>disabled</default>
 		</option>
+		<option name="toggle_always_on_bottom" type="activator">
+			<_short>Toggle Always on Bottom</_short>
+			<_long>Toggle the always-on-bottom state of a view.</_long>
+			<default>disabled</default>
+		</option>
 		<option name="toggle_fullscreen" type="activator">
 			<_short>Toggle Fullscreen</_short>
 			<_long>Toggle the fullscreen state of a view.</_long>

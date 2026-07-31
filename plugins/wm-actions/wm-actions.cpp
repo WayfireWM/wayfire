@@ -32,9 +32,69 @@ class always_on_top_root_node_t : public wf::scene::output_node_t
     }
 };
 
+class always_on_bottom_root_node_t : public wf::scene::output_node_t
+{
+  public:
+    using output_node_t::output_node_t;
+
+    std::string stringify() const override
+    {
+        return "always-on-bottom for output " + get_output()->to_string() + " " + stringify_flags();
+    }
+};
+
+static void emit_above_changed(wf::output_t *output, wayfire_view view)
+{
+    if (!output)
+    {
+        return;
+    }
+
+    wf::wm_actions_above_changed_signal data;
+    data.view = view;
+    output->emit(&data);
+}
+
+static void emit_below_changed(wf::output_t *output, wayfire_view view)
+{
+    if (!output)
+    {
+        return;
+    }
+
+    wf::wm_actions_below_changed_signal data;
+    data.view = view;
+    output->emit(&data);
+}
+
+static bool unset_above_state_data(wf::output_t *output, wayfire_view view)
+{
+    if (!view->has_data("wm-actions-above"))
+    {
+        return false;
+    }
+
+    view->erase_data("wm-actions-above");
+    emit_above_changed(output, view);
+    return true;
+}
+
+static bool unset_below_state_data(wf::output_t *output, wayfire_view view)
+{
+    if (!view->has_data("wm-actions-below"))
+    {
+        return false;
+    }
+
+    view->erase_data("wm-actions-below");
+    emit_below_changed(output, view);
+    return true;
+}
+
 class wayfire_wm_actions_output_t : public wf::per_output_plugin_instance_t
 {
     wf::scene::floating_inner_ptr always_above;
+    wf::scene::floating_inner_ptr always_below;
     bool showdesktop_active = false;
 
     wf::option_wrapper_t<wf::activatorbinding_t> minimize{
@@ -43,6 +103,8 @@ class wayfire_wm_actions_output_t : public wf::per_output_plugin_instance_t
         "wm-actions/toggle_maximize"};
     wf::option_wrapper_t<wf::activatorbinding_t> toggle_above{
         "wm-actions/toggle_always_on_top"};
+    wf::option_wrapper_t<wf::activatorbinding_t> toggle_below{
+        "wm-actions/toggle_always_on_bottom"};
     wf::option_wrapper_t<wf::activatorbinding_t> toggle_fullscreen{
         "wm-actions/toggle_fullscreen"};
     wf::option_wrapper_t<wf::activatorbinding_t> toggle_sticky{
@@ -68,21 +130,40 @@ class wayfire_wm_actions_output_t : public wf::per_output_plugin_instance_t
 
         if (above)
         {
+            unset_below_state_data(output, view);
             wf::scene::readd_front(always_above, view->get_root_node());
             view->store_data(std::make_unique<wf::custom_data_t>(),
                 "wm-actions-above");
+            emit_above_changed(output, view);
         } else
         {
             wf::scene::readd_front(output->wset()->get_node(), view->get_root_node());
-            if (view->has_data("wm-actions-above"))
-            {
-                view->erase_data("wm-actions-above");
-            }
+            unset_above_state_data(output, view);
         }
 
-        wf::wm_actions_above_changed_signal data;
-        data.view = view;
-        output->emit(&data);
+        return true;
+    }
+
+    bool set_keep_below_state(wayfire_view view, bool below)
+    {
+        if (!view || !output->can_activate_plugin(&grab_interface))
+        {
+            return false;
+        }
+
+        if (below)
+        {
+            unset_above_state_data(output, view);
+            wf::scene::readd_front(always_below, view->get_root_node());
+            view->store_data(std::make_unique<wf::custom_data_t>(),
+                "wm-actions-below");
+            emit_below_changed(output, view);
+        } else
+        {
+            wf::scene::readd_front(output->wset()->get_node(), view->get_root_node());
+            unset_below_state_data(output, view);
+        }
+
         return true;
     }
 
@@ -116,6 +197,15 @@ class wayfire_wm_actions_output_t : public wf::per_output_plugin_instance_t
         }
     };
 
+    wf::signal::connection_t<wf::wm_actions_set_below_state_signal> on_set_below_state_signal =
+        [=] (wf::wm_actions_set_below_state_signal *signal)
+    {
+        if (!set_keep_below_state(signal->view, signal->below))
+        {
+            LOG(wf::log::LOG_LEVEL_DEBUG, "view below action failed via signal.");
+        }
+    };
+
     /**
      * Ensures views marked as above are still above if their output changes.
      */
@@ -138,6 +228,11 @@ class wayfire_wm_actions_output_t : public wf::per_output_plugin_instance_t
         {
             wf::scene::readd_front(always_above, view->get_root_node());
         }
+
+        if (view->has_data("wm-actions-below"))
+        {
+            wf::scene::readd_front(always_below, view->get_root_node());
+        }
     };
 
     /**
@@ -155,6 +250,11 @@ class wayfire_wm_actions_output_t : public wf::per_output_plugin_instance_t
         if (ev->view->has_data("wm-actions-above") && !ev->view->minimized)
         {
             wf::scene::readd_front(always_above, ev->view->get_root_node());
+        }
+
+        if (ev->view->has_data("wm-actions-below") && !ev->view->minimized)
+        {
+            wf::scene::readd_front(always_below, ev->view->get_root_node());
         }
     };
 
@@ -226,6 +326,18 @@ class wayfire_wm_actions_output_t : public wf::per_output_plugin_instance_t
         if (view)
         {
             return set_keep_above_state(view, !view->has_data("wm-actions-above"));
+        } else
+        {
+            return false;
+        }
+    };
+
+    wf::activator_callback on_toggle_below = [=] (auto ev) -> bool
+    {
+        auto view = choose_view(ev.source);
+        if (view)
+        {
+            return set_keep_below_state(view, !view->has_data("wm-actions-below"));
         } else
         {
             return false;
@@ -374,15 +486,19 @@ class wayfire_wm_actions_output_t : public wf::per_output_plugin_instance_t
     void init() override
     {
         always_above = std::make_shared<always_on_top_root_node_t>(output);
+        always_below = std::make_shared<always_on_bottom_root_node_t>(output);
         wf::scene::add_front(wf::get_core().scene()->layers[(int)wf::scene::layer::WORKSPACE], always_above);
+        wf::scene::add_back(wf::get_core().scene()->layers[(int)wf::scene::layer::WORKSPACE], always_below);
         output->add_activator(minimize, &on_minimize);
         output->add_activator(toggle_maximize, &on_toggle_maximize);
         output->add_activator(toggle_above, &on_toggle_above);
+        output->add_activator(toggle_below, &on_toggle_below);
         output->add_activator(toggle_fullscreen, &on_toggle_fullscreen);
         output->add_activator(toggle_sticky, &on_toggle_sticky);
         output->add_activator(send_to_back, &on_send_to_back);
         output->add_activator(bring_to_front, &on_bring_to_front);
         output->connect(&on_set_above_state_signal);
+        output->connect(&on_set_below_state_signal);
         output->connect(&on_view_minimized);
         wf::get_core().connect(&on_view_output_changed);
     }
@@ -395,12 +511,19 @@ class wayfire_wm_actions_output_t : public wf::per_output_plugin_instance_t
             {
                 set_keep_above_state(view, false);
             }
+
+            if (view->has_data("wm-actions-below"))
+            {
+                set_keep_below_state(view, false);
+            }
         }
 
         wf::scene::remove_child(always_above);
+        wf::scene::remove_child(always_below);
         output->rem_binding(&on_minimize);
         output->rem_binding(&on_toggle_maximize);
         output->rem_binding(&on_toggle_above);
+        output->rem_binding(&on_toggle_below);
         output->rem_binding(&on_toggle_fullscreen);
         output->rem_binding(&on_toggle_sticky);
         output->rem_binding(&on_send_to_back);
@@ -420,6 +543,7 @@ class wayfire_wm_actions_t : public wf::plugin_interface_t,
         init_output_tracking();
         ipc_repo->register_method("wm-actions/set-minimized", ipc_minimize);
         ipc_repo->register_method("wm-actions/set-always-on-top", ipc_set_always_on_top);
+        ipc_repo->register_method("wm-actions/set-always-on-bottom", ipc_set_always_on_bottom);
         ipc_repo->register_method("wm-actions/set-fullscreen", ipc_set_fullscreen);
         ipc_repo->register_method("wm-actions/set-sticky", ipc_set_sticky);
         ipc_repo->register_method("wm-actions/send-to-back", ipc_send_to_back);
@@ -432,6 +556,7 @@ class wayfire_wm_actions_t : public wf::plugin_interface_t,
         fini_output_tracking();
         ipc_repo->unregister_method("wm-actions/set-minimized");
         ipc_repo->unregister_method("wm-actions/set-always-on-top");
+        ipc_repo->unregister_method("wm-actions/set-always-on-bottom");
         ipc_repo->unregister_method("wm-actions/set-fullscreen");
         ipc_repo->unregister_method("wm-actions/set-sticky");
         ipc_repo->unregister_method("wm-actions/send-to-back");
@@ -483,11 +608,41 @@ class wayfire_wm_actions_t : public wf::plugin_interface_t,
         {
             if (!view->get_output())
             {
-                view->store_data(std::make_unique<wf::custom_data_t>(), "wm-actions-above");
+                if (state)
+                {
+                    unset_below_state_data(nullptr, view);
+                    view->store_data(std::make_unique<wf::custom_data_t>(), "wm-actions-above");
+                } else
+                {
+                    unset_above_state_data(nullptr, view);
+                }
+
                 return;
             }
 
             output_instance[view->get_output()]->set_keep_above_state(view, state);
+        });
+    };
+
+    wf::ipc::method_callback ipc_set_always_on_bottom = [=] (const wf::json_t& js)
+    {
+        return execute_for_view(js, [=] (wayfire_toplevel_view view, bool state)
+        {
+            if (!view->get_output())
+            {
+                if (state)
+                {
+                    unset_above_state_data(nullptr, view);
+                    view->store_data(std::make_unique<wf::custom_data_t>(), "wm-actions-below");
+                } else
+                {
+                    unset_below_state_data(nullptr, view);
+                }
+
+                return;
+            }
+
+            output_instance[view->get_output()]->set_keep_below_state(view, state);
         });
     };
 

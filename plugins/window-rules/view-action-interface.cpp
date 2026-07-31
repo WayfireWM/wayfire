@@ -63,6 +63,10 @@ bool view_action_interface_t::execute(const std::string & name,
         {
             _always_on_top();
             return false;
+        } else if (id == "always_on_bottom")
+        {
+            _always_on_bottom();
+            return false;
         }
 
         if ((args.size() < 2) || (wf::is_string(args.at(0)) == false))
@@ -278,6 +282,21 @@ void view_action_interface_t::_always_on_top()
 
     data.view  = _view;
     data.above = true;
+    output->emit(&data);
+}
+
+void view_action_interface_t::_always_on_bottom()
+{
+    wf::wm_actions_set_below_state_signal data;
+
+    auto output = _view->get_output();
+    if (!output)
+    {
+        return;
+    }
+
+    data.view  = _view;
+    data.below = true;
     output->emit(&data);
 }
 
