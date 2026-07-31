@@ -429,7 +429,10 @@ bool output_state_t::operator ==(const output_state_t& other) const
     if (source == OUTPUT_IMAGE_SOURCE_MIRROR)
     {
         return other.source == OUTPUT_IMAGE_SOURCE_MIRROR &&
-               mirror_from == other.mirror_from;
+               mirror_from == other.mirror_from &&
+               (mode.width == other.mode.width) &&
+               (mode.height == other.mode.height) &&
+               (mode.refresh == other.mode.refresh);
     }
 
     bool eq = true;
@@ -758,7 +761,11 @@ struct output_layout_output_t
 
           case output_config::MODE_MIRROR:
             state.source = OUTPUT_IMAGE_SOURCE_MIRROR;
-            state.mode   = select_default_mode(output_config::MODE_AUTO);
+            tmp.width    = mode.get_width();
+            tmp.height   = mode.get_height();
+            tmp.refresh  = mode.get_refresh();
+            state.mode   = ((tmp.width > 0) && is_mode_supported(tmp)) ?
+                tmp : select_default_mode(output_config::MODE_AUTO);
             state.mirror_from = mode.get_mirror_from();
             break;
         }
@@ -1768,7 +1775,9 @@ class output_layout_t::impl
                 LOGC(OUTPUT, "\t  mode: dpms");
             } else if (entry.second.source == OUTPUT_IMAGE_SOURCE_MIRROR)
             {
-                LOGC(OUTPUT, "\t  mode: mirror ", entry.second.mirror_from);
+                LOGC(OUTPUT, "\t  mode: mirror ", entry.second.mirror_from,
+                    " (", entry.second.mode.width, "x", entry.second.mode.height,
+                    "@", entry.second.mode.refresh, ")");
             } else
             {
                 LOGC(OUTPUT, "\t  mode: ",
