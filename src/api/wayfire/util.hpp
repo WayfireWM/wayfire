@@ -3,6 +3,7 @@
 
 #include <algorithm>
 #include <wayland-server.h>
+#include <cstdint>
 #include <functional>
 
 namespace wf
@@ -94,6 +95,39 @@ class wl_idle_call
   private:
     callback_t call;
     wl_event_source *source = NULL;
+};
+
+/** A one-shot high-resolution CLOCK_MONOTONIC timer integrated with the Wayland event loop. */
+class wl_high_resolution_timer
+{
+  public:
+    using callback_t = std::function<void ()>;
+
+    wl_high_resolution_timer() = default;
+    ~wl_high_resolution_timer();
+
+    wl_high_resolution_timer(const wl_high_resolution_timer&) = delete;
+    wl_high_resolution_timer(wl_high_resolution_timer&&) = delete;
+    wl_high_resolution_timer& operator =(const wl_high_resolution_timer&) = delete;
+    wl_high_resolution_timer& operator =(wl_high_resolution_timer&&) = delete;
+
+    /** Arm the timer at an absolute CLOCK_MONOTONIC timestamp in nanoseconds. */
+    bool set_deadline(int64_t deadline_ns, callback_t call);
+
+    /** Disarm the timer. */
+    void disconnect();
+
+    /** @return true if the timer is armed. */
+    bool is_connected() const;
+
+  private:
+    static int handle_timer(int fd, uint32_t mask, void *data);
+    bool ensure_source();
+
+    int timer_fd = -1;
+    wl_event_source *source = nullptr;
+    callback_t call;
+    bool armed = false;
 };
 
 /**

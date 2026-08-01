@@ -3,6 +3,10 @@
 #include <wayfire/debug.hpp>
 #include <wayfire/core.hpp>
 #include <ctime>
+#include <cerrno>
+#include <cstring>
+#include <sys/timerfd.h>
+#include <unistd.h>
 
 #include "wl-listener-wrapper.tpp"
 
@@ -88,6 +92,105 @@ void wl_idle_call::execute()
     {
         call();
     }
+}
+
+wl_high_resolution_timer::~wl_high_resolution_timer()
+{
+    if (source)
+    {
+        wl_event_source_remove(source);
+    }
+
+    if (timer_fd >= 0)
+    {
+        close(timer_fd);
+    }
+}
+
+bool wl_high_resolution_timer::ensure_source()
+{
+    if (source)
+    {
+        return true;
+    }
+
+    timer_fd = timerfd_create(CLOCK_MONOTONIC, TFD_CLOEXEC | TFD_NONBLOCK);
+    if (timer_fd < 0)
+    {
+        LOGE("Failed to create high-resolution timer: ", strerror(errno));
+        return false;
+    }
+
+    source = wl_event_loop_add_fd(get_core().ev_loop, timer_fd,
+        WL_EVENT_READABLE, handle_timer, this);
+    if (!source)
+    {
+        LOGE("Failed to add high-resolution timer to the event loop");
+        close(timer_fd);
+        timer_fd = -1;
+        return false;
+    }
+
+    return true;
+}
+
+bool wl_high_resolution_timer::set_deadline(int64_t deadline_ns, callback_t call)
+{
+    if ((deadline_ns <= 0) || !ensure_source())
+    {
+        return false;
+    }
+
+    itimerspec timer{};
+    timer.it_value.tv_sec  = deadline_ns / 1'000'000'000;
+    timer.it_value.tv_nsec = deadline_ns % 1'000'000'000;
+    if (timerfd_settime(timer_fd, TFD_TIMER_ABSTIME, &timer, nullptr) < 0)
+    {
+        LOGE("Failed to arm high-resolution timer: ", strerror(errno));
+        disconnect();
+        return false;
+    }
+
+    this->call = std::move(call);
+    armed = true;
+    return true;
+}
+
+void wl_high_resolution_timer::disconnect()
+{
+    if ((timer_fd >= 0) && armed)
+    {
+        itimerspec timer{};
+        timerfd_settime(timer_fd, 0, &timer, nullptr);
+    }
+
+    call  = {};
+    armed = false;
+}
+
+bool wl_high_resolution_timer::is_connected() const
+{
+    return armed;
+}
+
+int wl_high_resolution_timer::handle_timer(int fd, uint32_t mask, void *data)
+{
+    auto timer = static_cast<wl_high_resolution_timer*>(data);
+    uint64_t expirations;
+    if (!(mask & WL_EVENT_READABLE) || (read(fd, &expirations, sizeof(expirations)) < 0))
+    {
+        return 0;
+    }
+
+    timer->armed = false;
+    auto call = std::move(timer->call);
+    timer->call = {};
+    if (call)
+    {
+        call();
+    }
+
+    return 0;
 }
 
 template<bool Repeat>
