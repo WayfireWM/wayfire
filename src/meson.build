@@ -60,6 +60,7 @@ wayfire_sources = ['geometry.cpp',
                    'view/translation-node.cpp',
 
                    'output/output.cpp',
+                   'output/adaptive-repaint-scheduler.cpp',
                    'output/workarea.cpp',
                    'output/render-manager.cpp',
                    'output/workspace-stream.cpp',

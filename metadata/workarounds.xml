@@ -28,7 +28,7 @@
 		</option>
 		<option name="dynamic_repaint_delay" type="bool">
 			<_short>Allow dynamic repaint delay</_short>
-			<_long>If true, allows Wayfire to dynamically recalculate its max_render_time, i.e allow render time higher than max_render_time.</_long>
+			<_long>Learn a conservative paint-to-commit budget from previous frames and adjust repaint deadlines to avoid missed presentations.</_long>
 			<default>false</default>
 		</option>
 		<option name="use_external_output_configuration" type="bool">

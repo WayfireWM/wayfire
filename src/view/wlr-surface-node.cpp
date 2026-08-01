@@ -512,17 +512,20 @@ class wf::scene::wlr_surface_node_t::wlr_surface_render_instance_t : public rend
                 &state, release_point.timeline, release_point.point);
         }
 
-        if (wlr_output_test_state(output->handle, &state) &&
-            wlr_output_commit_state(output->handle, &state))
+        if (wlr_output_test_state(output->handle, &state))
         {
+            // The helper listens for the output commit and must run before the
+            // commit which will present this surface.
             wlr_presentation_surface_scanned_out_on_output(wlr_surf, output->handle);
-            wlr_output_state_finish(&state);
-            return direct_scanout::SUCCESS;
-        } else
-        {
-            wlr_output_state_finish(&state);
-            return direct_scanout::OCCLUSION;
+            if (wlr_output_commit_state(output->handle, &state))
+            {
+                wlr_output_state_finish(&state);
+                return direct_scanout::SUCCESS;
+            }
         }
+
+        wlr_output_state_finish(&state);
+        return direct_scanout::OCCLUSION;
     }
 
     void compute_visibility(wf::output_t *output, wf::regionf_t& visible) override

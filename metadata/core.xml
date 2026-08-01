@@ -68,8 +68,8 @@
 			<default></default>
 		</option>
 		<option name="max_render_time" type="int">
-			<_short>Maximum render time</_short>
-			<_long>Sets the compositor render delay in milliseconds, which allows applications to render with low latency.</_long>
+			<_short>Deprecated render deadline budget</_short>
+			<_long>Legacy global render deadline budget. Use the per-output min_render_budget option instead.</_long>
 			<default>-1</default>
 		</option>
 		<option name="transaction_timeout" type="int">

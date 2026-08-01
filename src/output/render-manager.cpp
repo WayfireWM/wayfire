@@ -18,6 +18,7 @@
 #include <algorithm>
 #include <filesystem>
 #include <fstream>
+#include <deque>
 #include <optional>
 #include <wayfire/nonstd/reverse.hpp>
 #include <wayfire/nonstd/safe-list.hpp>
@@ -25,6 +26,8 @@
 #include <wayfire/nonstd/wlroots-full.hpp>
 #include <wlr/types/wlr_gamma_control_v1.h>
 #include <wayfire/output-layout.hpp>
+#include "adaptive-repaint-scheduler.hpp"
+#include <ctime>
 
 namespace wf
 {
@@ -154,7 +157,7 @@ struct swapchain_damage_manager_t
         }
     }
 
-    int constant_redraw_counter = 0;
+    int constant_redraw_counter   = 0;
     void set_redraw_always(bool always)
     {
         constant_redraw_counter += (always ? 1 : -1);
@@ -240,7 +243,8 @@ struct swapchain_damage_manager_t
         return true;
     }
 
-    bool force_next_frame = false;
+    bool force_next_frame       = false;
+    uint64_t request_generation = 0;
 
     // Tracks whether a new frame is needed at all.
     // Set when new content was damaged, cleared when a frame (composited or direct scanout) is presented.
@@ -259,13 +263,24 @@ struct swapchain_damage_manager_t
                (constant_redraw_counter > 0);
     }
 
-    /**
-     * Notify the damage manager that a new frame is about to be presented.
-     */
-    void frame_started()
+    uint64_t get_request_generation() const
     {
-        force_next_frame = false;
-        pending_frame_request = false;
+        return request_generation;
+    }
+
+    /** Consume only requests which existed when this frame began. */
+    void frame_committed(uint64_t frame_generation)
+    {
+        if (frame_generation == request_generation)
+        {
+            force_next_frame = false;
+            pending_frame_request = false;
+        } else
+        {
+            // A request raised during painting may have had its idle callback
+            // superseded by this commit. Re-arm it behind the pending page flip.
+            schedule_repaint();
+        }
     }
 
     /**
@@ -301,7 +316,7 @@ struct swapchain_damage_manager_t
         return next_frame;
     }
 
-    void swap_buffers(std::unique_ptr<frame_object_t> next_frame, const wf::region_t& swap_damage)
+    bool swap_buffers(std::unique_ptr<frame_object_t> next_frame, const wf::region_t& swap_damage)
     {
         /* If force frame sync option is set, call glFinish to block until
          * the GPU finishes rendering. This can work around some driver
@@ -314,7 +329,6 @@ struct swapchain_damage_manager_t
             });
         }
 
-        frame_damage.clear();
         wlr_output_state_set_buffer(&next_frame->state, next_frame->buffer);
         wlr_output_state_set_damage(&next_frame->state, swap_damage.to_pixman());
         auto release_sync = wo->render->next_explicit_sync_release_point();
@@ -329,14 +343,17 @@ struct swapchain_damage_manager_t
         if (!wlr_output_test_state(output, &next_frame->state))
         {
             LOGE("Output test failed!");
-            return;
+            return false;
         }
 
         if (!wlr_output_commit_state(output, &next_frame->state))
         {
             LOGE("Output commit failed!");
-            return;
+            return false;
         }
+
+        frame_damage.clear();
+        return true;
     }
 
     /**
@@ -369,6 +386,7 @@ struct swapchain_damage_manager_t
      */
     void schedule_repaint()
     {
+        ++request_generation;
         wlr_output_schedule_frame(output);
         force_next_frame = true;
     }
@@ -647,170 +665,50 @@ class depth_buffer_manager_t
     }
 };
 
-/**
- * A struct which manages the repaint delay.
- *
- * The repaint delay is a technique to potentially lower the input latency.
- *
- * It works by delaying Wayfire's repainting after getting the next frame event.
- * During this time the clients have time to update and submit their buffers.
- * If they manage this on time, the next frame will contain the already new
- * application contents, otherwise, the changes are visible after 1 more frame.
- *
- * The repaint delay however should be chosen so that Wayfire's own rendering
- * starts early enough for the next vblank, otherwise, the framerate will suffer.
- *
- * Calculating the maximal time Wayfire needs for rendering is very hard, and
- * and can change depending on active plugins, number of opened windows, etc.
- *
- * Thus, we need to dynamically guess this time based on the previous frames.
- * Currently, the following algorithm is implemented:
- *
- * Initially, the repaint delay is zero.
- *
- * If at some point Wayfire skips a frame, the delay is assumed too big and
- * reduced by `2^i`, where `i` is the amount of consecutive skipped frames.
- *
- * If Wayfire renders in time for `increase_window` milliseconds, then the
- * delay is increased by one. If the next frame is delayed, then
- * `increase_window` is doubled, otherwise, it is halved
- * (but it must stay between `MIN_INCREASE_WINDOW` and `MAX_INCREASE_WINDOW`).
- */
-struct repaint_delay_manager_t
+static int64_t get_monotonic_time_ns()
 {
-    repaint_delay_manager_t(wf::output_t *output)
-    {
-        on_present.set_callback([&] (void *data)
-        {
-            auto ev = static_cast<wlr_output_event_present*>(data);
-            this->refresh_nsec = ev->refresh;
-        });
-        on_present.connect(&output->handle->events.present);
-    }
+    timespec now;
+    clock_gettime(CLOCK_MONOTONIC, &now);
+    return now.tv_sec * 1'000'000'000ll + now.tv_nsec;
+}
 
-    /**
-     * The next frame will be skipped.
-     */
-    void skip_frame()
-    {
-        // Mark last frame as invalid, because we don't know how much time
-        // will pass until next frame
-        last_pageflip = -1;
-    }
-
-    /**
-     * Starting a new frame.
-     */
-    void start_frame()
-    {
-        if (last_pageflip == -1)
-        {
-            last_pageflip = get_current_time();
-            return;
-        }
-
-        const int64_t refresh = this->refresh_nsec / 1e6;
-        const int64_t on_time_thresh = refresh * 1.5;
-        const int64_t last_frame_len = get_current_time() - last_pageflip;
-        if (last_frame_len <= on_time_thresh)
-        {
-            // We rendered last frame on time
-            if (get_current_time() - last_increase >= increase_window)
-            {
-                increase_window = clamp(int64_t(increase_window * 0.75),
-                    MIN_INCREASE_WINDOW, MAX_INCREASE_WINDOW);
-                update_delay(+1);
-                reset_increase_timer();
-
-                // If we manage the next few frames, then we have reached a new
-                // stable state
-                expand_inc_window_on_miss = 20;
-            } else
-            {
-                --expand_inc_window_on_miss;
-            }
-
-            // Stop exponential decrease
-            consecutive_decrease = 1;
-        } else
-        {
-            // We missed last frame.
-            update_delay(-consecutive_decrease);
-            // Next decrease should be faster
-            consecutive_decrease = clamp(consecutive_decrease * 2, 1, 32);
-
-            // Next increase should be tried after a longer interval
-            if (expand_inc_window_on_miss >= 0)
-            {
-                increase_window = clamp(increase_window * 2,
-                    MIN_INCREASE_WINDOW, MAX_INCREASE_WINDOW);
-            }
-
-            reset_increase_timer();
-        }
-
-        last_pageflip = get_current_time();
-    }
-
-    /**
-     * @return The delay in milliseconds for the current frame.
-     */
-    int get_delay()
-    {
-        return delay;
-    }
-
-  private:
-    int delay = 0;
-
-    void update_delay(int delta)
-    {
-        int config_delay = std::max(0,
-            (int)(this->refresh_nsec / 1e6) - max_render_time);
-
-        int min = 0;
-        int max = config_delay;
-        if (max_render_time == -1)
-        {
-            max = 0;
-        } else if (!dynamic_delay)
-        {
-            min = config_delay;
-            max = config_delay;
-        }
-
-        delay = clamp(delay + delta, min, max);
-    }
-
-    void reset_increase_timer()
-    {
-        last_increase = get_current_time();
-    }
-
-    static constexpr int64_t MIN_INCREASE_WINDOW = 200; // 200 ms
-    static constexpr int64_t MAX_INCREASE_WINDOW = 30'000; // 30s
-    int64_t increase_window = MIN_INCREASE_WINDOW;
-    int64_t last_increase   = 0;
-
-    // > 0 => Increase increase_window
-    int64_t expand_inc_window_on_miss = 0;
-
-    // Expontential decrease in case of missed frames
-    int32_t consecutive_decrease = 1;
-
-    // Time of last frame
-    int64_t last_pageflip = -1; // -1 is invalid
-
-    int64_t refresh_nsec;
-    wf::option_wrapper_t<int> max_render_time{"core/max_render_time"};
-    wf::option_wrapper_t<bool> dynamic_delay{"workarounds/dynamic_repaint_delay"};
-
-    wf::wl_listener_wrapper on_present;
-};
+static int64_t timespec_to_ns(const timespec& timestamp)
+{
+    return timestamp.tv_sec * 1'000'000'000ll + timestamp.tv_nsec;
+}
 
 class wf::render_manager::impl
 {
   public:
+    struct render_timer_deleter_t
+    {
+        void operator ()(wlr_render_timer *timer) const
+        {
+            if (timer)
+            {
+                wlr_render_timer_destroy(timer);
+            }
+        }
+    };
+
+    using render_timer_ptr = std::unique_ptr<wlr_render_timer, render_timer_deleter_t>;
+
+    struct pending_render_timer_t
+    {
+        uint32_t commit_seq;
+        int64_t paint_started_ns;
+        int64_t committed_ns;
+        int64_t timer_started_ns;
+        render_timer_ptr timer;
+    };
+
+    enum class render_timer_support_t
+    {
+        UNKNOWN,
+        SUPPORTED,
+        UNSUPPORTED,
+    };
+
     struct color_transform_deleter_t
     {
         void operator ()(wlr_color_transform *transform) const
@@ -832,8 +730,8 @@ class wf::render_manager::impl
         wlr_color_named_primaries primaries;
     };
 
-    wf::wl_listener_wrapper on_frame;
-    wf::wl_timer<false> repaint_timer;
+    wf::wl_listener_wrapper on_frame, on_present, on_output_commit, on_renderer_destroy;
+    wf::wl_high_resolution_timer repaint_timer;
 
     output_t *output;
     wf::region_t swap_damage;
@@ -841,7 +739,16 @@ class wf::render_manager::impl
     std::unique_ptr<effect_hook_manager_t> effects;
     std::unique_ptr<postprocessing_manager_t> postprocessing;
     std::unique_ptr<depth_buffer_manager_t> depth_buffer_manager;
-    std::unique_ptr<repaint_delay_manager_t> delay_manager;
+    adaptive_repaint_scheduler_t repaint_scheduler;
+    std::deque<pending_render_timer_t> pending_render_timers;
+    render_timer_support_t render_timer_support = render_timer_support_t::UNKNOWN;
+    repaint_schedule_t last_schedule;
+
+    wf::option_wrapper_t<int> min_render_budget;
+    wf::option_wrapper_t<int> legacy_render_budget{"core/max_render_time"};
+    wf::option_wrapper_t<bool> dynamic_repaint_delay{"workarounds/dynamic_repaint_delay"};
+    bool legacy_render_budget_fallback_warned = false;
+    bool legacy_render_budget_conflict_warned = false;
 
     wf::option_wrapper_t<wf::color_t> background_color_opt;
     std::unique_ptr<wf::render_pass_t> current_pass;
@@ -965,7 +872,58 @@ class wf::render_manager::impl
         effects = std::make_unique<effect_hook_manager_t>();
         postprocessing = std::make_unique<postprocessing_manager_t>(o);
         depth_buffer_manager = std::make_unique<depth_buffer_manager_t>();
-        delay_manager = std::make_unique<repaint_delay_manager_t>(o);
+        if (output->handle->renderer)
+        {
+            on_renderer_destroy.set_callback([&] (void*)
+            {
+                pending_render_timers.clear();
+                render_timer_support = render_timer_support_t::UNSUPPORTED;
+                on_renderer_destroy.disconnect();
+            });
+            on_renderer_destroy.connect(&output->handle->renderer->events.destroy);
+        }
+
+        auto section = wf::get_core().config_backend->get_output_section(output->handle);
+        min_render_budget.load_option(section, "min_render_budget");
+
+        on_present.set_callback([&] (void *data)
+        {
+            auto event = static_cast<wlr_output_event_present*>(data);
+            uint32_t commit_seq = event->commit_seq;
+#if WLR_HAS_X11_BACKEND
+            // wlroots 0.20's X11 backend submits the sequence before the
+            // generic output code increments it after a successful commit.
+            if (wlr_output_is_x11(output->handle))
+            {
+                ++commit_seq;
+            }
+
+#endif
+            consume_render_timer(commit_seq,
+                event->flags & WLR_OUTPUT_PRESENT_HW_COMPLETION);
+            repaint_scheduler.handle_presentation({
+                    commit_seq,
+                    event->presented,
+                    timespec_to_ns(event->when),
+                    event->refresh,
+                    (event->flags & (WLR_OUTPUT_PRESENT_HW_CLOCK | WLR_OUTPUT_PRESENT_HW_COMPLETION)) ==
+                    (WLR_OUTPUT_PRESENT_HW_CLOCK | WLR_OUTPUT_PRESENT_HW_COMPLETION),
+                });
+        });
+        on_present.connect(&output->handle->events.present);
+
+        on_output_commit.set_callback([&] (void *data)
+        {
+            auto event = static_cast<wlr_output_event_commit*>(data);
+            constexpr uint32_t timing_changes = WLR_OUTPUT_STATE_MODE |
+                WLR_OUTPUT_STATE_ENABLED | WLR_OUTPUT_STATE_ADAPTIVE_SYNC_ENABLED |
+                WLR_OUTPUT_STATE_RENDER_FORMAT;
+            if (event->state->committed & timing_changes)
+            {
+                reset_repaint_timing(true);
+            }
+        });
+        on_output_commit.connect(&output->handle->events.commit);
 
         int drm_fd = wlr_backend_get_drm_fd(output->handle->backend);
         if ((drm_fd >= 0) && output->handle->backend->features.timeline &&
@@ -984,30 +942,41 @@ class wf::render_manager::impl
 
         on_frame.set_callback([&] (void*)
         {
+            consume_available_render_timers();
+            const int64_t frame_arrived_ns = get_monotonic_time_ns();
+
             /* If the session is not active, don't paint.
              * This is the case when e.g. switching to another tty */
             if (wf::get_core().session && !wf::get_core().session->active)
             {
+                reset_repaint_timing(false);
                 return;
             }
 
-            delay_manager->start_frame();
+            const bool vrr_enabled    = output->handle->adaptive_sync_status ==
+                WLR_OUTPUT_ADAPTIVE_SYNC_ENABLED;
+            const int min_render_budget_ms = get_min_render_budget();
+            auto schedule = repaint_scheduler.schedule_frame(frame_arrived_ns,
+                min_render_budget_ms, dynamic_repaint_delay, vrr_enabled);
 
-            auto repaint_delay = delay_manager->get_delay();
             // Leave a bit of time for clients to render, see
             // https://github.com/swaywm/sway/pull/4588
-            if (repaint_delay < 1)
+            if (schedule.repaint_deadline_ns <= 0)
             {
                 output->handle->frame_pending = false;
-                paint();
+                paint(schedule);
             } else
             {
                 output->handle->frame_pending = true;
-                repaint_timer.set_timeout(repaint_delay, [=] ()
+                if (!repaint_timer.set_deadline(schedule.repaint_deadline_ns, [=] ()
                 {
                     output->handle->frame_pending = false;
-                    paint();
-                });
+                    paint(schedule);
+                }))
+                {
+                    output->handle->frame_pending = false;
+                    paint(schedule);
+                }
             }
 
             frame_done_signal ev;
@@ -1024,7 +993,6 @@ class wf::render_manager::impl
 
         damage_manager->schedule_repaint();
 
-        auto section = wf::get_core().config_backend->get_output_section(output->handle);
         icc_profile.load_option(section, "icc_profile");
         icc_profile.set_callback([=] ()
         {
@@ -1043,6 +1011,123 @@ class wf::render_manager::impl
         });
 
         reload_icc_profile();
+    }
+
+    int get_min_render_budget()
+    {
+        const int configured_budget = min_render_budget;
+        const int fallback_budget   = legacy_render_budget;
+        if (configured_budget >= 0)
+        {
+            if ((fallback_budget >= 0) && !legacy_render_budget_conflict_warned)
+            {
+                legacy_render_budget_conflict_warned = true;
+                LOGW("Both min_render_budget and deprecated core/max_render_time are set for output ",
+                    output->to_string(), "; using min_render_budget.");
+            }
+
+            return configured_budget;
+        }
+
+        if ((fallback_budget != -1) && !legacy_render_budget_fallback_warned)
+        {
+            legacy_render_budget_fallback_warned = true;
+            LOGW("Using deprecated core/max_render_time for output ", output->to_string(),
+                " because min_render_budget is -1.");
+        }
+
+        return fallback_budget;
+    }
+
+    void reset_repaint_timing(bool reset_estimates)
+    {
+        pending_render_timers.clear();
+        repaint_scheduler.reset(reset_estimates);
+    }
+
+    render_timer_ptr create_render_timer()
+    {
+        if (!dynamic_repaint_delay || (get_min_render_budget() < 0) ||
+            (render_timer_support == render_timer_support_t::UNSUPPORTED) ||
+            !output->handle->renderer || !wf::get_core().is_gles2())
+        {
+            return {};
+        }
+
+        render_timer_ptr timer{wlr_render_timer_create(output->handle->renderer)};
+        if (!timer)
+        {
+            render_timer_support = render_timer_support_t::UNSUPPORTED;
+            return {};
+        }
+
+        render_timer_support = render_timer_support_t::SUPPORTED;
+        return timer;
+    }
+
+    void track_render_timer(uint32_t commit_seq, int64_t paint_started_ns,
+        int64_t committed_ns, int64_t timer_started_ns, render_timer_ptr timer)
+    {
+        if (!timer)
+        {
+            return;
+        }
+
+        pending_render_timers.push_back({commit_seq, paint_started_ns,
+            committed_ns, timer_started_ns, std::move(timer)});
+        constexpr size_t MAX_PENDING_RENDER_TIMERS = 16;
+        if (pending_render_timers.size() > MAX_PENDING_RENDER_TIMERS)
+        {
+            pending_render_timers.pop_front();
+        }
+    }
+
+    void consume_render_timer_at(std::deque<pending_render_timer_t>::iterator pending)
+    {
+        const int timer_duration_ns = wlr_render_timer_get_duration_ns(pending->timer.get());
+        if (timer_duration_ns >= 0)
+        {
+            const int64_t cpu_duration_ns = std::max<int64_t>(0,
+                pending->committed_ns - pending->paint_started_ns);
+            const int64_t render_completion_ns = std::max<int64_t>(0,
+                pending->timer_started_ns - pending->paint_started_ns) + timer_duration_ns;
+            repaint_scheduler.observe_render_completion(pending->commit_seq,
+                repaint_path_t::COMPOSED,
+                std::max(cpu_duration_ns, render_completion_ns));
+        }
+
+        pending_render_timers.erase(pending);
+    }
+
+    void consume_render_timer(uint32_t commit_seq, bool completion_known)
+    {
+        auto pending = std::find_if(pending_render_timers.begin(),
+            pending_render_timers.end(), [=] (const auto& candidate)
+        {
+            return candidate.commit_seq == commit_seq;
+        });
+        if ((pending == pending_render_timers.end()) || !completion_known)
+        {
+            return;
+        }
+
+        consume_render_timer_at(pending);
+    }
+
+    void consume_available_render_timers()
+    {
+        // A synthetic present event does not prove GPU completion. Defer its
+        // one nonblocking query until a later backend frame. Since wlroots uses
+        // -1 for both unavailable and invalid timers, never query one twice.
+        while (!pending_render_timers.empty())
+        {
+            if ((get_monotonic_time_ns() - pending_render_timers.front().committed_ns) < 1'000'000)
+            {
+                break;
+            }
+
+            consume_render_timer_at(pending_render_timers.begin());
+        }
     }
 
     wlr_buffer_pass_options pass_opts{};
@@ -1091,6 +1176,7 @@ class wf::render_manager::impl
 
     ~impl()
     {
+        pending_render_timers.clear();
         set_icc_transform(nullptr);
         output_inverse_eotf_cache.reset();
         if (render_timeline)
@@ -1159,9 +1245,9 @@ class wf::render_manager::impl
      * Try to directly scanout a view on the output, thereby skipping rendering
      * entirely.
      *
-     * @return True if scanout was successful, False otherwise.
+     * @return The committed output sequence if scanout succeeded.
      */
-    bool do_direct_scanout()
+    std::optional<uint32_t> do_direct_scanout()
     {
         const bool can_scanout = !output_inhibit_counter && effects->can_scanout() &&
             postprocessing->can_scanout() && wlr_output_is_direct_scanout_allowed(output->handle) &&
@@ -1169,12 +1255,17 @@ class wf::render_manager::impl
 
         if (!can_scanout || !env_allow_scanout)
         {
-            return false;
+            return {};
         }
 
         auto result = scene::try_scanout_from_list(
             damage_manager->instance_manager->get_instances(), output);
-        return result == scene::direct_scanout::SUCCESS;
+        if (result == scene::direct_scanout::SUCCESS)
+        {
+            return output->handle->commit_seq;
+        }
+
+        return {};
     }
 
     /**
@@ -1210,8 +1301,7 @@ class wf::render_manager::impl
         params.renderer = output->handle->renderer;
         params.flags    = RPASS_CLEAR_BACKGROUND | RPASS_EMIT_SIGNALS;
 
-        pass_opts.timer = NULL; // TODO: do we care about this? could be useful for dynamic frame
-                                // scheduling
+        pass_opts.timer    = nullptr;
         params.pass_opts   = std::move(pass_opts);
         this->current_pass = std::make_unique<render_pass_t>(params);
 
@@ -1256,8 +1346,9 @@ class wf::render_manager::impl
     /**
      * Repaints the whole output, includes all effects and hooks
      */
-    void paint()
+    void paint(const repaint_schedule_t& schedule)
     {
+        const int64_t paint_started_ns = get_monotonic_time_ns();
         /* Part 1: frame setup: query damage, etc. */
         effects->run_effects(OUTPUT_EFFECT_PRE);
         effects->run_effects(OUTPUT_EFFECT_DAMAGE);
@@ -1266,13 +1357,18 @@ class wf::render_manager::impl
         // just skip the whole repaint
         if (!damage_manager->should_repaint())
         {
-            delay_manager->skip_frame();
             return;
         }
 
-        damage_manager->frame_started();
-        if (do_direct_scanout())
+        const uint64_t frame_generation = damage_manager->get_request_generation();
+        if (auto commit_seq = do_direct_scanout())
         {
+            const int64_t submitted_ns = get_monotonic_time_ns();
+            damage_manager->frame_committed(frame_generation);
+            last_schedule = schedule;
+            repaint_scheduler.submit_frame(schedule, repaint_path_t::DIRECT_SCANOUT,
+                paint_started_ns, submitted_ns, *commit_seq,
+                output->handle->adaptive_sync_status == WLR_OUTPUT_ADAPTIVE_SYNC_ENABLED);
             // Yet another optimization: if we can directly scanout, we should
             // stop the rest of the repaint cycle.
             return;
@@ -1281,12 +1377,14 @@ class wf::render_manager::impl
         auto next_frame = damage_manager->start_frame();
         if (!next_frame)
         {
-            delay_manager->skip_frame();
+            damage_manager->damage_whole();
             return;
         }
 
         /* Part 2: call the renderer, which sets swap_damage and draws the scenegraph */
         update_bound_output(next_frame->buffer);
+        render_timer_ptr render_timer;
+        int64_t timer_started_ns = 0;
         this->swap_damage = start_output_pass(next_frame);
 
         /* Part 3: overlay effects */
@@ -1306,7 +1404,6 @@ class wf::render_manager::impl
             unset_bound_output();
             swap_damage.clear();
             damage_manager->damage_whole();
-            delay_manager->skip_frame();
             return;
         }
 
@@ -1320,34 +1417,57 @@ class wf::render_manager::impl
 
         postprocessing->run_post_effects();
 
+        // GLES render timers include earlier work queued in the context, so a
+        // final marker pass measures completion of scene, postprocessing and cursors.
+        render_timer = create_render_timer();
+        if (render_timer)
+        {
+            timer_started_ns = get_monotonic_time_ns();
+        }
+
         /* Part 6: render sw cursors We render software cursors after everything else
          * for consistency with hardware cursor planes */
-        if (!render_sw_cursors(next_frame.get()))
+        if (!render_sw_cursors(next_frame.get(), render_timer.get()))
         {
             wlr_buffer_unlock(next_frame->buffer);
             unset_bound_output();
             swap_damage.clear();
             damage_manager->damage_whole();
-            delay_manager->skip_frame();
             return;
         }
 
         /* Part 7: finalize frame: swap buffers, send frame_done, etc */
-        damage_manager->swap_buffers(std::move(next_frame), swap_damage);
+        const bool committed = damage_manager->swap_buffers(std::move(next_frame), swap_damage);
+        const int64_t committed_ns = get_monotonic_time_ns();
 
         unset_bound_output();
         swap_damage.clear();
+        if (!committed)
+        {
+            damage_manager->damage_whole();
+            return;
+        }
+
+        damage_manager->frame_committed(frame_generation);
+        last_schedule = schedule;
+        repaint_scheduler.submit_frame(schedule, repaint_path_t::COMPOSED,
+            paint_started_ns, committed_ns, output->handle->commit_seq,
+            output->handle->adaptive_sync_status == WLR_OUTPUT_ADAPTIVE_SYNC_ENABLED);
+        track_render_timer(output->handle->commit_seq, paint_started_ns,
+            committed_ns, timer_started_ns, std::move(render_timer));
         post_paint();
     }
 
-    bool render_sw_cursors(swapchain_damage_manager_t::frame_object_t *next_frame)
+    bool render_sw_cursors(swapchain_damage_manager_t::frame_object_t *next_frame,
+        wlr_render_timer *timer)
     {
-        if (swap_damage.empty() && !render_timeline)
+        if (swap_damage.empty() && !render_timeline && !timer)
         {
             return true;
         }
 
         wlr_buffer_pass_options pass_options{};
+        pass_options.timer = timer;
         pass_options.color_transform = get_color_transform();
         if (render_timeline)
         {
