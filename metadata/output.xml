@@ -17,7 +17,7 @@
     </option>
     <option name="min_render_budget" type="int">
       <_short>Minimum render deadline budget</_short>
-      <_long>Minimum time reserved for compositor rendering before the next presentation, in milliseconds. Set to -1 to use the deprecated core/max_render_time value or disable delayed repaint if the legacy option is also unset.</_long>
+      <_long>Minimum time reserved for compositor rendering before the next presentation, in milliseconds. -1 to reserve the entire frame, unless dynamic repaint delay is enabled. </_long>
       <default>-1</default>
       <min>-1</min>
     </option>

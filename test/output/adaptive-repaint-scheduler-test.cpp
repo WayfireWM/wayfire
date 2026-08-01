@@ -40,6 +40,25 @@ TEST_CASE("Repaint scheduler starts conservatively and uses presentation deadlin
     CHECK(delay_ms(learned) <= 14);
 }
 
+TEST_CASE("Dynamic repaint treats a disabled minimum budget as a zero floor")
+{
+    wf::adaptive_repaint_scheduler_t scheduler;
+    scheduler.handle_presentation(present(1, 100 * MS));
+
+    CHECK_FALSE(scheduler.schedule_frame(100 * MS, -1, false, false).
+        target_presentation_ns.has_value());
+
+    auto first = scheduler.schedule_frame(100 * MS, -1, true, false);
+    CHECK(first.target_presentation_ns.has_value());
+    CHECK(first.delay_ns == 0);
+    scheduler.submit_frame(first, wf::repaint_path_t::COMPOSED,
+        100 * MS, 102 * MS, 2, false);
+    scheduler.handle_presentation(present(2, first.target_presentation_ns.value()));
+
+    auto learned = scheduler.schedule_frame(first.target_presentation_ns.value(), -1, true, false);
+    CHECK(learned.delay_ns > 0);
+}
+
 TEST_CASE("Repaint scheduler correlates misses by commit sequence")
 {
     wf::adaptive_repaint_scheduler_t scheduler;

@@ -1121,8 +1121,7 @@ class wf::render_manager::impl
 
     render_timer_ptr create_render_timer()
     {
-        if (!dynamic_repaint_delay || (get_min_render_budget() < 0) ||
-            (render_timer_support == render_timer_support_t::UNSUPPORTED) ||
+        if (!dynamic_repaint_delay || (render_timer_support == render_timer_support_t::UNSUPPORTED) ||
             !output->handle->renderer || !wf::get_core().is_gles2())
         {
             return {};

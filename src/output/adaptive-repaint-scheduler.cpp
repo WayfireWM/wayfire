@@ -83,7 +83,7 @@ repaint_schedule_t adaptive_repaint_scheduler_t::schedule_frame(
     repaint_schedule_t result;
     result.predicted_path = predict_path();
 
-    if ((min_render_budget_ms < 0) || !last_presentation_ns || (refresh_ns <= 0))
+    if (((min_render_budget_ms < 0) && !dynamic_delay) || !last_presentation_ns || (refresh_ns <= 0))
     {
         return result;
     }
