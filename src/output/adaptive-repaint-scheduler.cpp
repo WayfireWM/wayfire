@@ -57,7 +57,7 @@ repaint_scheduler_debug_info_t adaptive_repaint_scheduler_t::get_debug_info(
     auto path_info = [=] (repaint_path_t path)
     {
         const auto& estimator = get_estimator(path);
-        return repaint_path_debug_info_t{
+        return render_path_debug_info_t{
             .paint_budget_ns = estimator.paint_budget_ns,
             .miss_guard_ns   = estimator.miss_guard_ns,
             .total_budget_ns = get_budget_ns(path, min_render_budget_ms),

@@ -78,10 +78,7 @@ struct swapchain_damage_manager_t
         wlr_damage_ring_init(&damage_ring);
         on_needs_frame.set_callback([=] (void*)
         {
-            if (!scheduling_vrr_keepalive)
-            {
-                schedule_repaint();
-            }
+            schedule_repaint();
         });
         on_damage.set_callback([=] (void *data)
         {
@@ -163,7 +160,7 @@ struct swapchain_damage_manager_t
         }
     }
 
-    int constant_redraw_counter   = 0;
+    int constant_redraw_counter = 0;
     void set_redraw_always(bool always)
     {
         constant_redraw_counter += (always ? 1 : -1);
@@ -250,9 +247,7 @@ struct swapchain_damage_manager_t
     }
 
     bool force_next_frame = false;
-    bool vrr_keepalive_pending    = false;
-    bool scheduling_vrr_keepalive = false;
-    uint64_t request_generation   = 0;
+    uint64_t request_generation = 0;
 
     // Tracks whether a new frame is needed at all.
     // Set when new content was damaged, cleared when a frame (composited or direct scanout) is presented.
@@ -267,19 +262,8 @@ struct swapchain_damage_manager_t
      */
     bool should_repaint() const
     {
-        return force_next_frame || vrr_keepalive_pending || output->needs_frame || pending_frame_request ||
+        return force_next_frame || output->needs_frame || pending_frame_request ||
                (constant_redraw_counter > 0);
-    }
-
-    bool is_vrr_keepalive_only() const
-    {
-        return vrr_keepalive_pending && !force_next_frame && !pending_frame_request &&
-               (constant_redraw_counter == 0);
-    }
-
-    bool is_vrr_keepalive_pending() const
-    {
-        return vrr_keepalive_pending;
     }
 
     uint64_t get_request_generation() const
@@ -293,7 +277,6 @@ struct swapchain_damage_manager_t
         if (frame_generation == request_generation)
         {
             force_next_frame = false;
-            vrr_keepalive_pending = false;
             pending_frame_request = false;
         } else
         {
@@ -411,19 +394,14 @@ struct swapchain_damage_manager_t
         force_next_frame = true;
     }
 
-    bool schedule_vrr_keepalive()
+    void schedule_vrr_keepalive()
     {
         if (output->frame_pending || output->needs_frame)
         {
-            return false;
+            return;
         }
 
-        ++request_generation;
-        vrr_keepalive_pending    = true;
-        scheduling_vrr_keepalive = true;
         wlr_output_schedule_frame(output);
-        scheduling_vrr_keepalive = false;
-        return true;
     }
 
     /**
@@ -998,8 +976,7 @@ class wf::render_manager::impl
                 return;
             }
 
-            const bool keepalive_only = damage_manager->is_vrr_keepalive_only();
-            const bool vrr_enabled    = output->handle->adaptive_sync_status ==
+            const bool vrr_enabled = output->handle->adaptive_sync_status ==
                 WLR_OUTPUT_ADAPTIVE_SYNC_ENABLED;
             const int min_render_budget_ms = get_min_render_budget();
             auto schedule = repaint_scheduler.schedule_frame(frame_arrived_ns,
@@ -1025,12 +1002,9 @@ class wf::render_manager::impl
                 }
             }
 
-            if (!keepalive_only)
-            {
-                frame_done_signal ev;
-                output->emit(&ev);
-                arm_vrr_idle_timer();
-            }
+            frame_done_signal ev;
+            output->emit(&ev);
+            arm_vrr_idle_timer();
         });
 
         on_frame.connect(&output->handle->events.frame);
@@ -1087,6 +1061,56 @@ class wf::render_manager::impl
         }
 
         return fallback_budget;
+    }
+
+    static render_debug_path_t convert_path(repaint_path_t path)
+    {
+        return path == repaint_path_t::DIRECT_SCANOUT ?
+               render_debug_path_t::DIRECT_SCANOUT : render_debug_path_t::COMPOSED;
+    }
+
+    render_debug_info_t get_debug_info()
+    {
+        const int effective_budget = get_min_render_budget();
+        const auto scheduler_info  = repaint_scheduler.get_debug_info(effective_budget);
+
+        render_timer_debug_support_t timer_support = render_timer_debug_support_t::UNKNOWN;
+        switch (render_timer_support)
+        {
+          case render_timer_support_t::SUPPORTED:
+            timer_support = render_timer_debug_support_t::SUPPORTED;
+            break;
+
+          case render_timer_support_t::UNSUPPORTED:
+            timer_support = render_timer_debug_support_t::UNSUPPORTED;
+            break;
+
+          case render_timer_support_t::UNKNOWN:
+            break;
+        }
+
+        return {
+            .min_render_budget_ms  = effective_budget,
+            .dynamic_repaint_delay = dynamic_repaint_delay,
+            .vrr_enabled = output->handle->adaptive_sync_status == WLR_OUTPUT_ADAPTIVE_SYNC_ENABLED,
+            .vrr_idle_refresh_rate   = vrr_idle_refresh_rate,
+            .last_scheduled_delay_ns = last_schedule.delay_ns,
+            .has_last_target_presentation = last_schedule.target_presentation_ns.has_value(),
+            .last_target_presentation_ns  = last_schedule.target_presentation_ns.value_or(0),
+            .predicted_path = convert_path(last_schedule.predicted_path),
+            .has_last_presentation = scheduler_info.has_last_presentation,
+            .last_presentation_ns  = scheduler_info.last_presentation_ns,
+            .refresh_ns = scheduler_info.refresh_ns,
+            .pending_scheduler_frames = scheduler_info.pending_frames,
+            .consecutive_scanouts     = scheduler_info.consecutive_scanouts,
+            .composed = scheduler_info.composed,
+            .direct_scanout = scheduler_info.direct_scanout,
+            .render_timer_support  = timer_support,
+            .pending_render_timers = static_cast<uint32_t>(pending_render_timers.size()),
+            .output_frame_pending  = output->handle->frame_pending,
+            .output_needs_frame    = output->handle->needs_frame,
+            .repaint_pending = damage_manager->should_repaint(),
+        };
     }
 
     void reset_repaint_timing(bool reset_estimates)
@@ -1771,6 +1795,11 @@ wf::explicit_sync_point_t render_manager::next_explicit_sync_release_point()
 wf::explicit_sync_point_t render_manager::next_explicit_sync_render_point()
 {
     return pimpl->next_render_completion_point();
+}
+
+render_debug_info_t render_manager::get_debug_info() const
+{
+    return pimpl->get_debug_info();
 }
 
 wf::render_pass_t*render_manager::get_current_pass()

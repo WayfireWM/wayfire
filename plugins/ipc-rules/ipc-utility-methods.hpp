@@ -9,6 +9,7 @@
 #include <cstdlib>
 #include <filesystem>
 #include <wayfire/plugin.hpp>
+#include <wayfire/render-manager.hpp>
 #include <wayfire/nonstd/wlroots-full.hpp>
 #include <wayfire/output-layout.hpp>
 #include <wayfire/config/compound-option.hpp>
@@ -38,6 +39,7 @@ class ipc_rules_utility_methods_t
         method_repository->register_method("wayfire/set-config-options", set_config_options);
         method_repository->register_method("wayfire/reload-config-metadata", reload_config_metadata);
         method_repository->register_method("wayfire/reload-plugins", reload_plugins);
+        method_repository->register_method("wayfire/render-metrics", get_render_metrics);
         method_repository->register_method("wayfire/get-keyboard-state", get_kb_state);
         method_repository->register_method("wayfire/set-keyboard-state", set_kb_state);
     }
@@ -52,6 +54,7 @@ class ipc_rules_utility_methods_t
         method_repository->unregister_method("wayfire/set-config-options");
         method_repository->unregister_method("wayfire/reload-config-metadata");
         method_repository->unregister_method("wayfire/reload-plugins");
+        method_repository->unregister_method("wayfire/render-metrics");
         method_repository->unregister_method("wayfire/get-keyboard-state");
         method_repository->unregister_method("wayfire/set-keyboard-state");
     }
@@ -104,6 +107,119 @@ class ipc_rules_utility_methods_t
     {
         wf::get_core().reload_plugins();
         return wf::ipc::json_ok();
+    };
+
+    static const char *render_debug_path_to_string(render_debug_path_t path)
+    {
+        switch (path)
+        {
+          case render_debug_path_t::DIRECT_SCANOUT:
+            return "direct-scanout";
+
+          case render_debug_path_t::COMPOSED:
+            return "composed";
+        }
+
+        return "unknown";
+    }
+
+    static const char *render_timer_support_to_string(render_timer_debug_support_t support)
+    {
+        switch (support)
+        {
+          case render_timer_debug_support_t::SUPPORTED:
+            return "supported";
+
+          case render_timer_debug_support_t::UNSUPPORTED:
+            return "unsupported";
+
+          case render_timer_debug_support_t::UNKNOWN:
+            return "unknown";
+        }
+
+        return "unknown";
+    }
+
+    static wf::json_t render_path_metrics_to_json(const render_path_debug_info_t& info)
+    {
+        wf::json_t response;
+        response["paint-budget-ns"] = info.paint_budget_ns;
+        response["miss-guard-ns"]   = info.miss_guard_ns;
+        response["total-budget-ns"] = info.total_budget_ns;
+        response["successful-presentations"] = info.successful_presentations;
+        return response;
+    }
+
+    static wf::json_t render_metrics_to_json(wf::output_t *output)
+    {
+        wf::json_t response;
+        response["output"] = ipc_rules::output_to_json(output);
+
+        const auto info = output->render->get_debug_info();
+        response["min-render-budget-ms"]  = info.min_render_budget_ms;
+        response["dynamic-repaint-delay"] = info.dynamic_repaint_delay;
+        response["vrr-enabled"] = info.vrr_enabled;
+        response["vrr-idle-refresh-rate"] = info.vrr_idle_refresh_rate;
+
+        response["last-scheduled-delay-ns"] = info.last_scheduled_delay_ns;
+        response["has-last-target-presentation"] = info.has_last_target_presentation;
+        response["last-target-presentation-ns"]  = info.last_target_presentation_ns;
+        response["predicted-path"] = render_debug_path_to_string(info.predicted_path);
+
+        response["has-last-presentation"] = info.has_last_presentation;
+        response["last-presentation-ns"]  = info.last_presentation_ns;
+        response["refresh-ns"] = info.refresh_ns;
+        response["pending-scheduler-frames"] = info.pending_scheduler_frames;
+        response["consecutive-scanouts"]     = info.consecutive_scanouts;
+
+        response["composed"] = render_path_metrics_to_json(info.composed);
+        response["direct-scanout"] = render_path_metrics_to_json(info.direct_scanout);
+
+        response["render-timer-support"]  = render_timer_support_to_string(info.render_timer_support);
+        response["pending-render-timers"] = info.pending_render_timers;
+
+        response["output-frame-pending"] = info.output_frame_pending;
+        response["output-needs-frame"]   = info.output_needs_frame;
+        response["repaint-pending"] = info.repaint_pending;
+        return response;
+    }
+
+    wf::ipc::method_callback get_render_metrics = [=] (const wf::json_t& data)
+    {
+        auto output_name = wf::ipc::json_get_optional_string(data, "output");
+        auto output_id   = wf::ipc::json_get_optional_uint64(data, "output-id");
+
+        if (!output_id.has_value())
+        {
+            output_id = wf::ipc::json_get_optional_uint64(data, "output_id");
+        }
+
+        if (output_name.has_value() || output_id.has_value())
+        {
+            wf::output_t *output = NULL;
+            if (output_name.has_value())
+            {
+                output = wf::get_core().output_layout->find_output(output_name.value());
+            } else
+            {
+                output = wf::ipc::find_output_by_id(output_id.value());
+            }
+
+            if (!output)
+            {
+                return wf::ipc::json_error("Output not found!");
+            }
+
+            return render_metrics_to_json(output);
+        }
+
+        wf::json_t response = wf::json_t::array();
+        for (auto output : wf::get_core().output_layout->get_outputs())
+        {
+            response.append(render_metrics_to_json(output));
+        }
+
+        return response;
     };
 
     wf::ipc::method_callback create_headless_output = [=] (const wf::json_t& data)

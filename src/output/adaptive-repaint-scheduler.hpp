@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <deque>
 #include <optional>
+#include <wayfire/render-manager.hpp>
 
 namespace wf
 {
@@ -42,18 +43,6 @@ struct repaint_presentation_t
     bool timing_reliable = false;
 };
 
-struct repaint_path_debug_info_t
-{
-    /** Learned paint-to-GPU-completion estimate including the sample margin. */
-    int64_t paint_budget_ns = 0;
-    /** Adaptive scheduling safety margin added after missed targets. */
-    int64_t miss_guard_ns = 0;
-    /** Effective max(configured floor, paint budget + miss guard). */
-    int64_t total_budget_ns = 0;
-    /** Consecutive correlated on-time presentations since the last miss. */
-    uint32_t successful_presentations = 0;
-};
-
 struct repaint_scheduler_debug_info_t
 {
     /** Whether last_presentation_ns contains a usable presentation anchor. */
@@ -68,8 +57,8 @@ struct repaint_scheduler_debug_info_t
     uint32_t consecutive_scanouts = 0;
     /** Path whose budget would be used for the next repaint. */
     repaint_path_t predicted_path = repaint_path_t::COMPOSED;
-    repaint_path_debug_info_t composed;
-    repaint_path_debug_info_t direct_scanout;
+    render_path_debug_info_t composed;
+    render_path_debug_info_t direct_scanout;
 };
 
 /**

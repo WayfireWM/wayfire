@@ -4,6 +4,7 @@
 #include <wayfire/output.hpp>
 #include <wayfire/object.hpp>
 #include <wayfire/region.hpp>
+#include <cstdint>
 
 namespace wf
 {
@@ -33,6 +34,79 @@ enum output_effect_type_t
     OUTPUT_EFFECT_POST      = 4,
     /* Invalid type for a hook, used internally */
     OUTPUT_EFFECT_TOTAL     = 5,
+};
+
+enum class render_debug_path_t
+{
+    COMPOSED,
+    DIRECT_SCANOUT,
+};
+
+enum class render_timer_debug_support_t
+{
+    UNKNOWN,
+    SUPPORTED,
+    UNSUPPORTED,
+};
+
+struct render_path_debug_info_t
+{
+    /** Learned render duration including the scheduler sample margin, in nanoseconds. */
+    int64_t paint_budget_ns = 0;
+    /** Adaptive missed-deadline safety margin, in nanoseconds. */
+    int64_t miss_guard_ns = 0;
+    /** Effective render budget after applying the configured floor, in nanoseconds. */
+    int64_t total_budget_ns = 0;
+    /** Consecutive on-time correlated presentations since the last miss. */
+    uint32_t successful_presentations = 0;
+};
+
+/** Snapshot returned by render_manager::get_debug_info(). Durations are nanoseconds unless noted. */
+struct render_debug_info_t
+{
+    /** Effective per-output min_render_budget in milliseconds, including legacy fallback resolution. */
+    int min_render_budget_ms = -1;
+    /** Current workarounds/dynamic_repaint_delay value. */
+    bool dynamic_repaint_delay = false;
+    /** Whether adaptive sync is currently enabled on the output. */
+    bool vrr_enabled = false;
+    /** Configured VRR idle keepalive rate in Hz; zero disables it. */
+    int vrr_idle_refresh_rate = 0;
+
+    /** Delay used by the most recent successfully committed repaint. */
+    int64_t last_scheduled_delay_ns = 0;
+    /** Whether last_target_presentation_ns is valid. */
+    bool has_last_target_presentation = false;
+    /** Predicted timestamp for the most recent successfully committed repaint. */
+    int64_t last_target_presentation_ns = 0;
+    /** Render path predicted for the most recent successfully committed repaint. */
+    render_debug_path_t predicted_path = render_debug_path_t::COMPOSED;
+
+    /** Whether last_presentation_ns contains a usable presentation anchor. */
+    bool has_last_presentation = false;
+    /** Most recent usable presentation timestamp. */
+    int64_t last_presentation_ns = 0;
+    /** Nominal output refresh period. */
+    int64_t refresh_ns = 0;
+    /** Submitted frames waiting for presentation correlation. */
+    uint32_t pending_scheduler_frames = 0;
+    /** Number of consecutive direct-scanout presentations. */
+    uint32_t consecutive_scanouts = 0;
+
+    render_path_debug_info_t composed;
+    render_path_debug_info_t direct_scanout;
+
+    /** Availability of renderer GPU timestamp queries. */
+    render_timer_debug_support_t render_timer_support = render_timer_debug_support_t::UNKNOWN;
+    /** GPU timer samples waiting to be consumed. */
+    uint32_t pending_render_timers = 0;
+
+    /** wlroots reports an outstanding output frame. */
+    bool output_frame_pending = false;
+    /** wlroots reports that the output requires a commit. */
+    bool output_needs_frame = false;
+    /** Wayfire damage tracking currently requires repainting. */
+    bool repaint_pending = false;
 };
 
 /** Post hooks are called just before swapping buffers. In contrast to
@@ -193,6 +267,9 @@ class render_manager
 
     /** Reserve the next point on the output render-completion timeline. */
     wf::explicit_sync_point_t next_explicit_sync_render_point();
+
+    /** Snapshot repaint scheduling state for debugging. */
+    render_debug_info_t get_debug_info() const;
 
   public:
     class impl;
