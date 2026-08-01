@@ -1,0 +1,8 @@
+<?xml version="1.0"?>
+<wayfire>
+	<plugin name="vk-color-management">
+		<_short>Color Management</_short>
+		<_long>Enable support for per-ouput color profiles with the GLES renderer.</_long>
+		<category>Utility</category>
+	</plugin>
+</wayfire>
