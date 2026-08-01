@@ -24,6 +24,13 @@
     <option name="vrr" type="bool">
       <default>false</default>
     </option>
+    <option name="vrr_idle_refresh_rate" type="int">
+      <_short>VRR idle refresh rate</_short>
+      <_long>Minimum refresh rate maintained while a VRR output is idle. Zero disables idle refresh commits.</_long>
+      <default>0</default>
+      <min>0</min>
+      <max>1000</max>
+    </option>
     <option name="hdr" type="bool">
       <default>false</default>
     </option>

@@ -76,7 +76,13 @@ struct swapchain_damage_manager_t
         output->connect(&output_mode_changed);
 
         wlr_damage_ring_init(&damage_ring);
-        on_needs_frame.set_callback([=] (void*) { schedule_repaint(); });
+        on_needs_frame.set_callback([=] (void*)
+        {
+            if (!scheduling_vrr_keepalive)
+            {
+                schedule_repaint();
+            }
+        });
         on_damage.set_callback([=] (void *data)
         {
             auto ev = static_cast<wlr_output_event_damage*>(data);
@@ -243,8 +249,10 @@ struct swapchain_damage_manager_t
         return true;
     }
 
-    bool force_next_frame       = false;
-    uint64_t request_generation = 0;
+    bool force_next_frame = false;
+    bool vrr_keepalive_pending    = false;
+    bool scheduling_vrr_keepalive = false;
+    uint64_t request_generation   = 0;
 
     // Tracks whether a new frame is needed at all.
     // Set when new content was damaged, cleared when a frame (composited or direct scanout) is presented.
@@ -259,8 +267,19 @@ struct swapchain_damage_manager_t
      */
     bool should_repaint() const
     {
-        return force_next_frame || output->needs_frame || pending_frame_request ||
+        return force_next_frame || vrr_keepalive_pending || output->needs_frame || pending_frame_request ||
                (constant_redraw_counter > 0);
+    }
+
+    bool is_vrr_keepalive_only() const
+    {
+        return vrr_keepalive_pending && !force_next_frame && !pending_frame_request &&
+               (constant_redraw_counter == 0);
+    }
+
+    bool is_vrr_keepalive_pending() const
+    {
+        return vrr_keepalive_pending;
     }
 
     uint64_t get_request_generation() const
@@ -274,6 +293,7 @@ struct swapchain_damage_manager_t
         if (frame_generation == request_generation)
         {
             force_next_frame = false;
+            vrr_keepalive_pending = false;
             pending_frame_request = false;
         } else
         {
@@ -389,6 +409,21 @@ struct swapchain_damage_manager_t
         ++request_generation;
         wlr_output_schedule_frame(output);
         force_next_frame = true;
+    }
+
+    bool schedule_vrr_keepalive()
+    {
+        if (output->frame_pending || output->needs_frame)
+        {
+            return false;
+        }
+
+        ++request_generation;
+        vrr_keepalive_pending    = true;
+        scheduling_vrr_keepalive = true;
+        wlr_output_schedule_frame(output);
+        scheduling_vrr_keepalive = false;
+        return true;
     }
 
     /**
@@ -732,6 +767,7 @@ class wf::render_manager::impl
 
     wf::wl_listener_wrapper on_frame, on_present, on_output_commit, on_renderer_destroy;
     wf::wl_high_resolution_timer repaint_timer;
+    wf::wl_timer<false> vrr_idle_timer;
 
     output_t *output;
     wf::region_t swap_damage;
@@ -747,6 +783,7 @@ class wf::render_manager::impl
     wf::option_wrapper_t<int> min_render_budget;
     wf::option_wrapper_t<int> legacy_render_budget{"core/max_render_time"};
     wf::option_wrapper_t<bool> dynamic_repaint_delay{"workarounds/dynamic_repaint_delay"};
+    wf::option_wrapper_t<int> vrr_idle_refresh_rate;
     bool legacy_render_budget_fallback_warned = false;
     bool legacy_render_budget_conflict_warned = false;
 
@@ -885,6 +922,8 @@ class wf::render_manager::impl
 
         auto section = wf::get_core().config_backend->get_output_section(output->handle);
         min_render_budget.load_option(section, "min_render_budget");
+        vrr_idle_refresh_rate.load_option(section, "vrr_idle_refresh_rate");
+        vrr_idle_refresh_rate.set_callback([&] () { arm_vrr_idle_timer(); });
 
         on_present.set_callback([&] (void *data)
         {
@@ -909,6 +948,10 @@ class wf::render_manager::impl
                     (event->flags & (WLR_OUTPUT_PRESENT_HW_CLOCK | WLR_OUTPUT_PRESENT_HW_COMPLETION)) ==
                     (WLR_OUTPUT_PRESENT_HW_CLOCK | WLR_OUTPUT_PRESENT_HW_COMPLETION),
                 });
+            if (event->presented)
+            {
+                arm_vrr_idle_timer();
+            }
         });
         on_present.connect(&output->handle->events.present);
 
@@ -921,6 +964,7 @@ class wf::render_manager::impl
             if (event->state->committed & timing_changes)
             {
                 reset_repaint_timing(true);
+                vrr_idle_timer.disconnect();
             }
         });
         on_output_commit.connect(&output->handle->events.commit);
@@ -950,9 +994,11 @@ class wf::render_manager::impl
             if (wf::get_core().session && !wf::get_core().session->active)
             {
                 reset_repaint_timing(false);
+                vrr_idle_timer.disconnect();
                 return;
             }
 
+            const bool keepalive_only = damage_manager->is_vrr_keepalive_only();
             const bool vrr_enabled    = output->handle->adaptive_sync_status ==
                 WLR_OUTPUT_ADAPTIVE_SYNC_ENABLED;
             const int min_render_budget_ms = get_min_render_budget();
@@ -979,8 +1025,12 @@ class wf::render_manager::impl
                 }
             }
 
-            frame_done_signal ev;
-            output->emit(&ev);
+            if (!keepalive_only)
+            {
+                frame_done_signal ev;
+                output->emit(&ev);
+                arm_vrr_idle_timer();
+            }
         });
 
         on_frame.connect(&output->handle->events.frame);
@@ -1128,6 +1178,31 @@ class wf::render_manager::impl
 
             consume_render_timer_at(pending_render_timers.begin());
         }
+    }
+
+    void arm_vrr_idle_timer()
+    {
+        vrr_idle_timer.disconnect();
+        const int refresh_rate = vrr_idle_refresh_rate;
+        if ((refresh_rate <= 0) || !output->handle->enabled ||
+            (output->handle->adaptive_sync_status != WLR_OUTPUT_ADAPTIVE_SYNC_ENABLED))
+        {
+            return;
+        }
+
+        const uint32_t timeout_ms = std::max(1, (1000 + refresh_rate - 1) / refresh_rate);
+        vrr_idle_timer.set_timeout(timeout_ms, [=] () { handle_vrr_idle_timeout(); });
+    }
+
+    void handle_vrr_idle_timeout()
+    {
+        if (!output->handle->enabled ||
+            (output->handle->adaptive_sync_status != WLR_OUTPUT_ADAPTIVE_SYNC_ENABLED))
+        {
+            return;
+        }
+
+        damage_manager->schedule_vrr_keepalive();
     }
 
     wlr_buffer_pass_options pass_opts{};
