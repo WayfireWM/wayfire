@@ -338,8 +338,8 @@ class squeezimize_transformer : public wf::scene::view_2d_transformer_t
         auto geom   = output->get_relative_geometry();
 
         // check which edge the target is closest to
-        double x  = minimize_target.x + minimize_target.width / 2.0;
-        double y  = minimize_target.y + minimize_target.height / 2.0;
+        double x  = this->minimize_target.x + this->minimize_target.width / 2.0;
+        double y  = this->minimize_target.y + this->minimize_target.height / 2.0;
         double y2 = y * geom.width / geom.height;
         if (x < y2)
         {
