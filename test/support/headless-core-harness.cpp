@@ -10,7 +10,7 @@
 #include <array>
 #include <vector>
 
-#include <drm_fourcc.h>
+#include <libdrm/drm_fourcc.h>
 #include <sys/stat.h>
 #include <unistd.h>
 
