@@ -37,17 +37,18 @@ static int repeat_once_handler(void *callback)
 
 /* Provides a way to bind specific commands to activator bindings.
  *
- * It supports 4 modes:
+ * It supports 3 modes:
  *
- * 1. Regular bindings
+ * 1. Regular bindings - executed once when the button is pressed
  * 2. Repeatable bindings - for example, if the user binds a keybinding, then
  * after a specific delay the command begins to be executed repeatedly, until
  * the user released the key. In the config file, repeatable bindings have the
  * prefix repeatable_
- * 3. Always bindings - bindings that can be executed even if a plugin is already
- * active, or if the screen is locked. They have a prefix always_
- * 4. Release bindings - Execute a command when a binding is released. Useful for
+ * 3. Release bindings - Execute a command when a binding is released. Useful for
  * Push-To-Talk. They have a prefix release_
+ *
+ * They can be marked as "Always" bindings, that can be executed even if a plugin
+ * is already active, or if the screen is locked.
  * */
 
 class wayfire_command : public wf::plugin_interface_t
@@ -242,17 +243,13 @@ class wayfire_command : public wf::plugin_interface_t
 
   public:
     wf::option_wrapper_t<wf::config::compound_list_t<
-        std::string, wf::activatorbinding_t>> regular_bindings{"command/bindings"};
+        std::string, wf::activatorbinding_t, bool>> regular_bindings{"command/bindings"};
 
-    wf::option_wrapper_t<wf::config::compound_list_t<std::string, wf::activatorbinding_t>> repeat_bindings{
+    wf::option_wrapper_t<wf::config::compound_list_t<std::string, wf::activatorbinding_t, bool>> repeat_bindings{
         "command/repeatable_bindings"
     };
 
-    wf::option_wrapper_t<wf::config::compound_list_t<std::string, wf::activatorbinding_t>> always_bindings{
-        "command/always_bindings"
-    };
-
-    wf::option_wrapper_t<wf::config::compound_list_t<std::string, wf::activatorbinding_t>> release_bindings{
+    wf::option_wrapper_t<wf::config::compound_list_t<std::string, wf::activatorbinding_t, bool>> release_bindings{
         "command/release_bindings"
     };
 
@@ -263,22 +260,20 @@ class wayfire_command : public wf::plugin_interface_t
 
         auto regular    = regular_bindings.value();
         auto repeatable = repeat_bindings.value();
-        auto always     = always_bindings.value();
         auto release    = release_bindings.value();
         bindings.resize(
-            regular.size() + repeatable.size() + always.size() + release.size());
+            regular.size() + repeatable.size() + release.size());
         size_t i = 0;
 
         const auto& push_bindings =
-            [&] (wf::config::compound_list_t<std::string, wf::activatorbinding_t>& list, binding_mode mode,
-                 bool always_exec = false)
+            [&] (wf::config::compound_list_t<std::string, wf::activatorbinding_t, bool>& list, binding_mode mode)
         {
-            for (const auto& [_, _cmd, activator] : list)
+            for (const auto& [_, _cmd, activator, always] : list)
             {
                 std::string cmd     = _cmd;
                 command_callback cb = [cmd] () -> bool { return wf::get_core().run(cmd); };
                 bindings[i] =
-                    std::bind(std::mem_fn(&wayfire_command::on_binding), this, cb, mode, always_exec, _1,
+                    std::bind(std::mem_fn(&wayfire_command::on_binding), this, cb, mode, always, _1,
                         nullptr);
                 wf::get_core().bindings->add_activator(wf::create_option(activator), &bindings[i]);
                 ++i;
@@ -287,7 +282,6 @@ class wayfire_command : public wf::plugin_interface_t
 
         push_bindings(regular, BINDING_NORMAL);
         push_bindings(repeatable, BINDING_REPEAT);
-        push_bindings(always, BINDING_NORMAL, true);
         push_bindings(release, BINDING_RELEASE);
     };
 

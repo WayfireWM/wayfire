@@ -16,6 +16,11 @@
 				<_short>Binding</_short>
 				<_long>Sets the triggering activator binding.</_long>
 			</entry>
+			<entry prefix="always_" type="bool" name="repeatable">
+				<_short>Always</_short>
+				<_long>Wether the binding can be prevented from running by other conditions</_long>
+				<default>false</default>
+			</entry>
 		</option>
 
 		<option name="repeatable_bindings" type="dynamic-list" type-hint="dict">
@@ -30,21 +35,13 @@
 				<_short>Binding</_short>
 				<_long>Sets the triggering activator binding.</_long>
 			</entry>
+			<entry prefix="always_" type="bool" name="repeatable">
+				<_short>Always</_short>
+				<_long>Wether the binding can be prevented from running by other conditions</_long>
+				<default>false</default>
+			</entry>
 		</option>
 
-		<option name="always_bindings" type="dynamic-list" type-hint="dict">
-			<_short>Always bindings</_short>
-			<_long>Sets the bindings which are always available, even when screen is locked.</_long>
-			<entry prefix="command_" type="string" name="command">
-				<_short>Command</_short>
-				<_long>Sets the command to execute.</_long>
-				<hint>file</hint>
-			</entry>
-			<entry prefix="always_binding_" type="activator" name="binding">
-				<_short>Binding</_short>
-				<_long>Sets the triggering activator binding.</_long>
-			</entry>
-		</option>
 		<option name="release_bindings" type="dynamic-list" type-hint="dict">
 			<_short>Release bindings</_short>
 			<_long>Sets the bindings which activate on release</_long>
@@ -56,6 +53,11 @@
 			<entry prefix="release_binding_" type="activator" name="binding">
 				<_short>Binding</_short>
 				<_long>Sets the triggering activator binding.</_long>
+			</entry>
+			<entry prefix="always_" type="bool" name="repeatable">
+				<_short>Always</_short>
+				<_long>Wether the binding can be prevented from running by other conditions</_long>
+				<default>false</default>
 			</entry>
 		</option>
 	</plugin>
