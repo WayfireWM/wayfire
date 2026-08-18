@@ -119,6 +119,11 @@ void wf_blur_base::render_iteration(wf::region_t blur_region,
     wf::gles::bind_render_buffer(out.get_renderbuffer());
     GL_CALL(glActiveTexture(GL_TEXTURE0));
     GL_CALL(glBindTexture(GL_TEXTURE_2D, tex_id));
+
+    // Blur shaders can sample one texel outside the partial render region.
+    // Render a one-pixel guard band so those samples are initialized.
+    blur_region.expand_edges(1);
+    blur_region &= wlr_box{0, 0, width, height};
     for (auto& b : blur_region)
     {
         wf::gles::scissor_render_buffer(out.get_renderbuffer(), wlr_box_from_pixman_box(b));
