@@ -86,8 +86,45 @@ cairo_surface_t*decoration_theme_t::render_text(std::string text,
     layout = pango_cairo_create_layout(cr);
     pango_layout_set_font_description(layout, font_desc);
     pango_layout_set_text(layout, text.c_str(), text.size());
+
+    /* Horizontal alignment */
+    std::string halign = title_halign;
+
+    if (halign == "center")
+    {
+        pango_layout_set_width(layout, width * PANGO_SCALE);
+        pango_layout_set_alignment(layout, PANGO_ALIGN_CENTER);
+    } else if (halign == "right")
+    {
+        pango_layout_set_width(layout, (width - 2) * PANGO_SCALE);
+        pango_layout_set_alignment(layout, PANGO_ALIGN_RIGHT);
+    } else
+    {
+        pango_layout_set_width(layout, width * PANGO_SCALE);
+        pango_layout_set_alignment(layout, PANGO_ALIGN_LEFT);
+    }
+
+    /* Vertical alignment */
+    int text_width, text_height;
+    pango_layout_get_pixel_size(layout, &text_width, &text_height);
+
+    std::string valign = title_valign;
+
+    double y = 0.0;
+
+    if (valign == "center")
+    {
+        y = (height - text_height) / 2.0;
+    } else if (valign == "bottom")
+    {
+        y = height - text_height;
+    }
+
+    cairo_move_to(cr, 0, y);
+
     cairo_set_source_rgba(cr, color.r, color.g, color.b, color.a);
     pango_cairo_show_layout(cr, layout);
+
     pango_font_description_free(font_desc);
     g_object_unref(layout);
     cairo_destroy(cr);

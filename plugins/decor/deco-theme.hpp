@@ -78,6 +78,8 @@ class decoration_theme_t
     wf::option_wrapper_t<int> button_padding{"decoration/button_padding"};
     wf::option_wrapper_t<wf::color_t> active_color{"decoration/active_color"};
     wf::option_wrapper_t<wf::color_t> inactive_color{"decoration/inactive_color"};
+    wf::option_wrapper_t<std::string> title_halign{"decoration/title_halign"};
+    wf::option_wrapper_t<std::string> title_valign{"decoration/title_valign"};
 };
 }
 }

@@ -21,6 +21,40 @@
 			<max>1.0</max>
 			<min>0.1</min>
 		</option>
+		<option name="title_halign" type="string">
+			<_short>Title horizontal alignment</_short>
+			<_long>Sets the horizontal alignment of the title text. Valid values are left, center and right.</_long>
+			<default>left</default>
+			<desc>
+				<value>left</value>
+				<_name>left</_name>
+			</desc>
+			<desc>
+				<value>center</value>
+				<_name>center</_name>
+			</desc>
+			<desc>
+				<value>right</value>
+				<_name>right</_name>
+			</desc>
+		</option>
+		<option name="title_valign" type="string">
+			<_short>Title vertical alignment</_short>
+			<_long>Sets the vertical alignment of the title text. Valid values are top, center and bottom.</_long>
+			<default>top</default>
+			<desc>
+				<value>top</value>
+				<_name>top</_name>
+			</desc>
+			<desc>
+				<value>center</value>
+				<_name>center</_name>
+			</desc>
+			<desc>
+				<value>bottom</value>
+				<_name>bottom</_name>
+			</desc>
+		</option>
 		<option name="title_height" type="int">
 			<_short>Title bar height</_short>
 			<_long>Sets the height of the title bars in pixels.</_long>
