@@ -86,17 +86,18 @@ void main()
     {
         y = uv.y;
         uv_squeeze.y += -progress_pt_two * (inv_h - target_box.w);
-        sigmoid = 1.0 / (1.0 + pow(2.718, -(y * (1.0 / (src_box.w - target_box.w)) * 15.0 - 10.0)));
+        sigmoid = 1.0 / (1.0 + pow(1.718, -(y * (1.0 / (src_box.w - target_box.w)) * 14.5 - 6.0)));
     } else
     {
         y = 1.0 - uv.y;
         uv_squeeze.y -= -progress_pt_two * (inv_h - target_box.y + target_box.w);
-        sigmoid = 1.0 / (1.0 + pow(2.718, -(y * (1.0 / (target_box.w - src_box.y)) * 15.0 - 10.0)));
+        sigmoid = 1.0 / (1.0 + pow(1.718, -(y * (1.0 / (target_box.w - src_box.y)) * 14.5 - 6.0)));
     }
 
-    uv_squeeze.x += sigmoid * progress_pt_one * (src_box.x - target_box.x) * inv_w;
-    uv_squeeze.x *= (sigmoid * ((src_box.z - src_box.x) - (target_box.z - target_box.x)) /
-                    (target_box.z - target_box.x) * progress_pt_one) + 1.0;
+    float t = sigmoid * progress_pt_one;
+    float sx0 = mix(src_box.x, target_box.x, t);
+    float sx1 = mix(src_box.z, target_box.z, t);
+    uv_squeeze.x = (uv.x - sx0) / (sx1 - sx0);
 
     if (uv_squeeze.x < 0.0 || uv_squeeze.y < 0.0 ||
         uv_squeeze.x > 1.0 || uv_squeeze.y > 1.0)
@@ -139,17 +140,18 @@ void main()
     {
         y = 1.0 - uv.x;
         uv_squeeze.x += progress_pt_two * (inv_w - target_box.z);
-        sigmoid = 1.0 / (1.0 + pow(2.718, -(y * (1.0 / (src_box.z - target_box.z)) * 15.0 - 10.0)));
+        sigmoid = 1.0 / (1.0 + pow(1.718, -(y * (1.0 / (src_box.z - target_box.z)) * 14.0 - 8.0)));
     } else
     {
         y = uv.x;
         uv_squeeze.x -= progress_pt_two * (inv_w - target_box.x + target_box.z);
-        sigmoid = 1.0 / (1.0 + pow(2.718, -(y * (1.0 / (target_box.z - src_box.x)) * 15.0 - 10.0)));
+        sigmoid = 1.0 / (1.0 + pow(1.718, -(y * (1.0 / (target_box.z - src_box.x)) * 14.0 - 8.0)));
     }
 
-    uv_squeeze.y += sigmoid * progress_pt_one * (src_box.y - target_box.y) * inv_h;
-    uv_squeeze.y *= (sigmoid * ((src_box.w - src_box.y) - (target_box.w - target_box.y)) /
-                    (target_box.w - target_box.y) * progress_pt_one) + 1.0;
+    float t = sigmoid * progress_pt_one;
+    float sy0 = mix(src_box.y, target_box.y, t);
+    float sy1 = mix(src_box.w, target_box.w, t);
+    uv_squeeze.y = (uv.y - sy0) / (sy1 - sy0);
     uv_squeeze.y = 1.0 - uv_squeeze.y;
 
     if (uv_squeeze.x < 0.0 || uv_squeeze.y < 0.0 ||
