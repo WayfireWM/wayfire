@@ -17,7 +17,12 @@ class wayfire_zoom_screen : public wf::per_output_plugin_instance_t
     wf::option_wrapper_t<wf::animation_description_t> smoothing_duration{"zoom/smoothing_duration"};
     wf::option_wrapper_t<int> interpolation_method{"zoom/interpolation_method"};
     wf::animation::simple_animation_t progression{smoothing_duration};
+
     bool hook_set = false;
+
+    double zoom_center_x = 0;
+    double zoom_center_y = 0;
+    bool zoom_center_set = false;
 
     wf::plugin_activation_data_t grab_interface = {
         .name = "zoom",
@@ -35,7 +40,24 @@ class wayfire_zoom_screen : public wf::per_output_plugin_instance_t
     {
         float target = progression.end;
         target -= target * delta * speed;
-        target  = wf::clamp(target, 1.0f, 50.0f);
+        target = wf::clamp(target, 1.0f, 50.0f);
+
+        if (!zoom_center_set && target > 1.0f)
+        {
+            auto oc = output->get_cursor_position();
+
+            double x, y;
+            wlr_box b = wf::to_integer_box(output->get_relative_geometry());
+            wlr_box_closest_point(&b, oc.x, oc.y, &x, &y);
+
+            wf::geometry_t box = {x, y, 1, 1};
+            box = output->render->get_target_framebuffer()
+                .framebuffer_geometry_from_geometry_box(box);
+
+            zoom_center_x = box.x;
+            zoom_center_y = box.y;
+            zoom_center_set = true;
+        }
 
         if (target != progression.end)
         {
@@ -72,37 +94,54 @@ class wayfire_zoom_screen : public wf::per_output_plugin_instance_t
     {
         auto w = destination.get_size().width;
         auto h = destination.get_size().height;
+
         if ((w <= 0) || (h <= 0))
         {
             LOGE("Invalid output size in zoom plugin!");
             return;
         }
 
-        auto oc = output->get_cursor_position();
-        double x, y;
-        wlr_box b = wf::to_integer_box(output->get_relative_geometry());
-        wlr_box_closest_point(&b, oc.x, oc.y, &x, &y);
-
-        /* get rotation & scale */
-        wf::geometry_t box = {x, y, 1, 1};
-        box = output->render->get_target_framebuffer().framebuffer_geometry_from_geometry_box(box);
-        x   = box.x;
-        y   = box.y;
-
-        // Store progression once to avoid its value changing in subsequent calls, could be very tricky due to
-        // timing. And if we use slightly different progressions, we can get an invalid rect.
         const float factor = (float)progression;
         const float scale  = (factor - 1) / factor;
-        const float x1     = std::clamp(float(x * scale), 0.0f, w - 1.0f);
-        const float y1     = std::clamp(float(y * scale), 0.0f, h - 1.0f);
-        const float tw     = std::clamp(w / factor, 0.0f, w - x1);
-        const float th     = std::clamp(h / factor, 0.0f, h - y1);
-        auto filter_mode   = (interpolation_method == (int)interpolation_method_t::NEAREST) ?
-            WLR_SCALE_FILTER_NEAREST : WLR_SCALE_FILTER_BILINEAR;
-        destination.blit(source, {x1, y1, tw, th}, {0.0, 0.0, (double)w, (double)h}, filter_mode);
+
+        const float x = zoom_center_x;
+        const float y = zoom_center_y;
+
+        const float x1 = std::clamp(
+            x * scale,
+            0.0f,
+            w - 1.0f);
+
+        const float y1 = std::clamp(
+            y * scale,
+            0.0f,
+            h - 1.0f);
+
+        const float tw = std::clamp(
+            w / factor,
+            0.0f,
+            w - x1);
+
+        const float th = std::clamp(
+            h / factor,
+            0.0f,
+            h - y1);
+
+        auto filter_mode =
+            (interpolation_method == (int)interpolation_method_t::NEAREST) ?
+            WLR_SCALE_FILTER_NEAREST :
+            WLR_SCALE_FILTER_BILINEAR;
+
+        destination.blit(
+            source,
+            {x1, y1, tw, th},
+            {0.0, 0.0, (double)w, (double)h},
+            filter_mode);
+
         if (!progression.running() && (progression - 1 <= 0.01))
         {
             unset_hook();
+            zoom_center_set = false;
         }
     };
 
