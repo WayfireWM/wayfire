@@ -326,8 +326,9 @@ std::vector<std::string> wf::get_plugin_paths()
 
     if (xdg_data_dir != "")
     {
-        plugin_prefixes.push_back(xdg_data_dir + "/wayfire/plugin-manager/install/lib/wayfire");
-        plugin_prefixes.push_back(xdg_data_dir + "/wayfire/plugin-manager/install/lib64/wayfire");
+        // REL_LIBDIR from meson.build: get_option('libdir') to be compatible with wayfire-plugin
+        plugin_prefixes.push_back(xdg_data_dir + "/wayfire/plugin-manager/install/" +
+            REL_LIBDIR + "/wayfire");
         plugin_prefixes.push_back(xdg_data_dir + "/wayfire/plugins");
     }
 

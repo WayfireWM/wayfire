@@ -168,6 +168,7 @@ conf_data.set('PLUGIN_XML_DIR', join_paths(get_option('prefix'), metadata_dir_su
 sysconfdir = join_paths(get_option('prefix'), get_option('sysconfdir'))
 conf_data.set('SYSCONFDIR', sysconfdir)
 pkgdatadir = join_paths(get_option('prefix'), 'share', 'wayfire', 'protocols')
+conf_data.set('REL_LIBDIR', get_option('libdir'))
 
 if get_option('default_config_backend') == 'default'
   conf_data.set('DEFAULT_CONFIG_BACKEND', join_paths(conf_data.get('PLUGIN_PATH'), 'libdefault-config-backend.so'))
