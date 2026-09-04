@@ -149,9 +149,9 @@ void main()
     }
 
     float t = sigmoid * progress_pt_one;
-    float sy0 = mix(src_box.y, target_box.y, t);
-    float sy1 = mix(src_box.w, target_box.w, t);
-    uv_squeeze.y = (uv.y - sy0) / (sy1 - sy0);
+    float sy0 = mix(src_box.y, 1.0 - target_box.w, t);
+    float sy1 = mix(src_box.w, 1.0 - target_box.y, t);
+    uv_squeeze.y = (uv.y - sy1) / (sy0 - sy1);
     uv_squeeze.y = 1.0 - uv_squeeze.y;
 
     if (uv_squeeze.x < 0.0 || uv_squeeze.y < 0.0 ||
