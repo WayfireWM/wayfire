@@ -20,6 +20,23 @@
 			<_long>Sets the smoothing duration in milliseconds.</_long>
 			<default>300ms linear</default>
 		</option>
+		<option name="mode" type="string">
+			<_short>Viewport movement mode</_short>
+			<_long>Controls how the zoomed viewport moves after zooming finishes.</_long>
+			<default>follow</default>
+			<desc>
+				<value>follow</value>
+				<_name>Follow the cursor</_name>
+			</desc>
+			<desc>
+				<value>locked</value>
+				<_name>Lock the viewport</_name>
+			</desc>
+			<desc>
+				<value>edge</value>
+				<_name>Move when the cursor reaches the edge</_name>
+			</desc>
+		</option>
 		<option name="interpolation_method" type="int">
 			<_short>Interpolation method</_short>
 			<_long>Sets the pixel interpolation method to use.</_long>
