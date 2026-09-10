@@ -3,6 +3,7 @@
 #include <wayfire/render.hpp>
 #include <wayfire/render-manager.hpp>
 #include <wayfire/util/duration.hpp>
+#include <string>
 
 class wayfire_zoom_screen : public wf::per_output_plugin_instance_t
 {
@@ -16,8 +17,11 @@ class wayfire_zoom_screen : public wf::per_output_plugin_instance_t
     wf::option_wrapper_t<double> speed{"zoom/speed"};
     wf::option_wrapper_t<wf::animation_description_t> smoothing_duration{"zoom/smoothing_duration"};
     wf::option_wrapper_t<int> interpolation_method{"zoom/interpolation_method"};
+    wf::option_wrapper_t<std::string> mode{"zoom/mode"};
     wf::animation::simple_animation_t progression{smoothing_duration};
     bool hook_set = false;
+    bool has_locked_region = false;
+    wf::geometry_t locked_region;
 
     wf::plugin_activation_data_t grab_interface = {
         .name = "zoom",
@@ -28,6 +32,7 @@ class wayfire_zoom_screen : public wf::per_output_plugin_instance_t
     void init() override
     {
         progression.set(1, 1);
+        mode.set_callback([=] () { has_locked_region = false; });
         output->add_axis(modifier, &axis);
     }
 
@@ -97,9 +102,55 @@ class wayfire_zoom_screen : public wf::per_output_plugin_instance_t
         const float y1     = std::clamp(float(y * scale), 0.0f, h - 1.0f);
         const float tw     = std::clamp(w / factor, 0.0f, w - x1);
         const float th     = std::clamp(h / factor, 0.0f, h - y1);
-        auto filter_mode   = (interpolation_method == (int)interpolation_method_t::NEAREST) ?
+        wf::geometry_t source_box{x1, y1, tw, th};
+
+        const std::string& movement_mode = mode;
+        if (movement_mode != "follow")
+        {
+            if (!has_locked_region)
+            {
+                locked_region     = source_box;
+                has_locked_region = !progression.running();
+            } else
+            {
+                const double center_x = locked_region.x + locked_region.width / 2.0;
+                const double center_y = locked_region.y + locked_region.height / 2.0;
+                locked_region.width  = std::clamp((double)w / factor, 0.0, (double)w);
+                locked_region.height = std::clamp((double)h / factor, 0.0, (double)h);
+                locked_region.x = std::clamp(center_x - locked_region.width / 2.0,
+                    0.0, w - locked_region.width);
+                locked_region.y = std::clamp(center_y - locked_region.height / 2.0,
+                    0.0, h - locked_region.height);
+
+                if ((movement_mode == "edge") && !progression.running())
+                {
+                    if (x < locked_region.x)
+                    {
+                        locked_region.x = x;
+                    } else if (x > locked_region.x + locked_region.width)
+                    {
+                        locked_region.x = x - locked_region.width;
+                    }
+
+                    if (y < locked_region.y)
+                    {
+                        locked_region.y = y;
+                    } else if (y > locked_region.y + locked_region.height)
+                    {
+                        locked_region.y = y - locked_region.height;
+                    }
+
+                    locked_region.x = std::clamp(locked_region.x, 0.0, w - locked_region.width);
+                    locked_region.y = std::clamp(locked_region.y, 0.0, h - locked_region.height);
+                }
+            }
+
+            source_box = locked_region;
+        }
+
+        auto filter_mode = (interpolation_method == (int)interpolation_method_t::NEAREST) ?
             WLR_SCALE_FILTER_NEAREST : WLR_SCALE_FILTER_BILINEAR;
-        destination.blit(source, {x1, y1, tw, th}, {0.0, 0.0, (double)w, (double)h}, filter_mode);
+        destination.blit(source, source_box, {0.0, 0.0, (double)w, (double)h}, filter_mode);
         if (!progression.running() && (progression - 1 <= 0.01))
         {
             unset_hook();
@@ -111,6 +162,7 @@ class wayfire_zoom_screen : public wf::per_output_plugin_instance_t
         output->render->set_redraw_always(false);
         output->render->rem_post(&render_hook);
         hook_set = false;
+        has_locked_region = false;
     }
 
     void fini() override
