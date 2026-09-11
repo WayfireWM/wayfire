@@ -4,22 +4,38 @@
 		<_short>Zoom</_short>
 		<_long>A plugin to zoom in the desktop with the mouse.</_long>
 		<category>Accessibility</category>
+
 		<option name="modifier" type="key">
 			<_short>Zoom in the desktop by scrolling with modifier</_short>
 			<_long>Scrolls with the specified modifier to zoom in and out.</_long>
 			<default>&lt;super&gt;</default>
 		</option>
+
+		<option name="lock" type="activator">
+			<_short>Toggle locked zoom</_short>
+			<_long>Locks or unlocks the zoomed viewport.</_long>
+			<default>&lt;super&gt; BTN_MIDDLE</default>
+		</option>
+
 		<option name="speed" type="double">
 			<_short>Speed</_short>
 			<_long>Sets the speed factor for zooming.</_long>
 			<default>0.01</default>
 			<precision>0.001</precision>
 		</option>
+
 		<option name="smoothing_duration" type="animation">
 			<_short>Smoothing duration</_short>
 			<_long>Sets the smoothing duration in milliseconds.</_long>
 			<default>300ms linear</default>
 		</option>
+
+		<option name="edge" type="bool">
+			<_short>Push edges</_short>
+			<_long>Allows the locked viewport to move when the cursor reaches its edge.</_long>
+			<default>false</default>
+		</option>
+
 		<option name="interpolation_method" type="int">
 			<_short>Interpolation method</_short>
 			<_long>Sets the pixel interpolation method to use.</_long>
