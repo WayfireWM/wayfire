@@ -22,9 +22,8 @@ class wayfire_zoom_screen : public wf::per_output_plugin_instance_t
     wf::animation::simple_animation_t progression{smoothing_duration};
 
     bool hook_set = false;
-    bool locked = false;
-    bool has_locked_region = false;
-    wf::geometry_t locked_region;
+    bool locked   = false;
+    wf::pointf_t lock_point;
 
     wf::plugin_activation_data_t grab_interface = {
         .name = "zoom",
@@ -79,13 +78,17 @@ class wayfire_zoom_screen : public wf::per_output_plugin_instance_t
     wf::activator_callback lock_binding = [&] (const wf::activator_data_t&)
     {
         locked = !locked;
-        has_locked_region = false;
+
+        if (locked)
+        {
+            lock_point = wf::get_core().get_cursor_position();
+        }
+
         return true;
     };
 
-    wf::post_hook_t render_hook = [&] (
-        wf::auxilliary_buffer_t& source,
-        const wf::render_buffer_t& destination)
+    wf::post_hook_t render_hook = [=] (wf::auxilliary_buffer_t& source,
+                                       const wf::render_buffer_t& destination)
     {
         auto w = destination.get_size().width;
         auto h = destination.get_size().height;
@@ -95,102 +98,64 @@ class wayfire_zoom_screen : public wf::per_output_plugin_instance_t
             return;
         }
 
-        auto oc = output->get_cursor_position();
+        auto cur_pos = output->get_cursor_position();
+        auto oc = locked ? lock_point : cur_pos;
         double x, y;
         wlr_box b = wf::to_integer_box(output->get_relative_geometry());
         wlr_box_closest_point(&b, oc.x, oc.y, &x, &y);
 
         /* get rotation & scale */
         wf::geometry_t box = {x, y, 1, 1};
-        box = output->render->get_target_framebuffer().
-            framebuffer_geometry_from_geometry_box(box);
-        x = box.x;
-        y = box.y;
+        box = output->render->get_target_framebuffer().framebuffer_geometry_from_geometry_box(box);
+        x   = box.x;
+        y   = box.y;
 
-        // Store progression once to avoid its value changing in subsequent
-        // calls, which could result in an invalid rect.
+        // Store progression once to avoid its value changing in subsequent calls, could be very tricky due to
+        // timing. And if we use slightly different progressions, we can get an invalid rect.
         const float factor = (float)progression;
         const float scale  = (factor - 1) / factor;
-        const float x1     = std::clamp(float(x * scale), 0.0f, w - 1.0f);
-        const float y1     = std::clamp(float(y * scale), 0.0f, h - 1.0f);
-        const float tw     = std::clamp(w / factor, 0.0f, w - x1);
-        const float th     = std::clamp(h / factor, 0.0f, h - y1);
+        float x1 = float(x * scale);
+        float y1 = float(y * scale);
+        float tw = w / factor;
+        float th = h / factor;
 
-        wf::geometry_t source_box{x1, y1, tw, th};
-
-        if (locked)
+        if (locked && edge)
         {
-            if (!has_locked_region)
+            wlr_box_closest_point(&b, cur_pos.x, cur_pos.y, &cur_pos.x, &cur_pos.y);
+            wf::geometry_t box = {cur_pos.x, cur_pos.y, 1, 1};
+            box = output->render->get_target_framebuffer().framebuffer_geometry_from_geometry_box(box);
+            cur_pos.x = box.x;
+            cur_pos.y = box.y;
+
+            if (cur_pos.x < x1)
             {
-                locked_region = source_box;
-                has_locked_region = true;
-            } else
+                lock_point.x -= x1 - cur_pos.x;
+                x1 = cur_pos.x;
+            } else if (cur_pos.x > x1 + tw)
             {
-                const double center_x =
-                    locked_region.x + locked_region.width / 2.0;
-                const double center_y =
-                    locked_region.y + locked_region.height / 2.0;
-
-                locked_region.width =
-                    std::clamp((double)w / factor, 0.0, (double)w);
-                locked_region.height =
-                    std::clamp((double)h / factor, 0.0, (double)h);
-
-                locked_region.x = std::clamp(
-                    center_x - locked_region.width / 2.0,
-                    0.0,
-                    w - locked_region.width);
-
-                locked_region.y = std::clamp(
-                    center_y - locked_region.height / 2.0,
-                    0.0,
-                    h - locked_region.height);
-
-                if (edge && !progression.running())
-                {
-                    if (x < locked_region.x)
-                    {
-                        locked_region.x = x;
-                    } else if (x > locked_region.x + locked_region.width)
-                    {
-                        locked_region.x = x - locked_region.width;
-                    }
-
-                    if (y < locked_region.y)
-                    {
-                        locked_region.y = y;
-                    } else if (y > locked_region.y + locked_region.height)
-                    {
-                        locked_region.y = y - locked_region.height;
-                    }
-
-                    locked_region.x = std::clamp(
-                        locked_region.x,
-                        0.0,
-                        w - locked_region.width);
-
-                    locked_region.y = std::clamp(
-                        locked_region.y,
-                        0.0,
-                        h - locked_region.height);
-                }
+                lock_point.x += cur_pos.x - (x1 + tw);
+                x1 = cur_pos.x - tw;
             }
 
-            source_box = locked_region;
+            if (cur_pos.y < y1)
+            {
+                lock_point.y -= y1 - cur_pos.y;
+                y1 = cur_pos.y;
+            } else if (cur_pos.y > y1 + th)
+            {
+                lock_point.y += cur_pos.y - (y1 + th);
+                y1 = cur_pos.y - th;
+            }
         }
 
-        auto filter_mode =
-            (interpolation_method ==
-             (int)interpolation_method_t::NEAREST) ?
-            WLR_SCALE_FILTER_NEAREST :
-            WLR_SCALE_FILTER_BILINEAR;
+        x1 = std::clamp(x1, 0.0f, w - 1.0f);
+        y1 = std::clamp(y1, 0.0f, h - 1.0f);
+        tw = std::clamp(tw, 0.0f, w - x1);
+        th = std::clamp(th, 0.0f, h - y1);
 
-        destination.blit(
-            source,
-            source_box,
-            {0.0, 0.0, (double)w, (double)h},
-            filter_mode);
-
+        auto filter_mode = (interpolation_method == (int)interpolation_method_t::NEAREST) ?
+            WLR_SCALE_FILTER_NEAREST : WLR_SCALE_FILTER_BILINEAR;
+        destination.blit(source, {x1, y1, tw, th}, {0.0, 0.0, (double)w, (double)h}, filter_mode);
         if (!progression.running() && (progression - 1 <= 0.01))
         {
             unset_hook();
@@ -202,8 +167,7 @@ class wayfire_zoom_screen : public wf::per_output_plugin_instance_t
         output->render->set_redraw_always(false);
         output->render->rem_post(&render_hook);
         hook_set = false;
-        locked = false;
-        has_locked_region = false;
+        locked   = false;
     }
 
     void fini() override
