@@ -189,7 +189,7 @@ class simple_decoration_node_t : public wf::scene::node_t, public wf::pointer_in
         void schedule_instructions(std::vector<wf::scene::render_instruction_t>& instructions,
             const wf::render_target_t& target, wf::regionf_t& damage) override
         {
-            auto our_region = self->get_bounding_box();
+            auto our_region = self->cached_region + self->get_offset();
             wf::regionf_t our_damage = damage & our_region;
             if (!our_damage.empty())
             {
