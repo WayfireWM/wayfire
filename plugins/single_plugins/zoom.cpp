@@ -81,7 +81,7 @@ class wayfire_zoom_screen : public wf::per_output_plugin_instance_t
 
         if (locked)
         {
-            lock_point = wf::get_core().get_cursor_position();
+            lock_point = output->get_cursor_position();
         }
 
         return true;
