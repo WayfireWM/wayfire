@@ -22,11 +22,13 @@ class wayfire_zoom_screen : public wf::per_output_plugin_instance_t
     wf::option_wrapper_t<int> interpolation_method{"zoom/interpolation_method"};
 
     wf::animation::simple_animation_t progression{smoothing_duration};
+    wf::animation::simple_animation_t lock_transition{wf::create_option<int>(500)};
     double target;
+    wf::pointf_t oc;
 
     bool hook_set = false;
-    bool locked   = false;
-    wf::pointf_t lock_point;
+    bool locked = false;
+    wf::pointf_t lock_point, target_point;
 
     wf::plugin_activation_data_t grab_interface = {
         .name = "zoom",
@@ -37,6 +39,7 @@ class wayfire_zoom_screen : public wf::per_output_plugin_instance_t
     void init() override
     {
         progression.set(1, 1);
+        lock_transition.set(0, 0);
 
         output->add_axis(modifier, &axis);
         output->add_activator(lock, &lock_binding);
@@ -57,11 +60,11 @@ class wayfire_zoom_screen : public wf::per_output_plugin_instance_t
                 hook_set = true;
                 output->render->add_post(&render_hook);
                 wf::get_core().connect(&on_motion_event);
+                lock_point = oc = output->get_cursor_position();
             }
         }
 
         output->render->damage_whole();
-        output->render->schedule_redraw();
     }
 
     wf::axis_callback axis = [=] (wlr_pointer_axis_event *ev)
@@ -87,7 +90,20 @@ class wayfire_zoom_screen : public wf::per_output_plugin_instance_t
 
         if (locked)
         {
-            lock_point = output->get_cursor_position();
+            if (!lock_transition.running())
+            {
+                oc = output->get_cursor_position();
+            }
+
+            lock_point = oc;
+            lock_transition.set(1, 1);
+        } else
+        {
+            lock_transition.set(0, 0);
+            lock_transition.animate(1.0);
+            target_point = output->get_cursor_position();
+
+            output->render->damage_whole();
         }
 
         return true;
@@ -97,8 +113,35 @@ class wayfire_zoom_screen : public wf::per_output_plugin_instance_t
         [=] (wf::input_event_signal<wlr_pointer_motion_event> *ev)
     {
         output->render->damage_whole();
-        output->render->schedule_redraw();
     };
+
+    void damage_cursors()
+    {
+        wlr_output_cursor *cursor;
+        int transformed_width, transformed_height;
+        wlr_output_transformed_resolution(output->handle, &transformed_width, &transformed_height);
+        wl_list_for_each(cursor, &output->handle->cursors, link)
+        {
+            if (!cursor->enabled || !cursor->visible ||
+                (output->handle->hardware_cursor == cursor) || !cursor->texture)
+            {
+                continue;
+            }
+
+            wlr_box box{
+                static_cast<int>(cursor->x - cursor->hotspot_x),
+                static_cast<int>(cursor->y - cursor->hotspot_y),
+                static_cast<int>(cursor->width),
+                static_cast<int>(cursor->height),
+            };
+            wlr_box_transform(&box, &box,
+                wlr_output_transform_invert(output->handle->transform),
+                transformed_width, transformed_height);
+
+            wf::geometry_t damage{double(box.x), double(box.y), double(box.width), double(box.height)};
+            output->render->damage(damage, false);
+        }
+    }
 
     wf::post_hook_t render_hook = [=] (wf::auxilliary_buffer_t& source,
                                        const wf::render_buffer_t& destination)
@@ -111,8 +154,24 @@ class wayfire_zoom_screen : public wf::per_output_plugin_instance_t
             return;
         }
 
+        damage_cursors();
+
         auto cur_pos = output->get_cursor_position();
-        auto oc = locked ? lock_point : cur_pos;
+
+        wf::pointf_t from, to;
+        if (locked)
+        {
+            from = target_point;
+            to   = lock_point;
+        } else
+        {
+            from = lock_point;
+            to   = cur_pos;
+        }
+
+        oc.x = from.x + (to.x - from.x) * lock_transition;
+        oc.y = from.y + (to.y - from.y) * lock_transition;
+
         double x, y;
         wlr_box b = wf::to_integer_box(output->get_relative_geometry());
         wlr_box_closest_point(&b, oc.x, oc.y, &x, &y);
@@ -170,9 +229,9 @@ class wayfire_zoom_screen : public wf::per_output_plugin_instance_t
             WLR_SCALE_FILTER_NEAREST : WLR_SCALE_FILTER_BILINEAR;
         destination.blit(source, {x1, y1, tw, th}, {0.0, 0.0, (double)w, (double)h}, filter_mode);
 
-        if (progression.running())
+        if (progression.running() || lock_transition.running())
         {
-            output->render->schedule_redraw();
+            output->render->damage_whole_idle();
         } else if (progression - 1.0 <= 0.0)
         {
             unset_hook();
