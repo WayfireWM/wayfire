@@ -3,7 +3,6 @@
 #include <wayfire/render.hpp>
 #include <wayfire/render-manager.hpp>
 #include <wayfire/util/duration.hpp>
-#include <wayfire/nonstd/wlroots-full.hpp>
 
 class wayfire_zoom_screen : public wf::per_output_plugin_instance_t
 {
@@ -53,7 +52,6 @@ class wayfire_zoom_screen : public wf::per_output_plugin_instance_t
             if (!hook_set)
             {
                 hook_set = true;
-                output->render->add_effect(&pre_hook, wf::OUTPUT_EFFECT_PRE);
                 output->render->add_post(&render_hook);
                 output->render->set_redraw_always();
             }
@@ -87,39 +85,6 @@ class wayfire_zoom_screen : public wf::per_output_plugin_instance_t
         }
 
         return true;
-    };
-
-    wf::effect_hook_t pre_hook = [=] ()
-    {
-        wlr_output_cursor *cursor;
-        int transformed_width, transformed_height;
-        wlr_output_transformed_resolution(output->handle, &transformed_width, &transformed_height);
-        wl_list_for_each(cursor, &output->handle->cursors, link)
-        {
-            if (!cursor->enabled || !cursor->visible ||
-                (output->handle->hardware_cursor == cursor) || !cursor->texture)
-            {
-                continue;
-            }
-
-            // wlr_output_cursor stores x/y/width/height/hotspot in scaled
-            // buffer-pixel units, pre-output-transform (see wlr_output_cursor_move
-            // and wlr_output_cursor_set_buffer in wlroots). Mirror the wlroots
-            // helper: build the integer fb-coord box, then apply the inverse
-            // output transform so the final dst_box is in framebuffer pixels.
-            wlr_box box{
-                static_cast<int>(cursor->x - cursor->hotspot_x),
-                static_cast<int>(cursor->y - cursor->hotspot_y),
-                static_cast<int>(cursor->width),
-                static_cast<int>(cursor->height),
-            };
-            wlr_box_transform(&box, &box,
-                wlr_output_transform_invert(output->handle->transform),
-                transformed_width, transformed_height);
-
-            wf::geometry_t damage{double(box.x), double(box.y), double(box.width), double(box.height)};
-            output->render->damage(damage, false);
-        }
     };
 
     wf::post_hook_t render_hook = [=] (wf::auxilliary_buffer_t& source,
@@ -201,7 +166,6 @@ class wayfire_zoom_screen : public wf::per_output_plugin_instance_t
     {
         output->render->set_redraw_always(false);
         output->render->rem_post(&render_hook);
-        output->render->rem_effect(&pre_hook);
         hook_set = false;
         locked   = false;
     }
