@@ -1637,7 +1637,7 @@ class wf::render_manager::impl
 
             wf::region_t cursor_damage{box};
             cursor_damage &= swap_damage;
-            if (cursor_damage.empty() || wf::region_t{swap_damage & cursor_damage}.empty())
+            if (cursor_damage.empty())
             {
                 continue;
             }
