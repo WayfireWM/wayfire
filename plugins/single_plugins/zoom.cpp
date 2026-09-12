@@ -3,6 +3,8 @@
 #include <wayfire/render.hpp>
 #include <wayfire/render-manager.hpp>
 #include <wayfire/util/duration.hpp>
+#include <wayfire/signal-definitions.hpp>
+#include <wayfire/nonstd/wlroots-full.hpp>
 
 class wayfire_zoom_screen : public wf::per_output_plugin_instance_t
 {
@@ -20,6 +22,7 @@ class wayfire_zoom_screen : public wf::per_output_plugin_instance_t
     wf::option_wrapper_t<int> interpolation_method{"zoom/interpolation_method"};
 
     wf::animation::simple_animation_t progression{smoothing_duration};
+    double target;
 
     bool hook_set = false;
     bool locked   = false;
@@ -41,7 +44,7 @@ class wayfire_zoom_screen : public wf::per_output_plugin_instance_t
 
     void update_zoom_target(float delta)
     {
-        float target = progression.end;
+        target  = progression.end;
         target -= target * delta * speed;
         target  = wf::clamp(target, 1.0f, 50.0f);
 
@@ -53,9 +56,12 @@ class wayfire_zoom_screen : public wf::per_output_plugin_instance_t
             {
                 hook_set = true;
                 output->render->add_post(&render_hook);
-                output->render->set_redraw_always();
+                wf::get_core().connect(&on_motion_event);
             }
         }
+
+        output->render->damage_whole();
+        output->render->schedule_redraw();
     }
 
     wf::axis_callback axis = [=] (wlr_pointer_axis_event *ev)
@@ -85,6 +91,13 @@ class wayfire_zoom_screen : public wf::per_output_plugin_instance_t
         }
 
         return true;
+    };
+
+    wf::signal::connection_t<wf::input_event_signal<wlr_pointer_motion_event>> on_motion_event =
+        [=] (wf::input_event_signal<wlr_pointer_motion_event> *ev)
+    {
+        output->render->damage_whole();
+        output->render->schedule_redraw();
     };
 
     wf::post_hook_t render_hook = [=] (wf::auxilliary_buffer_t& source,
@@ -156,7 +169,11 @@ class wayfire_zoom_screen : public wf::per_output_plugin_instance_t
         auto filter_mode = (interpolation_method == (int)interpolation_method_t::NEAREST) ?
             WLR_SCALE_FILTER_NEAREST : WLR_SCALE_FILTER_BILINEAR;
         destination.blit(source, {x1, y1, tw, th}, {0.0, 0.0, (double)w, (double)h}, filter_mode);
-        if (!progression.running() && (progression - 1 <= 0.01))
+
+        if (progression.running())
+        {
+            output->render->schedule_redraw();
+        } else if (progression - 1.0 <= 0.0)
         {
             unset_hook();
         }
@@ -164,7 +181,7 @@ class wayfire_zoom_screen : public wf::per_output_plugin_instance_t
 
     void unset_hook()
     {
-        output->render->set_redraw_always(false);
+        on_motion_event.disconnect();
         output->render->rem_post(&render_hook);
         hook_set = false;
         locked   = false;
@@ -174,7 +191,7 @@ class wayfire_zoom_screen : public wf::per_output_plugin_instance_t
     {
         if (hook_set)
         {
-            output->render->rem_post(&render_hook);
+            unset_hook();
         }
 
         output->rem_binding(&axis);
