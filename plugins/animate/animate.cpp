@@ -366,13 +366,14 @@ class wayfire_animation : public wf::plugin_interface_t, private wf::per_output_
             }
         }
 
+        if (desired_effect_name.empty() || (desired_effect_name == "none"))
+        {
+            return {"none", wf::animation_description_t{0, {}, ""}};
+        }
+
         if (!effects_registry->effects.count(desired_effect_name))
         {
-            if ((std::string)desired_effect_name != "none")
-            {
-                LOGE("Unknown animation type: \"", desired_effect_name, "\"");
-            }
-
+            LOGE("Unknown animation type: \"", desired_effect_name, "\"");
             return {"none", wf::animation_description_t{0, {}, ""}};
         }
 
