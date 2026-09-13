@@ -60,7 +60,7 @@ class wayfire_zoom_screen : public wf::per_output_plugin_instance_t
                 hook_set = true;
                 output->render->add_post(&render_hook);
                 wf::get_core().connect(&on_motion_event);
-                lock_point = oc = output->get_cursor_position();
+                oc = output->get_cursor_position();
             }
         }
 
@@ -163,9 +163,13 @@ class wayfire_zoom_screen : public wf::per_output_plugin_instance_t
         {
             from = target_point;
             to   = lock_point;
+        } else if (lock_transition.running())
+        {
+            from = oc;
+            to   = cur_pos;
         } else
         {
-            from = lock_point;
+            from = cur_pos;
             to   = cur_pos;
         }
 
