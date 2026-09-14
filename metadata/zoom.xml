@@ -28,7 +28,7 @@
 		<option name="edge" type="bool">
 			<_short>Push edges</_short>
 			<_long>Allows the locked viewport to move when the cursor reaches its edge.</_long>
-			<default>false</default>
+			<default>true</default>
 		</option>
 		<option name="interpolation_method" type="int">
 			<_short>Interpolation method</_short>
