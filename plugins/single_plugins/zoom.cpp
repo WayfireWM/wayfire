@@ -16,6 +16,7 @@ class wayfire_zoom_screen : public wf::per_output_plugin_instance_t
 
     wf::option_wrapper_t<wf::keybinding_t> modifier{"zoom/modifier"};
     wf::option_wrapper_t<wf::activatorbinding_t> lock{"zoom/lock"};
+    wf::option_wrapper_t<bool> centered{"zoom/centered"};
     wf::option_wrapper_t<double> speed{"zoom/speed"};
     wf::option_wrapper_t<wf::animation_description_t> smoothing_duration{"zoom/smoothing_duration"};
     wf::option_wrapper_t<bool> edge{"zoom/edge"};
@@ -95,8 +96,27 @@ class wayfire_zoom_screen : public wf::per_output_plugin_instance_t
                 oc = output->get_cursor_position();
             }
 
-            lock_point = oc;
             lock_transition.set(1, 1);
+
+            if (centered)
+            {
+                auto og = output->get_relative_geometry();
+                const double factor = progression;
+                const double scale  = (factor - 1) / factor;
+                double x1 = double(oc.x * scale);
+                double y1 = double(oc.y * scale);
+                double tw = og.width / factor;
+                double th = og.height / factor;
+                x1 = std::min(double(oc.x), og.width - tw / 2) - tw / 2;
+                y1 = std::min(double(oc.y), og.height - th / 2) - th / 2;
+                double x, y;
+                x = x1 / scale;
+                y = y1 / scale;
+                lock_point = {x, y};
+            } else
+            {
+                lock_point = oc;
+            }
         } else
         {
             lock_transition.set(0, 0);
@@ -165,7 +185,7 @@ class wayfire_zoom_screen : public wf::per_output_plugin_instance_t
             to   = lock_point;
         } else if (lock_transition.running())
         {
-            from = oc;
+            from = centered ? lock_point : oc;
             to   = cur_pos;
         } else
         {
@@ -188,12 +208,12 @@ class wayfire_zoom_screen : public wf::per_output_plugin_instance_t
 
         // Store progression once to avoid its value changing in subsequent calls, could be very tricky due to
         // timing. And if we use slightly different progressions, we can get an invalid rect.
-        const float factor = (float)progression;
-        const float scale  = (factor - 1) / factor;
-        float x1 = float(x * scale);
-        float y1 = float(y * scale);
-        float tw = w / factor;
-        float th = h / factor;
+        const double factor = progression;
+        const double scale  = (factor - 1) / factor;
+        double x1 = double(x * scale);
+        double y1 = double(y * scale);
+        double tw = w / factor;
+        double th = h / factor;
 
         if (locked && edge)
         {
@@ -224,10 +244,16 @@ class wayfire_zoom_screen : public wf::per_output_plugin_instance_t
             }
         }
 
-        x1 = std::clamp(x1, 0.0f, w - 1.0f);
-        y1 = std::clamp(y1, 0.0f, h - 1.0f);
-        tw = std::clamp(tw, 0.0f, w - x1);
-        th = std::clamp(th, 0.0f, h - y1);
+        if (!locked && centered)
+        {
+            x1 = std::min(x, b.width - tw / 2) - tw / 2;
+            y1 = std::min(y, b.height - th / 2) - th / 2;
+        }
+
+        x1 = std::clamp(x1, double(0.0f), double(w - 1.0f));
+        y1 = std::clamp(y1, double(0.0f), double(h - 1.0f));
+        tw = std::clamp(tw, double(0.0f), double(w - x1));
+        th = std::clamp(th, double(0.0f), double(h - y1));
 
         auto filter_mode = (interpolation_method == (int)interpolation_method_t::NEAREST) ?
             WLR_SCALE_FILTER_NEAREST : WLR_SCALE_FILTER_BILINEAR;
