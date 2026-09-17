@@ -136,6 +136,22 @@ class wayfire_fast_switcher : public wf::per_output_plugin_instance_t, public wf
         });
     }
 
+    void exit_show_desktop()
+    {
+        /*
+         * Unminimizing a view hidden by wm-actions makes that plugin leave
+         * show-desktop mode and restore the other affected views as well.
+         */
+        for (auto& view : output->wset()->get_views())
+        {
+            if (view->has_data("wm-actions-showdesktop"))
+            {
+                wf::get_core().default_wm->minimize_request(view, false);
+                break;
+            }
+        }
+    }
+
     bool do_switch(bool forward, const wf::keybinding_t& binding)
     {
         if (active)
@@ -149,6 +165,7 @@ class wayfire_fast_switcher : public wf::per_output_plugin_instance_t, public wf
             return false;
         }
 
+        exit_show_desktop();
         update_views();
 
         if (views.size() < 1)
