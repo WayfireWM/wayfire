@@ -9,6 +9,11 @@
 			<_long>Scrolls with the specified modifier to zoom in and out.</_long>
 			<default>&lt;super&gt;</default>
 		</option>
+		<option name="lock" type="activator">
+			<_short>Toggle locked zoom</_short>
+			<_long>Locks or unlocks the zoomed viewport.</_long>
+			<default>&lt;super&gt; BTN_MIDDLE</default>
+		</option>
 		<option name="speed" type="double">
 			<_short>Speed</_short>
 			<_long>Sets the speed factor for zooming.</_long>
@@ -19,6 +24,16 @@
 			<_short>Smoothing duration</_short>
 			<_long>Sets the smoothing duration in milliseconds.</_long>
 			<default>300ms linear</default>
+		</option>
+		<option name="edge" type="bool">
+			<_short>Push edges</_short>
+			<_long>Allows the locked viewport to move when the cursor reaches its edge.</_long>
+			<default>true</default>
+		</option>
+		<option name="centered" type="bool">
+			<_short>Center cursor</_short>
+			<_long>Center cursor within zoomed area.</_long>
+			<default>true</default>
 		</option>
 		<option name="interpolation_method" type="int">
 			<_short>Interpolation method</_short>
