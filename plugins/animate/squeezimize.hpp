@@ -94,9 +94,10 @@ void main()
         sigmoid = 1.0 / (1.0 + pow(2.718, -(y * (1.0 / (target_box.w - src_box.y)) * 15.0 - 10.0)));
     }
 
-    uv_squeeze.x += sigmoid * progress_pt_one * (src_box.x - target_box.x) * inv_w;
-    uv_squeeze.x *= (sigmoid * ((src_box.z - src_box.x) - (target_box.z - target_box.x)) /
-                    (target_box.z - target_box.x) * progress_pt_one) + 1.0;
+    float t = sigmoid * progress_pt_one;
+    float sx0 = mix(src_box.x, target_box.x, t);
+    float sx1 = mix(src_box.z, target_box.z, t);
+    uv_squeeze.x = (uv.x - sx0) / (sx1 - sx0);
 
     if (uv_squeeze.x < 0.0 || uv_squeeze.y < 0.0 ||
         uv_squeeze.x > 1.0 || uv_squeeze.y > 1.0)
@@ -147,9 +148,10 @@ void main()
         sigmoid = 1.0 / (1.0 + pow(2.718, -(y * (1.0 / (target_box.z - src_box.x)) * 15.0 - 10.0)));
     }
 
-    uv_squeeze.y += sigmoid * progress_pt_one * (src_box.y - target_box.y) * inv_h;
-    uv_squeeze.y *= (sigmoid * ((src_box.w - src_box.y) - (target_box.w - target_box.y)) /
-                    (target_box.w - target_box.y) * progress_pt_one) + 1.0;
+    float t = sigmoid * progress_pt_one;
+    float sy0 = mix(src_box.y, 1.0 - target_box.w, t);
+    float sy1 = mix(src_box.w, 1.0 - target_box.y, t);
+    uv_squeeze.y = (uv.y - sy1) / (sy0 - sy1);
     uv_squeeze.y = 1.0 - uv_squeeze.y;
 
     if (uv_squeeze.x < 0.0 || uv_squeeze.y < 0.0 ||
