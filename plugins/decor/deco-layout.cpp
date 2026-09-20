@@ -217,8 +217,13 @@ decoration_layout_t::action_response_t decoration_layout_t::handle_motion(
         if (is_grabbed && current_area &&
             (current_area->get_type() & DECORATION_AREA_MOVE_BIT))
         {
-            is_grabbed = false;
-            return {DECORATION_ACTION_MOVE, 0};
+            wf::pointf_t position = {(double)x, (double)y};
+
+            if (wf::abs(position - grab_origin) > 5)
+            {
+                is_grabbed = false;
+                return {DECORATION_ACTION_MOVE, 0};
+            }
         }
     } else
     {
@@ -276,6 +281,8 @@ decoration_layout_t::action_response_t decoration_layout_t::handle_press_event(
     if (!pressed && double_click_at_release)
     {
         double_click_at_release = false;
+        is_grabbed = false;
+
         if (button == BTN_LEFT)
         {
             return {DECORATION_ACTION_TOGGLE_MAXIMIZE, 0};
