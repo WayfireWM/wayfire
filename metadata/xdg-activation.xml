@@ -14,6 +14,11 @@
 			<_long>Whether to reject activation requests if a newer request has arrived since their creation.</_long>
 			<default>false</default>
 		</option>
+		<option name="focus_stealing_prevention" type="bool">
+			<_short>Prevent stealing focus by an activation request</_short>
+			<_long>Whether to reject an activation request if the user interacted with a different view since its creation.</_long>
+			<default>true</default>
+		</option>
 		<option name="timeout" type="int">
 			<_short>Timeout for activation (in seconds)</_short>
 			<_long>Focus requests will be ignored if at least this amount of time has elapsed between creating and using it.</_long>
