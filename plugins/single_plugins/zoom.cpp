@@ -24,12 +24,11 @@ class wayfire_zoom_screen : public wf::per_output_plugin_instance_t
 
     wf::animation::simple_animation_t progression{smoothing_duration};
     wf::animation::simple_animation_t lock_transition{wf::create_option<int>(500)};
-    double target;
     wf::pointf_t oc;
 
     bool hook_set = false;
-    bool locked = false;
-    wf::pointf_t lock_point, target_point;
+    bool locked   = false;
+    wf::pointf_t lock_point;
 
     wf::plugin_activation_data_t grab_interface = {
         .name = "zoom",
@@ -43,22 +42,63 @@ class wayfire_zoom_screen : public wf::per_output_plugin_instance_t
         lock_transition.set(1, 1);
 
         output->add_axis(modifier, &axis);
-        output->add_activator(lock, &lock_binding);
     }
 
-    bool output_transform_portrait()
+    wf::pointf_t get_centered_zoom_point(wf::pointf_t cursor, double factor)
     {
-        auto transform = output->handle->transform;
-        return
-            transform == WL_OUTPUT_TRANSFORM_90 ||
-            transform == WL_OUTPUT_TRANSFORM_270 ||
-            transform == WL_OUTPUT_TRANSFORM_FLIPPED_90 ||
-            transform == WL_OUTPUT_TRANSFORM_FLIPPED_270;
+        auto geometry = output->get_relative_geometry();
+        const double scale  = (factor - 1.0) / factor;
+        const double width  = geometry.width / factor;
+        const double height = geometry.height / factor;
+
+        return {
+            std::clamp(cursor.x - width / 2.0, 0.0, geometry.width - width) / scale,
+            std::clamp(cursor.y - height / 2.0, 0.0, geometry.height - height) / scale,
+        };
+    }
+
+    wf::pointf_t to_framebuffer(wf::pointf_t point)
+    {
+        wf::geometry_t box = {point.x, point.y, 1, 1};
+        box = output->render->get_target_framebuffer().framebuffer_geometry_from_geometry_box(box);
+        return {box.x, box.y};
+    }
+
+    static wf::pointf_t untransform_delta(wf::pointf_t delta, wl_output_transform transform)
+    {
+        switch (transform)
+        {
+          case WL_OUTPUT_TRANSFORM_NORMAL:
+            return {delta.x, delta.y};
+
+          case WL_OUTPUT_TRANSFORM_90:
+            return {-delta.y, delta.x};
+
+          case WL_OUTPUT_TRANSFORM_180:
+            return {-delta.x, -delta.y};
+
+          case WL_OUTPUT_TRANSFORM_270:
+            return {delta.y, -delta.x};
+
+          case WL_OUTPUT_TRANSFORM_FLIPPED:
+            return {-delta.x, delta.y};
+
+          case WL_OUTPUT_TRANSFORM_FLIPPED_90:
+            return {delta.y, delta.x};
+
+          case WL_OUTPUT_TRANSFORM_FLIPPED_180:
+            return {delta.x, -delta.y};
+
+          case WL_OUTPUT_TRANSFORM_FLIPPED_270:
+            return {-delta.y, -delta.x};
+        }
+
+        return delta;
     }
 
     void update_zoom_target(float delta)
     {
-        target  = progression.end;
+        double target = progression.end;
         target -= target * delta * speed;
         target  = wf::clamp(target, 1.0f, 50.0f);
 
@@ -69,6 +109,7 @@ class wayfire_zoom_screen : public wf::per_output_plugin_instance_t
             if (!hook_set)
             {
                 hook_set = true;
+                output->add_activator(lock, &lock_binding);
                 output->render->add_post(&render_hook);
                 wf::get_core().connect(&on_motion_event);
                 oc = output->get_cursor_position();
@@ -115,17 +156,7 @@ class wayfire_zoom_screen : public wf::per_output_plugin_instance_t
 
             if (centered)
             {
-                auto og = output->get_relative_geometry();
-                const double factor = progression;
-                const double scale  = (factor - 1) / factor;
-                double tw = og.width / factor;
-                double th = og.height / factor;
-                double x1 = std::max(std::min(double(oc.x), og.width - tw / 2) - tw / 2, 0.0);
-                double y1 = std::max(std::min(double(oc.y), og.height - th / 2) - th / 2, 0.0);
-                double x, y;
-                x = x1 / scale;
-                y = y1 / scale;
-                lock_point = {x, y};
+                lock_point = get_centered_zoom_point(oc, progression);
             } else
             {
                 lock_point = oc;
@@ -134,7 +165,6 @@ class wayfire_zoom_screen : public wf::per_output_plugin_instance_t
         {
             lock_transition.set(0, 0);
             lock_transition.animate(1.0);
-            target_point = output->get_cursor_position();
 
             output->render->damage_whole();
         }
@@ -143,7 +173,7 @@ class wayfire_zoom_screen : public wf::per_output_plugin_instance_t
     };
 
     wf::signal::connection_t<wf::input_event_signal<wlr_pointer_motion_event>> on_motion_event =
-        [=] (wf::input_event_signal<wlr_pointer_motion_event> *ev)
+        [=] (wf::input_event_signal<wlr_pointer_motion_event>*)
     {
         output->render->damage_whole();
     };
@@ -194,173 +224,67 @@ class wayfire_zoom_screen : public wf::per_output_plugin_instance_t
         const double factor = progression;
         const double scale  = (factor - 1) / factor;
         const bool lock_transition_running = lock_transition.running();
-        wlr_box b = wf::to_integer_box(output->get_relative_geometry());
+        wlr_box output_box = wf::to_integer_box(output->get_relative_geometry());
 
-        wf::pointf_t from, to;
         if (locked)
         {
-            from = target_point;
-            to   = lock_point;
+            oc = lock_point;
         } else if (lock_transition_running)
         {
+            wf::pointf_t target = cur_pos;
             if (centered)
             {
-                double tw = b.width / factor;
-                double th = b.height / factor;
-                double x1 = std::min(cur_pos.x, b.width - tw / 2) - tw / 2;
-                double y1 = std::min(cur_pos.y, b.height - th / 2) - th / 2;
-                double x, y;
-                x = x1 / scale;
-                y = y1 / scale;
-
-                from = lock_point;
-                to   = {x, y};
-            } else
-            {
-                from = lock_point;
-                to   = cur_pos;
+                target = get_centered_zoom_point(cur_pos, factor);
             }
+
+            oc.x = lock_point.x + (target.x - lock_point.x) * lock_transition;
+            oc.y = lock_point.y + (target.y - lock_point.y) * lock_transition;
         } else
         {
-            from = cur_pos;
-            to   = cur_pos;
+            oc = cur_pos;
         }
 
-        oc.x = from.x + (to.x - from.x) * lock_transition;
-        oc.y = from.y + (to.y - from.y) * lock_transition;
-
         double x, y;
-        wlr_box_closest_point(&b, oc.x, oc.y, &x, &y);
+        wlr_box_closest_point(&output_box, oc.x, oc.y, &x, &y);
 
         /* get rotation & scale */
-        wf::geometry_t box = {x, y, 1, 1};
-        box = output->render->get_target_framebuffer().framebuffer_geometry_from_geometry_box(box);
-        x   = box.x;
-        y   = box.y;
+        auto framebuffer_point = to_framebuffer({x, y});
+        x = framebuffer_point.x;
+        y = framebuffer_point.y;
 
         // Store progression once to avoid its value changing in subsequent calls, could be very tricky due to
         // timing. And if we use slightly different progressions, we can get an invalid rect.
-        double x1 = double(x * scale);
-        double y1 = double(y * scale);
+        double x1 = x * scale;
+        double y1 = y * scale;
         double tw = w / factor;
         double th = h / factor;
 
         if (locked && edge)
         {
-            auto transform = output->handle->transform;
-            wlr_box_closest_point(&b, cur_pos.x, cur_pos.y, &cur_pos.x, &cur_pos.y);
-            wf::geometry_t box = {cur_pos.x, cur_pos.y, 1, 1};
-            box = output->render->get_target_framebuffer().framebuffer_geometry_from_geometry_box(box);
-            cur_pos.x = box.x;
-            cur_pos.y = box.y;
+            wlr_box_closest_point(&output_box, cur_pos.x, cur_pos.y, &cur_pos.x, &cur_pos.y);
+            cur_pos = to_framebuffer(cur_pos);
 
-            if (cur_pos.x < x1)
-            {
-                if (output_transform_portrait())
-                {
-                    if ((transform == WL_OUTPUT_TRANSFORM_270) ||
-                        (transform == WL_OUTPUT_TRANSFORM_FLIPPED_270))
-                    {
-                        lock_point.y += x1 - cur_pos.x;
-                    } else
-                    {
-                        lock_point.y -= x1 - cur_pos.x;
-                    }
-                } else
-                {
-                    if ((transform == WL_OUTPUT_TRANSFORM_180) ||
-                        (transform == WL_OUTPUT_TRANSFORM_FLIPPED))
-                    {
-                        lock_point.x += x1 - cur_pos.x;
-                    } else
-                    {
-                        lock_point.x -= x1 - cur_pos.x;
-                    }
-                }
-            } else if (cur_pos.x > x1 + tw)
-            {
-                if (output_transform_portrait())
-                {
-                    if ((transform == WL_OUTPUT_TRANSFORM_270) ||
-                        (transform == WL_OUTPUT_TRANSFORM_FLIPPED_270))
-                    {
-                        lock_point.y -= cur_pos.x - (x1 + tw);
-                    } else
-                    {
-                        lock_point.y += cur_pos.x - (x1 + tw);
-                    }
-                } else
-                {
-                    if ((transform == WL_OUTPUT_TRANSFORM_180) ||
-                        (transform == WL_OUTPUT_TRANSFORM_FLIPPED))
-                    {
-                        lock_point.x -= cur_pos.x - (x1 + tw);
-                    } else
-                    {
-                        lock_point.x += cur_pos.x - (x1 + tw);
-                    }
-                }
-            }
-
-            if (cur_pos.y < y1)
-            {
-                if (output_transform_portrait())
-                {
-                    if ((transform == WL_OUTPUT_TRANSFORM_270) ||
-                        (transform == WL_OUTPUT_TRANSFORM_FLIPPED_90))
-                    {
-                        lock_point.x -= y1 - cur_pos.y;
-                    } else
-                    {
-                        lock_point.x += y1 - cur_pos.y;
-                    }
-                } else
-                {
-                    if ((transform == WL_OUTPUT_TRANSFORM_180) ||
-                        (transform == WL_OUTPUT_TRANSFORM_FLIPPED_180))
-                    {
-                        lock_point.y += y1 - cur_pos.y;
-                    } else
-                    {
-                        lock_point.y -= y1 - cur_pos.y;
-                    }
-                }
-            } else if (cur_pos.y > y1 + th)
-            {
-                if (output_transform_portrait())
-                {
-                    if ((transform == WL_OUTPUT_TRANSFORM_270) ||
-                        (transform == WL_OUTPUT_TRANSFORM_FLIPPED_90))
-                    {
-                        lock_point.x += cur_pos.y - (y1 + th);
-                    } else
-                    {
-                        lock_point.x -= cur_pos.y - (y1 + th);
-                    }
-                } else
-                {
-                    if ((transform == WL_OUTPUT_TRANSFORM_180) ||
-                        (transform == WL_OUTPUT_TRANSFORM_FLIPPED_180))
-                    {
-                        lock_point.y -= cur_pos.y - (y1 + th);
-                    } else
-                    {
-                        lock_point.y += cur_pos.y - (y1 + th);
-                    }
-                }
-            }
+            wf::pointf_t clamped{
+                std::clamp(cur_pos.x, x1, x1 + tw),
+                std::clamp(cur_pos.y, y1, y1 + th),
+            };
+            const auto& target = output->render->get_target_framebuffer();
+            auto delta = untransform_delta(cur_pos - clamped, target.wl_transform);
+            delta.x    /= target.scale;
+            delta.y    /= target.scale;
+            lock_point += delta;
         }
 
         if (!locked && centered && !lock_transition_running)
         {
-            x1 = std::min(x, w - tw / 2) - tw / 2;
-            y1 = std::min(y, h - th / 2) - th / 2;
+            x1 = std::clamp(x - tw / 2.0, 0.0, w - tw);
+            y1 = std::clamp(y - th / 2.0, 0.0, h - th);
         }
 
-        x1 = std::clamp(x1, double(0.0f), double(w - 1.0f));
-        y1 = std::clamp(y1, double(0.0f), double(h - 1.0f));
-        tw = std::clamp(tw, double(1.0f), double(w - x1));
-        th = std::clamp(th, double(1.0f), double(h - y1));
+        x1 = std::clamp(x1, 0.0, w - 1.0);
+        y1 = std::clamp(y1, 0.0, h - 1.0);
+        tw = std::clamp(tw, 1.0, w - x1);
+        th = std::clamp(th, 1.0, h - y1);
 
         auto filter_mode = (interpolation_method == (int)interpolation_method_t::NEAREST) ?
             WLR_SCALE_FILTER_NEAREST : WLR_SCALE_FILTER_BILINEAR;
@@ -379,6 +303,7 @@ class wayfire_zoom_screen : public wf::per_output_plugin_instance_t
     {
         on_motion_event.disconnect();
         output->render->rem_post(&render_hook);
+        output->rem_binding(&lock_binding);
         hook_set = false;
         locked   = false;
     }
@@ -391,7 +316,6 @@ class wayfire_zoom_screen : public wf::per_output_plugin_instance_t
         }
 
         output->rem_binding(&axis);
-        output->rem_binding(&lock_binding);
     }
 };
 

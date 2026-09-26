@@ -33,7 +33,7 @@
 		<option name="centered" type="bool">
 			<_short>Center cursor</_short>
 			<_long>Center cursor within zoomed area.</_long>
-			<default>true</default>
+			<default>false</default>
 		</option>
 		<option name="interpolation_method" type="int">
 			<_short>Interpolation method</_short>
