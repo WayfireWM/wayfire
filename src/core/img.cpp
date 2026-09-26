@@ -1,5 +1,5 @@
 #include <GLES2/gl2.h>
-#include <drm_fourcc.h>
+#include <libdrm/drm_fourcc.h>
 #include <wayfire/util/log.hpp>
 #include "wayfire/img.hpp"
 #include "wayfire/opengl.hpp"
