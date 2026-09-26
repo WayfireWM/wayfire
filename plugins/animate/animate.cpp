@@ -316,7 +316,7 @@ class wayfire_animation : public wf::plugin_interface_t, private wf::per_output_
     view_animation_t get_animation_for_view(const std::string& anim_type,
         wf::option_wrapper_t<std::string>& anim_type_cfg, wayfire_view view)
     {
-        std::string desired_effect_name;
+        std::string desired_effect_name = "none";
         std::optional<wf::animation_description_t> desired_duration;
 
         // Default animation options (open/close/minimize_animation + enabled_for)
@@ -366,13 +366,14 @@ class wayfire_animation : public wf::plugin_interface_t, private wf::per_output_
             }
         }
 
+        if (desired_effect_name == "none")
+        {
+            return {"none", wf::animation_description_t{0, {}, ""}};
+        }
+
         if (!effects_registry->effects.count(desired_effect_name))
         {
-            if ((std::string)desired_effect_name != "none")
-            {
-                LOGE("Unknown animation type: \"", desired_effect_name, "\"");
-            }
-
+            LOGE("Unknown animation type: \"", desired_effect_name, "\"");
             return {"none", wf::animation_description_t{0, {}, ""}};
         }
 
