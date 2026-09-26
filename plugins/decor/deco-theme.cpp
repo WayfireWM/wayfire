@@ -86,6 +86,8 @@ cairo_surface_t*decoration_theme_t::render_text(std::string text,
     layout = pango_cairo_create_layout(cr);
     pango_layout_set_font_description(layout, font_desc);
     pango_layout_set_text(layout, text.c_str(), text.size());
+    pango_layout_set_ellipsize(layout, PANGO_ELLIPSIZE_END);
+    pango_layout_set_height(layout, -1);
 
     /* Horizontal alignment */
     std::string halign = title_halign;
