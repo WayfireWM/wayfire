@@ -351,7 +351,7 @@ void view_2d_transformer_t::gen_render_instances(
 }
 
 /* -------------------------------- 3d view --------------------------------- */
-const float view_3d_transformer_t::fov = PI / 4;
+const float view_3d_transformer_t::fov = PI / 12;
 glm::mat4 view_3d_transformer_t::default_view_matrix()
 {
     return glm::lookAt(
