@@ -9,6 +9,11 @@
 			<_long>Shows an overview of all workspaces with the specified activator.  Pressing again exits.</_long>
 			<default>&lt;super&gt; KEY_E</default>
 		</option>
+		<option name="disabled_for" type="string">
+			<_short>Disable toggle for</_short>
+			<_long>Do not trigger the toggle activator when a matching view is focused.</_long>
+			<default>none</default>
+		</option>
 		<option name="background" type="color">
 			<_short>Background color</_short>
 			<_long>Sets the background color.</_long>

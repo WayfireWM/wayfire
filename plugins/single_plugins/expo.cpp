@@ -6,6 +6,7 @@
 #include "wayfire/scene.hpp"
 #include "wayfire/signal-definitions.hpp"
 #include "wayfire/view.hpp"
+#include "wayfire/matcher.hpp"
 #include <memory>
 #include <wayfire/per-output-plugin.hpp>
 #include <wayfire/output.hpp>
@@ -782,6 +783,7 @@ class wayfire_expo_global : public wf::plugin_interface_t,
     public wf::per_output_tracker_mixin_t<wayfire_expo>
 {
     wf::ipc_activator_t toggle_binding{"expo/toggle"};
+    wf::view_matcher_t disabled_for{"expo/disabled_for"};
 
   public:
     void init() override
@@ -795,8 +797,13 @@ class wayfire_expo_global : public wf::plugin_interface_t,
         this->fini_output_tracking();
     }
 
-    wf::ipc_activator_t::handler_t toggle_cb = [=] (wf::output_t *output, wayfire_view)
+    wf::ipc_activator_t::handler_t toggle_cb = [=] (wf::output_t *output, wayfire_view view)
     {
+        if (view && disabled_for.matches(view))
+        {
+            return false;
+        }
+
         return this->output_instance[output]->handle_toggle();
     };
 };
