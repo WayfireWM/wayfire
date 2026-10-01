@@ -658,6 +658,17 @@ void view_action_interface_t::_move(int x, int y)
         view_geometry.y = y;
 
         view_geometry = wf::clamp(view_geometry, grid);
+
+        // If this is an initial move before the view is mapped, mark the
+        // position as intentional so the place plugin does not override it.
+        if (!_view->toplevel()->current().mapped)
+        {
+            _view->set_property<int>(
+                "startup-x", static_cast<int>(view_geometry.x));
+            _view->set_property<int>(
+                "startup-y", static_cast<int>(view_geometry.y));
+        }
+
         _set_pending_geometry(view_geometry);
     }
 }
