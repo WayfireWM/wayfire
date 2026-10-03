@@ -112,7 +112,11 @@ void wf_blur_base::render_iteration(wf::region_t blur_region,
     width  = std::max(width, 1);
     height = std::max(height, 1);
 
-    out.allocate({width, height});
+    if (out.allocate({width, height}) == wf::buffer_reallocation_result_t::FAILED)
+    {
+        alloc_failed = true;
+        return;
+    }
 
     GLuint tex_id = wf::gles_texture_t::from_aux(in).tex_id;
 
@@ -176,7 +180,11 @@ wlr_box wf_blur_base::copy_region(wf::auxilliary_buffer_t& result,
     subbox = sanitize(subbox, degrade_opt, source_box);
     int degraded_width  = subbox.width / degrade_opt;
     int degraded_height = subbox.height / degrade_opt;
-    result.allocate({degraded_width, degraded_height});
+    if (result.allocate({degraded_width, degraded_height}) == wf::buffer_reallocation_result_t::FAILED)
+    {
+        alloc_failed = true;
+        return {0, 0, 0, 0};
+    }
 
     GLuint src_fb = wf::gles::ensure_render_buffer_fb_id(source);
     GLuint dst_fb = wf::gles::ensure_render_buffer_fb_id(result.get_renderbuffer());
@@ -192,15 +200,20 @@ wlr_box wf_blur_base::copy_region(wf::auxilliary_buffer_t& result,
     return subbox;
 }
 
-void wf_blur_base::prepare_blur(const wf::render_target_t& target_fb, const wf::regionf_t& damage)
+bool wf_blur_base::prepare_blur(const wf::render_target_t& target_fb, const wf::regionf_t& damage)
 {
     if (damage.empty())
     {
-        return;
+        return true;
     }
 
+    alloc_failed    = false;
     int degrade     = degrade_opt;
     auto damage_box = copy_region(fb[0], target_fb, damage);
+    if (alloc_failed)
+    {
+        return false;
+    }
 
     /* As an optimization, we create a region that blur can use
      * to perform minimal rendering required to blur. We start
@@ -214,12 +227,18 @@ void wf_blur_base::prepare_blur(const wf::render_target_t& target_fb, const wf::
     int r = blur_fb0(blur_damage, fb[0].get_size().width, fb[0].get_size().height);
     /* Make sure the result is always fb[0], because that's what is used in render()
      * */
+    if (alloc_failed)
+    {
+        return false;
+    }
+
     if (r != 0)
     {
         std::swap(fb[0], fb[1]);
     }
 
     prepared_geometry = wf::from_integer_box(damage_box);
+    return true;
 }
 
 static wf::pointf_t get_center(wf::geometry_t g)

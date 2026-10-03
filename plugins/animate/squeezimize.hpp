@@ -282,7 +282,13 @@ class squeezimize_transformer : public wf::scene::view_2d_transformer_t
                 self->animation_geometry.height
             };
 
-            auto src_tex = wf::gles_texture_t{this->get_texture(1.0)};
+            auto contents = this->get_texture(1.0);
+            if (!contents)
+            {
+                return; // no buffer this frame (out of GPU memory)
+            }
+
+            auto src_tex = wf::gles_texture_t{contents};
             data.pass->custom_gles_subpass(data.target, [&]
             {
                 self->program.use(wf::TEXTURE_TYPE_RGBA);

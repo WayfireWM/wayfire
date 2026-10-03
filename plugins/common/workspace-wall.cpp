@@ -158,7 +158,7 @@ class workspace_wall_t::workspace_wall_node_t : public scene::node_t
                         visible_damage |= visible_box;
                     }
 
-                    if (!visible_damage.empty())
+                    if (!visible_damage.empty() && self->aux_buffers[i][j].get_buffer())  // (refused: skipped)
                     {
                         wf::render_target_t aux{self->aux_buffers[i][j]};
                         aux.subbuffer = self->aux_buffer_current_subbox[i][j];
@@ -202,6 +202,10 @@ class workspace_wall_t::workspace_wall_node_t : public scene::node_t
                     auto B   = self->get_bounding_box();
                     auto render_geometry = wf::scale_box(A, B, box);
                     auto& buffer = self->aux_buffers[i][j];
+                    if (!buffer.get_buffer())
+                    {
+                        continue;     // the GPU refused it (its memory full): that workspace stays blank
+                    }
 
                     float dim = self->wall->get_color_for_workspace({i, j});
                     const auto& subbox = self->aux_buffer_current_subbox[i][j];
