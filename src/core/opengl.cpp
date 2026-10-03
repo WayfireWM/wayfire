@@ -468,12 +468,22 @@ wf::gles_texture_t::gles_texture_t(GLuint tex)
     this->tex_id = tex;
 }
 
-wf::gles_texture_t::gles_texture_t(const std::shared_ptr<wf::texture_t>& tex) :
-    wf::gles_texture_t(tex->get_wlr_texture(), tex->get_source_box())
-{}
+wf::gles_texture_t::gles_texture_t(const std::shared_ptr<wf::texture_t>& tex)
+{
+    // No texture (its buffer could not be allocated): texture 0, draws nothing
+    if (tex && tex->get_wlr_texture())
+    {
+        *this = wf::gles_texture_t(tex->get_wlr_texture(), tex->get_source_box());
+    }
+}
 
 wf::gles_texture_t::gles_texture_t(wlr_texture *texture, std::optional<wlr_fbox> viewport)
 {
+    if (!texture)
+    {
+        return; // texture 0, see above
+    }
+
     wf::dassert(wlr_texture_is_gles2(texture));
     wlr_gles2_texture_attribs attribs;
     wlr_gles2_texture_get_attribs(texture, &attribs);

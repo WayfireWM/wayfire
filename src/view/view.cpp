@@ -96,8 +96,16 @@ void wf::view_interface_t::take_snapshot(wf::auxilliary_buffer_t& buffer)
     auto root_node = get_surface_root_node();
     const wf::geometry_t bbox = root_node->get_bounding_box();
     float scale = get_output()->handle->scale;
-    buffer.allocate(wf::dimensions(bbox), scale,
-        wf::buffer_allocation_hints_t{.hdr_linear = get_output() && get_output()->is_hdr()});
+    if (buffer.allocate(wf::dimensions(bbox), scale,
+        wf::buffer_allocation_hints_t{.hdr_linear = get_output() && get_output()->is_hdr()}) ==
+        wf::buffer_reallocation_result_t::FAILED)
+    {
+        // The GPU refused the buffer (its memory full): no snapshot. Rendering
+        // into it aborted the compositor ("Cannot run a render pass without a
+        // valid target"); users of the snapshot check get_buffer().
+        buffer.free();
+        return;
+    }
 
     wf::render_target_t target{buffer};
     target.geometry = bbox;

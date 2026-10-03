@@ -236,12 +236,12 @@ wlr_texture*wf::texture_t::get_wlr_texture() const
 
 int32_t wf::texture_t::get_width() const
 {
-    return texture->width;
+    return texture ? texture->width : 0;
 }
 
 int32_t wf::texture_t::get_height() const
 {
-    return texture->height;
+    return texture ? texture->height : 0;
 }
 
 wf::render_buffer_t::render_buffer_t(wlr_buffer *buffer, wf::dimensions_t size)
@@ -890,13 +890,22 @@ void wf::render_pass_t::clear(const wf::regionf_t& region, const wf::color_t& co
         .a = static_cast<float>(color.a),
     };
 
-    wlr_render_pass_add_rect(_get_pass(), &opts);
+    // No pass when the target buffer could not be set up (out of GPU memory): skip
+    if (auto pass = _get_pass())
+    {
+        wlr_render_pass_add_rect(pass, &opts);
+    }
 }
 
 void wf::render_pass_t::add_texture(const std::shared_ptr<wf::texture_t>& texture,
     const wf::render_target_t& adjusted_target, const wf::geometry_t& geometry,
     const wf::regionf_t& damage, float alpha)
 {
+    if (!texture || !texture->get_wlr_texture())
+    {
+        return; // the texture could not be created (out of GPU memory)
+    }
+
     if (wlr_renderer_is_gles2(this->get_wlr_renderer()))
     {
         // This is a hack to make sure that plugins can do whatever they want and we render on the correct
@@ -949,7 +958,10 @@ void wf::render_pass_t::add_texture(const std::shared_ptr<wf::texture_t>& textur
         opts.luminance_multiplier = &luminance_multiplier;
     }
 
-    wlr_render_pass_add_texture(get_wlr_pass(), &opts);
+    if (auto pass = get_wlr_pass())
+    {
+        wlr_render_pass_add_texture(pass, &opts);
+    }
 }
 
 void wf::render_pass_t::add_rect(const wf::color_t& color, const wf::render_target_t& adjusted_target,
@@ -968,7 +980,10 @@ void wf::render_pass_t::add_rect(const wf::color_t& color, const wf::render_targ
     opts.box  = adjusted_target.framebuffer_texture_dst_box_from_geometry_box(geometry);
     wf::dassert(opts.box.width >= 0);
     wf::dassert(opts.box.height >= 0);
-    wlr_render_pass_add_rect(_get_pass(), &opts);
+    if (auto pass = _get_pass())
+    {
+        wlr_render_pass_add_rect(pass, &opts);
+    }
 }
 
 bool wf::render_pass_t::submit()
