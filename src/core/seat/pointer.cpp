@@ -236,6 +236,11 @@ wf::scene::node_ptr wf::pointer_t::get_focus() const
 }
 
 /* -------------------------- Implicit grab --------------------------------- */
+void wf::pointer_t::release_grab()
+{
+    grab_surface(nullptr);
+}
+
 void wf::pointer_t::grab_surface(wf::scene::node_ptr node)
 {
     if ((node == grabbed_node) &&

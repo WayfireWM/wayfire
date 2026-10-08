@@ -29,6 +29,9 @@ class pointer_t
         nonstd::observer_ptr<seat_t> seat);
     ~pointer_t();
 
+    /** Release the current pointer grab and update pointer focus. */
+    void release_grab();
+
     /**
      * Enable/disable the logical pointer's focusing abilities.
      * The requests are counted, i.e if set_enable_focus(false) is called twice,
