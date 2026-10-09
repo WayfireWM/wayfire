@@ -4,6 +4,7 @@
 #include <memory>
 #include <cassert>
 #include <typeindex>
+#include <vector>
 
 namespace wf
 {

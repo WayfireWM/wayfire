@@ -3,6 +3,7 @@
 
 #include <iosfwd>
 #include <algorithm>
+#include <cmath>
 
 extern "C" {
 #include <wlr/util/box.h>
