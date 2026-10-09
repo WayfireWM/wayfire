@@ -2,9 +2,20 @@
 #define ANIMATION_FIRE_PARTICLE_HPP
 
 #include <wayfire/opengl.hpp>
+#ifdef WF_USE_CONFIG_H
+    #include <config.h>
+#else
+    #include <wayfire/config.h>
+#endif
 #include <functional>
 #include <atomic>
 #include <vector>
+
+#if WF_HAS_VULKANFX
+    #include <wayfire/vulkan.hpp>
+    #include "shaders/fire.vert.h"
+    #include "shaders/fire.frag.h"
+#endif
 
 struct Particle
 {
@@ -82,8 +93,36 @@ class ParticleSystem
     std::vector<float> center;
 
     OpenGL::program_t program;
+    bool gl_program_created = false;
     void update_worker(float time, int i);
     void create_program();
+
+#if WF_HAS_VULKANFX
+  public:
+    /* Render the particles with the given vulkan render state.
+     * Performs two draws: one to darken the background and one additive
+     * pass for the particle colors, mirroring the GLES implementation. */
+    void render_vk(wf::vulkan_render_state_t& state, wf::vk::command_buffer_t& cmd_buf,
+        const wf::render_target_t& target, const wf::regionf_t& damage, glm::mat4 matrix);
+
+  private:
+    struct vulkan_push_constants_t
+    {
+        glm::mat4 matrix;
+        float smoothing;
+    };
+
+    class fire_vk_state_t : public wf::custom_data_t
+    {
+      public:
+        std::shared_ptr<wf::vk::graphics_pipeline_t> darken_pipeline;
+        std::shared_ptr<wf::vk::graphics_pipeline_t> additive_pipeline;
+    };
+
+    std::shared_ptr<wf::vk::gpu_buffer_t> instance_buffer;
+    fire_vk_state_t& ensure_vk_state(wf::vulkan_render_state_t& state);
+    void upload_instance_data(wf::vulkan_render_state_t& state, int count);
+#endif
 };
 
 

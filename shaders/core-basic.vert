@@ -5,6 +5,7 @@ layout(push_constant, column_major) uniform UBO {
 	mat4 mvp;
     vec2 uv_scale;
     vec2 uv_offset;
+    float alpha;
 } data;
 
 #include "texture-transform.vert"
