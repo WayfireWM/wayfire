@@ -50,6 +50,11 @@ class unmapped_view_snapshot_node : public wf::scene::node_t
         using simple_render_instance_t::simple_render_instance_t;
         void render(const wf::scene::render_instruction_t& data)
         {
+            if (!self->snapshot.get_buffer())
+            {
+                return; // no snapshot (the GPU refused the buffer): nothing to animate
+            }
+
             auto texture = wf::texture_t::from_aux(self->snapshot);
             data.pass->add_texture(texture, data.target, self->get_bounding_box(), data.damage);
         }

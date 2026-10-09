@@ -141,7 +141,7 @@ struct gles_texture_t
     /* Texture target */
     GLenum target = GL_TEXTURE_2D;
     /* Actual texture ID */
-    GLuint tex_id;
+    GLuint tex_id = 0;
 
     /** Invert Y? */
     bool invert_y = false;
