@@ -5,7 +5,7 @@
 #include "wayfire/opengl.hpp"
 #include <wayfire/scene-render.hpp>
 #include <cmath>
-#include <drm_fourcc.h>
+#include <libdrm/drm_fourcc.h>
 
 /**
  * SDR reference white luminance in cd/m², used when bridging between [0,1]-relative SDR linear

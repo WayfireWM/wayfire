@@ -11,7 +11,7 @@
 #include <wayfire/render.hpp>
 
 // TODO: do we need some kind of dependency here?
-#include <drm_fourcc.h>
+#include <libdrm/drm_fourcc.h>
 
 namespace wf
 {

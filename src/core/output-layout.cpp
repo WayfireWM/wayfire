@@ -14,7 +14,7 @@
 #include <cstring>
 #include <climits>
 #include <unordered_set>
-#include <drm_fourcc.h>
+#include <libdrm/drm_fourcc.h>
 #include <wayfire/seat.hpp>
 
 #include <wayfire/debug.hpp>
