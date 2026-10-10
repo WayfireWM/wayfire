@@ -204,6 +204,21 @@ struct idle_inhibit_changed_signal
 };
 
 /**
+ * on: core
+ * when: before running a command in compositor_core_t::run().
+ *   Plugins can listen to this signal and add environment variables to
+ *   set in env.
+ */
+struct command_run_signal
+{
+    const std::string& command;
+    std::vector<std::pair<std::string, std::string>> env;
+
+    command_run_signal(const std::string& cmd) : command(cmd)
+    {}
+};
+
+/**
  * on: output, core(output-)
  * when: Immediately after the output becomes focused.
  */
