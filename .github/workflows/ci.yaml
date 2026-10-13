@@ -41,7 +41,7 @@ jobs:
         - run: sudo apt-get install -y git cmake gcc make
         - uses: actions/checkout@v1
         - run: git clone http://github.com/ammen99/uncrustify
-        - run: cd uncrustify && mkdir build && cd build && cmake ../ && make && cd ../../
+        - run: cd uncrustify && mkdir build && cd build && cmake -DCMAKE_POLICY_VERSION_MINIMUM=3.5 ../ && make && cd ../../
         - run: git ls-files | grep "hpp$\|cpp$" | xargs ./uncrustify/build/uncrustify -c uncrustify.ini --no-backup --replace
         - run: git diff
         - run: git diff | diff - /dev/null &> /dev/null
