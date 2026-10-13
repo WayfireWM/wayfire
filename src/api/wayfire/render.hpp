@@ -1,10 +1,6 @@
 #pragma once
 
-#ifdef WF_USE_CONFIG_H
-    #include <config.h>
-#else
-    #include <wayfire/config.h>
-#endif
+#include <wayfire/build-config.hpp>
 
 #include "wayfire/signal-provider.hpp"
 #include <memory>
