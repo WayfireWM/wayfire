@@ -546,6 +546,16 @@ std::pair<VkPipelineLayout, VkPipeline> graphics_pipeline_t::pipeline_for(const 
     return {layout, pipeline};
 }
 
+uint32_t get_hardware_maximum_texture_size()
+{
+    VkPhysicalDeviceProperties properties;
+    auto physical_device = wlr_vk_renderer_get_physical_device(wf::get_core().renderer);
+
+    vkGetPhysicalDeviceProperties(physical_device, &properties);
+
+    return properties.limits.maxImageDimension2D;
+}
+
 glm::mat4 render_target_transform(const wf::render_target_t& target, bool aligned)
 {
     glm::mat4 ortho;
