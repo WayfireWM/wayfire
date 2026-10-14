@@ -1,6 +1,7 @@
 #ifndef WF_GEOMETRY_HPP
 #define WF_GEOMETRY_HPP
 
+#include <cmath>
 #include <iosfwd>
 #include <algorithm>
 
