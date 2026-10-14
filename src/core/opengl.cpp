@@ -518,6 +518,15 @@ gles_texture_t gles_texture_t::from_aux(auxilliary_buffer_t& buffer, std::option
 
     return tex;
 }
+
+uint32_t wf::gles::get_hardware_maximum_texture_size()
+{
+    GLint max_texture_size = 0;
+
+    GL_CALL(glGetIntegerv(GL_MAX_TEXTURE_SIZE, &max_texture_size));
+
+    return max_texture_size;
+}
 } // namespace wf
 
 namespace OpenGL

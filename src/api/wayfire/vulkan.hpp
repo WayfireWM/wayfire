@@ -465,6 +465,11 @@ glm::mat4 geometry_mat(const wf::geometry_t& box);
  *   When set to false, it will map the unaligned target.geometry to the NDC space.
  */
 glm::mat4 render_target_transform(const wf::render_target_t& target, bool aligned = false);
+
+/**
+ * Returns the maximum texture size for the gpu hardware.
+ */
+uint32_t get_hardware_maximum_texture_size();
 }
 
 /**
