@@ -1004,7 +1004,7 @@ class wobbly_render_instance_t :
             wf::gles::for_each_scissor_rect(data.target, data.damage, [&]
             {
                 wobbly_graphics::render_triangles(self->wobbly_program, tex,
-                    wf::gles::render_target_aligned_orthographic_projection(data.target),
+                    wf::gles::render_target_orthographic_projection(data.target),
                     vert.data(), uv.data(), count_triangles);
             });
         });
