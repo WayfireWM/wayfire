@@ -197,6 +197,12 @@ class wayfire_cube : public wf::per_output_plugin_instance_t, public wf::pointer
     std::string last_background_mode;
     std::unique_ptr<wf_cube_background_base> background;
 
+    /* Last pointer position seen while grabbed, used to turn the absolute
+     * positions reported by tablets and touchscreens into deltas. Empty
+     * until the first motion event, so that the first event does not cause
+     * a jump. */
+    std::optional<wf::pointf_t> last_pointer_position;
+
     wf::option_wrapper_t<std::string> background_mode{"cube/background_mode"};
 
     void reload_background()
@@ -275,6 +281,30 @@ class wayfire_cube : public wf::per_output_plugin_instance_t, public wf::pointer
         {
             pointer_scrolled(event.delta);
         }
+    }
+
+    /**
+     * Rotate the cube when dragging with an absolute pointing device.
+     *
+     * Relative devices are handled by on_motion_event below, which reads the
+     * raw deltas and then zeroes them so that the pointer stays locked in
+     * place while the cube is grabbed. Absolute devices (drawing tablets,
+     * touchscreens used as pointers, and the virtual tablets that QEMU,
+     * VirtualBox and VMware expose to guests) never produce those deltas, so
+     * without this handler the cube opens but cannot be rotated at all.
+     *
+     * The pointer cannot be locked for absolute devices, so the rotation
+     * stops once the pointer reaches the edge of the output.
+     */
+    void handle_pointer_motion(wf::pointf_t pointer_position, uint32_t time_ms) override
+    {
+        if (last_pointer_position)
+        {
+            rotate_cube(pointer_position.x - last_pointer_position->x,
+                pointer_position.y - last_pointer_position->y);
+        }
+
+        last_pointer_position = pointer_position;
     }
 
     void load_program()
@@ -371,6 +401,7 @@ class wayfire_cube : public wf::per_output_plugin_instance_t, public wf::pointer
             return false;
         }
 
+        last_pointer_position = {};
         wf::get_core().connect(&on_motion_event);
 
         render_node = std::make_shared<cube_render_node_t>(this);
@@ -422,6 +453,7 @@ class wayfire_cube : public wf::per_output_plugin_instance_t, public wf::pointer
         output->deactivate_plugin(&grab_interface);
         wf::get_core().unhide_cursor();
         on_motion_event.disconnect();
+        last_pointer_position = {};
 
         /* Figure out how much we have rotated and switch workspace */
         int size = get_num_faces();
@@ -686,7 +718,8 @@ class wayfire_cube : public wf::per_output_plugin_instance_t, public wf::pointer
     wf::signal::connection_t<wf::input_event_signal<wlr_pointer_motion_event>> on_motion_event =
         [=] (wf::input_event_signal<wlr_pointer_motion_event> *ev)
     {
-        pointer_moved(ev->event);
+        rotate_cube(ev->event->delta_x, ev->event->delta_y);
+        last_pointer_position = {};
 
         ev->event->delta_x    = 0;
         ev->event->delta_y    = 0;
@@ -694,15 +727,15 @@ class wayfire_cube : public wf::per_output_plugin_instance_t, public wf::pointer
         ev->event->unaccel_dy = 0;
     };
 
-    void pointer_moved(wlr_pointer_motion_event *ev)
+    void rotate_cube(double dx, double dy)
     {
         if (animation.in_exit)
         {
             return;
         }
 
-        double xdiff = ev->delta_x;
-        double ydiff = ev->delta_y * -1.0;
+        double xdiff = dx;
+        double ydiff = dy * -1.0;
 
         animation.cube_animation.zoom.restart_with_end(
             animation.cube_animation.zoom.end);
