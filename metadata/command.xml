@@ -5,8 +5,7 @@
 		<_long>A plugin to bind key combo (key, button, touch) to execute shell commands.</_long>
 		<category>General</category>
 		<option name="bindings" type="dynamic-list" type-hint="dict">
-			<_short>Regular bindings</_short>
-			<_long>Regular bindings</_long>
+			<_short>Bindings</_short>
 			<entry prefix="command_" type="string" name="command">
 				<_short>Command</_short>
 				<_long>Sets the command to execute.</_long>
@@ -16,11 +15,21 @@
 				<_short>Binding</_short>
 				<_long>Sets the triggering activator binding.</_long>
 			</entry>
+			<entry prefix="flags_" type="string" name="flags">
+				<_short>Execution conditions</_short>
+				<_long>Events in which the command will be executed, separated by commas. Supported events are :
+- `normal` for a key press.
+- `repeat` for a key press, and repeated while the binding is held.
+- `release` for when the binding is released.
+- `always` allows the command to be executed even when the screen is locked or another plugin is active.</_long>
+				<default>normal</default>
+			</entry>
 		</option>
 
 		<option name="repeatable_bindings" type="dynamic-list" type-hint="dict">
-			<_short>Repeatable bindings</_short>
-			<_long>Bindings which repeat their command if their key or button is held pressed.</_long>
+			<_short>Repeatable bindings (deprecated)</_short>
+			<_long>Bindings which repeat their command if their key or button is held pressed.
+This option is deprecated, and will be removed in a further release. Please migrate your configuration to use the `bindings` option with the appropriate `flags`.</_long>
 			<entry prefix="command_" type="string" name="command">
 				<_short>Command</_short>
 				<_long>Sets the command to execute.</_long>
@@ -33,8 +42,9 @@
 		</option>
 
 		<option name="always_bindings" type="dynamic-list" type-hint="dict">
-			<_short>Always bindings</_short>
-			<_long>Sets the bindings which are always available, even when screen is locked.</_long>
+			<_short>Always bindings (deprecated)</_short>
+			<_long>Sets the bindings which are always available, even when screen is locked.
+This option is deprecated, and will be removed in a further release. Please migrate your configuration to use the `bindings` option with the appropriate `flags`.</_long>
 			<entry prefix="command_" type="string" name="command">
 				<_short>Command</_short>
 				<_long>Sets the command to execute.</_long>
@@ -45,9 +55,11 @@
 				<_long>Sets the triggering activator binding.</_long>
 			</entry>
 		</option>
+
 		<option name="release_bindings" type="dynamic-list" type-hint="dict">
-			<_short>Release bindings</_short>
-			<_long>Sets the bindings which activate on release</_long>
+			<_short>Release bindings (deprecated)</_short>
+			<_long>Sets the bindings which activate on release.
+This option is deprecated, and will be removed in a further release. Please migrate your configuration to use the `bindings` option with the appropriate `flags`.</_long>
 			<entry prefix="command_" type="string" name="command">
 				<_short>Command</_short>
 				<_long>Sets the command to execute.</_long>
