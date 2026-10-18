@@ -13,6 +13,11 @@ class window_manager_t
     virtual ~window_manager_t() = default;
 
     /**
+     * Option that sets whether newly mapped views get focus by default.
+     */
+    wf::option_wrapper_t<bool> focus_on_map{"core/focus_on_map"};
+
+    /**
      * Update the remembered last windowed geometry.
      *
      * When a view is being tiled or fullscreened, we usually want to remember its size and position so that
