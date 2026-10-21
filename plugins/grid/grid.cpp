@@ -153,9 +153,15 @@ class wayfire_grid : public wf::plugin_interface_t, public wf::per_output_tracke
         /* Destroy previous preview */
         if (slot.preview)
         {
-            auto input = ev->input;
-            slot.preview->set_target_geometry(wf::pointf_t{(double)input.x, (double)input.y}, 0,
-                true);
+            if (ev->operation == wf::grid::MOVE_OP_DROP)
+            {
+                slot.preview->set_target_geometry(slot.preview->get_target_geometry(), 0, true);
+            } else
+            {
+                auto input = ev->input;
+                slot.preview->set_target_geometry(wf::pointf_t{(double)input.x, (double)input.y}, 0, true);
+            }
+
             slot.preview = nullptr;
         }
 
