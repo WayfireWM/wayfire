@@ -131,11 +131,12 @@ class wayfire_grid : public wf::plugin_interface_t, public wf::per_output_tracke
             wf::grid::slot_t::SLOT_NONE :
             wf::grid::calc_slot(ev->output, ev->input, snap_threshold, quarter_snap_threshold);
 
-        if ((ev->operation == wf::grid::MOVE_OP_DROP) && new_slot_id)
+        /* Tile the view as the preview shows, not what the signal suggests */
+        if ((ev->operation == wf::grid::MOVE_OP_DROP) && slot.slot_id)
         {
-            ev->view->toplevel()->pending().tiled_edges = wf::grid::get_tiled_edges_for_slot(new_slot_id);
-            auto desired_size = wf::grid::get_slot_dimensions(ev->view->get_output(), new_slot_id);
-            ev->view->get_data_safe<wf_grid_slot_data>()->slot = new_slot_id;
+            ev->view->toplevel()->pending().tiled_edges = wf::grid::get_tiled_edges_for_slot(slot.slot_id);
+            auto desired_size = wf::grid::get_slot_dimensions(ev->view->get_output(), slot.slot_id);
+            ev->view->get_data_safe<wf_grid_slot_data>()->slot = slot.slot_id;
             ensure_grid_view(ev->view)->adjust_target_geometry(
                 adjust_for_workspace(get_view_wset(ev->view), desired_size,
                     get_view_wset(ev->view)->get_current_workspace()),
