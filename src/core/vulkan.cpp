@@ -3,7 +3,7 @@
 #include <wayfire/vulkan.hpp>
 #include <fstream>
 #include <wayfire/util/log.hpp>
-#include <drm_fourcc.h>
+#include <libdrm/drm_fourcc.h>
 #include <cstring>
 #include <glm/gtc/matrix_transform.hpp>
 
