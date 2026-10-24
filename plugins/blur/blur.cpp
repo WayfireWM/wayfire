@@ -178,7 +178,21 @@ class blur_render_instance_t : public transformer_render_instance_t<blur_node_t>
         // Nodes below should re-render the padded areas so that we can sample from them
         damage |= padded_region;
 
-        saved_pixels->pixels.allocate(target.get_size());
+        if (saved_pixels->pixels.allocate(target.get_size()) == wf::buffer_reallocation_result_t::FAILED)
+        {
+            // The GPU refused the buffer (its memory full, e.g. a game): this
+            // frame without blur instead of a crash (bind_render_buffer on an
+            // empty buffer took the whole session down).
+            saved_pixels->region.clear();
+            self->release_saved_pixel_buffer(saved_pixels);
+            saved_pixels = nullptr;
+            for (auto& ch : this->children)
+            {
+                ch->schedule_instructions(instructions, target, damage);
+            }
+
+            return;
+        }
 
         wf::gles::run_in_context_if_gles([&]
         {
@@ -213,16 +227,31 @@ class blur_render_instance_t : public transformer_render_instance_t<blur_node_t>
         {
             wf::dimensionsf_t render_size;
             auto contents = get_texture(data.target.scale, &render_size);
+            if (!contents)
+            {
+                return;
+            }
 
             auto tex = wf::gles_texture_t{contents};
             if (!data.damage.empty())
             {
                 auto translucent_damage = calculate_translucent_damage(data.target, data.damage);
-                self->provider()->prepare_blur(data.target, translucent_damage);
-
                 wf::geometry_t render_geometry = wf::construct_box(wf::origin(bounding_box), render_size);
                 render_geometry = data.target.aligned_geometry_from_geometry_box(render_geometry);
-                self->provider()->render(tex, render_geometry, data.damage, data.target, data.target);
+                if (self->provider()->prepare_blur(data.target, translucent_damage))
+                {
+                    self->provider()->render(tex, render_geometry, data.damage, data.target, data.target);
+                } else
+                {
+                    // no buffer for the blur (GPU memory full): the window as it is
+                    wf::gles::bind_render_buffer(data.target);
+                    auto ortho = wf::gles::render_target_orthographic_projection(data.target);
+                    wf::gles::for_each_scissor_rect(data.target, data.damage, [&]
+                    {
+                        OpenGL::render_transformed_texture(tex, render_geometry, ortho,
+                            glm::vec4{1.0, 1.0, 1.0, 1.0});
+                    });
+                }
             }
 
             GL_CALL(glDisable(GL_SCISSOR_TEST));

@@ -413,6 +413,11 @@ void write_to_file(std::string name, uint8_t *pixels, int w, int h, std::string 
 void write_to_file(std::string name, const wf::render_buffer_t& fb)
 {
     auto tex = wlr_texture_from_buffer(wf::get_core().renderer, fb.get_buffer());
+    if (!tex)
+    {
+        LOGE("failed to create a texture from the buffer");
+        return;
+    }
 
     std::vector<char> buffer(tex->width * tex->height * 4);
     wlr_texture_read_pixels_options opts{};

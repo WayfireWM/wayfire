@@ -58,8 +58,13 @@ class crossfade_node_t : public scene::view_2d_transformer_t
         const wf::geometry_t bbox = root_node->get_bounding_box();
         const wf::geometry_t g    = view->get_geometry();
         const float scale = view->get_output()->handle->scale;
-        original_buffer.allocate(wf::dimensions(g), scale,
-            wf::buffer_allocation_hints_t{.hdr_linear = view->get_output() && view->get_output()->is_hdr()});
+        if (original_buffer.allocate(wf::dimensions(g), scale,
+            wf::buffer_allocation_hints_t{.hdr_linear = view->get_output() && view->get_output()->is_hdr()}) ==
+            buffer_reallocation_result_t::FAILED)
+        {
+            original_buffer.free();          // the GPU refused it: no crossfade, the view as it is
+            return;
+        }
 
         wf::render_target_t target{original_buffer};
         target.geometry = view->get_geometry();
@@ -186,6 +191,11 @@ class crossfade_render_instance_t : public scene::render_instance_t
         } else
         {
             ra = std::pow((self->overlay_alpha - 0.5) * 2, N) / 2.0 + 0.5;
+        }
+
+        if (!self->original_buffer.get_buffer())
+        {
+            return;
         }
 
         auto tex = wf::texture_t::from_buffer(

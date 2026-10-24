@@ -264,6 +264,11 @@ class view_2d_render_instance_t :
         {
             // No rotation, we can use render-agnostic functions.
             auto tex = this->get_texture(data.target.scale);
+            if (!tex)
+            {
+                return;
+            }
+
             tex->set_filter_mode(WLR_SCALE_FILTER_BILINEAR);
             auto bbox = self->get_bounding_box();
             data.pass->add_texture(tex, data.target, bbox, data.damage, self->get_alpha());
@@ -288,7 +293,13 @@ class view_2d_render_instance_t :
 
         data.pass->custom_gles_subpass([&]
         {
-            auto tex = wf::gles_texture_t{this->get_texture(data.target.scale)};
+            auto contents = this->get_texture(data.target.scale);
+            if (!contents)
+            {
+                return;
+            }
+
+            auto tex = wf::gles_texture_t{contents};
             wf::gles::bind_render_buffer(data.target);
             auto ortho = wf::gles::render_target_orthographic_projection(data.target);
 
@@ -305,6 +316,11 @@ class view_2d_render_instance_t :
         {
             auto& vk_state = vk::core_ensure_vk(state);
             auto texture   = get_texture(data.target.scale);
+            if (!texture)
+            {
+                return;
+            }
+
             auto tex_dset  = state.get_descriptor_pool()->get_descriptor_set(cmd_buf, texture);
             wf::vk::texture_sampling_params_t sampling{texture};
             wf::vk::pipeline_specialization_t specialization{};
@@ -540,7 +556,13 @@ class view_3d_render_instance_t :
 
         data.pass->custom_gles_subpass([&]
         {
-            auto tex = wf::gles_texture_t{get_texture(data.target.scale)};
+            auto contents = get_texture(data.target.scale);
+            if (!contents)
+            {
+                return;
+            }
+
+            auto tex = wf::gles_texture_t{contents};
             wf::gles::bind_render_buffer(data.target);
             wf::gles::for_each_scissor_rect(data.target, data.damage, [&]
             {
@@ -554,6 +576,11 @@ class view_3d_render_instance_t :
         {
             auto& vk_state = vk::core_ensure_vk(state);
             auto texture   = get_texture(data.target.scale);
+            if (!texture)
+            {
+                return;
+            }
+
             auto tex_dset  = state.get_descriptor_pool()->get_descriptor_set(cmd_buf, texture);
             wf::vk::texture_sampling_params_t sampling{texture};
             wf::vk::pipeline_specialization_t specialization{};
@@ -618,9 +645,18 @@ uint32_t transformer_base_node_t::optimize_update(uint32_t flags)
 std::shared_ptr<wf::texture_t> transformer_base_node_t::get_updated_contents(const wf::geometry_t& bbox,
     float scale, std::vector<scene::render_instance_uptr>& children, wf::output_t *output)
 {
-    if (inner_content.allocate(wf::dimensions(bbox), scale,
-        wf::buffer_allocation_hints_t{.hdr_linear = output && output->is_hdr()}) !=
-        buffer_reallocation_result_t::SAME)
+    auto result = inner_content.allocate(wf::dimensions(bbox), scale,
+        wf::buffer_allocation_hints_t{.hdr_linear = output && output->is_hdr()});
+    if (result == buffer_reallocation_result_t::FAILED)
+    {
+        // The GPU refused the buffer (seen with NVIDIA's GBM: "gbm_bo_create
+        // failed: Invalid argument"). Rendering into it crashed the compositor;
+        // callers skip this frame instead.
+        cached_damage |= bbox;
+        return nullptr;
+    }
+
+    if (result != buffer_reallocation_result_t::SAME)
     {
         cached_damage |= bbox;
     }
@@ -638,7 +674,14 @@ std::shared_ptr<wf::texture_t> transformer_base_node_t::get_updated_contents(con
     wf::render_pass_t::run(params);
     cached_damage.clear();
 
-    return wf::texture_t::from_aux(inner_content);
+    auto texture = wf::texture_t::from_aux(inner_content);
+    if (!texture->get_wlr_texture())
+    {
+        cached_damage |= bbox; // no texture for the buffer (out of GPU memory)
+        return nullptr;
+    }
+
+    return texture;
 }
 
 void transformer_base_node_t::release_buffers()

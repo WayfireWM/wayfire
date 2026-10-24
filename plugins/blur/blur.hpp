@@ -94,6 +94,8 @@ class wf_blur_base
     /* used to store temporary results in blur algorithms, cleaned up in base
      * destructor */
     wf::auxilliary_buffer_t fb[2];
+    /* a buffer couldn't be allocated in this frame's blur */
+    bool alloc_failed = false;
     wf::geometry_t prepared_geometry;
 
     /* the program created by the given algorithm, cleaned up in base destructor */
@@ -139,7 +141,8 @@ class wf_blur_base
      * @param target_fb A render target containing the background to be blurred.
      * @param damage    The region to be blurred.
      */
-    void prepare_blur(const wf::render_target_t& target_fb, const wf::regionf_t& damage);
+    /** @return false when the GPU refused a buffer (its memory full): no blur this frame. */
+    bool prepare_blur(const wf::render_target_t& target_fb, const wf::regionf_t& damage);
 
     /**
      * Render a view with a blended background as prepared from @prepare_blur.

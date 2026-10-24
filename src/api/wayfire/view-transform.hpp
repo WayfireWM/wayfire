@@ -78,6 +78,9 @@ class transformer_base_node_t : public scene::floating_inner_node_t
      *   the @hdr_linear hint if the output is currently in an HDR (PQ) configuration,
      *   so HDR contents above SDR reference white aren't clipped or banded by an
      *   8-bit linear backing.
+     *
+     * @return The children's contents, or nullptr when @inner_content could not
+     *   be allocated (the GPU refused the buffer): skip drawing for this frame.
      */
     std::shared_ptr<wf::texture_t> get_updated_contents(const wf::geometry_t& bbox, float scale,
         std::vector<scene::render_instance_uptr>& children, wf::output_t *output = nullptr);
@@ -125,6 +128,8 @@ class transformer_render_instance_t : public render_instance_t
      *   size.
      *
      * @param out_logical_size If provided, the logical size of the texture is written to this pointer.
+     * @return The texture, or nullptr when the auxiliary buffer could not be
+     *   allocated: the caller should skip drawing for this frame.
      */
     std::shared_ptr<wf::texture_t> get_texture(float scale, wf::dimensionsf_t *out_logical_size = nullptr)
     {
@@ -139,6 +144,11 @@ class transformer_render_instance_t : public render_instance_t
 
         auto contents =
             self->get_updated_contents(self->get_children_bounding_box(), scale, children, _shown_on);
+        if (!contents)
+        {
+            return nullptr;
+        }
+
         if (out_logical_size)
         {
             *out_logical_size = wf::dimensionsf_t{
