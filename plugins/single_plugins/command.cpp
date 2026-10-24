@@ -74,80 +74,123 @@ class wayfire_command : public wf::plugin_interface_t
         uint32_t pressed_key    = 0;
         command_callback callback;
         wf::activator_callback *callback_owner = nullptr;
-    } repeat;
+        bool armed = false;
+    } repeat_state, release_state;
 
     wl_event_source *repeat_source = NULL;
     wl_event_source *repeat_delay_source = NULL;
 
-    enum binding_mode
+    enum binding_mode_flags
     {
-        BINDING_NORMAL,
-        BINDING_REPEAT,
-        BINDING_RELEASE,
+        BINDING_NORMAL = 1,
+        BINDING_REPEAT = 2,
+        BINDING_RELEASE = 4,
+        BINDING_ALWAYS = 8,
     };
 
-    bool on_binding(command_callback callback, binding_mode mode, bool exec_always,
-        const wf::activator_data_t& data, wf::activator_callback *callback_owner = nullptr)
+    typedef int binding_mode;
+
+    binding_mode binding_mode_from_string_stream(std::stringstream *modes_str)
     {
-        /* We already have a repeatable command, do not accept further bindings */
-        if (repeat.pressed_key || repeat.pressed_button)
-        {
-            return false;
-        }
+        std::string segment;
+        binding_mode mode = 0;
+        while (std::getline(*modes_str, segment, ',')) {
+            // also trim leading/trailing whitespace from the segment
+            size_t start = segment.find_first_not_of(" \t");
+            size_t end = segment.find_last_not_of(" \t");
 
-        auto focused_output = wf::get_core().seat->get_active_output();
-        if (!exec_always && !focused_output->can_activate_plugin(&grab_interface))
-        {
-            return false;
-        }
+            if (start == std::string::npos)
+                continue;
 
-        if (mode == BINDING_RELEASE)
-        {
-            repeat.callback = callback;
-            repeat.callback_owner = callback_owner;
-            if ((data.source == wf::activator_source_t::KEYBINDING) ||
-                (data.source == wf::activator_source_t::MODIFIERBINDING))
-            {
-                repeat.pressed_key = data.activation_data;
-                wf::get_core().connect(&on_key_event_release);
-            } else
-            {
-                repeat.pressed_button = data.activation_data;
-                wf::get_core().connect(&on_button_event_release);
+            std::string trimmed_mode = segment.substr(start, end - start + 1);
+
+            if (trimmed_mode == "normal") {
+                mode |= BINDING_NORMAL;
+            } else if (trimmed_mode == "repeat") {
+                mode |= BINDING_REPEAT;
+            } else if (trimmed_mode == "release") {
+                mode |= BINDING_RELEASE;
+            } else if (trimmed_mode == "always") {
+                mode |= BINDING_ALWAYS;
             }
+            // else {
+                // log a warning or something
+            // }
+        }
 
+        if (mode == 0)
+            mode = BINDING_NORMAL;
+
+        return mode;
+    }
+
+    bool can_activate_for_mode(binding_mode mode) const
+    {
+        auto focused_output = wf::get_core().seat->get_active_output();
+        if (!focused_output)
+        {
+            return false;
+        }
+
+        if (mode & BINDING_ALWAYS)
+        {
             return true;
+        }
+
+        return focused_output->can_activate_plugin(
+            const_cast<wf::plugin_activation_data_t*>(&grab_interface));
+    }
+
+    void setup_release_trigger(
+        command_callback callback,
+        const wf::activator_data_t& data,
+        wf::activator_callback *callback_owner)
+    {
+        release_state.callback = callback;
+        release_state.callback_owner = callback_owner;
+        release_state.armed = true;
+
+        if ((data.source == wf::activator_source_t::KEYBINDING) ||
+            (data.source == wf::activator_source_t::MODIFIERBINDING))
+        {
+            release_state.pressed_key = data.activation_data;
+            wf::get_core().connect(&on_key_event_release);
+        } else if (data.source == wf::activator_source_t::BUTTONBINDING)
+        {
+            release_state.pressed_button = data.activation_data;
+            wf::get_core().connect(&on_button_event_release);
         } else
         {
-            callback();
+            /* Unsupported release source, disarm */
+            reset_release();
         }
+    }
 
-        /* No repeat necessary in any of those cases */
-        if ((mode != BINDING_REPEAT) ||
-            (data.source == wf::activator_source_t::GESTURE) ||
-            (data.activation_data == 0))
-        {
-            return true;
-        }
+    void setup_repeat_trigger(
+        command_callback callback,
+        const wf::activator_data_t& data,
+        wf::activator_callback *callback_owner)
+    {
+        repeat_state.callback = callback;
+        repeat_state.callback_owner = callback_owner;
+        repeat_state.armed = true;
 
-        repeat.callback = callback;
-        repeat.callback_owner = callback_owner;
         if (data.source == wf::activator_source_t::KEYBINDING)
         {
-            repeat.pressed_key = data.activation_data;
+            repeat_state.pressed_key = data.activation_data;
         } else
         {
-            repeat.pressed_button = data.activation_data;
+            repeat_state.pressed_button = data.activation_data;
         }
 
-        repeat_delay_source = wl_event_loop_add_timer(wf::get_core().ev_loop,
-            repeat_delay_timeout_handler, &on_repeat_delay_timeout);
+        repeat_delay_source = wl_event_loop_add_timer(
+            wf::get_core().ev_loop, repeat_delay_timeout_handler, &on_repeat_delay_timeout);
 
-        wl_event_source_timer_update(repeat_delay_source, wf::option_wrapper_t<int>("input/kb_repeat_delay"));
+        wl_event_source_timer_update(
+            repeat_delay_source, wf::option_wrapper_t<int>("input/kb_repeat_delay"));
 
         wf::get_core().connect(&on_button_event);
         wf::get_core().connect(&on_key_event);
-        return true;
     }
 
     std::function<void()> on_repeat_delay_timeout = [=] ()
@@ -159,6 +202,11 @@ class wayfire_command : public wf::plugin_interface_t
 
     std::function<void()> on_repeat_once = [=] ()
     {
+        if (!repeat_state.armed || !repeat_state.callback)
+        {
+            return reset_repeat();
+        }
+
         uint32_t repeat_rate = wf::option_wrapper_t<int>("input/kb_repeat_rate");
         if ((repeat_rate <= 0) || (repeat_rate > 1000))
         {
@@ -166,7 +214,7 @@ class wayfire_command : public wf::plugin_interface_t
         }
 
         wl_event_source_timer_update(repeat_source, 1000 / repeat_rate);
-        repeat.callback();
+        repeat_state.callback();
     };
 
     void reset_repeat()
@@ -183,17 +231,31 @@ class wayfire_command : public wf::plugin_interface_t
             repeat_source = NULL;
         }
 
-        repeat.pressed_key = repeat.pressed_button = 0;
-        repeat.callback    = nullptr;
-        repeat.callback_owner = nullptr;
+        repeat_state.pressed_key = repeat_state.pressed_button = 0;
+        repeat_state.callback = nullptr;
+        repeat_state.callback_owner = nullptr;
+        repeat_state.armed = false;
+
         on_button_event.disconnect();
         on_key_event.disconnect();
+    }
+
+    void reset_release()
+    {
+        release_state.pressed_key = release_state.pressed_button = 0;
+        release_state.callback = nullptr;
+        release_state.callback_owner = nullptr;
+        release_state.armed = false;
+
+        on_key_event_release.disconnect();
+        on_button_event_release.disconnect();
     }
 
     wf::signal::connection_t<wf::input_event_signal<wlr_pointer_button_event>> on_button_event =
         [=] (wf::input_event_signal<wlr_pointer_button_event> *ev)
     {
-        if ((ev->event->button == repeat.pressed_button) &&
+        if (repeat_state.armed &&
+            (ev->event->button == repeat_state.pressed_button) &&
             (ev->event->state == WL_POINTER_BUTTON_STATE_RELEASED))
         {
             reset_repeat();
@@ -203,7 +265,8 @@ class wayfire_command : public wf::plugin_interface_t
     wf::signal::connection_t<wf::input_event_signal<wlr_keyboard_key_event>> on_key_event =
         [=] (wf::input_event_signal<wlr_keyboard_key_event> *ev)
     {
-        if ((ev->event->keycode == repeat.pressed_key) &&
+        if (repeat_state.armed &&
+            (ev->event->keycode == repeat_state.pressed_key) &&
             (ev->event->state == WL_KEYBOARD_KEY_STATE_RELEASED))
         {
             reset_repeat();
@@ -213,46 +276,100 @@ class wayfire_command : public wf::plugin_interface_t
     wf::signal::connection_t<wf::input_event_signal<wlr_keyboard_key_event>> on_key_event_release =
         [=] (wf::input_event_signal<wlr_keyboard_key_event> *ev)
     {
-        if ((ev->event->keycode == repeat.pressed_key) &&
+        if (release_state.armed &&
+            (ev->event->keycode == release_state.pressed_key) &&
             (ev->event->state == WL_KEYBOARD_KEY_STATE_RELEASED))
         {
-            repeat.callback();
-            repeat.pressed_key = repeat.pressed_button = 0;
-            repeat.callback    = nullptr;
-            repeat.callback_owner = nullptr;
-            on_key_event_release.disconnect();
+            if (repeat_state.armed && (repeat_state.pressed_key == ev->event->keycode))
+            {
+                reset_repeat();
+            }
+
+            if (release_state.callback)
+            {
+                release_state.callback();
+            }
+
+            reset_release();
         }
     };
 
     wf::signal::connection_t<wf::input_event_signal<wlr_pointer_button_event>> on_button_event_release =
         [=] (wf::input_event_signal<wlr_pointer_button_event> *ev)
     {
-        if ((ev->event->button == repeat.pressed_button) &&
+        if (release_state.armed &&
+            (ev->event->button == release_state.pressed_button) &&
             (ev->event->state == WL_POINTER_BUTTON_STATE_RELEASED))
         {
-            repeat.callback();
-            repeat.pressed_key = repeat.pressed_button = 0;
-            repeat.callback    = nullptr;
-            repeat.callback_owner = nullptr;
-            on_button_event_release.disconnect();
+            if (repeat_state.armed && (repeat_state.pressed_button == ev->event->button))
+            {
+                reset_repeat();
+            }
+
+            if (release_state.callback)
+            {
+                release_state.callback();
+            }
+
+            reset_release();
         }
     };
+
+    bool on_binding(command_callback callback, binding_mode mode,
+        const wf::activator_data_t& data, wf::activator_callback *callback_owner = nullptr)
+    {
+        /* One tracked activation at a time */
+        if (repeat_state.armed || release_state.armed)
+        {
+            return false;
+        }
+
+        if (!can_activate_for_mode(mode))
+        {
+            return false;
+        }
+
+        if (mode & BINDING_NORMAL || mode & BINDING_REPEAT)
+        {
+            callback();
+        }
+
+        /* Hold trigger */
+        if (mode & BINDING_REPEAT &&
+            (data.source != wf::activator_source_t::GESTURE) &&
+            (data.activation_data != 0) &&
+            ((data.source == wf::activator_source_t::KEYBINDING) ||
+            (data.source == wf::activator_source_t::BUTTONBINDING)))
+        {
+            setup_repeat_trigger(callback, data, callback_owner);
+        }
+
+        /* Release trigger */
+        if (mode & BINDING_RELEASE &&
+            (data.source != wf::activator_source_t::GESTURE) &&
+            (data.activation_data != 0))
+        {
+            setup_release_trigger(callback, data, callback_owner);
+        }
+
+        return true;
+    }
 
     wf::shared_data::ref_ptr_t<wf::ipc::method_repository_t> method_repository;
 
   public:
     wf::option_wrapper_t<wf::config::compound_list_t<
-        std::string, wf::activatorbinding_t>> regular_bindings{"command/bindings"};
+        std::string, wf::activatorbinding_t, std::string>> regular_bindings{"command/bindings"};
 
-    wf::option_wrapper_t<wf::config::compound_list_t<std::string, wf::activatorbinding_t>> repeat_bindings{
+    wf::option_wrapper_t<wf::config::compound_list_t<std::string, wf::activatorbinding_t>> repeat_bindings_deprecated{
         "command/repeatable_bindings"
     };
 
-    wf::option_wrapper_t<wf::config::compound_list_t<std::string, wf::activatorbinding_t>> always_bindings{
+    wf::option_wrapper_t<wf::config::compound_list_t<std::string, wf::activatorbinding_t>> always_bindings_deprecated{
         "command/always_bindings"
     };
 
-    wf::option_wrapper_t<wf::config::compound_list_t<std::string, wf::activatorbinding_t>> release_bindings{
+    wf::option_wrapper_t<wf::config::compound_list_t<std::string, wf::activatorbinding_t>> release_bindings_deprecated{
         "command/release_bindings"
     };
 
@@ -262,33 +379,42 @@ class wayfire_command : public wf::plugin_interface_t
         using namespace std::placeholders;
 
         auto regular    = regular_bindings.value();
-        auto repeatable = repeat_bindings.value();
-        auto always     = always_bindings.value();
-        auto release    = release_bindings.value();
+        auto repeatable = repeat_bindings_deprecated.value();
+        auto always     = always_bindings_deprecated.value();
+        auto release    = release_bindings_deprecated.value();
         bindings.resize(
             regular.size() + repeatable.size() + always.size() + release.size());
-        size_t i = 0;
+        size_t bind_index = 0;
 
-        const auto& push_bindings =
-            [&] (wf::config::compound_list_t<std::string, wf::activatorbinding_t>& list, binding_mode mode,
-                 bool always_exec = false)
+        for (const auto& [_/*name*/, command, activator, flags] : regular)
+        {
+            std::stringstream modes_str(flags);
+            binding_mode mode = binding_mode_from_string_stream(&modes_str);
+            std::string cmd = command;
+            command_callback cb = [cmd] () -> bool { return wf::get_core().run(cmd); };
+            bindings[bind_index] =
+                std::bind(std::mem_fn(&wayfire_command::on_binding), this, cb, mode, _1, nullptr);
+            wf::get_core().bindings->add_activator(wf::create_option(activator), &bindings[bind_index]);
+            ++bind_index;
+        }
+
+        const auto& push_bindings_depr =
+            [&] (wf::config::compound_list_t<std::string, wf::activatorbinding_t>& list, binding_mode mode)
         {
             for (const auto& [_, _cmd, activator] : list)
             {
                 std::string cmd     = _cmd;
                 command_callback cb = [cmd] () -> bool { return wf::get_core().run(cmd); };
-                bindings[i] =
-                    std::bind(std::mem_fn(&wayfire_command::on_binding), this, cb, mode, always_exec, _1,
-                        nullptr);
-                wf::get_core().bindings->add_activator(wf::create_option(activator), &bindings[i]);
-                ++i;
+                bindings[bind_index] =
+                    std::bind(std::mem_fn(&wayfire_command::on_binding), this, cb, mode, _1, nullptr);
+                wf::get_core().bindings->add_activator(wf::create_option(activator), &bindings[bind_index]);
+                ++bind_index;
             }
         };
 
-        push_bindings(regular, BINDING_NORMAL);
-        push_bindings(repeatable, BINDING_REPEAT);
-        push_bindings(always, BINDING_NORMAL, true);
-        push_bindings(release, BINDING_RELEASE);
+        push_bindings_depr(repeatable, BINDING_REPEAT);
+        push_bindings_depr(always, BINDING_NORMAL | BINDING_ALWAYS);
+        push_bindings_depr(release, BINDING_RELEASE);
     };
 
     void clear_bindings()
@@ -351,20 +477,19 @@ class wayfire_command : public wf::plugin_interface_t
             return wf::ipc::json_error("Invalid binding!");
         }
 
-        binding_mode mode = BINDING_NORMAL;
+        binding_mode mode;
         if (mode_str.has_value())
         {
-            if (mode_str == "release")
-            {
-                mode = BINDING_RELEASE;
-            } else if (mode_str == "repeat")
-            {
-                mode = BINDING_REPEAT;
-            } else
-            {
-                return wf::ipc::json_error("Invalid mode!");
-            }
+            auto stream = std::stringstream(mode_str.value());
+            mode = binding_mode_from_string_stream(&stream);
+        } else
+        {
+            mode = BINDING_NORMAL;
         }
+
+        // deprecated, will end up being removed
+        if (exec_always)
+            mode |= BINDING_ALWAYS;
 
         ipc_bindings.push_back({});
 
@@ -382,7 +507,7 @@ class wayfire_command : public wf::plugin_interface_t
                 {
                     method_repository->call_method(js["call-method"], js["call-data"]);
                     return true;
-                }, mode, exec_always, data, stored_callback);
+                }, mode, data, stored_callback);
             };
         } else if (command.has_value())
         {
@@ -391,7 +516,7 @@ class wayfire_command : public wf::plugin_interface_t
                 return on_binding([js] () -> bool
                 {
                     return wf::get_core().run(js["command"]);
-                }, mode, exec_always, data, stored_callback);
+                }, mode, data, stored_callback);
             };
         } else
         {
@@ -404,7 +529,7 @@ class wayfire_command : public wf::plugin_interface_t
                     event["event"] = "command-binding";
                     event["binding-id"] = id;
                     return client->send_json(event);
-                }, mode, exec_always, data, stored_callback);
+                }, mode, data, stored_callback);
             };
         }
 
@@ -434,9 +559,13 @@ class wayfire_command : public wf::plugin_interface_t
         {
             if (filter(binding))
             {
-                if (repeat.callback_owner == &binding.callback)
+                if (repeat_state.callback_owner == &binding.callback)
                 {
                     reset_repeat();
+                }
+                if (release_state.callback_owner == &binding.callback)
+                {
+                    reset_release();
                 }
 
                 wf::get_core().bindings->rem_binding((void*)&binding.callback);
