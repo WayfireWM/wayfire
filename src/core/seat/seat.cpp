@@ -293,6 +293,7 @@ wf::seat_t::seat_t(wl_display *display, std::string name) : seat(wlr_seat_create
         priv->end_drag.set_callback([&] (void*)
         {
             this->priv->active_drag = nullptr;
+            this->priv->lpointer->release_grab();
             priv->end_drag.disconnect();
         });
         priv->end_drag.connect(&d->events.destroy);
