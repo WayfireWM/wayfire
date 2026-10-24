@@ -4,6 +4,11 @@ shaders = [
   'core-basic.frag',
   'wobbly.vert',
   'wobbly.frag',
+  'fire.vert',
+  'fire.frag',
+  'squeezimize.vert',
+  'squeezimize.frag',
+  'squeezimize-horiz.frag',
 ]
 
 vert_common = [ 'texture-transform.vert' ]
@@ -14,6 +19,9 @@ glslang_version_info = run_command(glslang, '--version', check: true).stdout()
 glslang_version = glslang_version_info.split('\n')[0].split(':')[-1]
 
 vulkan_shaders = []
+# Dictionary mapping shader name (e.g. 'fire.vert') to the generated header
+# target, so plugins can easily reference the shaders they need.
+vulkan_shader_headers = {}
 foreach shader : shaders
 	name = shader.underscorify() + '_data'
 	args = [glslang, '-V', '@INPUT@', '-o', '@OUTPUT@', '--vn', name]
@@ -38,4 +46,5 @@ foreach shader : shaders
     depend_files: deps)
 
 	vulkan_shaders += [header]
+  vulkan_shader_headers += {shader: header}
 endforeach

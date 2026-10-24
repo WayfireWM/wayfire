@@ -24,6 +24,11 @@
 
 #include <wayfire/output.hpp>
 #include <wayfire/opengl.hpp>
+#ifdef WF_USE_CONFIG_H
+    #include <config.h>
+#else
+    #include <wayfire/config.h>
+#endif
 #include <wayfire/core.hpp>
 #include <wayfire/view-transform.hpp>
 #include <wayfire/signal-definitions.hpp>
@@ -37,6 +42,13 @@
 #include <glm/gtc/matrix_transform.hpp>
 
 #include "animate.hpp"
+
+#if WF_HAS_VULKANFX
+    #include <wayfire/vulkan.hpp>
+    #include "shaders/squeezimize.vert.h"
+    #include "shaders/squeezimize.frag.h"
+    #include "shaders/squeezimize-horiz.frag.h"
+#endif
 
 
 static const char *squeeze_vert_source =
@@ -185,6 +197,7 @@ class squeezimize_transformer : public wf::scene::view_2d_transformer_t
     wf::geometry_t animation_geometry;
     squeezimize_animation_t progression;
     bool upward = false;
+    bool horiz  = false;
 
     class simple_node_render_instance_t : public wf::scene::transformer_render_instance_t<squeezimize_transformer>
     {
@@ -225,7 +238,110 @@ class squeezimize_transformer : public wf::scene::view_2d_transformer_t
             damage |= self->animation_geometry;
         }
 
-        void render(const render_instruction_t& data) override
+    #if WF_HAS_VULKANFX
+    struct vulkan_push_constants_t
+    {
+        glm::mat4 matrix;
+        glm::vec4 src_box;
+        glm::vec4 target_box;
+        float progress;
+        int upward;
+    };
+
+    class vulkan_state_t : public wf::custom_data_t
+    {
+      public:
+        std::shared_ptr<wf::vk::graphics_pipeline_t> pipeline;
+    };
+
+    std::shared_ptr<wf::vk::gpu_buffer_t> vulkan_vertex_buffer;
+
+    vulkan_state_t& ensure_vk(wf::vulkan_render_state_t& state)
+    {
+        if (auto data = state.get_data<vulkan_state_t>())
+        {
+            return *data;
+        }
+
+        auto vs = state.get_context()->load_shader_module(
+            squeezimize_vert_data, sizeof(squeezimize_vert_data));
+        auto fs = state.get_context()->load_shader_module(
+            self->horiz ? squeezimize_horiz_frag_data : squeezimize_frag_data,
+            self->horiz ? sizeof(squeezimize_horiz_frag_data) : sizeof(squeezimize_frag_data));
+
+        wf::vk::pipeline_params_t params{};
+        params.shaders = {
+            {.stage = VK_SHADER_STAGE_VERTEX_BIT, .shader = vs},
+            {.stage = VK_SHADER_STAGE_FRAGMENT_BIT, .shader = fs},
+        };
+
+        // One descriptor set for the uv texture.
+        params.descriptor_set_layouts = {wf::vk::pipeline_params_t::texture_descriptor_set_t{}};
+        params.push_constants = {
+            VkPushConstantRange{
+                .stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
+                .offset     = 0,
+                .size       = sizeof(vulkan_push_constants_t),
+            },
+        };
+
+        params.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_FAN;
+        params.vertex_input_description = {{
+            .binding   = 0,
+            .stride    = sizeof(float) * 4,
+            .inputRate = VK_VERTEX_INPUT_RATE_VERTEX,
+        }};
+        params.vertex_attribute_description = {
+            {
+                .location = 0,
+                .binding  = 0,
+                .format   = VK_FORMAT_R32G32_SFLOAT,
+                .offset   = 0,
+            },
+            {
+                .location = 1,
+                .binding  = 0,
+                .format   = VK_FORMAT_R32G32_SFLOAT,
+                .offset   = sizeof(float) * 2,
+            },
+        };
+
+        auto data = std::make_unique<vulkan_state_t>();
+        data->pipeline = std::make_shared<wf::vk::graphics_pipeline_t>(state.get_context(), params);
+        auto ptr = data.get();
+        state.store_data<vulkan_state_t>(std::move(data));
+        return *ptr;
+    }
+
+    void upload_vertex_data(wf::vulkan_render_state_t& state,
+        const float *vertex_data_pos, const float *vertex_data_uv)
+    {
+        /* Interleaved vertex data: [pos.x, pos.y, uv.x, uv.y]. */
+        const size_t floats_per_vertex = 4;
+        float unified_buffer[floats_per_vertex * 4];
+        for (size_t i = 0; i < 4; i++)
+        {
+            unified_buffer[floats_per_vertex * i]     = vertex_data_pos[2 * i];
+            unified_buffer[floats_per_vertex * i + 1] = vertex_data_pos[2 * i + 1];
+            unified_buffer[floats_per_vertex * i + 2] = vertex_data_uv[2 * i];
+            unified_buffer[floats_per_vertex * i + 3] = vertex_data_uv[2 * i + 1];
+        }
+
+        const VkDeviceSize total_size = sizeof(unified_buffer);
+
+        /* Reuse the buffer between frames when possible, to avoid reallocations. */
+        if (!vulkan_vertex_buffer || (vulkan_vertex_buffer->get_size() < total_size) ||
+            (vulkan_vertex_buffer.use_count() != 1))
+        {
+            vulkan_vertex_buffer = state.get_context()->create_buffer(total_size,
+                VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+        }
+
+        vulkan_vertex_buffer->write(unified_buffer, total_size);
+    }
+#endif
+
+    void render(const render_instruction_t& data) override
         {
             auto src_box  = self->get_children_bounding_box();
             auto progress = self->progression.progress();
@@ -282,9 +398,9 @@ class squeezimize_transformer : public wf::scene::view_2d_transformer_t
                 self->animation_geometry.height
             };
 
-            auto src_tex = wf::gles_texture_t{this->get_texture(1.0)};
             data.pass->custom_gles_subpass(data.target, [&]
             {
+                auto src_tex = wf::gles_texture_t{this->get_texture(1.0)};
                 self->program.use(wf::TEXTURE_TYPE_RGBA);
                 self->program.uniformMatrix4f("matrix",
                     wf::gles::render_target_orthographic_projection(data.target));
@@ -300,6 +416,49 @@ class squeezimize_transformer : public wf::scene::view_2d_transformer_t
                     GL_CALL(glDrawArrays(GL_TRIANGLE_FAN, 0, 4));
                 });
             });
+
+#if WF_HAS_VULKANFX
+            data.pass->custom_vulkan_subpass([&] (wf::vulkan_render_state_t& state,
+                                                  wf::vk::command_buffer_t& cmd_buf)
+            {
+                auto& vk_state = ensure_vk(state);
+                upload_vertex_data(state, vertex_data_pos, vertex_data_uv);
+
+                auto texture   = this->get_texture(1.0);
+                auto tex_dset  = state.get_descriptor_pool()->get_descriptor_set(cmd_buf, texture);
+                wf::vk::texture_sampling_params_t sampling{texture};
+                wf::vk::pipeline_specialization_t specialization{};
+                specialization.add_specialization_for_texture(texture);
+
+                auto [layout, _] = cmd_buf.bind_pipeline(vk_state.pipeline, data.target,
+                    specialization);
+                cmd_buf.set_full_viewport(data.target);
+                cmd_buf.bind_texture(texture);
+
+                vkCmdBindDescriptorSets(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, layout,
+                    0, 1, &tex_dset, 0, nullptr);
+
+                vulkan_push_constants_t push_constants{};
+                push_constants.matrix = wf::vk::render_target_transform(data.target);
+                push_constants.progress    = progress;
+                push_constants.src_box     = src_box_pos;
+                push_constants.target_box  = target_box_pos;
+                push_constants.upward      = self->upward ? 1 : 0;
+                vkCmdPushConstants(cmd_buf, layout,
+                    VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
+                    0, sizeof(vulkan_push_constants_t), &push_constants);
+
+                VkBuffer vertex_buffer = vulkan_vertex_buffer->get_buffer();
+                VkDeviceSize vertex_offset = 0;
+                vkCmdBindVertexBuffers(cmd_buf, 0, 1, &vertex_buffer, &vertex_offset);
+                cmd_buf.bind_buffer(vulkan_vertex_buffer);
+
+                cmd_buf.for_each_scissor_rect(data.target, (data.damage & data.target.geometry), [&]
+                {
+                    vkCmdDraw(cmd_buf, 4, 1, 0, 0);
+                });
+            });
+#endif
         }
     };
 
@@ -372,6 +531,8 @@ class squeezimize_transformer : public wf::scene::view_2d_transformer_t
                 this->upward = true;
             }
         }
+
+        this->horiz = horiz;
 
         wf::gles::run_in_context_if_gles([&]
         {
