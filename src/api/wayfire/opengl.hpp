@@ -118,6 +118,11 @@ bool run_in_context(F&& code)
 {
     return run_in_context_if_gles(code, true);
 }
+
+/**
+ * Returns the maximum texture size for the gpu hardware.
+ */
+uint32_t get_hardware_maximum_texture_size();
 }
 
 /** Represents the different types(formats) of textures in Wayfire. */
