@@ -430,7 +430,7 @@ void wf::pointer_t::handle_pointer_axis(wlr_pointer_axis_event *ev,
 
     /* Calculate speed settings */
     wf::pointing_device_t *pd = (wf::pointing_device_t*)ev->pointer->base.data;
-    double mult = pd->get_scroll_speed(&ev->pointer->base, ev->source == WL_POINTER_AXIS_SOURCE_FINGER);
+    double mult = pd->get_scroll_speed(ev->source);
 
     ev->delta *= mult;
     ev->delta_discrete *= mult;
