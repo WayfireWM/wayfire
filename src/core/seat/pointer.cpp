@@ -322,7 +322,8 @@ void wf::pointer_t::check_implicit_grab()
     /* end the button held grab. We need to to this here after we have send
      * the last button release event, so that buttons don't get stuck in clients */
     if ((count_pressed_buttons == 0) &&
-        (current_grab_kind == input_grab_kind_t::IMPLICIT))
+        ((current_grab_kind == input_grab_kind_t::IMPLICIT) ||
+         (current_grab_kind == input_grab_kind_t::DND)))
     {
         grab_surface(nullptr);
     }
