@@ -31,6 +31,15 @@ class headless_core_harness_t
     void pointer_motion(double x, double y);
     void pointer_button(uint32_t button, uint32_t state);
 
+    /**
+     * Send a vertical axis event from the given pointer device and return the
+     * delta after the configured scroll speed has been applied.
+     * The device must have been announced via backend->events.new_input.
+     * Note that the core skips the scaling if an axis binding consumes the
+     * event, in which case the delta is returned unchanged.
+     */
+    double pointer_axis(wlr_pointer *device, wl_pointer_axis_source source, double delta);
+
     wf::output_t *output() const;
     const std::string& socket_name() const;
     std::vector<uint32_t> capture_output_pixels();

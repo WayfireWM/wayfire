@@ -13,7 +13,15 @@ struct pointing_device_t : public input_device_impl_t
     void load_options();
     void update_options() override;
 
-    double get_scroll_speed(wlr_input_device *dev, bool touchpad);
+    /**
+     * Get the factor by which scrolling with the given axis source should be
+     * scaled. Finger scrolling always uses touchpad_scroll_speed, even for
+     * devices which libinput does not report as touchpads, for example when
+     * the events are forwarded by a parent compositor. Touchpads use it for
+     * their other scroll methods as well, which libinput reports as
+     * WL_POINTER_AXIS_SOURCE_CONTINUOUS.
+     */
+    double get_scroll_speed(wl_pointer_axis_source source);
 
     wf::option_wrapper_t<bool> left_handed_mode;
     wf::option_wrapper_t<bool> middle_emulation;
@@ -34,6 +42,9 @@ struct pointing_device_t : public input_device_impl_t
     wf::option_wrapper_t<bool> touchpad_tap_and_drag_enabled;
     wf::option_wrapper_t<bool> touchpad_drag_lock_enabled;
     wf::option_wrapper_t<std::string> touchpad_3fg_drag;
+
+    /** Whether libinput reports the device as a touchpad. */
+    bool is_touchpad = false;
 
     void reconfigure_device(std::shared_ptr<wf::config::section_t> device_section) override;
 };
