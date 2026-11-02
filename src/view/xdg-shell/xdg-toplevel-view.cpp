@@ -315,7 +315,7 @@ void wf::xdg_toplevel_view_t::map()
     // window rule). Focusing it would unminimize it.
     if (!this->minimized)
     {
-        wf::get_core().default_wm->focus_request(self());
+        focus_toplevel_on_map();
     }
 
     /* Might trigger repositioning */
