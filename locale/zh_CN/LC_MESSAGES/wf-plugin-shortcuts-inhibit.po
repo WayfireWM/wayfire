@@ -1,0 +1,49 @@
+# Wayfire 简体中文翻译（zh_CN）
+# Maintainer: WenYin-Community <https://github.com/WenYin-Community/wayfire>
+# Translator: Wenyin Root <ruojiner@hotmail.com>
+msgid ""
+msgstr ""
+"Project-Id-Version: wayfire\n"
+"POT-Creation-Date: 2025-09-18 14:55+0300\n"
+"PO-Revision-Date: 2026-11-11 12:00+0800\n"
+"Last-Translator: Wenyin Root <ruojiner@hotmail.com>\n"
+"Language-Team: WenYin-Community <ruojiner@hotmail.com>\n"
+"Language: zh_CN\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. (itstool) path: plugin/_short
+msgid "Keyboard Shortcuts Inhibit Protocol"
+msgstr "键盘快捷键抑制协议"
+
+#. (itstool) path: plugin/_long
+msgid "An implementation of the keyboard-shortcuts-inhibit-v1 protocol."
+msgstr "keyboard-shortcuts-inhibit-v1 协议的实现。"
+
+#. (itstool) path: option/_short
+msgid "Inhibit by default"
+msgstr "默认抑制"
+
+#. (itstool) path: option/_long
+msgid ""
+"Criteria for which apps to inhibit input for even though they do not request "
+"it via the protocol."
+msgstr "指定即使应用未通过协议请求，也对其抑制输入的条件。"
+
+#. (itstool) path: option/_short
+msgid "Ignore views"
+msgstr "忽略窗口"
+
+#. (itstool) path: option/_long
+msgid "Restrict matched views from activating shortcuts inhibit."
+msgstr "限制匹配的窗口激活快捷键抑制。"
+
+#. (itstool) path: option/_short
+msgid "Break current inhibitor"
+msgstr "解除当前抑制"
+
+#. (itstool) path: option/_long
+msgid "A keybinding to remove the currently active inhibitor temporary."
+msgstr "用于临时移除当前活动抑制的按键绑定。"

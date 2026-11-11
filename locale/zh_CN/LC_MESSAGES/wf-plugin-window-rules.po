@@ -1,0 +1,40 @@
+# Wayfire 简体中文翻译（zh_CN）
+# Maintainer: WenYin-Community <https://github.com/WenYin-Community/wayfire>
+# Translator: Wenyin Root <ruojiner@hotmail.com>
+msgid ""
+msgstr ""
+"Project-Id-Version: wayfire\n"
+"POT-Creation-Date: 2025-09-18 14:55+0300\n"
+"PO-Revision-Date: 2026-11-11 12:00+0800\n"
+"Last-Translator: Wenyin Root <ruojiner@hotmail.com>\n"
+"Language-Team: WenYin-Community <ruojiner@hotmail.com>\n"
+"Language: zh_CN\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. (itstool) path: plugin/_short
+msgid "Window Rules"
+msgstr "窗口规则"
+
+#. (itstool) path: plugin/_long
+msgid ""
+"A plugin to apply specific commands to windows by using various criteria."
+msgstr "使用各种条件对窗口执行特定命令的插件。"
+
+#. (itstool) path: option/_short
+msgid "Window rules"
+msgstr "窗口规则"
+
+#. (itstool) path: option/_long
+msgid "Apply specific commands to windows by using various criteria"
+msgstr "使用各种条件对窗口执行特定命令。"
+
+#. (itstool) path: entry/_short
+msgid "Rule"
+msgstr "规则"
+
+#. (itstool) path: entry/_long
+msgid "Defines the rule to be applied"
+msgstr "定义要应用的规则。"

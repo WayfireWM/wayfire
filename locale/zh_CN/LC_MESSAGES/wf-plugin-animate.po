@@ -1,0 +1,221 @@
+# Wayfire 简体中文翻译（zh_CN）
+# Maintainer: WenYin-Community <https://github.com/WenYin-Community/wayfire>
+# Translator: Wenyin Root <ruojiner@hotmail.com>
+msgid ""
+msgstr ""
+"Project-Id-Version: wayfire\n"
+"POT-Creation-Date: 2025-09-18 14:55+0300\n"
+"PO-Revision-Date: 2026-11-11 12:00+0800\n"
+"Last-Translator: Wenyin Root <ruojiner@hotmail.com>\n"
+"Language-Team: WenYin-Community <ruojiner@hotmail.com>\n"
+"Language: zh_CN\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. (itstool) path: plugin/_short
+msgid "Animate"
+msgstr "动画"
+
+#. (itstool) path: plugin/_long
+msgid "A plugin which provides animations when a window is opened or closed."
+msgstr "在窗口打开或关闭时提供动画的插件。"
+
+#. (itstool) path: option/_short
+msgid "Open animation"
+msgstr "打开动画"
+
+#. (itstool) path: option/_long
+msgid "Specifies the type of animation when opening a window."
+msgstr "指定打开窗口时的动画类型。"
+
+#. (itstool) path: desc/_name
+msgid "None"
+msgstr "无"
+
+#. (itstool) path: desc/_name
+msgid "Fade"
+msgstr "淡入淡出"
+
+#. (itstool) path: desc/_name
+msgid "Zoom"
+msgstr "缩放"
+
+#. (itstool) path: desc/_name
+msgid "Fire"
+msgstr "火焰"
+
+#. (itstool) path: desc/_name
+msgid "Zap"
+msgstr "闪电"
+
+#. (itstool) path: desc/_name
+msgid "Spin"
+msgstr "旋转"
+
+#. (itstool) path: option/_short
+msgid "Close animation"
+msgstr "关闭动画"
+
+#. (itstool) path: option/_long
+msgid "Specifies the type of animation when closing a window."
+msgstr "指定关闭窗口时的动画类型。"
+
+#. (itstool) path: option/_short
+msgid "Minimize animation"
+msgstr "最小化动画"
+
+#. (itstool) path: option/_long
+msgid "Specifies the type of animation when minimizing a window."
+msgstr "指定最小化窗口时的动画类型。"
+
+#. (itstool) path: desc/_name
+msgid "Squeezimize"
+msgstr "挤压最小化"
+
+#. (itstool) path: option/_short
+msgid "Animation enabled for specified window types"
+msgstr "为指定窗口类型启用动画"
+
+#. (itstool) path: option/_long
+msgid "Specifies the window types to be animated."
+msgstr "指定要应用动画的窗口类型。"
+
+#. (itstool) path: option/_short
+msgid "Duration"
+msgstr "持续时间"
+
+#. (itstool) path: option/_long
+msgid "Sets the duration of the animation in milliseconds."
+msgstr "设置动画持续时间，单位为毫秒。"
+
+#. (itstool) path: option/_short
+msgid "System fade duration when Wayfire starts"
+msgstr "Wayfire 启动时的系统淡入持续时间"
+
+#. (itstool) path: option/_long
+msgid "Sets the duration of fading (in milliseconds) when Wayfire starts."
+msgstr "设置 Wayfire 启动时的淡入持续时间（毫秒）。"
+
+#. (itstool) path: option/_short
+msgid "Fade animation enabled for specified window types"
+msgstr "为指定窗口类型启用淡入淡出动画"
+
+#. (itstool) path: option/_long
+msgid "Specifies the window types to be animated with a fade effect."
+msgstr "指定要应用淡入淡出效果的窗口类型。"
+
+#. (itstool) path: option/_short
+msgid "Fade duration"
+msgstr "淡入淡出持续时间"
+
+#. (itstool) path: option/_long
+msgid ""
+"Sets the duration for the _fade_ animation in milliseconds. Only applies for "
+"windows matched by `animate.fade_enabled_for`."
+msgstr "设置 _淡入淡出_ 动画的持续时间（毫秒）。仅对匹配 `animate.fade_enabled_for` 的窗口生效。"
+
+#. (itstool) path: option/_short
+msgid "Zoom animation enabled for specified window types"
+msgstr "为指定窗口类型启用缩放动画"
+
+#. (itstool) path: option/_long
+msgid "Specifies the window types to be animated with a zoom effect."
+msgstr "指定要应用缩放效果的窗口类型。"
+
+#. (itstool) path: option/_short
+msgid "Zoom duration"
+msgstr "缩放持续时间"
+
+#. (itstool) path: option/_long
+msgid ""
+"Sets the duration for the _zoom_ animation in milliseconds. Only applies for "
+"windows matched by `animate.zoom_enabled_for`."
+msgstr "设置 _缩放_ 动画的持续时间（毫秒）。仅对匹配 `animate.zoom_enabled_for` 的窗口生效。"
+
+#. (itstool) path: option/_short
+msgid "Fire animation enabled for specified window types"
+msgstr "为指定窗口类型启用火焰动画"
+
+#. (itstool) path: option/_long
+msgid "Specifies the window types to be animated with a fire effect."
+msgstr "指定要应用火焰效果的窗口类型。"
+
+#. (itstool) path: option/_short
+msgid "Fire duration"
+msgstr "火焰持续时间"
+
+#. (itstool) path: option/_long
+msgid ""
+"Sets the duration for the _fire_ animation in milliseconds. Only applies for "
+"windows matched by `animate.fire_enabled_for`."
+msgstr "设置 _火焰_ 动画的持续时间（毫秒）。仅对匹配 `animate.fire_enabled_for` 的窗口生效。"
+
+#. (itstool) path: option/_short
+msgid "Fire particles"
+msgstr "火焰粒子数"
+
+#. (itstool) path: option/_long
+msgid "Sets the number of fire particles."
+msgstr "设置火焰粒子的数量。"
+
+#. (itstool) path: option/_short
+msgid "Fire particle size"
+msgstr "火焰粒子大小"
+
+#. (itstool) path: option/_long
+msgid "Sets the size of the fire particles in pixels."
+msgstr "设置火焰粒子的大小，单位为像素。"
+
+#. (itstool) path: option/_short
+msgid "Random fire colors"
+msgstr "随机火焰颜色"
+
+#. (itstool) path: option/_long
+msgid ""
+"Sets whether to use one solid color or select a random color for each "
+"particle"
+msgstr "设置使用单一纯色，还是为每个粒子随机选择颜色。"
+
+#. (itstool) path: option/_short
+msgid "Color of the fire"
+msgstr "火焰颜色"
+
+#. (itstool) path: option/_long
+msgid "Sets the color of the fire effects, alpha is ignored"
+msgstr "设置火焰效果的颜色，忽略 alpha 通道。"
+
+#. (itstool) path: option/_short
+msgid "Squeezimize duration"
+msgstr "挤压最小化持续时间"
+
+#. (itstool) path: option/_long
+msgid "Sets the duration of the squeezimize animation in milliseconds."
+msgstr "设置挤压最小化动画的持续时间（毫秒）。"
+
+#. (itstool) path: option/_short
+msgid "Zap duration"
+msgstr "闪电持续时间"
+
+#. (itstool) path: option/_long
+msgid "Sets the duration for the zap animation in milliseconds."
+msgstr "设置闪电动画的持续时间（毫秒）。"
+
+#. (itstool) path: option/_short
+msgid "Spin duration"
+msgstr "旋转持续时间"
+
+#. (itstool) path: option/_long
+msgid "Sets the duration for the spin animation in milliseconds."
+msgstr "设置旋转动画的持续时间（毫秒）。"
+
+#. (itstool) path: option/_short
+msgid "Spin rotations"
+msgstr "旋转圈数"
+
+#. (itstool) path: option/_long
+msgid ""
+"Number of rotations for the spin animation. Negative values reverse the spin "
+"direction."
+msgstr "旋转动画的旋转圈数。负值会反转旋转方向。"

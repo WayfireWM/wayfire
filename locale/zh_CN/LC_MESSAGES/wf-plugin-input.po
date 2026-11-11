@@ -1,0 +1,393 @@
+# Wayfire 简体中文翻译（zh_CN）
+# Maintainer: WenYin-Community <https://github.com/WenYin-Community/wayfire>
+# Translator: Wenyin Root <ruojiner@hotmail.com>
+msgid ""
+msgstr ""
+"Project-Id-Version: wayfire\n"
+"POT-Creation-Date: 2025-09-18 14:55+0300\n"
+"PO-Revision-Date: 2026-11-11 12:00+0800\n"
+"Last-Translator: Wenyin Root <ruojiner@hotmail.com>\n"
+"Language-Team: WenYin-Community <ruojiner@hotmail.com>\n"
+"Language: zh_CN\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. (itstool) path: plugin/_short
+msgid "Input"
+msgstr "输入"
+
+#. (itstool) path: plugin/_long
+msgid "Input configuration."
+msgstr "输入配置。"
+
+#. (itstool) path: option/_short
+msgid "Left-handed mode"
+msgstr "左手模式"
+
+#. (itstool) path: option/_long
+msgid ""
+"Switches the device’s functionality to be more accommodating for left-handed "
+"users."
+msgstr "将设备功能切换为更适合左手用户的方式。"
+
+#. (itstool) path: group/_short
+msgid "Keyboard"
+msgstr "键盘"
+
+#. (itstool) path: group/_long
+msgid "Configure the keyboard."
+msgstr "配置键盘。"
+
+#. (itstool) path: option/_short
+msgid "Modifier binding timeout"
+msgstr "修饰键绑定超时"
+
+#. (itstool) path: option/_long
+msgid ""
+"Cancels modifier actions (like `Super` for the `expo` plugin) when held for "
+"the specified timeout (in milliseconds). Setting the value to **0** never "
+"cancels."
+msgstr "按住修饰键达到指定超时时间（毫秒）后取消修饰键动作（例如 `expo` 插件的 `Super`）。值为 **0** 表示从不取消。"
+
+#. (itstool) path: option/_short
+msgid "Key repeat delay"
+msgstr "按键重复延迟"
+
+#. (itstool) path: option/_long
+msgid "Sets the amount of time a key must be held before it starts repeating."
+msgstr "设置按键开始重复前需要按住的时间。"
+
+#. (itstool) path: option/_short
+msgid "Key repeat rate"
+msgstr "按键重复速率"
+
+#. (itstool) path: option/_long
+msgid ""
+"Sets the frequency of key repeats once the `input.kb_repeat_delay` has "
+"passed."
+msgstr "设置超过 `input.kb_repeat_delay` 后按键重复的频率。"
+
+#. (itstool) path: option/_short
+msgid "Numlock default state"
+msgstr "数字锁定默认状态"
+
+#. (itstool) path: option/_long
+msgid "Default numlock state when wayfire starts."
+msgstr "Wayfire 启动时的默认数字锁定状态。"
+
+#. (itstool) path: option/_short
+msgid "Capslock default state"
+msgstr "大写锁定默认状态"
+
+#. (itstool) path: option/_long
+msgid "Default capslock state when wayfire starts."
+msgstr "Wayfire 启动时的默认大写锁定状态。"
+
+#. (itstool) path: option/_short
+msgid "XKB layout"
+msgstr "XKB 布局"
+
+#. (itstool) path: option/_long
+msgid ""
+"Sets the layout of the keyboard, like `us` or `fr`. Multiple layouts can be "
+"specified by separating them with commas."
+msgstr "设置键盘布局，例如 `us` 或 `fr`。多个布局可用逗号分隔。"
+
+#. (itstool) path: option/_short
+msgid "XKB model"
+msgstr "XKB 型号"
+
+#. (itstool) path: option/_long
+msgid ""
+"Sets the model of the keyboard. This has an influence for some extra keys "
+"your keyboard might have."
+msgstr "设置键盘型号。这会影响键盘上可能具有的某些额外按键。"
+
+#. (itstool) path: option/_short
+msgid "XKB options"
+msgstr "XKB 选项"
+
+#. (itstool) path: option/_long
+msgid ""
+"Sets extra XKB configuration options for the keyboard. Multiple options can "
+"be specified by separating them with commas."
+msgstr "设置键盘的额外 XKB 配置选项。多个选项可用逗号分隔。"
+
+#. (itstool) path: option/_short
+msgid "XKB rules"
+msgstr "XKB 规则"
+
+#. (itstool) path: option/_long
+msgid "Sets files of rules to be used for keyboard mapping composition."
+msgstr "设置用于组合键盘映射的规则文件。"
+
+#. (itstool) path: option/_short
+msgid "XKB variant"
+msgstr "XKB 变体"
+
+#. (itstool) path: option/_long
+msgid "Sets the variant of the keyboard, like `dvorak` or `colemak`."
+msgstr "设置键盘变体，例如 `dvorak` 或 `colemak`。"
+
+#. (itstool) path: group/_short
+msgid "Mouse"
+msgstr "鼠标"
+
+#. (itstool) path: group/_long
+msgid "Configure the mouse."
+msgstr "配置鼠标。"
+
+#. (itstool) path: option/_short
+msgid "Middle-click emulation"
+msgstr "中键模拟"
+
+#. (itstool) path: option/_long
+msgid ""
+"Enables middle button emulation by hitting the left and right buttons "
+"simultaneously."
+msgstr "同时按下左右按钮来模拟中键。"
+
+#. (itstool) path: option/_short
+msgid "Mouse acceleration profile"
+msgstr "鼠标加速配置"
+
+#. (itstool) path: option/_long
+msgid "Sets the pointer acceleration profile."
+msgstr "设置指针加速配置。"
+
+#. (itstool) path: desc/_name
+msgid "Default"
+msgstr "默认"
+
+#. (itstool) path: desc/_name
+msgid "None"
+msgstr "无"
+
+#. (itstool) path: desc/_name
+msgid "Adaptive"
+msgstr "自适应"
+
+#. (itstool) path: desc/_name
+msgid "Flat"
+msgstr "平面"
+
+#. (itstool) path: option/_short
+msgid "Mouse cursor speed"
+msgstr "鼠标光标速度"
+
+#. (itstool) path: option/_long
+msgid "Changes the pointer acceleration."
+msgstr "更改指针加速度。"
+
+#. (itstool) path: option/_short
+msgid "Mouse scroll speed"
+msgstr "鼠标滚动速度"
+
+#. (itstool) path: option/_long
+msgid ""
+"Changes the mouse scroll factor. Scroll speed will be scaled by the given "
+"value, which must be non-negative."
+msgstr "更改鼠标滚动系数。滚动速度将按给定值缩放，该值必须为非负数。"
+
+#. (itstool) path: option/_short
+msgid "Mouse natural scroll"
+msgstr "鼠标自然滚动"
+
+#. (itstool) path: option/_long
+msgid "Enables or disables mouse natural (inverted) scrolling."
+msgstr "启用或禁用鼠标自然（反向）滚动。"
+
+#. (itstool) path: group/_short
+msgid "Touchpad"
+msgstr "触摸板"
+
+#. (itstool) path: group/_long
+msgid "Configure the touchpad."
+msgstr "配置触摸板。"
+
+#. (itstool) path: option/_short
+msgid "Touchpad acceleration profile"
+msgstr "触摸板加速配置"
+
+#. (itstool) path: option/_long
+msgid "Sets the touchpad acceleration profile."
+msgstr "设置触摸板加速配置。"
+
+#. (itstool) path: option/_short
+msgid "Tap-to-click"
+msgstr "轻触点击"
+
+#. (itstool) path: option/_long
+msgid "Enables or disables tap-to-click."
+msgstr "启用或禁用轻触点击。"
+
+#. (itstool) path: option/_short
+msgid "Click method"
+msgstr "点击方式"
+
+#. (itstool) path: option/_long
+msgid "Changes the click method."
+msgstr "更改点击方式。"
+
+#. (itstool) path: desc/_name
+msgid "Button areas"
+msgstr "按钮区域"
+
+#. (itstool) path: desc/_name
+msgid "Clickfinger"
+msgstr "手指点击"
+
+#. (itstool) path: option/_short
+msgid "Scroll method"
+msgstr "滚动方式"
+
+#. (itstool) path: option/_long
+msgid "Changes the scroll method."
+msgstr "更改滚动方式。"
+
+#. (itstool) path: desc/_name
+msgid "Two-finger"
+msgstr "双指"
+
+#. (itstool) path: desc/_name
+msgid "Edge"
+msgstr "边缘"
+
+#. (itstool) path: desc/_name
+msgid "On-button down"
+msgstr "按下按钮时"
+
+#. (itstool) path: option/_short
+msgid "Disable touchpad while typing"
+msgstr "输入时禁用触摸板"
+
+#. (itstool) path: option/_long
+msgid "Disables the touchpad while typing."
+msgstr "输入时禁用触摸板。"
+
+#. (itstool) path: option/_short
+msgid "Disable touchpad while using the mouse"
+msgstr "使用鼠标时禁用触摸板"
+
+#. (itstool) path: option/_long
+msgid "Disables the touchpad while using the mouse."
+msgstr "使用鼠标时禁用触摸板。"
+
+#. (itstool) path: option/_short
+msgid "Natural scroll"
+msgstr "自然滚动"
+
+#. (itstool) path: option/_long
+msgid "Enables or disables natural (inverted) scrolling."
+msgstr "启用或禁用自然（反向）滚动。"
+
+#. (itstool) path: option/_short
+msgid "Tap and drag"
+msgstr "轻触拖动"
+
+#. (itstool) path: option/_long
+msgid "Enables or disables tap-and-drag."
+msgstr "启用或禁用轻触拖动。"
+
+#. (itstool) path: option/_short
+msgid "Drag lock"
+msgstr "拖动锁定"
+
+#. (itstool) path: option/_long
+msgid "Enables or disables drag lock."
+msgstr "启用或禁用拖动锁定。"
+
+#. (itstool) path: option/_short
+msgid "Multi-finger drag"
+msgstr "多指拖动"
+
+#. (itstool) path: option/_long
+msgid ""
+"Enables or disables 3-finger or 4-finger drag. Requires libinput ≥ 1.28."
+msgstr "启用或禁用三指或四指拖动。需要 libinput ≥ 1.28。"
+
+#. (itstool) path: desc/_name
+msgid "Drag using 3 fingers"
+msgstr "三指拖动"
+
+#. (itstool) path: desc/_name
+msgid "Drag using 4 fingers"
+msgstr "四指拖动"
+
+#. (itstool) path: option/_short
+msgid "Touchpad cursor speed"
+msgstr "触摸板光标速度"
+
+#. (itstool) path: option/_long
+msgid "Changes the touchpad acceleration."
+msgstr "更改触摸板加速度。"
+
+#. (itstool) path: option/_short
+msgid "Touchscreen gesture sensitivity"
+msgstr "触摸屏手势灵敏度"
+
+#. (itstool) path: option/_long
+msgid ""
+"Change the sensitivity of the built-in gesture detection. Higher values mean "
+"that less finger movement is required to trigger the gesture."
+msgstr "更改内置手势检测的灵敏度。值越高，触发手势所需的手指移动越少。"
+
+#. (itstool) path: option/_short
+msgid "Touchpad scroll speed"
+msgstr "触摸板滚动速度"
+
+#. (itstool) path: option/_long
+msgid ""
+"Changes the touchpad scroll factor. Scroll speed will be scaled by the given "
+"value, which must be non-negative."
+msgstr "更改触摸板滚动系数。滚动速度将按给定值缩放，该值必须为非负数。"
+
+#. (itstool) path: group/_short
+msgid "Tablet"
+msgstr "数位板"
+
+#. (itstool) path: group/_long
+msgid "Configure graphic tablets."
+msgstr "配置绘图板。"
+
+#. (itstool) path: option/_short
+msgid "Motion Mode"
+msgstr "移动模式"
+
+#. (itstool) path: option/_long
+msgid "Sets the motion mode for graphic tablets."
+msgstr "设置绘图板的移动模式。"
+
+#. (itstool) path: desc/_name
+msgid "Absolute"
+msgstr "绝对"
+
+#. (itstool) path: desc/_name
+msgid "Relative"
+msgstr "相对"
+
+#. (itstool) path: group/_short
+msgid "Cursor"
+msgstr "光标"
+
+#. (itstool) path: group/_long
+msgid "Configure the cursor."
+msgstr "配置光标。"
+
+#. (itstool) path: option/_short
+msgid "Cursor theme"
+msgstr "光标主题"
+
+#. (itstool) path: option/_long
+msgid "Overrides the system default `XCursor` theme."
+msgstr "覆盖系统默认的 `XCursor` 主题。"
+
+#. (itstool) path: option/_short
+msgid "Cursor size"
+msgstr "光标大小"
+
+#. (itstool) path: option/_long
+msgid "Overrides the system default `XCursor` size."
+msgstr "覆盖系统默认的 `XCursor` 大小。"
