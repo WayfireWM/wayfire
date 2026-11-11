@@ -1,0 +1,166 @@
+# Wayfire 简体中文翻译（zh_CN）
+# Maintainer: WenYin-Community <https://github.com/WenYin-Community/wayfire>
+# Translator: Wenyin Root <ruojiner@hotmail.com>
+msgid ""
+msgstr ""
+"Project-Id-Version: wayfire\n"
+"POT-Creation-Date: 2025-09-18 14:55+0300\n"
+"PO-Revision-Date: 2026-11-11 12:00+0800\n"
+"Last-Translator: Wenyin Root <ruojiner@hotmail.com>\n"
+"Language-Team: WenYin-Community <ruojiner@hotmail.com>\n"
+"Language: zh_CN\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. (itstool) path: plugin/_short
+msgid "Simple Tile"
+msgstr "简单平铺"
+
+#. (itstool) path: plugin/_long
+msgid ""
+"A plugin which provides some tiling features, inspired by Sway. The plugin "
+"is meant to contain only the basics."
+msgstr "提供一些平铺功能、受 Sway 启发的插件。该插件只包含基础功能。"
+
+#. (itstool) path: option/_short
+msgid "Tile enabled for specified window types"
+msgstr "为指定窗口类型启用平铺"
+
+#. (itstool) path: option/_long
+msgid "Enables tiling for windows matching the specified criteria."
+msgstr "为匹配指定条件的窗口启用平铺。"
+
+#. (itstool) path: option/_short
+msgid "Keep fullscreen on adjacent"
+msgstr "切换到相邻窗口时保持全屏"
+
+#. (itstool) path: option/_long
+msgid ""
+"Specifies whether to keep fullscreen state when changing the focus. If "
+"**true**, the next focused window will also get fullscreen. If **false**, "
+"leaves fullscreen."
+msgstr "指定切换焦点时是否保持全屏状态。若为 **true**，下一个聚焦的窗口也会进入全屏；若为 **false**，则退出全屏。"
+
+#. (itstool) path: option/_short
+msgid "Button move"
+msgstr "拖动按钮"
+
+#. (itstool) path: option/_long
+msgid ""
+"When the specified button is held down, you can drag and drop tiled windows "
+"to reorder them and to change the tiling direction."
+msgstr "按住指定按钮时，可以拖放平铺窗口以重新排序并更改平铺方向。"
+
+#. (itstool) path: option/_short
+msgid "Button resize"
+msgstr "调整大小按钮"
+
+#. (itstool) path: option/_long
+msgid ""
+"When the specified button is held down, you can drag tiled windows to resize "
+"them."
+msgstr "按住指定按钮时，可以拖动平铺窗口来调整其大小。"
+
+#. (itstool) path: option/_short
+msgid "Key toggle"
+msgstr "切换按键"
+
+#. (itstool) path: option/_long
+msgid "Toggles tiling mode with the specified key."
+msgstr "使用指定按键切换平铺模式。"
+
+#. (itstool) path: option/_short
+msgid "Key focus left"
+msgstr "向左聚焦按键"
+
+#. (itstool) path: option/_long
+msgid "Moves focus to the window left with the specified key."
+msgstr "使用指定按键将焦点移到左侧窗口。"
+
+#. (itstool) path: option/_short
+msgid "Key focus right"
+msgstr "向右聚焦按键"
+
+#. (itstool) path: option/_long
+msgid "Moves focus to the window right with the specified key."
+msgstr "使用指定按键将焦点移到右侧窗口。"
+
+#. (itstool) path: option/_short
+msgid "Key focus above"
+msgstr "向上聚焦按键"
+
+#. (itstool) path: option/_long
+msgid "Moves focus to the window above with the specified key."
+msgstr "使用指定按键将焦点移到上方窗口。"
+
+#. (itstool) path: option/_short
+msgid "Key focus below"
+msgstr "向下聚焦按键"
+
+#. (itstool) path: option/_long
+msgid "Moves focus to the window below with the specified key."
+msgstr "使用指定按键将焦点移到下方窗口。"
+
+#. (itstool) path: option/_short
+msgid "Key toggle maximized"
+msgstr "切换最大化按键"
+
+#. (itstool) path: option/_long
+msgid ""
+"Toggles the maximized state of the currently focused tiled view. When "
+"enabled, the view fills the workarea (like fullscreen, but stays in its "
+"tile). When disabled, the view returns to its previous tiled size."
+msgstr "切换当前聚焦平铺窗口的最大化状态。启用时，窗口填满工作区（类似全屏，但仍保留在平铺位置）；禁用时，窗口恢复为之前的平铺大小。"
+
+#. (itstool) path: option/_short
+msgid "Inner gap size"
+msgstr "内部间隙大小"
+
+#. (itstool) path: option/_long
+msgid ""
+"Number of pixels to shrink of a view when it has a neighbor in a given "
+"direction."
+msgstr "窗口在某个方向上有相邻窗口时缩小的像素数。"
+
+#. (itstool) path: option/_short
+msgid "Outer horizontal gap size"
+msgstr "外部水平间隙大小"
+
+#. (itstool) path: option/_long
+msgid ""
+"Number of pixels to shrink of a view when it has no neighbor on the left or "
+"on the right."
+msgstr "窗口左/右没有相邻窗口时缩小的像素数。"
+
+#. (itstool) path: option/_short
+msgid "Outer vertical gap size"
+msgstr "外部垂直间隙大小"
+
+#. (itstool) path: option/_long
+msgid ""
+"Number of pixels to shrink of a view when it has no neighbor above or below."
+msgstr "窗口上/下没有相邻窗口时缩小的像素数。"
+
+#. (itstool) path: option/_short
+msgid "Resize animation duration"
+msgstr "调整大小动画持续时间"
+
+#. (itstool) path: option/_long
+msgid ""
+"The duration of the crossfade animation in situations where a tiled view's "
+"geometry changes."
+msgstr "平铺窗口几何尺寸变化时交叉淡化动画的持续时间。"
+
+#. (itstool) path: option/_short
+msgid "Preview fill color"
+msgstr "预览填充颜色"
+
+#. (itstool) path: option/_short
+msgid "Preview border color"
+msgstr "预览边框颜色"
+
+#. (itstool) path: option/_short
+msgid "Preview border width"
+msgstr "预览边框宽度"

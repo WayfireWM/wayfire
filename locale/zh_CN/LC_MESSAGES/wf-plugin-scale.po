@@ -1,0 +1,187 @@
+# Wayfire 简体中文翻译（zh_CN）
+# Maintainer: WenYin-Community <https://github.com/WenYin-Community/wayfire>
+# Translator: Wenyin Root <ruojiner@hotmail.com>
+msgid ""
+msgstr ""
+"Project-Id-Version: wayfire\n"
+"POT-Creation-Date: 2025-09-18 14:55+0300\n"
+"PO-Revision-Date: 2026-11-11 12:00+0800\n"
+"Last-Translator: Wenyin Root <ruojiner@hotmail.com>\n"
+"Language-Team: WenYin-Community <ruojiner@hotmail.com>\n"
+"Language: zh_CN\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. (itstool) path: plugin/_short
+msgid "Scale"
+msgstr "窗口概览"
+
+#. (itstool) path: plugin/_long
+msgid "Show all views on screen."
+msgstr "在屏幕上显示所有窗口。"
+
+#. (itstool) path: group/_short
+msgid "Behavior"
+msgstr "行为"
+
+#. (itstool) path: option/_short
+msgid "Toggle"
+msgstr "切换"
+
+#. (itstool) path: option/_long
+msgid "Toggles scale with the specified activator."
+msgstr "使用指定激活器切换窗口概览。"
+
+#. (itstool) path: option/_short
+msgid "Toggle for all workspaces"
+msgstr "切换所有工作区的窗口概览"
+
+#. (itstool) path: option/_long
+msgid "Toggles scale showing windows from all workspaces."
+msgstr "切换显示所有工作区窗口的窗口概览。"
+
+#. (itstool) path: option/_short
+msgid "Animation Transition Time"
+msgstr "动画过渡时间"
+
+#. (itstool) path: option/_long
+msgid "Time it takes for views to transition. Units are in milliseconds."
+msgstr "窗口过渡所需的时间，单位为毫秒。"
+
+#. (itstool) path: option/_short
+msgid "Allow Zoomed Views"
+msgstr "允许放大窗口"
+
+#. (itstool) path: option/_long
+msgid "Whether scaled views can have a size larger than their original size."
+msgstr "缩放视图中窗口的大小是否可以超过其原始大小。"
+
+#. (itstool) path: option/_short
+msgid "Close views with middle click"
+msgstr "中键点击关闭窗口"
+
+#. (itstool) path: option/_long
+msgid ""
+"Use the middle mouse button to close views in the scale state. Only applies "
+"if interactive mode is not enabled."
+msgstr "在窗口概览状态中使用鼠标中键关闭窗口。仅在未启用交互模式时生效。"
+
+#. (itstool) path: option/_short
+msgid "Include minimized views"
+msgstr "包含最小化窗口"
+
+#. (itstool) path: option/_long
+msgid "Whether to show views that are minimized when starting scale."
+msgstr "启动窗口概览时是否显示已最小化的窗口。"
+
+#. (itstool) path: option/_short
+msgid "Close on new views"
+msgstr "新窗口出现时关闭"
+
+#. (itstool) path: option/_long
+msgid "Whether to close scale when a new view is mapped."
+msgstr "当新窗口映射时是否关闭窗口概览。"
+
+#. (itstool) path: group/_short
+msgid "Appearance"
+msgstr "外观"
+
+#. (itstool) path: option/_short
+msgid "Spacing"
+msgstr "间距"
+
+#. (itstool) path: option/_long
+msgid "Sets the spacing between the views."
+msgstr "设置窗口之间的间距。"
+
+#. (itstool) path: option/_short
+msgid "Outer Margin"
+msgstr "外边距"
+
+#. (itstool) path: option/_long
+msgid ""
+"The outer margin is the space reserved between the scaled windows and the "
+"monitor edges while scale is active."
+msgstr "外边距是窗口概览激活时在缩放窗口与显示器边缘之间保留的空间。"
+
+#. (itstool) path: option/_short
+msgid "Inactive Opacity"
+msgstr "非活动窗口不透明度"
+
+#. (itstool) path: option/_long
+msgid "Set the opacity value of the inactive windows."
+msgstr "设置非活动窗口的不透明度。"
+
+#. (itstool) path: option/_short
+msgid "Minimized View Opacity"
+msgstr "最小化窗口不透明度"
+
+#. (itstool) path: option/_long
+msgid "Set the opacity value of minimized views that are shown in scale."
+msgstr "设置窗口概览中显示的最小化窗口的不透明度。"
+
+#. (itstool) path: option/_short
+msgid "Show views' title"
+msgstr "显示窗口标题"
+
+#. (itstool) path: option/_long
+msgid "Whether to display the title of each view as an overlay."
+msgstr "是否将每个窗口的标题显示为叠加层。"
+
+#. (itstool) path: desc/_name
+msgid "Never"
+msgstr "从不"
+
+#. (itstool) path: desc/_name
+msgid "Only for the view under the pointer"
+msgstr "仅指针下的窗口"
+
+#. (itstool) path: desc/_name
+msgid "For all views"
+msgstr "所有窗口"
+
+#. (itstool) path: option/_short
+msgid "Font size for title"
+msgstr "标题字体大小"
+
+#. (itstool) path: option/_long
+msgid "Size of font used to display an overlay of each view's title."
+msgstr "显示每个窗口标题叠加层所用的字体大小。"
+
+#. (itstool) path: option/_short
+msgid "Position for title"
+msgstr "标题位置"
+
+#. (itstool) path: option/_long
+msgid "Position for overlays of views' titles when shown."
+msgstr "显示窗口标题叠加层时的位置。"
+
+#. (itstool) path: desc/_name
+msgid "Top"
+msgstr "顶部"
+
+#. (itstool) path: desc/_name
+msgid "Center"
+msgstr "居中"
+
+#. (itstool) path: desc/_name
+msgid "Bottom"
+msgstr "底部"
+
+#. (itstool) path: option/_short
+msgid "Background color"
+msgstr "背景颜色"
+
+#. (itstool) path: option/_long
+msgid "Background color for title overlay text."
+msgstr "标题叠加层文字的背景颜色。"
+
+#. (itstool) path: option/_short
+msgid "Text color"
+msgstr "文字颜色"
+
+#. (itstool) path: option/_long
+msgid "Text color for title overlay."
+msgstr "标题叠加层文字的颜色。"

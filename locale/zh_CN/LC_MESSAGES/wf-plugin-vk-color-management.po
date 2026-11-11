@@ -1,0 +1,25 @@
+# Wayfire 简体中文翻译（zh_CN）
+# Maintainer: WenYin-Community <https://github.com/WenYin-Community/wayfire>
+# Translator: Wenyin Root <ruojiner@hotmail.com>
+msgid ""
+msgstr ""
+"Project-Id-Version: wayfire\n"
+"POT-Creation-Date: 2025-09-18 14:55+0300\n"
+"PO-Revision-Date: 2026-11-11 12:00+0800\n"
+"Last-Translator: Wenyin Root <ruojiner@hotmail.com>\n"
+"Language-Team: WenYin-Community <ruojiner@hotmail.com>\n"
+"Language: zh_CN\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. (itstool) path: plugin/_short
+msgid "ICC profile support for the GLES2 renderer"
+msgstr "GLES2 渲染器的 ICC 配置文件支持"
+
+#. (itstool) path: plugin/_long
+msgid ""
+"Adds support for ICC profiles when running with the GLES2 renderer. Needs "
+"wlroots' vulkan renderer."
+msgstr "在使用 GLES2 渲染器时添加 ICC 配置文件支持。需要 wlroots 的 Vulkan 渲染器。"
