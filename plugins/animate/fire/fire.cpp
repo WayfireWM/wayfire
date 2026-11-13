@@ -7,6 +7,10 @@
 #include "wayfire/scene.hpp"
 #include "wayfire/view-transform.hpp"
 
+#if WF_HAS_VULKANFX
+    #include <wayfire/vulkan.hpp>
+#endif
+
 #include <memory>
 #include <wayfire/output.hpp>
 #include <wayfire/core.hpp>
@@ -194,6 +198,17 @@ class fire_render_instance_t : public wf::scene::render_instance_t
                 self->ps->render(wf::gles::render_target_orthographic_projection(data.target) * translate);
             });
         });
+
+#if WF_HAS_VULKANFX
+        data.pass->custom_vulkan_subpass([&] (wf::vulkan_render_state_t& state,
+                                              wf::vk::command_buffer_t& cmd_buf)
+        {
+            /* Vulkan's NDC has the Y axis pointing down, so the projection
+             * differs from the GLES one. */
+            auto matrix = wf::vk::render_target_transform(data.target) * translate;
+            self->ps->render_vk(state, cmd_buf, data.target, data.damage, matrix);
+        });
+#endif
     }
 
     void presentation_feedback(wf::output_t *output) override
