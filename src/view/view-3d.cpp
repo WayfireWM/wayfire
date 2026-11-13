@@ -62,6 +62,7 @@ struct core_vulkan_push_data_t
     glm::mat4 transform;
     glm::vec2 uv_scale;
     glm::vec2 uv_offset;
+    float alpha;
 };
 
 core_vulkan_state_t& core_ensure_vk(wf::vulkan_render_state_t& state)
@@ -326,6 +327,7 @@ class view_2d_render_instance_t :
             push_constants.transform = transform;
             push_constants.uv_scale  = sampling.get_uv_scale();
             push_constants.uv_offset = sampling.get_uv_offset();
+            push_constants.alpha     = self->get_alpha();
             vkCmdPushConstants(cmd_buf, layout, VK_SHADER_STAGE_VERTEX_BIT,
                 0, sizeof(vk::core_vulkan_push_data_t), &push_constants);
 
@@ -575,6 +577,7 @@ class view_3d_render_instance_t :
             push_constants.transform = transform;
             push_constants.uv_scale  = sampling.get_uv_scale();
             push_constants.uv_offset = sampling.get_uv_offset();
+            push_constants.alpha     = self->color.a;
             vkCmdPushConstants(cmd_buf, layout, VK_SHADER_STAGE_VERTEX_BIT,
                 0, sizeof(vk::core_vulkan_push_data_t), &push_constants);
 
