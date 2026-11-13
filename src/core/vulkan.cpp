@@ -588,7 +588,7 @@ glm::mat4 render_target_transform(const wf::render_target_t& target, bool aligne
         float translate_y = (2.0 * sub.y + sub.height) / target.get_size().height - 1.0;
 
         fb = glm::translate(glm::mat4(1.0), glm::vec3(translate_x, translate_y, 0.0)) *
-             glm::scale(glm::mat4(1.0), glm::vec3(scale_x, scale_y, 1.0)) * fb;
+            glm::scale(glm::mat4(1.0), glm::vec3(scale_x, scale_y, 1.0)) * fb;
     }
 
     return fb * ortho;
