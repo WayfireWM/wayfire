@@ -96,7 +96,7 @@ class ParticleSystem
 
   public:
     /* Render the particles with the given vulkan render state. Performs two draws: one to darken the
-     * background and one additive pass for the particle colors, mirroring the GLES implementation. */
+    * background and one additive pass for the particle colors, mirroring the GLES implementation. */
     void render_vk(wf::vulkan_render_state_t& state, wf::vk::command_buffer_t& cmd_buf,
         const wf::render_target_t& target, const wf::regionf_t& damage, glm::mat4 matrix);
 

@@ -230,8 +230,8 @@ ParticleSystem::fire_vk_state_t& ParticleSystem::ensure_vk_state(
      * attribute. */
     wf::vk::pipeline_params_t params{};
     params.shaders = {
-        {.stage    = VK_SHADER_STAGE_VERTEX_BIT, .shader = vs},
-        {.stage    = VK_SHADER_STAGE_FRAGMENT_BIT, .shader = fs},
+        {.stage = VK_SHADER_STAGE_VERTEX_BIT, .shader = vs},
+        {.stage = VK_SHADER_STAGE_FRAGMENT_BIT, .shader = fs},
     };
 
     params.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_FAN;
