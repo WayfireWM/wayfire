@@ -551,11 +551,15 @@ glm::mat4 render_target_transform(const wf::render_target_t& target, bool aligne
     glm::mat4 ortho;
     if (aligned)
     {
-        ortho = glm::ortho(0.0f, (float)target.get_size().width, (float)target.get_size().height, 0.0f) *
+        // The input is in framebuffer pixel coordinates (y-down), map them directly to
+        // Vulkan's y-down NDC (top of the buffer is -1).
+        ortho = glm::ortho(0.0f, (float)target.get_size().width, 0.0f, (float)target.get_size().height) *
             glm::scale(glm::mat4(1.0), glm::vec3(target.scale, target.scale, 1.0)) *
             glm::translate(glm::mat4(1.0), glm::vec3(-target.geometry.x, -target.geometry.y, 1.0));
     } else
     {
+        // The input is in logical coordinates; the top of the target's geometry must map
+        // to -1, which matches Vulkan's y-down NDC convention.
         ortho = glm::ortho(
             1.0f * target.geometry.x,
             1.0f * target.geometry.x + 1.0f * target.geometry.width,
@@ -563,8 +567,31 @@ glm::mat4 render_target_transform(const wf::render_target_t& target, bool aligne
             1.0f * target.geometry.y + 1.0f * target.geometry.height);
     }
 
-    ortho[1][1] *= -1; // Invert Y axis to match Vulkan's coordinate system
-    return ortho * gles::render_target_gl_to_framebuffer(target);
+    // Vulkan's NDC space has y pointing down (top = -1), which is the same orientation as
+    // the ortho matrices above, so we must NOT apply the FLIPPED_180 viewport correction
+    // that the GLES helpers use (wlroots' GLES renderer uses an inverted viewport).
+    // Only the output rotation and the subbuffer adjustment (which operate in NDC space)
+    // need to be applied, and they must be applied AFTER the logical -> NDC transform
+    // (multiplying it on the left). Multiplying on the right applies them in logical
+    // space, which breaks targets with a non-zero geometry offset (e.g. views rendered
+    // into the auxiliary buffers of the workspace wall for workspaces other than the
+    // current one) and subbuffers not positioned at the origin.
+    glm::mat4 fb = get_output_matrix_from_transform((wl_output_transform)target.wl_transform);
+    if (target.subbuffer)
+    {
+        auto sub = target.subbuffer.value();
+
+        float scale_x = 1.0 * sub.width / target.get_size().width;
+        float scale_y = 1.0 * sub.height / target.get_size().height;
+
+        float translate_x = (2.0 * sub.x + sub.width) / target.get_size().width - 1.0;
+        float translate_y = (2.0 * sub.y + sub.height) / target.get_size().height - 1.0;
+
+        fb = glm::translate(glm::mat4(1.0), glm::vec3(translate_x, translate_y, 0.0)) *
+             glm::scale(glm::mat4(1.0), glm::vec3(scale_x, scale_y, 1.0)) * fb;
+    }
+
+    return fb * ortho;
 }
 } // namespace vk
 
