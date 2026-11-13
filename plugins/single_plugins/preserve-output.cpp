@@ -65,7 +65,7 @@ class preserve_output_t : public wf::plugin_interface_t
      * Find an output to which views of a disconnected output can be moved. The active output is preferred, if
      * it is not the disconnected one.
      */
-    wf::output_t * find_connected_output(wf::output_t *exclude)
+    wf::output_t *find_connected_output(wf::output_t *exclude)
     {
         wf::output_t *fallback = nullptr;
         for (auto output : wf::get_core().output_layout->get_outputs())
