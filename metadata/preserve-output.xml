@@ -2,7 +2,7 @@
 <wayfire>
 	<plugin name="preserve-output">
 		<_short>Preserve Output</_short>
-		<_long>A plugin to restore windows to their original position if outputs are temporarily disconnected.</_long>
+		<_long>A plugin to restore windows to their original position if outputs are temporarily disconnected. When an output is disconnected, its windows are moved to a connected output so that they remain accessible, and they are moved back to the output where they were placed when it is reconnected.</_long>
 		<category>Window Management</category>
 		<option name="last_output_focus_timeout" type="int">
 			<_short>Last output focus timeout</_short>
