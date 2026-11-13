@@ -226,12 +226,12 @@ ParticleSystem::fire_vk_state_t& ParticleSystem::ensure_vk_state(
     auto vs  = ctx->load_shader_module(fire_vert_data, sizeof(fire_vert_data));
     auto fs  = ctx->load_shader_module(fire_frag_data, sizeof(fire_frag_data));
 
-    /* Per-instance attributes: center (2), radius (1), color (4).
-     * The quad corner position is a per-vertex attribute. */
+    /* Per-instance attributes: center (2), radius (1), color (4). The quad corner position is a per-vertex
+     * attribute. */
     wf::vk::pipeline_params_t params{};
     params.shaders = {
-        {.stage = VK_SHADER_STAGE_VERTEX_BIT, .shader = vs},
-        {.stage = VK_SHADER_STAGE_FRAGMENT_BIT, .shader = fs},
+        {.stage    = VK_SHADER_STAGE_VERTEX_BIT, .shader = vs},
+        {.stage    = VK_SHADER_STAGE_FRAGMENT_BIT, .shader = fs},
     };
 
     params.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_FAN;
@@ -278,27 +278,26 @@ ParticleSystem::fire_vk_state_t& ParticleSystem::ensure_vk_state(
         VkPushConstantRange{
             .stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
             .offset     = 0,
-            .size       = sizeof(vulkan_push_constants_t),
+            .size = sizeof(vulkan_push_constants_t),
         },
     };
 
     auto data = std::make_unique<fire_vk_state_t>();
 
-    /* Pass 1: darken the background behind the particle.
-     * GL: (GL_ZERO, GL_ONE_MINUS_SRC_ALPHA) => out = dst * (1 - src.a) */
-    params.blending.blend_op = VK_BLEND_OP_ADD;
+    /* Pass 1: darken the background behind the particle. GL: (GL_ZERO, GL_ONE_MINUS_SRC_ALPHA) => out = dst *
+     * (1 - src.a) */
+    params.blending.blend_op   = VK_BLEND_OP_ADD;
     params.blending.src_factor = VK_BLEND_FACTOR_ZERO;
     params.blending.dst_factor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
-    params.blending.alpha_blend_op = {};
+    params.blending.alpha_blend_op   = {};
     params.blending.alpha_src_factor = {};
     params.blending.alpha_dst_factor = {};
     data->darken_pipeline = std::make_shared<wf::vk::graphics_pipeline_t>(ctx, params);
 
-    /* Pass 2: additive particle color.
-     * GL: (GL_SRC_ALPHA, GL_ONE) => out = src * src.a + dst */
+    /* Pass 2: additive particle color. GL: (GL_SRC_ALPHA, GL_ONE) => out = src * src.a + dst */
     params.blending.src_factor = VK_BLEND_FACTOR_SRC_ALPHA;
     params.blending.dst_factor = VK_BLEND_FACTOR_ONE;
-    data->additive_pipeline = std::make_shared<wf::vk::graphics_pipeline_t>(ctx, params);
+    data->additive_pipeline    = std::make_shared<wf::vk::graphics_pipeline_t>(ctx, params);
 
     auto ptr = data.get();
     state.store_data<fire_vk_state_t>(std::move(data));
@@ -361,8 +360,8 @@ void ParticleSystem::render_vk(wf::vulkan_render_state_t& state,
     vertex_buffer->write(vertex_data, sizeof(vertex_data));
 
     vulkan_push_constants_t push_constants{};
-    push_constants.matrix     = matrix;
-    push_constants.smoothing  = 0.5;
+    push_constants.matrix    = matrix;
+    push_constants.smoothing = 0.5;
 
     for (int pass = 0; pass < 2; pass++)
     {
@@ -381,7 +380,7 @@ void ParticleSystem::render_vk(wf::vulkan_render_state_t& state,
 
         VkDeviceSize vertex_offset = 0;
         VkBuffer vertex_buffers[]  = {vertex_buffer->get_buffer(), instance_buffer->get_buffer()};
-        VkDeviceSize offsets[] = {0, 0};
+        VkDeviceSize offsets[]     = {0, 0};
         vkCmdBindVertexBuffers(cmd_buf, 0, 2, vertex_buffers, offsets);
 
         cmd_buf.for_each_scissor_rect(target, damage, [&]
@@ -390,4 +389,5 @@ void ParticleSystem::render_vk(wf::vulkan_render_state_t& state,
         });
     }
 }
+
 #endif

@@ -29,9 +29,7 @@ struct Particle
 
     glm::vec4 color{1.0, 1.0, 1.0, 1.0};
 
-    /* update the given particle
-     * time is the percentage of the frame which has elapsed
-     * must be thread-safe */
+    /* update the given particle time is the percentage of the frame which has elapsed must be thread-safe */
     void update(float time);
 };
 
@@ -41,8 +39,7 @@ using ParticleIniter = std::function<void (Particle&)>;
 class ParticleSystem
 {
   public:
-    /* the user of this class has to set up a proper GL context
-     * before creating the ParticleSystem */
+    /* the user of this class has to set up a proper GL context before creating the ParticleSystem */
     ParticleSystem(int num_part);
     ~ParticleSystem();
     void set_initer(ParticleIniter init);
@@ -56,8 +53,7 @@ class ParticleSystem
      * returns the number of actually spawned particles */
     int spawn(int num);
 
-    /* change the maximal number of particles
-     * Warning: This might kill a lot of particles */
+    /* change the maximal number of particles Warning: This might kill a lot of particles */
     void resize(int num);
 
     // return the maximal number of particles
@@ -69,9 +65,8 @@ class ParticleSystem
     // number of particles alive
     int statistic();
 
-    /* render particles, each will be multiplied by matrix
-     * The user of this class has to set up the same GL context that was
-     * used during the creation of the particle system */
+    /* render particles, each will be multiplied by matrix The user of this class has to set up the same GL
+     * context that was used during the creation of the particle system */
     void render(glm::mat4 matrix);
 
   private:
@@ -98,10 +93,10 @@ class ParticleSystem
     void create_program();
 
 #if WF_HAS_VULKANFX
+
   public:
-    /* Render the particles with the given vulkan render state.
-     * Performs two draws: one to darken the background and one additive
-     * pass for the particle colors, mirroring the GLES implementation. */
+    /* Render the particles with the given vulkan render state. Performs two draws: one to darken the
+     * background and one additive pass for the particle colors, mirroring the GLES implementation. */
     void render_vk(wf::vulkan_render_state_t& state, wf::vk::command_buffer_t& cmd_buf,
         const wf::render_target_t& target, const wf::regionf_t& damage, glm::mat4 matrix);
 
