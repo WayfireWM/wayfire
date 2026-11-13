@@ -486,6 +486,14 @@ struct postprocessing_manager_t
         this->output = output;
     }
 
+    ~postprocessing_manager_t()
+    {
+        if (post_effects.size() > 0)
+        {
+            wlr_output_lock_software_cursors(output->handle, false);
+        }
+    }
+
     wf::render_buffer_t final_target;
     void set_current_buffer(wlr_buffer *buffer)
     {
@@ -512,13 +520,24 @@ struct postprocessing_manager_t
 
     void add_post(post_hook_t *hook)
     {
+        if (post_effects.size() == 0)
+        {
+            wlr_output_lock_software_cursors(output->handle, true);
+        }
+
         post_effects.push_back(hook);
         output->render->damage_whole_idle();
     }
 
     void rem_post(post_hook_t *hook)
     {
+        const bool had_post_effects = post_effects.size() > 0;
         post_effects.remove_all(hook);
+        if (had_post_effects && (post_effects.size() == 0))
+        {
+            wlr_output_lock_software_cursors(output->handle, false);
+        }
+
         output->render->damage_whole_idle();
     }
 
@@ -1507,25 +1526,33 @@ class wf::render_manager::impl
 
         effects->run_effects(OUTPUT_EFFECT_PASS_DONE);
 
-        /* Part 5: finalize the scene: postprocessing effects */
+        /* Part 5: render software cursors into the postprocessing input */
         if (postprocessing->post_effects.size())
         {
             swap_damage |= damage_manager->get_buffer_extents();
         }
 
+        if (!render_sw_cursors(postprocessing->get_target_framebuffer().get_buffer()))
+        {
+            wlr_buffer_unlock(next_frame->buffer);
+            unset_bound_output();
+            swap_damage.clear();
+            damage_manager->damage_whole();
+            return;
+        }
+
+        /* Part 6: run postprocessing effects over the scene and cursors */
         postprocessing->run_post_effects();
 
         // GLES render timers include earlier work queued in the context, so a
-        // final marker pass measures completion of scene, postprocessing and cursors.
+        // final marker pass measures completion of scene, cursors and postprocessing.
         render_timer = create_render_timer();
         if (render_timer)
         {
             timer_started_ns = get_monotonic_time_ns();
         }
 
-        /* Part 6: render sw cursors We render software cursors after everything else
-         * for consistency with hardware cursor planes */
-        if (!render_sw_cursors(next_frame.get(), render_timer.get()))
+        if (!submit_final_render_pass(next_frame.get(), render_timer.get()))
         {
             wlr_buffer_unlock(next_frame->buffer);
             unset_bound_output();
@@ -1556,25 +1583,18 @@ class wf::render_manager::impl
         post_paint();
     }
 
-    bool render_sw_cursors(swapchain_damage_manager_t::frame_object_t *next_frame,
-        wlr_render_timer *timer)
+    bool render_sw_cursors(wlr_buffer *target_buffer)
     {
-        if (swap_damage.empty() && !render_timeline && !timer)
+        if (swap_damage.empty())
         {
             return true;
         }
 
         wlr_buffer_pass_options pass_options{};
-        pass_options.timer = timer;
         pass_options.color_transform = get_color_transform();
-        if (render_timeline)
-        {
-            pass_options.signal_timeline = render_timeline;
-            pass_options.signal_point    = ++render_point;
-        }
 
         auto *sw_cursor_pass = wlr_renderer_begin_buffer_pass(
-            output->handle->renderer, next_frame->buffer, &pass_options);
+            output->handle->renderer, target_buffer, &pass_options);
         if (!sw_cursor_pass)
         {
             LOGE("Failed to render software cursors!");
@@ -1647,6 +1667,40 @@ class wf::render_manager::impl
         if (!wlr_render_pass_submit(sw_cursor_pass))
         {
             LOGE("Failed to submit software cursor render pass!");
+            return false;
+        }
+
+        return true;
+    }
+
+    bool submit_final_render_pass(swapchain_damage_manager_t::frame_object_t *next_frame,
+        wlr_render_timer *timer)
+    {
+        if (!render_timeline && !timer)
+        {
+            return true;
+        }
+
+        wlr_buffer_pass_options pass_options{};
+        pass_options.timer = timer;
+        pass_options.color_transform = get_color_transform();
+        if (render_timeline)
+        {
+            pass_options.signal_timeline = render_timeline;
+            pass_options.signal_point    = ++render_point;
+        }
+
+        auto *final_pass = wlr_renderer_begin_buffer_pass(
+            output->handle->renderer, next_frame->buffer, &pass_options);
+        if (!final_pass)
+        {
+            LOGE("Failed to begin final output render pass!");
+            return false;
+        }
+
+        if (!wlr_render_pass_submit(final_pass))
+        {
+            LOGE("Failed to submit final output render pass!");
             return false;
         }
 
