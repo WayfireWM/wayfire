@@ -42,6 +42,12 @@
 				<_long>Whether to close scale when a new view is mapped.</_long>
 				<default>false</default>
 			</option>
+			<option name="desktop_overlap_threshold" type="int">
+				<_short>Desktop overlap threshold</_short>
+				<_long>A view is shown for the current desktop if the part of it located on the desktop is larger than this threshold (in pixels) in at least one direction.</_long>
+				<default>20</default>
+				<min>0</min>
+			</option>
 		</group>
 		<group>
 			<_short>Appearance</_short>

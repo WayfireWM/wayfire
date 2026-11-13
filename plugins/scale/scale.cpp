@@ -117,6 +117,8 @@ class wayfire_scale : public wf::per_output_plugin_instance_t,
     wf::option_wrapper_t<bool> allow_scale_zoom{"scale/allow_zoom"};
     wf::option_wrapper_t<bool> include_minimized{"scale/include_minimized"};
     wf::option_wrapper_t<bool> close_on_new_view{"scale/close_on_new_view"};
+    wf::option_wrapper_t<int> desktop_overlap_threshold{
+        "scale/desktop_overlap_threshold"};
 
     /* maximum scale -- 1.0 means we will not "zoom in" on a view */
     const double max_scale_factor = 1.0;
@@ -733,13 +735,17 @@ class wayfire_scale : public wf::per_output_plugin_instance_t,
     std::vector<wayfire_toplevel_view> get_current_workspace_views()
     {
         std::vector<wayfire_toplevel_view> views;
+        auto og = output->get_relative_geometry();
         for (auto& view : get_all_workspace_views())
         {
             auto vg = view->get_geometry();
-            auto og = output->get_relative_geometry();
-            wf::pointf_t center{vg.x + vg.width / 2, vg.y + vg.height / 2};
+            auto intersection = wf::geometry_intersection(vg, og);
 
-            if (og & center)
+            /* A view belongs to the current desktop if the part of it located
+             * on the desktop is larger than the configured threshold in at
+             * least one direction. */
+            if ((intersection.width > desktop_overlap_threshold) ||
+                (intersection.height > desktop_overlap_threshold))
             {
                 views.push_back(view);
             }
