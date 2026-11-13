@@ -409,6 +409,14 @@ class wayfire_scale : public wf::per_output_plugin_instance_t,
             return;
         }
 
+        /* Outside of all-workspaces mode, scale must not switch workspaces.
+         * Views that merely overlap the current workspace are shown as well,
+         * but selecting them should just raise them in place. */
+        if (!all_workspaces)
+        {
+            return;
+        }
+
         auto ws = get_view_main_workspace(view);
         output->wset()->request_workspace(ws);
     }
