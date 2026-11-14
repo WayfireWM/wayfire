@@ -1,5 +1,7 @@
 #include <wayfire/per-output-plugin.hpp>
 #include <memory>
+#include <linux/input-event-codes.h>
+#include <wayfire/config/config-manager.hpp>
 #include <wayfire/plugin.hpp>
 #include <wayfire/opengl.hpp>
 #include <wayfire/output.hpp>
@@ -37,7 +39,8 @@
 #include "shaders.tpp"
 #include "shaders-3-2.tpp"
 
-class wayfire_cube : public wf::per_output_plugin_instance_t, public wf::pointer_interaction_t
+class wayfire_cube : public wf::per_output_plugin_instance_t, public wf::pointer_interaction_t,
+    public wf::keyboard_interaction_t
 {
     class cube_render_node_t : public wf::scene::node_t
     {
@@ -193,6 +196,9 @@ class wayfire_cube : public wf::per_output_plugin_instance_t, public wf::pointer
     wf_cube_animation_attribs animation;
     wf::option_wrapper_t<bool> use_light{"cube/light"};
     wf::option_wrapper_t<int> use_deform{"cube/deform"};
+    wf::option_wrapper_t<double> keyboard_tilt_step{"cube/keyboard_tilt_step"};
+    /* opened by cube/keyboard_activate: stays open without a held button */
+    bool keyboard_mode = false;
 
     std::string last_background_mode;
     std::unique_ptr<wf_cube_background_base> background;
@@ -247,7 +253,7 @@ class wayfire_cube : public wf::per_output_plugin_instance_t, public wf::pointer
   public:
     void init() override
     {
-        input_grab = std::make_unique<wf::input_grab_t>("cube", output, nullptr, this, nullptr);
+        input_grab = std::make_unique<wf::input_grab_t>("cube", output, this, this, nullptr);
         input_grab->set_wants_raw_input(true);
 
         animation.cube_animation.offset_y.set(0, 0);
@@ -269,10 +275,119 @@ class wayfire_cube : public wf::per_output_plugin_instance_t, public wf::pointer
 
     void handle_pointer_button(const wlr_pointer_button_event& event) override
     {
-        if (event.state == WL_POINTER_BUTTON_STATE_RELEASED)
+        /* in keyboard mode no button is held: a click does not end it */
+        if ((event.state == WL_POINTER_BUTTON_STATE_RELEASED) && !keyboard_mode)
         {
             input_ungrabbed();
         }
+    }
+
+    /* Keyboard mode: the keys work whenever the cube is
+     * open (also while the mouse holds it); see cube/keyboard_activate. */
+    void handle_keyboard_key(wf::seat_t*, wlr_keyboard_key_event event) override
+    {
+        if ((event.state != WL_KEYBOARD_KEY_STATE_PRESSED) || animation.in_exit)
+        {
+            return;
+        }
+
+        switch (event.keycode)
+        {
+          case KEY_LEFT:
+            keyboard_turn(+1, 0);
+            break;
+
+          case KEY_RIGHT:
+            keyboard_turn(-1, 0);
+            break;
+
+          case KEY_UP: /* look from above: the top comes into view */
+            keyboard_turn(0, -1);
+            break;
+
+          case KEY_DOWN:
+            keyboard_turn(0, +1);
+            break;
+
+          case KEY_EQUAL:
+          case KEY_KPPLUS:
+          case KEY_PAGEUP:
+            pointer_scrolled(-5);
+            break;
+
+          case KEY_MINUS:
+          case KEY_KPMINUS:
+          case KEY_PAGEDOWN:
+            pointer_scrolled(+5);
+            break;
+
+          case KEY_S:
+            set_shape((use_deform + 1) % num_shapes());
+            break;
+
+          case KEY_0:
+          case KEY_1:
+          case KEY_2:
+          case KEY_3:
+            set_shape(event.keycode == KEY_0 ? 0 : (int)(event.keycode - KEY_1 + 1));
+            break;
+
+          case KEY_ENTER:
+          case KEY_KPENTER:
+          case KEY_ESC:
+          case KEY_SPACE:
+            keyboard_mode = false;
+            input_ungrabbed();
+            break;
+        }
+    }
+
+    /* Turn by @faces sides and tilt by @tilts keyboard steps, animated */
+    void keyboard_turn(int faces, int tilts)
+    {
+        double off_y = wf::clamp(animation.cube_animation.offset_y.end + tilts * (double)keyboard_tilt_step,
+            -1.5, 1.5);
+
+        animation.cube_animation.offset_y.restart_with_end(off_y);
+        animation.cube_animation.offset_z.restart_with_end(animation.cube_animation.offset_z.end);
+        animation.cube_animation.zoom.restart_with_end(animation.cube_animation.zoom.end);
+        animation.cube_animation.ease_deformation.restart_with_end(
+            animation.cube_animation.ease_deformation.end);
+        animation.cube_animation.rotation.restart_with_end(
+            animation.cube_animation.rotation.end + faces * animation.side_angle);
+        animation.cube_animation.start();
+        output->render->schedule_redraw();
+    }
+
+    /* Change cube/deform at run time (like the configuration manager, not saved to the file) and morph into
+     * the new shape */
+    void set_shape(int shape)
+    {
+        if (!tessellation_support || (shape == use_deform) || (shape < 0) || (shape >= num_shapes()))
+        {
+            return;
+        }
+
+        auto opt = wf::get_core().config->get_option("cube/deform");
+        if (!opt || !opt->set_value_str(std::to_string(shape)))
+        {
+            return;
+        }
+
+        if (shape > 0)
+        {
+            animation.cube_animation.ease_deformation.set(0, 1);
+        }
+
+        keyboard_turn(0, 0);
+    }
+
+    /* The number of deformations: cube/deform's maximum + 1 */
+    int num_shapes()
+    {
+        auto opt = std::dynamic_pointer_cast<wf::config::option_t<int>>(
+            wf::get_core().config->get_option("cube/deform"));
+        return (opt && opt->get_maximum()) ? (*opt->get_maximum() + 1) : 3;
     }
 
     void handle_pointer_axis(const wlr_pointer_axis_event& event) override
@@ -450,6 +565,7 @@ class wayfire_cube : public wf::per_output_plugin_instance_t, public wf::pointer
         output->render->set_require_depth_buffer(false);
 
         input_grab->ungrab_input();
+        keyboard_mode = false;
         output->deactivate_plugin(&grab_interface);
         wf::get_core().unhide_cursor();
         on_motion_event.disconnect();
@@ -485,6 +601,12 @@ class wayfire_cube : public wf::per_output_plugin_instance_t, public wf::pointer
     /* Start moving to a workspace to the left/right using the keyboard */
     bool move_vp(int dir)
     {
+        if (keyboard_mode && output->is_plugin_active(grab_interface.name) && !animation.in_exit)
+        {
+            keyboard_turn(-dir, 0);
+            return true;
+        }
+
         if (!activate())
         {
             return false;
@@ -540,6 +662,36 @@ class wayfire_cube : public wf::per_output_plugin_instance_t, public wf::pointer
 
         // Let the button go to the input grab
         return false;
+    }
+
+    /* Keyboard mode: open like a mouse grab, but stay open; the binding
+     * again closes it */
+    bool keyboard_toggle()
+    {
+        if (keyboard_mode && output->is_plugin_active(grab_interface.name))
+        {
+            keyboard_mode = false;
+            if (!animation.in_exit)
+            {
+                input_ungrabbed();
+            }
+
+            return true;
+        }
+
+        if (output->is_plugin_active(grab_interface.name))
+        {
+            return false; /* held by the mouse */
+        }
+
+        input_grabbed();
+        if (!output->is_plugin_active(grab_interface.name))
+        {
+            return false;
+        }
+
+        keyboard_mode = true;
+        return true;
     }
 
     /* Mouse grab was released */
@@ -808,6 +960,7 @@ class wayfire_cube_global : public wf::plugin_interface_t,
     wf::ipc_activator_t rotate_left{"cube/rotate_left"};
     wf::ipc_activator_t rotate_right{"cube/rotate_right"};
     wf::ipc_activator_t activate{"cube/activate"};
+    wf::ipc_activator_t keyboard_activate{"cube/keyboard_activate"};
 
   public:
     void init() override
@@ -824,6 +977,7 @@ class wayfire_cube_global : public wf::plugin_interface_t,
         rotate_left.set_handler(rotate_left_cb);
         rotate_right.set_handler(rotate_right_cb);
         activate.set_handler(activate_cb);
+        keyboard_activate.set_handler(keyboard_activate_cb);
     }
 
     void fini() override
@@ -844,6 +998,11 @@ class wayfire_cube_global : public wf::plugin_interface_t,
     wf::ipc_activator_t::handler_t activate_cb = [=] (wf::output_t *output, wayfire_view)
     {
         return this->output_instance[output]->input_grabbed();
+    };
+
+    wf::ipc_activator_t::handler_t keyboard_activate_cb = [=] (wf::output_t *output, wayfire_view)
+    {
+        return this->output_instance[output]->keyboard_toggle();
     };
 };
 
