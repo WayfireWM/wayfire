@@ -62,6 +62,8 @@ uniform mat4 model;
 uniform mat4 VP;
 uniform int  deform;
 uniform float ease;
+/* radius of the sphere (deform = 3): the distance of the sides from the centre */
+uniform float radius;
 
 vec2 interpolate2D(vec2 v0, vec2 v1, vec2 v2) {
     return vec2(gl_TessCoord.x) * v0
@@ -83,7 +85,11 @@ void main() {
     tp = interpolate3D(tcPosition[0], tcPosition[1], tcPosition[2]);
     tp = (model * vec4(tp, 1.0)).xyz;
 
-    if(deform > 0) {
+    if(deform == 3) {
+        /* sphere: every point projected from the centre onto the sphere */
+        float scale = pow(radius / length(tp), ease);
+        tp = tp * scale;
+    } else if(deform > 0) {
         float r = 0.5;
         float d = distance(tp.xz, vec2(0, 0));
         float scale = 1.0;
