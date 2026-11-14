@@ -115,6 +115,19 @@
 			<hint>file</hint>
 			<default></default>
 		</option>
+		<!-- Caps -->
+		<option name="cap_top_image" type="string">
+			<_short>Top cap image</_short>
+			<_long>Image (PNG or JPEG) shown on the top of the cube. Empty = no top cap.</_long>
+			<hint>file</hint>
+			<default></default>
+		</option>
+		<option name="cap_bottom_image" type="string">
+			<_short>Bottom cap image</_short>
+			<_long>Image (PNG or JPEG) shown on the bottom of the cube. Empty = no bottom cap.</_long>
+			<hint>file</hint>
+			<default></default>
+		</option>
 		<!-- Cubemap -->
 		<option name="cubemap_image" type="string">
 			<_short>Cubemap image</_short>
