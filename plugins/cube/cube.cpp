@@ -1,5 +1,6 @@
 #include <wayfire/per-output-plugin.hpp>
 #include <memory>
+#include <algorithm>
 #include <wayfire/plugin.hpp>
 #include <wayfire/opengl.hpp>
 #include <wayfire/output.hpp>
@@ -35,6 +36,7 @@
 #endif
 
 #include "shaders.tpp"
+#include "reflection-shaders.tpp"
 #include "shaders-3-2.tpp"
 
 class wayfire_cube : public wf::per_output_plugin_instance_t, public wf::pointer_interaction_t
@@ -194,6 +196,14 @@ class wayfire_cube : public wf::per_output_plugin_instance_t, public wf::pointer
     wf::option_wrapper_t<bool> use_light{"cube/light"};
     wf::option_wrapper_t<int> use_deform{"cube/deform"};
 
+    /* Reflection: a mirrored copy of the sides below a floor plane under the cube, fading out downwards,
+     * like Compiz's Cube Reflection. */
+    wf::option_wrapper_t<bool> reflection{"cube/reflection"};
+    wf::option_wrapper_t<double> reflection_intensity{"cube/reflection_intensity"};
+    wf::option_wrapper_t<double> reflection_gap{"cube/reflection_gap"};
+    wf::option_wrapper_t<double> reflection_fade{"cube/reflection_fade"};
+    OpenGL::program_t reflection_program;
+
     std::string last_background_mode;
     std::unique_ptr<wf_cube_background_base> background;
 
@@ -349,6 +359,9 @@ class wayfire_cube : public wf::per_output_plugin_instance_t, public wf::pointer
             program.set_simple(id);
 #endif
         }
+
+        reflection_program.set_simple(OpenGL::compile_program(
+            cube_reflection_vertex, cube_reflection_fragment));
 
         animation.projection = glm::perspective(45.0f, 1.f, 0.1f, 100.f);
     }
@@ -617,6 +630,77 @@ class wayfire_cube : public wf::per_output_plugin_instance_t, public wf::pointer
         return rotation * translation;
     }
 
+    /* Camera position in the cube's model coordinates */
+    glm::vec3 camera_position()
+    {
+        float zoom_factor = animation.cube_animation.zoom;
+        auto view_scale   = animation.view * glm::scale(glm::mat4(1.0),
+            glm::vec3(1. / zoom_factor, 1. / zoom_factor, 1. / zoom_factor));
+        glm::vec4 camera = glm::inverse(view_scale) * glm::vec4(0, 0, 0, 1);
+        return glm::vec3(camera) / camera.w;
+    }
+
+    /* Draw the reflection of the sides: mirrored at the floor plane y = h below the cube (model y = +0.5 is
+     * the bottom on screen, output_transform() flips y), blended over the background with an opacity that
+     * falls off with the distance from the floor. Only drawn while the camera is above the floor: seen
+     * from below, the floor would hide it. */
+    void render_reflection(const glm::mat4& vp, std::vector<wf::auxilliary_buffer_t>& buffers)
+    {
+        const double intensity = std::clamp((double)reflection_intensity, 0.0, 1.0);
+        if (!reflection || (intensity <= 0.0) || (get_num_faces() < 3))
+        {
+            return;
+        }
+
+        const float h = 0.5f + std::max(0.0f, (float)(double)reflection_gap);
+        if (camera_position().y >= h)
+        {
+            return;
+        }
+
+        auto mirror = glm::translate(glm::mat4(1.0), glm::vec3(0, 2 * h, 0)) *
+            glm::scale(glm::mat4(1.0), glm::vec3(1, -1, 1));
+
+        static const GLfloat vertexData[] = {
+            -0.5, 0.5, 0.5, 0.5, 0.5, -0.5, -0.5, -0.5
+        };
+        static const GLfloat coordData[] = {
+            0.0f, 1.0f, 1.0f, 1.0f, 1.0f, 0.0f, 0.0f, 0.0f
+        };
+        static const GLuint indexData[] = {0, 1, 2, 0, 2, 3};
+
+        reflection_program.use(wf::TEXTURE_TYPE_RGBA);
+        reflection_program.attrib_pointer("position", 2, 0, vertexData);
+        reflection_program.attrib_pointer("uvPosition", 2, 0, coordData);
+        reflection_program.uniformMatrix4f("VP", vp);
+        reflection_program.uniform1f("intensity", intensity);
+        reflection_program.uniform1f("floorY", h);
+        reflection_program.uniform1f("fade",
+            std::max(0.05f, (float)(double)reflection_fade));
+
+        /* the reflection is translucent: only the sides facing the camera may be drawn, else the sides
+         * behind them would show through -- and, like the cube, without relying on the depth buffer. Face
+         * culling does it: the sides seen from the front are the ones render_cube() draws with
+         * glFrontFace(GL_CW); mirroring reverses the winding, so here they are GL_CCW. */
+        GL_CALL(glEnable(GL_BLEND));
+        GL_CALL(glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA)); /* premultiplied */
+        GL_CALL(glEnable(GL_CULL_FACE));
+        GL_CALL(glFrontFace(GL_CCW));
+        auto cws = output->wset()->get_current_workspace();
+        for (int i = 0; i < get_num_faces(); i++)
+        {
+            int index = (cws.x + i) % get_num_faces();
+            GL_CALL(glBindTexture(GL_TEXTURE_2D, wf::gles_texture_t::from_aux(buffers[index]).tex_id));
+            reflection_program.uniformMatrix4f("model", mirror * calculate_model_matrix(i));
+            GL_CALL(glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, &indexData));
+        }
+
+        GL_CALL(glDisable(GL_CULL_FACE));
+        GL_CALL(glDisable(GL_BLEND));
+        GL_CALL(glBindTexture(GL_TEXTURE_2D, 0));
+        reflection_program.deactivate();
+    }
+
     /* Render the sides of the cube, using the given culling mode - cw or ccw */
     void render_cube(GLuint front_face, std::vector<wf::auxilliary_buffer_t>& buffers)
     {
@@ -659,9 +743,12 @@ class wayfire_cube : public wf::per_output_plugin_instance_t, public wf::pointer
 
             auto vp = calculate_vp_matrix(data.target);
 
-            program.use(wf::TEXTURE_TYPE_RGBA);
             GL_CALL(glEnable(GL_DEPTH_TEST));
             GL_CALL(glDepthFunc(GL_LESS));
+            /* reflection first: the cube is then depth-tested against it */
+            render_reflection(vp, buffers);
+
+            program.use(wf::TEXTURE_TYPE_RGBA);
 
             static GLfloat vertexData[] = {
                 -0.5, 0.5,
@@ -797,6 +884,7 @@ class wayfire_cube : public wf::per_output_plugin_instance_t, public wf::pointer
         wf::gles::run_in_context_if_gles([&]
         {
             program.free_resources();
+            reflection_program.free_resources();
         });
     }
 };
