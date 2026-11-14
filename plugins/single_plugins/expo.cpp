@@ -20,6 +20,10 @@
 #include <wayfire/plugins/common/shared-core-data.hpp>
 #include <wayfire/plugins/common/key-repeat.hpp>
 
+#include <wayfire/opengl.hpp>
+#include <algorithm>
+#include "expo-curve-shaders.tpp"
+
 /* TODO: this file should be included in some header maybe(plugin.hpp) */
 #include <linux/input-event-codes.h>
 
@@ -44,6 +48,114 @@ class wayfire_expo : public wf::per_output_plugin_instance_t, public wf::keyboar
     wf::option_wrapper_t<double> inactive_brightness{"expo/inactive_brightness"};
     wf::option_wrapper_t<int> transition_length{"expo/transition_length"};
     wf::geometry_animation_t zoom_animation{zoom_duration};
+
+    /* Curved row + reflection, like Compiz's
+     * Expo with curve deformation and reflection */
+    wf::option_wrapper_t<double> curve_opt{"expo/curve"};
+    wf::option_wrapper_t<bool> reflection_opt{"expo/reflection"};
+    wf::option_wrapper_t<double> reflection_intensity{"expo/reflection_intensity"};
+    wf::option_wrapper_t<double> reflection_fade{"expo/reflection_fade"};
+    OpenGL::program_t curve_program;
+    bool curve_hook_set = false;
+
+    struct curve_params_t
+    {
+        bool on = false;
+        /* the workspace row on screen, output-local */
+        wf::geometry_t band;
+        /* curve strength * progress */
+        float kt = 0;
+        /* reflection intensity * progress */
+        float refl = 0;
+    };
+
+    /* How far expo is zoomed out: 0 = desktop, 1 = full expo */
+    float zoom_progress()
+    {
+        if (zoom_animation.running())
+        {
+            float p = zoom_animation.progress();
+            return state.zoom_in ? p : 1.0f - p;
+        }
+
+        return (state.active && state.zoom_in) ? 1.0f : 0.0f;
+    }
+
+    curve_params_t get_curve_params()
+    {
+        curve_params_t p;
+        const float k = std::clamp((double)curve_opt, 0.0, 1.0);
+        const float i = reflection_opt ? std::clamp((double)reflection_intensity, 0.0, 1.0) : 0.0;
+        const float t = zoom_progress();
+        if (((k <= 0) && (i <= 0)) || (t <= 0))
+        {
+            return p;
+        }
+
+        auto og = output->get_relative_geometry();
+        auto vp = wall->get_viewport();
+        if ((vp.width <= 0) || (vp.height <= 0))
+        {
+            return p;
+        }
+
+        p.band = wf::scale_box(vp, og, wall->get_wall_rectangle());
+        p.kt   = k * t;
+        p.refl = i * t;
+        p.on   = (p.band.width > 0) && (p.band.height > 0);
+        return p;
+    }
+
+    void set_curve_hook(bool on)
+    {
+        if (on == curve_hook_set)
+        {
+            return;
+        }
+
+        if (on)
+        {
+            if (!wf::get_core().is_gles2())
+            {
+                return;
+            }
+
+            wf::gles::run_in_context([&]
+            {
+                if (curve_program.get_program_id(wf::TEXTURE_TYPE_RGBA) == 0)
+                {
+                    curve_program.set_simple(OpenGL::compile_program(expo_curve_vertex,
+                        expo_curve_fragment));
+                }
+            });
+            output->render->add_post(&curve_hook);
+        } else
+        {
+            output->render->rem_post(&curve_hook);
+        }
+
+        curve_hook_set = on;
+    }
+
+    /* Input on the curved row: undo the vertical stretch of the column, so
+     * that clicks and drags hit what is shown there */
+    void uncurve_input(double sx, double& sy)
+    {
+        auto p = get_curve_params();
+        if (!p.on || (p.kt <= 0))
+        {
+            return;
+        }
+
+        double u  = std::clamp((sx - p.band.x) / std::max(1.0, 1.0 * p.band.width), 0.0, 1.0) * 2 - 1;
+        double s  = 1 + p.kt * u * u;
+        double c  = p.band.y + p.band.height / 2.0;
+        double dy = sy - c;
+        if (std::abs(dy) <= p.band.height / 2.0 * s)
+        {
+            sy = c + dy / s;
+        }
+    }
 
     wf::option_wrapper_t<bool> move_enable_snap_off{"move/enable_snap_off"};
     wf::option_wrapper_t<int> move_snap_off_threshold{"move/snap_off_threshold"};
@@ -274,6 +386,37 @@ class wayfire_expo : public wf::per_output_plugin_instance_t, public wf::keyboar
         this->state.button_pressed = false;
     };
 
+    wf::post_hook_t curve_hook = [=] (wf::auxilliary_buffer_t& source, const wf::render_buffer_t& dest)
+    {
+        static const float vertexData[] = {-1.0f, -1.0f, 1.0f, -1.0f, 1.0f, 1.0f, -1.0f, 1.0f};
+        static const float coordData[]  = {0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f};
+
+        auto og = output->get_relative_geometry();
+        auto p  = get_curve_params();
+        wf::gles_texture_t source_tex = wf::gles_texture_t::from_aux(source);
+        wf::gles::run_in_context([&]
+        {
+            wf::gles::bind_render_buffer(dest);
+            curve_program.use(wf::TEXTURE_TYPE_RGBA);
+            curve_program.attrib_pointer("position", 2, 0, vertexData);
+            curve_program.attrib_pointer("uvPosition", 2, 0, coordData);
+            curve_program.uniform1f("center", (p.band.y + p.band.height / 2.0) / og.height);
+            curve_program.uniform1f("half_h", p.band.height / 2.0 / og.height);
+            curve_program.uniform1f("band_x", 1.0 * p.band.x / og.width);
+            curve_program.uniform1f("band_w", std::max(1.0, 1.0 * p.band.width) / og.width);
+            curve_program.uniform1f("kt", p.on ? p.kt : 0.0f);
+            curve_program.uniform1f("refl", p.on ? p.refl : 0.0f);
+            curve_program.uniform1f("fade", std::clamp((double)reflection_fade, 0.05, 2.0));
+            GL_CALL(glActiveTexture(GL_TEXTURE0));
+            GL_CALL(glBindTexture(GL_TEXTURE_2D, source_tex.tex_id));
+            GL_CALL(glDisable(GL_BLEND));
+            GL_CALL(glDrawArrays(GL_TRIANGLE_FAN, 0, 4));
+            GL_CALL(glEnable(GL_BLEND));
+            GL_CALL(glBindTexture(GL_TEXTURE_2D, 0));
+            curve_program.deactivate();
+        });
+    };
+
     bool activate()
     {
         if (!output->activate_plugin(&grab_interface))
@@ -289,6 +432,7 @@ class wayfire_expo : public wf::per_output_plugin_instance_t, public wf::keyboar
 
         wall->start_output_renderer();
         output->render->add_effect(&pre_frame, wf::OUTPUT_EFFECT_PRE);
+        set_curve_hook((curve_opt > 0) || reflection_opt);
         output->render->schedule_redraw();
 
         auto cws = output->wset()->get_current_workspace();
@@ -607,6 +751,7 @@ class wayfire_expo : public wf::per_output_plugin_instance_t, public wf::keyboar
      */
     void input_coordinates_to_global_coordinates(double& sx, double& sy)
     {
+        uncurve_input(sx, sy);
         auto og = output->get_layout_geometry();
 
         auto wsize = output->wset()->get_workspace_grid_size();
@@ -656,6 +801,10 @@ class wayfire_expo : public wf::per_output_plugin_instance_t, public wf::keyboar
 
     std::optional<wf::point_t> find_workspace_at(int x, int y)
     {
+        /* curved row: the point as it lies on the flat row */
+        double cy = y;
+        uncurve_input(x, cy);
+        y = (int)std::lround(cy);
         wlr_box box = {x, y, 1, 1};
         auto og     = output->get_relative_geometry();
         auto in_grid = wf::origin(wf::scale_box(og, wall->get_viewport(), wf::from_integer_box(box)));
@@ -763,6 +912,7 @@ class wayfire_expo : public wf::per_output_plugin_instance_t, public wf::keyboar
         input_grab->ungrab_input();
         wall->stop_output_renderer(true);
         output->render->rem_effect(&pre_frame);
+        set_curve_hook(false);
         key_repeat.disconnect();
         key_pressed = 0;
 
@@ -775,6 +925,8 @@ class wayfire_expo : public wf::per_output_plugin_instance_t, public wf::keyboar
         {
             finalize_and_exit();
         }
+
+        wf::gles::run_in_context_if_gles([&] { curve_program.free_resources(); });
     }
 };
 
