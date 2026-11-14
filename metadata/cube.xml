@@ -80,6 +80,12 @@
 			<default>0.02</default>
 			<precision>0.01</precision>
 		</option>
+		<!-- Free vertical rotation -->
+		<option name="free_vertical_rotation" type="bool">
+			<_short>Free vertical rotation</_short>
+			<_long>Let the cube be turned over completely when dragged up or down. Off: the tilt stops at about 86 degrees.</_long>
+			<default>false</default>
+		</option>
 		<!-- Background -->
 		<option name="background_mode" type="string">
 			<_short>Background mode</_short>
