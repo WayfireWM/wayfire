@@ -9,6 +9,7 @@
 #include <wayfire/workspace-set.hpp>
 #include <wayfire/scene-operations.hpp>
 #include <wayfire/plugins/common/input-grab.hpp>
+#include <cmath>
 #include "wayfire/plugins/ipc/ipc-activator.hpp"
 
 #include <glm/gtc/matrix_transform.hpp>
@@ -194,6 +195,19 @@ class wayfire_cube : public wf::per_output_plugin_instance_t, public wf::pointer
     wf::option_wrapper_t<bool> use_light{"cube/light"};
     wf::option_wrapper_t<int> use_deform{"cube/deform"};
 
+    /* Top and bottom caps: an image on the top and/or the bottom of the cube, like Compiz's Cube Caps.
+     * Empty path = no cap. */
+    wf::option_wrapper_t<std::string> cap_top_image{"cube/cap_top_image"};
+    wf::option_wrapper_t<std::string> cap_bottom_image{"cube/cap_bottom_image"};
+    OpenGL::program_t cap_program;
+    struct cap_texture_t
+    {
+        std::string path;
+        GLuint tex = 0;
+    };
+
+    cap_texture_t caps[2]; /* 0 = top, 1 = bottom */
+
     std::string last_background_mode;
     std::unique_ptr<wf_cube_background_base> background;
 
@@ -350,7 +364,136 @@ class wayfire_cube : public wf::per_output_plugin_instance_t, public wf::pointer
 #endif
         }
 
+        /* caps are flat polygons: the simple GLES 2 cube shader is enough */
+        cap_program.set_simple(OpenGL::compile_program(cube_vertex_2_0, cube_fragment_2_0));
+
         animation.projection = glm::perspective(45.0f, 1.f, 0.1f, 100.f);
+    }
+
+    /* (Re)load a cap image when its option changed; returns 0 if no cap. */
+    GLuint cap_texture(cap_texture_t& cap, const std::string& path)
+    {
+        if (path == cap.path)
+        {
+            return cap.tex;
+        }
+
+        cap.path = path;
+        if (cap.tex)
+        {
+            GL_CALL(glDeleteTextures(1, &cap.tex));
+            cap.tex = 0;
+        }
+
+        if (path.empty())
+        {
+            return 0;
+        }
+
+        GL_CALL(glGenTextures(1, &cap.tex));
+        GL_CALL(glBindTexture(GL_TEXTURE_2D, cap.tex));
+        if (image_io::load_from_file(path, GL_TEXTURE_2D))
+        {
+            GL_CALL(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR));
+            GL_CALL(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR));
+            GL_CALL(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE));
+            GL_CALL(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE));
+        } else
+        {
+            LOGE("cube: failed to load cap image \"", path, "\"");
+            GL_CALL(glDeleteTextures(1, &cap.tex));
+            cap.tex = 0;
+        }
+
+        GL_CALL(glBindTexture(GL_TEXTURE_2D, 0));
+        return cap.tex;
+    }
+
+    /* Camera position in the cube's model coordinates */
+    glm::vec3 camera_position()
+    {
+        float zoom_factor = animation.cube_animation.zoom;
+        auto view_scale   = animation.view * glm::scale(glm::mat4(1.0),
+            glm::vec3(1. / zoom_factor, 1. / zoom_factor, 1. / zoom_factor));
+        glm::vec4 camera = glm::inverse(view_scale) * glm::vec4(0, 0, 0, 1);
+        return glm::vec3(camera) / camera.w;
+    }
+
+    /* Draw the top and bottom caps: a polygon through the top (bottom)
+     * corners of all sides, turning with the cube; the image is mapped onto
+     * the bounding square of the polygon.
+     *
+     * Like the sides, the caps must not rely on the depth buffer (the cube
+     * itself draws in painter's order: back sides, then front sides).
+     * A cap faces the camera only when the camera is outside its plane;
+     * front = true draws those (after the sides), front = false the others
+     * (before the sides). Seen from outside, the visible faces of a convex
+     * body never overlap, so this order is always correct. */
+    void render_caps(const glm::mat4& vp, bool front)
+    {
+        const int n = get_num_faces();
+        if (n < 3)
+        {
+            return; /* 1 or 2 sides have no top surface */
+        }
+
+        GLuint tex[2] = {
+            cap_texture(caps[0], cap_top_image),
+            cap_texture(caps[1], cap_bottom_image),
+        };
+        if (!tex[0] && !tex[1])
+        {
+            return;
+        }
+
+        /* output_transform() flips y (scale 1, -1, 1): the top of the cube
+         * on screen is at model y = -0.5 */
+        const float cam_y    = camera_position().y;
+        const bool facing[2] = {(cam_y < -0.5f), (cam_y > 0.5f)};
+
+        /* corner k = right edge of side k: rotate(k * side) * (0.5, 0, z0) */
+        const float z0 = identity_z_offset;
+        const float R  = std::sqrt(0.25f + z0 * z0);
+        std::vector<glm::vec2> corners;
+        for (int k = 0; k < n; k++)
+        {
+            float a = k * animation.side_angle;
+            corners.push_back({0.5f * std::cos(a) + z0 * std::sin(a),
+                -0.5f * std::sin(a) + z0 * std::cos(a)});
+        }
+
+        auto model = glm::rotate(glm::mat4(1.0),
+            float(animation.cube_animation.rotation), glm::vec3(0, 1, 0));
+
+        cap_program.use(wf::TEXTURE_TYPE_RGBA);
+        cap_program.uniformMatrix4f("VP", vp);
+        cap_program.uniformMatrix4f("model", model);
+        GL_CALL(glActiveTexture(GL_TEXTURE0));
+        for (int c = 0; c < 2; c++)
+        {
+            if (!tex[c] || (facing[c] != front))
+            {
+                continue;
+            }
+
+            float y = (c == 0) ? -0.5f : 0.5f;
+            std::vector<float> pos = {0.0f, y, 0.0f};
+            std::vector<float> uv  = {0.5f, 0.5f};
+            for (int k = 0; k <= n; k++) /* close the fan: first corner again */
+            {
+                auto& p = corners[k % n];
+                pos.insert(pos.end(), {p.x, y, p.y});
+                uv.insert(uv.end(), {p.x / (2 * R) + 0.5f, p.y / (2 * R) + 0.5f});
+            }
+
+            cap_program.attrib_pointer("position", 3, 0, pos.data());
+            cap_program.attrib_pointer("uvPosition", 2, 0, uv.data());
+            GL_CALL(glBindTexture(GL_TEXTURE_2D, tex[c]));
+            GL_CALL(glDrawArrays(GL_TRIANGLE_FAN, 0, n + 2));
+        }
+
+        GL_CALL(glBindTexture(GL_TEXTURE_2D, 0));
+        cap_program.deactivate();
     }
 
     wf::signal::connection_t<cube_control_signal> on_cube_control = [=] (cube_control_signal *d)
@@ -659,6 +802,8 @@ class wayfire_cube : public wf::per_output_plugin_instance_t, public wf::pointer
 
             auto vp = calculate_vp_matrix(data.target);
 
+            /* caps facing away from the camera, behind the sides */
+            render_caps(vp, false);
             program.use(wf::TEXTURE_TYPE_RGBA);
             GL_CALL(glEnable(GL_DEPTH_TEST));
             GL_CALL(glDepthFunc(GL_LESS));
@@ -696,9 +841,12 @@ class wayfire_cube : public wf::per_output_plugin_instance_t, public wf::pointer
             render_cube(GL_CCW, buffers);
             render_cube(GL_CW, buffers);
             GL_CALL(glDisable(GL_CULL_FACE));
+            program.deactivate();
+
+            /* caps facing the camera, over the sides */
+            render_caps(vp, true);
 
             GL_CALL(glDisable(GL_DEPTH_TEST));
-            program.deactivate();
         });
     }
 
@@ -797,6 +945,15 @@ class wayfire_cube : public wf::per_output_plugin_instance_t, public wf::pointer
         wf::gles::run_in_context_if_gles([&]
         {
             program.free_resources();
+            cap_program.free_resources();
+            for (auto& cap : caps)
+            {
+                if (cap.tex)
+                {
+                    GL_CALL(glDeleteTextures(1, &cap.tex));
+                    cap.tex = 0;
+                }
+            }
         });
     }
 };
