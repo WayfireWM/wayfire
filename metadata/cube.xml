@@ -115,6 +115,38 @@
 			<hint>file</hint>
 			<default></default>
 		</option>
+		<!-- 3D windows -->
+		<option name="windows_3d" type="bool">
+			<_short>3D windows</_short>
+			<_long>Draw the windows of each side lifted off the cube, the topmost window highest. Applies the next time the cube is activated.</_long>
+			<default>false</default>
+		</option>
+		<option name="windows_3d_depth" type="double">
+			<_short>3D windows depth</_short>
+			<_long>Height of the topmost window above its side, in cube widths; lower windows are spaced evenly below it.</_long>
+			<default>0.1</default>
+			<min>0.0</min>
+			<max>0.5</max>
+			<precision>0.01</precision>
+		</option>
+		<option name="windows_3d_thickness" type="double">
+			<_short>3D windows thickness</_short>
+			<_long>Thickness of the 3D windows, in cube widths: each window becomes a slab reaching back towards its side (never below it). 0 = flat windows.</_long>
+			<default>0.0</default>
+			<min>0.0</min>
+			<max>0.1</max>
+			<precision>0.005</precision>
+		</option>
+		<option name="windows_3d_edge_from_window" type="bool">
+			<_short>3D windows edges in window colors</_short>
+			<_long>The edges of thick 3D windows continue the window's own colors (its outermost pixels stretched back along the edge). Off: the edge color below.</_long>
+			<default>true</default>
+		</option>
+		<option name="windows_3d_edge_color" type="color">
+			<_short>3D windows edge color</_short>
+			<_long>Color of the edges of thick 3D windows when they are not drawn in the window's colors (shaded like the cube sides when "light" is on).</_long>
+			<default>#2E3440FF</default>
+		</option>
 		<!-- Cubemap -->
 		<option name="cubemap_image" type="string">
 			<_short>Cubemap image</_short>
