@@ -35,6 +35,8 @@
 #endif
 
 #include "shaders.tpp"
+#include "windows3d-shaders.tpp"
+#include "windows3d.hpp"
 #include "shaders-3-2.tpp"
 
 class wayfire_cube : public wf::per_output_plugin_instance_t, public wf::pointer_interaction_t
@@ -49,6 +51,8 @@ class wayfire_cube : public wf::per_output_plugin_instance_t, public wf::pointer
             std::vector<std::vector<wf::scene::render_instance_uptr>> ws_instances;
             std::vector<wf::regionf_t> ws_damage;
             std::vector<wf::auxilliary_buffer_t> framebuffers;
+            /* 3D windows: per face, its windows (empty when off) */
+            cube3d::face_windows_t face_windows;
 
             wf::signal::connection_t<wf::scene::node_damage_signal> on_cube_damage =
                 [=] (wf::scene::node_damage_signal *ev)
@@ -78,6 +82,28 @@ class wayfire_cube : public wf::per_output_plugin_instance_t, public wf::pointer
                         push_damage_child, self->cube->output);
 
                     ws_damage[i] |= self->workspaces[i]->get_bounding_box();
+                }
+
+                face_windows.resize(self->workspaces.size());
+                for (int i = 0; i < (int)self->windows.size(); i++)
+                {
+                    const int n = self->windows[i].size();
+                    for (int k = 0; k < n; k++)
+                    {
+                        auto node = self->windows[i][k].lock();
+                        if (!node)
+                        {
+                            continue;
+                        }
+
+                        auto layer = std::make_unique<cube3d::window_layer_t>();
+                        layer->node  = node;
+                        layer->level = float(n - k) / n; /* topmost (k = 0) = 1 */
+                        node->gen_render_instances(layer->instances,
+                            [=] (const wf::regionf_t&) { push_damage(self->get_bounding_box()); },
+                            self->cube->output);
+                        face_windows[i].push_back(std::move(layer));
+                    }
                 }
             }
 
@@ -121,11 +147,73 @@ class wayfire_cube : public wf::per_output_plugin_instance_t, public wf::pointer
                     wf::render_pass_t::run(params);
                     ws_damage[i].clear();
                 }
+
+                render_windows(is_hdr);
+            }
+
+            /* 3D windows: render every window of every face into its own
+             * buffer -- the part of it which lies on that face's workspace */
+            void render_windows(bool is_hdr)
+            {
+                auto output = self->cube->output;
+                auto og     = output->get_relative_geometry();
+                auto cws    = output->wset()->get_current_workspace();
+                const float scale = output->handle->scale;
+                for (int i = 0; i < (int)face_windows.size(); i++)
+                {
+                    wf::geometry_t ws_rect = {(i - cws.x) * og.width,
+                        (self->row - cws.y) * og.height, og.width, og.height};
+                    for (auto& layer : face_windows[i])
+                    {
+                        layer->rect = {0, 0, 0, 0};
+                        auto node = layer->node.lock();
+                        if (!node || !node->is_enabled())
+                        {
+                            continue;
+                        }
+
+                        auto rect = wf::geometry_intersection(node->get_bounding_box(), ws_rect);
+                        if ((rect.width <= 0) || (rect.height <= 0))
+                        {
+                            continue;
+                        }
+
+                        layer->buffer.allocate(wf::dimensions(rect), scale,
+                            wf::buffer_allocation_hints_t{.hdr_linear = is_hdr});
+                        wf::render_target_t target{layer->buffer};
+                        target.geometry = rect;
+                        target.scale    = scale;
+
+                        wf::render_pass_params_t params;
+                        params.instances = &layer->instances;
+                        params.damage    = rect;
+                        params.reference_output = output;
+                        params.target = target;
+                        params.background_color = {0, 0, 0, 0}; /* transparent */
+                        params.flags = wf::RPASS_CLEAR_BACKGROUND | wf::RPASS_EMIT_SIGNALS;
+                        wf::render_pass_t::run(params);
+
+                        layer->rect = {rect.x - ws_rect.x, rect.y - ws_rect.y,
+                            rect.width, rect.height};
+
+                        /* thickness edges follow the window itself, not its
+                         * shadow (part of the bounding box) */
+                        layer->slab = {0, 0, 0, 0};
+                        if (auto view = wf::toplevel_cast(wf::node_to_view(node)))
+                        {
+                            auto s = wf::geometry_intersection(view->get_geometry(), ws_rect);
+                            if ((s.width > 0) && (s.height > 0))
+                            {
+                                layer->slab = {s.x - ws_rect.x, s.y - ws_rect.y, s.width, s.height};
+                            }
+                        }
+                    }
+                }
             }
 
             void render(const wf::scene::render_instruction_t& data) override
             {
-                self->cube->render(data, framebuffers);
+                self->cube->render(data, framebuffers, &face_windows);
             }
 
             void compute_visibility(wf::output_t *output, wf::regionf_t& visible) override
@@ -147,10 +235,30 @@ class wayfire_cube : public wf::per_output_plugin_instance_t, public wf::pointer
             this->cube = cube;
             auto w = cube->output->wset()->get_workspace_grid_size().width;
             auto y = cube->output->wset()->get_current_workspace().y;
+            this->row = y;
             for (int i = 0; i < w; i++)
             {
-                auto node = std::make_shared<wf::workspace_stream_node_t>(cube->output, wf::point_t{i, y});
-                workspaces.push_back(node);
+                if (!cube->windows_3d)
+                {
+                    auto node = std::make_shared<wf::workspace_stream_node_t>(cube->output,
+                        wf::point_t{i, y});
+                    workspaces.push_back(node);
+                    continue;
+                }
+
+                /* 3D windows: the face shows the desktop without its windows,
+                 * the windows are drawn separately */
+                auto wins = cube3d::workspace_windows(cube->output, {i, y});
+                std::set<wf::scene::node_t*> skip;
+                windows.emplace_back();
+                for (auto& win : wins)
+                {
+                    skip.insert(win.get());
+                    windows.back().push_back(win);
+                }
+
+                workspaces.push_back(std::make_shared<cube3d::base_stream_node_t>(
+                    cube->output, wf::point_t{i, y}, skip));
             }
         }
 
@@ -173,7 +281,10 @@ class wayfire_cube : public wf::per_output_plugin_instance_t, public wf::pointer
         }
 
       private:
-        std::vector<std::shared_ptr<wf::workspace_stream_node_t>> workspaces;
+        std::vector<std::shared_ptr<wf::scene::node_t>> workspaces;
+        /* 3D windows: per face, the window nodes, topmost first */
+        std::vector<std::vector<std::weak_ptr<wf::scene::node_t>>> windows;
+        int row = 0;
         wayfire_cube *cube;
     };
 
@@ -194,6 +305,13 @@ class wayfire_cube : public wf::per_output_plugin_instance_t, public wf::pointer
     wf::option_wrapper_t<bool> use_light{"cube/light"};
     wf::option_wrapper_t<int> use_deform{"cube/deform"};
 
+    /* 3D windows: windows lifted off the faces */
+    wf::option_wrapper_t<bool> windows_3d{"cube/windows_3d"};
+    wf::option_wrapper_t<double> windows_3d_depth{"cube/windows_3d_depth"};
+    wf::option_wrapper_t<double> windows_3d_thickness{"cube/windows_3d_thickness"};
+    wf::option_wrapper_t<wf::color_t> windows_3d_edge_color{"cube/windows_3d_edge_color"};
+    wf::option_wrapper_t<bool> windows_3d_edge_from_window{"cube/windows_3d_edge_from_window"};
+    OpenGL::program_t window_program, edge_program;
     std::string last_background_mode;
     std::unique_ptr<wf_cube_background_base> background;
 
@@ -350,6 +468,8 @@ class wayfire_cube : public wf::per_output_plugin_instance_t, public wf::pointer
 #endif
         }
 
+        window_program.set_simple(OpenGL::compile_program(cube_vertex_2_0, cube_window_fragment));
+        edge_program.set_simple(OpenGL::compile_program(cube_edge_vertex, cube_edge_fragment));
         animation.projection = glm::perspective(45.0f, 1.f, 0.1f, 100.f);
     }
 
@@ -645,7 +765,297 @@ class wayfire_cube : public wf::per_output_plugin_instance_t, public wf::pointer
         }
     }
 
-    void render(const wf::scene::render_instruction_t& data, std::vector<wf::auxilliary_buffer_t>& buffers)
+    /* Camera position in the cube's model coordinates */
+    glm::vec3 camera_position()
+    {
+        float zoom_factor = animation.cube_animation.zoom;
+        auto view_scale   = animation.view * glm::scale(glm::mat4(1.0),
+            glm::vec3(1. / zoom_factor, 1. / zoom_factor, 1. / zoom_factor));
+        glm::vec4 camera = glm::inverse(view_scale) * glm::vec4(0, 0, 0, 1);
+        return glm::vec3(camera) / camera.w;
+    }
+
+    /* Brightness of a flat surface with normal @normal and centre @center
+     * (model space), as the tessellation shader computes it for the sides
+     * when "light" is on (shaders-3-2.tpp); 1 without lighting. */
+    float light_factor(glm::vec3 normal, glm::vec3 center)
+    {
+        if (!tessellation_support || !use_light)
+        {
+            return 1.0f;
+        }
+
+        const glm::vec3 light_source{0, 0, 2};
+        float d = glm::distance(center, light_source);
+        float ambient = std::pow(std::clamp(2.0f / d, 0.0f, 1.0f), 10.0f);
+        float value   = std::clamp(std::pow(std::abs(glm::dot(glm::normalize(normal),
+            glm::normalize(light_source))), 1.5f), 0.0f, 1.0f);
+        return 0.3f * ambient + 0.7f * value;
+    }
+
+    void use_face_program(const glm::mat4& vp)
+    {
+        static GLfloat vertexData[] = {
+            -0.5, 0.5, 0.5, 0.5, 0.5, -0.5, -0.5, -0.5
+        };
+        static GLfloat coordData[] = {
+            0.0f, 1.0f, 1.0f, 1.0f, 1.0f, 0.0f, 0.0f, 0.0f
+        };
+
+        program.use(wf::TEXTURE_TYPE_RGBA);
+        program.attrib_pointer("position", 2, 0, vertexData);
+        program.attrib_pointer("uvPosition", 2, 0, coordData);
+        program.uniformMatrix4f("VP", vp);
+        if (tessellation_support)
+        {
+            program.uniform1i("deform", use_deform);
+            program.uniform1i("light", use_light);
+            program.uniform1f("ease", animation.cube_animation.ease_deformation);
+        }
+    }
+
+    /* 3D windows: draw the sides facing the camera from the farthest to the
+     * nearest, each followed by its windows, lifted off the side by
+     * level * windows_3d_depth (topmost window highest). Painter's order:
+     * no depth buffer needed. Back sides are culled together with their
+     * windows (the window quads have the winding of their side). */
+    void render_front_sides_3d(const glm::mat4& vp, std::vector<wf::auxilliary_buffer_t>& buffers,
+        cube3d::face_windows_t& windows)
+    {
+        static const GLuint indexData[] = {0, 1, 2, 0, 2, 3};
+        const int n    = get_num_faces();
+        const auto cws = output->wset()->get_current_workspace();
+        const glm::vec3 camera = camera_position();
+        const float depth     = std::max(0.0, (double)windows_3d_depth);
+        const float thickness = windows_3d_thickness;
+
+        std::vector<int> order(n);
+        std::vector<float> dist(n);
+        for (int i = 0; i < n; i++)
+        {
+            order[i] = i;
+            dist[i]  = glm::distance(glm::vec3(calculate_model_matrix(i) * glm::vec4(0, 0, 0, 1)), camera);
+        }
+
+        std::sort(order.begin(), order.end(), [&] (int a, int b) { return dist[a] > dist[b]; });
+
+        GL_CALL(glEnable(GL_CULL_FACE));
+        GL_CALL(glFrontFace(GL_CW));
+        for (int i : order)
+        {
+            const int index  = (cws.x + i) % n;
+            const auto model = calculate_model_matrix(i);
+
+            use_face_program(vp);
+            GL_CALL(glBindTexture(GL_TEXTURE_2D, wf::gles_texture_t::from_aux(buffers[index]).tex_id));
+            program.uniformMatrix4f("model", model);
+            if (tessellation_support)
+            {
+#ifdef USE_GLES32
+                GL_CALL(glDrawElements(GL_PATCHES, 6, GL_UNSIGNED_INT, &indexData));
+#endif
+            } else
+            {
+                GL_CALL(glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, &indexData));
+            }
+
+            program.deactivate();
+            if ((index >= (int)windows.size()) || windows[index].empty())
+            {
+                continue;
+            }
+
+            /* lowest window first */
+            auto og = output->get_relative_geometry();
+            const glm::vec3 normal = glm::vec3(model * glm::vec4(0, 0, 1, 0));
+            window_program.use(wf::TEXTURE_TYPE_RGBA);
+            window_program.uniformMatrix4f("VP", vp);
+            GL_CALL(glEnable(GL_BLEND));
+            GL_CALL(glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA)); /* premultiplied */
+            for (auto it = windows[index].rbegin(); it != windows[index].rend(); ++it)
+            {
+                auto& layer = *it;
+                if ((layer->rect.width <= 0) || (layer->rect.height <= 0))
+                {
+                    continue;
+                }
+
+                /* face: x, y in -0.5..0.5, y = -0.5 is the top (v = 0) */
+                float x0 = float(layer->rect.x) / og.width - 0.5f;
+                float x1 = float(layer->rect.x + layer->rect.width) / og.width - 0.5f;
+                float y0 = float(layer->rect.y) / og.height - 0.5f;
+                float y1 = float(layer->rect.y + layer->rect.height) / og.height - 0.5f;
+                /* same corner order and winding as the side's quad */
+                const GLfloat pos[] = {x0, y1, x1, y1, x1, y0, x0, y0};
+                const GLfloat uv[]  = {0, 1, 1, 1, 1, 0, 0, 0};
+                auto lifted = model * glm::translate(glm::mat4(1.0),
+                    glm::vec3(0, 0, depth * layer->level));
+                glm::vec3 center = glm::vec3(lifted * glm::vec4((x0 + x1) / 2, (y0 + y1) / 2, 0, 1));
+
+                /* thickness: a slab behind the visible window, not below
+                 * the side */
+                const float front = depth * layer->level;
+                const float back  = std::max(0.0f, front - std::max(0.0f, thickness));
+                if ((thickness > 0) && (front > back) && (layer->slab.width > 0))
+                {
+                    window_program.deactivate();
+                    /* the visible window inside the window's texture (which
+                     * also holds the shadow) */
+                    const auto& r     = layer->rect;
+                    const auto& sl    = layer->slab;
+                    glm::vec4 slab_uv = {
+                        float(sl.x - r.x) / r.width, float(sl.y - r.y) / r.height,
+                        float(sl.x + sl.width - r.x) / r.width, float(sl.y + sl.height - r.y) / r.height};
+                    glm::vec2 inset = {
+                        std::min(float(2.0 / r.width), float((slab_uv.z - slab_uv.x) / 2)),
+                        std::min(float(2.0 / r.height), float((slab_uv.w - slab_uv.y) / 2))};
+                    render_window_edges(vp, model,
+                        float(layer->slab.x) / og.width - 0.5f,
+                        float(layer->slab.y) / og.height - 0.5f,
+                        float(layer->slab.x + layer->slab.width) / og.width - 0.5f,
+                        float(layer->slab.y + layer->slab.height) / og.height - 0.5f,
+                        back, front, camera,
+                        wf::gles_texture_t::from_aux(layer->buffer).tex_id, slab_uv, inset);
+                    window_program.use(wf::TEXTURE_TYPE_RGBA);
+                    window_program.uniformMatrix4f("VP", vp);
+                }
+
+                window_program.attrib_pointer("position", 2, 0, pos);
+                window_program.attrib_pointer("uvPosition", 2, 0, uv);
+                window_program.uniformMatrix4f("model", lifted);
+                window_program.uniform1f("colorFactor", light_factor(normal, center));
+                GL_CALL(glBindTexture(GL_TEXTURE_2D,
+                    wf::gles_texture_t::from_aux(layer->buffer).tex_id));
+                GL_CALL(glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, &indexData));
+            }
+
+            GL_CALL(glDisable(GL_BLEND));
+            window_program.deactivate();
+        }
+
+        GL_CALL(glDisable(GL_CULL_FACE));
+        GL_CALL(glBindTexture(GL_TEXTURE_2D, 0));
+    }
+
+    /* Thickness of a 3D window: the four edges of a slab from the window
+     * (z = front) back towards the side (z = back), in the side's model
+     * space. Edges facing away from the camera first, then the others --
+     * the window itself is drawn after them (painter's order).
+     *
+     * With windows_3d_edge_from_window (and a window texture @tex), each
+     * edge continues the window's own colours: it stretches the window's
+     * outermost row / column of pixels (2 px inside, @uv = the visible
+     * window in the texture: u0, v0, u1, v1; v = 0 is the top) back along
+     * the slab. Otherwise a flat windows_3d_edge_color. */
+    void render_window_edges(const glm::mat4& vp, const glm::mat4& model,
+        float x0, float y0, float x1, float y1, float back, float front, const glm::vec3& camera,
+        GLuint tex = 0, glm::vec4 uv = {0, 0, 1, 1}, glm::vec2 inset = {0, 0})
+    {
+        if (tex && windows_3d_edge_from_window)
+        {
+            render_window_edges_textured(vp, model, x0, y0, x1, y1, back, front, camera, tex, uv, inset);
+            return;
+        }
+
+        struct edge_t
+        {
+            glm::vec3 normal;
+            GLfloat pos[12];
+        };
+
+        const edge_t edges[4] = {
+            {{0, -1, 0}, {x0, y0, back, x1, y0, back, x1, y0, front, x0, y0, front}}, /* top */
+            {{0, 1, 0}, {x0, y1, back, x1, y1, back, x1, y1, front, x0, y1, front}}, /* bottom */
+            {{-1, 0, 0}, {x0, y0, back, x0, y1, back, x0, y1, front, x0, y0, front}}, /* left */
+            {{1, 0, 0}, {x1, y0, back, x1, y1, back, x1, y1, front, x1, y0, front}}, /* right */
+        };
+        static const GLuint indexData[] = {0, 1, 2, 0, 2, 3};
+
+        wf::color_t c = windows_3d_edge_color;
+        edge_program.use(wf::TEXTURE_TYPE_RGBA);
+        edge_program.uniformMatrix4f("VP", vp);
+        edge_program.uniformMatrix4f("model", model);
+        edge_program.uniform4f("color", glm::vec4(c.r, c.g, c.b, c.a));
+        GL_CALL(glDisable(GL_CULL_FACE));
+        for (int pass = 0; pass < 2; pass++)
+        {
+            for (auto& e : edges)
+            {
+                glm::vec3 center = glm::vec3(model * glm::vec4(
+                    (e.pos[0] + e.pos[6]) / 2, (e.pos[1] + e.pos[7]) / 2, (back + front) / 2, 1));
+                glm::vec3 normal  = glm::vec3(model * glm::vec4(e.normal, 0));
+                const bool facing = glm::dot(normal, camera - center) > 0;
+                if (facing != (pass == 1))
+                {
+                    continue;
+                }
+
+                edge_program.attrib_pointer("position", 3, 0, e.pos);
+                edge_program.uniform1f("colorFactor", light_factor(normal, center));
+                GL_CALL(glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, &indexData));
+            }
+        }
+
+        GL_CALL(glEnable(GL_CULL_FACE));
+        edge_program.deactivate();
+    }
+
+    void render_window_edges_textured(const glm::mat4& vp, const glm::mat4& model,
+        float x0, float y0, float x1, float y1, float back, float front, const glm::vec3& camera,
+        GLuint tex, glm::vec4 uv, glm::vec2 inset)
+    {
+        struct edge_t
+        {
+            glm::vec3 normal;
+            GLfloat pos[12];
+            GLfloat uv[8];
+        };
+
+        const float vt = uv.y + inset.y, vb = uv.w - inset.y; /* top, bottom row */
+        const float ul = uv.x + inset.x, ur = uv.z - inset.x; /* left, right column */
+        const edge_t edges[4] = {
+            {{0, -1, 0}, {x0, y0, back, x1, y0, back, x1, y0, front, x0, y0, front},
+                {uv.x, vt, uv.z, vt, uv.z, vt, uv.x, vt}}, /* top */
+            {{0, 1, 0}, {x0, y1, back, x1, y1, back, x1, y1, front, x0, y1, front},
+                {uv.x, vb, uv.z, vb, uv.z, vb, uv.x, vb}}, /* bottom */
+            {{-1, 0, 0}, {x0, y0, back, x0, y1, back, x0, y1, front, x0, y0, front},
+                {ul, uv.y, ul, uv.w, ul, uv.w, ul, uv.y}}, /* left */
+            {{1, 0, 0}, {x1, y0, back, x1, y1, back, x1, y1, front, x1, y0, front},
+                {ur, uv.y, ur, uv.w, ur, uv.w, ur, uv.y}}, /* right */
+        };
+        static const GLuint indexData[] = {0, 1, 2, 0, 2, 3};
+
+        window_program.use(wf::TEXTURE_TYPE_RGBA);
+        window_program.uniformMatrix4f("VP", vp);
+        window_program.uniformMatrix4f("model", model);
+        GL_CALL(glBindTexture(GL_TEXTURE_2D, tex));
+        GL_CALL(glDisable(GL_CULL_FACE));
+        for (int pass = 0; pass < 2; pass++)
+        {
+            for (auto& e : edges)
+            {
+                glm::vec3 center = glm::vec3(model * glm::vec4(
+                    (e.pos[0] + e.pos[6]) / 2, (e.pos[1] + e.pos[7]) / 2, (back + front) / 2, 1));
+                glm::vec3 normal  = glm::vec3(model * glm::vec4(e.normal, 0));
+                const bool facing = glm::dot(normal, camera - center) > 0;
+                if (facing != (pass == 1))
+                {
+                    continue;
+                }
+
+                window_program.attrib_pointer("position", 3, 0, e.pos);
+                window_program.attrib_pointer("uvPosition", 2, 0, e.uv);
+                window_program.uniform1f("colorFactor", light_factor(normal, center));
+                GL_CALL(glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, &indexData));
+            }
+        }
+
+        GL_CALL(glEnable(GL_CULL_FACE));
+        window_program.deactivate();
+    }
+
+    void render(const wf::scene::render_instruction_t& data, std::vector<wf::auxilliary_buffer_t>& buffers,
+        cube3d::face_windows_t *windows = nullptr)
     {
         data.pass->custom_gles_subpass([&]
         {
@@ -692,13 +1102,25 @@ class wayfire_cube : public wf::per_output_plugin_instance_t, public wf::pointer
              * By using two stages, we ensure that we first render the cube sides
              * that are on the back, and then we render those at the front, so we
              * don't have to use depth testing and we also can support alpha cube. */
-            GL_CALL(glEnable(GL_CULL_FACE));
-            render_cube(GL_CCW, buffers);
-            render_cube(GL_CW, buffers);
-            GL_CALL(glDisable(GL_CULL_FACE));
+            if (windows && windows_3d)
+            {
+                /* 3D windows: the back sides, then the front sides with their windows, which stand out
+                 * of the cube */
+                GL_CALL(glEnable(GL_CULL_FACE));
+                render_cube(GL_CCW, buffers);
+                GL_CALL(glDisable(GL_CULL_FACE));
+                program.deactivate();
+                render_front_sides_3d(vp, buffers, *windows);
+            } else
+            {
+                GL_CALL(glEnable(GL_CULL_FACE));
+                render_cube(GL_CCW, buffers);
+                render_cube(GL_CW, buffers);
+                GL_CALL(glDisable(GL_CULL_FACE));
+                program.deactivate();
+            }
 
             GL_CALL(glDisable(GL_DEPTH_TEST));
-            program.deactivate();
         });
     }
 
@@ -797,6 +1219,8 @@ class wayfire_cube : public wf::per_output_plugin_instance_t, public wf::pointer
         wf::gles::run_in_context_if_gles([&]
         {
             program.free_resources();
+            window_program.free_resources();
+            edge_program.free_resources();
         });
     }
 };
