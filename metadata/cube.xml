@@ -13,6 +13,20 @@
 				<_long>Activates the cube with the specified button.</_long>
 				<default>&lt;ctrl&gt; &lt;alt&gt; BTN_LEFT</default>
 			</option>
+			<!-- Keyboard mode -->
+			<option name="keyboard_activate" type="activator">
+				<_short>Keyboard mode</_short>
+				<_long>Opens the cube and keeps it open without a mouse button: Left/Right turn it by one side, Up/Down tilt it (top and bottom), +/- (or Page Up/Down) zoom, S the next shape, 0-3 a shape (cube, cylinder, star, sphere), Enter, Esc or this binding again close it on the side facing you.</_long>
+				<default>none</default>
+			</option>
+			<option name="keyboard_tilt_step" type="double">
+				<_short>Keyboard tilt step</_short>
+				<_long>How far Up/Down tilt the cube in keyboard mode, in radians (0.26 = 15 degrees).</_long>
+				<default>0.26</default>
+				<min>0.05</min>
+				<max>1.5</max>
+				<precision>0.01</precision>
+			</option>
 			<option name="rotate_left" type="activator">
 				<_short>Rotate left</_short>
 				<_long>Rotates left with the specified activator.</_long>
