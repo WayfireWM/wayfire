@@ -80,6 +80,36 @@
 			<default>0.02</default>
 			<precision>0.01</precision>
 		</option>
+		<!-- Reflection -->
+		<option name="reflection" type="bool">
+			<_short>Reflection</_short>
+			<_long>Draw a mirror image of the cube on a floor below it.</_long>
+			<default>false</default>
+		</option>
+		<option name="reflection_intensity" type="double">
+			<_short>Reflection intensity</_short>
+			<_long>Opacity of the reflection at the floor (0 = invisible, 1 = as bright as the cube).</_long>
+			<default>0.4</default>
+			<min>0.0</min>
+			<max>1.0</max>
+			<precision>0.05</precision>
+		</option>
+		<option name="reflection_gap" type="double">
+			<_short>Reflection gap</_short>
+			<_long>Distance between the bottom of the cube and the floor, in cube heights.</_long>
+			<default>0.05</default>
+			<min>0.0</min>
+			<max>1.0</max>
+			<precision>0.01</precision>
+		</option>
+		<option name="reflection_fade" type="double">
+			<_short>Reflection fade</_short>
+			<_long>Depth below the floor, in cube heights, at which the reflection has faded out completely.</_long>
+			<default>0.6</default>
+			<min>0.05</min>
+			<max>2.0</max>
+			<precision>0.05</precision>
+		</option>
 		<!-- Background -->
 		<option name="background_mode" type="string">
 			<_short>Background mode</_short>
