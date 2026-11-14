@@ -42,6 +42,36 @@
 			<_long>Duration of the transition of brightness when a new workspace is selected in milliseconds.</_long>
 			<default>200</default>
 		</option>
+		<!-- Curved row and reflection -->
+		<option name="curve" type="double">
+			<_short>Curve</_short>
+			<_long>Bend the row of workspaces like a curved wall: the left and right ends are drawn taller by this fraction. 0 = flat.</_long>
+			<default>0.0</default>
+			<min>0.0</min>
+			<max>1.0</max>
+			<precision>0.05</precision>
+		</option>
+		<option name="reflection" type="bool">
+			<_short>Reflection</_short>
+			<_long>Draw a mirror image of the workspaces below them, fading out.</_long>
+			<default>false</default>
+		</option>
+		<option name="reflection_intensity" type="double">
+			<_short>Reflection intensity</_short>
+			<_long>Opacity of the mirror image at its top (0-1).</_long>
+			<default>0.35</default>
+			<min>0.0</min>
+			<max>1.0</max>
+			<precision>0.05</precision>
+		</option>
+		<option name="reflection_fade" type="double">
+			<_short>Reflection fade</_short>
+			<_long>Length of the mirror image until it has faded out, in heights of the workspace row.</_long>
+			<default>0.6</default>
+			<min>0.05</min>
+			<max>2.0</max>
+			<precision>0.05</precision>
+		</option>
 		<option name="workspace_bindings" type="dynamic-list" type-hint="dict">
 			<_short>Select workspace</_short>
 			<_long>When the binding is triggered while expo is active, the corresponding workspace will be focused and Expo will exit.</_long>
