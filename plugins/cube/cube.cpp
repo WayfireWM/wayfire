@@ -194,6 +194,10 @@ class wayfire_cube : public wf::per_output_plugin_instance_t, public wf::pointer
     wf::option_wrapper_t<bool> use_light{"cube/light"};
     wf::option_wrapper_t<int> use_deform{"cube/deform"};
 
+    /* Free vertical rotation: no +-1.5 rad (86 degree) limit for the tilt, the cube can be turned over
+     * completely, like Compiz's Rotate Cube. */
+    wf::option_wrapper_t<bool> free_vertical_rotation{"cube/free_vertical_rotation"};
+
     std::string last_background_mode;
     std::unique_ptr<wf_cube_background_base> background;
 
@@ -478,7 +482,16 @@ class wayfire_cube : public wf::per_output_plugin_instance_t, public wf::pointer
         animation.cube_animation.zoom.restart_with_end(1.0);
         animation.cube_animation.offset_z.restart_with_end(
             identity_z_offset + Z_OFFSET_NEAR);
-        animation.cube_animation.offset_y.restart_with_end(0);
+        /* with free vertical rotation the tilt can be several turns:
+         * go back to the nearest upright position, not through every turn */
+        double upright = 0;
+        if (free_vertical_rotation)
+        {
+            upright = 2 * M_PI *
+                std::round((double)animation.cube_animation.offset_y / (2 * M_PI));
+        }
+
+        animation.cube_animation.offset_y.restart_with_end(upright);
         animation.cube_animation.ease_deformation.restart_with_end(0);
     }
 
@@ -743,7 +756,11 @@ class wayfire_cube : public wf::per_output_plugin_instance_t, public wf::pointer
         double current_off_y = animation.cube_animation.offset_y;
         double off_y = current_off_y + ydiff * YVelocity;
 
-        off_y = wf::clamp(off_y, -1.5, 1.5);
+        if (!free_vertical_rotation)
+        {
+            off_y = wf::clamp(off_y, -1.5, 1.5);
+        }
+
         animation.cube_animation.offset_y.set(current_off_y, off_y);
         animation.cube_animation.offset_z.restart_with_end(
             animation.cube_animation.offset_z.end);
