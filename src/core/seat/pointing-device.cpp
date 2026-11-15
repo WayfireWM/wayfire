@@ -1,10 +1,22 @@
 #include "pointing-device.hpp"
 #include <wayfire/config-backend.hpp>
 
+static bool device_is_touchpad(wlr_input_device *dev)
+{
+    if (!wlr_input_device_is_libinput(dev))
+    {
+        return false;
+    }
+
+    auto handle = wlr_libinput_get_device_handle(dev);
+    return handle && (libinput_device_config_tap_get_finger_count(handle) > 0);
+}
+
 wf::pointing_device_t::pointing_device_t(wlr_input_device *dev) :
     input_device_impl_t(dev)
 {
-    dev->data = this;
+    dev->data   = this;
+    is_touchpad = device_is_touchpad(dev);
     load_options();
     update_options();
 }
@@ -79,7 +91,7 @@ void wf::pointing_device_t::update_options()
         LIBINPUT_CONFIG_MIDDLE_EMULATION_DISABLED);
 
     /* we are configuring a touchpad */
-    if (libinput_device_config_tap_get_finger_count(dev) > 0)
+    if (is_touchpad)
     {
         libinput_device_config_accel_set_speed(dev,
             touchpad_cursor_speed);
@@ -208,14 +220,9 @@ void wf::pointing_device_t::update_options()
     }
 }
 
-double wf::pointing_device_t::get_scroll_speed(wlr_input_device *dev, bool touchpad)
+double wf::pointing_device_t::get_scroll_speed(wl_pointer_axis_source source)
 {
-    if ((touchpad && (dev->type != WLR_INPUT_DEVICE_TABLET_PAD)) ||
-        (!touchpad && (dev->type != WLR_INPUT_DEVICE_POINTER)))
-    {
-        return 1.0;
-    }
-
+    const bool touchpad = is_touchpad || (source == WL_POINTER_AXIS_SOURCE_FINGER);
     return touchpad ? touchpad_scroll_speed : mouse_scroll_speed;
 }
 

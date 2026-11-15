@@ -391,6 +391,23 @@ void wf::test::headless_core_harness_t::pointer_button(uint32_t button, uint32_t
     wl_display_flush_clients(priv->core->display);
 }
 
+double wf::test::headless_core_harness_t::pointer_axis(wlr_pointer *device,
+    wl_pointer_axis_source source, double delta)
+{
+    wlr_pointer_axis_event ev = {};
+    ev.pointer   = device;
+    ev.time_msec = priv->touch_time++;
+    ev.source    = source;
+    ev.orientation = WL_POINTER_AXIS_VERTICAL_SCROLL;
+    ev.delta = delta;
+
+    priv->core->seat->priv->lpointer->handle_pointer_axis(&ev,
+        wf::input_event_processing_mode_t::FULL);
+    wlr_seat_pointer_notify_frame(priv->core->seat->seat);
+    wl_display_flush_clients(priv->core->display);
+    return ev.delta;
+}
+
 wf::output_t*wf::test::headless_core_harness_t::output() const
 {
     auto outputs = priv->core->output_layout->get_outputs();
