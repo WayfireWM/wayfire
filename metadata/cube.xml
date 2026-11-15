@@ -30,7 +30,7 @@
 			<_long>Specifies the deformation to be used.</_long>
 			<default>0</default>
 			<min>0</min>
-			<max>2</max>
+			<max>3</max>
 			<desc>
 				<value>0</value>
 				<_name>None</_name>
@@ -42,6 +42,10 @@
 			<desc>
 				<value>2</value>
 				<_name>Star</_name>
+			</desc>
+			<desc>
+				<value>3</value>
+				<_name>Sphere</_name>
 			</desc>
 		</option>
 		<option name="light" type="bool">

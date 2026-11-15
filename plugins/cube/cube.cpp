@@ -686,6 +686,7 @@ class wayfire_cube : public wf::per_output_plugin_instance_t, public wf::pointer
                 program.uniform1i("light", use_light);
                 program.uniform1f("ease",
                     animation.cube_animation.ease_deformation);
+                program.uniform1f("radius", identity_z_offset);
             }
 
             /* We render the cube in two stages, based on winding.
