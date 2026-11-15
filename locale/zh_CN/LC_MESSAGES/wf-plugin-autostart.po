@@ -1,0 +1,44 @@
+# Wayfire 简体中文翻译（zh_CN）
+# Maintainer: WenYin-Community <https://github.com/WenYin-Community/wayfire>
+# Translator: Wenyin Root <ruojiner@hotmail.com>
+msgid ""
+msgstr ""
+"Project-Id-Version: wayfire\n"
+"POT-Creation-Date: 2025-09-18 14:55+0300\n"
+"PO-Revision-Date: 2026-11-11 12:00+0800\n"
+"Last-Translator: Wenyin Root <ruojiner@hotmail.com>\n"
+"Language-Team: WenYin-Community <ruojiner@hotmail.com>\n"
+"Language: zh_CN\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. (itstool) path: plugin/_short
+#. (itstool) path: group/_short
+#. (itstool) path: option/_short
+msgid "Autostart"
+msgstr "自启动"
+
+#. (itstool) path: plugin/_long
+msgid "A plugin to run shell commands on startup."
+msgstr "在启动时运行 Shell 命令的插件。"
+
+#. (itstool) path: group/_long
+msgid "Specifies the shell commands to run on startup."
+msgstr "指定启动时要运行的 Shell 命令。"
+
+#. (itstool) path: option/_long
+msgid ""
+"Executes shell command with `sh` on startup. The program ID does not matter, "
+"but must be different for distinct commands."
+msgstr "启动时使用 `sh` 执行 Shell 命令。程序 ID 本身无关紧要，但不同命令必须使用不同的 ID。"
+
+#. (itstool) path: option/_short
+msgid "Autostart shell clients"
+msgstr "自启动 Shell 客户端"
+
+#. (itstool) path: option/_long
+msgid ""
+"Start wf-panel and wf-background if they are not listed as autostart entries."
+msgstr "如果 wf-panel 和 wf-background 未列在自启动项中，则启动它们。"

@@ -1,0 +1,218 @@
+# Wayfire 简体中文翻译（zh_CN）
+# Maintainer: WenYin-Community <https://github.com/WenYin-Community/wayfire>
+# Translator: Wenyin Root <ruojiner@hotmail.com>
+msgid ""
+msgstr ""
+"Project-Id-Version: wayfire\n"
+"POT-Creation-Date: 2025-09-18 14:55+0300\n"
+"PO-Revision-Date: 2026-11-11 12:00+0800\n"
+"Last-Translator: Wenyin Root <ruojiner@hotmail.com>\n"
+"Language-Team: WenYin-Community <ruojiner@hotmail.com>\n"
+"Language: zh_CN\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. (itstool) path: plugin/_short
+msgid "Viewport Switcher"
+msgstr "视口切换器"
+
+#. (itstool) path: plugin/_long
+msgid "A plugin to switch workspaces in a grid."
+msgstr "在网格中切换工作区的插件。"
+
+#. (itstool) path: option/_short
+msgid "Left"
+msgstr "左"
+
+#. (itstool) path: option/_long
+msgid "Switches to workspace left with the specified activator."
+msgstr "使用指定激活器切换到左侧工作区。"
+
+#. (itstool) path: option/_short
+msgid "Right"
+msgstr "右"
+
+#. (itstool) path: option/_long
+msgid "Switches to workspace right with the specified activator."
+msgstr "使用指定激活器切换到右侧工作区。"
+
+#. (itstool) path: option/_short
+msgid "Up"
+msgstr "上"
+
+#. (itstool) path: option/_long
+msgid "Switches to workspace up with the specified activator."
+msgstr "使用指定激活器切换到上方工作区。"
+
+#. (itstool) path: option/_short
+msgid "Down"
+msgstr "下"
+
+#. (itstool) path: option/_long
+msgid "Switches to workspace down with the specified activator."
+msgstr "使用指定激活器切换到下方工作区。"
+
+#. (itstool) path: option/_short
+msgid "Last"
+msgstr "上一个"
+
+#. (itstool) path: option/_long
+msgid "Switches to the last active workspace with the specified activator."
+msgstr "使用指定激活器切换到上一个活动工作区。"
+
+#. (itstool) path: option/_short
+msgid "Left with window"
+msgstr "带窗口向左"
+
+#. (itstool) path: option/_long
+msgid ""
+"Switches to workspace left with the focused window with the specified "
+"activator."
+msgstr "使用指定激活器将当前聚焦窗口切换到左侧工作区。"
+
+#. (itstool) path: option/_short
+msgid "Right with window"
+msgstr "带窗口向右"
+
+#. (itstool) path: option/_long
+msgid ""
+"Switches to workspace right with the focused window with the specified "
+"activator."
+msgstr "使用指定激活器将当前聚焦窗口切换到右侧工作区。"
+
+#. (itstool) path: option/_short
+msgid "Up with window"
+msgstr "带窗口向上"
+
+#. (itstool) path: option/_long
+msgid ""
+"Switches to workspace up with the focused window with the specified "
+"activator."
+msgstr "使用指定激活器将当前聚焦窗口切换到上方工作区。"
+
+#. (itstool) path: option/_short
+msgid "Down with window"
+msgstr "带窗口向下"
+
+#. (itstool) path: option/_long
+msgid ""
+"Switches to workspace down with the focused window with the specified "
+"activator."
+msgstr "使用指定激活器将当前聚焦窗口切换到下方工作区。"
+
+#. (itstool) path: option/_short
+msgid "Last with window"
+msgstr "带窗口切换到上一个工作区"
+
+#. (itstool) path: option/_long
+msgid ""
+"Switches to the last active workspace with the focused window with the "
+"specified activator."
+msgstr "使用指定激活器将当前聚焦窗口切换到上一个活动工作区。"
+
+#. (itstool) path: option/_short
+msgid "Send window to the left"
+msgstr "将窗口发送到左侧"
+
+#. (itstool) path: option/_long
+msgid "Send the focused window to the workspace on the left."
+msgstr "将当前聚焦窗口发送到左侧工作区。"
+
+#. (itstool) path: option/_short
+msgid "Send window to the right"
+msgstr "将窗口发送到右侧"
+
+#. (itstool) path: option/_long
+msgid "Send the focused window to the workspace on the right."
+msgstr "将当前聚焦窗口发送到右侧工作区。"
+
+#. (itstool) path: option/_short
+msgid "Send window above"
+msgstr "将窗口发送到上方"
+
+#. (itstool) path: option/_long
+msgid "Send the focused window to the workspace above."
+msgstr "将当前聚焦窗口发送到上方工作区。"
+
+#. (itstool) path: option/_short
+msgid "Send window below"
+msgstr "将窗口发送到下方"
+
+#. (itstool) path: option/_long
+msgid "Send the focused window to the workspace below."
+msgstr "将当前聚焦窗口发送到下方工作区。"
+
+#. (itstool) path: option/_short
+msgid "Send window to last"
+msgstr "将窗口发送到上一个工作区"
+
+#. (itstool) path: option/_long
+msgid ""
+"Send the focused window to the last active workspace with the specified "
+"activator."
+msgstr "使用指定激活器将当前聚焦窗口发送到上一个活动工作区。"
+
+#. (itstool) path: option/_short
+#. (itstool) path: option/_long
+msgid "Go-To-Workspace bindings"
+msgstr "跳转到工作区绑定"
+
+#. (itstool) path: entry/_short
+msgid "Binding for workspace N"
+msgstr "工作区 N 的绑定"
+
+#. (itstool) path: entry/_long
+msgid "Sets the binding to go to workspace N."
+msgstr "设置跳转到工作区 N 的绑定。"
+
+#. (itstool) path: option/_short
+#. (itstool) path: option/_long
+msgid "Go-To-Workspace with window bindings"
+msgstr "带窗口跳转到工作区绑定"
+
+#. (itstool) path: entry/_long
+msgid "Sets the binding to go to workspace N with currently focused window."
+msgstr "设置将当前聚焦窗口带到工作区 N 的绑定。"
+
+#. (itstool) path: entry/_short
+msgid "Move window to workspace N"
+msgstr "将窗口移动到工作区 N"
+
+#. (itstool) path: entry/_long
+msgid "Sets the binding to move focused window to workspace N."
+msgstr "设置将聚焦窗口移动到工作区 N 的绑定。"
+
+#. (itstool) path: option/_short
+msgid "Duration"
+msgstr "持续时间"
+
+#. (itstool) path: option/_long
+msgid "Sets the duration of the workspace switching animation in milliseconds."
+msgstr "设置工作区切换动画的持续时间（毫秒）。"
+
+#. (itstool) path: option/_short
+msgid "Gap size"
+msgstr "间隙大小"
+
+#. (itstool) path: option/_long
+msgid ""
+"Sets the gap between workspaces when animating the transition between them."
+msgstr "设置工作区之间过渡动画的间隙大小。"
+
+#. (itstool) path: option/_short
+msgid "Background color"
+msgstr "背景颜色"
+
+#. (itstool) path: option/_long
+msgid "Sets the background color of gaps."
+msgstr "设置间隙的背景颜色。"
+
+#. (itstool) path: option/_short
+msgid "Wraparound"
+msgstr "循环切换"
+
+#. (itstool) path: option/_long
+msgid "Whether to wrap around when at the edge of the workspace grid."
+msgstr "位于工作区网格边缘时是否循环切换。"

@@ -1,0 +1,36 @@
+# Wayfire 简体中文翻译（zh_CN）
+# Maintainer: WenYin-Community <https://github.com/WenYin-Community/wayfire>
+# Translator: Wenyin Root <ruojiner@hotmail.com>
+msgid ""
+msgstr ""
+"Project-Id-Version: wayfire\n"
+"POT-Creation-Date: 2025-09-18 14:55+0300\n"
+"PO-Revision-Date: 2026-11-11 12:00+0800\n"
+"Last-Translator: Wenyin Root <ruojiner@hotmail.com>\n"
+"Language-Team: WenYin-Community <ruojiner@hotmail.com>\n"
+"Language: zh_CN\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. (itstool) path: plugin/_short
+msgid "Preserve Output"
+msgstr "保留输出"
+
+#. (itstool) path: plugin/_long
+msgid ""
+"A plugin to restore windows to their original position if outputs are "
+"temporarily disconnected."
+msgstr "在输出暂时断开时将窗口恢复到原始位置的插件。"
+
+#. (itstool) path: option/_short
+msgid "Last output focus timeout"
+msgstr "最后聚焦输出超时"
+
+#. (itstool) path: option/_long
+msgid ""
+"Length of time in milliseconds to remember a destroyed output as the last "
+"output with focus, before it can be overridden by another destroyed output "
+"with focus."
+msgstr "将已销毁的输出记为最后聚焦输出的保留时间（毫秒），超过后可能被另一个已销毁的聚焦输出覆盖。"

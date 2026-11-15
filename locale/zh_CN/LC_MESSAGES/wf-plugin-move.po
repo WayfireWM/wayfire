@@ -1,0 +1,115 @@
+# Wayfire 简体中文翻译（zh_CN）
+# Maintainer: WenYin-Community <https://github.com/WenYin-Community/wayfire>
+# Translator: Wenyin Root <ruojiner@hotmail.com>
+msgid ""
+msgstr ""
+"Project-Id-Version: wayfire\n"
+"POT-Creation-Date: 2025-09-18 14:55+0300\n"
+"PO-Revision-Date: 2026-11-11 12:00+0800\n"
+"Last-Translator: Wenyin Root <ruojiner@hotmail.com>\n"
+"Language-Team: WenYin-Community <ruojiner@hotmail.com>\n"
+"Language: zh_CN\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. (itstool) path: plugin/_short
+msgid "Move"
+msgstr "移动"
+
+#. (itstool) path: plugin/_long
+msgid ""
+"A plugin to move windows around by dragging them from any part (not just the "
+"title bar)."
+msgstr "通过拖动窗口任意位置（不只是标题栏）来移动窗口的插件。"
+
+#. (itstool) path: option/_short
+msgid "Activate"
+msgstr "激活"
+
+#. (itstool) path: option/_long
+msgid ""
+"When the specified button is held down, you can drag windows to move them."
+msgstr "按住指定按钮时，可以拖动窗口来移动它们。"
+
+#. (itstool) path: option/_short
+msgid "Snap"
+msgstr "吸附"
+
+#. (itstool) path: option/_long
+msgid ""
+"Enables or disables snapping the window being moved to an edge of the screen."
+msgstr "启用或禁用将正在移动的窗口吸附到屏幕边缘。"
+
+#. (itstool) path: option/_short
+msgid "Snap threshold"
+msgstr "吸附阈值"
+
+#. (itstool) path: option/_long
+msgid ""
+"Sets the amount of pixels from the edge of the screen for which aero-snap "
+"gets triggered."
+msgstr "设置触发 Aero 吸附的距离屏幕边缘的像素数。"
+
+#. (itstool) path: option/_short
+msgid "Quarter snap threshold"
+msgstr "四分之一吸附阈值"
+
+#. (itstool) path: option/_long
+msgid ""
+"Sets the amount of pixels from the corner of the screen for which quarter "
+"aero-snap gets triggered. The mouse should still be within snap_threshold of "
+"at least one edge of the screen."
+msgstr "设置触发四分之一 Aero 吸附的距离屏幕角落的像素数。鼠标仍需位于至少一个屏幕边缘的 snap_threshold 范围内。"
+
+#. (itstool) path: option/_short
+msgid "Snap off"
+msgstr "脱离吸附"
+
+#. (itstool) path: option/_long
+msgid ""
+"Enables or disables snapping off the window being grabbed from an edge of "
+"the screen."
+msgstr "启用或禁用将正在抓取的窗口从屏幕边缘脱离吸附。"
+
+#. (itstool) path: option/_short
+msgid "Snap off threshold"
+msgstr "脱离吸附阈值"
+
+#. (itstool) path: option/_long
+msgid ""
+"When attempting to move a snapped window, this option requires the user to "
+"move at least the specified amount of pixels before the window actually "
+"moves. This only takes effect with `move.enable_snap_off`."
+msgstr "尝试移动已吸附的窗口时，此选项要求用户移动至少指定的像素数后窗口才会实际移动。仅在启用 `move.enable_snap_off` 时生效。"
+
+#. (itstool) path: option/_short
+msgid "Disallow independently moving dialogues"
+msgstr "禁止独立移动对话框"
+
+#. (itstool) path: option/_long
+msgid "Disallows independently moving dialogues."
+msgstr "禁止对话框独立移动。"
+
+#. (itstool) path: option/_short
+msgid "Preview fill color"
+msgstr "预览填充颜色"
+
+#. (itstool) path: option/_short
+msgid "Preview border color"
+msgstr "预览边框颜色"
+
+#. (itstool) path: option/_short
+msgid "Preview border width"
+msgstr "预览边框宽度"
+
+#. (itstool) path: option/_short
+msgid "Switch workspace after"
+msgstr "切换工作区延迟"
+
+#. (itstool) path: option/_long
+msgid ""
+"Switch workspace when the mouse stays on the output edge for the given "
+"duration in milliseconds (-1 to disable)."
+msgstr "当鼠标在输出边缘停留达到指定时间（毫秒）后切换工作区（-1 表示禁用）。"

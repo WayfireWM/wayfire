@@ -1,0 +1,68 @@
+# Wayfire 简体中文翻译（zh_CN）
+# Maintainer: WenYin-Community <https://github.com/WenYin-Community/wayfire>
+# Translator: Wenyin Root <ruojiner@hotmail.com>
+msgid ""
+msgstr ""
+"Project-Id-Version: wayfire\n"
+"POT-Creation-Date: 2025-09-18 14:55+0300\n"
+"PO-Revision-Date: 2026-11-11 12:00+0800\n"
+"Last-Translator: Wenyin Root <ruojiner@hotmail.com>\n"
+"Language-Team: WenYin-Community <ruojiner@hotmail.com>\n"
+"Language: zh_CN\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. (itstool) path: plugin/_short
+#. (itstool) path: entry/_short
+msgid "Command"
+msgstr "命令"
+
+#. (itstool) path: plugin/_long
+msgid ""
+"A plugin to bind key combo (key, button, touch) to execute shell commands."
+msgstr "将组合键（按键、鼠标按钮、触摸）绑定到 Shell 命令的插件。"
+
+#. (itstool) path: option/_short
+#. (itstool) path: option/_long
+msgid "Regular bindings"
+msgstr "常规绑定"
+
+#. (itstool) path: entry/_long
+msgid "Sets the command to execute."
+msgstr "设置要执行的命令。"
+
+#. (itstool) path: entry/_short
+msgid "Binding"
+msgstr "绑定"
+
+#. (itstool) path: entry/_long
+msgid "Sets the triggering activator binding."
+msgstr "设置触发用的激活器绑定。"
+
+#. (itstool) path: option/_short
+msgid "Repeatable bindings"
+msgstr "可重复绑定"
+
+#. (itstool) path: option/_long
+msgid ""
+"Bindings which repeat their command if their key or button is held pressed."
+msgstr "按住按键或鼠标按钮时会重复执行命令的绑定。"
+
+#. (itstool) path: option/_short
+msgid "Always bindings"
+msgstr "始终生效的绑定"
+
+#. (itstool) path: option/_long
+msgid ""
+"Sets the bindings which are always available, even when screen is locked."
+msgstr "设置即使屏幕锁定时也始终可用的绑定。"
+
+#. (itstool) path: option/_short
+msgid "Release bindings"
+msgstr "释放绑定"
+
+#. (itstool) path: option/_long
+msgid "Sets the bindings which activate on release"
+msgstr "设置松开时触发的绑定。"

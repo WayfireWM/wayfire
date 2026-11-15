@@ -1,0 +1,49 @@
+# Wayfire 简体中文翻译（zh_CN）
+# Maintainer: WenYin-Community <https://github.com/WenYin-Community/wayfire>
+# Translator: Wenyin Root <ruojiner@hotmail.com>
+msgid ""
+msgstr ""
+"Project-Id-Version: wayfire\n"
+"POT-Creation-Date: 2025-09-18 14:55+0300\n"
+"PO-Revision-Date: 2026-11-11 12:00+0800\n"
+"Last-Translator: Wenyin Root <ruojiner@hotmail.com>\n"
+"Language-Team: WenYin-Community <ruojiner@hotmail.com>\n"
+"Language: zh_CN\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. (itstool) path: plugin/_short
+msgid "Workspace Sets"
+msgstr "工作区集"
+
+#. (itstool) path: plugin/_long
+msgid "A plugin which allows manipulation of workspace sets."
+msgstr "允许操作工作区集的插件。"
+
+#. (itstool) path: option/_short
+msgid "Bind/Select workspace set to current output"
+msgstr "将工作区集绑定/选择到当前输出"
+
+#. (itstool) path: option/_long
+msgid ""
+"A binding to bind and/or select the workspace set #N to the current output."
+msgstr "将工作区集 #N 绑定和/或选择到当前输出的绑定。"
+
+#. (itstool) path: option/_short
+msgid "Move window to workspace set"
+msgstr "将窗口移动到工作区集"
+
+#. (itstool) path: option/_long
+msgid "A binding to move the currently focused window to the workspace set #N."
+msgstr "将当前聚焦窗口移动到工作区集 #N 的绑定。"
+
+#. (itstool) path: option/_short
+msgid "Label duration"
+msgstr "标签持续时间"
+
+#. (itstool) path: option/_long
+msgid ""
+"Sets the duration in milliseconds for which the workspace set label is shown."
+msgstr "设置工作区集标签显示的持续时间（毫秒）。"

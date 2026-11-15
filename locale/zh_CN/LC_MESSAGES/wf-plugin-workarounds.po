@@ -1,0 +1,208 @@
+# Wayfire 简体中文翻译（zh_CN）
+# Maintainer: WenYin-Community <https://github.com/WenYin-Community/wayfire>
+# Translator: Wenyin Root <ruojiner@hotmail.com>
+msgid ""
+msgstr ""
+"Project-Id-Version: wayfire\n"
+"POT-Creation-Date: 2025-09-18 14:55+0300\n"
+"PO-Revision-Date: 2026-11-11 12:00+0800\n"
+"Last-Translator: Wenyin Root <ruojiner@hotmail.com>\n"
+"Language-Team: WenYin-Community <ruojiner@hotmail.com>\n"
+"Language: zh_CN\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. (itstool) path: plugin/_short
+msgid "Workarounds"
+msgstr "兼容性变通"
+
+#. (itstool) path: plugin/_long
+msgid "Some hacks that might be required to make things work."
+msgstr "为使功能正常工作可能需要的一些变通措施。"
+
+#. (itstool) path: option/_short
+msgid "Application ID mode"
+msgstr "应用 ID 模式"
+
+#. (itstool) path: option/_long
+msgid "Specifies the application ID mode."
+msgstr "指定应用 ID 模式。"
+
+#. (itstool) path: desc/_name
+msgid "Stock"
+msgstr "标准"
+
+#. (itstool) path: desc/_name
+msgid "GTK Shell"
+msgstr "GTK Shell"
+
+#. (itstool) path: desc/_name
+msgid "Full"
+msgstr "完整"
+
+#. (itstool) path: option/_short
+msgid "Make all dialogs modal"
+msgstr "将所有对话框设为模态"
+
+#. (itstool) path: option/_long
+msgid ""
+"If false, the main window can be focused even if it has a dialog. The dialog "
+"is nevertheless kept on top of the main window. Kwin defaults to false."
+msgstr "若为 false，即使主窗口带有对话框，主窗口仍可获得焦点。但对话框仍保持在主窗口上方。KWin 默认为 false。"
+
+#. (itstool) path: option/_short
+msgid "Allow dynamic repaint delay"
+msgstr "允许动态重绘延迟"
+
+#. (itstool) path: option/_long
+msgid ""
+"If true, allows Wayfire to dynamically recalculate its max_render_time, i.e "
+"allow render time higher than max_render_time."
+msgstr "若为 true，允许 Wayfire 动态重新计算 max_render_time，即允许渲染时间高于 max_render_time。"
+
+#. (itstool) path: option/_short
+msgid "Use external output configuration instead of Wayfire's own."
+msgstr "使用外部输出配置代替 Wayfire 自身的配置。"
+
+#. (itstool) path: option/_long
+msgid ""
+"If true, Wayfire will not handle any configuration options for outputs in "
+"the config file once an external daemon like https://github.com/emersion/"
+"kanshi sets the output configuration via the wlr-output-management protocol. "
+"Exceptions are made for options not available via wlr-output-management, "
+"like output mirroring and custom modelines."
+msgstr ""
+"若为 true，当外部守护进程（例如 https://github.com/emersion/kanshi）通过 "
+"wlr-output-management 协议设置输出配置后，Wayfire 将不再处理配置文件中任何输出相关选项。对于 "
+"wlr-output-management 无法提供的选项（例如输出镜像和自定义模型行）则例外。"
+
+#. (itstool) path: option/_short
+msgid "Allow views to overlap between multiple outputs."
+msgstr "允许窗口在多个输出之间重叠。"
+
+#. (itstool) path: option/_long
+msgid ""
+"Allow views to overlap between multiple outputs. Many of the core plugins "
+"will not behave properly with this option set!"
+msgstr "允许窗口在多个输出之间重叠。启用此选项后，许多核心插件将无法正常工作！"
+
+#. (itstool) path: option/_short
+msgid ""
+"Force xdg-decoration clients to use the compositor-preferred decoration mode."
+msgstr "强制 xdg-decoration 客户端使用合成器首选的装饰模式。"
+
+#. (itstool) path: option/_long
+msgid ""
+"Force xdg-decoration clients to use the compositor-preferred decoration mode "
+"regardless of the client's preference."
+msgstr "无论客户端偏好如何，强制 xdg-decoration 客户端使用合成器首选的装饰模式。"
+
+#. (itstool) path: option/_short
+msgid "Enable calling dlclose() when a plugin is unloaded"
+msgstr "插件卸载时调用 dlclose()"
+
+#. (itstool) path: option/_long
+msgid ""
+"Enable calling dlclose() when a plugin is unloaded. Note that this may not "
+"work well with all plugins."
+msgstr "插件卸载时调用 dlclose()。注意，这可能并非对所有插件都有效。"
+
+#. (itstool) path: option/_short
+msgid "Discard output from commands invoked by Wayfire."
+msgstr "丢弃 Wayfire 调用命令的输出。"
+
+#. (itstool) path: option/_long
+msgid ""
+"Discard output from commands invoked by Wayfire, so that they don't end up "
+"in the logs."
+msgstr "丢弃 Wayfire 调用命令的输出，以免其出现在日志中。"
+
+#. (itstool) path: option/_short
+msgid "Enable support for the newer input-method-v2 protocol."
+msgstr "启用对较新的 input-method-v2 协议的支持。"
+
+#. (itstool) path: option/_long
+msgid ""
+"Enable support for the newer input-method-v2 protocol. Note that the input-"
+"method-v1 protocol works better in many cases."
+msgstr "启用对较新的 input-method-v2 协议的支持。注意，在许多情况下 input-method-v1 协议工作得更好。"
+
+#. (itstool) path: option/_short
+msgid ""
+"Enable certain damage optimizations which are based on a surfaces' opaque "
+"regions."
+msgstr "启用基于表面不透明区域的某些重绘优化。"
+
+#. (itstool) path: option/_long
+msgid ""
+"Enable certain damage optimizations which are based on a surfaces' opaque "
+"regions. In some cases, this optimization might give unexpected results (i.e "
+"background app stops updating) even though this is fine according to "
+"Wayland's protocol."
+msgstr "启用基于表面不透明区域的某些重绘优化。在某些情况下，尽管符合 Wayland 协议，此优化仍可能导致意外结果（例如后台应用停止更新）。"
+
+#. (itstool) path: option/_short
+msgid "Force frame synchronization."
+msgstr "强制帧同步。"
+
+#. (itstool) path: option/_long
+msgid ""
+"This option can be used to workaround driver bugs that cause rendering "
+"artifacts, though can cause more resource usage. Leave disabled if unsure."
+msgstr "此选项可用于绕过导致渲染伪影的驱动缺陷，但可能增加资源占用。不确定时请保持禁用。"
+
+#. (itstool) path: option/_short
+msgid "Maximum buffer size"
+msgstr "最大缓冲区大小"
+
+#. (itstool) path: option/_long
+msgid ""
+"Maximum size in pixels of graphics buffers used for rendering. Needs to be "
+"set lower on some systems to avoid crashes and other issues."
+msgstr "用于渲染的图形缓冲区最大尺寸（像素）。在某些系统上需要设置得更低，以避免崩溃和其他问题。"
+
+#. (itstool) path: option/_short
+msgid "Disable primary selection"
+msgstr "禁用主选区"
+
+#. (itstool) path: option/_long
+msgid "Disable primary selection (middle-click copy/paste)."
+msgstr "禁用主选区（中键复制/粘贴）。"
+
+#. (itstool) path: option/_short
+msgid "Focus main surface instead of popup menus"
+msgstr "聚焦主表面而非弹出菜单"
+
+#. (itstool) path: option/_long
+msgid ""
+"Focus the main surface instead of popup menus. Works around some bugs in Qt-"
+"based apps related to copy-paste."
+msgstr "聚焦主表面而非弹出菜单。可绕过 Qt 应用中与复制粘贴相关的一些缺陷。"
+
+#. (itstool) path: option/_short
+msgid "Keep last focused toplevel activated"
+msgstr "保持最后聚焦的顶层窗口处于活动状态"
+
+#. (itstool) path: option/_long
+msgid ""
+"When a layer-shell view grabs keyboard focus, keep the last focused toplevel "
+"view as activated."
+msgstr "当 layer-shell 窗口获取键盘焦点时，保持最后聚焦的顶层窗口处于活动状态。"
+
+#. (itstool) path: option/_short
+msgid "Auto-reload Config"
+msgstr "自动重载配置"
+
+#. (itstool) path: option/_long
+msgid "Automatically reload the config file when it's modified."
+msgstr "配置文件被修改时自动重载。"
+
+#. (itstool) path: option/_short
+msgid "Config reload delay"
+msgstr "配置重载延迟"
+
+#. (itstool) path: option/_long
+msgid "Delay in milliseconds after a config file change before reloading."
+msgstr "配置文件更改后延迟重载的时间（毫秒）。"

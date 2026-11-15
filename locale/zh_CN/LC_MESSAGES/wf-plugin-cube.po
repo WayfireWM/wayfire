@@ -1,0 +1,177 @@
+# Wayfire 简体中文翻译（zh_CN）
+# Maintainer: WenYin-Community <https://github.com/WenYin-Community/wayfire>
+# Translator: Wenyin Root <ruojiner@hotmail.com>
+msgid ""
+msgstr ""
+"Project-Id-Version: wayfire\n"
+"POT-Creation-Date: 2025-09-18 14:55+0300\n"
+"PO-Revision-Date: 2026-11-11 12:00+0800\n"
+"Last-Translator: Wenyin Root <ruojiner@hotmail.com>\n"
+"Language-Team: WenYin-Community <ruojiner@hotmail.com>\n"
+"Language: zh_CN\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. (itstool) path: plugin/_short
+msgid "Cube"
+msgstr "立方体"
+
+#. (itstool) path: plugin/_long
+msgid "A plugin to show the current workspace row as a cube."
+msgstr "将当前工作区行显示为立方体的插件。"
+
+#. (itstool) path: group/_short
+msgid "Bindings"
+msgstr "绑定"
+
+#. (itstool) path: group/_long
+msgid "Sets the cube bindings."
+msgstr "设置立方体绑定。"
+
+#. (itstool) path: option/_short
+msgid "Activate"
+msgstr "激活"
+
+#. (itstool) path: option/_long
+msgid "Activates the cube with the specified button."
+msgstr "使用指定按钮激活立方体。"
+
+#. (itstool) path: option/_short
+msgid "Rotate left"
+msgstr "向左旋转"
+
+#. (itstool) path: option/_long
+msgid "Rotates left with the specified activator."
+msgstr "使用指定激活器向左旋转。"
+
+#. (itstool) path: option/_short
+msgid "Rotate right"
+msgstr "向右旋转"
+
+#. (itstool) path: option/_long
+msgid "Rotates right with the specified activator."
+msgstr "使用指定激活器向右旋转。"
+
+#. (itstool) path: option/_short
+msgid "Deformation"
+msgstr "变形"
+
+#. (itstool) path: option/_long
+msgid "Specifies the deformation to be used."
+msgstr "指定使用的变形效果。"
+
+#. (itstool) path: desc/_name
+msgid "None"
+msgstr "无"
+
+#. (itstool) path: desc/_name
+msgid "Cylinder"
+msgstr "圆柱"
+
+#. (itstool) path: desc/_name
+msgid "Star"
+msgstr "星形"
+
+#. (itstool) path: option/_short
+msgid "Use lighting"
+msgstr "使用光照"
+
+#. (itstool) path: option/_long
+msgid "Specifies whether to use lighting."
+msgstr "指定是否使用光照。"
+
+#. (itstool) path: option/_short
+msgid "Zoom"
+msgstr "缩放"
+
+#. (itstool) path: option/_long
+msgid ""
+"Sets the level of zoom out. Setting the value to **0.0** means to not zoom "
+"out."
+msgstr "设置缩小程度。值为 **0.0** 表示不缩小。"
+
+#. (itstool) path: option/_short
+msgid "Duration"
+msgstr "持续时间"
+
+#. (itstool) path: option/_long
+msgid "Sets the initial animation duration in milliseconds."
+msgstr "设置初始动画持续时间（毫秒）。"
+
+#. (itstool) path: option/_short
+msgid "Zoom speed"
+msgstr "缩放速度"
+
+#. (itstool) path: option/_long
+msgid "Sets the speed factor for zooming."
+msgstr "设置缩放的速度系数。"
+
+#. (itstool) path: option/_short
+msgid "Horizontal spin speed"
+msgstr "水平旋转速度"
+
+#. (itstool) path: option/_long
+msgid "Sets the velocity of horizontal spinning."
+msgstr "设置水平旋转的速度。"
+
+#. (itstool) path: option/_short
+msgid "Vertical spin speed"
+msgstr "垂直旋转速度"
+
+#. (itstool) path: option/_long
+msgid "Sets the velocity of vertical spinning."
+msgstr "设置垂直旋转的速度。"
+
+#. (itstool) path: option/_short
+msgid "Background mode"
+msgstr "背景模式"
+
+#. (itstool) path: option/_long
+msgid "Sets the background mode."
+msgstr "设置背景模式。"
+
+#. (itstool) path: desc/_name
+msgid "Simple"
+msgstr "简单"
+
+#. (itstool) path: desc/_name
+msgid "Skydome"
+msgstr "天空穹顶"
+
+#. (itstool) path: desc/_name
+msgid "Cubemap"
+msgstr "立方体贴图"
+
+#. (itstool) path: option/_short
+msgid "Background color"
+msgstr "背景颜色"
+
+#. (itstool) path: option/_long
+msgid "Sets the background color for the simple background mode."
+msgstr "设置简单背景模式的背景颜色。"
+
+#. (itstool) path: option/_short
+msgid "Skydome mirror"
+msgstr "天空穹顶镜像"
+
+#. (itstool) path: option/_long
+msgid "Specifies whether to mirror skydome."
+msgstr "指定是否镜像天空穹顶。"
+
+#. (itstool) path: option/_short
+msgid "Skydome texture"
+msgstr "天空穹顶纹理"
+
+#. (itstool) path: option/_long
+msgid "Loads the specified texture for the skydome background mode."
+msgstr "为天空穹顶背景模式加载指定的纹理。"
+
+#. (itstool) path: option/_short
+msgid "Cubemap image"
+msgstr "立方体贴图图像"
+
+#. (itstool) path: option/_long
+msgid "Loads the specified image for the cubemap background mode."
+msgstr "为立方体贴图背景模式加载指定的图像。"
