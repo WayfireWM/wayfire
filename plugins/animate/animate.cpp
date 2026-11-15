@@ -228,14 +228,14 @@ class wayfire_animation : public wf::plugin_interface_t, private wf::per_output_
         register_effect<zoom_animation>("zoom", default_duration);
         register_effect<wf::zap::zap_animation>("zap", zap_duration);
 
-        if (wf::get_core().is_gles2())
+        if (wf::get_core().is_gles2() || wf::get_core().is_vulkan())
         {
             register_effect<FireAnimation>("fire", default_duration);
             register_effect<wf::spin::spin_animation>("spin", spin_duration);
             register_effect<wf::squeezimize::squeezimize_animation>("squeezimize", squeezimize_duration);
         } else
         {
-            LOGW("Running with Vulkan/Pixman renderers, disabling fire, spin and squeezimize animations!");
+            LOGW("Running with Pixman renderer, disabling fire, spin and squeezimize animations!");
         }
     }
 
