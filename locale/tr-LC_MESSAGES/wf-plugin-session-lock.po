@@ -1,0 +1,25 @@
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"POT-Creation-Date: 2025-09-18 14:55+0300\n"
+"PO-Revision-Date: 2026-11-16 19:35+0300\n"
+"Last-Translator: Türkçe Çeviri\n"
+"Language-Team: Türkçe\n"
+"Language: tr\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Poedit 3.10\n"
+
+#. (itstool) path: plugin/_short
+msgid "Session Lock Protocol"
+msgstr "Oturum Kilidi Protokolü"
+
+#. (itstool) path: plugin/_long
+msgid ""
+"An implementation of the ext-session-lock-v1 protocol. Provides more secure "
+"screen locking."
+msgstr ""
+"Ext-session-lock-v1 protokolünün bir uygulaması. Daha güvenli ekran kilidi "
+"sağlar."

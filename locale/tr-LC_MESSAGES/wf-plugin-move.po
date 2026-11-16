@@ -1,0 +1,131 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"POT-Creation-Date: 2025-09-18 14:55+0300\n"
+"PO-Revision-Date: 2026-11-16 10:48+0300\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: tr\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Poedit 3.10\n"
+
+#. (itstool) path: plugin/_short
+msgid "Move"
+msgstr "Taşı"
+
+#. (itstool) path: plugin/_long
+msgid ""
+"A plugin to move windows around by dragging them from any part (not just the "
+"title bar)."
+msgstr ""
+"Pencereleri yalnızca başlık çubuğundan değil, herhangi bir yerinden "
+"sürükleyerek taşımaya yarayan bir eklenti."
+
+#. (itstool) path: option/_short
+msgid "Activate"
+msgstr "Etkinleştir"
+
+#. (itstool) path: option/_long
+msgid ""
+"When the specified button is held down, you can drag windows to move them."
+msgstr ""
+"Belirtilen düğme basılı tutulduğunda, pencereleri sürükleyerek "
+"taşıyabilirsiniz."
+
+#. (itstool) path: option/_short
+msgid "Snap"
+msgstr "Yapışma"
+
+#. (itstool) path: option/_long
+msgid ""
+"Enables or disables snapping the window being moved to an edge of the screen."
+msgstr ""
+"Taşınmakta olan pencerenin ekranın bir kenarına yapışmasını etkinleştirir "
+"veya devre dışı bırakır."
+
+#. (itstool) path: option/_short
+msgid "Snap threshold"
+msgstr "Yapışma eşiği"
+
+#. (itstool) path: option/_long
+msgid ""
+"Sets the amount of pixels from the edge of the screen for which aero-snap "
+"gets triggered."
+msgstr ""
+"Ekran kenarından itibaren, aero yapışmasının tetikleneceği piksel sayısını "
+"ayarlar."
+
+#. (itstool) path: option/_short
+msgid "Quarter snap threshold"
+msgstr "Çeyrek yapışma eşiği"
+
+#. (itstool) path: option/_long
+msgid ""
+"Sets the amount of pixels from the corner of the screen for which quarter "
+"aero-snap gets triggered. The mouse should still be within snap_threshold of "
+"at least one edge of the screen."
+msgstr ""
+"Ekran köşesinden itibaren, çeyrek aero yapışmasının tetikleneceği piksel "
+"sayısını ayarlar. Fare yine de ekranın en az bir kenarına snap_threshold "
+"mesafesinden yakın olmalıdır."
+
+#. (itstool) path: option/_short
+msgid "Snap off"
+msgstr "Yapışmayı çözme"
+
+#. (itstool) path: option/_long
+msgid ""
+"Enables or disables snapping off the window being grabbed from an edge of "
+"the screen."
+msgstr ""
+"Tutulmakta olan pencerenin ekranın bir kenarından çözülmesini etkinleştirir "
+"veya devre dışı bırakır."
+
+#. (itstool) path: option/_short
+msgid "Snap off threshold"
+msgstr "Yapışma çözme eşiği"
+
+#. (itstool) path: option/_long
+msgid ""
+"When attempting to move a snapped window, this option requires the user to "
+"move at least the specified amount of pixels before the window actually "
+"moves. This only takes effect with `move.enable_snap_off`."
+msgstr ""
+"Yapışmış bir pencereyi taşımaya çalışırken, bu seçenek pencere gerçekten "
+"hareket etmeden önce kullanıcının en az belirtilen miktarda piksel hareket "
+"etmesini gerektirir. Yalnızca `move.enable_snap_off` ile birlikte etkili "
+"olur."
+
+#. (itstool) path: option/_short
+msgid "Disallow independently moving dialogues"
+msgstr "Diyalogların bağımsız taşınmasını engelle"
+
+#. (itstool) path: option/_long
+msgid "Disallows independently moving dialogues."
+msgstr "Diyalogların ana pencerelerinden bağımsız olarak taşınmasını engeller."
+
+#. (itstool) path: option/_short
+msgid "Preview fill color"
+msgstr "Önizleme dolgu rengi"
+
+#. (itstool) path: option/_short
+msgid "Preview border color"
+msgstr "Önizleme kenarlık rengi"
+
+#. (itstool) path: option/_short
+msgid "Preview border width"
+msgstr "Önizleme kenarlık genişliği"
+
+#. (itstool) path: option/_short
+msgid "Switch workspace after"
+msgstr "Sonrasında çalışma alanını değiştir"
+
+#. (itstool) path: option/_long
+msgid ""
+"Switch workspace when the mouse stays on the output edge for the given "
+"duration in milliseconds (-1 to disable)."
+msgstr ""
+"Fare, ekran kenarında verilen süre kadar (milisaniye cinsinden) kaldığında "
+"çalışma alanını değiştirir (-1 ile devre dışı bırakılır)."

@@ -1,0 +1,45 @@
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"POT-Creation-Date: 2025-09-18 14:55+0300\n"
+"PO-Revision-Date: 2026-11-16 19:33+0300\n"
+"Last-Translator: Türkçe Çeviri\n"
+"Language-Team: Türkçe\n"
+"Language: tr\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Poedit 3.10\n"
+
+#. (itstool) path: plugin/_short
+msgid "Wobbly"
+msgstr "Esnek"
+
+#. (itstool) path: plugin/_long
+msgid "A plugin to get wobbly windows."
+msgstr "Esnek pencereler elde etmek için bir eklenti."
+
+#. (itstool) path: option/_short
+msgid "Friction"
+msgstr "Sürtünme"
+
+#. (itstool) path: option/_long
+msgid "Sets the friction value."
+msgstr "Sürtünme değerini ayarlar."
+
+#. (itstool) path: option/_short
+msgid "Spring constant"
+msgstr "Yay sabiti"
+
+#. (itstool) path: option/_long
+msgid "Sets the spring constant."
+msgstr "Yay sabitini ayarlar."
+
+#. (itstool) path: option/_short
+msgid "Grid resolution"
+msgstr "Izgara çözünürlüğü"
+
+#. (itstool) path: option/_long
+msgid "Sets the grid resolution."
+msgstr "Izgara çözünürlüğünü ayarlar."

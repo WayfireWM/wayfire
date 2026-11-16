@@ -1,0 +1,45 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"POT-Creation-Date: 2025-09-18 14:55+0300\n"
+"PO-Revision-Date: 2026-11-16 12:21+0300\n"
+"Last-Translator: \n"
+"Language-Team: Turkish\n"
+"Language: tr\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+"X-Generator: Poedit 3.10\n"
+
+#. (itstool) path: plugin/_short
+msgid "Alpha"
+msgstr "Alfa"
+
+#. (itstool) path: plugin/_long
+msgid "A plugin to change the opacity of windows."
+msgstr "Pencerelerin opaklığını değiştirmek için bir eklenti."
+
+#. (itstool) path: option/_short
+msgid "Modifier"
+msgstr "Değiştirici"
+
+#. (itstool) path: option/_long
+msgid ""
+"When the modifier key is held down, you can scroll down and up to adjust the "
+"opacity of the window."
+msgstr ""
+"Değiştirici tuş basılı tutulurken, pencerenin opaklığını ayarlamak için "
+"aşağı ve yukarı kaydırabilirsiniz."
+
+#. (itstool) path: option/_short
+msgid "Minimum"
+msgstr "En az"
+
+#. (itstool) path: option/_long
+msgid ""
+"Sets the minimum opacity of the window between 0 (completely transparent) "
+"and 1 (completely opaque)."
+msgstr ""
+"Pencerenin en az opaklık değerini 0 (tamamen saydam) ile 1 (tamamen opak) "
+"arasında ayarlar."

@@ -1,0 +1,85 @@
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"POT-Creation-Date: 2025-09-18 14:55+0300\n"
+"PO-Revision-Date: 2026-11-16 20:13+0300\n"
+"Last-Translator: Türkçe Çeviri\n"
+"Language-Team: Türkçe\n"
+"Language: tr\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Poedit 3.10\n"
+
+#. (itstool) path: plugin/_short
+msgid "Window Rotate"
+msgstr "Pencere Döndürme"
+
+#. (itstool) path: plugin/_long
+msgid "A plugin to rotate windows with the mouse."
+msgstr "Pencereleri fare ile döndüren bir eklenti."
+
+#. (itstool) path: option/_short
+msgid "Rotate 2D"
+msgstr "2B Döndür"
+
+#. (itstool) path: option/_long
+msgid "Rotates the window around its z-axis."
+msgstr "Pencereyi z ekseni etrafında döndürür."
+
+#. (itstool) path: option/_short
+msgid "Rotate 3D"
+msgstr "3B Döndür"
+
+#. (itstool) path: option/_long
+msgid "Rotates the window around its x and y axes.."
+msgstr "Pencereyi x ve y eksenleri etrafında döndürür."
+
+#. (itstool) path: option/_short
+msgid "Reset Radius"
+msgstr "Sıfırlama Yarıçapı"
+
+#. (itstool) path: option/_long
+msgid ""
+"The radius of the reset area for 2D rotations. The reset area is located at "
+"the center of the view and resets the rotation."
+msgstr ""
+"2B döndürmeler için sıfırlama alanının yarıçapı. Sıfırlama alanı görünümün "
+"merkezinde yer alır ve döndürmeyi sıfırlar."
+
+#. (itstool) path: option/_short
+msgid "Reset Current"
+msgstr "Geçerli Pencereyi Sıfırla"
+
+#. (itstool) path: option/_long
+msgid "Remove rotation from the currently focused view."
+msgstr "Şu anda odaklanan görünümün döndürmesini kaldırır."
+
+#. (itstool) path: option/_short
+msgid "Reset All"
+msgstr "Tümünü Sıfırla"
+
+#. (itstool) path: option/_long
+msgid "Remove rotation from all views."
+msgstr "Tüm görünümlerin döndürmesini kaldırır."
+
+#. (itstool) path: option/_short
+msgid "Sensitivity (3D)"
+msgstr "Hassasiyet (3B)"
+
+#. (itstool) path: option/_long
+msgid ""
+"How quickly 3D rotations happen with mouse movements (in arminutes per "
+"pixel)."
+msgstr ""
+"Fare hareketleriyle 3B döndürmelerin ne kadar hızlı gerçekleştiği (piksel "
+"başına yay-dakikası cinsinden)."
+
+#. (itstool) path: option/_short
+msgid "Invert 3D rotation directions"
+msgstr "3B döndürme yönlerini tersine çevir"
+
+#. (itstool) path: option/_long
+msgid "Invert the direction of movement for 3D rotations."
+msgstr "3B döndürmeler için hareket yönünü tersine çevirir."

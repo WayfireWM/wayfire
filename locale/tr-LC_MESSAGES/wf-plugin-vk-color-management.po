@@ -1,0 +1,25 @@
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"POT-Creation-Date: 2025-09-18 14:55+0300\n"
+"PO-Revision-Date: 2026-11-16 20:08+0300\n"
+"Last-Translator: Türkçe Çeviri\n"
+"Language-Team: Türkçe\n"
+"Language: tr\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Poedit 3.10\n"
+
+#. (itstool) path: plugin/_short
+msgid "ICC profile support for the GLES2 renderer"
+msgstr "GLES2 işleyici için ICC profili desteği"
+
+#. (itstool) path: plugin/_long
+msgid ""
+"Adds support for ICC profiles when running with the GLES2 renderer. Needs "
+"wlroots' vulkan renderer."
+msgstr ""
+"GLES2 işleyici ile çalışırken ICC profilleri için destek ekler. wlroots'un "
+"Vulkan işleyicisi gerekir."

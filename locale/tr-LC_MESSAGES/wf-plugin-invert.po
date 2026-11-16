@@ -1,0 +1,37 @@
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"POT-Creation-Date: 2025-09-18 14:55+0300\n"
+"PO-Revision-Date: 2026-11-16 19:43+0300\n"
+"Last-Translator: Türkçe Çeviri\n"
+"Language-Team: Türkçe\n"
+"Language: tr\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Poedit 3.10\n"
+
+#. (itstool) path: plugin/_short
+msgid "Invert"
+msgstr "Tersine çevir"
+
+#. (itstool) path: plugin/_long
+msgid "A plugin to invert the colors of the whole output."
+msgstr "Çıkışın tamamının renklerini tersine çeviren bir eklenti."
+
+#. (itstool) path: option/_short
+msgid "Toggle"
+msgstr "Aç/Kapat"
+
+#. (itstool) path: option/_long
+msgid "Inverts the colors of the whole output with the specified activator."
+msgstr "Belirtilen etkinleştirici ile çıkışın tamamının renklerini tersine çevirir."
+
+#. (itstool) path: option/_short
+msgid "Preserve Hue"
+msgstr "Tonu koru"
+
+#. (itstool) path: option/_long
+msgid "Only operate on black and white, preserving the hue"
+msgstr "Yalnızca siyah beyaz üzerinde çalışır, tonu korur"

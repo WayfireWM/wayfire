@@ -1,0 +1,191 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"POT-Creation-Date: 2025-09-18 14:55+0300\n"
+"PO-Revision-Date: 2026-11-16 18:44+0300\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: tr\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Poedit 3.10\n"
+
+#. (itstool) path: plugin/_short
+msgid "Scale"
+msgstr "Ölçekleme"
+
+#. (itstool) path: plugin/_long
+msgid "Show all views on screen."
+msgstr "Tüm görünümleri ekranda gösterir."
+
+#. (itstool) path: group/_short
+msgid "Behavior"
+msgstr "Davranış"
+
+#. (itstool) path: option/_short
+msgid "Toggle"
+msgstr "Aç/Kapa"
+
+#. (itstool) path: option/_long
+msgid "Toggles scale with the specified activator."
+msgstr "Ölçeklemeyi belirtilen etkinleştirici ile açar/kapatır."
+
+#. (itstool) path: option/_short
+msgid "Toggle for all workspaces"
+msgstr "Tüm çalışma alanları için aç/kapa"
+
+#. (itstool) path: option/_long
+msgid "Toggles scale showing windows from all workspaces."
+msgstr "Tüm çalışma alanlarındaki pencereleri göstererek ölçeklemeyi açar/kapatır."
+
+#. (itstool) path: option/_short
+msgid "Animation Transition Time"
+msgstr "Geçiş animasyonu süresi"
+
+#. (itstool) path: option/_long
+msgid "Time it takes for views to transition. Units are in milliseconds."
+msgstr "Görünümlerin geçiş yapması için gereken süre. Birim milisaniye cinsindendir."
+
+#. (itstool) path: option/_short
+msgid "Allow Zoomed Views"
+msgstr "Yakınlaştırılmış görünümlere izin ver"
+
+#. (itstool) path: option/_long
+msgid "Whether scaled views can have a size larger than their original size."
+msgstr ""
+"Ölçeklenen görünümlerin özgün boyutlarından daha büyük bir boyuta sahip olabilip "
+"olamayacağı."
+
+#. (itstool) path: option/_short
+msgid "Close views with middle click"
+msgstr "Görünümleri orta tık ile kapat"
+
+#. (itstool) path: option/_long
+msgid ""
+"Use the middle mouse button to close views in the scale state. Only applies if "
+"interactive mode is not enabled."
+msgstr ""
+"Ölçekleme durumundaki görünümleri kapatmak için orta fare düğmesini kullanın. "
+"Yalnızca etkileşimli mod etkin değilse uygulanır."
+
+#. (itstool) path: option/_short
+msgid "Include minimized views"
+msgstr "Küçültülmüş görünümleri dahil et"
+
+#. (itstool) path: option/_long
+msgid "Whether to show views that are minimized when starting scale."
+msgstr "Ölçekleme başlatıldığında küçültülmüş görünümlerin gösterilip gösterilmeyeceği."
+
+#. (itstool) path: option/_short
+msgid "Close on new views"
+msgstr "Yeni görünümlerde kapat"
+
+#. (itstool) path: option/_long
+msgid "Whether to close scale when a new view is mapped."
+msgstr "Yeni bir görünüm eşlendiğinde ölçeklemenin kapatılıp kapatılmayacağı."
+
+#. (itstool) path: group/_short
+msgid "Appearance"
+msgstr "Görünüm"
+
+#. (itstool) path: option/_short
+msgid "Spacing"
+msgstr "Aralık"
+
+#. (itstool) path: option/_long
+msgid "Sets the spacing between the views."
+msgstr "Görünümler arasındaki boşluğu ayarlar."
+
+#. (itstool) path: option/_short
+msgid "Outer Margin"
+msgstr "Dış kenar boşluğu"
+
+#. (itstool) path: option/_long
+msgid ""
+"The outer margin is the space reserved between the scaled windows and the monitor "
+"edges while scale is active."
+msgstr ""
+"Dış kenar boşluğu, ölçekleme etkinken ölçeklenen pencereler ile monitör kenarları "
+"arasında ayrılan alandır."
+
+#. (itstool) path: option/_short
+msgid "Inactive Opacity"
+msgstr "Etkin olmayanların opaklığı"
+
+#. (itstool) path: option/_long
+msgid "Set the opacity value of the inactive windows."
+msgstr "Etkin olmayan pencerelerin opaklık değerini ayarlar."
+
+#. (itstool) path: option/_short
+msgid "Minimized View Opacity"
+msgstr "Küçültülmüş görünümlerin opaklığı"
+
+#. (itstool) path: option/_long
+msgid "Set the opacity value of minimized views that are shown in scale."
+msgstr "Ölçeklemede gösterilen küçültülmüş görünümlerin opaklık değerini ayarlar."
+
+#. (itstool) path: option/_short
+msgid "Show views' title"
+msgstr "Görünümlerin başlığını göster"
+
+#. (itstool) path: option/_long
+msgid "Whether to display the title of each view as an overlay."
+msgstr "Her görünümün başlığının bir kaplama olarak görüntülenip görüntülenmeyeceği."
+
+#. (itstool) path: desc/_name
+msgid "Never"
+msgstr "Asla"
+
+#. (itstool) path: desc/_name
+msgid "Only for the view under the pointer"
+msgstr "Yalnızca işaretçinin altındaki görünüm için"
+
+#. (itstool) path: desc/_name
+msgid "For all views"
+msgstr "Tüm görünümler için"
+
+#. (itstool) path: option/_short
+msgid "Font size for title"
+msgstr "Başlık için yazı tipi boyutu"
+
+#. (itstool) path: option/_long
+msgid "Size of font used to display an overlay of each view's title."
+msgstr ""
+"Her görünümün başlık kaplamasını görüntülemek için kullanılan yazı tipinin boyutu."
+
+#. (itstool) path: option/_short
+msgid "Position for title"
+msgstr "Başlık konumu"
+
+#. (itstool) path: option/_long
+msgid "Position for overlays of views' titles when shown."
+msgstr "Görünümlerin başlık kaplamaları gösterildiğinde konum."
+
+#. (itstool) path: desc/_name
+msgid "Top"
+msgstr "Üst"
+
+#. (itstool) path: desc/_name
+msgid "Center"
+msgstr "Orta"
+
+#. (itstool) path: desc/_name
+msgid "Bottom"
+msgstr "Alt"
+
+#. (itstool) path: option/_short
+msgid "Background color"
+msgstr "Arka plan rengi"
+
+#. (itstool) path: option/_long
+msgid "Background color for title overlay text."
+msgstr "Başlık kaplama metni için arka plan rengi."
+
+#. (itstool) path: option/_short
+msgid "Text color"
+msgstr "Metin rengi"
+
+#. (itstool) path: option/_long
+msgid "Text color for title overlay."
+msgstr "Başlık kaplaması için metin rengi."

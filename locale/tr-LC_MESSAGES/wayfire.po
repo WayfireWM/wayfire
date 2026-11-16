@@ -1,0 +1,195 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"POT-Creation-Date: 2025-09-18 14:55+0300\n"
+"PO-Revision-Date: 2026-11-16 09:33+0300\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: tr\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Poedit 3.10\n"
+
+#. (itstool) path: plugin/_short
+msgid "Core"
+msgstr "Çekirdek"
+
+#. (itstool) path: plugin/_long
+msgid "General options."
+msgstr "Genel seçenekler."
+
+#. (itstool) path: option/_short
+msgid "Plugins"
+msgstr "Eklentiler"
+
+#. (itstool) path: option/_long
+msgid "Loads the specified plugins, space-separated list."
+msgstr "Belirtilen eklentileri boşlukla ayrılmış liste olarak yükler."
+
+#. (itstool) path: option/_short
+msgid "Close view"
+msgstr "Görünümü kapat"
+
+#. (itstool) path: option/_long
+msgid "Closes the currently focused window with the specified key."
+msgstr "O an odaklanmış pencereyi belirtilen tuşla kapatır."
+
+#. (itstool) path: option/_short
+msgid "Horizontal virtual size"
+msgstr "Yatay sanal boyut"
+
+#. (itstool) path: option/_long
+msgid ""
+"Sets the number of horizontal workspaces. Currently, cannot be changed at "
+"runtime."
+msgstr ""
+"Yatay çalışma alanlarının sayısını ayarlar. Şu anda çalışma zamanında "
+"değiştirilemez."
+
+#. (itstool) path: option/_short
+msgid "Vertical virtual size"
+msgstr "Dikey sanal boyut"
+
+#. (itstool) path: option/_long
+msgid ""
+"Sets the number of vertical workspaces. Currently, cannot be changed at "
+"runtime."
+msgstr ""
+"Dikey çalışma alanlarının sayısını ayarlar. Şu anda çalışma zamanında "
+"değiştirilemez."
+
+#. (itstool) path: option/_short
+msgid "Background color"
+msgstr "Arka plan rengi"
+
+#. (itstool) path: option/_long
+msgid ""
+"Sets the background color of workspaces. Visible when nothing is drawing the "
+"background."
+msgstr ""
+"Çalışma alanlarının arka plan rengini ayarlar. Arka planı başka bir şey "
+"çizmediğinde görünür."
+
+#. (itstool) path: option/_short
+msgid "Preferred decoration mode"
+msgstr "Tercih edilen dekorasyon modu"
+
+#. (itstool) path: option/_long
+msgid ""
+"Sets the preferred window decoration mode. Possible values are `client` and "
+"`server`. `client` allows the client to draw its own decorations."
+msgstr ""
+"Tercih edilen pencere dekorasyon modunu ayarlar. Olası değerler `client` ve "
+"`server` şeklindedir. `client`, istemcinin kendi dekorasyonlarını çizmesine "
+"izin verir."
+
+#. (itstool) path: desc/_name
+msgid "Client"
+msgstr "Client"
+
+#. (itstool) path: desc/_name
+msgid "Server"
+msgstr "Server"
+
+#. (itstool) path: option/_short
+msgid "XWayland"
+msgstr "XWayland"
+
+#. (itstool) path: option/_long
+msgid ""
+"Enables or disables XWayland support, which allows X11 applications to be "
+"used."
+msgstr ""
+"X11 uygulamalarının kullanılabilmesini sağlayan XWayland desteğini "
+"etkinleştirir veya devre dışı bırakır."
+
+#. (itstool) path: desc/_name
+msgid "Enable"
+msgstr "Etkinleştir"
+
+#. (itstool) path: desc/_name
+msgid "Disable"
+msgstr "Devre dışı bırak"
+
+#. (itstool) path: desc/_name
+msgid "Start when client connects"
+msgstr "İstemci bağlandığında başlat"
+
+#. (itstool) path: option/_short
+msgid "XWayland startup script"
+msgstr "XWayland başlangıç betiği"
+
+#. (itstool) path: option/_long
+msgid ""
+"A script to execute when the XWayland server starts. This script is executed "
+"in a POSIX shell (/bin/sh)."
+msgstr ""
+"XWayland sunucusu başlatıldığında çalıştırılacak bir betik. Bu betik bir "
+"POSIX kabuğunda (/bin/sh) çalıştırılır."
+
+#. (itstool) path: option/_short
+msgid "Maximum render time"
+msgstr "En yüksek çizim süresi"
+
+#. (itstool) path: option/_long
+msgid ""
+"Sets the compositor render delay in milliseconds, which allows applications "
+"to render with low latency."
+msgstr ""
+"Kompozitör çizim gecikmesini milisaniye cinsinden ayarlar; uygulamaların "
+"düşük gecikmeyle çizim yapmasını sağlar."
+
+#. (itstool) path: option/_short
+msgid "Timeout for transactions"
+msgstr "İşlemler için zaman aşımı"
+
+#. (itstool) path: option/_long
+msgid ""
+"Maximum time in milliseconds to wait for clients to respond to compositor "
+"requests."
+msgstr ""
+"İstemcilerin kompozitör isteklerine yanıt vermesini beklemek için milisaniye "
+"cinsinden en yüksek süre."
+
+#. (itstool) path: option/_short
+msgid "Focus on click if keyboard modifiers are pressed"
+msgstr "Değiştirici tuşlar basılıyken tıklamayla odaklama"
+
+#. (itstool) path: option/_long
+msgid ""
+"Allow focusing the clicked view even if keyboard modifiers are pressed. "
+"Without this option, click-to-focus only works if no modifiers are pressed."
+msgstr ""
+"Klavye değiştirici tuşları basılı olsa bile tıklanan görünümün odaklanmasına "
+"izin verir. Bu seçenek olmadan, tıklayarak odaklama yalnızca hiçbir "
+"değiştirici tuş basılı değilken çalışır."
+
+#. (itstool) path: option/_short
+msgid "Mouse buttons to focus views"
+msgstr "Görünümleri odaklamak için fare düğmeleri"
+
+#. (itstool) path: option/_long
+msgid "Clicking on a view with any of the mouse buttons of these will focus it."
+msgstr ""
+"Bu düğmelerden herhangi biriyle bir görünüme tıklamak, o görünümün "
+"odaklanmasını sağlar."
+
+#. (itstool) path: option/_short
+msgid "Pass through buttons to client"
+msgstr "Düğmeleri istemciye aktar"
+
+#. (itstool) path: option/_long
+msgid ""
+"Whether to pass buttons through to the client when switching the focus via "
+"clicking"
+msgstr ""
+"Tıklamayla odak değiştirilirken düğmelerin istemciye aktarılıp aktarılmayacağı"
+
+#. (itstool) path: option/_short
+msgid "Wayfire Shutdown"
+msgstr "Wayfire Kapatma"
+
+#. (itstool) path: option/_long
+msgid "Calls the shutdown routines for wayfire."
+msgstr "Wayfire'ın kapatma yordamlarını çağırır."
