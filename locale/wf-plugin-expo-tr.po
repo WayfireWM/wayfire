@@ -1,0 +1,105 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"POT-Creation-Date: 2025-09-18 14:55+0300\n"
+"PO-Revision-Date: 2026-11-16 18:17+0300\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: tr\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Poedit 3.10\n"
+
+#. (itstool) path: plugin/_short
+msgid "Expo"
+msgstr "Expo"
+
+#. (itstool) path: plugin/_long
+msgid "A plugin to show an overview of all workspaces."
+msgstr "Tüm çalışma alanlarının genel görünümünü gösteren bir eklenti."
+
+#. (itstool) path: option/_short
+msgid "Toggle"
+msgstr "Aç/Kapat"
+
+#. (itstool) path: option/_long
+msgid ""
+"Shows an overview of all workspaces with the specified activator. Pressing "
+"again exits."
+msgstr ""
+"Belirtilen etkinleştiriciyle tüm çalışma alanlarının genel görünümünü "
+"gösterir. Tekrar basıldığında kapanır."
+
+#. (itstool) path: option/_short
+msgid "Background color"
+msgstr "Arka plan rengi"
+
+#. (itstool) path: option/_long
+msgid "Sets the background color."
+msgstr "Arka plan rengini ayarlar."
+
+#. (itstool) path: option/_short
+msgid "Zoom duration"
+msgstr "Yakınlaştırma süresi"
+
+#. (itstool) path: option/_long
+msgid "Sets the zoom duration in milliseconds."
+msgstr "Yakınlaştırma süresini milisaniye cinsinden ayarlar."
+
+#. (itstool) path: option/_short
+msgid "Delimiter offset"
+msgstr "Ayırıcı aralığı"
+
+#. (itstool) path: option/_long
+msgid "Sets the delimiter offset (in pixels) between workspaces."
+msgstr ""
+"Çalışma alanları arasındaki ayırıcı aralığını (piksel cinsinden) ayarlar."
+
+#. (itstool) path: option/_short
+msgid "Keyboard interaction"
+msgstr "Klavye etkileşimi"
+
+#. (itstool) path: option/_long
+msgid ""
+"Allow the use of arrow keys to select a workspace, ESC to cancel and ENTER "
+"to accept."
+msgstr ""
+"Bir çalışma alanı seçmek için ok tuşlarını, iptal etmek için ESC'yi, "
+"onaylamak için ENTER'ı kullanmaya izin verir."
+
+#. (itstool) path: option/_short
+msgid "Brightness of inactive workspaces"
+msgstr "Etkin olmayan çalışma alanlarının parlaklığı"
+
+#. (itstool) path: option/_long
+msgid ""
+"Decrease the brightness of all workspaces except the currently selected one "
+"to this value."
+msgstr ""
+"O anda seçili olan çalışma alanı dışındaki tüm çalışma alanlarının "
+"parlaklığını bu değere düşürür."
+
+#. (itstool) path: option/_short
+msgid "Brightness transition duration"
+msgstr "Parlaklık geçiş süresi"
+
+#. (itstool) path: option/_long
+msgid ""
+"Duration of the transition of brightness when a new workspace is selected in "
+"milliseconds."
+msgstr ""
+"Yeni bir çalışma alanı seçildiğinde parlaklık geçişinin milisaniye cinsinden "
+"süresi."
+
+#. (itstool) path: option/_short
+msgid "Select workspace"
+msgstr "Çalışma alanı seç"
+
+#. (itstool) path: option/_long
+msgid ""
+"When the binding is triggered while expo is active, the corresponding "
+"workspace will be focused and Expo will exit."
+msgstr ""
+"Expo etkin durumdayken bu kısayol tetiklendiğinde ilgili çalışma alanı odağa "
+"alınır ve Expo kapatılır."
