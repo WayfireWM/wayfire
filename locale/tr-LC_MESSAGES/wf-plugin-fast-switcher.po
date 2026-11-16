@@ -1,0 +1,49 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"POT-Creation-Date: 2025-09-18 14:55+0300\n"
+"PO-Revision-Date: 2026-11-16 18:43+0300\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: tr\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Poedit 3.10\n"
+
+#. (itstool) path: plugin/_short
+msgid "Fast Switcher"
+msgstr "Hızlı Değiştirici"
+
+#. (itstool) path: plugin/_long
+msgid "A plugin to switch active window."
+msgstr "Etkin pencereyi değiştirmek için bir eklenti."
+
+#. (itstool) path: option/_short
+msgid "Next view"
+msgstr "Sonraki görünüm"
+
+#. (itstool) path: option/_long
+msgid ""
+"Activates fast switcher with the specified key, moving to the next view."
+msgstr ""
+"Hızlı değiştiriciyi belirtilen tuşla etkinleştirir ve sonraki görünüme "
+"geçer."
+
+#. (itstool) path: option/_short
+msgid "Previous view"
+msgstr "Önceki görünüm"
+
+#. (itstool) path: option/_long
+msgid ""
+"Activates fast switcher with the specified key, moving to the previous view."
+msgstr ""
+"Hızlı değiştiriciyi belirtilen tuşla etkinleştirir ve önceki görünüme geçer."
+
+#. (itstool) path: option/_short
+msgid "Inactive Opacity"
+msgstr "Etkin olmayanların opaklığı"
+
+#. (itstool) path: option/_long
+msgid "Set the opacity value of the inactive windows."
+msgstr "Etkin olmayan pencerelerin opaklık değerini ayarlar."

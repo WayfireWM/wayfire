@@ -1,0 +1,33 @@
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"POT-Creation-Date: 2025-09-18 14:55+0300\n"
+"PO-Revision-Date: 2026-11-16 20:03+0300\n"
+"Last-Translator: Türkçe Çeviri\n"
+"Language-Team: Türkçe\n"
+"Language: tr\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Poedit 3.10\n"
+
+#. (itstool) path: plugin/_short
+msgid "Security-context-v1 Protocol"
+msgstr "Security-context-v1 Protokolü"
+
+#. (itstool) path: plugin/_long
+msgid "An implementation of the security-context-v1 protocol."
+msgstr "Security-context-v1 protokolünün bir uygulaması."
+
+#. (itstool) path: option/_short
+msgid "Privileged protocols"
+msgstr "Ayrıcalıklı protokoller"
+
+#. (itstool) path: option/_long
+msgid ""
+"A comma-separated list of privileged protocols, which are not exposed to "
+"sandboxed clients."
+msgstr ""
+"Yalıtılmış (sandbox) istemcilere sunulmayan ayrıcalıklı protokollerin "
+"virgülle ayrılmış listesi."

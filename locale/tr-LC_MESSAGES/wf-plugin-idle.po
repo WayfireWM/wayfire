@@ -1,0 +1,104 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"POT-Creation-Date: 2025-09-18 14:55+0300\n"
+"PO-Revision-Date: 2026-11-16 18:26+0300\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: tr\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Poedit 3.10\n"
+
+#. (itstool) path: plugin/_short
+msgid "Idle"
+msgstr "Boşta Kalma"
+
+#. (itstool) path: plugin/_long
+msgid "A plugin for idle settings, such as the screensaver and DPMS."
+msgstr "Ekran koruyucu ve DPMS gibi boşta kalma ayarları için bir eklenti."
+
+#. (itstool) path: option/_short
+msgid "Toggle"
+msgstr "Aç/Kapat"
+
+#. (itstool) path: option/_long
+msgid ""
+"Disables the compositor going idle with the specified activator. Pressing "
+"again reactivates."
+msgstr ""
+"Birleştiricinin belirtilen etkinleştiriciyle boşta kalmasını devre dışı "
+"bırakır. Tekrar basıldığında yeniden etkinleştirilir."
+
+#. (itstool) path: option/_short
+msgid "Screensaver timeout"
+msgstr "Ekran koruyucu zaman aşımı"
+
+#. (itstool) path: option/_long
+msgid ""
+"Displays the screensaver after the specified seconds of inactivity. Setting "
+"the value to **-1** disables the screensaver."
+msgstr ""
+"Belirtilen saniyelik boşta kalmanın ardından ekran koruyucuyu görüntüler. "
+"Değer **-1** olarak ayarlandığında ekran koruyucu devre dışı bırakılır."
+
+#. (itstool) path: option/_short
+msgid "DPMS timeout"
+msgstr "DPMS zaman aşımı"
+
+#. (itstool) path: option/_long
+msgid ""
+"Enters power saving mode after the specified seconds of inactivity. Setting "
+"the value to **-1** disables power saving."
+msgstr ""
+"Belirtilen saniyelik boşta kalmanın ardından güç tasarrufu moduna geçer. "
+"Değer **-1** olarak ayarlandığında güç tasarrufu devre dışı bırakılır."
+
+#. (itstool) path: option/_short
+msgid "Disable on fullscreen"
+msgstr "Tam ekranda devre dışı bırak"
+
+#. (itstool) path: option/_long
+msgid "Disables idle on fullscreen."
+msgstr "Tam ekranda boşta kalmayı devre dışı bırakır."
+
+#. (itstool) path: option/_short
+msgid "Disable idle timeout initially"
+msgstr "Boşta kalma zaman aşımını başlangıçta devre dışı bırak"
+
+#. (itstool) path: option/_long
+msgid ""
+"Disables idle timeout innitially as if the toggle was called once after "
+"loading the plugin."
+msgstr ""
+"Eklenti yüklendikten sonra aç/kapat düğmesi bir kez çağrılmış gibi boşta "
+"kalma zaman aşımını başlangıçta devre dışı bırakır."
+
+#. (itstool) path: option/_short
+msgid "Cube zoom speed"
+msgstr "Küp yakınlaştırma hızı"
+
+#. (itstool) path: option/_long
+msgid ""
+"Sets the zoom speed. The speed means how long it will take from the time the "
+"screensaver starts to the time the cube reaches `idle.cube_max_zoom`."
+msgstr ""
+"Yakınlaştırma hızını ayarlar. Hız, ekran koruyucunun başlamasından küpün "
+"`idle.cube_max_zoom` değerine ulaşmasına kadar geçecek süreyi belirtir."
+
+#. (itstool) path: option/_short
+msgid "Cube rotate speed"
+msgstr "Küp döndürme hızı"
+
+#. (itstool) path: option/_long
+msgid "Sets the speed rotation of the cube."
+msgstr "Kübün dönme hızını ayarlar."
+
+#. (itstool) path: option/_short
+msgid "Cube max zoom"
+msgstr "Küp en yüksek yakınlaştırma"
+
+#. (itstool) path: option/_long
+msgid "Sets the maximum zoom level."
+msgstr "En yüksek yakınlaştırma düzeyini ayarlar."

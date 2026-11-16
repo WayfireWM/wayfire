@@ -1,0 +1,414 @@
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"POT-Creation-Date: 2025-09-18 14:55+0300\n"
+"PO-Revision-Date: 2026-11-16 19:37+0300\n"
+"Last-Translator: Türkçe Çeviri\n"
+"Language-Team: Türkçe\n"
+"Language: tr\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Poedit 3.10\n"
+
+#. (itstool) path: plugin/_short
+msgid "Input"
+msgstr "Giriş"
+
+#. (itstool) path: plugin/_long
+msgid "Input configuration."
+msgstr "Giriş yapılandırması."
+
+#. (itstool) path: option/_short
+msgid "Left-handed mode"
+msgstr "Solak mod"
+
+#. (itstool) path: option/_long
+msgid ""
+"Switches the device’s functionality to be more accommodating for left-"
+"handed users."
+msgstr "Cihazın işlevini solak kullanıcılar için daha uygun hale getirir."
+
+#. (itstool) path: group/_short
+msgid "Keyboard"
+msgstr "Klavye"
+
+#. (itstool) path: group/_long
+msgid "Configure the keyboard."
+msgstr "Klavyeyi yapılandırır."
+
+#. (itstool) path: option/_short
+msgid "Modifier binding timeout"
+msgstr "Değiştirici bağlama zaman aşımı"
+
+#. (itstool) path: option/_long
+msgid ""
+"Cancels modifier actions (like `Super` for the `expo` plugin) when held for "
+"the specified timeout (in milliseconds). Setting the value to **0** never "
+"cancels."
+msgstr ""
+"Değiştirici eylemleri (örneğin `expo` eklentisi için `Super`), belirtilen "
+"zaman aşımı süresince (milisaniye cinsinden) basılı tutulduğunda iptal "
+"eder. Değer **0** olarak ayarlandığında hiçbir zaman iptal edilmez."
+
+#. (itstool) path: option/_short
+msgid "Key repeat delay"
+msgstr "Tuş tekrar gecikmesi"
+
+#. (itstool) path: option/_long
+msgid "Sets the amount of time a key must be held before it starts repeating."
+msgstr ""
+"Bir tuşun tekrarlamaya başlamadan önce ne kadar süre basılı tutulması "
+"gerektiğini ayarlar."
+
+#. (itstool) path: option/_short
+msgid "Key repeat rate"
+msgstr "Tuş tekrar hızı"
+
+#. (itstool) path: option/_long
+msgid ""
+"Sets the frequency of key repeats once the `input.kb_repeat_delay` has "
+"passed."
+msgstr ""
+"`input.kb_repeat_delay` süresi geçtikten sonra tuş tekrar sıklığını ayarlar."
+
+#. (itstool) path: option/_short
+msgid "Numlock default state"
+msgstr "Numlock varsayılan durumu"
+
+#. (itstool) path: option/_long
+msgid "Default numlock state when wayfire starts."
+msgstr "Wayfire başladığında Numlock'un varsayılan durumu."
+
+#. (itstool) path: option/_short
+msgid "Capslock default state"
+msgstr "Capslock varsayılan durumu"
+
+#. (itstool) path: option/_long
+msgid "Default capslock state when wayfire starts."
+msgstr "Wayfire başladığında Capslock'un varsayılan durumu."
+
+#. (itstool) path: option/_short
+msgid "XKB layout"
+msgstr "XKB düzeni"
+
+#. (itstool) path: option/_long
+msgid ""
+"Sets the layout of the keyboard, like `us` or `fr`. Multiple layouts can be "
+"specified by separating them with commas."
+msgstr ""
+"Klavye düzenini ayarlar, örneğin `us` veya `fr`. Birden fazla düzen virgül "
+"ile ayrılarak belirtilebilir."
+
+#. (itstool) path: option/_short
+msgid "XKB model"
+msgstr "XKB modeli"
+
+#. (itstool) path: option/_long
+msgid ""
+"Sets the model of the keyboard. This has an influence for some extra keys "
+"your keyboard might have."
+msgstr ""
+"Klavye modelini ayarlar. Bu, klavyenizde bulunabilecek bazı ek tuşları "
+"etkiler."
+
+#. (itstool) path: option/_short
+msgid "XKB options"
+msgstr "XKB seçenekleri"
+
+#. (itstool) path: option/_long
+msgid ""
+"Sets extra XKB configuration options for the keyboard. Multiple options can "
+"be specified by separating them with commas."
+msgstr ""
+"Klavye için ek XKB yapılandırma seçeneklerini ayarlar. Birden fazla seçenek "
+"virgül ile ayrılarak belirtilebilir."
+
+#. (itstool) path: option/_short
+msgid "XKB rules"
+msgstr "XKB kuralları"
+
+#. (itstool) path: option/_long
+msgid "Sets files of rules to be used for keyboard mapping composition."
+msgstr ""
+"Klavye eşleme oluşturulması için kullanılacak kural dosyalarını ayarlar."
+
+#. (itstool) path: option/_short
+msgid "XKB variant"
+msgstr "XKB varyantı"
+
+#. (itstool) path: option/_long
+msgid "Sets the variant of the keyboard, like `dvorak` or `colemak`."
+msgstr "Klavyenin varyantını ayarlar, örneğin `dvorak` veya `colemak`."
+
+#. (itstool) path: group/_short
+msgid "Mouse"
+msgstr "Fare"
+
+#. (itstool) path: group/_long
+msgid "Configure the mouse."
+msgstr "Fareyi yapılandırır."
+
+#. (itstool) path: option/_short
+msgid "Middle-click emulation"
+msgstr "Orta tıklama öykünmesi"
+
+#. (itstool) path: option/_long
+msgid ""
+"Enables middle button emulation by hitting the left and right buttons "
+"simultaneously."
+msgstr ""
+"Sol ve sağ düğmelere aynı anda basarak orta düğme öykünmesini etkinleştirir."
+
+#. (itstool) path: option/_short
+msgid "Mouse acceleration profile"
+msgstr "Fare hızlandırma profili"
+
+#. (itstool) path: option/_long
+msgid "Sets the pointer acceleration profile."
+msgstr "İşaretçi hızlandırma profilini ayarlar."
+
+#. (itstool) path: desc/_name
+msgid "Default"
+msgstr "Varsayılan"
+
+#. (itstool) path: desc/_name
+msgid "None"
+msgstr "Yok"
+
+#. (itstool) path: desc/_name
+msgid "Adaptive"
+msgstr "Uyarlamalı"
+
+#. (itstool) path: desc/_name
+msgid "Flat"
+msgstr "Sabit"
+
+#. (itstool) path: option/_short
+msgid "Mouse cursor speed"
+msgstr "Fare imleci hızı"
+
+#. (itstool) path: option/_long
+msgid "Changes the pointer acceleration."
+msgstr "İşaretçi hızlandırmasını değiştirir."
+
+#. (itstool) path: option/_short
+msgid "Mouse scroll speed"
+msgstr "Fare kaydırma hızı"
+
+#. (itstool) path: option/_long
+msgid ""
+"Changes the mouse scroll factor. Scroll speed will be scaled by the given "
+"value, which must be non-negative."
+msgstr ""
+"Fare kaydırma faktörünü değiştirir. Kaydırma hızı, negatif olmayan "
+"belirtilen değerle ölçeklendirilir."
+
+#. (itstool) path: option/_short
+msgid "Mouse natural scroll"
+msgstr "Fare doğal kaydırma"
+
+#. (itstool) path: option/_long
+msgid "Enables or disables mouse natural (inverted) scrolling."
+msgstr ""
+"Farenin doğal (ters) kaydırmasını etkinleştirir veya devre dışı bırakır."
+
+#. (itstool) path: group/_short
+msgid "Touchpad"
+msgstr "Dokunmatik alan"
+
+#. (itstool) path: group/_long
+msgid "Configure the touchpad."
+msgstr "Dokunmatik alanı yapılandırır."
+
+#. (itstool) path: option/_short
+msgid "Touchpad acceleration profile"
+msgstr "Dokunmatik alan hızlandırma profili"
+
+#. (itstool) path: option/_long
+msgid "Sets the touchpad acceleration profile."
+msgstr "Dokunmatik alan hızlandırma profilini ayarlar."
+
+#. (itstool) path: option/_short
+msgid "Tap-to-click"
+msgstr "Dokunarak tıklama"
+
+#. (itstool) path: option/_long
+msgid "Enables or disables tap-to-click."
+msgstr "Dokunarak tıklamayı etkinleştirir veya devre dışı bırakır."
+
+#. (itstool) path: option/_short
+msgid "Click method"
+msgstr "Tıklama yöntemi"
+
+#. (itstool) path: option/_long
+msgid "Changes the click method."
+msgstr "Tıklama yöntemini değiştirir."
+
+#. (itstool) path: desc/_name
+msgid "Button areas"
+msgstr "Düğme alanları"
+
+#. (itstool) path: desc/_name
+msgid "Clickfinger"
+msgstr "Tıklama parmağı"
+
+#. (itstool) path: option/_short
+msgid "Scroll method"
+msgstr "Kaydırma yöntemi"
+
+#. (itstool) path: option/_long
+msgid "Changes the scroll method."
+msgstr "Kaydırma yöntemini değiştirir."
+
+#. (itstool) path: desc/_name
+msgid "Two-finger"
+msgstr "İki parmak"
+
+#. (itstool) path: desc/_name
+msgid "Edge"
+msgstr "Kenar"
+
+#. (itstool) path: desc/_name
+msgid "On-button down"
+msgstr "Düğme basılı iken"
+
+#. (itstool) path: option/_short
+msgid "Disable touchpad while typing"
+msgstr "Yazarken dokunmatik alanı devre dışı bırak"
+
+#. (itstool) path: option/_long
+msgid "Disables the touchpad while typing."
+msgstr "Yazarken dokunmatik alanı devre dışı bırakır."
+
+#. (itstool) path: option/_short
+msgid "Disable touchpad while using the mouse"
+msgstr "Fareyi kullanırken dokunmatik alanı devre dışı bırak"
+
+#. (itstool) path: option/_long
+msgid "Disables the touchpad while using the mouse."
+msgstr "Fare kullanılırken dokunmatik alanı devre dışı bırakır."
+
+#. (itstool) path: option/_short
+msgid "Natural scroll"
+msgstr "Doğal kaydırma"
+
+#. (itstool) path: option/_long
+msgid "Enables or disables natural (inverted) scrolling."
+msgstr "Doğal (ters) kaydırmayı etkinleştirir veya devre dışı bırakır."
+
+#. (itstool) path: option/_short
+msgid "Tap and drag"
+msgstr "Dokun ve sürükle"
+
+#. (itstool) path: option/_long
+msgid "Enables or disables tap-and-drag."
+msgstr "Dokun-sürükle işlevini etkinleştirir veya devre dışı bırakır."
+
+#. (itstool) path: option/_short
+msgid "Drag lock"
+msgstr "Sürükleme kilidi"
+
+#. (itstool) path: option/_long
+msgid "Enables or disables drag lock."
+msgstr "Sürükleme kilidini etkinleştirir veya devre dışı bırakır."
+
+#. (itstool) path: option/_short
+msgid "Multi-finger drag"
+msgstr "Çok parmaklı sürükleme"
+
+#. (itstool) path: option/_long
+msgid ""
+"Enables or disables 3-finger or 4-finger drag. Requires libinput ≥ 1.28."
+msgstr ""
+"3 parmaklı veya 4 parmaklı sürüklemeyi etkinleştirir veya devre dışı "
+"bırakır. libinput ≥ 1.28 gerektirir."
+
+#. (itstool) path: desc/_name
+msgid "Drag using 3 fingers"
+msgstr "3 parmakla sürükle"
+
+#. (itstool) path: desc/_name
+msgid "Drag using 4 fingers"
+msgstr "4 parmakla sürükle"
+
+#. (itstool) path: option/_short
+msgid "Touchpad cursor speed"
+msgstr "Dokunmatik alan imleç hızı"
+
+#. (itstool) path: option/_long
+msgid "Changes the touchpad acceleration."
+msgstr "Dokunmatik alan hızlandırmasını değiştirir."
+
+#. (itstool) path: option/_short
+msgid "Touchscreen gesture sensitivity"
+msgstr "Dokunmatik ekran jest duyarlılığı"
+
+#. (itstool) path: option/_long
+msgid ""
+"Change the sensitivity of the built-in gesture detection. Higher values "
+"mean that less finger movement is required to trigger the gesture."
+msgstr ""
+"Yerleşik jest algılamanın duyarlılığını değiştirir. Daha yüksek değerler, "
+"jestin tetiklenmesi için daha az parmak hareketi gerekmesi anlamına gelir."
+
+#. (itstool) path: option/_short
+msgid "Touchpad scroll speed"
+msgstr "Dokunmatik alan kaydırma hızı"
+
+#. (itstool) path: option/_long
+msgid ""
+"Changes the touchpad scroll factor. Scroll speed will be scaled by the "
+"given value, which must be non-negative."
+msgstr ""
+"Dokunmatik alan kaydırma faktörünü değiştirir. Kaydırma hızı, negatif "
+"olmayan belirtilen değerle ölçeklendirilir."
+
+#. (itstool) path: group/_short
+msgid "Tablet"
+msgstr "Tablet"
+
+#. (itstool) path: group/_long
+msgid "Configure graphic tablets."
+msgstr "Grafik tabletleri yapılandırır."
+
+#. (itstool) path: option/_short
+msgid "Motion Mode"
+msgstr "Hareket Modu"
+
+#. (itstool) path: option/_long
+msgid "Sets the motion mode for graphic tablets."
+msgstr "Grafik tabletler için hareket modunu ayarlar."
+
+#. (itstool) path: desc/_name
+msgid "Absolute"
+msgstr "Mutlak"
+
+#. (itstool) path: desc/_name
+msgid "Relative"
+msgstr "Göreceli"
+
+#. (itstool) path: group/_short
+msgid "Cursor"
+msgstr "İmleç"
+
+#. (itstool) path: group/_long
+msgid "Configure the cursor."
+msgstr "İmleci yapılandırır."
+
+#. (itstool) path: option/_short
+msgid "Cursor theme"
+msgstr "İmleç teması"
+
+#. (itstool) path: option/_long
+msgid "Overrides the system default `XCursor` theme."
+msgstr "Sistem varsayılan `XCursor` temasını geçersiz kılar."
+
+#. (itstool) path: option/_short
+msgid "Cursor size"
+msgstr "İmleç boyutu"
+
+#. (itstool) path: option/_long
+msgid "Overrides the system default `XCursor` size."
+msgstr "Sistem varsayılan `XCursor` boyutunu geçersiz kılar."

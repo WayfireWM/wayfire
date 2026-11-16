@@ -1,0 +1,62 @@
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"POT-Creation-Date: 2025-09-18 14:55+0300\n"
+"PO-Revision-Date: 2026-11-16 20:17+0300\n"
+"Last-Translator: Türkçe Çeviri\n"
+"Language-Team: Türkçe\n"
+"Language: tr\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Poedit 3.10\n"
+
+#. (itstool) path: plugin/_short
+msgid "XDG Activation Protocol"
+msgstr "XDG Etkinleştirme Protokolü"
+
+#. (itstool) path: plugin/_long
+msgid ""
+"An implementation of the xdg-activation-v1 protocol. This allows the active "
+"app to pass the focus to a different view in the same or a different app."
+msgstr ""
+"Xdg-activation-v1 protokolünün bir uygulaması. Bu, etkin uygulamanın odağı "
+"aynı veya farklı bir uygulamadaki başka bir görünüme geçirmesine izin verir."
+
+#. (itstool) path: option/_short
+msgid "Restrict to valid view"
+msgstr "Geçerli görünümle sınırla"
+
+#. (itstool) path: option/_long
+msgid ""
+"Whether to reject creating activation requests if no source view exists. "
+"Without this option, any view can grab to focus at any time."
+msgstr ""
+"Kaynak görünüm yoksa etkinleştirme istekleri oluşturmanın reddedilip "
+"reddedilmeyeceği. Bu seçenek olmadan, herhangi bir görünüm istediği zaman "
+"odağı kapabilir."
+
+#. (itstool) path: option/_short
+msgid "Restrict to the most recent activation request"
+msgstr "En son etkinleştirme isteğiyle sınırla"
+
+#. (itstool) path: option/_long
+msgid ""
+"Whether to reject activation requests if a newer request has arrived since "
+"their creation."
+msgstr ""
+"Oluşturulmalarından bu yana daha yeni bir istek geldiğinde etkinleştirme "
+"isteklerinin reddedilip reddedilmeyeceği."
+
+#. (itstool) path: option/_short
+msgid "Timeout for activation (in seconds)"
+msgstr "Etkinleştirme için zaman aşımı (saniye cinsinden)"
+
+#. (itstool) path: option/_long
+msgid ""
+"Focus requests will be ignored if at least this amount of time has elapsed "
+"between creating and using it."
+msgstr ""
+"Oluşturulması ile kullanılması arasında en az bu kadar süre geçtiyse "
+"odaklama istekleri yok sayılır."

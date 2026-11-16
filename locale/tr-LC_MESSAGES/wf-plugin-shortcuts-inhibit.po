@@ -1,0 +1,50 @@
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"POT-Creation-Date: 2025-09-18 14:55+0300\n"
+"PO-Revision-Date: 2026-11-16 20:05+0300\n"
+"Last-Translator: Türkçe Çeviri\n"
+"Language-Team: Türkçe\n"
+"Language: tr\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Poedit 3.10\n"
+
+#. (itstool) path: plugin/_short
+msgid "Keyboard Shortcuts Inhibit Protocol"
+msgstr "Klavye Kısayolları Engelleme Protokolü"
+
+#. (itstool) path: plugin/_long
+msgid "An implementation of the keyboard-shortcuts-inhibit-v1 protocol."
+msgstr "Keyboard-shortcuts-inhibit-v1 protokolünün bir uygulaması."
+
+#. (itstool) path: option/_short
+msgid "Inhibit by default"
+msgstr "Varsayılan olarak engelle"
+
+#. (itstool) path: option/_long
+msgid ""
+"Criteria for which apps to inhibit input for even though they do not "
+"request it via the protocol."
+msgstr ""
+"Protokol aracılığıyla istemeyen uygulamalar için bile girişin hangi "
+"ölçütlere göre engelleneceği."
+
+#. (itstool) path: option/_short
+msgid "Ignore views"
+msgstr "Görünümleri yok say"
+
+#. (itstool) path: option/_long
+msgid "Restrict matched views from activating shortcuts inhibit."
+msgstr "Eşleşen görünümlerin kısayol engellemeyi etkinleştirmesini kısıtlar."
+
+#. (itstool) path: option/_short
+msgid "Break current inhibitor"
+msgstr "Mevcut engelleyiciyi kaldır"
+
+#. (itstool) path: option/_long
+msgid "A keybinding to remove the currently active inhibitor temporary."
+msgstr ""
+"O an etkin olan engelleyiciyi geçici olarak kaldırmak için bir tuş ataması."

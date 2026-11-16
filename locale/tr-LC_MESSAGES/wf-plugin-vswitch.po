@@ -1,0 +1,237 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"POT-Creation-Date: 2025-09-18 14:55+0300\n"
+"PO-Revision-Date: 2026-11-16 11:25+0300\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: tr\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Poedit 3.10\n"
+
+#. (itstool) path: plugin/_short
+msgid "Viewport Switcher"
+msgstr "Çalışma Alanı Değiştirici"
+
+#. (itstool) path: plugin/_long
+msgid "A plugin to switch workspaces in a grid."
+msgstr ""
+"Izgara düzenindeki çalışma alanları arasında geçiş yapmayı sağlayan bir "
+"eklenti."
+
+#. (itstool) path: option/_short
+msgid "Left"
+msgstr "Sol"
+
+#. (itstool) path: option/_long
+msgid "Switches to workspace left with the specified activator."
+msgstr "Belirtilen etkinleştirici ile sol taraftaki çalışma alanına geçer."
+
+#. (itstool) path: option/_short
+msgid "Right"
+msgstr "Sağ"
+
+#. (itstool) path: option/_long
+msgid "Switches to workspace right with the specified activator."
+msgstr "Belirtilen etkinleştirici ile sağ taraftaki çalışma alanına geçer."
+
+#. (itstool) path: option/_short
+msgid "Up"
+msgstr "Yukarı"
+
+#. (itstool) path: option/_long
+msgid "Switches to workspace up with the specified activator."
+msgstr "Belirtilen etkinleştirici ile yukarıdaki çalışma alanına geçer."
+
+#. (itstool) path: option/_short
+msgid "Down"
+msgstr "Aşağı"
+
+#. (itstool) path: option/_long
+msgid "Switches to workspace down with the specified activator."
+msgstr "Belirtilen etkinleştirici ile aşağıdaki çalışma alanına geçer."
+
+#. (itstool) path: option/_short
+msgid "Last"
+msgstr "Son"
+
+#. (itstool) path: option/_long
+msgid "Switches to the last active workspace with the specified activator."
+msgstr "Belirtilen etkinleştirici ile son etkin çalışma alanına geçer."
+
+#. (itstool) path: option/_short
+msgid "Left with window"
+msgstr "Pencereyle birlikte sol"
+
+#. (itstool) path: option/_long
+msgid ""
+"Switches to workspace left with the focused window with the specified "
+"activator."
+msgstr ""
+"Belirtilen etkinleştirici ile odaklanmış pencereyle birlikte sol taraftaki "
+"çalışma alanına geçer."
+
+#. (itstool) path: option/_short
+msgid "Right with window"
+msgstr "Pencereyle birlikte sağ"
+
+#. (itstool) path: option/_long
+msgid ""
+"Switches to workspace right with the focused window with the specified "
+"activator."
+msgstr ""
+"Belirtilen etkinleştirici ile odaklanmış pencereyle birlikte sağ taraftaki "
+"çalışma alanına geçer."
+
+#. (itstool) path: option/_short
+msgid "Up with window"
+msgstr "Pencereyle birlikte yukarı"
+
+#. (itstool) path: option/_long
+msgid ""
+"Switches to workspace up with the focused window with the specified "
+"activator."
+msgstr ""
+"Belirtilen etkinleştirici ile odaklanmış pencereyle birlikte yukarıdaki "
+"çalışma alanına geçer."
+
+#. (itstool) path: option/_short
+msgid "Down with window"
+msgstr "Pencereyle birlikte aşağı"
+
+#. (itstool) path: option/_long
+msgid ""
+"Switches to workspace down with the focused window with the specified "
+"activator."
+msgstr ""
+"Belirtilen etkinleştirici ile odaklanmış pencereyle birlikte aşağıdaki "
+"çalışma alanına geçer."
+
+#. (itstool) path: option/_short
+msgid "Last with window"
+msgstr "Pencereyle birlikte son"
+
+#. (itstool) path: option/_long
+msgid ""
+"Switches to the last active workspace with the focused window with the "
+"specified activator."
+msgstr ""
+"Belirtilen etkinleştirici ile odaklanmış pencereyle birlikte son etkin "
+"çalışma alanına geçer."
+
+#. (itstool) path: option/_short
+msgid "Send window to the left"
+msgstr "Pencereyi sola gönder"
+
+#. (itstool) path: option/_long
+msgid "Send the focused window to the workspace on the left."
+msgstr "Odaklanmış pencereyi sol taraftaki çalışma alanına gönderir."
+
+#. (itstool) path: option/_short
+msgid "Send window to the right"
+msgstr "Pencereyi sağa gönder"
+
+#. (itstool) path: option/_long
+msgid "Send the focused window to the workspace on the right."
+msgstr "Odaklanmış pencereyi sağ taraftaki çalışma alanına gönderir."
+
+#. (itstool) path: option/_short
+msgid "Send window above"
+msgstr "Pencereyi yukarı gönder"
+
+#. (itstool) path: option/_long
+msgid "Send the focused window to the workspace above."
+msgstr "Odaklanmış pencereyi yukarıdaki çalışma alanına gönderir."
+
+#. (itstool) path: option/_short
+msgid "Send window below"
+msgstr "Pencereyi aşağı gönder"
+
+#. (itstool) path: option/_long
+msgid "Send the focused window to the workspace below."
+msgstr "Odaklanmış pencereyi aşağıdaki çalışma alanına gönderir."
+
+#. (itstool) path: option/_short
+msgid "Send window to last"
+msgstr "Pencereyi son çalışma alanına gönder"
+
+#. (itstool) path: option/_long
+msgid ""
+"Send the focused window to the last active workspace with the specified "
+"activator."
+msgstr ""
+"Belirtilen etkinleştirici ile odaklanmış pencereyi son etkin çalışma alanına "
+"gönderir."
+
+#. (itstool) path: option/_short
+#. (itstool) path: option/_long
+msgid "Go-To-Workspace bindings"
+msgstr "Çalışma alanına geçiş atamaları"
+
+#. (itstool) path: entry/_short
+msgid "Binding for workspace N"
+msgstr "N numaralı çalışma alanı için atama"
+
+#. (itstool) path: entry/_long
+msgid "Sets the binding to go to workspace N."
+msgstr "N numaralı çalışma alanına geçmek için atamayı ayarlar."
+
+#. (itstool) path: option/_short
+#. (itstool) path: option/_long
+msgid "Go-To-Workspace with window bindings"
+msgstr "Pencereyle birlikte çalışma alanına geçiş atamaları"
+
+#. (itstool) path: entry/_long
+msgid "Sets the binding to go to workspace N with currently focused window."
+msgstr ""
+"O anda odaklanmış pencereyle birlikte N numaralı çalışma alanına geçmek için "
+"atamayı ayarlar."
+
+#. (itstool) path: entry/_short
+msgid "Move window to workspace N"
+msgstr "Pencereyi N numaralı çalışma alanına taşı"
+
+#. (itstool) path: entry/_long
+msgid "Sets the binding to move focused window to workspace N."
+msgstr ""
+"Odaklanmış pencereyi N numaralı çalışma alanına taşımak için atamayı ayarlar."
+
+#. (itstool) path: option/_short
+msgid "Duration"
+msgstr "Süre"
+
+#. (itstool) path: option/_long
+msgid "Sets the duration of the workspace switching animation in milliseconds."
+msgstr ""
+"Çalışma alanı geçiş animasyonunun süresini milisaniye cinsinden ayarlar."
+
+#. (itstool) path: option/_short
+msgid "Gap size"
+msgstr "Boşluk boyutu"
+
+#. (itstool) path: option/_long
+msgid ""
+"Sets the gap between workspaces when animating the transition between them."
+msgstr ""
+"Çalışma alanları arasındaki geçiş canlandırılırken aralarındaki boşluğu "
+"ayarlar."
+
+#. (itstool) path: option/_short
+msgid "Background color"
+msgstr "Arka plan rengi"
+
+#. (itstool) path: option/_long
+msgid "Sets the background color of gaps."
+msgstr "Boşlukların arka plan rengini ayarlar."
+
+#. (itstool) path: option/_short
+msgid "Wraparound"
+msgstr "Döngüsel"
+
+#. (itstool) path: option/_long
+msgid "Whether to wrap around when at the edge of the workspace grid."
+msgstr ""
+"Çalışma alanı ızgarasının kenarındayken döngüsel olarak diğer uca geçilip "
+"geçilmeyeceğini ayarlar."

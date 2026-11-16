@@ -1,0 +1,250 @@
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"POT-Creation-Date: 2025-09-18 14:55+0300\n"
+"PO-Revision-Date: 2026-11-16 20:10+0300\n"
+"Last-Translator: Türkçe Çeviri\n"
+"Language-Team: Türkçe\n"
+"Language: tr\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Poedit 3.10\n"
+
+#. (itstool) path: plugin/_short
+msgid "Workarounds"
+msgstr "Geçici Çözümler"
+
+#. (itstool) path: plugin/_long
+msgid "Some hacks that might be required to make things work."
+msgstr "Şeylerin çalışması için gerekli olabilecek bazı geçici çözümler."
+
+#. (itstool) path: option/_short
+msgid "Application ID mode"
+msgstr "Uygulama kimliği modu"
+
+#. (itstool) path: option/_long
+msgid "Specifies the application ID mode."
+msgstr "Uygulama kimliği modunu belirtir."
+
+#. (itstool) path: desc/_name
+msgid "Stock"
+msgstr "Standart"
+
+#. (itstool) path: desc/_name
+msgid "GTK Shell"
+msgstr "GTK Shell"
+
+#. (itstool) path: desc/_name
+msgid "Full"
+msgstr "Tam"
+
+#. (itstool) path: option/_short
+msgid "Make all dialogs modal"
+msgstr "Tüm iletişim kutularını kalıcı yap"
+
+#. (itstool) path: option/_long
+msgid ""
+"If false, the main window can be focused even if it has a dialog. The "
+"dialog is nevertheless kept on top of the main window. Kwin defaults to "
+"false."
+msgstr ""
+"Yanlış ise, ana pencere bir iletişim kutusu olsa bile odaklanabilir. Ancak "
+"iletişim kutusu ana pencerenin üzerinde tutulur. Kwin varsayılanı yanlıştır."
+
+#. (itstool) path: option/_short
+msgid "Allow dynamic repaint delay"
+msgstr "Dinamik yeniden çizim gecikmesine izin ver"
+
+#. (itstool) path: option/_long
+msgid ""
+"If true, allows Wayfire to dynamically recalculate its max_render_time, i.e "
+"allow render time higher than max_render_time."
+msgstr ""
+"Doğru ise, Wayfire'un max_render_time değerini dinamik olarak yeniden "
+"hesaplamasına, yani çizim süresinin max_render_time değerinden yüksek "
+"olmasına izin verir."
+
+#. (itstool) path: option/_short
+msgid "Use external output configuration instead of Wayfire's own."
+msgstr ""
+"Wayfire'un kendi çıkış yapılandırması yerine dış çıkış yapılandırmasını "
+"kullanır."
+
+#. (itstool) path: option/_long
+msgid ""
+"If true, Wayfire will not handle any configuration options for outputs in "
+"the config file once an external daemon like https://github.com/emersion/"
+"kanshi sets the output configuration via the wlr-output-management "
+"protocol. Exceptions are made for options not available via wlr-output-"
+"management, like output mirroring and custom modelines."
+msgstr ""
+"Doğru ise, https://github.com/emersion/kanshi gibi bir dış arka plan "
+"programı wlr-output-management protokolü aracılığıyla çıkış "
+"yapılandırmasını ayarladığında, Wayfire yapılandırma dosyasındaki çıkış "
+"yapılandırma seçeneklerinin hiçbirini ele almaz. wlr-output-management "
+"üzerinden kullanılamayan seçenekler (çıkış aynalama ve özel modelines gibi) "
+"için istisnalar vardır."
+
+#. (itstool) path: option/_short
+msgid "Allow views to overlap between multiple outputs."
+msgstr "Görünümlerin birden çok çıkış arasında çakışmasına izin verir."
+
+#. (itstool) path: option/_long
+msgid ""
+"Allow views to overlap between multiple outputs. Many of the core plugins "
+"will not behave properly with this option set!"
+msgstr ""
+"Görünümlerin birden çok çıkış arasında çakışmasına izin verir. Bu seçenek "
+"ayarlandığında çekirdek eklentilerin birçoğu düzgün davranmayacaktır!"
+
+#. (itstool) path: option/_short
+msgid ""
+"Force xdg-decoration clients to use the compositor-preferred decoration "
+"mode."
+msgstr ""
+"Xdg-decoration istemcilerini kompozitörün tercih ettiği dekorasyon modunu "
+"kullanmaya zorlar."
+
+#. (itstool) path: option/_long
+msgid ""
+"Force xdg-decoration clients to use the compositor-preferred decoration "
+"mode regardless of the client's preference."
+msgstr ""
+"Xdg-decoration istemcilerini, istemcinin tercihine bakılmaksızın "
+"kompozitörün tercih ettiği dekorasyon modunu kullanmaya zorlar."
+
+#. (itstool) path: option/_short
+msgid "Enable calling dlclose() when a plugin is unloaded"
+msgstr "Eklenti bellekten kaldırıldığında dlclose() çağrısını etkinleştir"
+
+#. (itstool) path: option/_long
+msgid ""
+"Enable calling dlclose() when a plugin is unloaded. Note that this may not "
+"work well with all plugins."
+msgstr ""
+"Eklenti bellekten kaldırıldığında dlclose() çağrısını etkinleştirir. Tüm "
+"eklentilerle iyi çalışmayabilir."
+
+#. (itstool) path: option/_short
+msgid "Discard output from commands invoked by Wayfire."
+msgstr "Wayfire tarafından çağrılan komutların çıktısını atar."
+
+#. (itstool) path: option/_long
+msgid ""
+"Discard output from commands invoked by Wayfire, so that they don't end up "
+"in the logs."
+msgstr ""
+"Wayfire tarafından çağrılan komutların çıktısını atar, böylece günlüklerde "
+"yer almazlar."
+
+#. (itstool) path: option/_short
+msgid "Enable support for the newer input-method-v2 protocol."
+msgstr "Daha yeni input-method-v2 protokolü için desteği etkinleştirir."
+
+#. (itstool) path: option/_long
+msgid ""
+"Enable support for the newer input-method-v2 protocol. Note that the input-"
+"method-v1 protocol works better in many cases."
+msgstr ""
+"Daha yeni input-method-v2 protokolü için desteği etkinleştirir. Ancak "
+"birçok durumda input-method-v1 protokolü daha iyi çalışır."
+
+#. (itstool) path: option/_short
+msgid ""
+"Enable certain damage optimizations which are based on a surfaces' opaque "
+"regions."
+msgstr ""
+"Bir yüzeyin opak bölgelerine dayanan belirli hasar optimizasyonlarını "
+"etkinleştirir."
+
+#. (itstool) path: option/_long
+msgid ""
+"Enable certain damage optimizations which are based on a surfaces' opaque "
+"regions. In some cases, this optimization might give unexpected results "
+"(i.e background app stops updating) even though this is fine according to "
+"Wayland's protocol."
+msgstr ""
+"Bir yüzeyin opak bölgelerine dayanan belirli hasar optimizasyonlarını "
+"etkinleştirir. Bazı durumlarda, bu optimizasyon beklenmeyen sonuçlar "
+"verebilir (örneğin arka plan uygulaması güncellenmeyi durdurur), ancak bu "
+"Wayland protokolüne göre uygundur."
+
+#. (itstool) path: option/_short
+msgid "Force frame synchronization."
+msgstr "Kare eşzamanlamasını zorlar."
+
+#. (itstool) path: option/_long
+msgid ""
+"This option can be used to workaround driver bugs that cause rendering "
+"artifacts, though can cause more resource usage. Leave disabled if unsure."
+msgstr ""
+"Bu seçenek, çizim yapıtlarına neden olan sürücü hatalarına geçici bir çözüm "
+"için kullanılabilir, ancak daha fazla kaynak kullanımına neden olabilir. "
+"Emin değilseniz devre dışı bırakın."
+
+#. (itstool) path: option/_short
+msgid "Maximum buffer size"
+msgstr "Azami arabellek boyutu"
+
+#. (itstool) path: option/_long
+msgid ""
+"Maximum size in pixels of graphics buffers used for rendering. Needs to be "
+"set lower on some systems to avoid crashes and other issues."
+msgstr ""
+"Çizim için kullanılan grafik arabelleklerinin piksel cinsinden azami "
+"boyutu. Çökmeleri ve diğer sorunları önlemek için bazı sistemlerde daha "
+"düşük ayarlanması gerekir."
+
+#. (itstool) path: option/_short
+msgid "Disable primary selection"
+msgstr "Birincil seçimi devre dışı bırak"
+
+#. (itstool) path: option/_long
+msgid "Disable primary selection (middle-click copy/paste)."
+msgstr ""
+"Birincil seçimi (orta tıklamayla kopyala/yapıştır) devre dışı bırakır."
+
+#. (itstool) path: option/_short
+msgid "Focus main surface instead of popup menus"
+msgstr "Açılır menüler yerine ana yüzeyi odakla"
+
+#. (itstool) path: option/_long
+msgid ""
+"Focus the main surface instead of popup menus. Works around some bugs in Qt-"
+"based apps related to copy-paste."
+msgstr ""
+"Açılır menüler yerine ana yüzeyi odaklar. Qt tabanlı uygulamalardaki "
+"kopyala-yapıştır ile ilgili bazı hatalara geçici bir çözüm sağlar."
+
+#. (itstool) path: option/_short
+msgid "Keep last focused toplevel activated"
+msgstr "Son odaklanan üst düzey pencereyi etkin tut"
+
+#. (itstool) path: option/_long
+msgid ""
+"When a layer-shell view grabs keyboard focus, keep the last focused "
+"toplevel view as activated."
+msgstr ""
+"Bir layer-shell görünümü klavye odağını kazandığında, son odaklanan üst "
+"düzey görünümü etkin olarak tutar."
+
+#. (itstool) path: option/_short
+msgid "Auto-reload Config"
+msgstr "Yapılandırmayı Otomatik Yeniden Yükle"
+
+#. (itstool) path: option/_long
+msgid "Automatically reload the config file when it's modified."
+msgstr ""
+"Yapılandırma dosyası değiştirildiğinde otomatik olarak yeniden yükler."
+
+#. (itstool) path: option/_short
+msgid "Config reload delay"
+msgstr "Yapılandırma yeniden yükleme gecikmesi"
+
+#. (itstool) path: option/_long
+msgid "Delay in milliseconds after a config file change before reloading."
+msgstr ""
+"Yapılandırma dosyası değişikliğinden sonra yeniden yüklemeden önce "
+"milisaniye cinsinden gecikme."

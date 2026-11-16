@@ -1,0 +1,76 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"POT-Creation-Date: 2025-09-18 14:55+0300\n"
+"PO-Revision-Date: 2026-11-16 10:12+0300\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: tr\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Poedit 3.10\n"
+
+#. (itstool) path: plugin/_short
+msgid "WM Actions"
+msgstr "Pencere Yönetimi Eylemleri"
+
+#. (itstool) path: plugin/_long
+msgid "A plugin which provides various window management functionalities."
+msgstr "Çeşitli pencere yönetimi işlevleri sağlayan bir eklenti."
+
+#. (itstool) path: option/_short
+msgid "Toggle Always on Top"
+msgstr "Her Zaman Üstte Aç/Kapat"
+
+#. (itstool) path: option/_long
+msgid "Toggle the always-on-top state of a view."
+msgstr "Bir pencerenin her zaman üstte olma durumunu açar/kapatır."
+
+#. (itstool) path: option/_short
+msgid "Toggle Fullscreen"
+msgstr "Tam Ekranı Aç/Kapat"
+
+#. (itstool) path: option/_long
+msgid "Toggle the fullscreen state of a view."
+msgstr "Bir pencerenin tam ekran durumunu açar/kapatır."
+
+#. (itstool) path: option/_short
+msgid "Toggle Sticky"
+msgstr "Yapışkan Aç/Kapat"
+
+#. (itstool) path: option/_long
+msgid "Toggle the sticky state of a view."
+msgstr "Bir pencerenin yapışkan durumunu açar/kapatır."
+
+#. (itstool) path: option/_short
+msgid "Toggle Maximize"
+msgstr "Büyütmeyi Aç/Kapat"
+
+#. (itstool) path: option/_long
+msgid "Toggle the maximize state of the active view."
+msgstr "Etkin pencerenin büyütülmüş durumunu açar/kapatır."
+
+#. (itstool) path: option/_short
+msgid "Minimize View"
+msgstr "Pencereyi Küçült"
+
+#. (itstool) path: option/_long
+msgid "Minimize the active view."
+msgstr "Etkin pencereyi küçültür."
+
+#. (itstool) path: option/_short
+msgid "Toggle Show Desktop"
+msgstr "Masaüstünü Göstermeyi Aç/Kapat"
+
+#. (itstool) path: option/_long
+msgid "Show the desktop."
+msgstr "Masaüstünü gösterir."
+
+#. (itstool) path: option/_short
+msgid "Send to back"
+msgstr "En Arkaya Gönder"
+
+#. (itstool) path: option/_long
+msgid "Send the active view to behind all other views."
+msgstr "Etkin pencereyi diğer tüm pencerelerin arkasına gönderir."
