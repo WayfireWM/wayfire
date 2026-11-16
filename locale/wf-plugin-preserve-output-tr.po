@@ -1,0 +1,39 @@
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"POT-Creation-Date: 2025-09-18 14:55+0300\n"
+"PO-Revision-Date: 2026-11-16 19:48+0300\n"
+"Last-Translator: Türkçe Çeviri\n"
+"Language-Team: Türkçe\n"
+"Language: tr\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Poedit 3.10\n"
+
+#. (itstool) path: plugin/_short
+msgid "Preserve Output"
+msgstr "Çıkışı Koru"
+
+#. (itstool) path: plugin/_long
+msgid ""
+"A plugin to restore windows to their original position if outputs are "
+"temporarily disconnected."
+msgstr ""
+"Çıkışlar geçici olarak bağlantısı kesildiğinde pencereleri özgün "
+"konumlarına geri yükleyen bir eklenti."
+
+#. (itstool) path: option/_short
+msgid "Last output focus timeout"
+msgstr "Son çıkış odağı zaman aşımı"
+
+#. (itstool) path: option/_long
+msgid ""
+"Length of time in milliseconds to remember a destroyed output as the last "
+"output with focus, before it can be overridden by another destroyed output "
+"with focus."
+msgstr ""
+"Yok edilen bir çıkışın, odaklanan başka bir yok edilen çıkış tarafından "
+"geçersiz kılınabilmesinden önce, son odaklanan çıkış olarak hatırlanacağı "
+"milisaniye cinsinden süre."
