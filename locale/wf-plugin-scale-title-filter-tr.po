@@ -1,0 +1,72 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"POT-Creation-Date: 2025-09-18 14:55+0300\n"
+"PO-Revision-Date: 2026-11-16 18:44+0300\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: tr\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Poedit 3.10\n"
+
+#. (itstool) path: plugin/_short
+msgid "Scale Title Filter"
+msgstr "Ölçekleme başlık süzgeci"
+
+#. (itstool) path: plugin/_long
+msgid "Filter the views shown by scale by typing."
+msgstr "Yazarak ölçekleme tarafından gösterilen görünümleri süzer."
+
+#. (itstool) path: option/_short
+msgid "Case sensitive"
+msgstr "Büyük/küçük harfe duyarlı"
+
+#. (itstool) path: option/_long
+msgid "Match titles in a case sensitive way."
+msgstr "Başlıkları büyük/küçük harfe duyarlı şekilde eşleştirir."
+
+#. (itstool) path: option/_short
+msgid "Share filter among outputs"
+msgstr "Süzgeci çıktılar arasında paylaş"
+
+#. (itstool) path: option/_long
+msgid ""
+"Whether the active filter is shared among all outputs. Set to false to filter "
+"independently on each output."
+msgstr ""
+"Etkin süzgecin tüm çıktılar arasında paylaşılıp paylaşılmayacağı. Her çıktıda "
+"bağımsız olarak süzmek için false değerine ayarlayın."
+
+#. (itstool) path: option/_short
+msgid "Show overlay"
+msgstr "Kaplamayı göster"
+
+#. (itstool) path: option/_long
+msgid "Whether the current filter value is shown as an overlay."
+msgstr "Geçerli süzgeç değerinin bir kaplama olarak gösterilip gösterilmeyeceği."
+
+#. (itstool) path: option/_short
+msgid "Text font size"
+msgstr "Metin yazı tipi boyutu"
+
+#. (itstool) path: option/_long
+msgid "Size of the text used in the overlay."
+msgstr "Kaplamada kullanılan metnin boyutu."
+
+#. (itstool) path: option/_short
+msgid "Background color"
+msgstr "Arka plan rengi"
+
+#. (itstool) path: option/_long
+msgid "Background color for overlay text."
+msgstr "Kaplama metni için arka plan rengi."
+
+#. (itstool) path: option/_short
+msgid "Text color"
+msgstr "Metin rengi"
+
+#. (itstool) path: option/_long
+msgid "Text color for overlay."
+msgstr "Kaplama için metin rengi."
