@@ -1,0 +1,63 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"POT-Creation-Date: 2025-09-18 14:55+0300\n"
+"PO-Revision-Date: 2026-11-16 11:04+0300\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: tr\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Poedit 3.10\n"
+
+#. (itstool) path: plugin/_short
+msgid "Resize"
+msgstr "Yeniden Boyutlandırma"
+
+#. (itstool) path: plugin/_long
+msgid ""
+"A plugin to resize windows by dragging them from any part (not just the "
+"edges)."
+msgstr ""
+"Pencereleri herhangi bir yerinden (yalnızca kenarlarından değil) sürükleyerek "
+"yeniden boyutlandırmaya yarayan bir eklenti."
+
+#. (itstool) path: option/_short
+msgid "Activate"
+msgstr "Etkinleştir"
+
+#. (itstool) path: option/_long
+msgid ""
+"When the specified button is held down, you can drag a window to resize it."
+msgstr ""
+"Belirtilen düğme basılı tutulduğunda, bir pencereyi yeniden boyutlandırmak "
+"için sürükleyebilirsiniz."
+
+#. (itstool) path: option/_short
+msgid "Minimum view width"
+msgstr "En küçük pencere genişliği"
+
+#. (itstool) path: option/_long
+msgid "If set, views cannot be resized smaller than this width."
+msgstr "Ayarlanırsa, pencereler bu genişlikten daha küçük boyutlandırılamaz."
+
+#. (itstool) path: option/_short
+msgid "Minimum view height"
+msgstr "En küçük pencere yüksekliği"
+
+#. (itstool) path: option/_long
+msgid "If set, views cannot be resized smaller than this height."
+msgstr "Ayarlanırsa, pencereler bu yükseklikten daha küçük boyutlandırılamaz."
+
+#. (itstool) path: option/_short
+msgid "Activate resize while preserving aspect"
+msgstr "En-boy oranını koruyarak yeniden boyutlandırmayı etkinleştir"
+
+#. (itstool) path: option/_long
+msgid ""
+"When the specified button is held down, you can drag a window to resize it "
+"while preserving its original aspect."
+msgstr ""
+"Belirtilen düğme basılı tutulduğunda, pencereyi özgün en-boy oranını "
+"koruyarak yeniden boyutlandırmak için sürükleyebilirsiniz."
