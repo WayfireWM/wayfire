@@ -1,0 +1,228 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"POT-Creation-Date: 2025-09-18 14:55+0300\n"
+"PO-Revision-Date: 2026-11-16 17:55+0300\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: tr\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Poedit 3.10\n"
+
+#. (itstool) path: plugin/_short
+msgid "Animate"
+msgstr "Animasyon"
+
+#. (itstool) path: plugin/_long
+msgid "A plugin which provides animations when a window is opened or closed."
+msgstr ""
+"Bir pencere açıldığında ya da kapatıldığında animasyonlar sağlayan bir eklenti."
+
+#. (itstool) path: option/_short
+msgid "Open animation"
+msgstr "Açılış animasyonu"
+
+#. (itstool) path: option/_long
+msgid "Specifies the type of animation when opening a window."
+msgstr "Bir pencere açılırken kullanılacak animasyon türünü belirler."
+
+#. (itstool) path: desc/_name
+msgid "None"
+msgstr "Yok"
+
+#. (itstool) path: desc/_name
+msgid "Fade"
+msgstr "Soldurma"
+
+#. (itstool) path: desc/_name
+msgid "Zoom"
+msgstr "Yakınlaştırma"
+
+#. (itstool) path: desc/_name
+msgid "Fire"
+msgstr "Ateş"
+
+#. (itstool) path: desc/_name
+msgid "Zap"
+msgstr "Zap"
+
+#. (itstool) path: desc/_name
+msgid "Spin"
+msgstr "Döndürme"
+
+#. (itstool) path: option/_short
+msgid "Close animation"
+msgstr "Kapanış animasyonu"
+
+#. (itstool) path: option/_long
+msgid "Specifies the type of animation when closing a window."
+msgstr "Bir pencere kapatılırken kullanılacak animasyon türünü belirler."
+
+#. (itstool) path: option/_short
+msgid "Minimize animation"
+msgstr "Küçültme animasyonu"
+
+#. (itstool) path: option/_long
+msgid "Specifies the type of animation when minimizing a window."
+msgstr "Bir pencere küçültülürken kullanılacak animasyon türünü belirler."
+
+#. (itstool) path: desc/_name
+msgid "Squeezimize"
+msgstr "Sıkıştırma"
+
+#. (itstool) path: option/_short
+msgid "Animation enabled for specified window types"
+msgstr "Belirtilen pencere türleri için animasyon etkin"
+
+#. (itstool) path: option/_long
+msgid "Specifies the window types to be animated."
+msgstr "Animasyon uygulanacak pencere türlerini belirler."
+
+#. (itstool) path: option/_short
+msgid "Duration"
+msgstr "Süre"
+
+#. (itstool) path: option/_long
+msgid "Sets the duration of the animation in milliseconds."
+msgstr "Animasyonun süresini milisaniye cinsinden ayarlar."
+
+#. (itstool) path: option/_short
+msgid "System fade duration when Wayfire starts"
+msgstr "Wayfire başlarken sistem soldurma süresi"
+
+#. (itstool) path: option/_long
+msgid "Sets the duration of fading (in milliseconds) when Wayfire starts."
+msgstr "Wayfire başlarken soldurma süresini (milisaniye cinsinden) ayarlar."
+
+#. (itstool) path: option/_short
+msgid "Fade animation enabled for specified window types"
+msgstr "Belirtilen pencere türleri için soldurma animasyonu etkin"
+
+#. (itstool) path: option/_long
+msgid "Specifies the window types to be animated with a fade effect."
+msgstr "Soldurma efektiyle animasyon uygulanacak pencere türlerini belirler."
+
+#. (itstool) path: option/_short
+msgid "Fade duration"
+msgstr "Soldurma süresi"
+
+#. (itstool) path: option/_long
+msgid ""
+"Sets the duration for the _fade_ animation in milliseconds. Only applies for "
+"windows matched by `animate.fade_enabled_for`."
+msgstr ""
+"_Soldurma_ animasyonunun süresini milisaniye cinsinden ayarlar. Yalnızca "
+"`animate.fade_enabled_for` ile eşleşen pencereler için geçerlidir."
+
+#. (itstool) path: option/_short
+msgid "Zoom animation enabled for specified window types"
+msgstr "Belirtilen pencere türleri için yakınlaştırma animasyonu etkin"
+
+#. (itstool) path: option/_long
+msgid "Specifies the window types to be animated with a zoom effect."
+msgstr "Yakınlaştırma efektiyle animasyon uygulanacak pencere türlerini belirler."
+
+#. (itstool) path: option/_short
+msgid "Zoom duration"
+msgstr "Yakınlaştırma süresi"
+
+#. (itstool) path: option/_long
+msgid ""
+"Sets the duration for the _zoom_ animation in milliseconds. Only applies for "
+"windows matched by `animate.zoom_enabled_for`."
+msgstr ""
+"_Yakınlaştırma_ animasyonunun süresini milisaniye cinsinden ayarlar. Yalnızca "
+"`animate.zoom_enabled_for` ile eşleşen pencereler için geçerlidir."
+
+#. (itstool) path: option/_short
+msgid "Fire animation enabled for specified window types"
+msgstr "Belirtilen pencere türleri için ateş animasyonu etkin"
+
+#. (itstool) path: option/_long
+msgid "Specifies the window types to be animated with a fire effect."
+msgstr "Ateş efektiyle animasyon uygulanacak pencere türlerini belirler."
+
+#. (itstool) path: option/_short
+msgid "Fire duration"
+msgstr "Ateş süresi"
+
+#. (itstool) path: option/_long
+msgid ""
+"Sets the duration for the _fire_ animation in milliseconds. Only applies for "
+"windows matched by `animate.fire_enabled_for`."
+msgstr ""
+"_Ateş_ animasyonunun süresini milisaniye cinsinden ayarlar. Yalnızca "
+"`animate.fire_enabled_for` ile eşleşen pencereler için geçerlidir."
+
+#. (itstool) path: option/_short
+msgid "Fire particles"
+msgstr "Ateş parçacıkları"
+
+#. (itstool) path: option/_long
+msgid "Sets the number of fire particles."
+msgstr "Ateş parçacıklarının sayısını ayarlar."
+
+#. (itstool) path: option/_short
+msgid "Fire particle size"
+msgstr "Ateş parçacığı boyutu"
+
+#. (itstool) path: option/_long
+msgid "Sets the size of the fire particles in pixels."
+msgstr "Ateş parçacıklarının boyutunu piksel cinsinden ayarlar."
+
+#. (itstool) path: option/_short
+msgid "Random fire colors"
+msgstr "Rastgele ateş renkleri"
+
+#. (itstool) path: option/_long
+msgid ""
+"Sets whether to use one solid color or select a random color for each particle"
+msgstr ""
+"Her parçacık için tek bir düz renk mi yoksa rastgele bir renk mi "
+"kullanılacağını ayarlar"
+
+#. (itstool) path: option/_short
+msgid "Color of the fire"
+msgstr "Ateşin rengi"
+
+#. (itstool) path: option/_long
+msgid "Sets the color of the fire effects, alpha is ignored"
+msgstr "Ateş efektlerinin rengini ayarlar, alfa değeri yok sayılır"
+
+#. (itstool) path: option/_short
+msgid "Squeezimize duration"
+msgstr "Sıkıştırma süresi"
+
+#. (itstool) path: option/_long
+msgid "Sets the duration of the squeezimize animation in milliseconds."
+msgstr "Sıkıştırma animasyonunun süresini milisaniye cinsinden ayarlar."
+
+#. (itstool) path: option/_short
+msgid "Zap duration"
+msgstr "Zap süresi"
+
+#. (itstool) path: option/_long
+msgid "Sets the duration for the zap animation in milliseconds."
+msgstr "Zap animasyonunun süresini milisaniye cinsinden ayarlar."
+
+#. (itstool) path: option/_short
+msgid "Spin duration"
+msgstr "Döndürme süresi"
+
+#. (itstool) path: option/_long
+msgid "Sets the duration for the spin animation in milliseconds."
+msgstr "Döndürme animasyonunun süresini milisaniye cinsinden ayarlar."
+
+#. (itstool) path: option/_short
+msgid "Spin rotations"
+msgstr "Döndürme tur sayısı"
+
+#. (itstool) path: option/_long
+msgid ""
+"Number of rotations for the spin animation. Negative values reverse the spin "
+"direction."
+msgstr ""
+"Döndürme animasyonunun tur sayısı. Negatif değerler dönme yönünü tersine "
+"çevirir."
