@@ -1,0 +1,165 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"POT-Creation-Date: 2025-09-18 14:55+0300\n"
+"PO-Revision-Date: 2026-11-16 18:01+0300\n"
+"Last-Translator: \n"
+"Language-Team: Turkish\n"
+"Language: tr\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+"X-Generator: Poedit 3.10\n"
+
+#. (itstool) path: plugin/_short
+msgid "Blur"
+msgstr "Bulanıklaştırma"
+
+#. (itstool) path: plugin/_long
+msgid "A plugin to blur windows."
+msgstr "Pencereleri bulanıklaştırmak için bir eklenti."
+
+#. (itstool) path: option/_short
+msgid "Blur by default"
+msgstr "Varsayılan olarak bulanıklaştır"
+
+#. (itstool) path: option/_long
+msgid "Criteria for which apps to be blurred when they are opened"
+msgstr "Açıldıklarında hangi uygulamaların bulanıklaştırılacağını belirleyen ölçütler"
+
+#. (itstool) path: option/_short
+msgid "Toggle"
+msgstr "Aç/Kapat"
+
+#. (itstool) path: option/_long
+msgid "Sets the shortcut to toggle blurring for a specific window."
+msgstr "Belirli bir pencere için bulanıklaştırmayı açıp kapatma kısayolunu ayarlar."
+
+#. (itstool) path: option/_short
+msgid "Method"
+msgstr "Yöntem"
+
+#. (itstool) path: option/_long
+msgid "Chooses a blur algorithm."
+msgstr "Bir bulanıklaştırma algoritması seçer."
+
+#. (itstool) path: desc/_name
+msgid "Box"
+msgstr "Kutu"
+
+#. (itstool) path: desc/_name
+msgid "Gaussian"
+msgstr "Gauss"
+
+#. (itstool) path: desc/_name
+msgid "Kawase"
+msgstr "Kawase"
+
+#. (itstool) path: desc/_name
+msgid "Bokeh"
+msgstr "Bokeh"
+
+#. (itstool) path: option/_short
+msgid "Blur saturation"
+msgstr "Bulanıklaştırma doygunluğu"
+
+#. (itstool) path: option/_long
+msgid "Sets the saturation of the blurred content."
+msgstr "Bulanıklaştırılmış içeriğin doygunluğunu ayarlar."
+
+#. (itstool) path: option/_short
+msgid "Box offset"
+msgstr "Kutu ofseti"
+
+#. (itstool) path: option/_long
+msgid "Sets the offset value for the box method."
+msgstr "Kutu yöntemi için ofset değerini ayarlar."
+
+#. (itstool) path: option/_short
+msgid "Box degrade"
+msgstr "Kutu düşürmesi"
+
+#. (itstool) path: option/_long
+msgid "Sets the degrade value for the box method."
+msgstr "Kutu yöntemi için düşürme değerini ayarlar."
+
+#. (itstool) path: option/_short
+msgid "Box iterations"
+msgstr "Kutu yinelemeleri"
+
+#. (itstool) path: option/_long
+msgid "Sets the iterations for the box method."
+msgstr "Kutu yöntemi için yineleme sayısını ayarlar."
+
+#. (itstool) path: option/_short
+msgid "Gaussian offset"
+msgstr "Gauss ofseti"
+
+#. (itstool) path: option/_long
+msgid "Sets the offset value for the gaussian method."
+msgstr "Gauss yöntemi için ofset değerini ayarlar."
+
+#. (itstool) path: option/_short
+msgid "Gaussian degrade"
+msgstr "Gauss düşürmesi"
+
+#. (itstool) path: option/_long
+msgid "Sets the degrade value for the gaussian method."
+msgstr "Gauss yöntemi için düşürme değerini ayarlar."
+
+#. (itstool) path: option/_short
+msgid "Gaussian iterations"
+msgstr "Gauss yinelemeleri"
+
+#. (itstool) path: option/_long
+msgid "Sets the iterations for the gaussian method."
+msgstr "Gauss yöntemi için yineleme sayısını ayarlar."
+
+#. (itstool) path: option/_short
+msgid "Kawase offset"
+msgstr "Kawase ofseti"
+
+#. (itstool) path: option/_long
+msgid "Sets the offset value for the kawase method."
+msgstr "Kawase yöntemi için ofset değerini ayarlar."
+
+#. (itstool) path: option/_short
+msgid "Kawase degrade"
+msgstr "Kawase düşürmesi"
+
+#. (itstool) path: option/_long
+msgid "Sets the degrade value for the kawase method."
+msgstr "Kawase yöntemi için düşürme değerini ayarlar."
+
+#. (itstool) path: option/_short
+msgid "Kawase iterations"
+msgstr "Kawase yinelemeleri"
+
+#. (itstool) path: option/_long
+msgid "Sets the iterations for the kawase method."
+msgstr "Kawase yöntemi için yineleme sayısını ayarlar."
+
+#. (itstool) path: option/_short
+msgid "Bokeh offset"
+msgstr "Bokeh ofseti"
+
+#. (itstool) path: option/_long
+msgid "Sets the offset value for the bokeh method."
+msgstr "Bokeh yöntemi için ofset değerini ayarlar."
+
+#. (itstool) path: option/_short
+msgid "Bokeh degrade"
+msgstr "Bokeh düşürmesi"
+
+#. (itstool) path: option/_long
+msgid "Sets the degrade value for the bokeh method."
+msgstr "Bokeh yöntemi için düşürme değerini ayarlar."
+
+#. (itstool) path: option/_short
+msgid "Bokeh iterations"
+msgstr "Bokeh yinelemeleri"
+
+#. (itstool) path: option/_long
+msgid "Sets the iterations for the bokeh method."
+msgstr "Bokeh yöntemi için yineleme sayısını ayarlar."
