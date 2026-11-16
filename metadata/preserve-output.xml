@@ -2,13 +2,18 @@
 <wayfire>
 	<plugin name="preserve-output">
 		<_short>Preserve Output</_short>
-		<_long>A plugin to restore windows to their original position if outputs are temporarily disconnected. When an output is disconnected, its windows are moved to a connected output so that they remain accessible, and they are moved back to the output where they were placed when it is reconnected.</_long>
+		<_long>A plugin to restore windows to their original position if outputs are temporarily disconnected. If migrate_views is enabled, windows of a disconnected output are migrated to a connected output so that they remain accessible, and are migrated back to the output where they were placed when it is reconnected.</_long>
 		<category>Window Management</category>
 		<option name="last_output_focus_timeout" type="int">
 			<_short>Last output focus timeout</_short>
 			<_long>Length of time in milliseconds to remember a destroyed output as the last output with focus, before it can be overridden by another destroyed output with focus.</_long>
 			<default>10000</default>
 			<min>0</min>
+		</option>
+		<option name="migrate_views" type="bool">
+			<_short>Migrate views from disconnected output</_short>
+			<_long>Migrate views from disconnected output preserving workspace and migrate them back when output restores. Incompatible with tiling!</_long>
+			<default>false</default>
 		</option>
 	</plugin>
 </wayfire>
