@@ -1,0 +1,177 @@
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"POT-Creation-Date: 2025-09-18 14:55+0300\n"
+"PO-Revision-Date: 2026-11-16 19:27+0300\n"
+"Last-Translator: Z.ai Türkçe Çeviri\n"
+"Language-Team: Türkçe\n"
+"Language: tr\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Poedit 3.10\n"
+
+#. (itstool) path: plugin/_short
+msgid "Cube"
+msgstr "Küp"
+
+#. (itstool) path: plugin/_long
+msgid "A plugin to show the current workspace row as a cube."
+msgstr "Geçerli çalışma alanı satırını küp şeklinde gösteren bir eklenti."
+
+#. (itstool) path: group/_short
+msgid "Bindings"
+msgstr "Bağlamalar"
+
+#. (itstool) path: group/_long
+msgid "Sets the cube bindings."
+msgstr "Küp bağlamalarını ayarlar."
+
+#. (itstool) path: option/_short
+msgid "Activate"
+msgstr "Etkinleştir"
+
+#. (itstool) path: option/_long
+msgid "Activates the cube with the specified button."
+msgstr "Küpü belirtilen düğme ile etkinleştirir."
+
+#. (itstool) path: option/_short
+msgid "Rotate left"
+msgstr "Sola döndür"
+
+#. (itstool) path: option/_long
+msgid "Rotates left with the specified activator."
+msgstr "Belirtilen etkinleştirici ile sola döndürür."
+
+#. (itstool) path: option/_short
+msgid "Rotate right"
+msgstr "Sağa döndür"
+
+#. (itstool) path: option/_long
+msgid "Rotates right with the specified activator."
+msgstr "Belirtilen etkinleştirici ile sağa döndürür."
+
+#. (itstool) path: option/_short
+msgid "Deformation"
+msgstr "Deformasyon"
+
+#. (itstool) path: option/_long
+msgid "Specifies the deformation to be used."
+msgstr "Kullanılacak deformasyonu belirtir."
+
+#. (itstool) path: desc/_name
+msgid "None"
+msgstr "Yok"
+
+#. (itstool) path: desc/_name
+msgid "Cylinder"
+msgstr "Silindir"
+
+#. (itstool) path: desc/_name
+msgid "Star"
+msgstr "Yıldız"
+
+#. (itstool) path: option/_short
+msgid "Use lighting"
+msgstr "Aydınlatma kullan"
+
+#. (itstool) path: option/_long
+msgid "Specifies whether to use lighting."
+msgstr "Aydınlatma kullanılıp kullanılmayacağını belirtir."
+
+#. (itstool) path: option/_short
+msgid "Zoom"
+msgstr "Yakınlaştırma"
+
+#. (itstool) path: option/_long
+msgid ""
+"Sets the level of zoom out. Setting the value to **0.0** means to not zoom "
+"out."
+msgstr ""
+"Uzaklaştırma düzeyini ayarlar. Değer **0.0** olarak ayarlandığında "
+"uzaklaştırma yapılmaz."
+
+#. (itstool) path: option/_short
+msgid "Duration"
+msgstr "Süre"
+
+#. (itstool) path: option/_long
+msgid "Sets the initial animation duration in milliseconds."
+msgstr "Milisaniye cinsinden başlangıç animasyon süresini ayarlar."
+
+#. (itstool) path: option/_short
+msgid "Zoom speed"
+msgstr "Yakınlaştırma hızı"
+
+#. (itstool) path: option/_long
+msgid "Sets the speed factor for zooming."
+msgstr "Yakınlaştırma için hız faktörünü ayarlar."
+
+#. (itstool) path: option/_short
+msgid "Horizontal spin speed"
+msgstr "Yatay dönme hızı"
+
+#. (itstool) path: option/_long
+msgid "Sets the velocity of horizontal spinning."
+msgstr "Yatay dönme hızını ayarlar."
+
+#. (itstool) path: option/_short
+msgid "Vertical spin speed"
+msgstr "Dikey dönme hızı"
+
+#. (itstool) path: option/_long
+msgid "Sets the velocity of vertical spinning."
+msgstr "Dikey dönme hızını ayarlar."
+
+#. (itstool) path: option/_short
+msgid "Background mode"
+msgstr "Arka plan modu"
+
+#. (itstool) path: option/_long
+msgid "Sets the background mode."
+msgstr "Arka plan modunu ayarlar."
+
+#. (itstool) path: desc/_name
+msgid "Simple"
+msgstr "Basit"
+
+#. (itstool) path: desc/_name
+msgid "Skydome"
+msgstr "Skydome"
+
+#. (itstool) path: desc/_name
+msgid "Cubemap"
+msgstr "Küp eşleme"
+
+#. (itstool) path: option/_short
+msgid "Background color"
+msgstr "Arka plan rengi"
+
+#. (itstool) path: option/_long
+msgid "Sets the background color for the simple background mode."
+msgstr "Basit arka plan modu için arka plan rengini ayarlar."
+
+#. (itstool) path: option/_short
+msgid "Skydome mirror"
+msgstr "Skydome aynalama"
+
+#. (itstool) path: option/_long
+msgid "Specifies whether to mirror skydome."
+msgstr "Skydome'un aynalanıp aynalanmayacağını belirtir."
+
+#. (itstool) path: option/_short
+msgid "Skydome texture"
+msgstr "Skydome dokusu"
+
+#. (itstool) path: option/_long
+msgid "Loads the specified texture for the skydome background mode."
+msgstr "Skydome arka plan modu için belirtilen dokuyu yükler."
+
+#. (itstool) path: option/_short
+msgid "Cubemap image"
+msgstr "Küp eşleme görüntüsü"
+
+#. (itstool) path: option/_long
+msgid "Loads the specified image for the cubemap background mode."
+msgstr "Küp eşleme arka plan modu için belirtilen görüntüyü yükler."
