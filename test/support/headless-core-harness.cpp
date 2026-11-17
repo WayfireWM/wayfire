@@ -52,7 +52,14 @@ class test_config_backend_t : public wf::config_backend_t
         config = wf::config::build_configuration(get_xml_dirs(), "/dev/null",
             "/dev/null");
 
-        wf::config::load_configuration_options_from_string(config,
+        /* load_configuration_options_from_string() resets every registered
+         * option which is absent from the string it is given, so the defaults
+         * below and the options of the test have to be loaded in a single call:
+         * a second call would undo the defaults. The options of the test are
+         * appended, so they still take precedence, but they have to open their
+         * own section, and line numbers in parse errors refer to the result of
+         * the concatenation. */
+        const std::string default_config =
             "[core]\n"
             "background_color = 0.0 0.0 0.0 1.0\n"
             "plugins = \n"
@@ -64,14 +71,10 @@ class test_config_backend_t : public wf::config_backend_t
             "[workarounds]\n"
             "auto_reload_config = false\n"
             "enable_input_method_v2 = false\n"
-            "use_external_output_configuration = false\n",
-            "default-test-config");
+            "use_external_output_configuration = false\n";
 
-        if (!extra_config.empty())
-        {
-            wf::config::load_configuration_options_from_string(config,
-                extra_config, "headless-core-harness-extra-config");
-        }
+        wf::config::load_configuration_options_from_string(config,
+            default_config + extra_config, "harness defaults + test options");
     }
 };
 
