@@ -47,6 +47,7 @@ class xdg_toplevel_t : public toplevel_t, public std::enable_shared_from_this<xd
 
     void handle_surface_commit();
     uint32_t target_configure = 0;
+    bool has_acked_latest_configure() const;
 
     void emit_ready();
     bool pending_ready = false;

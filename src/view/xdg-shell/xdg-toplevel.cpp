@@ -155,6 +155,12 @@ void wf::xdg_toplevel_t::apply()
     }
 }
 
+bool wf::xdg_toplevel_t::has_acked_latest_configure() const
+{
+    // Configure serials are uint32 and wrap; compare their signed distance instead.
+    return (int32_t)(toplevel->base->current.configure_serial - this->target_configure) >= 0;
+}
+
 void wf::xdg_toplevel_t::handle_surface_commit()
 {
     pending_state.merge_state(toplevel->base->surface);
@@ -169,8 +175,7 @@ void wf::xdg_toplevel_t::handle_surface_commit()
     const bool is_committed = wf::get_core().tx_manager->is_object_committed(shared_from_this());
     if (is_committed)
     {
-        // TODO: handle overflow?
-        if (this->toplevel->base->current.configure_serial < this->target_configure)
+        if (!has_acked_latest_configure())
         {
             // Desired state not reached => wait for the desired state to be reached. In the meantime, send a
             // frame done so that the client can redraw faster.
@@ -188,6 +193,16 @@ void wf::xdg_toplevel_t::handle_surface_commit()
     const bool is_pending = wf::get_core().tx_manager->is_object_pending(shared_from_this());
     if (is_pending)
     {
+        return;
+    }
+
+    if (!has_acked_latest_configure())
+    {
+        // The transaction timed out before the client acked its configure. Until the client catches up,
+        // its commits are late frames for an older state, not a client-initiated resize: taking their size
+        // would undo the applied state (e.g. a maximized view shrinks back, anchored by the gravity of an
+        // earlier resize) and even configure the client back to the old size. Show them as they are.
+        apply_pending_state();
         return;
     }
 
