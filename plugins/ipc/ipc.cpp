@@ -323,7 +323,7 @@ bool wf::ipc::client_t::send_json(wf::json_t json)
         uint32_t len = size;
         if (!write_exact(fd, (char*)&len, 4) || !write_exact(fd, buffer, len))
         {
-            LOGE("Error sending json to client!");
+            LOGW("Error sending json to client!");
             shutdown(fd, SHUT_RDWR);
             return;
         }
