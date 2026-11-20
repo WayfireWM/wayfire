@@ -166,7 +166,9 @@ void wayfire_window_rules_t::apply(const std::string & signal, wayfire_view view
         auto error = rule->apply(signal, _access_interface, _action_interface);
         if (error)
         {
-            LOGE("Window-rules: Error while executing rule on ", signal, " signal.");
+            const auto app_id = view->get_app_id();
+            LOGE("Window-rules: Error while executing rule on ", signal, " signal.",
+                app_id.empty() ? "" : " [app-id: " + app_id + "]");
         }
     }
 
