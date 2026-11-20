@@ -26,7 +26,6 @@
 wf::xdg_toplevel_view_base_t::xdg_toplevel_view_base_t(wlr_xdg_toplevel *toplevel, bool autocommit)
 {
     this->xdg_toplevel = toplevel;
-    LOGI("new xdg_shell_stable surface: ", xdg_toplevel->title, " app-id: ", xdg_toplevel->app_id);
 
     this->main_surface = std::make_shared<scene::wlr_surface_node_t>(toplevel->base->surface, autocommit);
 
@@ -530,6 +529,10 @@ void wf::fini_xdg_decoration_handlers()
 
 void wf::xdg_toplevel_view_t::start_map_tx()
 {
+    const auto app_id = get_app_id();
+    LOGI("map xdg_shell_stable surface: ", get_title(),
+        app_id.empty() ? "" : " [app-id: " + app_id + "]");
+
     LOGC(VIEWS, "Start mapping ", self());
     wf::geometry_t box = wf::from_integer_box(xdg_toplevel->base->geometry);
     auto margins = wtoplevel->pending().margins;
