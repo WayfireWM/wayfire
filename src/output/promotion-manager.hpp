@@ -80,6 +80,7 @@ class promotion_manager_t
         wayfire_toplevel_view candidate = find_top_visible_view(output->wset()->get_node());
         if (candidate && candidate->toplevel()->current().fullscreen)
         {
+            promoted_app_id = candidate->get_app_id();
             start_promotion();
         } else
         {
@@ -88,6 +89,7 @@ class promotion_manager_t
     }
 
     bool promotion_active = false;
+    std::string promoted_app_id;
 
     // When a fullscreen view is on top of the stack, it should be displayed above
     // nodes in the TOP layer. To achieve this effect, we hide the TOP layer.
@@ -104,7 +106,8 @@ class promotion_manager_t
         wf::fullscreen_layer_focused_signal ev;
         ev.has_promoted = true;
         output->emit(&ev);
-        LOGD("autohide panels");
+        LOGD("autohide panels",
+            promoted_app_id.empty() ? "" : " [app-id: " + promoted_app_id + "]");
     }
 
     void stop_promotion()
@@ -120,7 +123,9 @@ class promotion_manager_t
         wf::fullscreen_layer_focused_signal ev;
         ev.has_promoted = false;
         output->emit(&ev);
-        LOGD("restore panels");
+        LOGD("restore panels",
+            promoted_app_id.empty() ? "" : " [app-id: " + promoted_app_id + "]");
+        promoted_app_id.clear();
     }
 };
 }
