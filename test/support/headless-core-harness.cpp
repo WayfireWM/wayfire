@@ -171,6 +171,7 @@ struct wf::test::headless_core_harness_t::impl
             captured_pixels = std::move(pixels);
         };
 
+        wf::get_core().hide_cursor();
         wo->render->add_post(&capture_hook);
         wo->render->damage_whole();
         wo->render->schedule_redraw();
