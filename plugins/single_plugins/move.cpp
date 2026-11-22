@@ -448,7 +448,8 @@ class wayfire_move : public wf::per_output_plugin_instance_t,
     void update_slot(wf::grid::move_op_t operation)
     {
         auto input = get_input_coords();
-        if (!is_snap_enabled() || !(output->get_relative_geometry() & input))
+        bool outside = !(output->get_relative_geometry() & input);
+        if (!is_snap_enabled() || outside)
         {
             operation = wf::grid::MOVE_OP_CLEAR_PREVIEW;
         }
@@ -461,7 +462,7 @@ class wayfire_move : public wf::per_output_plugin_instance_t,
 
         if (grid_signal.carried_out)
         {
-            update_workspace_switch_timeout(input, !operation);
+            update_workspace_switch_timeout(input, outside);
             return;
         }
 
@@ -473,6 +474,8 @@ class wayfire_move : public wf::per_output_plugin_instance_t,
         {
             slot.slot_id = wf::grid::SLOT_NONE;
         }
+
+        update_workspace_switch_timeout(input, outside);
 
         if (old_slot_id == slot.slot_id)
         {
@@ -498,7 +501,7 @@ class wayfire_move : public wf::per_output_plugin_instance_t,
             }
         }
 
-        update_workspace_switch_timeout(input, !operation);
+        update_workspace_switch_timeout(input, outside);
     }
 
     /* Returns the currently used input coordinates in global compositor space */
