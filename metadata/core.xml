@@ -93,6 +93,11 @@
 			<_long>Whether to pass buttons through to the client when switching the focus via clicking</_long>
 			<default>true</default>
 		</option>
+		<option name="focus_on_map" type="bool">
+			<_short>Focus newly opened views</_short>
+			<_long>If unset, newly opened views will only be focused by using the xdg-activation protocol.</_long>
+			<default>true</default>
+		</option>
 		<option name="exit" type="key">
 			<_short>Wayfire Shutdown</_short>
 			<_long>Calls the shutdown routines for wayfire.</_long>
