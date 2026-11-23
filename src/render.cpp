@@ -408,14 +408,35 @@ static const wlr_drm_format *choose_format(wlr_renderer *renderer, wf::buffer_al
     return choose_format_from_set(supported_render_formats, hints);
 }
 
-static wf::dimensions_t sanitize_buffer_size(wf::dimensions_t size, float max_allowed_size)
+static wf::dimensions_t sanitize_buffer_size(wf::dimensions_t size)
 {
-    if ((size.width > max_allowed_size) || (size.height > max_allowed_size))
+    int max_texture_size = 0;
+    if (wf::get_core().is_gles2())
     {
-        LOGW("Attempting to allocate a buffer which is too large ", size, "!");
-        float scale = std::min(max_allowed_size / size.width, max_allowed_size / size.height);
+        GL_CALL(glGetIntegerv(GL_MAX_TEXTURE_SIZE, &max_texture_size));
+#if WF_HAS_VULKANFX
+    } else if (wf::get_core().is_vulkan())
+    {
+        VkPhysicalDeviceProperties properties;
+        auto physical_device = wlr_vk_renderer_get_physical_device(wf::get_core().renderer);
+
+        vkGetPhysicalDeviceProperties(physical_device, &properties);
+
+        max_texture_size = properties.limits.maxImageDimension2D;
+#endif
+    } else
+    {
+        return size;
+    }
+
+    if ((size.width > max_texture_size) || (size.height > max_texture_size))
+    {
+        LOGW("Attempting to allocate a buffer which is too large: ", size,
+            "! (maximum dimension: ", max_texture_size, ")");
+        float scale = std::min(max_texture_size / size.width, max_texture_size / size.height);
         size.width  = std::ceil(size.width * scale);
         size.height = std::ceil(size.height * scale);
+        LOGW("Trying again with size: ", size);
     }
 
     return size;
@@ -424,14 +445,7 @@ static wf::dimensions_t sanitize_buffer_size(wf::dimensions_t size, float max_al
 wf::buffer_reallocation_result_t wf::auxilliary_buffer_t::allocate(wf::dimensions_t size, float scale,
     buffer_allocation_hints_t hints)
 {
-    // From 16k x 16k upwards, we very often hit various limits so there is no point in allocating larger
-    // buffers. Plus, we never really need buffers that big in practice, so these usually indicate bugs in
-    // the code.
-    static wf::option_wrapper_t<int> max_buffer_size{"workarounds/max_buffer_size"};
-    const int FALLBACK_MAX_BUFFER_SIZE = 4096;
-    size.width  = std::max(1, (int)std::ceil(size.width * scale));
-    size.height = std::max(1, (int)std::ceil(size.height * scale));
-    size = sanitize_buffer_size(size, max_buffer_size);
+    size = sanitize_buffer_size(size);
 
     if (buffer.get_size() == size)
     {
@@ -455,7 +469,7 @@ wf::buffer_reallocation_result_t wf::auxilliary_buffer_t::allocate(wf::dimension
     {
         // On some systems, we may not be able to allocate very big buffers, so try to allocate a smaller
         // size instead.
-        size = sanitize_buffer_size(size, FALLBACK_MAX_BUFFER_SIZE);
+        size = sanitize_buffer_size(size);
         buffer.buffer = wlr_allocator_create_buffer(wf::get_core_impl().allocator, size.width,
             size.height, format);
     }
