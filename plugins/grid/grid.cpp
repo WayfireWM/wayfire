@@ -14,6 +14,7 @@
 #include "wayfire/plugins/grid.hpp"
 #include "wayfire/plugins/crossfade.hpp"
 #include <wayfire/window-manager.hpp>
+#include <wayfire/util/log.hpp>
 
 #include <wayfire/plugins/wobbly/wobbly-signal.hpp>
 #include <wayfire/view-transform.hpp>
@@ -134,6 +135,7 @@ class wayfire_grid : public wf::plugin_interface_t, public wf::per_output_tracke
         /* Tile the view as the preview shows, not what the signal suggests */
         if ((ev->operation == wf::grid::MOVE_OP_DROP) && slot.slot_id)
         {
+            log_slot(ev->view, slot.slot_id, "snap to");
             ev->view->toplevel()->pending().tiled_edges = wf::grid::get_tiled_edges_for_slot(slot.slot_id);
             auto desired_size = wf::grid::get_slot_dimensions(ev->view->get_output(), slot.slot_id);
             ev->view->get_data_safe<wf_grid_slot_data>()->slot = slot.slot_id;
@@ -209,6 +211,22 @@ class wayfire_grid : public wf::plugin_interface_t, public wf::per_output_tracke
         return is_floating && (view->get_output() != nullptr) && view->toplevel()->pending().mapped;
     }
 
+    void log_slot(wayfire_toplevel_view view, int slot_id, const char *action)
+    {
+        static constexpr const char *slot_names[] = {
+            "none", "bottom-left", "bottom", "bottom-right",
+            "left", "center", "right",
+            "top-left", "top", "top-right"
+        };
+
+        const char *name = (slot_id >= 0 && slot_id < 10) ?
+            slot_names[slot_id] : "unknown";
+
+        LOGD("grid: ", action, " slot ", name,
+            " on ", view->get_output()->to_string(),
+            " [app-id: ", view->get_app_id(), "]");
+    }
+
     void handle_slot(wayfire_toplevel_view view, int slot, wf::pointf_t delta = {0, 0})
     {
         if (!can_adjust_view(view))
@@ -216,6 +234,7 @@ class wayfire_grid : public wf::plugin_interface_t, public wf::per_output_tracke
             return;
         }
 
+        log_slot(view, slot, "apply");
         view->get_data_safe<wf_grid_slot_data>()->slot = slot;
         auto slot_geometry = wf::grid::get_slot_dimensions(view->get_output(), slot) + delta;
         ensure_grid_view(view)->adjust_target_geometry(
@@ -282,6 +301,15 @@ class wayfire_grid : public wf::plugin_interface_t, public wf::per_output_tracke
 
         data->carried_out = true;
         uint32_t slot = wf::grid::get_slot_from_tiled_edges(data->edges);
+        if (data->edges == 0)
+        {
+            LOGD("grid: restore on ", data->view->get_output()->to_string(),
+                " [app-id: ", data->view->get_app_id(), "]");
+        } else
+        {
+            log_slot(data->view, slot, "tile to");
+        }
+
         if (slot > 0)
         {
             data->desired_size = wf::grid::get_slot_dimensions(data->view->get_output(), slot);
