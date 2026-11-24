@@ -14,6 +14,8 @@
 #include <wayfire/plugins/wobbly/wobbly-signal.hpp>
 #include <wayfire/nonstd/wlroots-full.hpp>
 #include <wlr/util/edges.h>
+#include <wayfire/util/log.hpp>
+#include <string>
 
 class wayfire_resize : public wf::per_output_plugin_instance_t, public wf::pointer_interaction_t,
     public wf::touch_interaction_t
@@ -69,6 +71,7 @@ class wayfire_resize : public wf::per_output_plugin_instance_t, public wf::point
     wf::option_wrapper_t<wf::buttonbinding_t> button_preserve_aspect{
         "resize/activate_preserve_aspect"};
     std::unique_ptr<wf::input_grab_t> input_grab;
+    std::string active_app_id;
     wf::plugin_activation_data_t grab_interface = {
         .name = "resize",
         .capabilities = wf::CAPABILITY_GRAB_INPUT | wf::CAPABILITY_MANAGE_DESKTOP,
@@ -251,6 +254,12 @@ class wayfire_resize : public wf::per_output_plugin_instance_t, public wf::point
             return false;
         }
 
+        active_app_id = view->get_app_id();
+        if (!active_app_id.empty())
+        {
+            LOGD("resize: activate on ", output->to_string(), " [app-id: ", active_app_id, "]");
+        }
+
         input_grab->set_wants_raw_input(true);
         input_grab->grab_input(wf::scene::layer::OVERLAY);
 
@@ -292,6 +301,12 @@ class wayfire_resize : public wf::per_output_plugin_instance_t, public wf::point
 
         input_grab->ungrab_input();
         output->deactivate_plugin(&grab_interface);
+
+        if (!active_app_id.empty())
+        {
+            LOGD("resize: deactivate on ", output->to_string(), " [app-id: ", active_app_id, "]");
+            active_app_id.clear();
+        }
 
         if (view)
         {

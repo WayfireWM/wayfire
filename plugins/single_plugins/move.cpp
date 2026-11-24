@@ -17,6 +17,8 @@
 #include <wayfire/plugins/vswitch.hpp>
 #include <wayfire/workarea.hpp>
 #include <wayfire/window-manager.hpp>
+#include <wayfire/util/log.hpp>
+#include <string>
 
 #include <linux/input.h>
 #include <wayfire/signal-definitions.hpp>
@@ -165,6 +167,7 @@ class wayfire_move : public wf::per_output_plugin_instance_t,
     };
 
     std::unique_ptr<wf::input_grab_t> input_grab;
+    std::string active_app_id;
     wf::plugin_activation_data_t grab_interface = {
         .name = "move",
         .capabilities = wf::CAPABILITY_GRAB_INPUT | wf::CAPABILITY_MANAGE_DESKTOP,
@@ -306,6 +309,12 @@ class wayfire_move : public wf::per_output_plugin_instance_t,
             return false;
         }
 
+        active_app_id = view->get_app_id();
+        if (!active_app_id.empty())
+        {
+            LOGD("move: activate on ", output->to_string(), " [app-id: ", active_app_id, "]");
+        }
+
         this->input_grab->grab_input(wf::scene::layer::OVERLAY);
         update_slot(wf::grid::MOVE_OP_CLEAR_PREVIEW);
         return true;
@@ -367,6 +376,12 @@ class wayfire_move : public wf::per_output_plugin_instance_t,
     {
         input_grab->ungrab_input();
         output->deactivate_plugin(&grab_interface);
+
+        if (!active_app_id.empty())
+        {
+            LOGD("move: deactivate on ", output->to_string(), " [app-id: ", active_app_id, "]");
+            active_app_id.clear();
+        }
     }
 
     void input_pressed(uint32_t state)
