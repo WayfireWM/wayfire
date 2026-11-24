@@ -20,6 +20,13 @@
 #include "vswipe-processing.hpp"
 #include "wayfire/plugins/common/input-grab.hpp"
 #include "wayfire/signal-provider.hpp"
+#include <wayfire/output-layout.hpp>
+#include <wayfire/seat.hpp>
+#include <wayfire/view-helpers.hpp>
+#include <wayfire/toplevel-view.hpp>
+#include <cctype>
+#include <map>
+#include <string>
 
 using namespace wf::animation;
 class vswipe_smoothing_t : public duration_t
@@ -47,6 +54,43 @@ static inline wf::geometry_t interpolate(wf::geometry_t a, wf::geometry_t b,
     };
 }
 
+/**
+ * Parse a modifier key combination (e.g. "<alt><shift><super>") into a WLR_MODIFIER_* bitmask. Unrecognized
+ * tokens are ignored.
+ */
+static uint32_t parse_modifier_mask(std::string description)
+{
+    static const std::map<std::string, uint32_t> modifier_names =
+    {
+        {"shift", WLR_MODIFIER_SHIFT},
+        {"ctrl", WLR_MODIFIER_CTRL},
+        {"alt", WLR_MODIFIER_ALT},
+        {"super", WLR_MODIFIER_LOGO},
+    };
+
+    uint32_t mask = 0;
+    std::string token;
+    description += ' ';
+    for (auto c : description)
+    {
+        if ((c == '<') || (c == '>') || std::isspace(c))
+        {
+            auto it = modifier_names.find(token);
+            if (it != modifier_names.end())
+            {
+                mask |= it->second;
+            }
+
+            token.clear();
+        } else
+        {
+            token += std::tolower(c);
+        }
+    }
+
+    return mask;
+}
+
 class vswipe : public wf::per_output_plugin_instance_t
 {
   private:
@@ -58,11 +102,18 @@ class vswipe : public wf::per_output_plugin_instance_t
         UNKNOWN    = 0,
     };
 
+    enum swipe_mode_t
+    {
+        MODE_VIEWPORT,
+        MODE_OUTPUT,
+    };
+
     struct
     {
         bool swiping   = false;
         bool animating = false;
         swipe_direction_t direction;
+        swipe_mode_t mode = MODE_VIEWPORT;
 
         wf::pointf_t initial_deltas;
         wf::pointf_t delta_sum;
@@ -86,13 +137,16 @@ class vswipe : public wf::per_output_plugin_instance_t
     wf::option_wrapper_t<wf::animation_description_t> animation_duration{"vswipe/duration"};
 
     vswipe_smoothing_t smooth_delta{animation_duration};
-    wf::option_wrapper_t<int> fingers{"vswipe/fingers"};
+    wf::option_wrapper_t<int> viewport_fingers{"vswipe/viewport_fingers"};
+    wf::option_wrapper_t<int> output_fingers{"vswipe/output_fingers"};
+    wf::option_wrapper_t<std::string> window_modifier{"vswipe/window_modifier"};
     wf::option_wrapper_t<double> gap{"vswipe/gap"};
     wf::option_wrapper_t<double> threshold{"vswipe/threshold"};
     wf::option_wrapper_t<double> delta_threshold{"vswipe/delta_threshold"};
     wf::option_wrapper_t<double> speed_factor{"vswipe/speed_factor"};
     wf::option_wrapper_t<double> speed_cap{"vswipe/speed_cap"};
     std::unique_ptr<wf::input_grab_t> input_grab;
+    wf::wl_idle_call idle_switch_output;
     wf::plugin_activation_data_t grab_interface = {
         .name = "vswipe",
         .capabilities = wf::CAPABILITY_MANAGE_COMPOSITOR,
@@ -160,7 +214,14 @@ class vswipe : public wf::per_output_plugin_instance_t
             return;
         }
 
-        if (static_cast<int>(ev->event->fingers) != fingers)
+        const int finger_count = ev->event->fingers;
+        if ((viewport_fingers > 0) && (finger_count == viewport_fingers))
+        {
+            state.mode = MODE_VIEWPORT;
+        } else if ((output_fingers > 0) && (finger_count == output_fingers))
+        {
+            state.mode = MODE_OUTPUT;
+        } else
         {
             return;
         }
@@ -215,13 +276,12 @@ class vswipe : public wf::per_output_plugin_instance_t
     }
 
     // XXX: how to determine this??
-    static constexpr double initial_direction_threshold = 0.05;
+    static constexpr double initial_direction_threshold   = 0.05;
     static constexpr double secondary_direction_threshold = 0.3;
     static constexpr double diagonal_threshold = 1.73; // tan(30deg)
     bool is_diagonal(wf::pointf_t deltas)
     {
-        /* Diagonal movement is possible if the slope is not too steep
-         * and we have moved enough */
+        /* Diagonal movement is possible if the slope is not too steep and we have moved enough */
         double slope  = deltas.x / deltas.y;
         bool diagonal = wf::clamp(slope,
             1.0 / diagonal_threshold, diagonal_threshold) == slope;
@@ -265,6 +325,11 @@ class vswipe : public wf::per_output_plugin_instance_t
 
         state.delta_sum.x += ev->event->dx / speed_factor;
         state.delta_sum.y += ev->event->dy / speed_factor;
+        if (state.mode == MODE_OUTPUT)
+        {
+            return;
+        }
+
         if (state.direction == UNKNOWN)
         {
             state.initial_deltas.x += std::abs(ev->event->dx / speed_factor);
@@ -318,14 +383,24 @@ class vswipe : public wf::per_output_plugin_instance_t
 
     wf::signal::connection_t<event<wlr_pointer_swipe_end_event>> on_swipe_end = [=] (auto)
     {
-        if (!state.swiping || !output->is_plugin_active(grab_interface.name))
+        if (!state.swiping)
         {
-            state.swiping = false;
-
             return;
         }
 
         state.swiping = false;
+
+        if (state.mode == MODE_OUTPUT)
+        {
+            handle_output_swipe();
+            return;
+        }
+
+        if (!output->is_plugin_active(grab_interface.name))
+        {
+            return;
+        }
+
         const double move_threshold = wf::clamp((double)threshold, 0.0, 1.0);
         const double fast_threshold =
             wf::clamp((double)delta_threshold, 0.0, 1000.0);
@@ -353,8 +428,209 @@ class vswipe : public wf::per_output_plugin_instance_t
         smooth_delta.dy.restart_with_end(target_delta.y);
         smooth_delta.start();
         output->wset()->set_workspace(target_workspace);
+        if ((target_workspace.x != state.vx) || (target_workspace.y != state.vy))
+        {
+            if (is_window_modifier_pressed())
+            {
+                move_active_window({state.vx, state.vy}, target_workspace);
+            }
+        }
+
         state.animating = true;
     };
+
+    bool is_window_modifier_pressed()
+    {
+        const auto mask = parse_modifier_mask(window_modifier);
+        if (mask == 0)
+        {
+            return false;
+        }
+
+        return (wf::get_core().seat->get_keyboard_modifiers() & mask) == mask;
+    }
+
+    /**
+     * Move the topmost active view of this output (together with its children) from the workspace 'from' to
+     * the workspace 'to'.
+     */
+    void move_active_window(wf::point_t from, wf::point_t to)
+    {
+        auto view = wf::find_topmost_parent(
+            wf::toplevel_cast(wf::get_active_view_for_output(output)));
+        if (!view || view->sticky)
+        {
+            return;
+        }
+
+        auto ws_size = wall->get_workspace_rectangle({0, 0});
+        const int dx = (to.x - from.x) * ws_size.width;
+        const int dy = (to.y - from.y) * ws_size.height;
+        for (auto& v : view->enumerate_views())
+        {
+            auto g = v->get_pending_geometry();
+            v->move(g.x + dx, g.y + dy);
+        }
+    }
+
+    wf::output_t *get_output_in_direction(int dir_x, int dir_y)
+    {
+        auto current_output = wf::get_core().seat->get_active_output();
+        if (!current_output)
+        {
+            return nullptr;
+        }
+
+        auto current_geo = current_output->get_layout_geometry();
+        wf::pointf_t current_center = {
+            current_geo.x + current_geo.width / 2.0,
+            current_geo.y + current_geo.height / 2.0
+        };
+
+        wf::output_t *best_output = nullptr;
+        double best_score = -INFINITY;
+
+        const int MIN_OVERLAP = 20;
+
+        for (auto& other_output : wf::get_core().output_layout->get_outputs())
+        {
+            if (other_output == current_output)
+            {
+                continue;
+            }
+
+            auto geo = other_output->get_layout_geometry();
+            wf::pointf_t center = {
+                geo.x + geo.width / 2.0,
+                geo.y + geo.height / 2.0
+            };
+
+            double dx = center.x - current_center.x;
+            double dy = center.y - current_center.y;
+
+            if (((dir_x != 0) && (dx * dir_x <= 0)) ||
+                ((dir_y != 0) && (dy * dir_y <= 0)))
+            {
+                continue;
+            }
+
+            double ortho_overlap = 1.0;
+            if (dir_x != 0)
+            {
+                int current_top    = current_geo.y;
+                int current_bottom = current_geo.y + current_geo.height;
+                int other_top    = geo.y;
+                int other_bottom = geo.y + geo.height;
+
+                int overlap = std::min(current_bottom, other_bottom) -
+                    std::max(current_top, other_top);
+                ortho_overlap = (double)overlap / current_geo.height;
+            } else if (dir_y != 0)
+            {
+                int current_left  = current_geo.x;
+                int current_right = current_geo.x + current_geo.width;
+                int other_left    = geo.x;
+                int other_right   = geo.x + geo.width;
+
+                int overlap = std::min(current_right, other_right) -
+                    std::max(current_left, other_left);
+                ortho_overlap = (double)overlap / current_geo.width;
+            }
+
+            if (ortho_overlap * 100 < MIN_OVERLAP)
+            {
+                continue;
+            }
+
+            double distance = sqrt(dx * dx + dy * dy);
+            double score    = ortho_overlap / distance;
+
+            if (score > best_score)
+            {
+                best_output = other_output;
+                best_score  = score;
+            }
+        }
+
+        return best_output ? best_output : current_output;
+    }
+
+    void switch_to_output(wf::output_t *target_output)
+    {
+        if (!target_output)
+        {
+            LOGI("No output found in requested direction. Cannot switch.");
+            return;
+        }
+
+        /* when we switch the output, the swipe may be activated again for the next output, which we don't
+         * want, so we postpone the switch */
+        idle_switch_output.run_once([=] ()
+        {
+            wf::get_core().seat->focus_output(target_output);
+            target_output->ensure_pointer(true);
+        });
+    }
+
+    void switch_to_output_with_window(wf::output_t *target_output)
+    {
+        auto current_output = wf::get_core().seat->get_active_output();
+        auto view =
+            wf::find_topmost_parent(wf::toplevel_cast(wf::get_active_view_for_output(current_output)));
+        if (view)
+        {
+            move_view_to_output(view, target_output, true);
+        }
+
+        switch_to_output(target_output);
+    }
+
+    /**
+     * Handle a swipe which was started with the output-switching finger count: switch to the output in the
+     * swipe direction (swiping right switches to the output on the right), moving the active window along if
+     * the window modifier is pressed.
+     */
+    void handle_output_swipe()
+    {
+        const double move_threshold = wf::clamp((double)threshold, 0.0, 1.0);
+
+        /* For output switching the target is in the swipe direction itself, i.e. swiping right switches to
+         * the output on the right */
+        const double dx = state.delta_sum.x;
+        const double dy = state.delta_sum.y;
+
+        int dir_x = 0, dir_y = 0;
+        if (std::abs(dx) >= std::abs(dy))
+        {
+            if (enable_horizontal && (std::abs(dx) > move_threshold))
+            {
+                dir_x = (dx > 0) ? 1 : -1;
+            }
+        } else if (enable_vertical && (std::abs(dy) > move_threshold))
+        {
+            dir_y = (dy > 0) ? 1 : -1;
+        }
+
+        if (!dir_x && !dir_y)
+        {
+            return;
+        }
+
+        auto target_output  = get_output_in_direction(dir_x, dir_y);
+        auto current_output = wf::get_core().seat->get_active_output();
+        if (!target_output || (target_output == current_output))
+        {
+            return;
+        }
+
+        if (is_window_modifier_pressed())
+        {
+            switch_to_output_with_window(target_output);
+        } else
+        {
+            switch_to_output(target_output);
+        }
+    }
 
     void finalize_and_exit()
     {
@@ -372,6 +648,8 @@ class vswipe : public wf::per_output_plugin_instance_t
         {
             finalize_and_exit();
         }
+
+        idle_switch_output.disconnect();
     }
 };
 

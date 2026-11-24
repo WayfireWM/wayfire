@@ -34,10 +34,20 @@
 			<_long>Sets the background color.</_long>
 			<default>0.1 0.1 0.1 1.0</default>
 		</option>
-		<option name="fingers" type="int">
-			<_short>Number of fingers</_short>
-			<_long>Specifies the number of fingers to swipe.</_long>
+		<option name="viewport_fingers" type="int">
+			<_short>Number of fingers viewport</_short>
+			<_long>Specifies the number of fingers to swipe for switching the viewport (workspace). 0 disables viewport switching.</_long>
+			<default>3</default>
+		</option>
+		<option name="output_fingers" type="int">
+			<_short>Number of fingers output</_short>
+			<_long>Specifies the number of fingers to swipe for switching the output (monitor). 0 disables output switching.</_long>
 			<default>4</default>
+		</option>
+		<option name="window_modifier" type="string">
+			<_short>With window modifier</_short>
+			<_long>Modifier key combination (for example &lt;alt&gt;&lt;shift&gt;&lt;super&gt;) which, while held during a swipe, makes the swipe also move the active window to the new viewport or output.</_long>
+			<default>&lt;alt&gt;</default>
 		</option>
 		<option name="gap" type="double">
 			<_short>Gap</_short>
