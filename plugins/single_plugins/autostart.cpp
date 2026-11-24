@@ -29,6 +29,7 @@ class wayfire_autostart : public wf::plugin_interface_t
                 continue;
             }
 
+            LOGI("Autostart: ", name, " = ", command);
             wf::get_core().run(command);
             if (command.find("wf-panel") != std::string::npos)
             {
@@ -43,11 +44,13 @@ class wayfire_autostart : public wf::plugin_interface_t
 
         if (autostart_wf_shell && !panel_manually_started)
         {
+            LOGI("Autostart: launching wf-panel");
             wf::get_core().run("wf-panel");
         }
 
         if (autostart_wf_shell && !background_manually_started)
         {
+            LOGI("Autostart: launching wf-background");
             wf::get_core().run("wf-background");
         }
     }
